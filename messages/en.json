@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "title": "NestHub - Smart rental in Tunisia",
+    "description": "Secure real estate rental platform"
+  },
+  "navigation": {
+    "home": "Welcome",
+    "login": "Connection",
+    "register": "Registration",
+    "dashboard": "Dashboard",
+    "profile": "My profile",
+    "admin": "Administration",
+    "logout": "Disconnect"
+  },
+  "auth": {
+    "loginTitle": "Connection",
+    "email": "E-mail",
+    "password": "Password",
+    "loginButton": "Log in",
+    "noAccount": "No account yet?",
+    "registerNow": "Register"
+  },
+  "admin": {
+    "dashboardTitle": "Admin Dashboard",
+    "users": "Users",
+    "verifications": "Verifications"
+  }
+}

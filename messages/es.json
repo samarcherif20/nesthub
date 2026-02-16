@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "title": "NestHub - Alquiler inteligente en Túnez",
+    "description": "Plataforma segura de alquiler de inmuebles"
+  },
+  "navigation": {
+    "home": "Bienvenido",
+    "login": "Conexión",
+    "register": "Registro",
+    "dashboard": "Panel",
+    "profile": "mi perfil",
+    "admin": "Administración",
+    "logout": "Desconectar"
+  },
+  "auth": {
+    "loginTitle": "Conexión",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "loginButton": "Acceso",
+    "noAccount": "¿Aún no tienes cuenta?",
+    "registerNow": "Registro"
+  },
+  "admin": {
+    "dashboardTitle": "Panel de administración",
+    "users": "Usuarios",
+    "verifications": "Verificaciones"
+  }
+}

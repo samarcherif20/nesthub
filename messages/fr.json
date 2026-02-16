@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "title": "NestHub - Location intelligente en Tunisie",
+    "description": "Plateforme de location immobilière sécurisée"
+  },
+  "navigation": {
+    "home": "Accueil",
+    "login": "Connexion",
+    "register": "Inscription",
+    "dashboard": "Tableau de bord",
+    "profile": "Mon profil",
+    "admin": "Administration",
+    "logout": "Déconnexion"
+  },
+  "auth": {
+    "loginTitle": "Connexion",
+    "email": "Email",
+    "password": "Mot de passe",
+    "loginButton": "Se connecter",
+    "noAccount": "Pas encore de compte ?",
+    "registerNow": "Inscrivez-vous"
+  },
+  "admin": {
+    "dashboardTitle": "Tableau de bord administrateur",
+    "users": "Utilisateurs",
+    "verifications": "Vérifications"
+  }
+}

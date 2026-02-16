@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "title": "NestHub – Intelligente Vermietung in Tunesien",
+    "description": "Sichere Immobilienvermietungsplattform"
+  },
+  "navigation": {
+    "home": "Willkommen",
+    "login": "Verbindung",
+    "register": "Anmeldung",
+    "dashboard": "Armaturenbrett",
+    "profile": "Mein Profil",
+    "admin": "Verwaltung",
+    "logout": "Trennen"
+  },
+  "auth": {
+    "loginTitle": "Verbindung",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "loginButton": "Einloggen",
+    "noAccount": "Noch kein Konto?",
+    "registerNow": "Registrieren"
+  },
+  "admin": {
+    "dashboardTitle": "Admin-Dashboard",
+    "users": "Benutzer",
+    "verifications": "Überprüfungen"
+  }
+}

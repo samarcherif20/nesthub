@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "title": "NestHub - الإيجار الذكي في تونس",
+    "description": "منصة تأجير العقارات الآمنة"
+  },
+  "navigation": {
+    "home": "مرحباً",
+    "login": "اتصال",
+    "register": "تسجيل",
+    "dashboard": "لوحة القيادة",
+    "profile": "ملفي الشخصي",
+    "admin": "إدارة",
+    "logout": "قطع الاتصال"
+  },
+  "auth": {
+    "loginTitle": "اتصال",
+    "email": "بريد إلكتروني",
+    "password": "كلمة المرور",
+    "loginButton": "تسجيل الدخول",
+    "noAccount": "ليس لديك حساب بعد؟",
+    "registerNow": "يسجل"
+  },
+  "admin": {
+    "dashboardTitle": "لوحة تحكم المشرف",
+    "users": "المستخدمين",
+    "verifications": "التحقق"
+  }
+}
