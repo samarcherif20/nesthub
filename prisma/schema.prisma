@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  PROPERTY_OWNER
+  TENANT
+}
+
+enum AccountStatus {
+  ACTIVE
+  TEMPORARILY_SUSPENDED
+  PERMANENTLY_BANNED
+  PENDING_VALIDATION
+  SECURITY_LOCKED
+}
+
+enum VerificationStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+}
+
+model User {
+  id                String   @id @default(uuid())
+  clerkId           String   @unique
+  email             String   @unique
+  firstName         String?
+  lastName          String?
+  phoneNumber       String?
+  profilePictureUrl String?
+  bio               String?  @db.Text
+  spokenLanguages   String[] @default([])
+  preferredLocale   String   @default("fr")
+  
+  role              UserRole      @default(TENANT)
+  status            AccountStatus @default(PENDING_VALIDATION)
+  isEmailVerified   Boolean       @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime 
+  lastLogin         DateTime?
+
+  identityVerification IdentityVerification?
+
+  @@map("users")
+}
+
+model IdentityVerification {
+  id               String             @id @default(uuid())
+  userId           String             @unique
+  documentFrontUrl String?
+  documentBackUrl  String?
+  submissionDate   DateTime?
+  processedDate    DateTime?
+  status           VerificationStatus @default(PENDING)
+  adminComment     String?            @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("identity_verifications")
+}
+
+model StaticPage {
+  id          String   @id @default(uuid())
+  type        String   @unique
+  title       String
+  slug        String   @unique
+  htmlContent String   @db.Text
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("static_pages")
+}
