@@ -24,5 +24,58 @@
     "dashboardTitle": "Panel de administración",
     "users": "Usuarios",
     "verifications": "Verificaciones"
+  },
+  "adminGate": {
+    "meta": {
+      "title": "Acceso de administración - NestHub",
+      "description": "Portal de acceso seguro a la administración"
+    },
+    "security": {
+      "badge": "Conexión segura",
+      "title": "Portal del administrador",
+      "subtitle": "Esta página está reservada. Por favor ingrese el código de acceso.",
+      "warning": "Intentos restantes: {intentos}",
+      "locked": "Acceso bloqueado temporalmente",
+      "lockedMessage": "Demasiados intentos fallidos. Inténtelo de nuevo en {minutos} minutos.",
+      "tryAgain": "Intentar otra vez"
+    },
+    "form": {
+      "codeLabel": "código de acceso",
+      "codePlaceholder": "Ingrese el código de 6 dígitos",
+      "submit": "Descubrir",
+      "submitting": "Verificación...",
+      "error": {
+        "required": "Se requiere código",
+        "invalidFormat": "El código debe contener 6 dígitos.",
+        "invalid": "código incorrecto",
+        "expired": "código caducado",
+        "generic": "Ha ocurrido un error"
+      }
+    },
+    "success": {
+      "title": "Acceso concedido",
+      "message": "Redirigir a la página de inicio de sesión...",
+      "redirecting": "Redirección en curso"
+    },
+    "backToSite": "← Volver al sitio público"
+  },
+  "adminLogin": {
+    "meta": {
+      "title": "Inicio de sesión de administración - NestHub"
+    },
+    "title": "Administración de NestHub",
+    "subtitle": "Inicie sesión con su cuenta de administrador",
+    "backToSite": "← Volver al sitio público",
+    "securityNotice": "Esta área está reservada para administradores autorizados."
+  },
+  "errors": {
+    "403": {
+      "title": "Acceso denegado",
+      "message": "No tienes los derechos necesarios."
+    },
+    "404": {
+      "title": "Página no encontrada",
+      "message": "La página que buscas no existe."
+    }
   }
 }

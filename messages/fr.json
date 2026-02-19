@@ -24,5 +24,91 @@
     "dashboardTitle": "Tableau de bord administrateur",
     "users": "Utilisateurs",
     "verifications": "Vérifications"
+  },
+  "admin_Gate": {
+    "meta": {
+      "title": "Accès Administration - NestHub",
+      "description": "Portail sécurisé d'accès à l'administration"
+    },
+    "security": {
+      "badge": "Connexion sécurisée",
+      "title": "Portail Administrateur",
+      "subtitle": "Cette page est réservée. Veuillez entrer le code d'accès.",
+      "warning": "Tentatives restantes : {attempts}",
+      "locked": "Accès temporairement bloqué",
+      "lockedMessage": "Trop de tentatives échouées. Veuillez réessayer dans {minutes} minutes.",
+      "tryAgain": "Réessayer"
+    },
+    "form": {
+      "codeLabel": "Code d'accès",
+      "codePlaceholder": "Entrez le code à 6 chiffres",
+      "submit": "Déverrouiller",
+      "submitting": "Vérification...",
+      "error": {
+        "required": "Le code est requis",
+        "invalidFormat": "Le code doit contenir 6 chiffres",
+        "invalid": "Code incorrect",
+        "expired": "Code expiré",
+        "generic": "Une erreur est survenue"
+      }
+    },
+    "success": {
+      "title": "Accès accordé",
+      "message": "Redirection vers la page de connexion...",
+      "redirecting": "Redirection en cours"
+    },
+    "backToSite": "← Retour au site public"
+  },
+  "adminLogin": {
+    "meta": {
+      "title": "Connexion Administration - NestHub"
+    },
+    "title": "Administration NestHub",
+    "subtitle": "Connectez-vous avec votre compte administrateur",
+    "backToSite": "← Retour au site public",
+    "securityNotice": "Cette zone est réservée aux administrateurs autorisés."
+  },
+  "errors": {
+    "404": {
+      "title": "Page non trouvée",
+      "message": "La page que vous recherchez n'existe pas."
+    },
+    "403": {
+      "title": "Accès refusé",
+      "message": "Vous n'avez pas les droits nécessaires."
+    }
+  },
+  
+   "adminGate": {
+    "title": {
+      "accessKey": "CLÉ D'ACCÈS REQUISE",
+      "locked": "SYSTÈME VERROUILLÉ"
+    },
+    "subtitle": {
+      "encryption": "NIVEAU DE CHIFFREMENT"
+    },
+    "error": {
+      "incomplete": "CODE INCOMPLET",
+      "invalidCode": "CLÉ D'ACCÈS INVALIDE",
+      "generic": "ERREUR SYSTÈME"
+    },
+    "locked": {
+      "title": "ACCÈS REFUSÉ",
+      "wait": "VEUILLEZ ATTENDRE AVANT DE RÉESSAYER"
+    },
+    "success": {
+      "title": "ACCÈS ACCORDÉ",
+      "redirecting": "REDIRECTION VERS ZONE SÉCURISÉE"
+    },
+    "button": {
+      "verifying": "VÉRIFICATION...",
+      "unlock": "DÉVERROUILLER"
+    },
+    "status": {
+      "securityLevel": "NIVEAU DE SÉCURITÉ",
+      "attemptCount": "TENTATIVES",
+      "voidSync": "SYNCHRO LOCALE"
+    }
   }
+
 }

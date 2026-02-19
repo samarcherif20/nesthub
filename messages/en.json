@@ -24,5 +24,89 @@
     "dashboardTitle": "Admin Dashboard",
     "users": "Users",
     "verifications": "Verifications"
+  },
+  "admin_Gate": {
+    "meta": {
+      "title": "Administration Access - NestHub",
+      "description": "Secure administration access portal"
+    },
+    "security": {
+      "badge": "Secure connection",
+      "title": "Administrator Portal",
+      "subtitle": "This page is reserved. Please enter the access code.",
+      "warning": "Attempts remaining: {attempts}",
+      "locked": "Access temporarily blocked",
+      "lockedMessage": "Too many failed attempts. Please try again in {minutes} minutes.",
+      "tryAgain": "Try again"
+    },
+    "form": {
+      "codeLabel": "Access code",
+      "codePlaceholder": "Enter the 6-digit code",
+      "submit": "Unlock",
+      "submitting": "Verification...",
+      "error": {
+        "required": "Code is required",
+        "invalidFormat": "The code must contain 6 digits",
+        "invalid": "Incorrect code",
+        "expired": "Expired code",
+        "generic": "An error has occurred"
+      }
+    },
+    "success": {
+      "title": "Access granted",
+      "message": "Redirect to login page...",
+      "redirecting": "Redirection in progress"
+    },
+    "backToSite": "← Return to public site"
+  },
+  "adminLogin": {
+    "meta": {
+      "title": "Administration Login - NestHub"
+    },
+    "title": "NestHub Administration",
+    "subtitle": "Log in with your administrator account",
+    "backToSite": "← Return to public site",
+    "securityNotice": "This area is reserved for authorized administrators."
+  },
+  "errors": {
+    "403": {
+      "title": "Access denied",
+      "message": "You do not have the necessary rights."
+    },
+    "404": {
+      "title": "Page not found",
+      "message": "The page you are looking for does not exist."
+    }
+  },
+  "adminGate": {
+    "title": {
+      "accessKey": "ACCESS KEY REQUIRED",
+      "locked": "LOCKED SYSTEM"
+    },
+    "subtitle": {
+      "encryption": "ENCRYPTION LEVEL"
+    },
+    "error": {
+      "incomplete": "INCOMPLETE CODE",
+      "invalidCode": "INVALID ACCESS KEY",
+      "generic": "SYSTEM ERROR"
+    },
+    "locked": {
+      "title": "ACCESS DENIED",
+      "wait": "PLEASE WAIT BEFORE TRYING AGAIN"
+    },
+    "success": {
+      "title": "ACCESS GRANTED",
+      "redirecting": "REDIRECTION TO SECURE AREA"
+    },
+    "button": {
+      "verifying": "VERIFICATION...",
+      "unlock": "UNLOCK"
+    },
+    "status": {
+      "securityLevel": "SECURITY LEVEL",
+      "attemptCount": "ATTEMPTS",
+      "voidSync": "LOCAL SYNCHRO"
+    }
   }
 }

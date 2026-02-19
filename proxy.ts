@@ -1,8 +1,7 @@
 import createMiddleware from "next-intl/middleware";
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { locales, defaultLocale } from "@/lib/i18n";
-import { cookies } from "next/headers";
+import { locales, defaultLocale, isValidLocale } from "@/lib/i18n";
 
 const intlMiddleware = createMiddleware({
   locales,
@@ -11,86 +10,85 @@ const intlMiddleware = createMiddleware({
 });
 
 const ADMIN_URL_KEY = process.env.ADMIN_URL_KEY;
-const COOKIE_NAME = "admin_activation";
-
-// ROUTES PUBLIQUES (pas besoin d'auth)
-const isPublicRoute = createRouteMatcher([
-  "/:locale",
-  "/:locale/login",
-  "/:locale/register",
-  "/:locale/cgu",
-  "/:locale/faq",
-  "/:locale/about",
-  "/:locale/how-it-works",
-  "/:locale/admin-gate",
-  "/api/admin/verify",
-  "/api/webhook/clerk",
-]);
-
-// MIDDLEWARE PRINCIPAL
+const COOKIE_NAME = "admin_gate_unlocked";
 
 export default clerkMiddleware(async (auth, req) => {
   const { pathname, searchParams } = req.nextUrl;
-  const { userId } = await auth();
 
-  // Extraire la locale du pathname
-  const locale = pathname.split("/")[1] || defaultLocale;
-  const cookieStore = await cookies();
+  // API routes — pas d'intl
+  if (pathname.startsWith("/api/")) {
+    return NextResponse.next();
+  }
+
+  // ========================================
+  // TOUJOURS appliquer intl d'abord
+  // ========================================
   const intlResponse = intlMiddleware(req);
-  if (intlResponse) {
+
+  // Si redirect (ex: / → /fr), suivre immédiatement
+  if (intlResponse.status >= 300 && intlResponse.status < 400) {
     return intlResponse;
   }
 
-  // PROTECTION ADMIN (/admin/*)
+  // ========================================
+  // Déterminer locale et chemin
+  // ========================================
+  const pathParts = pathname.split("/").filter(Boolean);
+  const locale = pathParts[0] && isValidLocale(pathParts[0])
+    ? pathParts[0]
+    : defaultLocale;
+  const pathWithoutLocale = "/" + pathParts.slice(1).join("/");
 
-  if (pathname.startsWith("/admin")) {
-    // Vérifier cookie d'activation
-    const activationCookie = cookieStore.get(COOKIE_NAME);
+  // ========================================
+  // Pages publiques
+  // ========================================
+  const publicPaths = ["/", "/login", "/register", "/cgu", "/faq", "/about", "/how-it-works"];
+  if (publicPaths.includes(pathWithoutLocale)) {
+    return intlResponse;
+  }
 
-    if (!activationCookie) {
-      // Pas de cookie → rediriger vers portail d'activation
+  // ========================================
+  // Admin gate
+  // ========================================
+  if (pathWithoutLocale === "/admin-gate") {
+    const providedKey = searchParams.get("key");
+    if (!providedKey) return NextResponse.rewrite(new URL(`/${locale}/404`, req.url));
+    if (providedKey !== ADMIN_URL_KEY) return new Response("Forbidden", { status: 403 });
+
+    const isUnlocked = req.cookies.get(COOKIE_NAME)?.value === "true";
+    if (isUnlocked) {
+      return NextResponse.redirect(
+        new URL(`/${locale}/admin/login?key=${providedKey}`, req.url)
+      );
+    }
+    return intlResponse;
+  }
+
+  // ========================================
+  // Zone admin
+  // ========================================
+  if (pathWithoutLocale.startsWith("/admin")) {
+    const isUnlocked = req.cookies.get(COOKIE_NAME)?.value === "true";
+    if (!isUnlocked) {
       const gateUrl = new URL(`/${locale}/admin-gate`, req.url);
-
-      // Garder la clé si présente
       const key = searchParams.get("key");
       if (key) gateUrl.searchParams.set("key", key);
-
       return NextResponse.redirect(gateUrl);
     }
-
-    // Cookie présent → laisser passer (vérification finale dans layout)
-    return NextResponse.next();
+    return intlResponse;
   }
 
-  // PORTAIL ADMIN-GATE
-
-  if (pathname.includes("/admin-gate")) {
-    const providedKey = searchParams.get("key");
-
-    // Clé invalide ou manquante → 404 (ne révèle pas l'existence)
-    if (providedKey !== ADMIN_URL_KEY) {
-      return new Response("Not Found", { status: 404 });
-    }
-
-    // Clé valide → afficher le portail
-    return NextResponse.next();
-  }
-
-  // ÉTAPE 4 : ROUTES PUBLIQUES
-
-  if (isPublicRoute(req)) {
-    return NextResponse.next();
-  }
-
-  // PROTECTION STANDARD (auth requise)
-
+  // ========================================
+  // Routes protégées
+  // ========================================
+  const { userId } = await auth();
   if (!userId) {
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
   }
 
-  return NextResponse.next();
+  return intlResponse;
 });
 
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)" ],
 };

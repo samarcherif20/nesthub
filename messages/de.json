@@ -24,5 +24,58 @@
     "dashboardTitle": "Admin-Dashboard",
     "users": "Benutzer",
     "verifications": "Überprüfungen"
+  },
+  "adminGate": {
+    "meta": {
+      "title": "Administratorzugriff – NestHub",
+      "description": "Sicheres Verwaltungszugangsportal"
+    },
+    "security": {
+      "badge": "Sichere Verbindung",
+      "title": "Administratorportal",
+      "subtitle": "Diese Seite ist reserviert. Bitte geben Sie den Zugangscode ein.",
+      "warning": "Verbleibende Versuche: {attempts}",
+      "locked": "Zugang vorübergehend gesperrt",
+      "lockedMessage": "Zu viele gescheiterte Versuche. Bitte versuchen Sie es in {Minuten} Minuten erneut.",
+      "tryAgain": "Versuchen Sie es erneut"
+    },
+    "form": {
+      "codeLabel": "Zugangscode",
+      "codePlaceholder": "Geben Sie den 6-stelligen Code ein",
+      "submit": "Entsperren",
+      "submitting": "Überprüfung...",
+      "error": {
+        "required": "Code ist erforderlich",
+        "invalidFormat": "Der Code muss 6 Ziffern enthalten",
+        "invalid": "Falscher Code",
+        "expired": "Abgelaufener Code",
+        "generic": "Es ist ein Fehler aufgetreten"
+      }
+    },
+    "success": {
+      "title": "Zugriff gewährt",
+      "message": "Zur Anmeldeseite weiterleiten...",
+      "redirecting": "Umleitung läuft"
+    },
+    "backToSite": "← Zurück zur öffentlichen Website"
+  },
+  "adminLogin": {
+    "meta": {
+      "title": "Administrator-Login – NestHub"
+    },
+    "title": "NestHub-Verwaltung",
+    "subtitle": "Melden Sie sich mit Ihrem Administratorkonto an",
+    "backToSite": "← Zurück zur öffentlichen Website",
+    "securityNotice": "Dieser Bereich ist autorisierten Administratoren vorbehalten."
+  },
+  "errors": {
+    "403": {
+      "title": "Zugriff verweigert",
+      "message": "Sie verfügen nicht über die erforderlichen Rechte."
+    },
+    "404": {
+      "title": "Seite nicht gefunden",
+      "message": "Die gesuchte Seite existiert nicht."
+    }
   }
 }
