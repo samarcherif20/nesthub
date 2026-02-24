@@ -26,56 +26,105 @@
     "verifications": "Verifiche"
   },
   "adminGate": {
-    "meta": {
-      "title": "Accesso amministrativo - NestHub",
-      "description": "Portale di accesso amministrativo sicuro"
+    "badge": {
+      "admin": "AMMINISTRATORE v3.2.1"
+    },
+    "header": {
+      "subtitle": "Portale sicuro"
+    },
+    "title": {
+      "admin": "AMMINISTRATORE",
+      "gate": "VIZIATO",
+      "locked": "SISTEMA BLOCCATO"
+    },
+    "subtitle": "È richiesta l'autorizzazione di livello 5",
+    "core": {
+      "sequence": "SEQUENZA"
+    },
+    "status": {
+      "awaiting": "IN ATTESA",
+      "twoRemaining": "⚠️ 2 RIMANENTI",
+      "finalAttempt": "🔥ULTIMO TENTATIVO"
+    },
+    "code": {
+      "display": "Codice",
+      "empty": "______"
+    },
+    "buttons": {
+      "clear": "Cancellare",
+      "confirm": "Confermare",
+      "mapping": "Mostra mappatura",
+      "security": "Dettagli di sicurezza"
+    },
+    "mapping": {
+      "title": "🔢 Mappatura dei simboli:"
     },
     "security": {
-      "badge": "Connessione sicura",
-      "title": "Portale amministratore",
-      "subtitle": "Questa pagina è riservata. Inserisci il codice di accesso.",
-      "warning": "Tentativi rimanenti: {tentativi}",
-      "locked": "Accesso temporaneamente bloccato",
-      "lockedMessage": "Troppi tentativi falliti. Riprova tra {minutes} minuti.",
-      "tryAgain": "Riprova"
+      "systemId": "ID SISTEMA",
+      "encryption": "CRITTOGRAFIA",
+      "uptime": "DISPONIBILE",
+      "protocol": "PROTOCOLLO"
     },
-    "form": {
-      "codeLabel": "Codice di accesso",
-      "codePlaceholder": "Inserisci il codice di 6 cifre",
-      "submit": "Sbloccare",
-      "submitting": "Verifica...",
-      "error": {
-        "required": "Il codice è obbligatorio",
-        "invalidFormat": "Il codice deve contenere 6 cifre",
-        "invalid": "Codice errato",
-        "expired": "Codice scaduto",
-        "generic": "Si è verificato un errore"
-      }
+    "attempts": {
+      "first": "1°",
+      "second": "2°",
+      "third": "3°"
+    },
+    "lockdown": {
+      "title": "SISTEMA BLOCCATO",
+      "message": "Troppi tentativi. Attendere prego."
     },
     "success": {
-      "title": "Accesso concesso",
-      "message": "Reindirizzamento alla pagina di accesso...",
-      "redirecting": "Reindirizzamento in corso"
+      "title": "ACCESSO AUTORIZZATO",
+      "message": "Reindirizzamento al portale sicuro..."
     },
-    "backToSite": "← Ritorna al sito pubblico"
-  },
-  "adminLogin": {
-    "meta": {
-      "title": "Accesso amministrativo - NestHub"
+    "alerts": {
+      "unlocked": {
+        "title": "Sistema sbloccato",
+        "message": "Il periodo di raffreddamento è finito. Puoi riprovare."
+      },
+      "locked": {
+        "title": "Sistema bloccato",
+        "message": "Numero massimo di tentativi superato. Raffreddamento: {time}"
+      },
+      "reset": {
+        "title": "Ripristino della sequenza",
+        "message": "Si prega di reinserire il codice."
+      },
+      "incomplete": {
+        "title": "Sequenza incompleta",
+        "message": "Inserisci tutti e 6 i simboli prima di confermare."
+      },
+      "attempt": {
+        "first": {
+          "title": "Tentativo {corrente}/{max}",
+          "message": "Codice non valido. {remaining} tentativo/i rimanente/i."
+        },
+        "second": {
+          "title": "Tentativo {current}/{max} - Avviso finale",
+          "message": "Ultimo tentativo prima del blocco del sistema."
+        }
+      },
+      "incorrect": {
+        "title": "Codice errato",
+        "message": "Ti restano {remaining} tentativi"
+      },
+      "lockdown": {
+        "title": "Sistema bloccato",
+        "message": "Numero massimo di tentativi ({max}) superato. Raffreddamento: 5 minuti."
+      },
+      "success": {
+        "title": "Accesso autorizzato",
+        "message": "Autenticazione riuscita. Reindirizzamento..."
+      },
+      "error": {
+        "title": "Errore di sistema",
+        "message": "Impossibile verificare le credenziali. Per favore riprova."
+      }
     },
-    "title": "Amministrazione NestHub",
-    "subtitle": "Accedi con il tuo account amministratore",
-    "backToSite": "← Ritorna al sito pubblico",
-    "securityNotice": "Quest'area è riservata agli amministratori autorizzati."
-  },
-  "errors": {
-    "403": {
-      "title": "Accesso negato",
-      "message": "Non hai i diritti necessari."
-    },
-    "404": {
-      "title": "Pagina non trovata",
-      "message": "La pagina che stai cercando non esiste."
+    "footer": {
+      "security": "Connessione sicura • AES-256",
+      "version": "Gateway amministrativo v3.2.1"
     }
   }
 }

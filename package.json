@@ -15,10 +15,11 @@
   },
   "dependencies": {
     "@clerk/localizations": "^3.35.4",
-    "@clerk/nextjs": "^6.37.4",
+    "@clerk/nextjs": "^6.38.0",
     "@prisma/client": "^6.19.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.34.3",
     "google-translate-api-x": "^10.7.2",
     "lucide-react": "^0.564.0",
     "next": "16.1.6",

@@ -26,56 +26,105 @@
     "verifications": "Überprüfungen"
   },
   "adminGate": {
-    "meta": {
-      "title": "Administratorzugriff – NestHub",
-      "description": "Sicheres Verwaltungszugangsportal"
+    "badge": {
+      "admin": "ADMIN v3.2.1"
+    },
+    "header": {
+      "subtitle": "Sicheres Gateway"
+    },
+    "title": {
+      "admin": "ADMIN",
+      "gate": "VERWÖHNT",
+      "locked": "GESPERRTES SYSTEM"
+    },
+    "subtitle": "Autorisierung der Stufe 5 erforderlich",
+    "core": {
+      "sequence": "SEQUENZ"
+    },
+    "status": {
+      "awaiting": "IN DER WARTESCHLEIFE",
+      "twoRemaining": "⚠️ 2 RESTLICH",
+      "finalAttempt": "🔥 LETZTER VERSUCH"
+    },
+    "code": {
+      "display": "Code",
+      "empty": "______"
+    },
+    "buttons": {
+      "clear": "Löschen",
+      "confirm": "Bestätigen",
+      "mapping": "Zuordnung anzeigen",
+      "security": "Sicherheitsdetails"
+    },
+    "mapping": {
+      "title": "🔢 Symbolzuordnung:"
     },
     "security": {
-      "badge": "Sichere Verbindung",
-      "title": "Administratorportal",
-      "subtitle": "Diese Seite ist reserviert. Bitte geben Sie den Zugangscode ein.",
-      "warning": "Verbleibende Versuche: {attempts}",
-      "locked": "Zugang vorübergehend gesperrt",
-      "lockedMessage": "Zu viele gescheiterte Versuche. Bitte versuchen Sie es in {Minuten} Minuten erneut.",
-      "tryAgain": "Versuchen Sie es erneut"
+      "systemId": "SYSTEM-ID",
+      "encryption": "VERSCHLÜSSELUNG",
+      "uptime": "VERFÜGBAR",
+      "protocol": "PROTOKOLL"
     },
-    "form": {
-      "codeLabel": "Zugangscode",
-      "codePlaceholder": "Geben Sie den 6-stelligen Code ein",
-      "submit": "Entsperren",
-      "submitting": "Überprüfung...",
-      "error": {
-        "required": "Code ist erforderlich",
-        "invalidFormat": "Der Code muss 6 Ziffern enthalten",
-        "invalid": "Falscher Code",
-        "expired": "Abgelaufener Code",
-        "generic": "Es ist ein Fehler aufgetreten"
-      }
+    "attempts": {
+      "first": "1",
+      "second": "2",
+      "third": "3"
+    },
+    "lockdown": {
+      "title": "GESPERRTES SYSTEM",
+      "message": "Zu viele Versuche. Bitte warten."
     },
     "success": {
-      "title": "Zugriff gewährt",
-      "message": "Zur Anmeldeseite weiterleiten...",
-      "redirecting": "Umleitung läuft"
+      "title": "AUTORISIERTER ZUGRIFF",
+      "message": "Weiterleitung zum sicheren Portal..."
     },
-    "backToSite": "← Zurück zur öffentlichen Website"
-  },
-  "adminLogin": {
-    "meta": {
-      "title": "Administrator-Login – NestHub"
+    "alerts": {
+      "unlocked": {
+        "title": "System entsperrt",
+        "message": "Die Abkühlphase ist vorbei. Sie können es noch einmal versuchen."
+      },
+      "locked": {
+        "title": "Gesperrtes System",
+        "message": "Maximale Anzahl an Versuchen überschritten. Abkühlung: {time}"
+      },
+      "reset": {
+        "title": "Sequenz zurückgesetzt",
+        "message": "Bitte geben Sie den Code erneut ein."
+      },
+      "incomplete": {
+        "title": "Unvollständige Sequenz",
+        "message": "Bitte geben Sie vor der Bestätigung alle 6 Symbole ein."
+      },
+      "attempt": {
+        "first": {
+          "title": "Versuch {current}/{max}",
+          "message": "Ungültiger Code. {remaining} Versuch(e) verbleiben."
+        },
+        "second": {
+          "title": "Versuch {current}/{max} – Letzte Warnung",
+          "message": "Letzter Versuch vor Systemsperre."
+        }
+      },
+      "incorrect": {
+        "title": "Falscher Code",
+        "message": "Sie haben noch {remaining} Versuch(e) übrig"
+      },
+      "lockdown": {
+        "title": "Gesperrtes System",
+        "message": "Maximale Versuche ({max}) überschritten. Abkühlen: 5 Minuten."
+      },
+      "success": {
+        "title": "Autorisierter Zugang",
+        "message": "Authentifizierung erfolgreich. Weiterleitung..."
+      },
+      "error": {
+        "title": "Systemfehler",
+        "message": "Anmeldeinformationen konnten nicht überprüft werden. Bitte versuchen Sie es erneut."
+      }
     },
-    "title": "NestHub-Verwaltung",
-    "subtitle": "Melden Sie sich mit Ihrem Administratorkonto an",
-    "backToSite": "← Zurück zur öffentlichen Website",
-    "securityNotice": "Dieser Bereich ist autorisierten Administratoren vorbehalten."
-  },
-  "errors": {
-    "403": {
-      "title": "Zugriff verweigert",
-      "message": "Sie verfügen nicht über die erforderlichen Rechte."
-    },
-    "404": {
-      "title": "Seite nicht gefunden",
-      "message": "Die gesuchte Seite existiert nicht."
+    "footer": {
+      "security": "Sichere Verbindung • AES-256",
+      "version": "Admin Gateway v3.2.1"
     }
   }
 }

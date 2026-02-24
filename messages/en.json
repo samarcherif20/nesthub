@@ -25,88 +25,106 @@
     "users": "Users",
     "verifications": "Verifications"
   },
-  "admin_Gate": {
-    "meta": {
-      "title": "Administration Access - NestHub",
-      "description": "Secure administration access portal"
-    },
-    "security": {
-      "badge": "Secure connection",
-      "title": "Administrator Portal",
-      "subtitle": "This page is reserved. Please enter the access code.",
-      "warning": "Attempts remaining: {attempts}",
-      "locked": "Access temporarily blocked",
-      "lockedMessage": "Too many failed attempts. Please try again in {minutes} minutes.",
-      "tryAgain": "Try again"
-    },
-    "form": {
-      "codeLabel": "Access code",
-      "codePlaceholder": "Enter the 6-digit code",
-      "submit": "Unlock",
-      "submitting": "Verification...",
-      "error": {
-        "required": "Code is required",
-        "invalidFormat": "The code must contain 6 digits",
-        "invalid": "Incorrect code",
-        "expired": "Expired code",
-        "generic": "An error has occurred"
-      }
-    },
-    "success": {
-      "title": "Access granted",
-      "message": "Redirect to login page...",
-      "redirecting": "Redirection in progress"
-    },
-    "backToSite": "← Return to public site"
-  },
-  "adminLogin": {
-    "meta": {
-      "title": "Administration Login - NestHub"
-    },
-    "title": "NestHub Administration",
-    "subtitle": "Log in with your administrator account",
-    "backToSite": "← Return to public site",
-    "securityNotice": "This area is reserved for authorized administrators."
-  },
-  "errors": {
-    "403": {
-      "title": "Access denied",
-      "message": "You do not have the necessary rights."
-    },
-    "404": {
-      "title": "Page not found",
-      "message": "The page you are looking for does not exist."
-    }
-  },
   "adminGate": {
+    "badge": {
+      "admin": "ADMIN v3.2.1"
+    },
+    "header": {
+      "subtitle": "Secure Gateway"
+    },
     "title": {
-      "accessKey": "ACCESS KEY REQUIRED",
+      "admin": "ADMIN",
+      "gate": "SPOILED",
       "locked": "LOCKED SYSTEM"
     },
-    "subtitle": {
-      "encryption": "ENCRYPTION LEVEL"
-    },
-    "error": {
-      "incomplete": "INCOMPLETE CODE",
-      "invalidCode": "INVALID ACCESS KEY",
-      "generic": "SYSTEM ERROR"
-    },
-    "locked": {
-      "title": "ACCESS DENIED",
-      "wait": "PLEASE WAIT BEFORE TRYING AGAIN"
-    },
-    "success": {
-      "title": "ACCESS GRANTED",
-      "redirecting": "REDIRECTION TO SECURE AREA"
-    },
-    "button": {
-      "verifying": "VERIFICATION...",
-      "unlock": "UNLOCK"
+    "subtitle": "Level 5 authorization required",
+    "core": {
+      "sequence": "SEQUENCE"
     },
     "status": {
-      "securityLevel": "SECURITY LEVEL",
-      "attemptCount": "ATTEMPTS",
-      "voidSync": "LOCAL SYNCHRO"
+      "awaiting": "ON HOLD",
+      "twoRemaining": "⚠️ 2 REMAINING",
+      "finalAttempt": "🔥 LAST ATTEMPT"
+    },
+    "code": {
+      "display": "Code",
+      "empty": "______"
+    },
+    "buttons": {
+      "clear": "To erase",
+      "confirm": "Confirm",
+      "mapping": "Show mapping",
+      "security": "Security details"
+    },
+    "mapping": {
+      "title": "🔢 Symbol mapping:"
+    },
+    "security": {
+      "systemId": "SYSTEM ID",
+      "encryption": "ENCRYPTION",
+      "uptime": "AVAILABLE",
+      "protocol": "PROTOCOL"
+    },
+    "attempts": {
+      "first": "1st",
+      "second": "2nd",
+      "third": "3rd"
+    },
+    "lockdown": {
+      "title": "LOCKED SYSTEM",
+      "message": "Too many attempts. Please wait."
+    },
+    "success": {
+      "title": "AUTHORIZED ACCESS",
+      "message": "Redirection to the secure portal..."
+    },
+    "alerts": {
+      "unlocked": {
+        "title": "System unlocked",
+        "message": "The cooling period is over. You can try again."
+      },
+      "locked": {
+        "title": "Locked system",
+        "message": "Maximum attempts exceeded. Cooling: {time}"
+      },
+      "reset": {
+        "title": "Sequence reset",
+        "message": "Please re-enter the code."
+      },
+      "incomplete": {
+        "title": "Incomplete sequence",
+        "message": "Please enter all 6 symbols before confirming."
+      },
+      "attempt": {
+        "first": {
+          "title": "Attempt {current}/{max}",
+          "message": "Invalid code. {remaining} attempt(s) remaining."
+        },
+        "second": {
+          "title": "Attempt {current}/{max} - Final warning",
+          "message": "Last attempt before system lock."
+        }
+      },
+      "incorrect": {
+        "title": "Incorrect code",
+        "message": "You have {remaining} attempt(s) left"
+      },
+      "lockdown": {
+        "title": "Locked system",
+        "message": "Maximum attempts ({max}) exceeded. Cooling: 5 minutes."
+      },
+      "success": {
+        "title": "Authorized access",
+        "message": "Authentication successful. Redirection..."
+      },
+      "error": {
+        "title": "System error",
+        "message": "Unable to verify credentials. Please try again."
+      }
+    },
+    "footer": {
+      "security": "Secure connection • AES-256",
+      "version": "Admin Gateway v3.2.1"
     }
   }
 }

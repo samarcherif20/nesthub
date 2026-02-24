@@ -25,89 +25,161 @@
     "users": "Utilisateurs",
     "verifications": "Vérifications"
   },
-  "admin_Gate": {
-    "meta": {
-      "title": "Accès Administration - NestHub",
-      "description": "Portail sécurisé d'accès à l'administration"
+  
+  "adminGate": {
+    "badge": {
+      "admin": "ADMIN v3.2.1"
+    },
+    "header": {
+      "subtitle": "Passerelle Sécurisée"
+    },
+    "title": {
+      "admin": "ADMIN",
+      "gate": "GATE",
+      "locked": "SYSTÈME VERROUILLÉ"
+    },
+    "subtitle": "Autorisation de niveau 5 requise",
+    "core": {
+      "sequence": "SÉQUENCE"
+    },
+    "status": {
+      "awaiting": "EN ATTENTE",
+      "twoRemaining": "⚠️ 2 RESTANTES",
+      "finalAttempt": "🔥 DERNIÈRE TENTATIVE"
+    },
+    "code": {
+      "display": "Code",
+      "empty": "______"
+    },
+    "buttons": {
+      "clear": "Effacer",
+      "confirm": "Confirmer",
+      "mapping": "Afficher le mapping",
+      "security": "Détails de sécurité"
+    },
+    "mapping": {
+      "title": "🔢 Mapping des symboles :"
     },
     "security": {
-      "badge": "Connexion sécurisée",
-      "title": "Portail Administrateur",
-      "subtitle": "Cette page est réservée. Veuillez entrer le code d'accès.",
-      "warning": "Tentatives restantes : {attempts}",
-      "locked": "Accès temporairement bloqué",
-      "lockedMessage": "Trop de tentatives échouées. Veuillez réessayer dans {minutes} minutes.",
-      "tryAgain": "Réessayer"
+      "systemId": "ID SYSTÈME",
+      "encryption": "CHIFFREMENT",
+      "uptime": "DISPO",
+      "protocol": "PROTOCOLE"
     },
-    "form": {
-      "codeLabel": "Code d'accès",
-      "codePlaceholder": "Entrez le code à 6 chiffres",
-      "submit": "Déverrouiller",
-      "submitting": "Vérification...",
-      "error": {
-        "required": "Le code est requis",
-        "invalidFormat": "Le code doit contenir 6 chiffres",
-        "invalid": "Code incorrect",
-        "expired": "Code expiré",
-        "generic": "Une erreur est survenue"
-      }
+    "attempts": {
+      "first": "1ère",
+      "second": "2ème",
+      "third": "3ème"
+    },
+    "lockdown": {
+      "title": "SYSTÈME VERROUILLÉ",
+      "message": "Trop de tentatives. Veuillez patienter."
     },
     "success": {
-      "title": "Accès accordé",
-      "message": "Redirection vers la page de connexion...",
-      "redirecting": "Redirection en cours"
+      "title": "ACCÈS AUTORISÉ",
+      "message": "Redirection vers le portail sécurisé..."
     },
-    "backToSite": "← Retour au site public"
-  },
-  "adminLogin": {
-    "meta": {
-      "title": "Connexion Administration - NestHub"
+    "alerts": {
+      "unlocked": {
+        "title": "Système déverrouillé",
+        "message": "La période de refroidissement est terminée. Vous pouvez réessayer."
+      },
+      "locked": {
+        "title": "Système verrouillé",
+        "message": "Tentatives maximales dépassées. Refroidissement: {time}"
+      },
+      "reset": {
+        "title": "Séquence réinitialisée",
+        "message": "Veuillez réentrer le code."
+      },
+      "incomplete": {
+        "title": "Séquence incomplète",
+        "message": "Veuillez entrer les 6 symboles avant de confirmer."
+      },
+      "attempt": {
+        "first": {
+          "title": "Tentative {current}/{max}",
+          "message": "Code invalide. {remaining} tentative(s) restante(s)."
+        },
+        "second": {
+          "title": "Tentative {current}/{max} - Dernier avertissement",
+          "message": "Dernière tentative avant verrouillage du système."
+        }
+      },
+      "incorrect": {
+        "title": "Code incorrect",
+        "message": "Il vous reste {remaining} tentative(s)"
+      },
+      "lockdown": {
+        "title": "Système verrouillé",
+        "message": "Tentatives maximales ({max}) dépassées. Refroidissement: 5 minutes."
+      },
+      "success": {
+        "title": "Accès autorisé",
+        "message": "Authentification réussie. Redirection..."
+      },
+      "error": {
+        "title": "Erreur système",
+        "message": "Impossible de vérifier les identifiants. Veuillez réessayer."
+      }
     },
-    "title": "Administration NestHub",
-    "subtitle": "Connectez-vous avec votre compte administrateur",
-    "backToSite": "← Retour au site public",
-    "securityNotice": "Cette zone est réservée aux administrateurs autorisés."
-  },
-  "errors": {
-    "404": {
-      "title": "Page non trouvée",
-      "message": "La page que vous recherchez n'existe pas."
-    },
-    "403": {
-      "title": "Accès refusé",
-      "message": "Vous n'avez pas les droits nécessaires."
+    "footer": {
+      "security": "Connexion sécurisée • AES-256",
+      "version": "Passerelle Admin v3.2.1"
     }
   },
   
-   "adminGate": {
-    "title": {
-      "accessKey": "CLÉ D'ACCÈS REQUISE",
-      "locked": "SYSTÈME VERROUILLÉ"
+  "adminLogin": {
+    "title": "Admin Suite",
+    "subtitle": "Connectez-vous à votre espace administrateur",
+    "email": "Adresse Email",
+    "password": "Mot de passe",
+    "rememberDevice": "Se souvenir de l'appareil",
+    "forgotPassword": "Mot de passe oublié ?",
+    "loginButton": "Se connecter",
+    "loggingIn": "Connexion...",
+    "sessionKey": "Clé de session",
+    "footer": "Accès non autorisé strictement interdit",
+    "support": "Support",
+    "privacy": "Confidentialité",
+    "badge": {
+      "security": "Sécurité de niveau entreprise"
     },
-    "subtitle": {
-      "encryption": "NIVEAU DE CHIFFREMENT"
+    "panel": {
+      "title": "Infrastructure sécurisée pour l'entreprise moderne",
+      "subtitle": "Gérez vos actifs, utilisateurs et connectivité globale depuis un tableau de bord unique et chiffré, conçu pour une efficacité maximale."
     },
-    "error": {
-      "incomplete": "CODE INCOMPLET",
-      "invalidCode": "CLÉ D'ACCÈS INVALIDE",
-      "generic": "ERREUR SYSTÈME"
+    "errors": {
+      "emailRequired": "L'email est requis",
+      "emailInvalid": "Format d'email invalide",
+      "passwordRequired": "Le mot de passe est requis",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères"
     },
-    "locked": {
-      "title": "ACCÈS REFUSÉ",
-      "wait": "VEUILLEZ ATTENDRE AVANT DE RÉESSAYER"
-    },
-    "success": {
-      "title": "ACCÈS ACCORDÉ",
-      "redirecting": "REDIRECTION VERS ZONE SÉCURISÉE"
-    },
-    "button": {
-      "verifying": "VÉRIFICATION...",
-      "unlock": "DÉVERROUILLER"
-    },
-    "status": {
-      "securityLevel": "NIVEAU DE SÉCURITÉ",
-      "attemptCount": "TENTATIVES",
-      "voidSync": "SYNCHRO LOCALE"
+    "alerts": {
+      "success": {
+        "title": "Bienvenue",
+        "message": "Authentification réussie. Redirection..."
+      },
+      "error": {
+        "title": "Échec de la connexion",
+        "message": "Une erreur est survenue lors de l'authentification"
+      },
+      "noAccount": {
+        "title": "Compte introuvable",
+        "message": "Aucun compte trouvé avec cet email"
+      },
+      "wrongPassword": {
+        "title": "Mot de passe incorrect",
+        "message": "Veuillez vérifier votre mot de passe"
+      },
+      "accessDenied": {
+        "title": "Accès refusé",
+        "message": "Vous n'avez pas les privilèges administrateur"
+      },
+      "passwordReset": {
+        "title": "Réinitialisation du mot de passe",
+        "message": "Veuillez contacter votre administrateur pour réinitialiser votre mot de passe"
+      }
     }
   }
 
