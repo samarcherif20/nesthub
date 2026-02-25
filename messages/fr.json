@@ -10,177 +10,39 @@
     "dashboard": "Tableau de bord",
     "profile": "Mon profil",
     "admin": "Administration",
-    "logout": "Déconnexion"
-  },
-  "auth": {
-    "loginTitle": "Connexion",
-    "email": "Email",
+    "logout": "Déconnexion"},
+ 
+  "Login": {
+    "welcome": "Bienvenue !",
+    "subtitle": "Connectez-vous pour accéder à votre espace sécurisé.",
+    "signUpTitle": "Créer un compte",
+    "signUpSubtitle": "Inscrivez-vous pour commencer votre voyage",
+    "heroTitle": "Votre voyage immobilier commence ici",
+    "heroSubtitle": "Une plateforme complète pour la location et la gestion de biens avec confiance et transparence.",
+    "joinStats": "Rejoignez +5 000 propriétaires et locataires",
+    "renter": "Locataire",
+    "owner": "Propriétaire",
+    "email": "Adresse email",
+    "emailPlaceholder": "nom@entreprise.com",
     "password": "Mot de passe",
-    "loginButton": "Se connecter",
-    "noAccount": "Pas encore de compte ?",
-    "registerNow": "Inscrivez-vous"
-  },
-  "admin": {
-    "dashboardTitle": "Tableau de bord administrateur",
-    "users": "Utilisateurs",
-    "verifications": "Vérifications"
-  },
-  
-  "adminGate": {
-    "badge": {
-      "admin": "ADMIN v3.2.1"
-    },
-    "header": {
-      "subtitle": "Passerelle Sécurisée"
-    },
-    "title": {
-      "admin": "ADMIN",
-      "gate": "GATE",
-      "locked": "SYSTÈME VERROUILLÉ"
-    },
-    "subtitle": "Autorisation de niveau 5 requise",
-    "core": {
-      "sequence": "SÉQUENCE"
-    },
-    "status": {
-      "awaiting": "EN ATTENTE",
-      "twoRemaining": "⚠️ 2 RESTANTES",
-      "finalAttempt": "🔥 DERNIÈRE TENTATIVE"
-    },
-    "code": {
-      "display": "Code",
-      "empty": "______"
-    },
-    "buttons": {
-      "clear": "Effacer",
-      "confirm": "Confirmer",
-      "mapping": "Afficher le mapping",
-      "security": "Détails de sécurité"
-    },
-    "mapping": {
-      "title": "🔢 Mapping des symboles :"
-    },
-    "security": {
-      "systemId": "ID SYSTÈME",
-      "encryption": "CHIFFREMENT",
-      "uptime": "DISPO",
-      "protocol": "PROTOCOLE"
-    },
-    "attempts": {
-      "first": "1ère",
-      "second": "2ème",
-      "third": "3ème"
-    },
-    "lockdown": {
-      "title": "SYSTÈME VERROUILLÉ",
-      "message": "Trop de tentatives. Veuillez patienter."
-    },
-    "success": {
-      "title": "ACCÈS AUTORISÉ",
-      "message": "Redirection vers le portail sécurisé..."
-    },
-    "alerts": {
-      "unlocked": {
-        "title": "Système déverrouillé",
-        "message": "La période de refroidissement est terminée. Vous pouvez réessayer."
-      },
-      "locked": {
-        "title": "Système verrouillé",
-        "message": "Tentatives maximales dépassées. Refroidissement: {time}"
-      },
-      "reset": {
-        "title": "Séquence réinitialisée",
-        "message": "Veuillez réentrer le code."
-      },
-      "incomplete": {
-        "title": "Séquence incomplète",
-        "message": "Veuillez entrer les 6 symboles avant de confirmer."
-      },
-      "attempt": {
-        "first": {
-          "title": "Tentative {current}/{max}",
-          "message": "Code invalide. {remaining} tentative(s) restante(s)."
-        },
-        "second": {
-          "title": "Tentative {current}/{max} - Dernier avertissement",
-          "message": "Dernière tentative avant verrouillage du système."
-        }
-      },
-      "incorrect": {
-        "title": "Code incorrect",
-        "message": "Il vous reste {remaining} tentative(s)"
-      },
-      "lockdown": {
-        "title": "Système verrouillé",
-        "message": "Tentatives maximales ({max}) dépassées. Refroidissement: 5 minutes."
-      },
-      "success": {
-        "title": "Accès autorisé",
-        "message": "Authentification réussie. Redirection..."
-      },
-      "error": {
-        "title": "Erreur système",
-        "message": "Impossible de vérifier les identifiants. Veuillez réessayer."
-      }
-    },
-    "footer": {
-      "security": "Connexion sécurisée • AES-256",
-      "version": "Passerelle Admin v3.2.1"
-    }
-  },
-  
-  "adminLogin": {
-    "title": "Admin Suite",
-    "subtitle": "Connectez-vous à votre espace administrateur",
-    "email": "Adresse Email",
-    "password": "Mot de passe",
-    "rememberDevice": "Se souvenir de l'appareil",
     "forgotPassword": "Mot de passe oublié ?",
-    "loginButton": "Se connecter",
-    "loggingIn": "Connexion...",
-    "sessionKey": "Clé de session",
-    "footer": "Accès non autorisé strictement interdit",
-    "support": "Support",
-    "privacy": "Confidentialité",
-    "badge": {
-      "security": "Sécurité de niveau entreprise"
-    },
-    "panel": {
-      "title": "Infrastructure sécurisée pour l'entreprise moderne",
-      "subtitle": "Gérez vos actifs, utilisateurs et connectivité globale depuis un tableau de bord unique et chiffré, conçu pour une efficacité maximale."
-    },
-    "errors": {
-      "emailRequired": "L'email est requis",
-      "emailInvalid": "Format d'email invalide",
-      "passwordRequired": "Le mot de passe est requis",
-      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères"
-    },
-    "alerts": {
-      "success": {
-        "title": "Bienvenue",
-        "message": "Authentification réussie. Redirection..."
-      },
-      "error": {
-        "title": "Échec de la connexion",
-        "message": "Une erreur est survenue lors de l'authentification"
-      },
-      "noAccount": {
-        "title": "Compte introuvable",
-        "message": "Aucun compte trouvé avec cet email"
-      },
-      "wrongPassword": {
-        "title": "Mot de passe incorrect",
-        "message": "Veuillez vérifier votre mot de passe"
-      },
-      "accessDenied": {
-        "title": "Accès refusé",
-        "message": "Vous n'avez pas les privilèges administrateur"
-      },
-      "passwordReset": {
-        "title": "Réinitialisation du mot de passe",
-        "message": "Veuillez contacter votre administrateur pour réinitialiser votre mot de passe"
-      }
-    }
+    "login": "Se connecter",
+    "signUp": "S'inscrire",
+    "processing": "Traitement en cours...",
+    "orContinueWith": "Ou continuer avec",
+    "termsPrefix": "En vous inscrivant ou en vous connectant, vous acceptez nos",
+    "termsOfUse": "Conditions d'utilisation",
+    "and": "et notre",
+    "privacyPolicy": "Politique de confidentialité",
+    "termsSuffix": ".",
+    "signIn": "Se connecter",
+    "alreadyHaveAccount": "Déjà un compte ?",
+    "dontHaveAccount": "Pas encore de compte ?",
+    "accessInfo": "Votre accès est automatiquement détecté en fonction de vos identifiants. Les profils administrateurs n'ont pas besoin de sélection manuelle.",
+    "error": "Une erreur est survenue",
+    "profileType": "Type de profil",
+    "rememberMe": "Rester connecté",
+    "legal": "Mentions légales",
+    "privacy": "Confidentialité"
   }
-
 }

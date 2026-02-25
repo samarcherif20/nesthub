@@ -138,15 +138,15 @@
 
 /* Style du label (le switch) */
 .theme-switcher-label {
-  width: 120px;
-  height: 50px;
+  width: 72px; /* 60px → 72px */
+  height: 30px; /* 25px → 30px */
   position: relative;
   display: block;
   background: #ebebeb;
-  border-radius: 50px;
+  border-radius: 30px; /* 25px → 30px */
   box-shadow:
-    inset 0px 5px 15px oklch(18.234% 0.04428 281.087),
-    inset 0px -5px 15px rgba(41, 21, 63, 0.4);
+    inset 0px 3px 9px oklch(18.234% 0.04428 281.087),
+    inset 0px -3px 9px rgba(41, 21, 63, 0.4);
   cursor: pointer;
   transition: 0.3s;
 }
@@ -154,33 +154,33 @@
 /* La boule qui se déplace */
 .theme-switcher-label:after {
   content: "";
-  width: 42px;
-  height: 42px;
+  width: 24px; /* 21px → 24px */
+  height: 24px; /* 21px → 24px */
   position: absolute;
-  top: 4px;
-  left: 4px;
+  top: 3px; /* 2px → 3px */
+  left: 3px; /* 2px → 3px */
   background: linear-gradient(180deg, #1f2869, #8f6dce);
-  border-radius: 42px;
-  box-shadow: 0px 5px 10px rgba(219, 225, 226, 0.2);
+  border-radius: 24px; /* 21px → 24px */
+  box-shadow: 0px 3px 6px rgba(219, 225, 226, 0.2);
   transition: 0.3s;
 }
 
 /* Style des SVG */
 .theme-switcher-label svg {
   position: absolute;
-  width: 30px;
-  top: 10px;
+  width: 18px; /* 15px → 18px */
+  top: 6px; /* 5px → 6px */
   z-index: 100;
 }
 
 .theme-switcher-label svg.sun {
-  left: 10px;
+  left: 6px; /* 5px → 6px */
   fill: #f3ebeb;
   transition: 0.3s;
 }
 
 .theme-switcher-label svg.moon {
-  left: 80px;
+  left: 48px; /* 40px → 48px (72px - 18px - 6px) */
   fill: #161133;
   transition: 0.3s;
 }
@@ -191,7 +191,7 @@
 }
 
 .theme-switcher-input:checked + .theme-switcher-label:after {
-  left: 74px;
+  left: 45px; /* 37px → 45px (72px - 24px - 3px) */
   transform: translateX(0);
   background: linear-gradient(180deg, #d8d1d1, #5e4586);
 }
@@ -206,5 +206,5 @@
 
 /* Animation au clic */
 .theme-switcher-input:active + .theme-switcher-label:after {
-  width: 50px;
+  width: 28px; /* 25px → 28px */
 }
