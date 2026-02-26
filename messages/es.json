@@ -12,119 +12,37 @@
     "admin": "Administración",
     "logout": "Desconectar"
   },
-  "auth": {
-    "loginTitle": "Conexión",
-    "email": "Correo electrónico",
+  "Login": {
+    "welcome": "Bienvenido !",
+    "subtitle": "Inicia sesión para acceder a tu espacio seguro.",
+    "signUpTitle": "Crea una cuenta",
+    "signUpSubtitle": "Regístrese para comenzar su viaje",
+    "heroTitle": "El eslabón inteligente para un nido apretado...",
+    "heroSubtitle": "Una plataforma completa e inteligente dedicada al alquiler y la gestión de propiedades, con confianza y transparencia.",
+    "joinStats": "Únete a +3.000 propietarios e inquilinos",
+    "renter": "Arrendatario",
+    "owner": "Dueño",
+    "email": "Dirección de correo electrónico",
+    "emailPlaceholder": "nombre@empresa.com",
     "password": "Contraseña",
-    "loginButton": "Acceso",
-    "noAccount": "¿Aún no tienes cuenta?",
-    "registerNow": "Registro"
-  },
-  "admin": {
-    "dashboardTitle": "Panel de administración",
-    "users": "Usuarios",
-    "verifications": "Verificaciones"
-  },
-  "adminGate": {
-    "badge": {
-      "admin": "ADMINISTRADOR v3.2.1"
-    },
-    "header": {
-      "subtitle": "Puerta de enlace segura"
-    },
-    "title": {
-      "admin": "ADMINISTRACIÓN",
-      "gate": "ARRUINADO",
-      "locked": "SISTEMA BLOQUEADO"
-    },
-    "subtitle": "Se requiere autorización de nivel 5",
-    "core": {
-      "sequence": "SECUENCIA"
-    },
-    "status": {
-      "awaiting": "EN ESPERA",
-      "twoRemaining": "⚠️ 2 RESTANTE",
-      "finalAttempt": "🔥 ÚLTIMO INTENTO"
-    },
-    "code": {
-      "display": "Código",
-      "empty": "______"
-    },
-    "buttons": {
-      "clear": "para borrar",
-      "confirm": "Confirmar",
-      "mapping": "Mostrar mapeo",
-      "security": "Detalles de seguridad"
-    },
-    "mapping": {
-      "title": "🔢 Mapeo de símbolos:"
-    },
-    "security": {
-      "systemId": "ID DEL SISTEMA",
-      "encryption": "CIFRADO",
-      "uptime": "DISPONIBLE",
-      "protocol": "PROTOCOLO"
-    },
-    "attempts": {
-      "first": "1er",
-      "second": "2do",
-      "third": "3er"
-    },
-    "lockdown": {
-      "title": "SISTEMA BLOQUEADO",
-      "message": "Demasiados intentos. Espere por favor."
-    },
-    "success": {
-      "title": "ACCESO AUTORIZADO",
-      "message": "Redirección al portal seguro..."
-    },
-    "alerts": {
-      "unlocked": {
-        "title": "Sistema desbloqueado",
-        "message": "El período de enfriamiento ha terminado. Puedes intentarlo de nuevo."
-      },
-      "locked": {
-        "title": "Sistema bloqueado",
-        "message": "Se superó el máximo de intentos. Enfriamiento: {tiempo}"
-      },
-      "reset": {
-        "title": "Reinicio de secuencia",
-        "message": "Por favor vuelva a ingresar el código."
-      },
-      "incomplete": {
-        "title": "secuencia incompleta",
-        "message": "Ingrese los 6 símbolos antes de confirmar."
-      },
-      "attempt": {
-        "first": {
-          "title": "Intento {actual}/{max}",
-          "message": "Código no válido. Quedan {restantes} intentos."
-        },
-        "second": {
-          "title": "Intento {current}/{max} - Advertencia final",
-          "message": "Último intento antes del bloqueo del sistema."
-        }
-      },
-      "incorrect": {
-        "title": "código incorrecto",
-        "message": "Te quedan {} intentos restantes"
-      },
-      "lockdown": {
-        "title": "Sistema bloqueado",
-        "message": "Se superó el número máximo de intentos ({max}). Enfriamiento: 5 minutos."
-      },
-      "success": {
-        "title": "Acceso autorizado",
-        "message": "Autenticación exitosa. Redirección..."
-      },
-      "error": {
-        "title": "error del sistema",
-        "message": "No se pueden verificar las credenciales. Por favor inténtalo de nuevo."
-      }
-    },
-    "footer": {
-      "security": "Conexión segura • AES-256",
-      "version": "Puerta de enlace de administración v3.2.1"
-    }
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "login": "Acceso",
+    "signUp": "Registro",
+    "processing": "Procesamiento en curso...",
+    "orContinueWith": "O continuar con",
+    "termsPrefix": "Al registrarte o iniciar sesión, aceptas nuestra",
+    "termsOfUse": "Condiciones de uso",
+    "and": "y nuestro",
+    "privacyPolicy": "política de privacidad",
+    "termsSuffix": ".",
+    "signIn": "Acceso",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "dontHaveAccount": "¿Aún no tienes cuenta?",
+    "accessInfo": "Su acceso se detecta automáticamente en función de sus credenciales. Los perfiles de administrador no necesitan selección manual.",
+    "error": "Ha ocurrido un error",
+    "profileType": "Tipo de perfil",
+    "rememberMe": "Mantente conectado",
+    "legal": "Avisos legales",
+    "privacy": "Confidencialidad"
   }
 }

@@ -10,16 +10,17 @@
     "dashboard": "Tableau de bord",
     "profile": "Mon profil",
     "admin": "Administration",
-    "logout": "Déconnexion"},
- 
+    "logout": "Déconnexion"
+  },
+
   "Login": {
     "welcome": "Bienvenue !",
     "subtitle": "Connectez-vous pour accéder à votre espace sécurisé.",
     "signUpTitle": "Créer un compte",
     "signUpSubtitle": "Inscrivez-vous pour commencer votre voyage",
-    "heroTitle": "Votre voyage immobilier commence ici",
-    "heroSubtitle": "Une plateforme complète pour la location et la gestion de biens avec confiance et transparence.",
-    "joinStats": "Rejoignez +5 000 propriétaires et locataires",
+    "heroTitle": "Le lien malin pour un nid serrain ...",
+    "heroSubtitle": "Une plateforme complète et intelligente dédiée à la location et à la gestion de biens, avec confiance et transparence.",
+    "joinStats": "Rejoignez +3 000 propriétaires et locataires",
     "renter": "Locataire",
     "owner": "Propriétaire",
     "email": "Adresse email",
@@ -39,10 +40,16 @@
     "alreadyHaveAccount": "Déjà un compte ?",
     "dontHaveAccount": "Pas encore de compte ?",
     "accessInfo": "Votre accès est automatiquement détecté en fonction de vos identifiants. Les profils administrateurs n'ont pas besoin de sélection manuelle.",
-    "error": "Une erreur est survenue",
     "profileType": "Type de profil",
     "rememberMe": "Rester connecté",
     "legal": "Mentions légales",
-    "privacy": "Confidentialité"
+    "privacy": "Confidentialité",
+    "emailRequired": "L'email est requis",
+    "emailInvalid": "Veuillez entrer une adresse email valide",
+    "passwordRequired": "Le mot de passe est requis",
+
+    "userNotFound": "Aucun compte trouvé avec cette adresse email",
+    "incorrectPassword": "Mot de passe incorrect. Veuillez réessayer",
+    "error": "Une erreur est survenue. Veuillez réessayer"
   }
 }

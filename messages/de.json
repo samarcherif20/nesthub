@@ -12,119 +12,37 @@
     "admin": "Verwaltung",
     "logout": "Trennen"
   },
-  "auth": {
-    "loginTitle": "Verbindung",
-    "email": "E-Mail",
+  "Login": {
+    "welcome": "Willkommen !",
+    "subtitle": "Melden Sie sich an, um auf Ihren sicheren Bereich zuzugreifen.",
+    "signUpTitle": "Ein Konto erstellen",
+    "signUpSubtitle": "Registrieren Sie sich, um Ihre Reise zu beginnen",
+    "heroTitle": "Der clevere Link für ein dichtes Nest...",
+    "heroSubtitle": "Eine umfassende und intelligente Plattform für die Miet- und Immobilienverwaltung mit Vertrauen und Transparenz.",
+    "joinStats": "Schließen Sie sich über 3.000 Eigentümern und Mietern an",
+    "renter": "Mieter",
+    "owner": "Eigentümer",
+    "email": "E-Mail-Adresse",
+    "emailPlaceholder": "name@company.com",
     "password": "Passwort",
-    "loginButton": "Einloggen",
-    "noAccount": "Noch kein Konto?",
-    "registerNow": "Registrieren"
-  },
-  "admin": {
-    "dashboardTitle": "Admin-Dashboard",
-    "users": "Benutzer",
-    "verifications": "Überprüfungen"
-  },
-  "adminGate": {
-    "badge": {
-      "admin": "ADMIN v3.2.1"
-    },
-    "header": {
-      "subtitle": "Sicheres Gateway"
-    },
-    "title": {
-      "admin": "ADMIN",
-      "gate": "VERWÖHNT",
-      "locked": "GESPERRTES SYSTEM"
-    },
-    "subtitle": "Autorisierung der Stufe 5 erforderlich",
-    "core": {
-      "sequence": "SEQUENZ"
-    },
-    "status": {
-      "awaiting": "IN DER WARTESCHLEIFE",
-      "twoRemaining": "⚠️ 2 RESTLICH",
-      "finalAttempt": "🔥 LETZTER VERSUCH"
-    },
-    "code": {
-      "display": "Code",
-      "empty": "______"
-    },
-    "buttons": {
-      "clear": "Löschen",
-      "confirm": "Bestätigen",
-      "mapping": "Zuordnung anzeigen",
-      "security": "Sicherheitsdetails"
-    },
-    "mapping": {
-      "title": "🔢 Symbolzuordnung:"
-    },
-    "security": {
-      "systemId": "SYSTEM-ID",
-      "encryption": "VERSCHLÜSSELUNG",
-      "uptime": "VERFÜGBAR",
-      "protocol": "PROTOKOLL"
-    },
-    "attempts": {
-      "first": "1",
-      "second": "2",
-      "third": "3"
-    },
-    "lockdown": {
-      "title": "GESPERRTES SYSTEM",
-      "message": "Zu viele Versuche. Bitte warten."
-    },
-    "success": {
-      "title": "AUTORISIERTER ZUGRIFF",
-      "message": "Weiterleitung zum sicheren Portal..."
-    },
-    "alerts": {
-      "unlocked": {
-        "title": "System entsperrt",
-        "message": "Die Abkühlphase ist vorbei. Sie können es noch einmal versuchen."
-      },
-      "locked": {
-        "title": "Gesperrtes System",
-        "message": "Maximale Anzahl an Versuchen überschritten. Abkühlung: {time}"
-      },
-      "reset": {
-        "title": "Sequenz zurückgesetzt",
-        "message": "Bitte geben Sie den Code erneut ein."
-      },
-      "incomplete": {
-        "title": "Unvollständige Sequenz",
-        "message": "Bitte geben Sie vor der Bestätigung alle 6 Symbole ein."
-      },
-      "attempt": {
-        "first": {
-          "title": "Versuch {current}/{max}",
-          "message": "Ungültiger Code. {remaining} Versuch(e) verbleiben."
-        },
-        "second": {
-          "title": "Versuch {current}/{max} – Letzte Warnung",
-          "message": "Letzter Versuch vor Systemsperre."
-        }
-      },
-      "incorrect": {
-        "title": "Falscher Code",
-        "message": "Sie haben noch {remaining} Versuch(e) übrig"
-      },
-      "lockdown": {
-        "title": "Gesperrtes System",
-        "message": "Maximale Versuche ({max}) überschritten. Abkühlen: 5 Minuten."
-      },
-      "success": {
-        "title": "Autorisierter Zugang",
-        "message": "Authentifizierung erfolgreich. Weiterleitung..."
-      },
-      "error": {
-        "title": "Systemfehler",
-        "message": "Anmeldeinformationen konnten nicht überprüft werden. Bitte versuchen Sie es erneut."
-      }
-    },
-    "footer": {
-      "security": "Sichere Verbindung • AES-256",
-      "version": "Admin Gateway v3.2.1"
-    }
+    "forgotPassword": "Passwort vergessen?",
+    "login": "Einloggen",
+    "signUp": "Registrieren",
+    "processing": "Bearbeitung läuft...",
+    "orContinueWith": "Oder fahren Sie fort mit",
+    "termsPrefix": "Mit der Registrierung bzw. Anmeldung erklären Sie sich mit unseren einverstanden",
+    "termsOfUse": "Nutzungsbedingungen",
+    "and": "und unser",
+    "privacyPolicy": "Datenschutzrichtlinie",
+    "termsSuffix": ".",
+    "signIn": "Einloggen",
+    "alreadyHaveAccount": "Sie haben bereits ein Konto?",
+    "dontHaveAccount": "Noch kein Konto?",
+    "accessInfo": "Ihr Zugang wird automatisch anhand Ihrer Zugangsdaten erkannt. Administratorprofile müssen nicht manuell ausgewählt werden.",
+    "error": "Es ist ein Fehler aufgetreten",
+    "profileType": "Profiltyp",
+    "rememberMe": "Bleiben Sie in Verbindung",
+    "legal": "Rechtliche Hinweise",
+    "privacy": "Vertraulichkeit"
   }
 }

@@ -12,119 +12,37 @@
     "admin": "Amministrazione",
     "logout": "Disconnetti"
   },
-  "auth": {
-    "loginTitle": "Connessione",
-    "email": "E-mail",
+  "Login": {
+    "welcome": "Benvenuto !",
+    "subtitle": "Effettua il login per accedere al tuo spazio protetto.",
+    "signUpTitle": "Creare un account",
+    "signUpSubtitle": "Registrati per iniziare il tuo viaggio",
+    "heroTitle": "Il collegamento intelligente per un nido stretto...",
+    "heroSubtitle": "Una piattaforma completa e intelligente dedicata alla gestione degli affitti e degli immobili, con fiducia e trasparenza.",
+    "joinStats": "Unisciti a oltre 3.000 proprietari e inquilini",
+    "renter": "Inquilino",
+    "owner": "Proprietario",
+    "email": "Indirizzo e-mail",
+    "emailPlaceholder": "nome@azienda.com",
     "password": "Password",
-    "loginButton": "Login",
-    "noAccount": "Non hai ancora un account?",
-    "registerNow": "Registro"
-  },
-  "admin": {
-    "dashboardTitle": "Pannello di amministrazione",
-    "users": "Utenti",
-    "verifications": "Verifiche"
-  },
-  "adminGate": {
-    "badge": {
-      "admin": "AMMINISTRATORE v3.2.1"
-    },
-    "header": {
-      "subtitle": "Portale sicuro"
-    },
-    "title": {
-      "admin": "AMMINISTRATORE",
-      "gate": "VIZIATO",
-      "locked": "SISTEMA BLOCCATO"
-    },
-    "subtitle": "È richiesta l'autorizzazione di livello 5",
-    "core": {
-      "sequence": "SEQUENZA"
-    },
-    "status": {
-      "awaiting": "IN ATTESA",
-      "twoRemaining": "⚠️ 2 RIMANENTI",
-      "finalAttempt": "🔥ULTIMO TENTATIVO"
-    },
-    "code": {
-      "display": "Codice",
-      "empty": "______"
-    },
-    "buttons": {
-      "clear": "Cancellare",
-      "confirm": "Confermare",
-      "mapping": "Mostra mappatura",
-      "security": "Dettagli di sicurezza"
-    },
-    "mapping": {
-      "title": "🔢 Mappatura dei simboli:"
-    },
-    "security": {
-      "systemId": "ID SISTEMA",
-      "encryption": "CRITTOGRAFIA",
-      "uptime": "DISPONIBILE",
-      "protocol": "PROTOCOLLO"
-    },
-    "attempts": {
-      "first": "1°",
-      "second": "2°",
-      "third": "3°"
-    },
-    "lockdown": {
-      "title": "SISTEMA BLOCCATO",
-      "message": "Troppi tentativi. Attendere prego."
-    },
-    "success": {
-      "title": "ACCESSO AUTORIZZATO",
-      "message": "Reindirizzamento al portale sicuro..."
-    },
-    "alerts": {
-      "unlocked": {
-        "title": "Sistema sbloccato",
-        "message": "Il periodo di raffreddamento è finito. Puoi riprovare."
-      },
-      "locked": {
-        "title": "Sistema bloccato",
-        "message": "Numero massimo di tentativi superato. Raffreddamento: {time}"
-      },
-      "reset": {
-        "title": "Ripristino della sequenza",
-        "message": "Si prega di reinserire il codice."
-      },
-      "incomplete": {
-        "title": "Sequenza incompleta",
-        "message": "Inserisci tutti e 6 i simboli prima di confermare."
-      },
-      "attempt": {
-        "first": {
-          "title": "Tentativo {corrente}/{max}",
-          "message": "Codice non valido. {remaining} tentativo/i rimanente/i."
-        },
-        "second": {
-          "title": "Tentativo {current}/{max} - Avviso finale",
-          "message": "Ultimo tentativo prima del blocco del sistema."
-        }
-      },
-      "incorrect": {
-        "title": "Codice errato",
-        "message": "Ti restano {remaining} tentativi"
-      },
-      "lockdown": {
-        "title": "Sistema bloccato",
-        "message": "Numero massimo di tentativi ({max}) superato. Raffreddamento: 5 minuti."
-      },
-      "success": {
-        "title": "Accesso autorizzato",
-        "message": "Autenticazione riuscita. Reindirizzamento..."
-      },
-      "error": {
-        "title": "Errore di sistema",
-        "message": "Impossibile verificare le credenziali. Per favore riprova."
-      }
-    },
-    "footer": {
-      "security": "Connessione sicura • AES-256",
-      "version": "Gateway amministrativo v3.2.1"
-    }
+    "forgotPassword": "Password dimenticata?",
+    "login": "Login",
+    "signUp": "Registro",
+    "processing": "Elaborazione in corso...",
+    "orContinueWith": "Oppure continua con",
+    "termsPrefix": "Registrandoti o effettuando il login accetti i ns",
+    "termsOfUse": "Termini di utilizzo",
+    "and": "e il nostro",
+    "privacyPolicy": "politica sulla riservatezza",
+    "termsSuffix": ".",
+    "signIn": "Login",
+    "alreadyHaveAccount": "Hai già un account?",
+    "dontHaveAccount": "Non hai ancora un account?",
+    "accessInfo": "Il tuo accesso viene rilevato automaticamente in base alle tue credenziali. I profili amministratore non necessitano di selezione manuale.",
+    "error": "Si è verificato un errore",
+    "profileType": "Tipo di profilo",
+    "rememberMe": "Rimani connesso",
+    "legal": "Avvisi legali",
+    "privacy": "Riservatezza"
   }
 }

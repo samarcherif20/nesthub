@@ -12,119 +12,37 @@
     "admin": "Administration",
     "logout": "Disconnect"
   },
-  "auth": {
-    "loginTitle": "Connection",
-    "email": "E-mail",
+  "Login": {
+    "welcome": "Welcome !",
+    "subtitle": "Log in to access your secure space.",
+    "signUpTitle": "Create an account",
+    "signUpSubtitle": "Register to start your journey",
+    "heroTitle": "The clever link for a tight nest...",
+    "heroSubtitle": "A complete and intelligent platform dedicated to rental and property management, with trust and transparency.",
+    "joinStats": "Join +3,000 owners and tenants",
+    "renter": "Tenant",
+    "owner": "Owner",
+    "email": "E-mail address",
+    "emailPlaceholder": "name@company.com",
     "password": "Password",
-    "loginButton": "Log in",
-    "noAccount": "No account yet?",
-    "registerNow": "Register"
-  },
-  "admin": {
-    "dashboardTitle": "Admin Dashboard",
-    "users": "Users",
-    "verifications": "Verifications"
-  },
-  "adminGate": {
-    "badge": {
-      "admin": "ADMIN v3.2.1"
-    },
-    "header": {
-      "subtitle": "Secure Gateway"
-    },
-    "title": {
-      "admin": "ADMIN",
-      "gate": "SPOILED",
-      "locked": "LOCKED SYSTEM"
-    },
-    "subtitle": "Level 5 authorization required",
-    "core": {
-      "sequence": "SEQUENCE"
-    },
-    "status": {
-      "awaiting": "ON HOLD",
-      "twoRemaining": "⚠️ 2 REMAINING",
-      "finalAttempt": "🔥 LAST ATTEMPT"
-    },
-    "code": {
-      "display": "Code",
-      "empty": "______"
-    },
-    "buttons": {
-      "clear": "To erase",
-      "confirm": "Confirm",
-      "mapping": "Show mapping",
-      "security": "Security details"
-    },
-    "mapping": {
-      "title": "🔢 Symbol mapping:"
-    },
-    "security": {
-      "systemId": "SYSTEM ID",
-      "encryption": "ENCRYPTION",
-      "uptime": "AVAILABLE",
-      "protocol": "PROTOCOL"
-    },
-    "attempts": {
-      "first": "1st",
-      "second": "2nd",
-      "third": "3rd"
-    },
-    "lockdown": {
-      "title": "LOCKED SYSTEM",
-      "message": "Too many attempts. Please wait."
-    },
-    "success": {
-      "title": "AUTHORIZED ACCESS",
-      "message": "Redirection to the secure portal..."
-    },
-    "alerts": {
-      "unlocked": {
-        "title": "System unlocked",
-        "message": "The cooling period is over. You can try again."
-      },
-      "locked": {
-        "title": "Locked system",
-        "message": "Maximum attempts exceeded. Cooling: {time}"
-      },
-      "reset": {
-        "title": "Sequence reset",
-        "message": "Please re-enter the code."
-      },
-      "incomplete": {
-        "title": "Incomplete sequence",
-        "message": "Please enter all 6 symbols before confirming."
-      },
-      "attempt": {
-        "first": {
-          "title": "Attempt {current}/{max}",
-          "message": "Invalid code. {remaining} attempt(s) remaining."
-        },
-        "second": {
-          "title": "Attempt {current}/{max} - Final warning",
-          "message": "Last attempt before system lock."
-        }
-      },
-      "incorrect": {
-        "title": "Incorrect code",
-        "message": "You have {remaining} attempt(s) left"
-      },
-      "lockdown": {
-        "title": "Locked system",
-        "message": "Maximum attempts ({max}) exceeded. Cooling: 5 minutes."
-      },
-      "success": {
-        "title": "Authorized access",
-        "message": "Authentication successful. Redirection..."
-      },
-      "error": {
-        "title": "System error",
-        "message": "Unable to verify credentials. Please try again."
-      }
-    },
-    "footer": {
-      "security": "Secure connection • AES-256",
-      "version": "Admin Gateway v3.2.1"
-    }
+    "forgotPassword": "Forgotten password?",
+    "login": "Log in",
+    "signUp": "Register",
+    "processing": "Processing in progress...",
+    "orContinueWith": "Or continue with",
+    "termsPrefix": "By registering or logging in, you agree to our",
+    "termsOfUse": "Terms of Use",
+    "and": "and our",
+    "privacyPolicy": "Privacy Policy",
+    "termsSuffix": ".",
+    "signIn": "Log in",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "No account yet?",
+    "accessInfo": "Your access is automatically detected based on your credentials. Administrator profiles do not need manual selection.",
+    "error": "An error has occurred",
+    "profileType": "Profile type",
+    "rememberMe": "Stay connected",
+    "legal": "Legal notices",
+    "privacy": "Confidentiality"
   }
 }

@@ -4,31 +4,51 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { useSignIn, useSignUp, useUser } from "@clerk/nextjs";
+import { useSignIn, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { EyeOff, Eye } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { LiaUserShieldSolid } from "react-icons/lia";
 import { RiLockPasswordLine } from "react-icons/ri";
+import { MdOutlineDangerous } from "react-icons/md";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+  AvatarBadge,
+  AvatarGroup,
+} from "@/components/ui/avatar";
+import { Loader2, LogIn } from "lucide-react";
+
+interface FormErrors {
+  email?: string;
+  password?: string;
+  general?: string;
+}
 
 export default function LoginPage() {
   const [role, setRole] = useState<"renter" | "owner">("renter");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignUp, setIsSignUp] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState({
+    email: false,
+    password: false,
+  });
 
-  const { theme } = useTheme();
+  const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("Login");
 
-  const { signIn, setActive: setSignInActive } = useSignIn();
-  const { signUp, setActive: setSignUpActive } = useSignUp();
+  const { signIn, setActive } = useSignIn();
   const { isSignedIn, user } = useUser();
   const router = useRouter();
+
+  // Déterminer le thème actuel
+  const currentTheme = theme === "system" ? systemTheme : theme;
 
   useEffect(() => {
     setMounted(true);
@@ -46,46 +66,97 @@ export default function LoginPage() {
     }
   }, [isSignedIn, user, router, role]);
 
+  // Fonction de validation email (pour la connexion)
+  const validateEmail = (email: string): string | undefined => {
+    if (!email.trim()) {
+      return t("emailRequired");
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return t("emailInvalid");
+    }
+    return undefined;
+  };
+
+  // Fonction de validation mot de passe (pour la connexion)
+  const validatePassword = (password: string): string | undefined => {
+    if (!password) {
+      return t("passwordRequired");
+    }
+    // Pour la connexion, on vérifie juste que le champ n'est pas vide
+    return undefined;
+  };
+
+  // Valider tout le formulaire
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    const emailError = validateEmail(email);
+    if (emailError) newErrors.email = emailError;
+
+    const passwordError = validatePassword(password);
+    if (passwordError) newErrors.password = passwordError;
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Gérer le blur des champs
+  const handleBlur = (field: "email" | "password") => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
+    if (field === "email") {
+      const emailError = validateEmail(email);
+      setErrors((prev) => ({ ...prev, email: emailError }));
+    } else if (field === "password") {
+      const passwordError = validatePassword(password);
+      setErrors((prev) => ({ ...prev, password: passwordError }));
+    }
+  };
+
   // Gérer la soumission du formulaire
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Marquer tous les champs comme touchés
+    setTouched({ email: true, password: true });
+
+    // Valider le formulaire
+    if (!validateForm()) {
+      return;
+    }
+
     setLoading(true);
-    setError("");
+    setErrors({});
 
     try {
-      if (isSignUp) {
-        if (!signUp) return;
+      if (!signIn) return;
 
-        const result = await signUp.create({
-          emailAddress: email,
-          password: password,
-        });
+      const result = await signIn.create({
+        identifier: email,
+        password: password,
+      });
 
-        if (result.status === "complete") {
-          await signUp.update({
-            unsafeMetadata: {
-              role: role === "owner" ? "PROPERTY_OWNER" : "TENANT",
-              preferredLocale: "fr",
-            },
-          });
-
-          await setSignUpActive({ session: result.createdSessionId });
-        }
-      } else {
-        if (!signIn) return;
-
-        const result = await signIn.create({
-          identifier: email,
-          password: password,
-        });
-
-        if (result.status === "complete") {
-          await setSignInActive({ session: result.createdSessionId });
-        }
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
       }
     } catch (err: any) {
       console.error("Auth error:", err);
-      setError(err.errors?.[0]?.message || t("error"));
+
+      // Gérer les erreurs spécifiques de Clerk pour la connexion
+      if (err.errors) {
+        const clerkError = err.errors[0];
+
+        if (clerkError.code === "form_identifier_not_found") {
+          setErrors({ general: t("userNotFound") });
+        } else if (clerkError.code === "form_password_incorrect") {
+          setErrors({ general: t("incorrectPassword") });
+        } else {
+          setErrors({ general: clerkError.message || t("error") });
+        }
+      } else {
+        setErrors({ general: t("error") });
+      }
     } finally {
       setLoading(false);
     }
@@ -133,12 +204,21 @@ export default function LoginPage() {
     }
   };
 
-  if (!mounted) return null;
+  // Éviter les problèmes d'hydratation
+  if (!mounted) {
+    return (
+      <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
+        <div className="w-full flex items-center justify-center">
+          <Loader2 className="animate-spin h-8 w-8" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
       {/* Left Side: Lifestyle Hero */}
-      <div className="hidden lg:flex lg:w-1/2 relative bg-linear-to-br from-indigo-900 via-purple-900 to-blue-900 items-start justify-center pt-16 px-12 overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 relative items-start justify-center pt-16 px-12 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/30 z-10"></div>
           <Image
@@ -150,38 +230,49 @@ export default function LoginPage() {
           />
         </div>
 
-        <div className="relative z-20 w-full max-w-md">
-          <div className="flex items-center gap-4 mb-4">
+        <div className="relative z-20 w-full mt-25 ml-15">
+          <div className="flex items-center gap-8 mb-8">
             <div className="relative w-12 h-12">
               <Image
                 src="/logo/logo.png"
                 alt="NestHub Logo"
                 fill
-                className="object-contain"
+                className="object-contain scale-[6] translate-y-3.5"
               />
             </div>
-            <h1 className="text-white text-4xl font-bold tracking-tight">
+            <h1 className="text-5xl font-bold tracking-tight bg-linear-to-r from-blue-200 via-sky-300 to-purple-300 dark:from-indigo-900 dark:via-sky-600 dark:to-purple-00 text-transparent bg-clip-text">
               N E S T H U B
             </h1>
           </div>
 
-          <h2 className="text-white text-5xl font-bold leading-tight mb-3">
+          <h2 className="text-blue-200 dark:text-indigo-900 text-5xl font-bold leading-tight mb-3">
             {t("heroTitle")}
           </h2>
-          <p className="text-white/80 text-lg leading-relaxed max-w-sm mb-6">
+          <p className="text-blue-200 dark:text-indigo-900 text-lg leading-relaxed max-w-sm mb-6">
             {t("heroSubtitle")}
           </p>
 
-          <div className="flex gap-4">
-            <div className="flex -space-x-2">
-              {[1, 2, 3].map((i) => (
-                <div
-                  key={i}
-                  className="size-10 rounded-full border-2 border-white bg-gradient-to-br from-purple-400 to-blue-400 overflow-hidden"
-                />
-              ))}
-            </div>
-            <p className="text-white text-sm font-medium self-center">
+          <div className="flex items-center gap-4">
+            <AvatarGroup>
+              <Avatar size="lg">
+                <AvatarImage src="/avatars/a1.jpg" />
+                <AvatarFallback>av_1</AvatarFallback>
+                <AvatarBadge className="bg-green-500" />
+              </Avatar>
+
+              <Avatar size="lg">
+                <AvatarImage src="/avatars/a2.jpg" />
+                <AvatarFallback>av_2</AvatarFallback>
+                <AvatarBadge className="bg-green-500" />
+              </Avatar>
+
+              <Avatar size="lg">
+                <AvatarImage src="/avatars/a3.jpg" />
+                <AvatarFallback>av_3</AvatarFallback>
+              </Avatar>
+            </AvatarGroup>
+
+            <p className="text-white dark:text-blue-800 text-sm font-medium">
               {t("joinStats")}
             </p>
           </div>
@@ -189,7 +280,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side: Login Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-6 bg-white dark:bg-background-dark overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-4 sm:px-6 py-4 sm:py-6 bg-background-light dark:bg-background-dark overflow-y-auto">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center gap-3 mb-6 justify-center">
@@ -198,26 +289,28 @@ export default function LoginPage() {
                 src="/logo/logo.png"
                 alt="NestHub Logo"
                 fill
-                className="object-contain"
+                className="object-contain scale-[3.75] translate-y-2.75"
               />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              NestHub
+            <h2 className="text-2xl font-bold bg-linear-to-r from-blue-400 via-sky-600 to-purple-500 text-transparent bg-clip-text">
+              N E S T H U B
             </h2>
           </div>
 
           <div className="mb-6 text-center lg:text-left">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
-              {isSignUp ? t("signUpTitle") : t("welcome")}
+              {t("welcome")}
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              {isSignUp ? t("signUpSubtitle") : t("subtitle")}
+              {t("subtitle")}
             </p>
           </div>
 
-          {error && (
-            <div className="mb-3 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs">
-              {error}
+          {/* Message d'erreur général avec icône */}
+          {errors.general && (
+            <div className="mb-3 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs flex items-center gap-1">
+              <MdOutlineDangerous className="shrink-0" size={16} />
+              <span>{errors.general}</span>
             </div>
           )}
 
@@ -230,7 +323,7 @@ export default function LoginPage() {
               onClick={() => setRole("renter")}
               className={`flex-1 text-center py-2 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all ${
                 role === "renter"
-                  ? "bg-white dark:bg-background-dark shadow-sm text-gray-900 dark:text-white"
+                  ? "bg-white dark:bg-background-dark shadow-sm text-gray-900 dark:text-blue-950"
                   : "text-gray-500 dark:text-gray-400"
               }`}
             >
@@ -241,7 +334,7 @@ export default function LoginPage() {
               onClick={() => setRole("owner")}
               className={`flex-1 text-center py-2 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all ${
                 role === "owner"
-                  ? "bg-white dark:bg-background-dark shadow-sm text-gray-900 dark:text-white"
+                  ? "bg-white dark:bg-background-dark shadow-sm text-gray-900 dark:text-blue-950"
                   : "text-gray-500 dark:text-gray-400"
               }`}
             >
@@ -249,7 +342,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <form className="space-y-3" onSubmit={handleSubmit}>
+          <form className="space-y-3" onSubmit={handleSubmit} noValidate>
             <div>
               <label
                 className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
@@ -263,17 +356,39 @@ export default function LoginPage() {
                   size={16}
                 />
                 <input
-                  className="w-full pl-10 pr-3 py-2.5 sm:py-3 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white"
+                  className={`w-full pl-10 pr-3 py-2.5 sm:py-3 text-sm bg-gray-50 dark:bg-white/5 border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white ${
+                    touched.email && errors.email
+                      ? "border-red-500 dark:border-red-500"
+                      : "border-gray-200 dark:border-white/10"
+                  }`}
                   id="email"
                   name="email"
                   placeholder={t("emailPlaceholder")}
                   required
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (touched.email) {
+                      const emailError = validateEmail(e.target.value);
+                      setErrors((prev) => ({ ...prev, email: emailError }));
+                    }
+                  }}
+                  onBlur={() => handleBlur("email")}
                   disabled={loading}
+                  aria-invalid={touched.email && !!errors.email}
+                  aria-describedby={errors.email ? "email-error" : undefined}
                 />
               </div>
+              {touched.email && errors.email && (
+                <p
+                  className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
+                  id="email-error"
+                >
+                  <MdOutlineDangerous className="shrink-0" size={14} />
+                  <span>{errors.email}</span>
+                </p>
+              )}
             </div>
 
             <div>
@@ -284,14 +399,12 @@ export default function LoginPage() {
                 >
                   {t("password")}
                 </label>
-                {!isSignUp && (
-                  <Link
-                    href="#"
-                    className="text-xs font-semibold text-emerald-600 dark:text-primary hover:underline"
-                  >
-                    {t("forgotPassword")}
-                  </Link>
-                )}
+                <Link
+                  href="/forgot-password"
+                  className="text-xs font-semibold text-purple-800 dark:text-primary hover:underline"
+                >
+                  {t("forgotPassword")}
+                </Link>
               </div>
               <div className="relative">
                 <RiLockPasswordLine
@@ -299,28 +412,55 @@ export default function LoginPage() {
                   size={18}
                 />
                 <input
-                  className="w-full pl-10 pr-10 py-2.5 sm:py-3 text-sm bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white"
+                  className={`w-full pl-10 pr-10 py-2.5 sm:py-3 text-sm bg-gray-50 dark:bg-white/5 border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white ${
+                    touched.password && errors.password
+                      ? "border-red-500 dark:border-red-500"
+                      : "border-gray-200 dark:border-white/10"
+                  }`}
                   id="password"
                   name="password"
                   placeholder="••••••••"
                   required
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (touched.password) {
+                      const passwordError = validatePassword(e.target.value);
+                      setErrors((prev) => ({
+                        ...prev,
+                        password: passwordError,
+                      }));
+                    }
+                  }}
+                  onBlur={() => handleBlur("password")}
                   disabled={loading}
+                  aria-invalid={touched.password && !!errors.password}
+                  aria-describedby={
+                    errors.password ? "password-error" : undefined
+                  }
                 />
                 <button
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
-                    <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
-                  ) : (
                     <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
                   )}
                 </button>
               </div>
+              {touched.password && errors.password && (
+                <p
+                  className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
+                  id="password-error"
+                >
+                  <MdOutlineDangerous className="shrink-0" size={14} />
+                  <span>{errors.password}</span>
+                </p>
+              )}
             </div>
 
             <div className="flex items-center justify-between py-1">
@@ -329,18 +469,32 @@ export default function LoginPage() {
                   className="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary h-3 w-3 sm:h-4 sm:w-4"
                   type="checkbox"
                 />
-                <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 transition-colors">
+                <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-300 transition-colors">
                   {t("rememberMe")}
                 </span>
               </label>
             </div>
 
             <button
-              className="w-full py-2.5 sm:py-3 bg-primary text-[#0d1b13] font-bold rounded-xl hover:bg-emerald-400 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               type="submit"
               disabled={loading}
+              className="w-full py-2.5 sm:py-3 bg-blue-400 text-black font-bold rounded-xl 
+             flex items-center justify-center gap-2 text-sm
+             transition-all duration-300 ease-in-out
+             hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500
+             active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? t("processing") : isSignUp ? t("signUp") : t("login")}
+              {loading ? (
+                <>
+                  <Loader2 className="animate-spin h-5 w-5" />
+                  {t("processing")}
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-5 w-5" />
+                  {t("login")}
+                </>
+              )}
             </button>
           </form>
 
@@ -349,7 +503,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-white dark:bg-background-dark text-gray-500 dark:text-gray-400">
+              <span className="px-3 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400">
                 {t("orContinueWith")}
               </span>
             </div>
@@ -418,14 +572,14 @@ export default function LoginPage() {
             {t("termsPrefix")}{" "}
             <Link
               href="/terms"
-              className="font-medium text-emerald-600 dark:text-primary hover:underline"
+              className="font-medium text-purple-800 dark:text-primary hover:underline"
             >
               {t("termsOfUse")}
             </Link>{" "}
             {t("and")}{" "}
             <Link
               href="/privacy"
-              className="font-medium text-emerald-600 dark:text-primary hover:underline"
+              className="font-medium text-purple-800 dark:text-primary hover:underline"
             >
               {t("privacyPolicy")}
             </Link>
@@ -441,12 +595,12 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
             {t("dontHaveAccount")}{" "}
-            <button
-              onClick={() => setIsSignUp(true)}
+            <Link
+              href="/sign-up"
               className="text-primary font-bold hover:underline"
             >
               {t("signUp")}
-            </button>
+            </Link>
           </p>
 
           <div className="mt-4 pt-3 text-[10px] text-slate-400 dark:text-slate-600 flex justify-between w-full border-t border-slate-100 dark:border-slate-800/50">
