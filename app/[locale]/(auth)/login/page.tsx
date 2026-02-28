@@ -4,10 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTheme } from "next-themes";
-import { useSignIn, useUser } from "@clerk/nextjs";
+import { useSignIn, useUser, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { EyeOff, Eye } from "lucide-react";
+import { EyeOff, Eye, User, Mail } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { LiaUserShieldSolid } from "react-icons/lia";
 import { RiLockPasswordLine } from "react-icons/ri";
@@ -21,8 +21,17 @@ import {
 } from "@/components/ui/avatar";
 import { Loader2, LogIn } from "lucide-react";
 
+// Import depuis utils.ts
+import {
+  ValidationPatterns,
+  isClerkAPIError,
+  getClerkErrorMessage,
+  logger,
+  type IdentifierType,
+} from "@/lib/utils";
+
 interface FormErrors {
-  email?: string;
+  identifier?: string;
   password?: string;
   general?: string;
 }
@@ -30,25 +39,26 @@ interface FormErrors {
 export default function LoginPage() {
   const [role, setRole] = useState<"renter" | "owner">("renter");
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState({
-    email: false,
+    identifier: false,
     password: false,
   });
+  const [identifierType, setIdentifierType] =
+    useState<IdentifierType>("unknown");
 
   const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const t = useTranslations("Login");
 
+  // Hooks Clerk
   const { signIn, setActive } = useSignIn();
   const { isSignedIn, user } = useUser();
+  const { signOut } = useClerk();
   const router = useRouter();
-
-  // Déterminer le thème actuel
-  const currentTheme = theme === "system" ? systemTheme : theme;
 
   useEffect(() => {
     setMounted(true);
@@ -66,24 +76,42 @@ export default function LoginPage() {
     }
   }, [isSignedIn, user, router, role]);
 
-  // Fonction de validation email (pour la connexion)
-  const validateEmail = (email: string): string | undefined => {
-    if (!email.trim()) {
-      return t("emailRequired");
+  // Détecter automatiquement le type d'identifiant
+  useEffect(() => {
+    setIdentifierType(ValidationPatterns.detectIdentifierType(identifier));
+  }, [identifier]);
+
+  // Fonction de validation avec messages spécifiques
+  const validateIdentifier = (value: string): string | undefined => {
+    if (!value.trim()) {
+      return t("identifierRequired");
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return t("emailInvalid");
+
+    const type = ValidationPatterns.detectIdentifierType(value);
+
+    if (type === "email") {
+      if (!ValidationPatterns.isEmail(value)) {
+        return t("emailInvalid"); // ← Message spécifique pour email
+      }
+      return undefined;
     }
-    return undefined;
+
+    if (type === "username") {
+      if (!ValidationPatterns.isUsername(value)) {
+        return t("usernameInvalid"); // ← Message spécifique pour username
+      }
+      return undefined;
+    }
+
+    // Ni email ni username valide (ex: "abc@", "123", etc.)
+    return t("identifierInvalid");
   };
 
-  // Fonction de validation mot de passe (pour la connexion)
+  // Fonction de validation mot de passe
   const validatePassword = (password: string): string | undefined => {
     if (!password) {
       return t("passwordRequired");
     }
-    // Pour la connexion, on vérifie juste que le champ n'est pas vide
     return undefined;
   };
 
@@ -91,8 +119,8 @@ export default function LoginPage() {
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    const emailError = validateEmail(email);
-    if (emailError) newErrors.email = emailError;
+    const identifierError = validateIdentifier(identifier);
+    if (identifierError) newErrors.identifier = identifierError;
 
     const passwordError = validatePassword(password);
     if (passwordError) newErrors.password = passwordError;
@@ -102,12 +130,12 @@ export default function LoginPage() {
   };
 
   // Gérer le blur des champs
-  const handleBlur = (field: "email" | "password") => {
+  const handleBlur = (field: "identifier" | "password") => {
     setTouched((prev) => ({ ...prev, [field]: true }));
 
-    if (field === "email") {
-      const emailError = validateEmail(email);
-      setErrors((prev) => ({ ...prev, email: emailError }));
+    if (field === "identifier") {
+      const identifierError = validateIdentifier(identifier);
+      setErrors((prev) => ({ ...prev, identifier: identifierError }));
     } else if (field === "password") {
       const passwordError = validatePassword(password);
       setErrors((prev) => ({ ...prev, password: passwordError }));
@@ -115,13 +143,10 @@ export default function LoginPage() {
   };
 
   // Gérer la soumission du formulaire
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Marquer tous les champs comme touchés
-    setTouched({ email: true, password: true });
-
-    // Valider le formulaire
+    setTouched({ identifier: true, password: true });
     if (!validateForm()) {
       return;
     }
@@ -129,40 +154,99 @@ export default function LoginPage() {
     setLoading(true);
     setErrors({});
 
+    logger.auth("Tentative de connexion", {
+      identifierType,
+      identifier,
+      selectedRole: role,
+    });
+
     try {
-      if (!signIn) return;
+      if (!signIn) {
+        throw new Error("SignIn not initialized");
+      }
 
       const result = await signIn.create({
-        identifier: email,
+        identifier: identifier,
         password: password,
       });
 
       if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-      }
-    } catch (err: any) {
-      console.error("Auth error:", err);
+        try {
+    // ✅ 1. Demande l'ID à Clerk en utilisant l'email
+    const clerkResponse = await fetch(`/api/clerk/user-by-email/${encodeURIComponent(identifier)}`);
+    
+    if (!clerkResponse.ok) {
+      throw new Error("Utilisateur non trouvé dans Clerk");
+    }
+    
+    const { id: clerkUserId } = await clerkResponse.json();
+    console.log("🆔 J'ai l'ID Clerk:", clerkUserId); // Ex: "user_3AD5aNwinVdGe16GT-"
+    
+    // ✅ 2. Maintenant tu peux utiliser TON API avec clerkId
+    const response = await fetch(`/api/users/by-clerk-id/${clerkUserId}`);
+    
+    if (!response.ok) {
+      setErrors({ general: t("userNotFoundInDB") });
+      if (signOut) await signOut();
+      setLoading(false);
+      return;
+    }
 
-      // Gérer les erreurs spécifiques de Clerk pour la connexion
-      if (err.errors) {
-        const clerkError = err.errors[0];
+    const dbUser = await response.json();
 
-        if (clerkError.code === "form_identifier_not_found") {
-          setErrors({ general: t("userNotFound") });
-        } else if (clerkError.code === "form_password_incorrect") {
-          setErrors({ general: t("incorrectPassword") });
-        } else {
-          setErrors({ general: clerkError.message || t("error") });
+          // Vérification du rôle pour les non-admins
+          if (dbUser.role !== "ADMIN") {
+            const roleMapping = {
+              TENANT: "renter",
+              PROPERTY_OWNER: "owner",
+            };
+
+            const expectedRole =
+              roleMapping[dbUser.role as keyof typeof roleMapping];
+
+            if (expectedRole !== role) {
+              if (signOut) {
+                await signOut();
+              }
+
+              const errorMessage =
+                dbUser.role === "PROPERTY_OWNER"
+                  ? t("wrongRoleOwner")
+                  : t("wrongRoleRenter");
+
+              setErrors({ general: errorMessage });
+              setLoading(false);
+              return;
+            }
+          }
+
+          // Tout est bon, on active la session
+          logger.success("Connexion réussie", {
+            userId: result.createdSessionId,
+            role: dbUser.role,
+          });
+
+          await setActive({ session: result.createdSessionId });
+        } catch (dbError) {
+          logger.error("Erreur DB", dbError);
+          if (signOut) {
+            await signOut();
+          }
+          setErrors({ general: t("error") });
+          setLoading(false);
         }
-      } else {
-        setErrors({ general: t("error") });
       }
+    } catch (err: unknown) {
+      console.error("Auth error:", err);
+      const errorMessage = getClerkErrorMessage(err, identifierType, t);
+      setErrors({ general: errorMessage });
+      logger.error("Erreur de connexion", err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Gérer la connexion avec Google
+  // Gestionnaires OAuth
   const handleGoogleLogin = async () => {
     try {
       if (!signIn) return;
@@ -172,11 +256,10 @@ export default function LoginPage() {
         redirectUrlComplete: "/dashboard",
       });
     } catch (err) {
-      console.error("Google login error:", err);
+      logger.error("Google login error", err);
     }
   };
 
-  // Gérer la connexion avec Apple
   const handleAppleLogin = async () => {
     try {
       if (!signIn) return;
@@ -186,11 +269,10 @@ export default function LoginPage() {
         redirectUrlComplete: "/dashboard",
       });
     } catch (err) {
-      console.error("Apple login error:", err);
+      logger.error("Apple login error", err);
     }
   };
 
-  // Gérer la connexion avec Facebook
   const handleFacebookLogin = async () => {
     try {
       if (!signIn) return;
@@ -200,11 +282,10 @@ export default function LoginPage() {
         redirectUrlComplete: "/dashboard",
       });
     } catch (err) {
-      console.error("Facebook login error:", err);
+      logger.error("Facebook login error", err);
     }
   };
 
-  // Éviter les problèmes d'hydratation
   if (!mounted) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
@@ -214,6 +295,31 @@ export default function LoginPage() {
       </div>
     );
   }
+
+  const getIdentifierIcon = () => {
+    if (identifierType === "email") {
+      return (
+        <TfiEmail
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          size={16}
+        />
+      );
+    } else if (identifierType === "username") {
+      return (
+        <User
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          size={16}
+        />
+      );
+    } else {
+      return (
+        <Mail
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          size={16}
+        />
+      );
+    }
+  };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
@@ -259,19 +365,16 @@ export default function LoginPage() {
                 <AvatarFallback>av_1</AvatarFallback>
                 <AvatarBadge className="bg-green-500" />
               </Avatar>
-
               <Avatar size="lg">
                 <AvatarImage src="/avatars/a2.jpg" />
                 <AvatarFallback>av_2</AvatarFallback>
                 <AvatarBadge className="bg-green-500" />
               </Avatar>
-
               <Avatar size="lg">
                 <AvatarImage src="/avatars/a3.jpg" />
                 <AvatarFallback>av_3</AvatarFallback>
               </Avatar>
             </AvatarGroup>
-
             <p className="text-white dark:text-blue-800 text-sm font-medium">
               {t("joinStats")}
             </p>
@@ -306,7 +409,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Message d'erreur général avec icône */}
+          {/* Message d'erreur général */}
           {errors.general && (
             <div className="mb-3 p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg text-xs flex items-center gap-1">
               <MdOutlineDangerous className="shrink-0" size={16} />
@@ -329,7 +432,6 @@ export default function LoginPage() {
             >
               {t("renter")}
             </button>
-
             <button
               onClick={() => setRole("owner")}
               className={`flex-1 text-center py-2 rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all ${
@@ -343,54 +445,60 @@ export default function LoginPage() {
           </div>
 
           <form className="space-y-3" onSubmit={handleSubmit} noValidate>
+            {/* Champ Identifier */}
             <div>
               <label
                 className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                htmlFor="email"
+                htmlFor="identifier"
               >
-                {t("email")}
+                {t("emailOrUsername")}
               </label>
               <div className="relative">
-                <TfiEmail
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={16}
-                />
+                {getIdentifierIcon()}
                 <input
                   className={`w-full pl-10 pr-3 py-2.5 sm:py-3 text-sm bg-gray-50 dark:bg-white/5 border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white ${
-                    touched.email && errors.email
+                    touched.identifier && errors.identifier
                       ? "border-red-500 dark:border-red-500"
                       : "border-gray-200 dark:border-white/10"
                   }`}
-                  id="email"
-                  name="email"
-                  placeholder={t("emailPlaceholder")}
+                  id="identifier"
+                  name="identifier"
+                  placeholder={t("emailOrUsernamePlaceholder")}
                   required
-                  type="email"
-                  value={email}
+                  type="text"
+                  value={identifier}
                   onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (touched.email) {
-                      const emailError = validateEmail(e.target.value);
-                      setErrors((prev) => ({ ...prev, email: emailError }));
+                    setIdentifier(e.target.value);
+                    if (touched.identifier) {
+                      const identifierError = validateIdentifier(
+                        e.target.value,
+                      );
+                      setErrors((prev) => ({
+                        ...prev,
+                        identifier: identifierError,
+                      }));
                     }
                   }}
-                  onBlur={() => handleBlur("email")}
+                  onBlur={() => handleBlur("identifier")}
                   disabled={loading}
-                  aria-invalid={touched.email && !!errors.email}
-                  aria-describedby={errors.email ? "email-error" : undefined}
+                  aria-invalid={touched.identifier && !!errors.identifier}
+                  aria-describedby={
+                    errors.identifier ? "identifier-error" : undefined
+                  }
                 />
               </div>
-              {touched.email && errors.email && (
+              {touched.identifier && errors.identifier && (
                 <p
                   className="mt-1 text-xs text-red-500 dark:text-red-400 flex items-center gap-1"
-                  id="email-error"
+                  id="identifier-error"
                 >
                   <MdOutlineDangerous className="shrink-0" size={14} />
-                  <span>{errors.email}</span>
+                  <span>{errors.identifier}</span>
                 </p>
               )}
             </div>
 
+            {/* Champ Password */}
             <div>
               <div className="flex justify-between mb-1">
                 <label
@@ -498,6 +606,7 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* Section OAuth */}
           <div className="relative my-4">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
@@ -535,7 +644,6 @@ export default function LoginPage() {
                 />
               </svg>
             </button>
-
             <button
               onClick={handleAppleLogin}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow flex items-center justify-center border border-gray-200 dark:border-gray-700"
@@ -552,7 +660,6 @@ export default function LoginPage() {
                 <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.82-.779.883-1.467 2.337-1.286 3.713 1.35.104 2.727-.715 3.573-1.703z" />
               </svg>
             </button>
-
             <button
               onClick={handleFacebookLogin}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow flex items-center justify-center border border-gray-200 dark:border-gray-700"

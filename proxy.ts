@@ -48,23 +48,6 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   // ========================================
-  // Admin gate
-  // ========================================
-  if (pathWithoutLocale === "/admin-gate") {
-    const providedKey = searchParams.get("key");
-    if (!providedKey) return NextResponse.rewrite(new URL(`/${locale}/404`, req.url));
-    if (providedKey !== ADMIN_URL_KEY) return new Response("Forbidden", { status: 403 });
-
-    const isUnlocked = req.cookies.get(COOKIE_NAME)?.value === "true";
-    if (isUnlocked) {
-      return NextResponse.redirect(
-        new URL(`/${locale}/admin/login?key=${providedKey}`, req.url)
-      );
-    }
-    return intlResponse;
-  }
-
-  // ========================================
   // Zone admin
   // ========================================
   if (pathWithoutLocale.startsWith("/admin")) {

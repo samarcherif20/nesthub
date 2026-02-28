@@ -31,6 +31,7 @@ model User {
   id                String   @id @default(uuid())
   clerkId           String   @unique
   email             String   @unique
+  username          String?  @unique  // ← AJOUTE CETTE LIGNE
   firstName         String?
   lastName          String?
   phoneNumber       String?

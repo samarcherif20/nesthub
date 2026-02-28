@@ -44,12 +44,27 @@
     "rememberMe": "Rester connecté",
     "legal": "Mentions légales",
     "privacy": "Confidentialité",
+    
     "emailRequired": "L'email est requis",
     "emailInvalid": "Veuillez entrer une adresse email valide",
     "passwordRequired": "Le mot de passe est requis",
-
     "userNotFound": "Aucun compte trouvé avec cette adresse email",
-    "incorrectPassword": "Mot de passe incorrect. Veuillez réessayer",
-    "error": "Une erreur est survenue. Veuillez réessayer"
+    "incorrectPassword": "Mot de passe incorrect. Veuillez réessayer !",
+    "error": "Une erreur est survenue. Veuillez réessayer",
+    
+    "usernameRequired": "Le nom d'utilisateur est requis",
+    "usernameInvalid": "Format de nom d'utilisateur invalide !",
+    "emailNotFound": "Aucun compte trouvé avec cet email",
+    "usernameNotFound": "Aucun compte trouvé avec ce nom d'utilisateur",
+    
+    "emailOrUsername": "Email ou nom d'utilisateur",
+    "emailOrUsernamePlaceholder": "ex: john@exemple.com ou john_doe",
+    "identifierRequired": "Email ou nom d'utilisateur requis",
+    "identifierInvalid": "Format invalide. Veuillez entrer un email ou un nom d'utilisateur valide ! ",
+    
+    "userNotFoundInDB": "Compte trouvé mais non synchronisé. Veuillez contacter le support !",
+    "wrongRoleRenter": "Ce compte est un propriétaire. Veuillez sélectionner 'Propriétaire' !",
+    "wrongRoleOwner": "Ce compte est un locataire. Veuillez sélectionner 'Locataire' ! ",
+    "tooManyAttempts": "Trop de tentatives. Réessayez plus tard!"
   }
 }
