@@ -1,3 +1,6 @@
+@import '../styles/_variables.scss';
+@import '../styles/_keyframe-animations.scss';
+
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -207,4 +210,147 @@
 /* Animation au clic */
 .theme-switcher-input:active + .theme-switcher-label:after {
   width: 28px; /* 25px → 28px */
+}
+/* Ajoutez à la fin du fichier */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out;
+}
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out;
+}
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-down {
+  animation: slideDown 0.2s ease-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+/* styles/globals.css */
+.tiptap {
+  > * + * {
+    margin-top: 0.75em;
+  }
+}
+
+.tiptap ul,
+.tiptap ol {
+  padding: 0 1rem;
+}
+
+.tiptap h1 {
+  font-size: 2em;
+  font-weight: bold;
+}
+
+.tiptap h2 {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.tiptap h3 {
+  font-size: 1.17em;
+  font-weight: bold;
+}
+
+.tiptap code {
+  background-color: rgba(97, 97, 97, 0.1);
+  border-radius: 0.25em;
+  padding: 0.1em 0.25em;
+  font-family: monospace;
+}
+
+.tiptap pre {
+  background: #0d0d0d;
+  border-radius: 0.5rem;
+  color: #fff;
+  font-family: 'JetBrainsMono', monospace;
+  padding: 0.75rem 1rem;
+}
+
+.tiptap pre code {
+  background: none;
+  color: inherit;
+  padding: 0;
+}
+
+.tiptap blockquote {
+  border-left: 3px solid rgba(13, 13, 13, 0.1);
+  padding-left: 1rem;
+}
+
+.tiptap img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+}
+
+.tiptap a {
+  color: #2563eb;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* Placeholder */
+.tiptap.is-editor-empty:first-child::before {
+  color: #9ca3af;
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Dark mode */
+.dark .tiptap {
+  color: #e5e7eb;
+}
+
+.dark .tiptap blockquote {
+  border-left-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark .tiptap a {
+  color: #60a5fa;
 }

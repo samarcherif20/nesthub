@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { useLocale } from "next-intl";
 import ThemeSwitcher from "@/components/ui/themeSwitcher";
-
+import LanguageSelector from "@/components/ui/LanguageSelector";
 export default function HomePage() {
   const locale = useLocale();
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center relative">
       {/* THEME SWITCHER TOP-RIGHT */}
-      <div className="absolute top-4 right-4">
-        <ThemeSwitcher />
-      </div>
-
+     <div className="absolute top-4 right-4 flex items-center gap-2">
+  <LanguageSelector />
+  <ThemeSwitcher />
+</div>
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">NestHub</h1>
         <p className="text-gray-600">Plateforme de location immobilière</p>

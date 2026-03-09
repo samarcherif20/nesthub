@@ -60,6 +60,171 @@
     "userNotFoundInDB": "Account trovato ma non sincronizzato. Si prega di contattare l'assistenza!",
     "wrongRoleRenter": "Questo account è un proprietario. Seleziona \"Proprietario\"!",
     "wrongRoleOwner": "Questo account è un inquilino. Seleziona \"Inquilino\"!",
-    "tooManyAttempts": "Troppi tentativi. Riprova più tardi!"
+    "tooManyAttempts": "Troppi tentativi. Riprova più tardi!",
+    "emailAlreadyExists": "Questa email è già in uso",
+    "passwordTooShort": "La password è troppo corta (minimo 8 caratteri)",
+    "passwordCompromised": "Questa password è stata compromessa. Per favore scegline un altro",
+    "verificationFailed": "Verifica non riuscita",
+    "sessionExists": "Esiste già una sessione",
+    "profileTypeRequired": "Seleziona un tipo di profilo",
+    "incorrectCode": "Codice di verifica errato.",
+    "accountLocked": "Il tuo account è temporaneamente bloccato. Per favore riprova più tardi.",
+    "accountSuspended": "Il tuo account è stato sospeso. Si prega di contattare l'assistenza.",
+    "verificationCode": "Codice di verifica a 6 cifre",
+    "verificationCodeSent": "Un codice di verifica è stato inviato al tuo indirizzo email.",
+    "verify": "Controllo",
+    "resendCode": "Invia nuovamente il codice",
+    "backToLogin": "Torna al login",
+    "codeRequired": "Inserisci il codice a 6 cifre",
+    "codeInvalid": "Codice non valido. Inserisci un codice di 6 cifre.",
+    "codeExpired": "Questo codice è scaduto. Si prega di richiederne uno nuovo.",
+    "secureAccess": "Proteggi il tuo accesso",
+    "enterCodeSentTo": "Inserisci il codice di 6 cifre inviato a",
+    "trustDevice": "Affidati a questo dispositivo per 30 giorni",
+    "trustDeviceTooltip": "Abilitando questa opzione, non dovrai più inserire un codice di verifica su questo browser per i prossimi 30 giorni.",
+    "verifying": "Verifica...",
+    "limitedTimeCode": "Codice a tempo limitato",
+    "codeExpiresIn": "Questo codice scade tra",
+    "didNotReceiveCode": "Non hai ricevuto il codice?",
+    "resend": "Invia nuovamente",
+    "sending": "Invio...",
+    "codeResent": "Ti è stato inviato un nuovo codice!",
+    "requestNewCode": "Richiedi un nuovo codice",
+    "close": "Vicino",
+    "securityBadge": "Crittografia AES-256 • Conforme al GDPR",
+    "2faAlt": "Verifica a due fattori",
+    "back": "Indietro"
+  },
+  "admin": {
+    "dashboard": "Pannello di controllo",
+    "users": "Utenti",
+    "properties": "Proprietà",
+    "transactions": "Transazioni",
+    "verifications": "Verifiche",
+    "reports": "Rapporti",
+    "disputes": "Controversie",
+    "staticPages": "Pagine statiche",
+    "settings": "Impostazioni",
+    "adminPanel": "Pannello di amministrazione",
+    "administrator": "Amministratore",
+    "logout": "Disconnetti",
+    "searchPlaceholder": "Per ricercare...",
+    "searching": "Ricerca...",
+    "results": "risultati",
+    "noResults": "Nessun risultato trovato",
+    "notifications": "Notifiche",
+    "new": "notizia)",
+    "viewAll": "Vedi tutte le notifiche",
+    "myProfile": "Il mio profilo",
+    "security": "Sicurezza",
+    "confirmLogout": "Conferma disconnessione",
+    "logoutMessage": "Sei sicuro di voler uscire?",
+    "cancel": "Cancellare",
+    "invitationDesAdmins": "Invito amministrativo",
+    "usersManagement": {
+      "page": {
+        "title": "Gestione utenti",
+        "description": "Gestisci tutti gli utenti della piattaforma"
+      },
+      "actions": {
+        "export": "Esporta dati",
+        "reset": "Reimposta i filtri",
+        "view": "Visualizza profilo",
+        "suspend": "Sospendere",
+        "ban": "Divieto",
+        "activate": "Abilitare"
+      },
+      "filters": {
+        "searchPlaceholder": "Cerca per nome, email, telefono...",
+        "role": {
+          "label": "Ruolo",
+          "all": "Tutti i ruoli",
+          "admin": "Ammin",
+          "property_owner": "Proprietario",
+          "tenant": "Inquilino"
+        },
+        "status": {
+          "label": "Stato",
+          "all": "Tutti gli stati",
+          "active": "Attivo",
+          "pending": "In attesa",
+          "suspended": "Sospeso",
+          "banned": "Vietato",
+          "rejected": "Respinto",
+          "inactive": "Inattivo"
+        },
+        "verification": {
+          "label": "Verifica",
+          "all": "Tutto",
+          "verified": "Verificato",
+          "pending": "In attesa",
+          "rejected": "Respinto"
+        },
+        "advanced": {
+          "title": "Filtri avanzati",
+          "dateRange": "Periodo di registrazione",
+          "minReliability": "Punteggio minimo di affidabilità",
+          "maxFraud": "Punteggio massimo di frode",
+          "minReliabilityPlaceholder": "≥50",
+          "maxFraudPlaceholder": "≤ 30"
+        }
+      },
+      "table": {
+        "headers": {
+          "user": "Utente",
+          "contact": "Contatto",
+          "role": "Ruolo",
+          "status": "Stato",
+          "verification": "Verifica",
+          "reliability": "Affidabilità",
+          "registration": "Registrazione",
+          "actions": "Azioni"
+        },
+        "user": {
+          "id": "ID"
+        }
+      },
+      "stats": {
+        "totalUsers": "Utenti totali",
+        "newUsers30d": "Nuovo (30 giorni)",
+        "activeUsers": "Attività",
+        "pendingUsers": "In attesa",
+        "suspendedUsers": "Sospeso",
+        "bannedUsers": "Vietato",
+        "verifiedIdentity": "Verificato",
+        "pendingApprovals": "In attesa di verifica",
+        "averageReliability": "Affidabilità media"
+      },
+      "badges": {
+        "verified": "✓ Verificato",
+        "pending": "⏳ In attesa",
+        "rejected": "✗ Rifiutato",
+        "unverified": "○ Non verificato",
+        "reliability": "Affidabilità",
+        "fraud": "Frode"
+      },
+      "alerts": {
+        "sessionExpired": "Sessione scaduta: accedi nuovamente",
+        "unauthorized": "Accesso non autorizzato",
+        "loadingError": "Errore di caricamento",
+        "exportError": "Errore durante l'esportazione",
+        "exportSuccess": "Esportazione riuscita"
+      },
+      "messages": {
+        "noUsers": "Nessun utente trovato",
+        "loading": "Caricamento..."
+      }
+    }
+  },
+  "common": {
+    "yes": "SÌ",
+    "no": "NO",
+    "save": "Salva",
+    "cancel": "Cancellare",
+    "delete": "ELIMINARE",
+    "edit": "Per modificare",
+    "close": "Vicino",
+    "confirm": "Confermare",
+    "back": "Indietro"
   }
 }

@@ -12,7 +12,6 @@
     "admin": "Administration",
     "logout": "Déconnexion"
   },
-
   "Login": {
     "welcome": "Bienvenue !",
     "subtitle": "Connectez-vous pour accéder à votre espace sécurisé.",
@@ -44,27 +43,377 @@
     "rememberMe": "Rester connecté",
     "legal": "Mentions légales",
     "privacy": "Confidentialité",
-    
     "emailRequired": "L'email est requis",
     "emailInvalid": "Veuillez entrer une adresse email valide",
     "passwordRequired": "Le mot de passe est requis",
     "userNotFound": "Aucun compte trouvé avec cette adresse email",
     "incorrectPassword": "Mot de passe incorrect. Veuillez réessayer !",
     "error": "Une erreur est survenue. Veuillez réessayer",
-    
     "usernameRequired": "Le nom d'utilisateur est requis",
     "usernameInvalid": "Format de nom d'utilisateur invalide !",
     "emailNotFound": "Aucun compte trouvé avec cet email",
     "usernameNotFound": "Aucun compte trouvé avec ce nom d'utilisateur",
-    
     "emailOrUsername": "Email ou nom d'utilisateur",
     "emailOrUsernamePlaceholder": "ex: john@exemple.com ou john_doe",
     "identifierRequired": "Email ou nom d'utilisateur requis",
-    "identifierInvalid": "Format invalide. Veuillez entrer un email ou un nom d'utilisateur valide ! ",
-    
+    "identifierInvalid": "Format invalide. Veuillez entrer un email ou un nom d'utilisateur valide !",
     "userNotFoundInDB": "Compte trouvé mais non synchronisé. Veuillez contacter le support !",
     "wrongRoleRenter": "Ce compte est un propriétaire. Veuillez sélectionner 'Propriétaire' !",
-    "wrongRoleOwner": "Ce compte est un locataire. Veuillez sélectionner 'Locataire' ! ",
-    "tooManyAttempts": "Trop de tentatives. Réessayez plus tard!"
+    "wrongRoleOwner": "Ce compte est un locataire. Veuillez sélectionner 'Locataire' !",
+    "tooManyAttempts": "Trop de tentatives. Réessayez plus tard!",
+    "emailAlreadyExists": "Cet email est déjà utilisé",
+    "passwordTooShort": "Le mot de passe est trop court (minimum 8 caractères)",
+    "passwordCompromised": "Ce mot de passe a été compromis. Veuillez en choisir un autre",
+    "verificationFailed": "La vérification a échoué",
+    "sessionExists": "Une session existe déjà",
+    "profileTypeRequired": "Veuillez sélectionner un type de profil",
+    "incorrectCode": "Code de vérification incorrect.",
+    "accountLocked": "Votre compte est temporairement verrouillé. Veuillez réessayer plus tard.",
+    "accountSuspended": "Votre compte a été suspendu. Veuillez contacter le support.",
+    "verificationCode": "Code de vérification à 6 chiffres",
+    "verificationCodeSent": "Un code de vérification a été envoyé à votre adresse email.",
+    "verify": "Vérifier",
+    "resendCode": "Renvoyer le code",
+    "backToLogin": "Retour à la connexion",
+    "codeRequired": "Veuillez entrer le code à 6 chiffres",
+    "codeInvalid": "Code invalide. Veuillez entrer un code à 6 chiffres.",
+    "codeExpired": "Ce code a expiré. Veuillez en demander un nouveau.",
+    "secureAccess": "Sécurisez votre accès",
+    "enterCodeSentTo": "Saisissez le code à 6 chiffres envoyé à",
+    "trustDevice": "Faire confiance à cet appareil pendant 30 jours",
+    "trustDeviceTooltip": "En activant cette option, vous n'aurez plus à saisir de code de vérification sur ce navigateur pendant les 30 prochains jours.",
+    "verifying": "Vérification...",
+    "limitedTimeCode": "Code à durée limitée",
+    "codeExpiresIn": "Ce code expire dans",
+    "didNotReceiveCode": "Vous n'avez pas reçu le code ?",
+    "resend": "Renvoyer",
+    "sending": "Envoi...",
+    "codeResent": "Un nouveau code vous a été envoyé !",
+    "requestNewCode": "Demander un nouveau code",
+    "close": "Fermer",
+    "securityBadge": "Chiffrement AES-256 • Conforme RGPD",
+    "2faAlt": "Vérification à deux facteurs",
+    "back": "Retour"
+  },
+  "admin": {
+    "dashboard": "Tableau de bord",
+    "users": "Utilisateurs",
+    "properties": "Propriétés",
+    "transactions": "Transactions",
+    "verifications": "Vérifications",
+    "reports": "Signalements",
+    "disputes": "Litiges",
+    "staticPages": "Pages Statiques",
+    "settings": "Paramètres",
+    "adminPanel": "Panneau d'administration",
+    "administrator": "Administrateur",
+    "logout": "Déconnexion",
+    "searchPlaceholder": "Rechercher...",
+    "searching": "Recherche...",
+    "results": "résultats",
+    "noResults": "Aucun résultat trouvé",
+    "notifications": "Notifications",
+    "new": "nouvelle(s)",
+    "viewAll": "Voir toutes les notifications",
+    "myProfile": "Mon Profil",
+    "security": "Sécurité",
+    "confirmLogout": "Confirmation de déconnexion",
+    "logoutMessage": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "cancel": "Annuler",
+    "invitationDesAdmins": "Invitation des admins",
+    "usersManagement": {
+      "page": {
+        "title": "Gestion des Utilisateurs",
+        "description": "Gérez tous les utilisateurs de la plateforme"
+      },
+      "actions": {
+        "export": "Exporter Données",
+        "reset": "Réinitialiser les filtres",
+        "view": "Voir profil",
+        "suspend": "Suspendre",
+        "ban": "Bannir",
+        "activate": "Activer"
+      },
+      "filters": {
+        "searchPlaceholder": "Rechercher par nom, email, téléphone...",
+        "role": {
+          "label": "Rôle",
+          "all": "Tous les rôles",
+          "admin": "Admin",
+          "property_owner": "Propriétaire",
+          "tenant": "Locataire"
+        },
+        "status": {
+          "label": "Statut",
+          "all": "Tous les statuts",
+          "active": "Actif",
+          "pending": "En attente",
+          "suspended": "Suspendu",
+          "banned": "Banni",
+          "rejected": "Rejeté",
+          "inactive": "Inactif"
+        },
+        "verification": {
+          "label": "Vérification",
+          "all": "Toutes",
+          "verified": "Vérifié",
+          "pending": "En attente",
+          "rejected": "Rejeté"
+        },
+        "advanced": {
+          "title": "Filtres avancés",
+          "dateRange": "Période d'inscription",
+          "minReliability": "Score fiabilité minimum",
+          "maxFraud": "Score fraude maximum",
+          "minReliabilityPlaceholder": "≥ 50",
+          "maxFraudPlaceholder": "≤ 30"
+        }
+      },
+      "table": {
+        "headers": {
+          "user": "Utilisateur",
+          "contact": "Contact",
+          "role": "Rôle",
+          "status": "Statut",
+          "verification": "Vérification",
+          "reliability": "Fiabilité",
+          "registration": "Inscription",
+          "actions": "Actions"
+        },
+        "user": {
+          "id": "ID"
+        }
+      },
+      "stats": {
+        "totalUsers": "Utilisateurs totaux",
+        "newUsers30d": "Nouveaux (30j)",
+        "activeUsers": "Actifs",
+        "pendingUsers": "En attente",
+        "suspendedUsers": "Suspendus",
+        "bannedUsers": "Bannis",
+        "verifiedIdentity": "Vérifiés",
+        "pendingApprovals": "En attente vérif",
+        "averageReliability": "Fiabilité moyenne"
+      },
+      "badges": {
+        "verified": "✓ Vérifié",
+        "pending": "⏳ En attente",
+        "rejected": "✗ Rejeté",
+        "unverified": "○ Non vérifié",
+        "reliability": "Fiabilité",
+        "fraud": "Fraude"
+      },
+      "alerts": {
+        "sessionExpired": "Session expirée - veuillez vous reconnecter",
+        "unauthorized": "Accès non autorisé",
+        "loadingError": "Erreur de chargement",
+        "exportError": "Erreur lors de l'export",
+        "exportSuccess": "Export réussi"
+      },
+      "messages": {
+        "noUsers": "Aucun utilisateur trouvé",
+        "loading": "Chargement..."
+      },"activateModal": {
+        "title": "Réactiver le compte",
+        "description": "Souhaitez-vous restaurer l'accès complet pour cet utilisateur ?",
+        "confirm": "Réactiver le compte",
+        "cancel": "Annuler",
+        "processing": "Traitement...",
+        "currentStatus": "Ce compte est actuellement {status}",
+        "status": {
+          "suspended": "suspendu",
+          "banned": "banni",
+          "locked": "bloqué",
+          "inactive": "inactif",
+          "rejected": "rejeté",
+          "unknown": "inconnu"
+        }},
+         "warningModal": {
+        "title": "Envoyer un avertissement",
+        "description": "Cette action sera enregistrée dans l'historique",
+        "reason": "Motif",
+        "reliability": "Fiab.",
+        "specifyReason": "Précisez le motif",
+        "optionalMessage": "Message (optionnel)",
+        "explainReason": "Expliquez la raison...",
+        "additionalDetails": "Détails supplémentaires...",
+        "notifyByEmail": "Notifier par email",
+        "infoMessage": "L'utilisateur recevra un avertissement visible dans son tableau de bord.",
+        "emailSent": "Email envoyé.",
+        "previousWarnings": "⚠️ Déjà {count} avertissement(s).",
+        "cancel": "Annuler",
+        "send": "Envoyer",
+        "processing": "Envoi...",
+        "error": "Erreur envoi avertissement",
+        "reasons": {
+          "inappropriateBehavior": {
+            "label": "Comportement inapproprié",
+            "description": "Langage ou attitude déplacée"
+          },
+          "spam": {
+            "label": "Spam",
+            "description": "Messages publicitaires non sollicités"
+          },
+          "falseInformation": {
+            "label": "Fausses informations",
+            "description": "Informations mensongères sur le profil"
+          },
+          "paymentIssues": {
+            "label": "Problèmes de paiement",
+            "description": "Paiements en retard ou refusés"
+          },
+          "multipleAccounts": {
+            "label": "Comptes multiples",
+            "description": "Création de plusieurs comptes"
+          },
+          "other": {
+            "label": "Autre",
+            "description": "Raison personnalisée"
+          }
+        }
+      }, "addNoteModal": {
+        "title": "Ajouter une note interne",
+        "description": "Visible seulement par les administrateurs",
+        "noteContent": "Contenu de la note",
+        "placeholder": "Rédigez votre note ici...",
+        "addNote": "Ajouter la note",
+        "adding": "Ajout...",
+        "cancel": "Annuler",
+        "enterLinkUrl": "Entrez l'URL du lien :",
+        "error": "Erreur lors de l'ajout de la note"
+      },
+       "banModal": {
+        "title": "Bannir définitivement l'utilisateur",
+        "description": "Cette action est irréversible",
+        "reason": "Raison du bannissement",
+        "selectReason": "Sélectionnez une raison...",
+        "evidence": "Preuves et détails",
+        "evidencePlaceholder": "Détaillez les raisons et joignez les liens vers les preuves si nécessaire...",
+        "confirmLabel": "Tapez",
+        "cancel": "Annuler",
+        "confirm": "Confirmer le bannissement",
+        "processing": "Traitement..."
+      },
+       "escalateModal": {
+        "title": "Escalade progressive",
+        "description": "Système de sanctions graduelles",
+        "currentLevel": "Niveau actuel",
+        "applySanction": "Sélectionner la prochaine étape",
+        "reason": "Raison de l'escalade",
+        "reasonPlaceholder": "Décrivez les motifs justifiant cette sanction...",
+        "warning": "Avertissement",
+        "suspension": "Suspension",
+        "ban": "Bannissement",
+        "alreadyApplied": "Déjà appliqué à l'utilisateur",
+        "locked": "Verrouillé - Étape suivante requise",
+        "historyNote": "Cette raison sera enregistrée dans l'historique de modération.",
+        "apply": "Appliquer l'escalade",
+        "cancel": "Annuler",
+        "processing": "Traitement..."
+      },
+       "suspendModal": {
+        "title": "Suspendre temporairement l'utilisateur",
+        "description": "L'utilisateur ne pourra pas se connecter pendant la durée choisie.",
+        "duration": "Durée de la suspension",
+        "day": "1 jour",
+        "days": "{count} jours",
+        "reason": "Raison de la suspension",
+        "selectReason": "Sélectionnez une raison",
+        "details": "Motif détaillé",
+        "detailsPlaceholder": "Expliquez brièvement la raison de cette mesure...",
+        "notify": "Notifier l'utilisateur par email",
+        "confirm": "Confirmer la suspension",
+        "cancel": "Annuler",
+        "processing": "Traitement...",
+        "enterLinkUrl": "Entrez l'URL du lien:",
+        "reasons": {
+          "spam": "Spam ou abus",
+          "tos": "Violation des conditions d'utilisation",
+          "safety": "Sécurité du compte",
+          "other": "Autre raison"
+        }
+
+    },  "lockUnlockModal": {
+        "lockTitle": "Bloquer le compte",
+        "unlockTitle": "Débloquer le compte",
+        "lockDescription": "Bloquer manuellement l'accès à ce compte.",
+        "unlockDescription": "Ce compte a été bloqué après plusieurs tentatives de connexion échouées.",
+        "reason": "Raison du blocage",
+        "reasonPlaceholder": "Pourquoi bloquer ce compte ?...",
+        "failedAttempts": "Tentatives échouées",
+        "lock": "Bloquer",
+        "unlock": "Débloquer",
+        "cancel": "Annuler",
+        "processing": "Traitement...",
+        "enterLinkUrl": "Entrez l'URL du lien:"
+      },"actionsHistoryModal": {
+        "title": "Historique des actions",
+        "subtitle": "NESTHUB Administration",
+        "close": "Fermer",
+        "admin": {
+          "default": "Admin"
+        },
+        "search": {
+          "placeholder": "Rechercher un admin, un utilisateur ou un motif..."
+        },
+        "filters": {
+          "label": "Filtrer par",
+          "all": "Tous les types"
+        },
+        "actionTypes": {
+          "suspension": "Suspension",
+          "ban": "Bannissement",
+          "activation": "Réactivation",
+          "unlock": "Déblocage",
+          "lock": "Blocage",
+          "warning": "Avertissement",
+          "escalation": "Escalade",
+          "note": "Note interne",
+          "rejectVerification": "Rejet vérification",
+          "validateVerification": "Validation vérification"
+        },
+        "status": {
+          "active": "Actif",
+          "suspended": "Suspendu",
+          "banned": "Banni",
+          "pending": "En attente",
+          "locked": "Bloqué",
+          "inactive": "Inactif",
+          "rejected": "Rejeté"
+        },
+        "user": {
+          "target": "Utilisateur"
+        },
+        "action": {
+          "reason": "Motif"
+        },
+        "undo": {
+          "button": "Annuler",
+          "processing": "Annulation...",
+          "title": "Annuler cette action"
+        },
+        "results": {
+          "showing": "Affichage de {start} à {end} sur {total} résultats",
+          "empty": "Aucune action trouvée"
+        },
+        "errors": {
+          "tokenNotAvailable": "Token non disponible",
+          "apiError": "Erreur API:",
+          "loadFailed": "Impossible de charger l'historique des actions",
+          "retry": "Réessayer"
+        }
+      }
+    }
+  },
+  "common": {
+    "yes": "Oui",
+    "no": "Non",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "close": "Fermer",
+    "confirm": "Confirmer",
+    "back": "Retour"
   }
 }

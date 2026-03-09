@@ -51,7 +51,7 @@
     "error": "An error has occurred. Please try again",
     "usernameRequired": "Username is required",
     "usernameInvalid": "Invalid username format!",
-    "emailNotFound": "No account found with this email",
+    "emailNotFound": "No accounts found with this email",
     "usernameNotFound": "No accounts found with this username",
     "emailOrUsername": "Email or username",
     "emailOrUsernamePlaceholder": "ex: john@example.com or john_doe",
@@ -60,6 +60,171 @@
     "userNotFoundInDB": "Account found but not synchronized. Please contact support!",
     "wrongRoleRenter": "This account is an owner. Please select 'Owner'!",
     "wrongRoleOwner": "This account is a tenant. Please select 'Tenant'!",
-    "tooManyAttempts": "Too many attempts. Try again later!"
+    "tooManyAttempts": "Too many attempts. Try again later!",
+    "emailAlreadyExists": "This email is already in use",
+    "passwordTooShort": "The password is too short (minimum 8 characters)",
+    "passwordCompromised": "This password has been compromised. Please choose another",
+    "verificationFailed": "Verification failed",
+    "sessionExists": "A session already exists",
+    "profileTypeRequired": "Please select a profile type",
+    "incorrectCode": "Incorrect verification code.",
+    "accountLocked": "Your account is temporarily locked. Please try again later.",
+    "accountSuspended": "Your account has been suspended. Please contact support.",
+    "verificationCode": "6-digit verification code",
+    "verificationCodeSent": "A verification code has been sent to your email address.",
+    "verify": "Check",
+    "resendCode": "Resend code",
+    "backToLogin": "Return to login",
+    "codeRequired": "Please enter the 6-digit code",
+    "codeInvalid": "Invalid code. Please enter a 6-digit code.",
+    "codeExpired": "This code has expired. Please request a new one.",
+    "secureAccess": "Secure your access",
+    "enterCodeSentTo": "Enter the 6-digit code sent to",
+    "trustDevice": "Trust this device for 30 days",
+    "trustDeviceTooltip": "By enabling this option, you will no longer have to enter a verification code on this browser for the next 30 days.",
+    "verifying": "Verification...",
+    "limitedTimeCode": "Limited time code",
+    "codeExpiresIn": "This code expires in",
+    "didNotReceiveCode": "Didn't receive the code?",
+    "resend": "Resend",
+    "sending": "Sending...",
+    "codeResent": "A new code has been sent to you!",
+    "requestNewCode": "Request a new code",
+    "close": "Close",
+    "securityBadge": "AES-256 encryption • GDPR compliant",
+    "2faAlt": "Two-factor verification",
+    "back": "Back"
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "properties": "Properties",
+    "transactions": "Transactions",
+    "verifications": "Verifications",
+    "reports": "Reports",
+    "disputes": "Disputes",
+    "staticPages": "Static Pages",
+    "settings": "Settings",
+    "adminPanel": "Admin Panel",
+    "administrator": "Administrator",
+    "logout": "Disconnect",
+    "searchPlaceholder": "To research...",
+    "searching": "Research...",
+    "results": "results",
+    "noResults": "No results found",
+    "notifications": "Notifications",
+    "new": "news)",
+    "viewAll": "See all notifications",
+    "myProfile": "My Profile",
+    "security": "Security",
+    "confirmLogout": "Disconnect confirmation",
+    "logoutMessage": "Are you sure you want to log out?",
+    "cancel": "Cancel",
+    "invitationDesAdmins": "Admin Invitation",
+    "usersManagement": {
+      "page": {
+        "title": "User Management",
+        "description": "Manage all platform users"
+      },
+      "actions": {
+        "export": "Export Data",
+        "reset": "Reset filters",
+        "view": "View profile",
+        "suspend": "Suspend",
+        "ban": "Ban",
+        "activate": "Enable"
+      },
+      "filters": {
+        "searchPlaceholder": "Search by name, email, phone...",
+        "role": {
+          "label": "Role",
+          "all": "All roles",
+          "admin": "Admin",
+          "property_owner": "Owner",
+          "tenant": "Tenant"
+        },
+        "status": {
+          "label": "Status",
+          "all": "All statuses",
+          "active": "Active",
+          "pending": "On hold",
+          "suspended": "Suspended",
+          "banned": "Banned",
+          "rejected": "Rejected",
+          "inactive": "Inactive"
+        },
+        "verification": {
+          "label": "Verification",
+          "all": "All",
+          "verified": "Verified",
+          "pending": "On hold",
+          "rejected": "Rejected"
+        },
+        "advanced": {
+          "title": "Advanced filters",
+          "dateRange": "Registration period",
+          "minReliability": "Minimum reliability score",
+          "maxFraud": "Maximum fraud score",
+          "minReliabilityPlaceholder": "≥50",
+          "maxFraudPlaceholder": "≤ 30"
+        }
+      },
+      "table": {
+        "headers": {
+          "user": "User",
+          "contact": "Contact",
+          "role": "Role",
+          "status": "Status",
+          "verification": "Verification",
+          "reliability": "Reliability",
+          "registration": "Registration",
+          "actions": "Actions"
+        },
+        "user": {
+          "id": "ID"
+        }
+      },
+      "stats": {
+        "totalUsers": "Total users",
+        "newUsers30d": "New (30 days)",
+        "activeUsers": "Assets",
+        "pendingUsers": "On hold",
+        "suspendedUsers": "Hanging",
+        "bannedUsers": "Banned",
+        "verifiedIdentity": "Verified",
+        "pendingApprovals": "Waiting for verification",
+        "averageReliability": "Average reliability"
+      },
+      "badges": {
+        "verified": "✓ Verified",
+        "pending": "⏳ Waiting",
+        "rejected": "✗ Rejected",
+        "unverified": "○ Not verified",
+        "reliability": "Reliability",
+        "fraud": "Fraud"
+      },
+      "alerts": {
+        "sessionExpired": "Session expired - please log in again",
+        "unauthorized": "Unauthorized access",
+        "loadingError": "Loading error",
+        "exportError": "Error during export",
+        "exportSuccess": "Export successful"
+      },
+      "messages": {
+        "noUsers": "No users found",
+        "loading": "Loading..."
+      }
+    }
+  },
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "DELETE",
+    "edit": "To modify",
+    "close": "Close",
+    "confirm": "Confirm",
+    "back": "Back"
   }
 }

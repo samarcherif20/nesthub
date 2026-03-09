@@ -51,7 +51,7 @@
     "error": "Es ist ein Fehler aufgetreten. Bitte versuchen Sie es erneut",
     "usernameRequired": "Benutzername ist erforderlich",
     "usernameInvalid": "Ungültiges Benutzernamenformat!",
-    "emailNotFound": "Mit dieser E-Mail wurde kein Konto gefunden",
+    "emailNotFound": "Mit dieser E-Mail wurden keine Konten gefunden",
     "usernameNotFound": "Mit diesem Benutzernamen wurden keine Konten gefunden",
     "emailOrUsername": "E-Mail oder Benutzername",
     "emailOrUsernamePlaceholder": "Beispiel: john@example.com oder john_doe",
@@ -60,6 +60,171 @@
     "userNotFoundInDB": "Konto gefunden, aber nicht synchronisiert. Bitte kontaktieren Sie den Support!",
     "wrongRoleRenter": "Dieses Konto ist ein Eigentümer. Bitte wählen Sie „Eigentümer“ aus!",
     "wrongRoleOwner": "Dieses Konto ist ein Mieter. Bitte wählen Sie „Mieter“ aus!",
-    "tooManyAttempts": "Zu viele Versuche. Versuchen Sie es später noch einmal!"
+    "tooManyAttempts": "Zu viele Versuche. Versuchen Sie es später noch einmal!",
+    "emailAlreadyExists": "Diese E-Mail wird bereits verwendet",
+    "passwordTooShort": "Das Passwort ist zu kurz (mindestens 8 Zeichen)",
+    "passwordCompromised": "Dieses Passwort wurde kompromittiert. Bitte wählen Sie eine andere",
+    "verificationFailed": "Die Überprüfung ist fehlgeschlagen",
+    "sessionExists": "Es existiert bereits eine Sitzung",
+    "profileTypeRequired": "Bitte wählen Sie einen Profiltyp aus",
+    "incorrectCode": "Falscher Bestätigungscode.",
+    "accountLocked": "Ihr Konto ist vorübergehend gesperrt. Bitte versuchen Sie es später noch einmal.",
+    "accountSuspended": "Ihr Konto wurde gesperrt. Bitte wenden Sie sich an den Support.",
+    "verificationCode": "6-stelliger Bestätigungscode",
+    "verificationCodeSent": "Ein Bestätigungscode wurde an Ihre E-Mail-Adresse gesendet.",
+    "verify": "Überprüfen",
+    "resendCode": "Code erneut senden",
+    "backToLogin": "Zurück zum Login",
+    "codeRequired": "Bitte geben Sie den 6-stelligen Code ein",
+    "codeInvalid": "Ungültiger Code. Bitte geben Sie einen 6-stelligen Code ein.",
+    "codeExpired": "Dieser Code ist abgelaufen. Bitte fordern Sie ein neues an.",
+    "secureAccess": "Sichern Sie Ihren Zugang",
+    "enterCodeSentTo": "Geben Sie den 6-stelligen Code ein, der an gesendet wurde",
+    "trustDevice": "Vertrauen Sie diesem Gerät 30 Tage lang",
+    "trustDeviceTooltip": "Wenn Sie diese Option aktivieren, müssen Sie in den nächsten 30 Tagen keinen Bestätigungscode mehr in diesem Browser eingeben.",
+    "verifying": "Überprüfung...",
+    "limitedTimeCode": "Zeitlich begrenzter Code",
+    "codeExpiresIn": "Dieser Code läuft ab",
+    "didNotReceiveCode": "Sie haben den Code nicht erhalten?",
+    "resend": "Erneut senden",
+    "sending": "Senden...",
+    "codeResent": "Ein neuer Code wurde Ihnen zugesandt!",
+    "requestNewCode": "Fordern Sie einen neuen Code an",
+    "close": "Schließen",
+    "securityBadge": "AES-256-Verschlüsselung • DSGVO-konform",
+    "2faAlt": "Zwei-Faktor-Verifizierung",
+    "back": "Zurück"
+  },
+  "admin": {
+    "dashboard": "Armaturenbrett",
+    "users": "Benutzer",
+    "properties": "Eigenschaften",
+    "transactions": "Transaktionen",
+    "verifications": "Überprüfungen",
+    "reports": "Berichte",
+    "disputes": "Streitigkeiten",
+    "staticPages": "Statische Seiten",
+    "settings": "Einstellungen",
+    "adminPanel": "Admin-Panel",
+    "administrator": "Administrator",
+    "logout": "Trennen",
+    "searchPlaceholder": "Zur Recherche...",
+    "searching": "Forschung...",
+    "results": "Ergebnisse",
+    "noResults": "Keine Ergebnisse gefunden",
+    "notifications": "Benachrichtigungen",
+    "new": "Nachricht)",
+    "viewAll": "Alle Benachrichtigungen anzeigen",
+    "myProfile": "Mein Profil",
+    "security": "Sicherheit",
+    "confirmLogout": "Bestätigung der Trennung",
+    "logoutMessage": "Möchten Sie sich wirklich abmelden?",
+    "cancel": "Stornieren",
+    "invitationDesAdmins": "Admin-Einladung",
+    "usersManagement": {
+      "page": {
+        "title": "Benutzerverwaltung",
+        "description": "Verwalten Sie alle Plattformbenutzer"
+      },
+      "actions": {
+        "export": "Daten exportieren",
+        "reset": "Filter zurücksetzen",
+        "view": "Profil ansehen",
+        "suspend": "Aussetzen",
+        "ban": "Verbot",
+        "activate": "Aktivieren"
+      },
+      "filters": {
+        "searchPlaceholder": "Suche nach Name, E-Mail, Telefon...",
+        "role": {
+          "label": "Rolle",
+          "all": "Alle Rollen",
+          "admin": "Admin",
+          "property_owner": "Eigentümer",
+          "tenant": "Mieter"
+        },
+        "status": {
+          "label": "Status",
+          "all": "Alle Status",
+          "active": "Aktiv",
+          "pending": "In der Warteschleife",
+          "suspended": "Ausgesetzt",
+          "banned": "Verboten",
+          "rejected": "Abgelehnt",
+          "inactive": "Inaktiv"
+        },
+        "verification": {
+          "label": "Überprüfung",
+          "all": "Alle",
+          "verified": "Verifiziert",
+          "pending": "In der Warteschleife",
+          "rejected": "Abgelehnt"
+        },
+        "advanced": {
+          "title": "Erweiterte Filter",
+          "dateRange": "Anmeldezeitraum",
+          "minReliability": "Mindestzuverlässigkeitsbewertung",
+          "maxFraud": "Maximaler Betrugswert",
+          "minReliabilityPlaceholder": "≥50",
+          "maxFraudPlaceholder": "≤ 30"
+        }
+      },
+      "table": {
+        "headers": {
+          "user": "Benutzer",
+          "contact": "Kontakt",
+          "role": "Rolle",
+          "status": "Status",
+          "verification": "Überprüfung",
+          "reliability": "Zuverlässigkeit",
+          "registration": "Anmeldung",
+          "actions": "Aktionen"
+        },
+        "user": {
+          "id": "AUSWEIS"
+        }
+      },
+      "stats": {
+        "totalUsers": "Gesamtzahl der Benutzer",
+        "newUsers30d": "Neu (30 Tage)",
+        "activeUsers": "Vermögenswerte",
+        "pendingUsers": "In der Warteschleife",
+        "suspendedUsers": "Hängend",
+        "bannedUsers": "Verboten",
+        "verifiedIdentity": "Verifiziert",
+        "pendingApprovals": "Warten auf Bestätigung",
+        "averageReliability": "Durchschnittliche Zuverlässigkeit"
+      },
+      "badges": {
+        "verified": "✓ Verifiziert",
+        "pending": "⏳ Warten",
+        "rejected": "✗ Abgelehnt",
+        "unverified": "○ Nicht verifiziert",
+        "reliability": "Zuverlässigkeit",
+        "fraud": "Betrug"
+      },
+      "alerts": {
+        "sessionExpired": "Sitzung abgelaufen – bitte melden Sie sich erneut an",
+        "unauthorized": "Unbefugter Zugriff",
+        "loadingError": "Fehler beim Laden",
+        "exportError": "Fehler beim Export",
+        "exportSuccess": "Export erfolgreich"
+      },
+      "messages": {
+        "noUsers": "Keine Benutzer gefunden",
+        "loading": "Laden..."
+      }
+    }
+  },
+  "common": {
+    "yes": "Ja",
+    "no": "NEIN",
+    "save": "Speichern",
+    "cancel": "Stornieren",
+    "delete": "LÖSCHEN",
+    "edit": "Zu ändern",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "back": "Zurück"
   }
 }

@@ -51,7 +51,7 @@
     "error": "لقد حدث خطأ. يرجى المحاولة مرة أخرى",
     "usernameRequired": "اسم المستخدم مطلوب",
     "usernameInvalid": "تنسيق اسم المستخدم غير صالح!",
-    "emailNotFound": "لم يتم العثور على حساب مع هذا البريد الإلكتروني",
+    "emailNotFound": "لم يتم العثور على حسابات مع هذا البريد الإلكتروني",
     "usernameNotFound": "لم يتم العثور على حسابات باسم المستخدم هذا",
     "emailOrUsername": "البريد الإلكتروني أو اسم المستخدم",
     "emailOrUsernamePlaceholder": "على سبيل المثال: john@example.com أو john_doe",
@@ -60,6 +60,171 @@
     "userNotFoundInDB": "تم العثور على الحساب ولكن لم تتم مزامنته. يرجى الاتصال بالدعم!",
     "wrongRoleRenter": "هذا الحساب مالك. الرجاء تحديد \"المالك\"!",
     "wrongRoleOwner": "هذا الحساب مستأجر. الرجاء تحديد \"المستأجر\"!",
-    "tooManyAttempts": "محاولات كثيرة جدًا. حاول مرة أخرى لاحقا!"
+    "tooManyAttempts": "محاولات كثيرة جدًا. حاول مرة أخرى لاحقا!",
+    "emailAlreadyExists": "هذا البريد الإلكتروني قيد الاستخدام بالفعل",
+    "passwordTooShort": "كلمة المرور قصيرة جدًا (8 أحرف على الأقل)",
+    "passwordCompromised": "لقد تم اختراق كلمة المرور هذه. الرجاء اختيار آخر",
+    "verificationFailed": "فشل التحقق",
+    "sessionExists": "الجلسة موجودة بالفعل",
+    "profileTypeRequired": "الرجاء تحديد نوع الملف الشخصي",
+    "incorrectCode": "رمز التحقق غير صحيح.",
+    "accountLocked": "حسابك مغلق مؤقتا. يرجى المحاولة مرة أخرى في وقت لاحق.",
+    "accountSuspended": "لقد تم تعليق حسابك. يرجى الاتصال بالدعم.",
+    "verificationCode": "رمز التحقق المكون من 6 أرقام",
+    "verificationCodeSent": "تم إرسال رمز التحقق إلى عنوان بريدك الإلكتروني.",
+    "verify": "يفحص",
+    "resendCode": "إعادة إرسال الرمز",
+    "backToLogin": "العودة إلى تسجيل الدخول",
+    "codeRequired": "الرجاء إدخال الرمز المكون من 6 أرقام",
+    "codeInvalid": "رمز غير صالح. الرجاء إدخال رمز مكون من 6 أرقام.",
+    "codeExpired": "لقد انتهت صلاحية هذا الرمز. يرجى طلب واحدة جديدة.",
+    "secureAccess": "تأمين الوصول الخاص بك",
+    "enterCodeSentTo": "أدخل الرمز المكون من 6 أرقام المرسل إليه",
+    "trustDevice": "ثق بهذا الجهاز لمدة 30 يومًا",
+    "trustDeviceTooltip": "من خلال تمكين هذا الخيار، لن تضطر بعد الآن إلى إدخال رمز التحقق على هذا المتصفح لمدة 30 يومًا القادمة.",
+    "verifying": "تَحَقّق...",
+    "limitedTimeCode": "رمز زمني محدود",
+    "codeExpiresIn": "تنتهي صلاحية هذا الرمز في",
+    "didNotReceiveCode": "لم تتلق الرمز؟",
+    "resend": "إعادة الإرسال",
+    "sending": "إرسال...",
+    "codeResent": "تم إرسال رمز جديد إليك!",
+    "requestNewCode": "اطلب رمزًا جديدًا",
+    "close": "يغلق",
+    "securityBadge": "تشفير AES-256 • متوافق مع اللائحة العامة لحماية البيانات",
+    "2faAlt": "التحقق الثنائي",
+    "back": "خلف"
+  },
+  "admin": {
+    "dashboard": "لوحة القيادة",
+    "users": "المستخدمين",
+    "properties": "ملكيات",
+    "transactions": "المعاملات",
+    "verifications": "التحقق",
+    "reports": "التقارير",
+    "disputes": "النزاعات",
+    "staticPages": "الصفحات الثابتة",
+    "settings": "إعدادات",
+    "adminPanel": "لوحة الإدارة",
+    "administrator": "المسؤول",
+    "logout": "قطع الاتصال",
+    "searchPlaceholder": "للبحث...",
+    "searching": "بحث...",
+    "results": "نتائج",
+    "noResults": "لم يتم العثور على نتائج",
+    "notifications": "إشعارات",
+    "new": "أخبار)",
+    "viewAll": "رؤية جميع الإخطارات",
+    "myProfile": "ملفي الشخصي",
+    "security": "حماية",
+    "confirmLogout": "تأكيد قطع الاتصال",
+    "logoutMessage": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+    "cancel": "يلغي",
+    "invitationDesAdmins": "دعوة المشرف",
+    "usersManagement": {
+      "page": {
+        "title": "إدارة المستخدم",
+        "description": "إدارة جميع مستخدمي المنصة"
+      },
+      "actions": {
+        "export": "تصدير البيانات",
+        "reset": "إعادة تعيين المرشحات",
+        "view": "عرض الملف الشخصي",
+        "suspend": "تعليق",
+        "ban": "حظر",
+        "activate": "يُمكَِن"
+      },
+      "filters": {
+        "searchPlaceholder": "البحث بالاسم والبريد الإلكتروني والهاتف ...",
+        "role": {
+          "label": "دور",
+          "all": "جميع الأدوار",
+          "admin": "مسؤل",
+          "property_owner": "مالك",
+          "tenant": "مستأجر"
+        },
+        "status": {
+          "label": "حالة",
+          "all": "جميع الحالات",
+          "active": "نشيط",
+          "pending": "في الانتظار",
+          "suspended": "معلق",
+          "banned": "محظور",
+          "rejected": "مرفوض",
+          "inactive": "غير نشط"
+        },
+        "verification": {
+          "label": "تَحَقّق",
+          "all": "الجميع",
+          "verified": "تم التحقق منه",
+          "pending": "في الانتظار",
+          "rejected": "مرفوض"
+        },
+        "advanced": {
+          "title": "مرشحات متقدمة",
+          "dateRange": "فترة التسجيل",
+          "minReliability": "الحد الأدنى من درجة الموثوقية",
+          "maxFraud": "الحد الأقصى لدرجة الاحتيال",
+          "minReliabilityPlaceholder": "≥50",
+          "maxFraudPlaceholder": "≥ 30"
+        }
+      },
+      "table": {
+        "headers": {
+          "user": "مستخدم",
+          "contact": "اتصال",
+          "role": "دور",
+          "status": "حالة",
+          "verification": "تَحَقّق",
+          "reliability": "مصداقية",
+          "registration": "تسجيل",
+          "actions": "الإجراءات"
+        },
+        "user": {
+          "id": "بطاقة تعريف"
+        }
+      },
+      "stats": {
+        "totalUsers": "إجمالي المستخدمين",
+        "newUsers30d": "جديد (30 يومًا)",
+        "activeUsers": "أصول",
+        "pendingUsers": "في الانتظار",
+        "suspendedUsers": "معلق",
+        "bannedUsers": "محظور",
+        "verifiedIdentity": "تم التحقق منه",
+        "pendingApprovals": "في انتظار التحقق",
+        "averageReliability": "متوسط ​​الموثوقية"
+      },
+      "badges": {
+        "verified": "✓ تم التحقق منها",
+        "pending": "⏳ في الإنتظار",
+        "rejected": "✗ مرفوض",
+        "unverified": "○ لم يتم التحقق منها",
+        "reliability": "مصداقية",
+        "fraud": "احتيال"
+      },
+      "alerts": {
+        "sessionExpired": "انتهت الجلسة - يرجى تسجيل الدخول مرة أخرى",
+        "unauthorized": "الوصول غير المصرح به",
+        "loadingError": "خطأ في التحميل",
+        "exportError": "حدث خطأ أثناء التصدير",
+        "exportSuccess": "تم التصدير بنجاح"
+      },
+      "messages": {
+        "noUsers": "لم يتم العثور على مستخدمين",
+        "loading": "تحميل..."
+      }
+    }
+  },
+  "common": {
+    "yes": "نعم",
+    "no": "لا",
+    "save": "يحفظ",
+    "cancel": "يلغي",
+    "delete": "يمسح",
+    "edit": "للتعديل",
+    "close": "يغلق",
+    "confirm": "يتأكد",
+    "back": "خلف"
   }
 }

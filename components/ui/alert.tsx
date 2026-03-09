@@ -1,66 +1,60 @@
-import * as React from "react"
-import { cva, type VariantProps } from "class-variance-authority"
+// components/ui/Alert.tsx
+'use client';
 
-import { cn } from "@/lib/utils"
+import { useEffect, useState } from 'react';
+import { IoCheckmarkCircle, IoCloseCircle, IoInformation, IoWarning } from 'react-icons/io5';
 
-const alertVariants = cva(
-  "relative w-full rounded-lg border px-4 py-3 text-sm grid has-[>svg]:grid-cols-[calc(var(--spacing)*4)_1fr] grid-cols-[0_1fr] has-[>svg]:gap-x-3 gap-y-0.5 items-start [&>svg]:size-4 [&>svg]:translate-y-0.5 [&>svg]:text-current",
-  {
-    variants: {
-      variant: {
-        default: "bg-card text-card-foreground",
-        destructive:
-          "text-destructive bg-card [&>svg]:text-current *:data-[slot=alert-description]:text-destructive/90",
-      },
-    },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
-
-function Alert({
-  className,
-  variant,
-  ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof alertVariants>) {
-  return (
-    <div
-      data-slot="alert"
-      role="alert"
-      className={cn(alertVariants({ variant }), className)}
-      {...props}
-    />
-  )
+interface AlertProps {
+  type: 'success' | 'error' | 'info' | 'warning';
+  message: string;
+  onClose?: () => void;
+  autoClose?: number;
 }
 
-function AlertTitle({ className, ...props }: React.ComponentProps<"div">) {
+const icons = {
+  success: <IoCheckmarkCircle className="w-5 h-5" />,
+  error: <IoCloseCircle className="w-5 h-5" />,
+  info: <IoInformation className="w-5 h-5" />,
+  warning: <IoWarning className="w-5 h-5" />,
+};
+
+const styles = {
+  success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  error: 'bg-red-50 text-red-700 border-red-200',
+  info: 'bg-blue-50 text-blue-700 border-blue-200',
+  warning: 'bg-amber-50 text-amber-700 border-amber-200',
+};
+
+export default function Alert({ type, message, onClose, autoClose = 5000 }: AlertProps) {
+  const [isVisible, setIsVisible] = useState(true);
+
+  useEffect(() => {
+    if (autoClose && onClose) {
+      const timer = setTimeout(() => {
+        setIsVisible(false);
+        onClose();
+      }, autoClose);
+      return () => clearTimeout(timer);
+    }
+  }, [autoClose, onClose]);
+
+  if (!isVisible) return null;
+
   return (
-    <div
-      data-slot="alert-title"
-      className={cn(
-        "col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight",
-        className
+    <div className={`flex items-center gap-3 p-4 rounded-lg border ${styles[type]}`}>
+      <span className="shrink-0">{icons[type]}</span>
+      <p className="flex-1 text-sm font-medium">{message}</p>
+      {onClose && (
+        <button
+          onClick={() => {
+            setIsVisible(false);
+            onClose();
+          }}
+          className="shrink-0 p-1 hover:opacity-70 transition-opacity"
+        >
+          <IoCloseCircle className="w-4 h-4" />
+        </button>
       )}
-      {...props}
-    />
-  )
+    </div>
+  );
 }
-
-function AlertDescription({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="alert-description"
-      className={cn(
-        "text-muted-foreground col-start-2 grid justify-items-start gap-1 text-sm [&_p]:leading-relaxed",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-export { Alert, AlertTitle, AlertDescription }

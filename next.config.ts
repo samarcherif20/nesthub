@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin("./i18n.config.ts");
 
 const nextConfig: NextConfig = {
   images: {
+    
     remotePatterns: [
       {
         protocol: "https",
@@ -13,6 +14,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.clerk.dev",
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.clerk.com',
+        pathname: '/**',
       },
     ],
   },

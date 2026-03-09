@@ -7,6 +7,243 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                   String                @id @default(uuid())
+  clerkId              String                @unique
+  email                String                @unique
+  username             String?               @unique
+  firstName            String?
+  lastName             String?
+  phoneNumber          String?
+  profilePictureUrl    String?
+  bio                  String?
+  spokenLanguages      String[]              @default([])
+  preferredLocale      String                @default("fr")
+  role                 UserRole              @default(TENANT)
+  status               AccountStatus         @default(PENDING_VALIDATION)
+  isEmailVerified      Boolean               @default(false)
+  isPhoneVerified      Boolean               @default(false)
+  isIdentityVerified   Boolean               @default(false)
+  cinNumber            String?               @unique
+  cinData              Json?
+  verifiedAt           DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  lastLogin            DateTime?
+  deletedAt            DateTime?
+  suspendedUntil       DateTime?
+  failedLoginAttempts  Int                   @default(0)
+  escalationLevel   Int?     // 1 = Avertissement, 2 = Suspension, 3 = Bannissement
+
+  writtenNotes         AdminNote[]           @relation("AuthorUser")
+  adminNotes           AdminNote[]           @relation("TargetUser")
+  auditLogs            AuditLog[]
+  actionsPerformed     UserAction[]          @relation("AdminUser")
+  userActions          UserAction[]
+  loginHistory         UserLoginHistory[]
+  reportsReceived      UserReport[]          @relation("ReportedUser")
+  reportsMade          UserReport[]          @relation("Reporter")
+  stats                UserStats?
+  verificationRequests VerificationRequest[]
+ 
+  @@index([email])
+  @@index([status])
+  @@index([role])
+  @@index([createdAt])
+  @@index([cinNumber])
+  @@map("users")
+}
+
+model AdminInvitation {
+  id         String    @id @default(uuid())
+  email      String    @unique
+  token      String    @unique
+  invitedBy  String
+  role       UserRole  @default(ADMIN)
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email])
+  @@index([token])
+  @@index([expiresAt])
+  @@map("admin_invitations")
+}
+
+model VerificationRequest {
+  id               String             @id @default(uuid())
+  userId           String
+  documentFrontUrl String
+  documentBackUrl  String?
+  selfieUrl        String?
+  extractedData    Json?
+  ocrSuccess       Boolean            @default(false)
+  confidenceScore  Float?
+  errorMessage     String?
+  rawOcrText       String?
+  status           VerificationStatus @default(PENDING)
+  reviewedBy       String?
+  reviewedAt       DateTime?
+  rejectionReason  String?
+  rejectionMotif   String?
+  adminComment     String?
+  processingTime   Int?
+  ipAddress        String?
+  userAgent        String?
+  submittedAt      DateTime           @default(now())
+  processedAt      DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([submittedAt])
+  @@index([reviewedBy])
+  @@map("verification_requests")
+}
+
+model UserAction {
+  id             String         @id @default(uuid())
+  userId         String
+  actionType     String
+  performedBy    String
+  reason         String?
+  motif          String?
+  internalNote   String?
+  duration       Int?
+  suspendedUntil DateTime?
+  previousStatus AccountStatus?
+  newStatus      AccountStatus?
+  createdAt      DateTime       @default(now())
+  level          Int?
+  content        String?
+  admin          User           @relation("AdminUser", fields: [performedBy], references: [id])
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([performedBy])
+  @@index([createdAt])
+  @@map("user_actions")
+}
+
+model AdminNote {
+  id           String   @id @default(uuid())
+  authorId     String
+  targetUserId String
+  content      String
+  isPrivate    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  author       User     @relation("AuthorUser", fields: [authorId], references: [id])
+  targetUser   User     @relation("TargetUser", fields: [targetUserId], references: [id])
+
+  @@index([authorId])
+  @@index([targetUserId])
+  @@map("admin_notes")
+}
+
+model UserReport {
+  id             String    @id @default(uuid())
+  reporterId     String
+  reportedUserId String
+  reason         String
+  description    String?
+  evidence       Json?
+  status         String    @default("PENDING")
+  priority       String    @default("NORMAL")
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  actionTaken    String?
+  adminComment   String?
+  actionMotif    String?
+  createdAt      DateTime  @default(now())
+  reportedUser   User      @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  reporter       User      @relation("Reporter", fields: [reporterId], references: [id])
+
+  @@index([reporterId])
+  @@index([reportedUserId])
+  @@index([status])
+  @@index([priority])
+  @@map("user_reports")
+}
+
+model UserLoginHistory {
+  id            String   @id @default(uuid())
+  userId        String
+  ipAddress     String?
+  userAgent     String?
+  device        String?
+  location      String?
+  success       Boolean  @default(true)
+  failureReason String?
+  createdAt     DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_login_history")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  adminId    String
+  action     String
+  actionType String
+  targetType String
+  targetId   String
+  details    Json?
+  motif      String?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+  admin      User     @relation(fields: [adminId], references: [id])
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model UserStats {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  reliabilityScore  Int       @default(50)
+  fraudScore        Int       @default(0)
+  totalBookings     Int       @default(0)
+  totalListings     Int       @default(0)
+  totalReviews      Int       @default(0)
+  averageRating     Float?    @default(0)
+  totalSpent        Float?    @default(0)
+  totalEarned       Float?    @default(0)
+  lastActive        DateTime?
+  loginCount        Int       @default(0)
+  reportCount       Int       @default(0)
+  disputeCount      Int       @default(0)
+  cancellationCount Int       @default(0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([reliabilityScore])
+  @@index([fraudScore])
+  @@map("user_stats")
+}
+
+model StaticPage {
+  id          String   @id @default(uuid())
+  type        String   @unique
+  title       String
+  slug        String   @unique
+  htmlContent String
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@index([slug])
+  @@index([type])
+  @@map("static_pages")
+}
+
 enum UserRole {
   ADMIN
   PROPERTY_OWNER
@@ -19,63 +256,14 @@ enum AccountStatus {
   PERMANENTLY_BANNED
   PENDING_VALIDATION
   SECURITY_LOCKED
+  INACTIVE
+  REJECTED
+  ANUALLY_BLOCKED
+  MANUALLY_BLOCKED
 }
 
 enum VerificationStatus {
   PENDING
   VALIDATED
   REJECTED
-}
-
-model User {
-  id                String   @id @default(uuid())
-  clerkId           String   @unique
-  email             String   @unique
-  username          String?  @unique  // ← AJOUTE CETTE LIGNE
-  firstName         String?
-  lastName          String?
-  phoneNumber       String?
-  profilePictureUrl String?
-  bio               String?  @db.Text
-  spokenLanguages   String[] @default([])
-  preferredLocale   String   @default("fr")
-  
-  role              UserRole      @default(TENANT)
-  status            AccountStatus @default(PENDING_VALIDATION)
-  isEmailVerified   Boolean       @default(false)
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime 
-  lastLogin         DateTime?
-
-  identityVerification IdentityVerification?
-
-  @@map("users")
-}
-
-model IdentityVerification {
-  id               String             @id @default(uuid())
-  userId           String             @unique
-  documentFrontUrl String?
-  documentBackUrl  String?
-  submissionDate   DateTime?
-  processedDate    DateTime?
-  status           VerificationStatus @default(PENDING)
-  adminComment     String?            @db.Text
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("identity_verifications")
-}
-
-model StaticPage {
-  id          String   @id @default(uuid())
-  type        String   @unique
-  title       String
-  slug        String   @unique
-  htmlContent String   @db.Text
-  updatedAt   DateTime @updatedAt
-  updatedBy   String?
-
-  @@map("static_pages")
 }
