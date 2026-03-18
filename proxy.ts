@@ -42,7 +42,7 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   // Pages publiques
   // ========================================
-  const publicPaths = ["/", "/login", "/inscription", "/cgu", "/faq", "/about", "/how-it-works",];
+  const publicPaths = ["/", "/login", "/inscription", "/cgu", "/faq", "/about", "/how-it-works","/complete-profile",];
   if (publicPaths.includes(pathWithoutLocale)) {
     return intlResponse;
   }

@@ -58,7 +58,7 @@ export async function POST(req: Request) {
     console.log("✅ Utilisateur créé:", user);
     return NextResponse.json({ success: true, user });
     
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ ERREUR COMPLÈTE:", error);
     if (error.code) {
       console.error("📌 Code erreur Prisma:", error.code);

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { otpStore } from "@/app/api/users/add-whatsapp/route";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
@@ -41,6 +42,23 @@ export async function POST(req: Request) {
     otpStore.delete(userId);
 
     console.log("✅ OTP vérifié pour:", userId);
+
+    // ✅ Sauvegarder dans Prisma
+    try {
+      await prisma.user.update({
+        where: { clerkId: userId },
+        data: {
+          phoneNumber,
+          phoneVerified: true,
+          phoneVerifiedAt: new Date(),
+          status: "ACTIVE",
+        },
+      });
+      console.log("✅ Phone verified sauvegardé en DB");
+    } catch (prismaError: any) {
+      console.error("⚠️ Erreur Prisma (non bloquant):", prismaError.message);
+      // On continue même si Prisma échoue car l'OTP est vérifié
+    }
 
     return NextResponse.json({
       success: true,

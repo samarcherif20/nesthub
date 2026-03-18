@@ -2,13 +2,12 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 import easyocr
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageEnhance
 import io
 import re
 
 app = FastAPI()
 
-# Autoriser les requêtes depuis Next.js
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -16,18 +15,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialiser EasyOCR (arabe + français)
 reader = easyocr.Reader(['ar', 'en'], gpu=False)
 
 @app.post("/ocr")
 async def extract_text(file: UploadFile = File(...)):
     try:
-        # Lire l'image
         contents = await file.read()
         image = Image.open(io.BytesIO(contents))
+        image = image.convert("RGB")
+
+        # Améliorer la qualité de l'image
+        enhancer = ImageEnhance.Contrast(image)
+        image = enhancer.enhance(2.0)
+        enhancer = ImageEnhance.Sharpness(image)
+        image = enhancer.enhance(2.0)
+
         image_np = np.array(image)
 
-        # Extraire le texte
         results = reader.readtext(image_np)
         texts = [text for (_, text, confidence) in results if confidence > 0.3]
         full_text = " ".join(texts)
@@ -35,8 +39,8 @@ async def extract_text(file: UploadFile = File(...)):
         print("📄 Texte extrait:", full_text)
         print("📄 Lignes:", texts)
 
-        # Parser les infos de la CIN tunisienne
         parsed = parse_cin(texts, full_text)
+        print("✅ Parsed:", parsed)
 
         return {
             "success": True,
@@ -46,6 +50,7 @@ async def extract_text(file: UploadFile = File(...)):
         }
 
     except Exception as e:
+        print("❌ Erreur OCR:", str(e))
         return {"success": False, "error": str(e)}
 
 
@@ -62,18 +67,18 @@ def parse_cin(lines: list, full_text: str):
     if cin_match:
         result["cinNumber"] = cin_match.group()
 
-    # Chercher la date de naissance
-    date_match = re.search(r'\b(\d{2})[./\-](\d{2})[./\-](\d{4})\b', full_text)
-    if date_match:
-        result["birthDate"] = f"{date_match.group(3)}-{date_match.group(2)}-{date_match.group(1)}"
+    # Chercher l'année de naissance (4 chiffres commençant par 19 ou 20)
+    year_match = re.search(r'\b(19|20)\d{2}\b', full_text)
+    if year_match:
+        result["birthDate"] = year_match.group()
 
-    # Chercher nom/prénom (lettres majuscules)
-    name_lines = [l for l in lines if re.match(r'^[A-ZÀ-Ü\s]{3,}$', l.strip())]
-    if len(name_lines) >= 2:
-        result["lastName"] = name_lines[0].strip()
-        result["firstName"] = name_lines[1].strip()
-    elif len(name_lines) == 1:
-        result["lastName"] = name_lines[0].strip()
+    # Chercher les lignes arabes pour nom/prénom
+    arabic_lines = [l for l in lines if re.search(r'[\u0600-\u06FF]', l) and len(l) > 3]
+    if len(arabic_lines) >= 2:
+        result["lastName"] = arabic_lines[0].strip()
+        result["firstName"] = arabic_lines[1].strip()
+    elif len(arabic_lines) == 1:
+        result["lastName"] = arabic_lines[0].strip()
 
     return result
 

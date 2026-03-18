@@ -27,6 +27,17 @@ import { MdOutlineCameraAlt } from "react-icons/md";
 import { MdVerified } from "react-icons/md";
 import { FaGavel } from "react-icons/fa6";
 import { TiCloudStorage } from "react-icons/ti";
+import { FaLock } from "react-icons/fa";
+import { FaRegUser } from "react-icons/fa";
+import { RiUserFollowFill } from "react-icons/ri";
+import { MdLockOutline } from "react-icons/md";
+import { FaUsers } from "react-icons/fa6";
+import { FaWhatsapp } from "react-icons/fa6";
+import ImageCropper from "@/components/ImageCropper";
+
+
+
+
 
 
 
@@ -84,7 +95,8 @@ const WhatsAppAlert = ({ message, onConfirm, onClose }: { message: string; onCon
     >
       <div className="text-center">
         <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="material-icons text-green-500 text-3xl">whatsapp</span>
+          <span className="material-icons text-green-500 text-3xl"><FaWhatsapp />
+</span>
         </div>
         <h3 className="text-xl font-bold mb-2">Code envoyé !</h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
@@ -169,6 +181,9 @@ export default function InscriptionPage() {
   // Après tes autres useState
   const [phoneNumberResourceId, setPhoneNumberResourceId] = useState<string | null>(null);
   const [showOcrConfirm, setShowOcrConfirm] = useState(false);
+  const [showCropper, setShowCropper] = useState(false);
+  const [cropperSide, setCropperSide] = useState<"recto" | "verso">("recto");
+  const [showWelcome, setShowWelcome] = useState(false);
 
   // ============================================================
   // useEffect
@@ -255,7 +270,6 @@ const handleOCR = async (file: File, side: 'recto' | 'verso') => {
       return;
     }
     
-    // Récupère l'ID utilisateur
     const userId = currentUserId || localStorage.getItem("currentUserId");
     
     if (!userId) {
@@ -270,8 +284,21 @@ const handleOCR = async (file: File, side: 'recto' | 'verso') => {
       const formattedPhoneNumber = `+216${phoneNumber}`;
       console.log("📤 Envoi du numéro:", formattedPhoneNumber);
       console.log("👤 User ID:", userId);
+  
+      // ✅ Sauvegarder les infos étape 2 en DB
+      await fetch("/api/users/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          firstName,
+          lastName,
+          bio,
+          phoneNumber: formattedPhoneNumber,
+        }),
+      });
       
-      // Appeler l'API backend
+      // Envoyer le code WhatsApp
       const response = await fetch("/api/users/add-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -288,12 +315,7 @@ const handleOCR = async (file: File, side: 'recto' | 'verso') => {
         throw new Error(data.error || "Erreur d'envoi");
       }
       
-      // Stocker l'ID de la ressource téléphone
       setPhoneNumberResourceId(data.phoneNumberId);
-      
-      // TODO: Ici, tu devras implémenter l'envoi du code WhatsApp
-      // via l'API WhatsApp Business
-      
       setWhatsappAlertMessage(`Un code de vérification a été envoyé sur WhatsApp au +216 ${phoneNumber}`);
       setShowWhatsappAlert(true);
       
@@ -304,7 +326,7 @@ const handleOCR = async (file: File, side: 'recto' | 'verso') => {
       setIsWhatsappLoading(false);
     }
   };
-
+  
   const handleVerifyWhatsApp = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -317,14 +339,12 @@ const handleOCR = async (file: File, side: 'recto' | 'verso') => {
     setWhatsappError("");
   
     try {
-      // Récupère l'ID utilisateur
       const userId = currentUserId || localStorage.getItem("currentUserId");
       
       if (!userId || !phoneNumber) {
         throw new Error("Informations manquantes");
       }
       
-      // Appeler l'API pour vérifier le code
       const response = await fetch("/api/users/verify-whatsapp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -341,8 +361,7 @@ const handleOCR = async (file: File, side: 'recto' | 'verso') => {
         throw new Error(data.error || "Code invalide");
       }
       
-      // Vérification réus sie
-      setCurrentStep(4); // Passe à l'étape 4 (OCR)
+      setCurrentStep(4);
       
     } catch (error: any) {
       console.error("❌ Erreur vérification:", error);
@@ -506,15 +525,12 @@ const markEmailAsVerified = async () => {
       console.log("🔴 5b - Réponse Clerk:", signUpAttempt);
       console.log("🔴 6 - Clerk créé, ID:", signUpAttempt.createdUserId);
 
-      await signUp.update({
-        publicMetadata: { role: role },
-      });
+      
 
       console.log("🔴 7 - Préparation appel API");
       
       
-      const userIdToUse = signUpAttempt.createdUserId || signUpAttempt.id;
-      console.log("🔴 8 - ID utilisé:", userIdToUse);
+      const userIdToUse = signUpAttempt.createdUserId || signUpAttempt.id || "";      console.log("🔴 8 - ID utilisé:", userIdToUse);
       
       console.log("🔴 9 - Envoi fetch à /api/users/create");
       const response = await fetch("/api/users/create", {
@@ -1011,7 +1027,9 @@ const markEmailAsVerified = async () => {
 
               {/* Notice de confidentialité */}
               <div className="bg-primary/10 border border-primary/20 p-4 flex items-start gap-3 mb-5">
-                <span className="material-icons text-primary mt-0.5">verified_user</span>
+                <span className="material-icons text-primary mt-0.5"><RiUserFollowFill />
+
+</span>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Confidentialité garantie</h3>
                   <p className="text-sm text-slate-600 dark:text-slate-400">Votre identité réelle est confidentielle et ne sera pas partagée publiquement.</p>
@@ -1022,7 +1040,9 @@ const markEmailAsVerified = async () => {
                 {/* Section 1: Private Identity */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="material-icons text-xs text-primary">lock</span>
+                    <span className="material-icons text-xs text-primary"><MdLockOutline />
+
+</span>
                     <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Informations Personnelles</h2>
                   </div>
 
@@ -1079,22 +1099,7 @@ const markEmailAsVerified = async () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2 mt-4">
-                    <div className="flex justify-between items-center">
-                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Adresse de résidence</label>
-                      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Optionnel</span>
-                    </div>
-                    <div className="relative">
-                      
-                      <input
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        placeholder="Entrez votre adresse complète"
-                        className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg pl-11 pr-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                      />
-                    </div>
-                  </div>
+                  
                   {phoneNumber && phoneNumber.length >= 8 && (
   <motion.div
     initial={{ opacity: 0, y: 10 }}
@@ -1124,6 +1129,22 @@ const markEmailAsVerified = async () => {
                  
 
                 </div>
+                <div className="space-y-2 mt-4">
+                    <div className="flex justify-between items-center">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Adresse de résidence</label>
+                      <span className="text-[10px] text-slate-500 uppercase font-bold tracking-tighter">Optionnel</span>
+                    </div>
+                    <div className="relative">
+                      
+                      <input
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Entrez votre adresse complète"
+                        className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg pl-11 pr-4 py-3 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                      />
+                    </div>
+                  </div>
 
                 {/* Divider */}
                 <div className="h-px bg-slate-200 dark:bg-slate-800 w-full"></div>
@@ -1131,7 +1152,8 @@ const markEmailAsVerified = async () => {
                 {/* Section 2: Public Profile */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="material-icons text-xs text-slate-400">public</span>
+                    <span className="material-icons text-xs text-slate-400"><FaUsers />
+</span>
                     <h2 className="text-xs font-bold uppercase tracking-widest text-slate-400">Profil Public</h2>
                   </div>
 
@@ -1161,19 +1183,25 @@ const markEmailAsVerified = async () => {
                     
                   </button>
                   <button
-                    type="button"
-                    onClick={() => {
-                      if (!firstName || !lastName || !phoneNumber) {
-                        setFormError("Veuillez remplir tous les champs obligatoires");
-                        return;
-                      }
-                      handleSendWhatsApp(); // Envoie le code WhatsApp
-                    }}
-                    className="order-1 sm:order-2 w-full sm:w-auto px-10 py-3 bg-primary hover:bg-primary/90 text-background-dark font-bold rounded-lg transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 group"
-                  >
-                    
-                    <span className="material-icons group-hover:translate-x-1 transition-transform">Continuer</span>
-                  </button>
+  type="button"
+  onClick={() => {
+    if (!firstName || !lastName || !phoneNumber) {
+      setFormError("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+    handleSendWhatsApp();
+  }}
+  className="order-1 sm:order-2 w-full sm:w-auto px-10 py-3 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white font-bold rounded-xl transition-all duration-300 ease-in-out hover:shadow-lg hover:shadow-blue-500/40 active:scale-[0.98] flex items-center justify-center gap-2 group"
+>
+  {isWhatsappLoading ? (
+    <>
+      <Loader2 className="animate-spin h-4 w-4" />
+      Envoi...
+    </>
+  ) : (
+    "Continuer"
+  )}
+</button>
                 </div>
               </div>
             </motion.div>
@@ -1351,11 +1379,16 @@ const markEmailAsVerified = async () => {
                         }}
                       />
                       <label
-                        htmlFor="cin-recto"
-                        className="w-full bg-[#1E90FF]/20 hover:bg-[#1E90FF] hover:text-[#0B1E3F] text-[#1E90FF] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer block text-center"
-                      >
-                        Choisir un fichier
-                      </label>
+  htmlFor="cin-recto"
+  onClick={(e) => {
+    e.preventDefault();
+    setCropperSide("recto");
+    setShowCropper(true);
+  }}
+  className="w-full bg-[#1E90FF]/20 hover:bg-[#1E90FF] hover:text-[#0B1E3F] text-[#1E90FF] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer block text-center"
+>
+  {cinRecto ? "✅ Photo ajoutée" : "Choisir un fichier"}
+</label>
                     </div>
 
                     {/* Verso CIN */}
@@ -1384,11 +1417,16 @@ const markEmailAsVerified = async () => {
                         }}
                       />
                       <label
-                        htmlFor="cin-verso"
-                        className="w-full bg-[#1E90FF]/20 hover:bg-[#1E90FF] hover:text-[#0B1E3F] text-[#1E90FF] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer block text-center"
-                      >
-                        Choisir un fichier
-                      </label>
+  htmlFor="cin-verso"
+  onClick={(e) => {
+    e.preventDefault();
+    setCropperSide("verso");
+    setShowCropper(true);
+  }}
+  className="w-full bg-[#1E90FF]/20 hover:bg-[#1E90FF] hover:text-[#0B1E3F] text-[#1E90FF] px-4 py-2 rounded-lg text-sm font-bold transition-all cursor-pointer block text-center"
+>
+  {cinVerso ? "✅ Photo ajoutée" : "Choisir un fichier"}
+</label>
                     </div>
                   </div>
 
@@ -1648,9 +1686,30 @@ const markEmailAsVerified = async () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowOcrConfirm(false);
-                    router.push("/fr/dashboard");
+                  onClick={async () => {
+                    const userId = currentUserId || localStorage.getItem("currentUserId");
+                    
+                    try {
+                      await fetch("/api/users/complete-profile", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          userId,
+                          firstName,
+                          lastName,
+                          dateNaissance,
+                          cinNumber,
+                          address,
+                          bio,
+                          phoneNumber: `+216${phoneNumber}`,
+                        }),
+                      });
+                    } catch (error) {
+                      console.error("❌ Erreur:", error);
+                    } finally {
+                      setShowOcrConfirm(false);
+                      setShowWelcome(true);
+                    }
                   }}
                   className="flex-1 bg-[#1E90FF] hover:bg-[#3EAFFF] text-white font-bold py-2.5 px-6 rounded-lg transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#1E90FF]/20"
                 >
@@ -1661,6 +1720,95 @@ const markEmailAsVerified = async () => {
             </motion.div>
           </motion.div>
         )}
+        {/* Cropper Modal */}
+      {showCropper && (
+        <ImageCropper
+          side={cropperSide}
+          onClose={() => setShowCropper(false)}
+          onCropComplete={(croppedFile) => {
+            if (cropperSide === "recto") {
+              setCinRecto(croppedFile);
+              handleOCR(croppedFile, "recto");
+            } else {
+              setCinVerso(croppedFile);
+              handleOCR(croppedFile, "verso");
+            }
+          }}
+        />
+      )}
+      {/* Welcome Modal */}
+{showWelcome && (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+  >
+    <motion.div
+      initial={{ opacity: 0, scale: 0.8, y: 30 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      transition={{ type: "spring", damping: 20 }}
+      className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-8 border border-primary/20 text-center"
+    >
+      {/* Confetti icon */}
+      <div className="text-6xl mb-4">🎉</div>
+
+      <h2 className="text-2xl font-black mb-2">
+        Bienvenue sur NestHub !
+      </h2>
+      <p className="text-slate-500 dark:text-slate-400 text-sm mb-2">
+        Votre compte a été créé avec succès.
+      </p>
+      <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+        Complétez votre profil pour augmenter votre score de confiance et accéder à toutes les fonctionnalités.
+      </p>
+
+      {/* Trust badges */}
+      <div className="flex justify-center gap-4 mb-6">
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <span className="text-green-500 text-lg">✅</span>
+          </div>
+          <span className="text-[10px] text-slate-500">Email vérifié</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+            <span className="text-green-500 text-lg">✅</span>
+          </div>
+          <span className="text-[10px] text-slate-500">WhatsApp vérifié</span>
+        </div>
+        <div className="flex flex-col items-center gap-1">
+          <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+            <span className="text-yellow-500 text-lg">⏳</span>
+          </div>
+          <span className="text-[10px] text-slate-500">CIN en attente</span>
+        </div>
+      </div>
+
+      <button
+        onClick={() => {
+          setShowWelcome(false);
+          localStorage.setItem("redirectAfterLogin", "/fr/complete-profile");
+          router.push("/fr/complete-profile");
+        }}
+        className="w-full py-3 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white font-bold rounded-xl transition-all hover:shadow-lg hover:shadow-blue-500/30"
+      >
+        Compléter mon profil →
+      </button>
+
+      <button
+        onClick={() => {
+          setShowWelcome(false);
+          router.push("/fr/dashboard");
+        }}
+        className="w-full py-2 mt-2 text-sm text-slate-500 hover:text-slate-700 transition-colors"
+      >
+        Passer pour l'instant
+      </button>
+    </motion.div>
+  </motion.div>
+)}
+
+    
 
         {/* Footer */}
         <div className="mt-4 sm:mt-6 pt-3 text-[10px] text-slate-400 dark:text-slate-600 flex flex-wrap justify-center gap-3 sm:gap-4 border-t border-slate-100 dark:border-slate-800/50">

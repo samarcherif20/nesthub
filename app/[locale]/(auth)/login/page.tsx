@@ -3,8 +3,20 @@
 import { SignIn } from "@clerk/nextjs";
 import { motion } from "framer-motion";
 import Image from "next/image";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const redirect = localStorage.getItem("redirectAfterLogin");
+    if (redirect) {
+      localStorage.removeItem("redirectAfterLogin");
+      router.push(redirect);
+    }
+  }, []);
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#0B1E3F] to-[#112B4E] flex items-center justify-center p-4">
       <motion.div
@@ -12,7 +24,6 @@ export default function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md"
       >
-        {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
           <div className="relative w-12 h-12">
             <Image
@@ -27,7 +38,6 @@ export default function LoginPage() {
           </h2>
         </div>
 
-        {/* Composant Clerk SignIn */}
         <SignIn 
           routing="path" 
           path="/fr/login"
