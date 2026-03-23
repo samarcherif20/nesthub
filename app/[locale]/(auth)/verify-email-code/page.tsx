@@ -1,266 +1,39 @@
 "use client";
 
-import { useSignIn } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { Loader2, Lock, X } from "lucide-react";
-import {
-  getClerkErrorMessage,
-  getClerkErrorCode,
-  maskEmail,
-  logger,
-  ClerkLoginErrorCodes,
-} from "@/lib/utils";
 import { BsHourglassSplit } from "react-icons/bs";
-import { HiOutlineExclamationTriangle } from "react-icons/hi2";
 import { LuMailCheck, LuMailX } from "react-icons/lu";
-
-interface ErrorState {
-  message: string;
-  type: "invalid" | "expired" | "generic";
-}
+import { useTranslations } from "next-intl";
+import { maskEmail } from "@/lib/utils";
+import { useVerifyCode } from "./hooks/useVerifyCode";
+import Alert from "@/components/ui/Alert";
 
 export default function VerifyEmailCodePage() {
-  const [code, setCode] = useState(["", "", "", "", "", ""]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<ErrorState | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [resendLoading, setResendLoading] = useState(false);
-  const [trustDevice, setTrustDevice] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes en secondes
-  const { signIn, setActive } = useSignIn();
-  const router = useRouter();
   const t = useTranslations("Login");
-  const [mounted, setMounted] = useState(false);
-
-  const inputRefs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
-
-  // Récupérer les infos stockées
-  const [pendingIdentifier, setPendingIdentifier] = useState<string | null>(
-    null,
-  );
-  const [pendingUserRole, setPendingUserRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-    const identifier = sessionStorage.getItem("pendingIdentifier");
-    const userRole = sessionStorage.getItem("pendingUserRole");
-
-    setPendingIdentifier(identifier);
-    setPendingUserRole(userRole);
-
-    if (!identifier) {
-      router.push("/fr/login");
-    }
-  }, [router]);
-
-  // Timer pour l'expiration du code
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Vérifier si le code a expiré
-  useEffect(() => {
-    if (timeLeft === 0 && !error) {
-      setError({
-        type: "expired",
-        message: t("codeExpired"),
-      });
-    }
-  }, [timeLeft, error, t]);
-
-  // Formater le temps (MM:SS)
-  const formatTime = useCallback((seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  }, []);
-
-  // Focus automatique sur le premier input
-  useEffect(() => {
-    if (mounted && inputRefs[0].current) {
-      inputRefs[0].current.focus();
-    }
-  }, [mounted]);
-
-  const handleChange = (index: number, value: string) => {
-    // Effacer l'erreur quand l'utilisateur tape
-    if (error) setError(null);
-
-    if (value.length > 1) {
-      const pastedCode = value.slice(0, 6).split("");
-      const newCode = [...code];
-      pastedCode.forEach((char, i) => {
-        if (i < 6) newCode[i] = char;
-      });
-      setCode(newCode);
-
-      const lastIndex = Math.min(pastedCode.length, 5);
-      if (lastIndex < 5 && inputRefs[lastIndex + 1]?.current) {
-        inputRefs[lastIndex + 1].current?.focus();
-      } else if (inputRefs[5].current) {
-        inputRefs[5].current?.focus();
-      }
-
-      // Soumettre automatiquement si 6 chiffres
-      if (pastedCode.length === 6 && pastedCode.every((c) => c)) {
-        setTimeout(
-          () => handleSubmit(new Event("submit") as unknown as React.FormEvent),
-          100,
-        );
-      }
-    } else {
-      const newCode = [...code];
-      newCode[index] = value.replace(/[^0-9]/g, "");
-      setCode(newCode);
-
-      if (value && index < 5 && inputRefs[index + 1].current) {
-        inputRefs[index + 1].current?.focus();
-      }
-
-      // Vérifier si tous les champs sont remplis
-      const allFilled = [
-        ...newCode.slice(0, index),
-        value,
-        ...newCode.slice(index + 1),
-      ].every((c) => c);
-      if (allFilled) {
-        setTimeout(
-          () => handleSubmit(new Event("submit") as unknown as React.FormEvent),
-          100,
-        );
-      }
-    }
-  };
-
-  const handleKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === "Backspace" && !code[index] && index > 0) {
-      inputRefs[index - 1].current?.focus();
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const fullCode = code.join("");
-    if (fullCode.length !== 6) {
-      setError({
-        type: "generic",
-        message: t("codeRequired"),
-      });
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    logger.auth("Tentative de vérification 2FA");
-
-    try {
-      if (!signIn) throw new Error("SignIn not initialized");
-
-      const result = await signIn.attemptSecondFactor({
-        strategy: "email_code",
-        code: fullCode,
-      });
-
-      logger.success("Vérification 2FA réussie", { status: result.status });
-
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
-
-        // Nettoyer le sessionStorage
-        sessionStorage.removeItem("pendingIdentifier");
-        sessionStorage.removeItem("pendingRole");
-        sessionStorage.removeItem("pendingIdentifierType");
-        sessionStorage.removeItem("pendingUserRole");
-
-        // Redirection selon le rôle
-        if (pendingUserRole === "ADMIN") {
-          router.push("/admin/dashboard");
-        } else if (pendingUserRole === "PROPERTY_OWNER") {
-          router.push("/dashboard/owner");
-        } else {
-          router.push("/dashboard/renter");
-        }
-      }
-    } catch (err: unknown) {
-      logger.error("Erreur vérification 2FA:", err);
-
-      const errorCode = getClerkErrorCode(err);
-
-      if (
-        errorCode === ClerkLoginErrorCodes.CODE_INCORRECT ||
-        errorCode === ClerkLoginErrorCodes.VERIFICATION_FAILED
-      ) {
-        setError({
-          type: "invalid",
-          message: t("incorrectCode"),
-        });
-      } else if (errorCode === ClerkLoginErrorCodes.CODE_EXPIRED) {
-        setError({
-          type: "expired",
-          message: t("codeExpired"),
-        });
-      } else {
-        // Utiliser la fonction de traduction générique
-        const errorMessage = getClerkErrorMessage(err, "email", t);
-        setError({
-          type: "generic",
-          message: errorMessage,
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    setResendLoading(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    try {
-      logger.auth("Demande de renvoi de code");
-      await signIn?.prepareSecondFactor({ strategy: "email_code" });
-      setTimeLeft(600); // Reset timer à 10 minutes
-      setSuccessMessage(t("codeResent"));
-
-      // Effacer le message après 5 secondes
-      setTimeout(() => setSuccessMessage(null), 5000);
-    } catch (err: unknown) {
-      logger.error("Erreur renvoi code:", err);
-      const errorMessage = getClerkErrorMessage(err, "email", t);
-      setError({
-        type: "generic",
-        message: errorMessage,
-      });
-    } finally {
-      setResendLoading(false);
-    }
-  };
-
-  const closeError = () => setError(null);
-  const closeSuccess = () => setSuccessMessage(null);
-
-  // Rediriger vers la page de login
-  const handleBackToLogin = () => {
-    router.push("/fr/login");
-  };
+  
+  const {
+    code,
+    loading,
+    error,
+    successMessage,
+    resendLoading,
+    trustDevice,
+    timeLeft,
+    mounted,
+    pendingIdentifier,
+    inputRefs,
+    setTrustDevice,
+    handleChange,
+    handleKeyDown,
+    handleSubmit,
+    handleResend,
+    handleBackToLogin,
+    closeError,
+    closeSuccess,
+    formatTime,
+  } = useVerifyCode();
 
   if (!mounted) {
     return (
@@ -309,6 +82,26 @@ export default function VerifyEmailCodePage() {
 
         {/* RIGHT SIDE - Form */}
         <div className="md:w-4/5 p-6 md:p-8">
+          {/* Alert Container - EN HAUT À DROITE */}
+          <div className="fixed top-5 right-5 z-[100] space-y-2 w-full max-w-sm">
+            {error && (
+              <Alert
+                type="error"
+                message={error.message}
+                onClose={closeError}
+                autoClose={5000}
+              />
+            )}
+            {successMessage && (
+              <Alert
+                type="success"
+                message={successMessage}
+                onClose={closeSuccess}
+                autoClose={5000}
+              />
+            )}
+          </div>
+
           {/* Email Display */}
           {pendingIdentifier && (
             <div className="mb-6 text-center">
@@ -321,52 +114,6 @@ export default function VerifyEmailCodePage() {
               <p className="text-primary font-semibold text-lg mt-1">
                 {maskEmail(pendingIdentifier)}
               </p>
-            </div>
-          )}
-
-          {/* Success Message avec bouton X */}
-          {successMessage && (
-            <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center justify-between gap-2 animate-slide-down">
-              <p className="text-green-700 dark:text-green-300 text-sm flex-1">
-                {successMessage}
-              </p>
-              <button
-                onClick={closeSuccess}
-                className="text-green-500 hover:text-green-700 dark:text-green-400 dark:hover:text-green-200 transition-colors"
-                aria-label={t("close")}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
-
-          {/* Error Message avec bouton X */}
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center justify-between gap-2 animate-slide-down">
-              <div className="flex items-start gap-2 flex-1">
-                <HiOutlineExclamationTriangle className="text-red-500 text-lg mt-0.5 shrink-0" />
-                <div>
-                  <p className="text-red-700 dark:text-red-300 text-sm">
-                    {error.message}
-                  </p>
-                  {error.type === "expired" && (
-                    <button
-                      onClick={handleResend}
-                      disabled={resendLoading}
-                      className="text-red-600 dark:text-red-400 text-xs font-medium hover:underline mt-1"
-                    >
-                      {resendLoading ? t("sending") : t("requestNewCode")}
-                    </button>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={closeError}
-                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200 transition-colors"
-                aria-label={t("close")}
-              >
-                <X size={16} />
-              </button>
             </div>
           )}
 
@@ -384,7 +131,7 @@ export default function VerifyEmailCodePage() {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    maxLength={6}
+                    maxLength={1} // ✅ TOUS les champs maxLength={1}
                     value={digit}
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}
@@ -484,7 +231,7 @@ export default function VerifyEmailCodePage() {
             {t("didNotReceiveCode")}
             <button
               onClick={handleResend}
-              disabled={resendLoading || timeLeft > 540} // Désactivé si moins de 1 minute écoulée
+              disabled={resendLoading || timeLeft > 540}
               className="text-purple-800 dark:text-purple-400 font-semibold hover:underline decoration-2 underline-offset-4 ml-1 disabled:opacity-50 disabled:no-underline"
             >
               {resendLoading ? t("sending") : t("resend")}

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAdminAuth, isAuthError, AdminAuth } from "@/lib/auth-admin";
+import { getAdminAuth, isAuthError } from "@/lib/auth-admin";
 import { Prisma, UserRole, AccountStatus } from "@prisma/client";
 
 // Types
@@ -39,7 +39,6 @@ interface CinExtractedData {
 export async function GET(request: NextRequest) {
   try {
     const auth = getAdminAuth(request);
-
     if (isAuthError(auth)) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
@@ -61,10 +60,9 @@ export async function GET(request: NextRequest) {
     const minReliability = searchParams.get("minReliability");
     const maxFraud = searchParams.get("maxFraud");
 
-    // Construction de la clause WHERE
+    // Construction WHERE
     const where: Prisma.UserWhereInput = {};
 
-    // Recherche multicritères
     if (search) {
       where.OR = [
         { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
@@ -76,17 +74,24 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // Filtre par rôle
     if (roleFilter && roleFilter !== "ALL") {
       where.role = roleFilter as UserRole;
     }
 
-    // Filtre par statut
     if (statusFilter && statusFilter !== "ALL") {
-      where.status = statusFilter as AccountStatus;
+      if (statusFilter === "INACTIVE") {
+        where.lastLogin = { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
+        where.status = "ACTIVE";
+      } else if (statusFilter === "LOCKED") {
+        where.OR = [
+          { status: "SECURITY_LOCKED" },
+          { status: "MANUALLY_BLOCKED" }
+        ];
+      } else {
+        where.status = statusFilter as AccountStatus;
+      }
     }
 
-    // Filtre par statut de vérification
     if (verificationStatus && verificationStatus !== "ALL") {
       if (verificationStatus === "VERIFIED") {
         where.isIdentityVerified = true;
@@ -98,17 +103,20 @@ export async function GET(request: NextRequest) {
         where.verificationRequests = {
           some: { status: "REJECTED" },
         };
+      } else if (verificationStatus === "NON_VERIFIE") {
+        where.isIdentityVerified = false;
+        where.verificationRequests = {
+          none: { status: { in: ["PENDING", "REJECTED"] } }
+        };
       }
     }
 
-    // Filtre par date
     if (dateFrom || dateTo) {
       where.createdAt = {};
       if (dateFrom) where.createdAt.gte = new Date(dateFrom);
       if (dateTo) where.createdAt.lte = new Date(dateTo);
     }
 
-    // Filtre par score
     if (minReliability || maxFraud) {
       where.stats = {};
       if (minReliability) {
@@ -134,6 +142,7 @@ export async function GET(request: NextRequest) {
           profilePictureUrl: true,
           role: true,
           status: true,
+          escalationLevel: true,
           isEmailVerified: true,
           isPhoneVerified: true,
           isIdentityVerified: true,
@@ -142,8 +151,7 @@ export async function GET(request: NextRequest) {
           lastLogin: true,
           verifiedAt: true,
           suspendedUntil: true,
-          escalationLevel: true, // ✅ AJOUTEZ CECI !
-
+          failedLoginAttempts: true,
           stats: {
             select: {
               reliabilityScore: true,
@@ -151,9 +159,15 @@ export async function GET(request: NextRequest) {
             },
           },
           verificationRequests: {
-            where: { status: "PENDING" },
+            select: {
+              id: true,
+              status: true,
+              submittedAt: true,
+              reviewedAt: true,
+              rejectionMotif: true,
+            },
+            orderBy: { submittedAt: "desc" },
             take: 1,
-            select: { id: true, status: true, submittedAt: true },
           },
           _count: {
             select: {
@@ -170,6 +184,14 @@ export async function GET(request: NextRequest) {
       prisma.user.count({ where }),
     ]);
 
+    // Fonction pour déterminer le statut de vérification
+    const getVerificationStatus = (user: any) => {
+      if (user.isIdentityVerified) return "VERIFIED";
+      if (user.verificationRequests?.[0]?.status === "PENDING") return "PENDING";
+      if (user.verificationRequests?.[0]?.status === "REJECTED") return "REJECTED";
+      return "NON_VERIFIE";
+    };
+
     // Transformation des données
     const transformedUsers = users.map((user) => ({
       id: user.id,
@@ -182,6 +204,8 @@ export async function GET(request: NextRequest) {
       profilePictureUrl: user.profilePictureUrl,
       role: user.role,
       status: user.status,
+      escalationLevel: user.escalationLevel ?? 0,
+      verificationStatus: getVerificationStatus(user),
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
       isIdentityVerified: user.isIdentityVerified,
@@ -190,31 +214,51 @@ export async function GET(request: NextRequest) {
       lastLogin: user.lastLogin,
       verifiedAt: user.verifiedAt,
       suspendedUntil: user.suspendedUntil,
-      escalationLevel: user.escalationLevel,
+      failedLoginAttempts: user.failedLoginAttempts ?? 0,
       verificationRequests: user.verificationRequests,
       _count: user._count,
       reliabilityScore: user.stats?.reliabilityScore ?? 50,
       fraudScore: user.stats?.fraudScore ?? 0,
     }));
 
-    // Statistiques
+    // ===========================================
+    // STATISTIQUES CORRIGÉES AVEC TOUS LES STATUTS
+    // ===========================================
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    
     const [
       newUsers30d,
       verifiedUsers,
       pendingRequests,
+      activeUsers,
+      pendingValidationUsers,
       suspendedUsers,
       bannedUsers,
+      securityLockedUsers,
+      manuallyBlockedUsers,
+      rejectedUsers,
+      inactiveUsers
     ] = await Promise.all([
-      prisma.user.count({
-        where: {
-          createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
-        },
-      }),
+      prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
       prisma.user.count({ where: { isIdentityVerified: true } }),
       prisma.verificationRequest.count({ where: { status: "PENDING" } }),
+      prisma.user.count({ where: { status: "ACTIVE" } }),
+      prisma.user.count({ where: { status: "PENDING_VALIDATION" } }),
       prisma.user.count({ where: { status: "TEMPORARILY_SUSPENDED" } }),
       prisma.user.count({ where: { status: "PERMANENTLY_BANNED" } }),
+      prisma.user.count({ where: { status: "SECURITY_LOCKED" } }),
+      prisma.user.count({ where: { status: "MANUALLY_BLOCKED" } }),
+      prisma.user.count({ where: { status: "REJECTED" } }),
+      prisma.user.count({ 
+        where: { 
+          status: "ACTIVE",
+          lastLogin: { lt: thirtyDaysAgo }
+        } 
+      }),
     ]);
+
+    const totalLocked = securityLockedUsers + manuallyBlockedUsers;
+    const totalSuspended = suspendedUsers + bannedUsers + totalLocked + rejectedUsers;
 
     return NextResponse.json({
       users: transformedUsers,
@@ -227,12 +271,15 @@ export async function GET(request: NextRequest) {
       stats: {
         totalUsers: totalCount,
         newUsers30d,
-        activeUsers: totalCount - (suspendedUsers + bannedUsers),
-        pendingUsers: pendingRequests,
+        activeUsers,
+        pendingValidationUsers,  // Utilisateurs en attente de validation email
+        pendingUsers: pendingRequests, // Demandes de vérification en attente
         suspendedUsers,
         bannedUsers,
-        verifiedIdentity:
-          totalCount > 0 ? Math.round((verifiedUsers / totalCount) * 100) : 0,
+        lockedUsers: totalLocked,
+        rejectedUsers,
+        inactiveUsers,
+        verifiedIdentity: totalCount > 0 ? Math.round((verifiedUsers / totalCount) * 100) : 0,
         pendingApprovals: pendingRequests,
         averageReliability: 75,
       },
@@ -280,6 +327,21 @@ export async function PATCH(request: NextRequest) {
 
     let suspendedUntil: Date | null = null;
     let actionType = "";
+    let previousStatus: AccountStatus | undefined;
+
+    // Récupérer l'utilisateur pour connaître son statut actuel
+    const user = await prisma.user.findUnique({
+      where: { id: targetUserId }
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
+    }
+
+    previousStatus = user.status;
 
     switch (action) {
       case "SUSPEND":
@@ -389,6 +451,10 @@ export async function PATCH(request: NextRequest) {
         userId: targetUserId,
         actionType,
         performedBy: auth.userId,
+        previousStatus,
+        newStatus: action === "SUSPEND" ? "TEMPORARILY_SUSPENDED" : 
+                  action === "BAN" ? "PERMANENTLY_BANNED" :
+                  action === "ACTIVATE" ? "ACTIVE" : undefined,
         motif: motif || null,
         duration: duration || null,
         suspendedUntil,
@@ -403,13 +469,14 @@ export async function PATCH(request: NextRequest) {
         actionType: "USER_ACTION",
         targetType: "USER",
         targetId: targetUserId,
-        details:
-          duration || suspendedUntil
-            ? ({
-                duration,
-                suspendedUntil: suspendedUntil?.toISOString(),
-              } as Prisma.JsonValue)
-            : Prisma.JsonNull,
+        details: {
+          previousStatus,
+          newStatus: action === "SUSPEND" ? "TEMPORARILY_SUSPENDED" : 
+                     action === "BAN" ? "PERMANENTLY_BANNED" :
+                     action === "ACTIVATE" ? "ACTIVE" : undefined,
+          duration,
+          suspendedUntil: suspendedUntil?.toISOString(),
+        } as Prisma.JsonValue,
         motif: motif || null,
       },
     });

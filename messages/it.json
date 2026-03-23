@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "title": "NestHub - Noleggio intelligente in Tunisia",
+    "title": "NESTHUB - Noleggio intelligente in Tunisia",
     "description": "Piattaforma sicura per l'affitto immobiliare"
   },
   "navigation": {
@@ -196,10 +196,10 @@
         "averageReliability": "Affidabilità media"
       },
       "badges": {
-        "verified": "✓ Verificato",
-        "pending": "⏳ In attesa",
-        "rejected": "✗ Rifiutato",
-        "unverified": "○ Non verificato",
+        "verified": "Verificato",
+        "pending": "In attesa",
+        "rejected": "Respinto",
+        "unverified": "Non verificato",
         "reliability": "Affidabilità",
         "fraud": "Frode"
       },
@@ -213,6 +213,211 @@
       "messages": {
         "noUsers": "Nessun utente trovato",
         "loading": "Caricamento..."
+      },
+      "activateModal": {
+        "title": "Riattiva l'account",
+        "description": "Vuoi ripristinare l'accesso completo per questo utente?",
+        "confirm": "Riattiva l'account",
+        "cancel": "Cancellare",
+        "processing": "Trattamento...",
+        "currentStatus": "Questo account è attualmente {status}",
+        "status": {
+          "suspended": "sospeso",
+          "banned": "vietato",
+          "locked": "bloccato",
+          "inactive": "inattivo",
+          "rejected": "respinto",
+          "unknown": "sconosciuto"
+        }
+      },
+      "warningModal": {
+        "title": "Invia un avviso",
+        "description": "Questa azione verrà salvata nella cronologia",
+        "reason": "Modello",
+        "reliability": "Fiab.",
+        "specifyReason": "Specificare il motivo",
+        "optionalMessage": "Messaggio (facoltativo)",
+        "explainReason": "Spiega il motivo...",
+        "additionalDetails": "Ulteriori dettagli...",
+        "infoMessage": "L'utente riceverà un avviso visibile nella propria dashboard.",
+        "emailSent": "E-mail inviata.",
+        "previousWarnings": "⚠️ Già {count} avviso/i.",
+        "cancel": "Cancellare",
+        "send": "Inviare",
+        "notifyByEmail": "Avvisare l'utente tramite e-mail",
+        "emailNotificationMessage": "Verrà inviata un'email a {email} per informarlo di questo avviso.",
+        "processing": "Invio...",
+        "error": "Errore nell'invio dell'avviso",
+        "reasons": {
+          "inappropriateBehavior": {
+            "label": "Comportamento inappropriato",
+            "description": "Linguaggio o atteggiamento inappropriato"
+          },
+          "spam": {
+            "label": "Spam",
+            "description": "Messaggi pubblicitari non richiesti"
+          },
+          "falseInformation": {
+            "label": "Notizie false",
+            "description": "Informazioni sul profilo fuorvianti"
+          },
+          "paymentIssues": {
+            "label": "Problemi di pagamento",
+            "description": "Pagamenti ritardati o rifiutati"
+          },
+          "multipleAccounts": {
+            "label": "Conti multipli",
+            "description": "Creazione di più account"
+          },
+          "other": {
+            "label": "Altro",
+            "description": "Motivo personalizzato"
+          }
+        }
+      },
+      "addNoteModal": {
+        "title": "Aggiungi una nota interna",
+        "description": "Visibile solo agli amministratori",
+        "noteContent": "Contenuto della nota",
+        "placeholder": "Scrivi qui la tua nota...",
+        "addNote": "Aggiungi nota",
+        "adding": "Aggiunta...",
+        "cancel": "Cancellare",
+        "enterLinkUrl": "Inserisci l'URL del collegamento:",
+        "error": "Errore durante l'aggiunta della nota"
+      },
+      "banModal": {
+        "title": "Escludere permanentemente l'utente",
+        "description": "Questa azione è irreversibile",
+        "reason": "Motivo del divieto",
+        "selectReason": "Seleziona un motivo...",
+        "evidence": "Prove e dettagli",
+        "evidencePlaceholder": "Dettagliare le ragioni e allegare collegamenti alle prove, se necessario...",
+        "notify": "Avvisare l'utente tramite e-mail",
+        "emailNotificationMessage": "Verrà inviata un'email a {email} per informarli di questo divieto.",
+        "confirmLabel": "Tipo",
+        "cancel": "Cancellare",
+        "confirm": "Conferma il divieto",
+        "processing": "Trattamento..."
+      },
+      "escalateModal": {
+        "title": "Escalation graduale",
+        "description": "Sistema sanzionatorio graduale",
+        "currentLevel": "Livello attuale",
+        "applySanction": "Seleziona il passaggio successivo",
+        "reason": "Motivo dell'escalation",
+        "reasonPlaceholder": "Descrivere le ragioni che giustificano tale sanzione...",
+        "warning": "Avvertimento",
+        "suspension": "Sospensione",
+        "ban": "Esilio",
+        "alreadyApplied": "Già applicato all'utente",
+        "locked": "Bloccato: passaggio successivo obbligatorio",
+        "historyNote": "Questo motivo verrà registrato nella cronologia della moderazione.",
+        "apply": "Applicare l'escalation",
+        "notify": "Avvisare l'utente tramite e-mail",
+        "emailNotificationMessage": "Verrà inviata un'e-mail a {email} per informarlo di questa sanzione.",
+        "cancel": "Cancellare",
+        "processing": "Trattamento..."
+      },
+      "suspendModal": {
+        "title": "Sospendere temporaneamente l'utente",
+        "description": "L'utente non potrà effettuare il login per la durata prescelta",
+        "duration": "Durata della sospensione",
+        "day": "1 giorno",
+        "days": "{count} giorni",
+        "reason": "Motivo della sospensione",
+        "selectReason": "Seleziona un motivo",
+        "details": "Modello dettagliato",
+        "detailsPlaceholder": "Spiegate brevemente il motivo di questo provvedimento...",
+        "emailNotification": "notifica inviata",
+        "notificationInfo": "Verrà inviata una email all'utente per informarlo della sospensione.",
+        "enterLinkUrl": "Inserisci l'URL del collegamento",
+        "cancel": "Cancellare",
+        "confirm": "Conferma la sospensione",
+        "processing": "Trattamento...",
+        "reasons": {
+          "spam": "Spam o abuso",
+          "tos": "Violazione dei termini di utilizzo",
+          "safety": "Sicurezza dell'account",
+          "other": "Altro motivo"
+        },
+        "emailNotificationTitle": "Notifica e-mail",
+        "emailNotificationMessage": "Verrà inviata un'email a {email} per informarlo di questa sospensione.",
+        "notify": "Avvisare l'utente tramite e-mail"
+      },
+      "lockUnlockModal": {
+        "lockTitle": "Blocca conto",
+        "unlockTitle": "Sblocca l'account",
+        "lockDescription": "Blocca manualmente l'accesso a questo account.",
+        "unlockDescription": "Questo account è stato bloccato dopo diversi tentativi di accesso non riusciti.",
+        "reason": "Motivo del blocco",
+        "reasonPlaceholder": "Perché bloccare questo account?...",
+        "notifyLock": "Avvisa l'utente del blocco",
+        "notifyUnlock": "Notifica all'utente lo sblocco",
+        "emailNotificationMessage": "Verrà inviata un'e-mail a {email} per notificare l'accaduto.",
+        "failedAttempts": "Tentativi falliti",
+        "lock": "Per bloccare",
+        "unlock": "Sbloccare",
+        "cancel": "Cancellare",
+        "processing": "Trattamento...",
+        "enterLinkUrl": "Inserisci l'URL del collegamento:"
+      },
+      "actionsHistoryModal": {
+        "title": "Storia delle azioni",
+        "subtitle": "Amministrazione NESTHUB",
+        "close": "Vicino",
+        "admin": {
+          "default": "Ammin"
+        },
+        "search": {
+          "placeholder": "Cerca un amministratore, un utente o un pattern..."
+        },
+        "filters": {
+          "label": "Filtra per",
+          "all": "Tutti i tipi"
+        },
+        "actionTypes": {
+          "suspension": "Sospensione",
+          "ban": "Esilio",
+          "activation": "Riattivazione",
+          "unlock": "Sblocco",
+          "lock": "Blocco",
+          "warning": "Avvertimento",
+          "escalation": "Escalation",
+          "note": "Nota interna",
+          "rejectVerification": "Rifiuto della verifica",
+          "validateVerification": "Verifica di validazione"
+        },
+        "status": {
+          "active": "Attivo",
+          "suspended": "Sospeso",
+          "banned": "Vietato",
+          "pending": "In attesa",
+          "locked": "Bloccato",
+          "inactive": "Inattivo",
+          "rejected": "Respinto"
+        },
+        "user": {
+          "target": "Utente"
+        },
+        "action": {
+          "reason": "Modello"
+        },
+        "undo": {
+          "button": "Cancellare",
+          "processing": "Cancellazione...",
+          "title": "Annulla questa azione"
+        },
+        "results": {
+          "showing": "Visualizzazione da {start} a {end} su {total} risultati",
+          "empty": "Nessuna azione trovata"
+        },
+        "errors": {
+          "tokenNotAvailable": "Gettone non disponibile",
+          "apiError": "Errore API:",
+          "loadFailed": "Impossibile caricare la cronologia delle azioni",
+          "retry": "Riprova"
+        }
       }
     }
   },
@@ -226,5 +431,328 @@
     "close": "Vicino",
     "confirm": "Confermare",
     "back": "Indietro"
+  },
+  "CGU": {
+    "title": "Condizioni Generali d'Uso",
+    "version": "Versione",
+    "lastUpdate": "Ultimo aggiornamento:",
+    "print": "Stampa",
+    "downloadPDF": "Scarica PDF",
+    "navigation": "Navigazione",
+    "needHelp": "Hai bisogno di aiuto?",
+    "helpText": "Se hai domande riguardanti i nostri Termini e Condizioni, il nostro team è a tua disposizione.",
+    "contactUs": "Contattaci",
+    "or": "O",
+    "privacyPolicy": "politica sulla riservatezza",
+    "introduction": {
+      "title": "Introduzione e accettazione",
+      "p1": "Lo scopo delle presenti Condizioni Generali d’Uso (di seguito “CGU”) è quello di definire i termini e le condizioni alle quali la piattaforma NESTHUB mette a disposizione dei propri utenti i servizi di connessione immobiliare in Tunisia.",
+      "p2": "Accedendo o utilizzando il sito web NESTHUB, riconosci di aver letto, compreso e accettato di essere vincolato da questi termini. Se non accetti questi termini, non devi utilizzare i nostri servizi.",
+      "warning": "Questi T&C si applicano a tutti gli utenti della piattaforma: inquilini, proprietari e visitatori non connessi."
+    },
+    "services": {
+      "title": "Descrizione dei servizi",
+      "description": "NESTHUB è una piattaforma tecnologica tunisina che facilita l'affitto di immobili tra privati. I nostri servizi includono, ma non sono limitati a:",
+      "item1": "La pubblicazione di annunci di affitto con foto, video e descrizioni dettagliate.",
+      "item2": "Un sistema di messaggistica sicuro con rilevamento anti-fuga di dati personali.",
+      "item3": "Uno strumento digitale per la gestione dei file di prenotazione e noleggio.",
+      "item4": "Soluzioni di pagamento sicure tramite Konnect, con gestione dei depositi in garanzia.",
+      "item5": "Un sistema di verifica dell'identità tramite OCR (CIN/Passaporto).",
+      "item6": "Un punteggio di affidabilità e badge di fiducia per gli utenti verificati.",
+      "item7": "Strumenti di intelligenza artificiale per il rilevamento e la raccomandazione delle frodi."
+    },
+    "obligations": {
+      "title": "Obblighi dell'utente",
+      "owners": {
+        "title": "Proprietari",
+        "item1": "Fornire informazioni accurate e veritiere sulla proprietà.",
+        "item2": "Possiede legalmente i diritti di noleggio sulla proprietà pubblicata.",
+        "item3": "Rispettare gli standard di decenza e la legislazione tunisina.",
+        "item4": "Non pubblicare annunci pubblicitari fittizi o fuorvianti.",
+        "item5": "Rispondere alle richieste di prenotazione entro un tempo ragionevole."
+      },
+      "tenants": {
+        "title": "Inquilini",
+        "item1": "Fornire documenti di identità autentici.",
+        "item2": "Utilizza la piattaforma in modo equo e onesto.",
+        "item3": "Effettua tutti i pagamenti esclusivamente tramite NESTHUB.",
+        "item4": "Rispettare il regolamento interno dell'immobile locato.",
+        "item5": "Segnala eventuali problemi attraverso i canali ufficiali."
+      },
+      "prohibited": {
+        "title": "Comportamenti vietati",
+        "text": "È severamente vietato condividere dati personali di contatto (numeri, email, IBAN) nella messaggistica, aggirare il sistema di pagamento, pubblicare annunci falsi o molestare altri utenti. Qualsiasi violazione può comportare la sospensione o il ban permanente dell'account."
+      }
+    },
+    "paiements": {
+      "title": "Condizioni finanziarie",
+      "quote": "La sicurezza delle tue transazioni è la nostra priorità. Tutti i pagamenti effettuati su NESTHUB vengono elaborati da Konnect, un fornitore di pagamenti approvato in Tunisia.",
+      "commission": {
+        "title": "Commissioni di servizio",
+        "text": "NESTHUB addebita una commissione del 20% su ogni transazione. Viene automaticamente detratto dall'importo pagato al proprietario e chiaramente visualizzato prima di ogni conferma."
+      },
+      "deposit": {
+        "title": "Cauzione (ricevente)",
+        "text": "Il deposito viene riscosso al momento del pagamento e posto in garanzia. Viene restituito automaticamente alla fine del soggiorno senza contestazione o arbitrato da NESTHUB in caso di conflitto con i documenti giustificativi fotografici."
+      },
+      "payout": {
+        "title": "Pagamenti ai proprietari",
+        "text": "I pagamenti vengono effettuati dopo la conferma del check-in, con una soglia minima di 50 DT. Una dichiarazione dettagliata è disponibile nella dashboard del proprietario."
+      },
+      "refund": {
+        "title": "Rimborsi",
+        "text": "I rimborsi vengono calcolati in base alla politica di cancellazione del proprietario. I tempi di consegna vanno dai 3 ai 5 giorni lavorativi. NESTHUB può imporre un rimborso in caso di controversia comprovata."
+      }
+    },
+    "responsabilite": {
+      "title": "Limitazione di responsabilità",
+      "description": "NESTHUB funge da host di contenuti e intermediario tecnico. La piattaforma non può essere ritenuta responsabile per:",
+      "item1": "Dal contenuto degli annunci pubblicitari pubblicati dagli utenti.",
+      "item2": "Mancata o cattiva esecuzione del contratto di locazione concluso tra le parti.",
+      "item3": "Danni indiretti derivanti dall'utilizzo del servizio.",
+      "item4": "Interruzioni temporanee del servizio per manutenzione o cause di forza maggiore.",
+      "item5": "La qualità, la conformità o lo stato effettivo dei beni noleggiati."
+    },
+    "resiliation": {
+      "title": "Terminazione",
+      "description": "L'utente può eliminare il proprio account in qualsiasi momento dalle proprie impostazioni. NESTHUB si riserva il diritto di sospendere o chiudere qualsiasi account in caso di:",
+      "reason1": {
+        "title": "Inosservanza dei Termini e Condizioni",
+        "desc": "Violazione delle regole d'uso."
+      },
+      "reason2": {
+        "title": "Attività fraudolente",
+        "desc": "Identità false, truffe, recensioni false."
+      },
+      "reason3": {
+        "title": "Bypass del sistema",
+        "desc": "Pagamenti o condivisione di contatti al di fuori di NH."
+      },
+      "process": "La risoluzione segue il processo di progressiva escalation: avvertimento → sospensione temporanea → ban permanente, salvo frode grave che giustifichi un'azione immediata."
+    },
+    "donnees": {
+      "title": "Dati personali",
+      "description": "NESTHUB si impegna a proteggere i tuoi dati personali. I tuoi diritti includono:",
+      "right1": {
+        "title": "Accesso",
+        "desc": "Visualizza i tuoi dati"
+      },
+      "right2": {
+        "title": "Correzione",
+        "desc": "Correggi i tuoi dati"
+      },
+      "right3": {
+        "title": "Cancellazione",
+        "desc": "Elimina il tuo account"
+      },
+      "right4": {
+        "title": "Portabilità",
+        "desc": "Esporta i tuoi dati"
+      },
+      "footer": "Per esercitare i tuoi diritti consulta la ns"
+    }
+  },
+  "Privacy": {
+    "title": "politica sulla riservatezza",
+    "lastUpdate": "Ultimo aggiornamento:",
+    "description": "In NestHub, la protezione dei tuoi dati personali è una priorità assoluta. Questa politica descrive in dettaglio come raccogliamo, utilizziamo e proteggiamo le tue informazioni, in conformità con le normative applicabili.",
+    "print": "Stampa",
+    "downloadPDF": "Scarica PDF",
+    "summary": "Riepilogo",
+    "needHelp": "Hai bisogno di aiuto?",
+    "helpText": "Domande sui tuoi dati? Il nostro DPO è a tua disposizione.",
+    "contactDPO": "Contatta il DPO",
+    "sections": {
+      "collecte": "Raccolta dati",
+      "utilisation": "Utilizzo",
+      "cookies": "Biscotti",
+      "droits": "I tuoi diritti (GDPR)",
+      "securite": "Sicurezza",
+      "ia": "IA e automazione",
+      "contact": "Contatta il responsabile della protezione dei dati"
+    },
+    "collecte": {
+      "title": "Raccolta dei dati personali",
+      "description": "Raccogliamo le informazioni che ci fornisci direttamente quando crei il tuo account, pubblichi un annuncio o richiedi un noleggio:",
+      "items": {
+        "identite": {
+          "label": "Identificare",
+          "desc": "Cognome, nome, data di nascita."
+        },
+        "coordonnees": {
+          "label": "Dettagli di contatto",
+          "desc": "Indirizzo e-mail, numero di telefono, indirizzo postale."
+        },
+        "profil": {
+          "label": "Profilo",
+          "desc": "Fotografia, biografia, tipo di inquilino, preferenze di ricerca, cronologia degli affitti."
+        },
+        "documents": {
+          "label": "Documenti d'identità",
+          "desc": "CIN o Passaporto caricato per la verifica OCR. Archiviazione crittografata."
+        },
+        "financieres": {
+          "label": "Dati finanziari",
+          "desc": "Cronologia dei pagamenti tramite Konnect (nessun dato bancario memorizzato)."
+        },
+        "comportementales": {
+          "label": "Dati comportamentali",
+          "desc": "Cronologia delle ricerche, annunci visualizzati, prenotazioni effettuate, recensioni."
+        },
+        "messagerie": {
+          "label": "Dati e-mail",
+          "desc": "Scambi analizzati dall'intelligenza artificiale anti-leak per bloccare la condivisione dei dati."
+        }
+      }
+    },
+    "utilisation": {
+      "title": "Perché utilizziamo i tuoi dati?",
+      "description": "I tuoi dati sono soggetti a trattamento automatizzato per le seguenti finalità:",
+      "items": {
+        "1": {
+          "title": "Connessione",
+          "desc": "Facilitare la connessione tra proprietari e inquilini, gestire le richieste."
+        },
+        "2": {
+          "title": "Verifica dell'identità",
+          "desc": "Analizza i tuoi documenti tramite OCR per assegnare il badge “Verificato”."
+        },
+        "3": {
+          "title": "Punteggio di affidabilità",
+          "desc": "Calcola il tuo punteggio di affidabilità (0-100) per un sistema affidabile."
+        },
+        "4": {
+          "title": "Sicurezza e antifrode",
+          "desc": "Rileva comportamenti fraudolenti e proteggiti dalle truffe."
+        },
+        "5": {
+          "title": "Personalizzazione",
+          "desc": "Consiglia annunci personalizzati in base alle tue preferenze."
+        },
+        "6": {
+          "title": "Pagamenti e depositi",
+          "desc": "Elabora i pagamenti tramite Konnect, gestisci l'impegno."
+        },
+        "7": {
+          "title": "Notifiche",
+          "desc": "Informarti sugli eventi legati alle tue prenotazioni."
+        },
+        "8": {
+          "title": "Supporto e controversie",
+          "desc": "Elabora i tuoi ticket e arbitra le controversie."
+        }
+      }
+    },
+    "cookies": {
+      "title": "Politica sui cookie",
+      "description": "NestHub utilizza i cookie per garantire il corretto funzionamento del sito, misurare il pubblico e offrirti contenuti adatti alle tue ricerche immobiliari.",
+      "essentiels": {
+        "name": "Cookie essenziali",
+        "desc": "Necessario per la navigazione, l'autenticazione (Clerk) e la sicurezza della sessione.",
+        "badge": "OBBLIGATORIO"
+      },
+      "analytiques": {
+        "name": "Cookie analitici",
+        "desc": "Per capire come utilizzi il nostro sito e migliorare i nostri servizi.",
+        "badge": "OPZIONALE"
+      },
+      "personnalisation": {
+        "name": "Cookie di personalizzazione",
+        "desc": "Per ricordare le tue preferenze e personalizzare i consigli.",
+        "badge": "OPZIONALE"
+      }
+    },
+    "droits": {
+      "title": "I tuoi diritti (GDPR)",
+      "description": "In conformità con le normative sulla protezione dei dati, hai i seguenti diritti, tutti accessibili dal tuo spazio NestHub personale:",
+      "items": {
+        "acces": {
+          "title": "Accesso",
+          "desc": "Visualizza tutti i tuoi dati personali dal tuo profilo."
+        },
+        "rectification": {
+          "title": "Correzione",
+          "desc": "Modifica le informazioni errate nelle impostazioni."
+        },
+        "suppression": {
+          "title": "Cancellazione",
+          "desc": "Richiedi la cancellazione del tuo account e dei tuoi dati."
+        },
+        "portabilite": {
+          "title": "Portabilità",
+          "desc": "Esporta tutti i tuoi dati in formato JSON/CSV."
+        },
+        "opposition": {
+          "title": "Opposizione",
+          "desc": "Opporsi al trattamento per la personalizzazione."
+        },
+        "limitation": {
+          "title": "Limitazione",
+          "desc": "Richiedere la limitazione del trattamento in determinati casi."
+        }
+      }
+    },
+    "securite": {
+      "title": "Sicurezza dei tuoi dati",
+      "description": "NestHub implementa rigorose misure tecniche e organizzative per garantire la sicurezza dei tuoi dati:",
+      "items": {
+        "chiffrement": {
+          "title": "Crittografia SSL/TLS",
+          "desc": "Tutte le comunicazioni sono crittografate."
+        },
+        "auth": {
+          "title": "Autenticazione sicura",
+          "desc": "Gestione della sessione tramite Clerk con supporto 2FA."
+        },
+        "documents": {
+          "title": "Documenti sicuri",
+          "desc": "Documenti di identità archiviati crittografati."
+        },
+        "audits": {
+          "title": "Audit regolari",
+          "desc": "Mantenuti controlli di sicurezza e registri di accesso amministrativo."
+        },
+        "messagerie": {
+          "title": "Messaggistica protetta",
+          "desc": "L'intelligenza artificiale rileva e nasconde i dati sensibili nella chat."
+        },
+        "paiements": {
+          "title": "Pagamenti sicuri",
+          "desc": "Nessun dato bancario memorizzato, tutto è gestito da Konnect."
+        }
+      }
+    },
+    "ia": {
+      "title": "IA e automazione",
+      "warning": "NestHub utilizza sistemi di intelligenza artificiale che elaborano alcuni dei tuoi dati in maniera automatizzata.",
+      "items": {
+        "detection": {
+          "title": "Rilevamento della perdita di dati",
+          "desc": "Analisi in tempo reale dei messaggi per rilevare e nascondere dati sensibili.",
+          "badge": "Obbligatorio"
+        },
+        "score": {
+          "title": "Punteggio di affidabilità automatico",
+          "desc": "Calcolo automatico del punteggio di affidabilità basato sul comportamento.",
+          "badge": "Automatizzato"
+        },
+        "fraude": {
+          "title": "Rilevamento delle frodi",
+          "desc": "Scansione degli annunci per rilevare comportamenti sospetti.",
+          "badge": "Automatizzato"
+        },
+        "recommandations": {
+          "title": "Raccomandazioni personalizzate",
+          "desc": "Utilizzo dei dati di navigazione per consigliare annunci.",
+          "badge": "Opzionale"
+        }
+      }
+    },
+    "contact": {
+      "title": "Hai bisogno di aiuto con i tuoi dati?",
+      "description": "Il nostro responsabile della protezione dei dati (DPO) è disponibile per rispondere a tutte le tue domande sulla raccolta, l'utilizzo o la cancellazione dei tuoi dati personali.",
+      "button": "Contatta il DPO",
+      "helpCenter": "Centro assistenza"
+    }
   }
 }

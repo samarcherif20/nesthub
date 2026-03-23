@@ -11,6 +11,7 @@ const intlMiddleware = createMiddleware({
 
 export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
+  const { userId } = await auth();
 
   // ========================================
   // API routes — AJOUT des routes publiques
@@ -26,7 +27,8 @@ export default clerkMiddleware(async (auth, req) => {
       "/api/users/by-username",
       "/api/auth/login",
       "/api/auth/register",
-
+      "/api/cron/reactivate-users",
+      "/api/get-redirect-url", // 👈 AJOUTÉ (pour récupérer l'URL de redirection)
     ];
 
     // Vérifier si la route est publique
@@ -42,7 +44,6 @@ export default clerkMiddleware(async (auth, req) => {
 
     // Pour les autres routes API (comme /api/admin/users)
     console.log("🔐 [API PRIVEE] Vérification pour:", pathname);
-    const { userId } = await auth();
     if (!userId) {
       console.log("❌ [API PRIVEE] Non authentifié");
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -70,6 +71,74 @@ export default clerkMiddleware(async (auth, req) => {
   const pathWithoutLocale = "/" + pathParts.slice(1).join("/");
 
   // ========================================
+  // GESTION DE LA REDIRECTION APRÈS LOGIN (AJOUTÉ)
+  // ========================================
+  
+  // Si l'utilisateur est connecté
+  if (userId) {
+    // Vérifier s'il y a une URL de redirection stockée
+    const redirectUrl = req.cookies.get('redirectAfterLogin')?.value;
+    
+    // Vérifier si la page actuelle est une page publique
+    const publicPaths = [
+      "/",
+      "/login",
+      "/register",
+      "/cgu",
+      "/faq",
+      "/about",
+      "/how-it-works",
+      "/verify-email-code",
+      "/terms",
+      "/privacy"
+    ];
+    const isPublicPage = publicPaths.includes(pathWithoutLocale);
+    
+    // Si on a une URL de redirection et qu'on est sur une page publique
+    if (isPublicPage && redirectUrl) {
+      console.log("🔄 Redirection vers:", redirectUrl);
+      const response = NextResponse.redirect(new URL(redirectUrl, req.url));
+      response.cookies.delete('redirectAfterLogin');
+      return response;
+    }
+  } else {
+    // Si l'utilisateur n'est PAS connecté
+    const publicPaths = [
+      "/",
+      "/login",
+      "/register",
+      "/cgu",
+      "/faq",
+      "/about",
+      "/how-it-works",
+      "/verify-email-code",
+      "/terms",
+      "/privacy"
+    ];
+    const isPublicPage = publicPaths.includes(pathWithoutLocale);
+    const isStaticAsset = pathname.includes('/_next') || pathname.includes('/favicon.ico');
+    
+    // Ne pas rediriger pour les assets statiques
+    if (!isPublicPage && !isStaticAsset && !pathname.startsWith('/api/')) {
+      console.log("🔒 Page protégée, stockage de l'URL:", pathname);
+      
+      // Stocker l'URL demandée pour redirection après login
+      const redirectUrl = pathWithoutLocale + req.nextUrl.search;
+      const response = NextResponse.redirect(new URL(`/${locale}/login`, req.url));
+      
+      response.cookies.set('redirectAfterLogin', redirectUrl, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 10, // 10 minutes
+        path: '/',
+      });
+      
+      return response;
+    }
+  }
+
+  // ========================================
   // Pages publiques
   // ========================================
   const publicPaths = [
@@ -81,6 +150,8 @@ export default clerkMiddleware(async (auth, req) => {
     "/about",
     "/how-it-works",
     "/verify-email-code",
+    "/terms",
+    "/privacy"
   ];
 
   if (publicPaths.includes(pathWithoutLocale)) {
@@ -90,16 +161,12 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   // Routes protégées
   // ========================================
-  const { userId } = await auth();
   if (!userId) {
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
   }
+  
   // ✅ Vérification spécifique pour les pages admin/verifications
-  // Les pages commençant par /admin/verifications sont automatiquement protégées
-  // car elles nécessitent déjà une authentification (userId)
-  // Mais tu peux ajouter une vérification de rôle si nécessaire
   if (pathWithoutLocale.startsWith('/admin/verifications')) {
-    // Ici tu pourrais vérifier le rôle si besoin
     console.log("🔐 Accès à la page verifications:", pathWithoutLocale);
   }
 

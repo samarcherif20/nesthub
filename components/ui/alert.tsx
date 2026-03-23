@@ -1,7 +1,7 @@
-// components/ui/Alert.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { IoCheckmarkCircle, IoCloseCircle, IoInformation, IoWarning } from 'react-icons/io5';
 
 interface AlertProps {
@@ -11,50 +11,80 @@ interface AlertProps {
   autoClose?: number;
 }
 
-const icons = {
-  success: <IoCheckmarkCircle className="w-5 h-5" />,
-  error: <IoCloseCircle className="w-5 h-5" />,
-  info: <IoInformation className="w-5 h-5" />,
-  warning: <IoWarning className="w-5 h-5" />,
-};
-
-const styles = {
-  success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  error: 'bg-red-50 text-red-700 border-red-200',
-  info: 'bg-blue-50 text-blue-700 border-blue-200',
-  warning: 'bg-amber-50 text-amber-700 border-amber-200',
+const CFG = {
+  success: {
+    grad:    'from-emerald-500 to-green-600',
+    icon:    IoCheckmarkCircle,
+    title:   'Succès',
+  },
+  error: {
+    grad:    'from-red-500 to-rose-600',
+    icon:    IoCloseCircle,
+    title:   'Erreur',
+  },
+  info: {
+    grad:    'from-blue-500 to-indigo-600',
+    icon:    IoInformation,
+    title:   'Information',
+  },
+  warning: {
+    grad:    'from-amber-500 to-orange-500',
+    icon:    IoWarning,
+    title:   'Attention',
+  },
 };
 
 export default function Alert({ type, message, onClose, autoClose = 5000 }: AlertProps) {
-  const [isVisible, setIsVisible] = useState(true);
+  const [visible, setVisible] = useState(true);
+  const { grad, icon: Icon, title } = CFG[type];
 
   useEffect(() => {
-    if (autoClose && onClose) {
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        onClose();
-      }, autoClose);
-      return () => clearTimeout(timer);
-    }
+    if (!autoClose) return;
+    const t = setTimeout(() => {
+      setVisible(false);
+      onClose?.();
+    }, autoClose);
+    return () => clearTimeout(t);
   }, [autoClose, onClose]);
 
-  if (!isVisible) return null;
+  const handleClose = () => {
+    setVisible(false);
+    onClose?.();
+  };
 
   return (
-    <div className={`flex items-center gap-3 p-4 rounded-lg border ${styles[type]}`}>
-      <span className="shrink-0">{icons[type]}</span>
-      <p className="flex-1 text-sm font-medium">{message}</p>
-      {onClose && (
-        <button
-          onClick={() => {
-            setIsVisible(false);
-            onClose();
-          }}
-          className="shrink-0 p-1 hover:opacity-70 transition-opacity"
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0, y: -40, scale: 0.92 }}
+          animate={{ opacity: 1, y: 0,   scale: 1     }}
+          exit={{    opacity: 0, y: -20,  scale: 0.92  }}
+          transition={{ type: 'spring', damping: 22, stiffness: 280 }}
         >
-          <IoCloseCircle className="w-4 h-4" />
-        </button>
+          <div className={`bg-gradient-to-r ${grad} text-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border border-white/20`}>
+            {/* Icon circle */}
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <Icon className="w-6 h-6 text-white" />
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm">{title}</p>
+              <p className="text-xs text-white/90 truncate">{message}</p>
+            </div>
+
+            {/* Close */}
+            {onClose && (
+              <button
+                onClick={handleClose}
+                className="w-8 h-8 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors flex-shrink-0"
+              >
+                <IoCloseCircle className="w-4 h-4 text-white" />
+              </button>
+            )}
+          </div>
+        </motion.div>
       )}
-    </div>
+    </AnimatePresence>
   );
 }

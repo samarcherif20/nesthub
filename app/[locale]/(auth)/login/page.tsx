@@ -1,9 +1,10 @@
-"use client";
+// app/[locale]/(auth)/login/page.tsx
+'use client';
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { EyeOff, Eye, User, Mail } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { LiaUserShieldSolid } from "react-icons/lia";
@@ -11,6 +12,9 @@ import { RiLockPasswordLine } from "react-icons/ri";
 import { MdOutlineDangerous } from "react-icons/md";
 import { Loader2, LogIn } from "lucide-react";
 import { HiOutlineExclamationTriangle } from "react-icons/hi2";
+
+// Importer votre composant Alert
+import Alert from "@/components/ui/Alert"; // Ajustez le chemin selon votre structure
 
 import {
   Avatar,
@@ -43,8 +47,17 @@ export default function LoginPage() {
   });
   const [identifierType, setIdentifierType] = useState<IdentifierType>("unknown");
   const [mounted, setMounted] = useState(false);
+    const [rememberMe, setRememberMe] = useState(false); // 👈 AJOUTE
+
+  
+  // États pour les alertes
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [alertType, setAlertType] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+  const [showAlert, setShowAlert] = useState(false);
+  
   const t = useTranslations("Login");
-  // ✅ État pour contrôler l'affichage de l'erreur générale
+  const locale = useLocale();
+  
   const [showGeneralError, setShowGeneralError] = useState(true);
 
   
@@ -63,6 +76,22 @@ export default function LoginPage() {
   useEffect(() => {
     setIdentifierType(ValidationPatterns.detectIdentifierType(identifier));
   }, [identifier]);
+
+  // Fonction pour afficher une alerte
+  const showAlertMessage = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
+    setAlertType(type);
+    setAlertMessage(message);
+    setShowAlert(true);
+    
+    // Optionnel: auto-cacher après 5 secondes (déjà géré par le composant)
+  };
+
+  // Remplacer l'affichage d'erreur générale par l'alerte
+  useEffect(() => {
+    if (errors.general && showGeneralError) {
+      showAlertMessage('error', errors.general);
+    }
+  }, [errors.general, showGeneralError]);
 
   const validateIdentifier = (value: string): string | undefined => {
     if (!value.trim()) return t("identifierRequired");
@@ -97,49 +126,42 @@ export default function LoginPage() {
     }
   };
 
-  // ✅ Handler pour l'identifiant avec gestion améliorée des erreurs
   const handleIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setIdentifier(value);
     
-    // Cache l'erreur générale quand on commence à taper
     setShowGeneralError(false);
+    setShowAlert(false); // Cacher l'alerte quand l'utilisateur commence à taper
     setErrors(prev => ({ ...prev, general: undefined }));
     
-    // Gestion de l'erreur de validation individuelle
     if (touched.identifier) {
       const error = validateIdentifier(value);
       setErrors(prev => ({ ...prev, identifier: error }));
     } else {
-      // Efface l'erreur même si le champ n'est pas touché
       setErrors(prev => ({ ...prev, identifier: undefined }));
     }
   };
 
-  // ✅ Handler pour le mot de passe avec gestion améliorée des erreurs
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
     
-    // Cache l'erreur générale quand on commence à taper
     setShowGeneralError(false);
+    setShowAlert(false); // Cacher l'alerte quand l'utilisateur commence à taper
     setErrors(prev => ({ ...prev, general: undefined }));
     
-    // Gestion de l'erreur de validation individuelle
     if (touched.password) {
       const error = validatePassword(value);
       setErrors(prev => ({ ...prev, password: error }));
     } else {
-      // Efface l'erreur même si le champ n'est pas touché
       setErrors(prev => ({ ...prev, password: undefined }));
     }
   };
 
-  // ✅ onSubmit modifié pour réactiver l'affichage de l'erreur
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setTouched({ identifier: true, password: true });
-    setShowGeneralError(true); // Réactive l'affichage pour la nouvelle soumission
+    setShowGeneralError(true);
     
     if (!validateForm()) {
       return;
@@ -149,11 +171,44 @@ export default function LoginPage() {
     setErrors({});
 
     try {
-      await authSubmit({ identifier, password, role, identifierType } as AuthParams);
+      await authSubmit({ identifier, password, role, identifierType, rememberMe } as AuthParams);
+      
+      // Exemple d'alerte de succès après connexion
+      showAlertMessage('success', 'Connexion réussie ! Redirection en cours...');
+      
+      // La redirection sera gérée par le hook useAuth
     } catch (error: any) {
       setErrors({ general: error.message });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Gestionnaires OAuth avec alertes
+  const handleGoogle = async () => {
+    try {
+      showAlertMessage('info', 'Redirection vers Google...');
+      await handleGoogleLogin();
+    } catch (error) {
+      showAlertMessage('error', 'Erreur lors de la connexion avec Google');
+    }
+  };
+
+  const handleApple = async () => {
+    try {
+      showAlertMessage('info', 'Redirection vers Apple...');
+      await handleAppleLogin();
+    } catch (error) {
+      showAlertMessage('error', 'Erreur lors de la connexion avec Apple');
+    }
+  };
+
+  const handleFacebook = async () => {
+    try {
+      showAlertMessage('info', 'Redirection vers Facebook...');
+      await handleFacebookLogin();
+    } catch (error) {
+      showAlertMessage('error', 'Erreur lors de la connexion avec Facebook');
     }
   };
 
@@ -175,9 +230,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
-      {/* Left Side: Lifestyle Hero (inchangé) */}
+      {/* Alert Container */}
+      <div className="fixed top-5 right-5 z-[100] space-y-2 w-full max-w-sm">
+          {showAlert && alertMessage && (
+            <Alert
+              type={alertType}
+              message={alertMessage}
+              onClose={() => setShowAlert(false)}
+              autoClose={5000}
+            />
+          )}
+      </div>
+
+      {/* Left Side: Lifestyle Hero */}
       <div className="hidden lg:flex lg:w-1/2 relative items-start justify-center pt-16 px-12 overflow-hidden">
-        {/* ... reste du code gauche ... */}
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/30 z-10"></div>
           <Image
@@ -263,23 +329,7 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* ✅ NOUVEAU BLOC D'ERREUR GÉNÉRALE AVEC BOUTON DE FERMETURE */}
-          {errors.general && showGeneralError && (
-            <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg text-sm flex items-start gap-2 animate-slide-down shadow-sm">
-              <HiOutlineExclamationTriangle  className="shrink-0 mt-0.5" size={18} />
-              <span className="flex-1 leading-tight">{errors.general}</span>
-              <button
-                type="button"
-                onClick={() => setShowGeneralError(false)}
-                className="shrink-0 ml-2 p-1 rounded-full hover:bg-red-200 dark:hover:bg-red-800/50 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 dark:focus:ring-red-400"
-                aria-label="Fermer le message d'erreur"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-          )}
+          {/* L'ancien bloc d'erreur générale a été supprimé - maintenant géré par Alert */}
 
           <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">
             {t("profileType")} {!role && <span className="text-yellow-500 ml-1">(Optionnel)</span>}
@@ -328,7 +378,7 @@ export default function LoginPage() {
                   required
                   type="text"
                   value={identifier}
-                  onChange={handleIdentifierChange}  // ✅ Utilisation du nouveau handler
+                  onChange={handleIdentifierChange}
                   onBlur={() => handleBlur("identifier")}
                   disabled={loading}
                 />
@@ -347,7 +397,7 @@ export default function LoginPage() {
                 <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="password">
                   {t("password")}
                 </label>
-                <Link href="/forgot-password" className="text-xs font-semibold text-purple-800 dark:text-primary hover:underline">
+                <Link href={`/${locale}/forgot-password`} className="text-xs font-semibold text-purple-800 dark:text-primary hover:underline">
                   {t("forgotPassword")}
                 </Link>
               </div>
@@ -363,7 +413,7 @@ export default function LoginPage() {
                   required
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={handlePasswordChange}  // ✅ Utilisation du nouveau handler
+                  onChange={handlePasswordChange}
                   onBlur={() => handleBlur("password")}
                   disabled={loading}
                 />
@@ -384,13 +434,18 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between py-1">
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <input className="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary h-3 w-3 sm:h-4 sm:w-4" type="checkbox" />
-                <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-300 transition-colors">
-                  {t("rememberMe")}
-                </span>
-              </label>
-            </div>
+    <label className="flex items-center gap-2 cursor-pointer group">
+      <input 
+        type="checkbox"
+        checked={rememberMe}
+        onChange={(e) => setRememberMe(e.target.checked)}
+        className="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary h-3 w-3 sm:h-4 sm:w-4" 
+      />
+      <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-300 transition-colors">
+        {t("rememberMe")}
+      </span>
+    </label>
+  </div>
 
             <button
               type="submit"
@@ -425,7 +480,7 @@ export default function LoginPage() {
 
           <div className="flex items-center justify-center gap-4">
             <button
-              onClick={handleGoogleLogin}
+              onClick={handleGoogle}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow flex items-center justify-center border border-gray-200 dark:border-gray-700"
               disabled={loading}
               aria-label="Google"
@@ -450,7 +505,7 @@ export default function LoginPage() {
               </svg>
             </button>
             <button
-              onClick={handleAppleLogin}
+              onClick={handleApple}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow flex items-center justify-center border border-gray-200 dark:border-gray-700"
               disabled={loading}
               aria-label="Apple"
@@ -466,7 +521,7 @@ export default function LoginPage() {
               </svg>
             </button>
             <button
-              onClick={handleFacebookLogin}
+              onClick={handleFacebook}
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow flex items-center justify-center border border-gray-200 dark:border-gray-700"
               disabled={loading}
               aria-label="Facebook"
@@ -482,11 +537,11 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
             {t("termsPrefix")}{" "}
-            <Link href="/terms" className="font-medium text-purple-800 dark:text-primary hover:underline">
+            <Link href={`/${locale}/terms`} className="font-medium text-purple-800 dark:text-primary hover:underline">
               {t("termsOfUse")}
             </Link>{" "}
             {t("and")}{" "}
-            <Link href="/privacy" className="font-medium text-purple-800 dark:text-primary hover:underline">
+            <Link href={`/${locale}/privacy`} className="font-medium text-purple-800 dark:text-primary hover:underline">
               {t("privacyPolicy")}
             </Link>
             {t("termsSuffix")}
@@ -501,17 +556,17 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
             {t("dontHaveAccount")}{" "}
-            <Link href="/sign-up" className="text-primary font-bold hover:underline">
+            <Link href={`/${locale}/sign-up`} className="text-primary font-bold hover:underline">
               {t("signUp")}
             </Link>
           </p>
 
           <div className="mt-4 pt-3 text-[10px] text-slate-400 dark:text-slate-600 flex justify-between w-full border-t border-slate-100 dark:border-slate-800/50">
             <div className="flex gap-3">
-              <Link href="/legal" className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors">
+              <Link href={`/${locale}/legal`} className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors">
                 {t("legal")}
               </Link>
-              <Link href="/privacy" className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors">
+              <Link href={`/${locale}/privacy`} className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors">
                 {t("privacy")}
               </Link>
             </div>

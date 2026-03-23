@@ -31,6 +31,7 @@ interface CustomUserData {
   unsafe_metadata?: Record<string, unknown>;
   created_at?: number;
   updated_at?: number;
+  last_sign_in_at?: number | null;
 }
 
 export async function POST(req: Request) {
@@ -122,7 +123,7 @@ export async function POST(req: Request) {
   }
 }
 
-// Le reste des fonctions (handleUserChange, handleUserDeleted) reste identique
+// Fonction handleUserChange avec vérification automatique pour les admins
 async function handleUserChange(data: CustomUserData) {
   const {
     id,
@@ -133,6 +134,7 @@ async function handleUserChange(data: CustomUserData) {
     last_name,
     image_url,
     public_metadata,
+    last_sign_in_at,
   } = data;
 
   if (!id) {
@@ -171,39 +173,81 @@ async function handleUserChange(data: CustomUserData) {
     email_addresses?.[0]?.verification?.status === "verified";
 
   try {
-    await prisma.user.upsert({
-      where: { clerkId: id },
-      update: {
-        email,
-        username: username ?? null,
-        firstName: first_name ?? null,
-        lastName: last_name ?? null,
-        phoneNumber: phoneNumber ?? null,
-        profilePictureUrl: image_url ?? null,
-        preferredLocale,
-        isEmailVerified,
-        updatedAt: new Date(),
-      },
-      create: {
-        clerkId: id,
-        email,
-        username: username ?? null,
-        firstName: first_name ?? null,
-        lastName: last_name ?? null,
-        phoneNumber: phoneNumber ?? null,
-        profilePictureUrl: image_url ?? null,
-        preferredLocale,
-        role,
-        status: AccountStatus.PENDING_VALIDATION,
-        isEmailVerified,
-        updatedAt: new Date(),
-      },
+    // Convertir last_sign_in_at si présent
+    const lastLoginDate = last_sign_in_at ? new Date(last_sign_in_at) : null;
+    
+    // Déterminer le statut du compte et la vérification d'identité en fonction du rôle
+    // Les admins sont automatiquement vérifiés et actifs
+    const isAdmin = role === UserRole.ADMIN;
+    const accountStatus = isAdmin ? AccountStatus.ACTIVE : AccountStatus.PENDING_VALIDATION;
+    const isIdentityVerified = isAdmin; // Les admins sont vérifiés par défaut
+    const verifiedAt = isAdmin ? new Date() : null; // Date de vérification pour les admins
+
+    // Vérifier si l'utilisateur existe déjà
+    const existingUser = await prisma.user.findUnique({
+      where: { clerkId: id }
     });
 
-    console.log(`✅ User ${id} synced with role: ${role}`);
+    if (existingUser) {
+      // Mise à jour - préserver certains champs si nécessaire
+      await prisma.user.update({
+        where: { clerkId: id },
+        data: {
+          email,
+          username: username ?? null,
+          firstName: first_name ?? null,
+          lastName: last_name ?? null,
+          phoneNumber: phoneNumber ?? null,
+          profilePictureUrl: image_url ?? null,
+          preferredLocale,
+          role,
+          status: accountStatus, // Mise à jour du statut
+          isEmailVerified,
+          isIdentityVerified: isIdentityVerified || existingUser.isIdentityVerified, // Préserver si déjà vérifié
+          verifiedAt: isIdentityVerified ? verifiedAt : existingUser.verifiedAt,
+          lastLogin: lastLoginDate,
+          updatedAt: new Date(),
+        },
+      });
+      
+      console.log(`✅ User ${id} updated with role: ${role}`);
+    } else {
+      // Création d'un nouvel utilisateur
+      await prisma.user.create({
+        data: {
+          clerkId: id,
+          email,
+          username: username ?? null,
+          firstName: first_name ?? null,
+          lastName: last_name ?? null,
+          phoneNumber: phoneNumber ?? null,
+          profilePictureUrl: image_url ?? null,
+          preferredLocale,
+          role,
+          status: accountStatus,
+          isEmailVerified,
+          isIdentityVerified, // true pour les admins
+          verifiedAt, // Date de vérification pour les admins
+          lastLogin: lastLoginDate,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+      
+      console.log(`✅ User ${id} created with role: ${role}`);
+    }
+
     console.log(`   Email: ${email}`);
     console.log(`   Username: ${username || 'Non fourni'}`);
     console.log(`   Locale: ${preferredLocale}`);
+    console.log(`   Status: ${accountStatus}`);
+    console.log(`   Identity Verified: ${isIdentityVerified}`);
+    if (isIdentityVerified) {
+      console.log(`   Verified at: ${verifiedAt?.toISOString()}`);
+    }
+    if (lastLoginDate) {
+      console.log(`   Last login: ${lastLoginDate.toISOString()}`);
+    }
   } catch (error) {
     console.error(`Error upserting user ${id}:`, error);
     throw error;

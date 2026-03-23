@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Modal from "@/components/ui/Modal";
 import { User } from "@/lib/types/user";
 import { RiUserFollowLine } from "react-icons/ri";
@@ -23,11 +23,16 @@ export default function ActivateUserModal({
   const t = useTranslations("admin.usersManagement.activateModal");
   const [loading, setLoading] = useState(false);
 
+  // Reset quand le modal se ferme
+  useEffect(() => {
+    if (!isOpen) {
+      setLoading(false);
+    }
+  }, [isOpen]);
+
   const handleConfirm = async () => {
     if (!user) return;
-
     setLoading(true);
-
     try {
       await onConfirm(user.id);
       onClose();
@@ -55,71 +60,78 @@ export default function ActivateUserModal({
       isOpen={isOpen}
       onClose={onClose}
       showCloseButton={true}
+      className="max-w-md"
       title={
-        <div className="flex flex-col items-center w-full ml-18">
+        <div className="flex flex-col items-center w-full ml-23">
           {/* Icon au centre */}
-          <div className="bg-green-100 dark:bg-green-900/30 p-4 rounded-full mb-3">
-            <RiUserFollowLine className="text-emerald-600 text-4xl" />
+          <div className="flex items-center justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 text-emerald-600 dark:text-emerald-400 mb-3 ">
+            <RiUserFollowLine className="text-2xl" />
           </div>
           
           {/* Titre */}
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white text-center">
             {t("title")}
           </h2>
           
           {/* Statut */}
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
             {t("currentStatus", { status: statusText })}
           </p>
         </div>
       }
     >
-      {/* BODY */}
-      <div className="p-6 space-y-5">
-        <p className="text-center text-gray-600 dark:text-gray-300">
+      {/* BODY - compact comme les autres modals */}
+      <div className="space-y-3 p-1">
+        <p className="text-xs text-gray-600 dark:text-gray-400 text-center">
           {t("description")}
         </p>
 
-        {/* User Card */}
-        <div className="flex items-center p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700">
+        {/* User Card - compact */}
+        <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700">
           {user?.profilePictureUrl ? (
             <img
               src={user.profilePictureUrl}
               alt="avatar"
-              className="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-600 shadow-sm"
+              className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"
             />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
-              <RiUserFollowLine className="text-gray-500 text-xl" />
+            <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+              <RiUserFollowLine className="text-gray-500 dark:text-gray-400 text-sm" />
             </div>
           )}
 
-          <div className="ml-4 overflow-hidden">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xs font-medium text-gray-900 dark:text-white truncate">
               {user?.firstName} {user?.lastName}
             </h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate">
               {user?.email}
             </p>
           </div>
         </div>
       </div>
 
-      {/* FOOTER */}
-      <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 flex flex-col sm:flex-row-reverse gap-3">
+      {/* FOOTER - compact comme les autres modals */}
+      <div className="flex justify-end gap-2 pt-3 mt-2 border-t border-gray-100 dark:border-gray-700">
+        <button
+          onClick={onClose}
+          className="px-3 py-1.5 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+        >
+          {t("cancel")}
+        </button>
         <button
           onClick={handleConfirm}
           disabled={loading}
-          className="inline-flex justify-center items-center px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm transition-colors disabled:opacity-50"
+          className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 shadow-sm transition-all disabled:opacity-50 flex items-center gap-1"
         >
-          {loading ? t("processing") : t("confirm")}
-        </button>
-
-        <button
-          onClick={onClose}
-          className="inline-flex justify-center items-center px-4 py-2.5 rounded-xl bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-medium text-sm hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-        >
-          {t("cancel")}
+          {loading ? (
+            <>
+              <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <span>{t("processing")}</span>
+            </>
+          ) : (
+            t("confirm")
+          )}
         </button>
       </div>
     </Modal>

@@ -119,6 +119,17 @@ export default function AdminLayout({
   const [counters, setCounters] = useState<Counters>(DEFAULT_COUNTERS);
   const [notifications, setNotifications] = useState<Notification[]>(DEFAULT_NOTIFICATIONS);
 
+  // Helper function pour obtenir le username
+  const getUsername = () => {
+    if (user?.username) return user.username;
+    // Fallback: générer à partir de l'email si pas de username
+    if (user?.emailAddresses[0]?.emailAddress) {
+      const email = user.emailAddresses[0].emailAddress;
+      return email.split('@')[0];
+    }
+    return null;
+  };
+
   // Marquer le composant comme monté côté client
   useEffect(() => {
     setMounted(true);
@@ -220,9 +231,16 @@ export default function AdminLayout({
   };
 
   const handleLogout = async () => {
-    await signOut();
-    router.push(`/${locale}/login`);
-  };
+  // 1. Nettoyer les préférences locales
+  localStorage.removeItem('rememberMe');
+  localStorage.removeItem('redirectAfterLogin');
+  
+  // 2. Déconnecter de Clerk
+  await signOut();
+  
+  // 3. Rediriger vers login
+  router.push(`/${locale}/login`);
+};
 
   // Navigation items avec les bonnes clés de traduction
   const navItems = [
@@ -252,7 +270,7 @@ export default function AdminLayout({
       count: counters.activeDisputes,
       countColor: 'bg-amber-500',
     },
-    { name: tLayout('staticPages'), href: `/${locale}/admin/pages`, icon: <PiFilesDuotone size={18} /> },
+    { name: tLayout('staticPages'), href: `/${locale}/admin/static-page`, icon: <PiFilesDuotone size={18} /> },
     { name: tLayout('settings'), href: `/${locale}/admin/settings`, icon: <RiSettings3Line size={18} /> },
   ];
 
@@ -334,7 +352,7 @@ export default function AdminLayout({
             e.stopPropagation();
             setIsSidebarOpen(!isSidebarOpen);
           }}
-          className="absolute -right-3 top-[66px] w-6 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-all z-10 shadow-md hidden lg:flex cursor-pointer"
+          className="absolute -right-3 bottom-34.5 w-6 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-all z-10 shadow-md hidden lg:flex cursor-pointer"
         >
           {isSidebarOpen ? <FaChevronCircleLeft size={14} /> : <FaChevronCircleRight size={14} />}
         </button>
@@ -637,7 +655,7 @@ export default function AdminLayout({
             {/* Ligne verticale */}
             <div className="w-px h-8 bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
 
-            {/* Profil */}
+            {/* Profil - AMÉLIORÉ avec toutes les infos admin */}
             <div className="relative profile-dropdown">
               <button
                 onClick={(e) => {
@@ -659,69 +677,108 @@ export default function AdminLayout({
                   )}
                 </div>
                 
-                {/* Nom et rôle - caché sur mobile */}
+                {/* Nom et rôle - amélioré avec le nom complet et le rôle "Administrateur" */}
                 <div className="hidden sm:block text-left">
                   <p className="text-sm font-semibold text-slate-900 dark:text-white">
                     {user?.firstName} {user?.lastName}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{tLayout('administrator')}</p>
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                    Administrateur
+                  </p>
                 </div>
                 
-                {/* Flèche - cachée sur mobile */}
+                {/* Flèche */}
                 <FaChevronDown className={`hidden sm:block text-slate-400 text-xs transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Dropdown profil */}
+              {/* Dropdown profil - amélioré avec toutes les infos */}
               {isProfileDropdownOpen && (
                 <div 
-                  className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50"
+                  className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                    <p className="text-sm font-bold text-slate-900 dark:text-white">{user?.firstName} {user?.lastName}</p>
-                    <p className="text-xs text-slate-500 truncate mt-1">{user?.emailAddresses[0]?.emailAddress}</p>
-                    <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium mt-2 bg-indigo-50 dark:bg-indigo-900/20 px-2 py-1 rounded-lg inline-block">
-                      {tLayout('administrator')}
-                    </p>
+                  {/* En-tête avec toutes les infos */}
+                  <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0 text-lg`}>
+                        {user?.imageUrl ? (
+                          <img src={user.imageUrl} alt="Avatar" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="font-medium">
+                            {user?.firstName?.[0]}{user?.lastName?.[0]}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-bold text-slate-900 dark:text-white truncate">
+                          {user?.firstName} {user?.lastName}
+                        </p>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
+                            ADMIN
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Email et username */}
+                    <div className="space-y-2 mt-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <IoPersonOutline className="text-slate-400 flex-shrink-0" size={14} />
+                        <span className="text-slate-600 dark:text-slate-400 truncate">
+                          {user?.emailAddresses[0]?.emailAddress}
+                        </span>
+                      </div>
+                      {getUsername() && (
+                        <div className="flex items-center gap-2 text-sm">
+                          <span className="text-slate-400 flex-shrink-0">@</span>
+                          <span className="text-indigo-600 dark:text-indigo-400 font-medium truncate">
+                            {getUsername()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   
+                  {/* Menu items */}
                   <div className="py-1">
                     <Link
                       href={`/${locale}/admin/profile`}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                       onClick={() => setIsProfileDropdownOpen(false)}
                     >
                       <IoPersonOutline size={16} />
-                      {tLayout('myProfile')}
+                      <span>{tLayout('myProfile')}</span>
                     </Link>
                     <Link
                       href={`/${locale}/admin/settings/security`}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                       onClick={() => setIsProfileDropdownOpen(false)}
                     >
                       <GoShieldLock size={16} />
-                      {tLayout('security')}
+                      <span>{tLayout('security')}</span>
                     </Link>
                     <Link
                       href={`/${locale}/admin/settings`}
-                      className="flex items-center gap-3 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                       onClick={() => setIsProfileDropdownOpen(false)}
                     >
                       <IoSettingsOutline size={16} />
-                      {tLayout('settings')}
+                      <span>{tLayout('settings')}</span>
                     </Link>
                   </div>
                   
+                  {/* Déconnexion */}
                   <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
                     <button
                       onClick={() => {
                         setIsProfileDropdownOpen(false);
                         setShowLogoutModal(true);
                       }}
-                      className="flex w-full items-center gap-3 px-4 py-2 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors cursor-pointer"
                     >
                       <RiLogoutCircleLine size={16} />
-                      {tLayout('logout')}
+                      <span>{tLayout('logout')}</span>
                     </button>
                   </div>
                 </div>

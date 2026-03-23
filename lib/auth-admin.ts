@@ -35,6 +35,7 @@ export function isAuthError(result: AdminAuth | AuthError): result is AuthError 
 // Fonction d'authentification principale
 export function getAdminAuth(request: NextRequest): AdminAuth | AuthError {
   const auth = getAuth(request);
+  
   const { userId, sessionClaims } = auth;
   
   if (!userId) {

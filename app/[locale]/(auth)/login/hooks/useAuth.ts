@@ -17,6 +17,7 @@ export interface AuthParams {
   password: string;
   role: "renter" | "owner" | null;
   identifierType: IdentifierType;
+  rememberMe?: boolean;
 }
 
 interface RoleCheckResult {
@@ -119,47 +120,51 @@ export function useAuth() {
     }
   };
 
-// Gérer la 2FA - Version corrigée
-const handleSecondFactor = async (
-  result: SignInResource,
-  identifier: string,
-  role: string | null,
-  identifierType: IdentifierType,
-  dbRole: string,
-): Promise<void> => {
-  try {
-    logger.auth("2FA requis");
+  // Gérer la 2FA - Version corrigée
+  const handleSecondFactor = async (
+    result: SignInResource,
+    identifier: string,
+    role: string | null,
+    identifierType: IdentifierType,
+    dbRole: string,
+  ): Promise<void> => {
+    try {
+      logger.auth("2FA requis");
 
-    // ✅ Récupérer les stratégies sous forme de strings
-    const strategies = result.supportedSecondFactors?.map(sf => sf.strategy) || [];
-    
-    // LOG POUR DIAGNOSTIC
-    console.log("📋 Stratégies 2FA disponibles (strings):", strategies);
+      // ✅ Récupérer les stratégies sous forme de strings
+      const strategies =
+        result.supportedSecondFactors?.map((sf) => sf.strategy) || [];
 
-    // Stocker les infos pour après la 2FA
-    sessionStorage.setItem("pendingIdentifier", identifier);
-    sessionStorage.setItem("pendingRole", role || "");
-    sessionStorage.setItem("pendingIdentifierType", identifierType);
-    sessionStorage.setItem("pendingUserRole", dbRole);
+      // LOG POUR DIAGNOSTIC
+      console.log("📋 Stratégies 2FA disponibles (strings):", strategies);
 
-    // ✅ Vérifier si email_code est dans le tableau de strings
-    if (strategies.includes("email_code")) {
-      logger.auth("2FA par email - Préparation...");
-      await signIn?.prepareSecondFactor({ strategy: "email_code" });
-      logger.success("Redirection vers vérification");
-       const pathname = window.location.pathname;
-      const locale = pathname.split('/')[1] || 'fr';
-  router.push(`/${locale}/verify-email-code`);
-    } else {
-      // Si email_code n'est pas disponible, afficher les stratégies disponibles
-      console.error("❌ email_code non disponible. Stratégies trouvées:", strategies);
-      throw new Error(t("verificationFailed"));
+      // Stocker les infos pour après la 2FA
+      sessionStorage.setItem("pendingIdentifier", identifier);
+      sessionStorage.setItem("pendingRole", role || "");
+      sessionStorage.setItem("pendingIdentifierType", identifierType);
+      sessionStorage.setItem("pendingUserRole", dbRole);
+
+      // ✅ Vérifier si email_code est dans le tableau de strings
+      if (strategies.includes("email_code")) {
+        logger.auth("2FA par email - Préparation...");
+        await signIn?.prepareSecondFactor({ strategy: "email_code" });
+        logger.success("Redirection vers vérification");
+        const pathname = window.location.pathname;
+        const locale = pathname.split("/")[1] || "fr";
+        router.push(`/${locale}/verify-email-code`);
+      } else {
+        // Si email_code n'est pas disponible, afficher les stratégies disponibles
+        console.error(
+          "❌ email_code non disponible. Stratégies trouvées:",
+          strategies,
+        );
+        throw new Error(t("verificationFailed"));
+      }
+    } catch (error) {
+      logger.error("Erreur 2FA:", error);
+      throw error;
     }
-  } catch (error) {
-    logger.error("Erreur 2FA:", error);
-    throw error;
-  }
-};
+  };
 
   // Gestionnaire Google
   const handleGoogleLogin = async (): Promise<void> => {
@@ -168,7 +173,7 @@ const handleSecondFactor = async (
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/dashboard",
+        redirectUrlComplete: "/sso-callback",
       });
     } catch (error) {
       logger.error("Google login error:", error);
@@ -183,7 +188,7 @@ const handleSecondFactor = async (
       await signIn.authenticateWithRedirect({
         strategy: "oauth_apple",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/dashboard",
+        redirectUrlComplete: "/sso-callback",
       });
     } catch (error) {
       logger.error("Apple login error:", error);
@@ -198,7 +203,7 @@ const handleSecondFactor = async (
       await signIn.authenticateWithRedirect({
         strategy: "oauth_facebook",
         redirectUrl: "/sso-callback",
-        redirectUrlComplete: "/dashboard",
+        redirectUrlComplete: "/sso-callback",
       });
     } catch (error) {
       logger.error("Facebook login error:", error);
@@ -206,93 +211,124 @@ const handleSecondFactor = async (
     }
   };
 
-  // VERSION CORRIGÉE DU HANDLER PRINCIPAL
-  const handleSubmit = async ({
-    identifier,
-    password,
-    role,
-    identifierType,
-  }: AuthParams): Promise<void> => {
-    try {
-      if (!signIn) throw new Error("SignIn not initialized");
+  // app/[locale]/(auth)/login/hooks/useAuth.ts
 
-      logger.auth("Tentative de connexion:", {
-        identifier,
-        identifierType,
-        role,
-      });
+// VERSION CORRIGÉE DU HANDLER PRINCIPAL
+const handleSubmit = async ({
+  identifier,
+  password,
+  role,
+  identifierType,
+  rememberMe = false, 
+}: AuthParams): Promise<void> => {
+  try {
+    if (!signIn) throw new Error("SignIn not initialized");
 
-      // Étape 1: Authentification Clerk
-      const result = await signIn.create({ identifier, password });
-      logger.auth("Statut:", result.status);
+    logger.auth("Tentative de connexion:", {
+      identifier,
+      identifierType,
+      role,
+      rememberMe,
+    });
 
-      // Étape 2: Vérifier le rôle dans la DB
-      const roleCheck = await checkUserRole(identifier, identifierType, role);
-
-      if (!roleCheck.isValid) {
-        logger.warning("Rôle incorrect, annulation de la session");
-
-        // ✅ SEULEMENT annuler si la session est complète
-        if (result.status === "complete" && result.createdSessionId) {
-          await fetch("/api/clerk/end-session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: result.createdSessionId }),
-          });
-        }
-
-        // 2. Déconnecter côté client SANS redirection
-        await signOut({ redirectUrl: window.location.href });
-
-        throw new Error(roleCheck.errorMessage);
-      }
-
-      // Étape 3: Gestion selon le statut
-      if (result.status === "complete") {
-        logger.success("Activation de la session avec rôle:", roleCheck.dbRole);
-
-        if (setActive) {
-          await setActive({ session: result.createdSessionId });
-
-          // Redirection selon le rôle
-          if (roleCheck.dbRole === "ADMIN") {
-            router.push("../../../admin/dashboard");
-          } else if (roleCheck.dbRole === "PROPERTY_OWNER") {
-            router.push("/dashboard/owner");
-          } else {
-            router.push("/dashboard/renter");
-          }
-        }
-      } else if (result.status === "needs_second_factor") {
-        // ✅ Appel à la fonction handleSecondFactor définie plus haut
-        await handleSecondFactor(
-          result,
-          identifier,
-          role,
-          identifierType,
-          roleCheck.dbRole || "",
-        );
-      } else {
-        throw new Error(t("error"));
-      }
-    } catch (error: unknown) {
-      logger.error("Erreur:", error);
-
-      // UTILISATION DES FONCTIONS D'UTILS.TS
-      if (isStandardError(error)) {
-        throw error;
-      } else if (isClerkAPIError(error)) {
-        const translatedMessage = getClerkErrorMessage(
-          error,
-          identifierType,
-          t,
-        );
-        throw new Error(translatedMessage);
-      } else {
-        throw new Error(t("error"));
-      }
+    // Étape 1: Authentification Clerk
+    const result = await signIn.create({ identifier, password });
+    logger.auth("Statut:", result.status);
+    
+    if (rememberMe) {
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      localStorage.removeItem('rememberMe');
     }
-  };
+
+    // Étape 2: Vérifier le rôle dans la DB
+    const roleCheck = await checkUserRole(identifier, identifierType, role);
+
+    if (!roleCheck.isValid) {
+      logger.warning("Rôle incorrect, annulation de la session");
+
+      if (result.status === "complete" && result.createdSessionId) {
+        await fetch("/api/clerk/end-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sessionId: result.createdSessionId }),
+        });
+      }
+
+      await signOut({ redirectUrl: window.location.href });
+      throw new Error(roleCheck.errorMessage);
+    }
+
+    // Étape 3: Gestion selon le statut
+    if (result.status === "complete") {
+      logger.success("Activation de la session avec rôle:", roleCheck.dbRole);
+
+      if (setActive) {
+        await setActive({ session: result.createdSessionId });
+        
+        // 👇 ATTENDRE UN PEU POUR QUE LE COOKIE SOIT DISPONIBLE
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // 👇 RÉCUPÉRER L'URL DE REDIRECTION STOCKÉE
+        const getRedirectUrl = async (): Promise<string> => {
+          try {
+            // Essayer de récupérer l'URL du cookie via l'API
+            const response = await fetch('/api/get-redirect-url');
+            if (response.ok) {
+              const data = await response.json();
+              if (data.url) {
+                console.log("🔄 URL de redirection trouvée:", data.url);
+                // Enlever le /fr/ du début si présent
+                const cleanUrl = data.url.replace(/^\/fr\//, '/');
+                return cleanUrl;
+              }
+            }
+          } catch (error) {
+            console.error("Erreur récupération URL:", error);
+          }
+          
+          // Fallback basé sur le rôle
+          if (roleCheck.dbRole === "ADMIN") {
+            return "../../../admin/dashboard";
+          } else if (roleCheck.dbRole === "PROPERTY_OWNER") {
+            return "/dashboard/owner";
+          } else {
+            return "/dashboard/renter";
+          }
+        };
+
+        const redirectUrl = await getRedirectUrl();
+        console.log("🚀 Redirection vers:", redirectUrl);
+        router.push(redirectUrl);
+      }
+    } else if (result.status === "needs_second_factor") {
+      await handleSecondFactor(
+        result,
+        identifier,
+        role,
+        identifierType,
+        roleCheck.dbRole || "",
+      );
+    } else {
+      throw new Error(t("error"));
+    }
+  } catch (error: unknown) {
+    logger.error("Erreur:", error);
+
+    if (isStandardError(error)) {
+      throw error;
+    } else if (isClerkAPIError(error)) {
+      const translatedMessage = getClerkErrorMessage(
+        error,
+        identifierType,
+        t,
+      );
+      throw new Error(translatedMessage);
+    } else {
+      throw new Error(t("error"));
+    }
+  }
+};
 
   return {
     handleSubmit,
