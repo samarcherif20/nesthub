@@ -5,10 +5,9 @@ import { getMessages } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { isValidLocale } from "@/lib/i18n";
 import { ReactNode } from "react";
-import "../favicon.ico";
-import { ThemeProviderWrapper } from "./theme-provider-wrapper"; // Import the client wrapper
+import { Toaster } from "sonner";
 
-// @ts-expect-error
+import "../favicon.ico";
 import "../globals.css";
 
 interface LayoutProps {
@@ -33,11 +32,16 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
         suppressHydrationWarning
       >
         <body suppressHydrationWarning>
-          <ThemeProviderWrapper>
-            <NextIntlClientProvider messages={messages} locale={locale}>
-              {children}
-            </NextIntlClientProvider>
-          </ThemeProviderWrapper>
+          <NextIntlClientProvider messages={messages} locale={locale}>
+            {children}
+            {/* ⭐⭐⭐ TOASTER AJOUTÉ ICI ⭐⭐⭐ */}
+            <Toaster 
+              position="top-center"
+              richColors
+              closeButton
+              theme={locale === "ar" ? "dark" : "light"} // Optionnel : adapte selon la locale
+            />
+          </NextIntlClientProvider>
         </body>
       </html>
     </ClerkProvider>

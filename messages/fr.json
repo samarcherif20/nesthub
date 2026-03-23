@@ -98,465 +98,75 @@
   "admin": {
     "dashboard": "Tableau de bord",
     "users": "Utilisateurs",
-    "properties": "Propriétés",
-    "transactions": "Transactions",
-    "verifications": "Vérifications",
-    "reports": "Signalements",
-    "disputes": "Litiges",
-    "staticPages": "Pages Statiques",
-    "settings": "Paramètres",
-    "adminPanel": "Panneau d'administration",
-    "administrator": "Administrateur",
-    "logout": "Déconnexion",
-    "searchPlaceholder": "Rechercher...",
-    "searching": "Recherche...",
-    "results": "résultats",
-    "noResults": "Aucun résultat trouvé",
-    "notifications": "Notifications",
-    "new": "nouvelle(s)",
-    "viewAll": "Voir toutes les notifications",
-    "myProfile": "Mon Profil",
+    "verifications": "Vérifications"
+  },
+  "Inscription": {
+    "title": "Inscription",
+    "step": "Étape {step} sur 4",
+    "Compte": "1.Compte",
+    "Documents": "2.Documents",
+    "verificationEmail": "Vérification",
+    "validation": "3.Validation",
+    "chooseRole": "Veuillez choisir un rôle",
+    "roleLandlord": "Propriétaire",
+    "roleTenant": "Locataire",
+    "username": "Nom d'utilisateur",
+    "email": "Adresse e-mail",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "continue": "Continuer",
+    "weak": "Faible",
+    "medium": "Moyen",
+    "good": "Bon",
+    "strong": "Fort",
+    "strength": "Force du mot de passe",
+    "required": "Tous les champs sont requis",
+    "invalidEmail": "Adresse e-mail invalide",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "usernameLength": "Le nom d'utilisateur doit contenir entre 3 et 20 caractères",
+    "passwordLength": "Le mot de passe doit contenir au moins 8 caractères",
+    "passwordStrength": "Le mot de passe est trop faible. Utilisez des majuscules, chiffres et caractères spéciaux",
+    "accountCreated": "Compte créé avec succès ! Un code de vérification a été envoyé à votre email.",
+    "verificationCodeSent": "Nous avons envoyé un code de vérification à {email}",
+    "verificationCode": "Code de vérification",
+    "verify": "Vérifier",
+    "back": "Retour",
+    "resendCode": "Renvoyer le code",
+    "codeResent": "Un nouveau code vous a été envoyé !",
+    "invalidCode": "Code invalide",
+    "verificationFailed": "Vérification échouée",
+    "verificationSuccess": "Félicitations ! Votre compte a été vérifié avec succès.",
+    "alreadyHaveAccount": "Déjà un compte ?",
+    "login": "Se connecter",
+    "termsOfUse": "Conditions d'utilisation",
+    "privacyPolicy": "Politique de confidentialité",
+    "help": "Besoin d'aide ?",
     "security": "Sécurité",
-    "confirmLogout": "Confirmation de déconnexion",
-    "logoutMessage": "Êtes-vous sûr de vouloir vous déconnecter ?",
-    "cancel": "Annuler",
-    "invitationDesAdmins": "Invitation des admins",
-    "usersManagement": {
-      "page": {
-        "title": "Gestion des Utilisateurs",
-        "description": "Gérez tous les utilisateurs de la plateforme"
-      },
-      "actions": {
-        "export": "Exporter Données",
-        "reset": "Réinitialiser les filtres",
-        "view": "Voir profil",
-        "suspend": "Suspendre",
-        "ban": "Bannir",
-        "activate": "Activer"
-      },
-      "filters": {
-        "searchPlaceholder": "Rechercher par nom, email, téléphone...",
-        "role": {
-          "label": "Rôle",
-          "all": "Tous les rôles",
-          "admin": "Admin",
-          "property_owner": "Propriétaire",
-          "tenant": "Locataire"
-        },
-        "status": {
-          "label": "Statut",
-          "all": "Tous les statuts",
-          "active": "Actif",
-          "pending": "En attente",
-          "suspended": "Suspendu",
-          "banned": "Banni",
-          "rejected": "Rejeté",
-          "inactive": "Inactif"
-        },
-        "verification": {
-          "label": "Vérification",
-          "all": "Toutes",
-          "verified": "Vérifié",
-          "pending": "En attente",
-          "rejected": "Rejeté"
-        },
-        "advanced": {
-          "title": "Filtres avancés",
-          "dateRange": "Période d'inscription",
-          "minReliability": "Score fiabilité minimum",
-          "maxFraud": "Score fraude maximum",
-          "minReliabilityPlaceholder": "≥ 50",
-          "maxFraudPlaceholder": "≤ 30"
-        }
-      },
-      "table": {
-        "headers": {
-          "user": "Utilisateur",
-          "contact": "Contact",
-          "role": "Rôle",
-          "status": "Statut",
-          "verification": "Vérification",
-          "reliability": "Fiabilité",
-          "registration": "Inscription",
-          "actions": "Actions"
-        },
-        "user": {
-          "id": "ID"
-        }
-      },
-      "stats": {
-        "totalUsers": "Utilisateurs totaux",
-        "newUsers30d": "Nouveaux (30j)",
-        "activeUsers": "Actifs",
-        "pendingUsers": "En attente",
-        "suspendedUsers": "Suspendus",
-        "bannedUsers": "Bannis",
-        "verifiedIdentity": "Vérifiés",
-        "pendingApprovals": "En attente vérif",
-        "averageReliability": "Fiabilité moyenne"
-      },
-      "badges": {
-        "verified": "Vérifié",
-        "pending": "En attente",
-        "rejected": "Rejeté",
-        "unverified": " Non vérifié",
-        "reliability": "Fiabilité",
-        "fraud": "Fraude"
-      },
-      "alerts": {
-        "sessionExpired": "Session expirée - veuillez vous reconnecter",
-        "unauthorized": "Accès non autorisé",
-        "loadingError": "Erreur de chargement",
-        "exportError": "Erreur lors de l'export",
-        "exportSuccess": "Export réussi"
-      },
-      "messages": {
-        "noUsers": "Aucun utilisateur trouvé",
-        "loading": "Chargement..."
-      },"activateModal": {
-        "title": "Réactiver le compte",
-        "description": "Souhaitez-vous restaurer l'accès complet pour cet utilisateur ?",
-        "confirm": "Réactiver le compte",
-        "cancel": "Annuler",
-        "processing": "Traitement...",
-        "currentStatus": "Ce compte est actuellement {status}",
-        "status": {
-          "suspended": "suspendu",
-          "banned": "banni",
-          "locked": "bloqué",
-          "inactive": "inactif",
-          "rejected": "rejeté",
-          "unknown": "inconnu"
-        }},
-         "warningModal": {
-        "title": "Envoyer un avertissement",
-        "description": "Cette action sera enregistrée dans l'historique",
-        "reason": "Motif",
-        "reliability": "Fiab.",
-        "specifyReason": "Précisez le motif",
-        "optionalMessage": "Message (optionnel)",
-        "explainReason": "Expliquez la raison...",
-        "additionalDetails": "Détails supplémentaires...",
-        "infoMessage": "L'utilisateur recevra un avertissement visible dans son tableau de bord.",
-        "emailSent": "Email envoyé.",
-        "previousWarnings": " Déjà {count} avertissement(s).",
-        "cancel": "Annuler",
-        "send": "Envoyer",
-         "notifyByEmail": "Notifier l'utilisateur par email",
-        "emailNotificationMessage": "Un email sera envoyé à {email} pour lui notifier cet avertissement.",
-        "processing": "Envoi...",
-        "error": "Erreur envoi avertissement",
-        "reasons": {
-          "inappropriateBehavior": {
-            "label": "Comportement inapproprié",
-            "description": "Langage ou attitude déplacée"
-          },
-          "spam": {
-            "label": "Spam",
-            "description": "Messages publicitaires non sollicités"
-          },
-          "falseInformation": {
-            "label": "Fausses informations",
-            "description": "Informations mensongères sur le profil"
-          },
-          "paymentIssues": {
-            "label": "Problèmes de paiement",
-            "description": "Paiements en retard ou refusés"
-          },
-          "multipleAccounts": {
-            "label": "Comptes multiples",
-            "description": "Création de plusieurs comptes"
-          },
-          "other": {
-            "label": "Autre",
-            "description": "Raison personnalisée"
-          }
-        }
-      }, "addNoteModal": {
-        "title": "Ajouter une note interne",
-        "description": "Visible seulement par les administrateurs",
-        "noteContent": "Contenu de la note",
-        "placeholder": "Rédigez votre note ici...",
-        "addNote": "Ajouter la note",
-        "adding": "Ajout...",
-        "cancel": "Annuler",
-        "enterLinkUrl": "Entrez l'URL du lien :",
-        "error": "Erreur lors de l'ajout de la note"
-      },
-       "banModal": {
-        "title": "Bannir définitivement l'utilisateur",
-        "description": "Cette action est irréversible",
-        "reason": "Raison du bannissement",
-        "selectReason": "Sélectionnez une raison...",
-        "evidence": "Preuves et détails",
-        "evidencePlaceholder": "Détaillez les raisons et joignez les liens vers les preuves si nécessaire...",
-         "notify": "Notifier l'utilisateur par email",
-        "emailNotificationMessage": "Un email sera envoyé à {email} pour le notifier de ce bannissement.",
-        "confirmLabel": "Tapez",
-        "cancel": "Annuler",
-        "confirm": "Confirmer le bannissement",
-        "processing": "Traitement..."
-      },
-       "escalateModal": {
-        "title": "Escalade progressive",
-        "description": "Système de sanctions graduelles",
-        "currentLevel": "Niveau actuel",
-        "applySanction": "Sélectionner la prochaine étape",
-        "reason": "Raison de l'escalade",
-        "reasonPlaceholder": "Décrivez les motifs justifiant cette sanction...",
-        "warning": "Avertissement",
-        "suspension": "Suspension",
-        "ban": "Bannissement",
-        "alreadyApplied": "Déjà appliqué à l'utilisateur",
-        "locked": "Verrouillé - Étape suivante requise",
-        "historyNote": "Cette raison sera enregistrée dans l'historique de modération.",
-        "apply": "Appliquer l'escalade",
-         "notify": "Notifier l'utilisateur par email",
-        "emailNotificationMessage": "Un email sera envoyé à {email} pour le notifier de cette sanction.",
-        "cancel": "Annuler",
-        "processing": "Traitement..."
-      },
-       "suspendModal": {
-        "title": "Suspendre temporairement l'utilisateur",
-        "description": "L'utilisateur ne pourra pas se connecter pendant la durée choisie",
-        "duration": "Durée de la suspension",
-        "day": "1 jour",
-        "days": "{count} jours",
-        "reason": "Raison de la suspension",
-        "selectReason": "Sélectionnez une raison",
-        "details": "Motif détaillé",
-        "detailsPlaceholder": "Expliquez brièvement la raison de cette mesure...",
-        "emailNotification": "notification envoyée",
-        "notificationInfo": "Un email sera envoyé à l'utilisateur pour l'informer de la suspension.",
-        "enterLinkUrl": "Entrez l'URL du lien",
-        "cancel": "Annuler",
-        "confirm": "Confirmer la suspension",
-        "processing": "Traitement...",
-        "reasons": {
-          "spam": "Spam ou abus",
-          "tos": "Violation des conditions d'utilisation",
-          "safety": "Sécurité du compte",
-          "other": "Autre raison"
-        },
-        "emailNotificationTitle": "Notification par email",
-        "emailNotificationMessage": "Un email sera envoyé à {email} pour le notifier de cette suspension.",
-        "notify": "Notifier l'utilisateur par email"
-      },  "lockUnlockModal": {
-        "lockTitle": "Bloquer le compte",
-        "unlockTitle": "Débloquer le compte",
-        "lockDescription": "Bloquer manuellement l'accès à ce compte.",
-        "unlockDescription": "Ce compte a été bloqué après plusieurs tentatives de connexion échouées.",
-        "reason": "Raison du blocage",
-        "reasonPlaceholder": "Pourquoi bloquer ce compte ?...",
-        "notifyLock": "Notifier l'utilisateur du blocage",
-        "notifyUnlock": "Notifier l'utilisateur du déblocage",
-        "emailNotificationMessage": "Un email sera envoyé à {email} pour le notifier.",
-        "failedAttempts": "Tentatives échouées",
-        "lock": "Bloquer",
-        "unlock": "Débloquer",
-        "cancel": "Annuler",
-        "processing": "Traitement...",
-        "enterLinkUrl": "Entrez l'URL du lien:"
-      },"actionsHistoryModal": {
-        "title": "Historique des actions",
-        "subtitle": "NESTHUB Administration",
-        "close": "Fermer",
-        "admin": {
-          "default": "Admin"
-        },
-        "search": {
-          "placeholder": "Rechercher un admin, un utilisateur ou un motif..."
-        },
-        "filters": {
-          "label": "Filtrer par",
-          "all": "Tous les types"
-        },
-        "actionTypes": {
-  "suspension": "Suspension",
-  "suspensionUndone": "Suspension annulée",
-  "ban": "Bannissement",
-  "banUndone": "Bannissement annulé",
-  "activation": "Réactivation",
-  "unlock": "Déblocage",
-  "lock": "Blocage",
-  "lockUndone": "Blocage annulé",
-  "warning": "Avertissement",
-  "escalation": "Escalade",
-  "escalationUndone": "Escalade annulée",
-  "note": "Note interne",
-  "rejectVerification": "Rejet vérification",
-  "validateVerification": "Validation vérification",
-  "undone": "Action annulée"
-},
-        "status": {
-          "active": "Actif",
-          "suspended": "Suspendu",
-          "banned": "Banni",
-          "pending": "En attente",
-          "locked": "Bloqué",
-          "inactive": "Inactif",
-          "rejected": "Rejeté"
-        },
-        "user": {
-          "target": "Utilisateur"
-        },
-        "action": {
-          "reason": "Motif"
-        },
-        "undo": {
-          "button": "Annuler",
-          "processing": "Annulation...",
-          "title": "Annuler cette action"
-        },
-        "results": {
-          "showing": "Affichage de {start} à {end} sur {total} résultats",
-          "empty": "Aucune action trouvée"
-        },
-        "errors": {
-          "tokenNotAvailable": "Token non disponible",
-          "apiError": "Erreur API:",
-          "loadFailed": "Impossible de charger l'historique des actions",
-          "retry": "Réessayer"
-        }
-      }
+    "securityMessage": "Cette plateforme utilise un chiffrement AES-256 de bout en bout pour garantir la sécurité de vos données immobilières.",
+    "usernameReserved": "Votre username @{username} est réservé pour les 30 prochaines minutes.",
+    "stepValidated": "Étape 1/4 validée !",
+    "usernameInfo": "3-20 caractères, lettres et chiffres uniquement. Ce nom sera visible sur la plateforme.",
+    "passwordInfo": "Utilisez des caractères spéciaux",
+    "professionalEmail": "Adresse e-mail professionnelle",
+    "publicIdentity": "Identité Publique",
+    "step1Description": "Étape 1 sur 4 : Configurez vos accès sécurisés.",
+    "emailSent": "Nous avons envoyé un code à 6 chiffres à",
+    "enterCode": "Entrez le code à 6 chiffres",
+    "didNotReceiveCode": "Vous n'avez pas reçu le code ?",
+    "errors": {
+      "chooseRole": "Veuillez choisir un rôle (Propriétaire ou Locataire)",
+      "usernameRequired": "Veuillez entrer un nom d'utilisateur",
+      "usernameInvalid": "Le nom d'utilisateur doit contenir entre 3 et 20 caractères",
+      "emailRequired": "Veuillez entrer une adresse email",
+      "emailInvalid": "Veuillez entrer une adresse email valide",
+      "passwordRequired": "Veuillez entrer un mot de passe",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+      "passwordWeak": "Le mot de passe est trop faible. Utilisez des majuscules, chiffres et caractères spéciaux",
+      "confirmPasswordRequired": "Veuillez confirmer votre mot de passe",
+      "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+      "codeRequired": "Veuillez entrer le code à 6 chiffres",
+      "codeInvalid": "Code invalide"
     }
-  },
-  "common": {
-    "yes": "Oui",
-    "no": "Non",
-    "save": "Enregistrer",
-    "cancel": "Annuler",
-    "delete": "Supprimer",
-    "edit": "Modifier",
-    "close": "Fermer",
-    "confirm": "Confirmer",
-    "back": "Retour"
-  },
-  "Terms": {
-  "title": "Conditions Générales d'Utilisation",
-  "version": "Version",
-  "lastUpdate": "Dernière mise à jour :",
-  "print": "Imprimer",
-  "downloadPDF": "Télécharger PDF",
-  "navigation": "Navigation",
-  "needHelp": "Besoin d'aide ?",
-  "helpText": "Si vous avez des questions concernant nos CGU, notre équipe est à votre disposition.",
-  "contactUs": "Nous contacter",
-  "or": "ou",
-  "privacyPolicy": "Politique de Confidentialité",
-  
-  "introduction": {
-    "title": "Introduction et acceptation",
-    "p1": "Les présentes Conditions Générales d'Utilisation (ci-après désignées « CGU ») ont pour objet de définir les modalités et conditions dans lesquelles la plateforme NESTHUB met à la disposition de ses utilisateurs les services de mise en relation immobilière en Tunisie.",
-    "p2": "En accédant ou en utilisant le site web NESTHUB, vous reconnaissez avoir lu, compris et accepté d'être lié par ces termes. Si vous n'acceptez pas ces conditions, vous ne devez pas utiliser nos services.",
-    "warning": "Ces CGU s'appliquent à tous les utilisateurs de la plateforme : locataires, propriétaires et visiteurs non connectés."
-  },
-  
-  "services": {
-    "title": "Description des services",
-    "description": "NESTHUB est une plateforme technologique tunisienne facilitant la location de biens immobiliers entre particuliers. Nos services incluent, sans s'y limiter :",
-    "item1": "La publication d'annonces de location avec photos, vidéos et descriptions détaillées.",
-    "item2": "Un système de messagerie sécurisée avec détection anti-fuite de données personnelles.",
-    "item3": "Un outil de gestion de réservations et de dossiers de location numérique.",
-    "item4": "Des solutions de paiement sécurisé via Konnect, avec gestion de caution en séquestre.",
-    "item5": "Un système de vérification d'identité par OCR (CIN / Passeport).",
-    "item6": "Un score de fiabilité et des badges de confiance pour les utilisateurs vérifiés.",
-    "item7": "Des outils d'intelligence artificielle pour la détection de fraude et la recommandation."
-  },
-  
-  "obligations": {
-    "title": "Obligations de l'utilisateur",
-    "owners": {
-      "title": "Propriétaires",
-      "item1": "Fournir des informations exactes et véridiques sur le bien.",
-      "item2": "Détenir légalement les droits de location sur le bien publié.",
-      "item3": "Respecter les normes de décence et la législation tunisienne.",
-      "item4": "Ne pas publier d'annonces fictives ou trompeuses.",
-      "item5": "Répondre aux demandes de réservation dans un délai raisonnable."
-    },
-    "tenants": {
-      "title": "Locataires",
-      "item1": "Fournir des documents d'identité authentiques.",
-      "item2": "Utiliser la plateforme de manière loyale et honnête.",
-      "item3": "Effectuer tous les paiements exclusivement via NESTHUB.",
-      "item4": "Respecter le règlement intérieur du bien loué.",
-      "item5": "Signaler tout problème via les canaux officiels."
-    },
-    "prohibited": {
-      "title": "Comportements interdits",
-      "text": "Il est strictement interdit de partager des coordonnées personnelles (numéros, emails, IBAN) dans la messagerie, de contourner le système de paiement, de publier de fausses annonces ou de harceler d'autres utilisateurs. Tout manquement peut entraîner la suspension ou le bannissement définitif du compte."
-    }
-  },
-  
-  "paiements": { 
-    "title": "Conditions Financières",
-    "quote": "La sécurité de vos transactions est notre priorité. Tous les paiements effectués sur NESTHUB sont traités par Konnect, prestataire de paiement agréé en Tunisie.",
-    "commission": {
-      "title": "Commissions de service",
-      "text": "NESTHUB prélève une commission de 20% sur chaque transaction. Elle est déduite automatiquement du montant versé au propriétaire et clairement affichée avant toute confirmation."
-    },
-    "deposit": {
-      "title": "Caution (Séquestre)",
-      "text": "La caution est collectée lors du paiement et placée en séquestre. Elle est restituée automatiquement en fin de séjour sans litige, ou arbitrée par NESTHUB en cas de conflit avec justificatifs photos."
-    },
-    "payout": {
-      "title": "Versements aux propriétaires",
-      "text": "Les versements sont effectués après confirmation du check-in, avec un seuil minimum de 50 DT. Un relevé détaillé est disponible dans le tableau de bord propriétaire."
-    },
-    "refund": {
-      "title": "Remboursements",
-      "text": "Les remboursements sont calculés selon la politique d'annulation du propriétaire. Le délai est de 3 à 5 jours ouvrables. NESTHUB peut forcer un remboursement en cas de litige avéré."
-    }
-  },
-  
-  "responsabilite": {  
-    "title": "Limitation de Responsabilité",
-    "description": "NESTHUB agit en tant qu'hébergeur de contenu et intermédiaire technique. La plateforme ne peut être tenue responsable :",
-    "item1": "Du contenu des annonces publiées par les utilisateurs.",
-    "item2": "De l'inexécution ou de la mauvaise exécution du bail conclu entre les parties.",
-    "item3": "Des dommages indirects résultant de l'utilisation du service.",
-    "item4": "Des interruptions temporaires du service pour maintenance ou force majeure.",
-    "item5": "De la qualité, de la conformité ou de l'état réel des biens mis en location."
-  },
-  
-  "resiliation": {
-    "title": "Résiliation",
-    "description": "L'utilisateur peut supprimer son compte à tout moment depuis ses paramètres. NESTHUB se réserve le droit de suspendre ou résilier tout compte en cas de :",
-    "reason1": {
-      "title": "Non-respect des CGU",
-      "desc": "Violation des règles d'utilisation."
-    },
-    "reason2": {
-      "title": "Activités frauduleuses",
-      "desc": "Fausses identités, arnaques, faux avis."
-    },
-    "reason3": {
-      "title": "Contournement système",
-      "desc": "Paiements ou partage de contacts hors NH."
-    },
-    "process": "La résiliation suit le processus d'escalade progressive : avertissement → suspension temporaire → bannissement définitif, sauf fraude grave justifiant une action immédiate."
-  },
-  
-  "donnees": {  
-    "title": "Données personnelles",
-    "description": "NESTHUB s'engage à protéger vos données personnelles. Vos droits incluent :",
-    "right1": {
-      "title": "Accès",
-      "desc": "Consulter vos données"
-    },
-    "right2": {
-      "title": "Rectification",
-      "desc": "Corriger vos données"
-    },
-    "right3": {
-      "title": "Suppression",
-      "desc": "Effacer votre compte"
-    },
-    "right4": {
-      "title": "Portabilité",
-      "desc": "Exporter vos données"
-    },
-    "footer": "Pour exercer vos droits, consultez notre"
   }
 },
   "Privacy": {

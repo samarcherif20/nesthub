@@ -304,3 +304,73 @@ enum VerificationStatus {
   VALIDATED
   REJECTED
 }
+
+model User {
+  id                String   @id @default(uuid())
+  clerkId           String   @unique
+  email             String   @unique
+  username          String   @unique
+  firstName         String?
+  lastName          String?
+  phoneNumber       String?  @unique        // ← @unique AJOUTÉ
+  phoneVerified     Boolean  @default(false) // ← NOUVEAU
+  phoneVerifiedAt   DateTime?               // ← NOUVEAU
+  profilePictureUrl String?
+  bio               String?  @db.Text
+  spokenLanguages   String[] @default([])
+  preferredLocale   String   @default("fr")
+
+  role              UserRole      @default(TENANT)
+  status            AccountStatus @default(PENDING_VALIDATION)
+  isEmailVerified   Boolean       @default(false)
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt     // ← @updatedAt AJOUTÉ (manquait)
+  lastLogin         DateTime?
+
+  identityVerification IdentityVerification?
+  otpCodes             OtpCode[]             // ← NOUVEAU
+
+  @@map("users")
+}
+
+model OtpCode {                              // ← NOUVEAU MODÈLE COMPLET
+  id          String   @id @default(uuid())
+  userId      String
+  phoneNumber String
+  code        String
+  expiresAt   DateTime
+  used        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("otp_codes")
+}
+
+model IdentityVerification {
+  id               String             @id @default(uuid())
+  userId           String             @unique
+  documentFrontUrl String?
+  documentBackUrl  String?
+  submissionDate   DateTime?
+  processedDate    DateTime?
+  status           VerificationStatus @default(PENDING)
+  adminComment     String?            @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("identity_verifications")
+}
+
+model StaticPage {
+  id          String   @id @default(uuid())
+  type        String   @unique
+  title       String
+  slug        String   @unique
+  htmlContent String   @db.Text
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("static_pages")
+}

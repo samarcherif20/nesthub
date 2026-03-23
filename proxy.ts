@@ -9,46 +9,14 @@ const intlMiddleware = createMiddleware({
   localePrefix: "always",
 });
 
+const ADMIN_URL_KEY = process.env.ADMIN_URL_KEY;
+const COOKIE_NAME = "admin_gate_unlocked";
+
 export default clerkMiddleware(async (auth, req) => {
-  const { pathname } = req.nextUrl;
-  const { userId } = await auth();
+  const { pathname, searchParams } = req.nextUrl;
 
-  // ========================================
-  // API routes — AJOUT des routes publiques
-  // ========================================
+  // API routes — pas d'intl
   if (pathname.startsWith("/api/")) {
-    // ✅ Routes API qui ne nécessitent PAS d'authentification
-    const publicApiRoutes = [
-      "/api/clerk/webhook",
-      "/api/clerk/users-by-email",
-      "/api/clerk/end-session",
-      "/api/users/by-email",
-      "/api/users/by-clerk-id",
-      "/api/users/by-username",
-      "/api/auth/login",
-      "/api/auth/register",
-      "/api/cron/reactivate-users",
-      "/api/get-redirect-url", // 👈 AJOUTÉ (pour récupérer l'URL de redirection)
-    ];
-
-    // Vérifier si la route est publique
-    const isPublicApiRoute = publicApiRoutes.some((route) =>
-      pathname.startsWith(route),
-    );
-
-    if (isPublicApiRoute) {
-      console.log("🔓 [API PUBLIQUE] Accès autorisé:", pathname);
-      return NextResponse.next();
-    }
-    console.log("🔐 [API CHECK]", pathname);
-
-    // Pour les autres routes API (comme /api/admin/users)
-    console.log("🔐 [API PRIVEE] Vérification pour:", pathname);
-    if (!userId) {
-      console.log("❌ [API PRIVEE] Non authentifié");
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
-    console.log("✅ [API PRIVEE] Authentifié, userId:", userId);
     return NextResponse.next();
   }
 
@@ -66,116 +34,44 @@ export default clerkMiddleware(async (auth, req) => {
   // Déterminer locale et chemin
   // ========================================
   const pathParts = pathname.split("/").filter(Boolean);
-  const locale =
-    pathParts[0] && isValidLocale(pathParts[0]) ? pathParts[0] : defaultLocale;
+  const locale = pathParts[0] && isValidLocale(pathParts[0])
+    ? pathParts[0]
+    : defaultLocale;
   const pathWithoutLocale = "/" + pathParts.slice(1).join("/");
-
-  // ========================================
-  // GESTION DE LA REDIRECTION APRÈS LOGIN (AJOUTÉ)
-  // ========================================
-  
-  // Si l'utilisateur est connecté
-  if (userId) {
-    // Vérifier s'il y a une URL de redirection stockée
-    const redirectUrl = req.cookies.get('redirectAfterLogin')?.value;
-    
-    // Vérifier si la page actuelle est une page publique
-    const publicPaths = [
-      "/",
-      "/login",
-      "/register",
-      "/cgu",
-      "/faq",
-      "/about",
-      "/how-it-works",
-      "/verify-email-code",
-      "/terms",
-      "/privacy"
-    ];
-    const isPublicPage = publicPaths.includes(pathWithoutLocale);
-    
-    // Si on a une URL de redirection et qu'on est sur une page publique
-    if (isPublicPage && redirectUrl) {
-      console.log("🔄 Redirection vers:", redirectUrl);
-      const response = NextResponse.redirect(new URL(redirectUrl, req.url));
-      response.cookies.delete('redirectAfterLogin');
-      return response;
-    }
-  } else {
-    // Si l'utilisateur n'est PAS connecté
-    const publicPaths = [
-      "/",
-      "/login",
-      "/register",
-      "/cgu",
-      "/faq",
-      "/about",
-      "/how-it-works",
-      "/verify-email-code",
-      "/terms",
-      "/privacy"
-    ];
-    const isPublicPage = publicPaths.includes(pathWithoutLocale);
-    const isStaticAsset = pathname.includes('/_next') || pathname.includes('/favicon.ico');
-    
-    // Ne pas rediriger pour les assets statiques
-    if (!isPublicPage && !isStaticAsset && !pathname.startsWith('/api/')) {
-      console.log("🔒 Page protégée, stockage de l'URL:", pathname);
-      
-      // Stocker l'URL demandée pour redirection après login
-      const redirectUrl = pathWithoutLocale + req.nextUrl.search;
-      const response = NextResponse.redirect(new URL(`/${locale}/login`, req.url));
-      
-      response.cookies.set('redirectAfterLogin', redirectUrl, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 10, // 10 minutes
-        path: '/',
-      });
-      
-      return response;
-    }
-  }
 
   // ========================================
   // Pages publiques
   // ========================================
-  const publicPaths = [
-    "/",
-    "/login",
-    "/register",
-    "/cgu",
-    "/faq",
-    "/about",
-    "/how-it-works",
-    "/verify-email-code",
-    "/terms",
-    "/privacy"
-  ];
-
+  const publicPaths = ["/", "/login", "/inscription", "/cgu", "/faq", "/about", "/how-it-works","/complete-profile",];
   if (publicPaths.includes(pathWithoutLocale)) {
+    return intlResponse;
+  }
+
+  // ========================================
+  // Zone admin
+  // ========================================
+  if (pathWithoutLocale.startsWith("/admin")) {
+    const isUnlocked = req.cookies.get(COOKIE_NAME)?.value === "true";
+    if (!isUnlocked) {
+      const gateUrl = new URL(`/${locale}/admin-gate`, req.url);
+      const key = searchParams.get("key");
+      if (key) gateUrl.searchParams.set("key", key);
+      return NextResponse.redirect(gateUrl);
+    }
     return intlResponse;
   }
 
   // ========================================
   // Routes protégées
   // ========================================
+  const { userId } = await auth();
   if (!userId) {
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
-  }
-  
-  // ✅ Vérification spécifique pour les pages admin/verifications
-  if (pathWithoutLocale.startsWith('/admin/verifications')) {
-    console.log("🔐 Accès à la page verifications:", pathWithoutLocale);
   }
 
   return intlResponse;
 });
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)",
-    "/api/:path*",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)" ],
 };
