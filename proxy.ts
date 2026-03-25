@@ -11,27 +11,56 @@ const intlMiddleware = createMiddleware({
 
 export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
-  const { userId } = await auth();
+  const { userId, sessionClaims, getToken } = await auth();
+
+  // 🔥 Récupérer le token avec le template personnalisé
+  const token = await getToken({ template: "my-app-template" });
+  
+  // Décoder le token pour extraire le rôle
+  let roleFromToken = null;
+  if (token) {
+    try {
+      const decoded = JSON.parse(atob(token.split('.')[1]));
+      roleFromToken = decoded.role;
+      console.log("🔐 Rôle depuis le token JWT:", roleFromToken);
+    } catch (e) {
+      console.error("Erreur décodage token:", e);
+    }
+  }
+
+  // ✅ ADDED — bypass everything for verify-catch
+  if (pathname.includes("/inscription/verify-catch")) {
+    return intlMiddleware(req);
+  }
 
   // ========================================
   // API routes — AJOUT des routes publiques
   // ========================================
   if (pathname.startsWith("/api/")) {
-    // ✅ Routes API qui ne nécessitent PAS d'authentification
     const publicApiRoutes = [
-      "/api/clerk/webhook",
+      "/api/clerk/webhook/clerk",
       "/api/clerk/users-by-email",
       "/api/clerk/end-session",
       "/api/users/by-email",
       "/api/users/by-clerk-id",
       "/api/users/by-username",
+      "/api/users/verify-email",
+      "/api/users/create",
+      "/api/users/update",
+      "/api/users/verify-whatsapp",
+      "/api/users/add-whatsapp",
+      "/api/users/upload-photo",
+      "/api/users/complete-profil",
+      "/api/auth/create-clerk-user",
+      "/api/users/update-clerk-id",
       "/api/auth/login",
       "/api/auth/register",
       "/api/cron/reactivate-users",
-      "/api/get-redirect-url", // 👈 AJOUTÉ (pour récupérer l'URL de redirection)
+      "/api/get-redirect-url",
+          "/api/auth/reset-password", // ✅ AJOUTER CETTE LIGNE
+
     ];
 
-    // Vérifier si la route est publique
     const isPublicApiRoute = publicApiRoutes.some((route) =>
       pathname.startsWith(route),
     );
@@ -42,7 +71,6 @@ export default clerkMiddleware(async (auth, req) => {
     }
     console.log("🔐 [API CHECK]", pathname);
 
-    // Pour les autres routes API (comme /api/admin/users)
     console.log("🔐 [API PRIVEE] Vérification pour:", pathname);
     if (!userId) {
       console.log("❌ [API PRIVEE] Non authentifié");
@@ -57,7 +85,6 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   const intlResponse = intlMiddleware(req);
 
-  // Si redirect (ex: / → /fr), suivre immédiatement
   if (intlResponse.status >= 300 && intlResponse.status < 400) {
     return intlResponse;
   }
@@ -71,87 +98,162 @@ export default clerkMiddleware(async (auth, req) => {
   const pathWithoutLocale = "/" + pathParts.slice(1).join("/");
 
   // ========================================
-  // GESTION DE LA REDIRECTION APRÈS LOGIN (AJOUTÉ)
+  // GESTION DE LA REDIRECTION APRÈS LOGIN
   // ========================================
-  
-  // Si l'utilisateur est connecté
   if (userId) {
-    // Vérifier s'il y a une URL de redirection stockée
-    const redirectUrl = req.cookies.get('redirectAfterLogin')?.value;
-    
-    // Vérifier si la page actuelle est une page publique
+    const redirectUrl = req.cookies.get("redirectAfterLogin")?.value;
+
     const publicPaths = [
       "/",
       "/login",
-      "/register",
+      "/inscription/verify",
+      "/inscription/verify-catch",
+      "/inscription",
+      "/complete-profile",
       "/cgu",
       "/faq",
       "/about",
       "/how-it-works",
       "/verify-email-code",
       "/terms",
-      "/privacy"
+      "/privacy",
+       "/sso-callback", // Add this line
+         "/forgot-password",  // Ajouter
+  "/reset-password",   // Ajouter
     ];
     const isPublicPage = publicPaths.includes(pathWithoutLocale);
-    
-    // Si on a une URL de redirection et qu'on est sur une page publique
-    if (isPublicPage && redirectUrl) {
+
+    if (
+      isPublicPage &&
+      redirectUrl &&
+      !pathWithoutLocale.includes("verify-catch")
+    ) {
       console.log("🔄 Redirection vers:", redirectUrl);
       const response = NextResponse.redirect(new URL(redirectUrl, req.url));
-      response.cookies.delete('redirectAfterLogin');
+      response.cookies.delete("redirectAfterLogin");
       return response;
     }
   } else {
-    // Si l'utilisateur n'est PAS connecté
     const publicPaths = [
       "/",
       "/login",
-      "/register",
+      "/inscription/verify",
+      "/inscription/verify-catch",
+      "/inscription",
+      "/complete-profile",
       "/cgu",
       "/faq",
       "/about",
       "/how-it-works",
       "/verify-email-code",
       "/terms",
-      "/privacy"
+      "/privacy",
+       "/sso-callback", // Add this line
+         "/forgot-password",  // Ajouter
+  "/reset-password",   // Ajouter
     ];
     const isPublicPage = publicPaths.includes(pathWithoutLocale);
-    const isStaticAsset = pathname.includes('/_next') || pathname.includes('/favicon.ico');
-    
-    // Ne pas rediriger pour les assets statiques
-    if (!isPublicPage && !isStaticAsset && !pathname.startsWith('/api/')) {
+    const isStaticAsset =
+      pathname.includes("/_next") || pathname.includes("/favicon.ico");
+
+    if (!isPublicPage && !isStaticAsset && !pathname.startsWith("/api/")) {
       console.log("🔒 Page protégée, stockage de l'URL:", pathname);
-      
-      // Stocker l'URL demandée pour redirection après login
+
       const redirectUrl = pathWithoutLocale + req.nextUrl.search;
-      const response = NextResponse.redirect(new URL(`/${locale}/login`, req.url));
-      
-      response.cookies.set('redirectAfterLogin', redirectUrl, {
+      const response = NextResponse.redirect(
+        new URL(`/${locale}/login`, req.url),
+      );
+
+      response.cookies.set("redirectAfterLogin", redirectUrl, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 10, // 10 minutes
-        path: '/',
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 10,
+        path: "/",
       });
-      
+
       return response;
     }
   }
 
+  // ========================================
+  // Zone admin — protégée avec vérification du rôle ADMIN
+  // ========================================
+  if (pathWithoutLocale.startsWith("/admin")) {
+    console.log("🔐 Accès admin tenté pour:", pathWithoutLocale);
+    console.log("🔐 userId:", userId);
+    
+    // 🔥 Utiliser le rôle du token JWT d'abord
+    const userRole = roleFromToken;
+    console.log("🔐 Rôle depuis token JWT:", userRole);
+    
+    if (!userId) {
+      console.log("🔴 Pas d'userId, redirection vers login");
+      const redirectUrl = pathWithoutLocale + req.nextUrl.search;
+      const response = NextResponse.redirect(
+        new URL(`/${locale}/login`, req.url),
+      );
+
+      response.cookies.set("redirectAfterLogin", redirectUrl, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 10,
+        path: "/",
+      });
+
+      return response;
+    }
+
+    // 🔑 Récupérer le rôle depuis la base de données (fallback si token n'a pas le rôle)
+    let role = userRole;
+    
+    if (!role) {
+      try {
+        const { prisma } = await import("@/lib/prisma");
+
+        const user = await prisma.user.findUnique({
+          where: { clerkId: userId },
+          select: { role: true },
+        });
+
+        role = user?.role;
+        console.log("🔐 Rôle récupéré depuis DB (fallback):", role);
+      } catch (error) {
+        console.error("❌ Erreur récupération rôle depuis DB:", error);
+        return NextResponse.redirect(new URL(`/${locale}/`, req.url));
+      }
+    }
+
+    if (role !== "ADMIN") {
+      console.log("❌ Accès admin refusé - rôle:", role);
+      return NextResponse.redirect(new URL(`/${locale}/`, req.url));
+    }
+
+    console.log("✅ Accès admin autorisé pour:", userId);
+    return intlResponse;
+  }
+  
   // ========================================
   // Pages publiques
   // ========================================
   const publicPaths = [
     "/",
     "/login",
-    "/register",
+    "/inscription/verify",
+    "/complete-profile",
+    "/inscription",
+    "/inscription/verify-catch",
     "/cgu",
     "/faq",
     "/about",
     "/how-it-works",
     "/verify-email-code",
     "/terms",
-    "/privacy"
+    "/privacy",
+     "/sso-callback", // Add this line
+       "/forgot-password",  // Ajouter
+  "/reset-password",   // Ajouter
   ];
 
   if (publicPaths.includes(pathWithoutLocale)) {
@@ -164,9 +266,8 @@ export default clerkMiddleware(async (auth, req) => {
   if (!userId) {
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
   }
-  
-  // ✅ Vérification spécifique pour les pages admin/verifications
-  if (pathWithoutLocale.startsWith('/admin/verifications')) {
+
+  if (pathWithoutLocale.startsWith("/admin/verifications")) {
     console.log("🔐 Accès à la page verifications:", pathWithoutLocale);
   }
 

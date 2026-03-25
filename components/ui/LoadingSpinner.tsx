@@ -11,6 +11,7 @@ interface LoadingSpinnerProps {
   text?: string;
   className?: string;
   iconClassName?: string;
+  speed?: 'fast' | 'normal' | 'slow' | 'very-slow'; // New prop for speed control
 }
 
 export default function LoadingSpinner({
@@ -21,6 +22,7 @@ export default function LoadingSpinner({
   text,
   className = '',
   iconClassName = '',
+  speed = 'normal', // Default to normal speed
 }: LoadingSpinnerProps) {
 
   const sizes = {
@@ -40,6 +42,14 @@ export default function LoadingSpinner({
     white: 'text-white',
   };
 
+  // Speed classes mapping - you'll need to add these to your global CSS
+  const speedClasses = {
+    fast: 'animate-spin-fast',      // 0.75s rotation
+    normal: 'animate-spin',          // 1s rotation (default)
+    slow: 'animate-spin-slow',       // 1.5s rotation
+    'very-slow': 'animate-spin-very-slow', // 2.5s rotation
+  };
+
   const renderSpinner = () => {
     switch (variant) {
       case 'spinner':
@@ -50,7 +60,7 @@ export default function LoadingSpinner({
             className={cn(
               sizes[size],
               colorsMap[color],
-              "animate-spin",
+              speedClasses[speed], // Use speed class here
               iconClassName
             )}
           />
@@ -97,7 +107,7 @@ export default function LoadingSpinner({
               className={cn(
                 sizes[size],
                 colorsMap[color],
-                "animate-spin",
+                speedClasses[speed], // Use speed class for ring variant too
                 iconClassName
               )}
             />
@@ -137,12 +147,19 @@ export default function LoadingSpinner({
 }
 
 // Version simplifiée pour une utilisation rapide
-export function SimpleSpinner({ className, ...props }: React.ComponentProps<"svg">) {
+export function SimpleSpinner({ className, speed = 'normal', ...props }: React.ComponentProps<"svg"> & { speed?: 'fast' | 'normal' | 'slow' | 'very-slow' }) {
+  const speedClasses = {
+    fast: 'animate-spin-fast',
+    normal: 'animate-spin',
+    slow: 'animate-spin-slow',
+    'very-slow': 'animate-spin-very-slow',
+  };
+
   return (
     <LoaderIcon
       role="status"
       aria-label="Loading"
-      className={cn("size-4 animate-spin", className)}
+      className={cn("size-4", speedClasses[speed], className)}
       {...props}
     />
   );

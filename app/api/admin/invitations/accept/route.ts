@@ -44,10 +44,19 @@ export async function POST(req: NextRequest) {
     const clerk = await clerkClient();
     console.log("✅ Clerk client initialized");
 
-    // Vérifier si compte Clerk existant
-    const existingClerkUsers = await clerk.users.getUserList({ 
-      emailAddress: [invitation.email] 
-    });
+    // ✅ Correction: Utiliser la bonne méthode pour récupérer les utilisateurs
+    let existingClerkUsers;
+    try {
+      existingClerkUsers = await clerk.users.getUserList({
+        emailAddress: [invitation.email]
+      });
+      console.log("📊 Clerk users found:", existingClerkUsers.data.length);
+    } catch (clerkError) {
+      console.error("❌ Error fetching users from Clerk:", clerkError);
+      return NextResponse.json({ 
+        error: "Erreur de communication avec le service d'authentification" 
+      }, { status: 500 });
+    }
     
     const isExistingAccount = existingClerkUsers.data.length > 0;
     console.log("👤 Existing account in Clerk:", isExistingAccount);
@@ -59,10 +68,18 @@ export async function POST(req: NextRequest) {
       clerkUserId = existingClerkUsers.data[0].id;
       console.log("👤 Updating existing user:", clerkUserId);
 
-      // Mettre à jour les métadonnées
-      await clerk.users.updateUser(clerkUserId, {
-        publicMetadata: { role: "ADMIN" },
-      });
+      try {
+        // Mettre à jour les métadonnées
+        await clerk.users.updateUser(clerkUserId, {
+          publicMetadata: { role: "ADMIN" },
+        });
+        console.log("✅ Clerk user metadata updated");
+      } catch (clerkError) {
+        console.error("❌ Error updating Clerk user:", clerkError);
+        return NextResponse.json({ 
+          error: "Erreur lors de la mise à jour du compte" 
+        }, { status: 500 });
+      }
 
       // Vérifier si l'utilisateur existe dans la DB
       const existingDbUser = await prisma.user.findUnique({ 
@@ -76,13 +93,12 @@ export async function POST(req: NextRequest) {
           data: { 
             role: "ADMIN", 
             status: AccountStatus.ACTIVE,
-            isIdentityVerified: true, // ✅ Vérification automatique
-            verifiedAt: new Date(), // Date de vérification
+            isIdentityVerified: true,
+            verifiedAt: new Date(),
           },
         });
       } else {
         console.log("💾 Creating new DB user from Clerk data");
-        // Créer l'utilisateur dans la DB
         const clerkUser = existingClerkUsers.data[0];
         await prisma.user.create({
           data: {
@@ -94,8 +110,8 @@ export async function POST(req: NextRequest) {
             role: "ADMIN",
             status: AccountStatus.ACTIVE,
             isEmailVerified: true,
-            isIdentityVerified: true, // ✅ Vérification automatique
-            verifiedAt: new Date(), // Date de vérification
+            isIdentityVerified: true,
+            verifiedAt: new Date(),
           },
         });
       }
@@ -138,7 +154,7 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        // Créer l'utilisateur dans Clerk AVEC username
+        // Créer l'utilisateur dans Clerk
         console.log("📤 Sending request to Clerk to create user with username...");
         
         const clerkUser = await clerk.users.createUser({
@@ -153,7 +169,7 @@ export async function POST(req: NextRequest) {
         clerkUserId = clerkUser.id;
         console.log("✅ Clerk user created successfully:", clerkUserId);
 
-        // Créer l'utilisateur dans la DB avec vérification automatique
+        // Créer l'utilisateur dans la DB
         await prisma.user.create({
           data: {
             clerkId: clerkUserId,
@@ -164,63 +180,53 @@ export async function POST(req: NextRequest) {
             role: "ADMIN",
             status: AccountStatus.ACTIVE,
             isEmailVerified: true,
-            isIdentityVerified: true, // ✅ Vérification automatique
-            verifiedAt: new Date(), // Date de vérification
+            isIdentityVerified: true,
+            verifiedAt: new Date(),
           },
         });
         console.log("💾 DB user created successfully with automatic verification");
         
       } catch (clerkError: any) {
-        console.error("❌ Erreur création Clerk - Détails complets:", JSON.stringify(clerkError, null, 2));
+        console.error("❌ Erreur création Clerk:", clerkError);
         
-        // Afficher les erreurs spécifiques de Clerk
+        // Gestion détaillée des erreurs Clerk
         if (clerkError.errors && clerkError.errors.length > 0) {
-          const errorMessages = clerkError.errors.map((err: any) => err.message).join(", ");
-          console.error("❌ Clerk error messages:", errorMessages);
-          
-          // Vérifier si c'est une erreur de username déjà pris
-          const usernameError = clerkError.errors.find((err: any) => 
-            err.meta?.paramName === "username" || err.message?.includes("username")
-          );
-          
-          if (usernameError) {
-            return NextResponse.json({ 
-              error: "Ce nom d'utilisateur est déjà pris. Veuillez en choisir un autre." 
-            }, { status: 400 });
+          for (const err of clerkError.errors) {
+            console.error(`❌ Clerk error: ${err.code} - ${err.message}`);
+            
+            // Erreur username déjà pris
+            if (err.code === "form_identifier_exists" && err.meta?.paramName === "username") {
+              return NextResponse.json({ 
+                error: "Ce nom d'utilisateur est déjà pris" 
+              }, { status: 409 });
+            }
+            
+            // Erreur email déjà existant
+            if (err.code === "form_identifier_exists" && err.meta?.paramName === "email_address") {
+              return NextResponse.json({ 
+                error: "Un compte existe déjà avec cet email" 
+              }, { status: 409 });
+            }
+            
+            // Erreur mot de passe trop commun
+            if (err.code === "form_password_pwned") {
+              return NextResponse.json({ 
+                error: "Ce mot de passe est trop commun, choisissez-en un autre" 
+              }, { status: 400 });
+            }
+            
+            // Erreur mot de passe trop court
+            if (err.code === "form_password_length_too_short") {
+              return NextResponse.json({ 
+                error: "Le mot de passe est trop court (minimum 8 caractères)" 
+              }, { status: 400 });
+            }
           }
-          
-          // Retourner un message d'erreur plus spécifique
-          return NextResponse.json({ 
-            error: `Erreur Clerk: ${errorMessages}` 
-          }, { status: 400 });
         }
         
-        if (clerkError?.errors?.[0]?.code === "form_identifier_exists") {
-          // Vérifier si c'est pour l'email ou le username
-          const paramName = clerkError.errors[0]?.meta?.paramName;
-          if (paramName === "username") {
-            return NextResponse.json({ 
-              error: "Ce nom d'utilisateur est déjà pris" 
-            }, { status: 409 });
-          }
-          return NextResponse.json({ 
-            error: "Un compte existe déjà avec cet email" 
-          }, { status: 409 });
-        }
-        
-        if (clerkError?.errors?.[0]?.code === "form_password_pwned") {
-          return NextResponse.json({ 
-            error: "Ce mot de passe est trop commun, choisissez-en un autre" 
-          }, { status: 400 });
-        }
-        
-        if (clerkError?.errors?.[0]?.code === "form_password_length_too_short") {
-          return NextResponse.json({ 
-            error: "Le mot de passe est trop court (minimum 8 caractères)" 
-          }, { status: 400 });
-        }
-        
-        throw clerkError;
+        return NextResponse.json({ 
+          error: "Erreur lors de la création du compte" 
+        }, { status: 500 });
       }
     }
 

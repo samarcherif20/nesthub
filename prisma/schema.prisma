@@ -7,6 +7,30 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  ADMIN
+  PROPERTY_OWNER
+  TENANT
+}
+
+enum AccountStatus {
+  ACTIVE
+  TEMPORARILY_SUSPENDED
+  PERMANENTLY_BANNED
+  PENDING_VALIDATION
+  SECURITY_LOCKED
+  INACTIVE
+  REJECTED
+  ANUALLY_BLOCKED
+  MANUALLY_BLOCKED
+}
+
+enum VerificationStatus {
+  PENDING
+  VALIDATED
+  REJECTED
+}
+
 model User {
   id                   String                @id @default(uuid())
   clerkId              String                @unique
@@ -14,7 +38,9 @@ model User {
   username             String?               @unique
   firstName            String?
   lastName             String?
-  phoneNumber          String?
+  phoneNumber          String?               @unique
+  phoneVerified        Boolean               @default(false)
+  phoneVerifiedAt      DateTime?
   profilePictureUrl    String?
   bio                  String?
   spokenLanguages      String[]              @default([])
@@ -46,6 +72,8 @@ model User {
   reportsMade          UserReport[]          @relation("Reporter")
   stats                UserStats?
   verificationRequests VerificationRequest[]
+  otpCodes             OtpCode[]
+  identityVerification IdentityVerification?
 
   @@index([email])
   @@index([status])
@@ -55,14 +83,48 @@ model User {
   @@map("users")
 }
 
+
+model OtpCode {
+  id          String   @id @default(uuid())
+  userId      String
+  phoneNumber String
+  code        String
+  expiresAt   DateTime
+  used        Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([phoneNumber])
+  @@index([expiresAt])
+  @@map("otp_codes")
+}
+
+model IdentityVerification {
+  id               String             @id @default(uuid())
+  userId           String             @unique
+  documentFrontUrl String?
+  documentBackUrl  String?
+  submissionDate   DateTime?
+  processedDate    DateTime?
+  status           VerificationStatus @default(PENDING)
+  adminComment     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("identity_verifications")
+}
+
 model AdminInvitation {
   id         String    @id @default(uuid())
-  email      String    @unique
+  email      String    
   token      String    @unique
   invitedBy  String
   role       UserRole  @default(ADMIN)
   expiresAt  DateTime
   acceptedAt DateTime?
+  revokedAt  DateTime? // Ajouter ce champ
   createdAt  DateTime  @default(now())
 
   @@index([email])
@@ -279,28 +341,4 @@ model EmailLog {
   @@index([userId])
   @@index([createdAt])
   @@map("email_logs")
-}
-
-enum UserRole {
-  ADMIN
-  PROPERTY_OWNER
-  TENANT
-}
-
-enum AccountStatus {
-  ACTIVE
-  TEMPORARILY_SUSPENDED
-  PERMANENTLY_BANNED
-  PENDING_VALIDATION
-  SECURITY_LOCKED
-  INACTIVE
-  REJECTED
-  ANUALLY_BLOCKED
-  MANUALLY_BLOCKED
-}
-
-enum VerificationStatus {
-  PENDING
-  VALIDATED
-  REJECTED
 }

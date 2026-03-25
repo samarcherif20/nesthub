@@ -5,6 +5,7 @@ import { WebhookEvent, DeletedObjectJSON } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { UserRole, AccountStatus } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { NextResponse } from "next/server";
 
 interface CustomPublicMetadata {
   role?: "TENANT" | "PROPERTY_OWNER" | "ADMIN";
@@ -36,10 +37,12 @@ interface CustomUserData {
 
 export async function POST(req: Request) {
   // Récupérer le signing secret
+
   const WEBHOOK_SECRET = process.env.CLERK_WEBHOOK_SIGNING_SECRET;
 
   if (!WEBHOOK_SECRET) {
-    throw new Error("Please add CLERK_WEBHOOK_SIGNING_SECRET to .env");
+    console.error("Missing CLERK_WEBHOOK_SIGNING_SECRET");
+    return NextResponse.json({ error: "No webhook secret" }, { status: 500 });
   }
 
   // Récupérer les headers
@@ -53,15 +56,15 @@ export async function POST(req: Request) {
   const body = JSON.stringify(payload);
 
   // ✅ SOLUTION: En développement, on ignore la vérification
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     console.log("🔧 Mode développement: vérification webhook ignorée");
     console.log("📦 Payload reçu:", payload);
-    
+
     // Traiter directement le payload
     try {
       const eventType = payload.type;
       const eventData = payload.data;
-      
+
       switch (eventType) {
         case "user.created":
         case "user.updated":
@@ -73,17 +76,26 @@ export async function POST(req: Request) {
         default:
           console.log(`Unhandled event type: ${eventType}`);
       }
-      
-      return new Response("Webhook processed successfully (dev mode)", { status: 200 });
+
+      return NextResponse.json(
+        { success: true, mode: "development" },
+        { status: 200 },
+      );
     } catch (error) {
       console.error("Error processing webhook in dev mode:", error);
-      return new Response("Error processing webhook", { status: 500 });
+      return NextResponse.json(
+        { error: "Error processing webhook" },
+        { status: 500 },
+      );
     }
   }
 
   // En production, on vérifie la signature
   if (!svixId || !svixTimestamp || !svixSignature) {
-    return new Response("Missing svix headers", { status: 400 });
+    return NextResponse.json(
+      { error: "Missing svix headers" },
+      { status: 400 },
+    );
   }
 
   const wh = new Webhook(WEBHOOK_SECRET);
@@ -97,7 +109,7 @@ export async function POST(req: Request) {
     }) as WebhookEvent;
   } catch (err) {
     console.error("Error verifying webhook:", err);
-    return new Response("Error verifying webhook", { status: 400 });
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
   // Traiter l'événement
@@ -116,17 +128,19 @@ export async function POST(req: Request) {
         console.log(`Unhandled event type: ${eventType}`);
     }
 
-    return new Response("Webhook processed successfully", { status: 200 });
+    return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
     console.error("Error processing webhook:", error);
-    return new Response("Error processing webhook", { status: 500 });
+    return NextResponse.json(
+      { error: "Error processing webhook" },
+      { status: 500 },
+    );
   }
 }
 
-// Fonction handleUserChange avec vérification automatique pour les admins
 async function handleUserChange(data: CustomUserData) {
   const {
-    id,
+    id: realClerkId,
     email_addresses,
     phone_numbers,
     username,
@@ -137,7 +151,7 @@ async function handleUserChange(data: CustomUserData) {
     last_sign_in_at,
   } = data;
 
-  if (!id) {
+  if (!realClerkId) {
     console.error("No user ID provided");
     return;
   }
@@ -159,13 +173,11 @@ async function handleUserChange(data: CustomUserData) {
 
   const phoneNumber =
     public_metadata?.phoneNumber || phone_numbers?.[0]?.phone_number;
-
   const preferredLocale = public_metadata?.preferredLocale || "fr";
-
   const email = email_addresses?.[0]?.email_address;
 
   if (!email) {
-    console.error("No email address provided for user", id);
+    console.error("No email address provided for user", realClerkId);
     return;
   }
 
@@ -173,49 +185,88 @@ async function handleUserChange(data: CustomUserData) {
     email_addresses?.[0]?.verification?.status === "verified";
 
   try {
-    // Convertir last_sign_in_at si présent
     const lastLoginDate = last_sign_in_at ? new Date(last_sign_in_at) : null;
-    
-    // Déterminer le statut du compte et la vérification d'identité en fonction du rôle
-    // Les admins sont automatiquement vérifiés et actifs
     const isAdmin = role === UserRole.ADMIN;
-    const accountStatus = isAdmin ? AccountStatus.ACTIVE : AccountStatus.PENDING_VALIDATION;
-    const isIdentityVerified = isAdmin; // Les admins sont vérifiés par défaut
-    const verifiedAt = isAdmin ? new Date() : null; // Date de vérification pour les admins
+    const accountStatus = isAdmin
+      ? AccountStatus.ACTIVE
+      : AccountStatus.PENDING_VALIDATION;
+    const isIdentityVerified = isAdmin;
+    const verifiedAt = isAdmin ? new Date() : null;
 
-    // Vérifier si l'utilisateur existe déjà
-    const existingUser = await prisma.user.findUnique({
-      where: { clerkId: id }
+    // ✅ Helper to sync role to Clerk public metadata
+    const syncClerkMetadata = async () => {
+      try {
+        const { clerkClient } = await import("@clerk/nextjs/server");
+        const client = await clerkClient();
+        await client.users.updateUser(realClerkId, {
+          publicMetadata: { role },
+        });
+        console.log(`✅ Clerk public metadata updated: role=${role}`);
+      } catch (clerkError) {
+        console.error(
+          "⚠️ Failed to update Clerk metadata (non-blocking):",
+          clerkError,
+        );
+      }
+    };
+
+    // Find by clerkId first
+    let existingUser = await prisma.user.findUnique({
+      where: { clerkId: realClerkId },
     });
 
+    // Fallback: find by email (catches sua_xxx → user_xxx transition)
+    if (!existingUser) {
+      existingUser = await prisma.user.findFirst({
+        where: { email },
+      });
+
+      if (existingUser) {
+        console.log(`🔍 Found existing user by email: ${email}`);
+        console.log(`   Old clerkId: ${existingUser.clerkId}`);
+        console.log(`   New clerkId: ${realClerkId}`);
+      }
+    }
+
     if (existingUser) {
-      // Mise à jour - préserver certains champs si nécessaire
       await prisma.user.update({
-        where: { clerkId: id },
+        where: { id: existingUser.id },
         data: {
+          clerkId: realClerkId,
           email,
-          username: username ?? null,
-          firstName: first_name ?? null,
-          lastName: last_name ?? null,
-          phoneNumber: phoneNumber ?? null,
-          profilePictureUrl: image_url ?? null,
+          username: username ?? existingUser.username,
+          firstName: first_name ?? existingUser.firstName,
+          lastName: last_name ?? existingUser.lastName,
+          phoneNumber: phoneNumber ?? existingUser.phoneNumber,
+          profilePictureUrl: image_url ?? existingUser.profilePictureUrl,
           preferredLocale,
           role,
-          status: accountStatus, // Mise à jour du statut
+          status: accountStatus,
           isEmailVerified,
-          isIdentityVerified: isIdentityVerified || existingUser.isIdentityVerified, // Préserver si déjà vérifié
+          isIdentityVerified:
+            isIdentityVerified || existingUser.isIdentityVerified,
           verifiedAt: isIdentityVerified ? verifiedAt : existingUser.verifiedAt,
           lastLogin: lastLoginDate,
           updatedAt: new Date(),
         },
       });
-      
-      console.log(`✅ User ${id} updated with role: ${role}`);
+
+      // ✅ Sync role to Clerk public metadata
+      await syncClerkMetadata();
+
+      console.log(`✅ User updated successfully!`);
+      console.log(`   ID: ${existingUser.id}`);
+      console.log(`   clerkId: ${realClerkId} (was ${existingUser.clerkId})`);
+      console.log(`   Email: ${email}`);
+      console.log(`   Email verified: ${isEmailVerified}`);
+      console.log(`   Status: ${accountStatus}`);
     } else {
-      // Création d'un nouvel utilisateur
+      console.log(
+        `⚠️ No existing user found for email ${email}, creating new record`,
+      );
       await prisma.user.create({
         data: {
-          clerkId: id,
+          clerkId: realClerkId,
           email,
           username: username ?? null,
           firstName: first_name ?? null,
@@ -226,30 +277,21 @@ async function handleUserChange(data: CustomUserData) {
           role,
           status: accountStatus,
           isEmailVerified,
-          isIdentityVerified, // true pour les admins
-          verifiedAt, // Date de vérification pour les admins
+          isIdentityVerified,
+          verifiedAt,
           lastLogin: lastLoginDate,
           createdAt: new Date(),
           updatedAt: new Date(),
         },
       });
-      
-      console.log(`✅ User ${id} created with role: ${role}`);
-    }
 
-    console.log(`   Email: ${email}`);
-    console.log(`   Username: ${username || 'Non fourni'}`);
-    console.log(`   Locale: ${preferredLocale}`);
-    console.log(`   Status: ${accountStatus}`);
-    console.log(`   Identity Verified: ${isIdentityVerified}`);
-    if (isIdentityVerified) {
-      console.log(`   Verified at: ${verifiedAt?.toISOString()}`);
-    }
-    if (lastLoginDate) {
-      console.log(`   Last login: ${lastLoginDate.toISOString()}`);
+      // ✅ Sync role to Clerk public metadata
+      await syncClerkMetadata();
+
+      console.log(`✅ New user created: ${realClerkId}`);
     }
   } catch (error) {
-    console.error(`Error upserting user ${id}:`, error);
+    console.error(`Error upserting user ${realClerkId}:`, error);
     throw error;
   }
 }
@@ -275,6 +317,9 @@ async function handleUserDeleted(data: DeletedObjectJSON) {
         console.error(`Error deleting user ${id}:`, error);
         throw error;
       }
+    } else {
+      console.error(`Error deleting user ${id}:`, error);
+      throw error;
     }
   }
 }

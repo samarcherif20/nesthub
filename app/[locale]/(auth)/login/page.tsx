@@ -27,6 +27,7 @@ import {
 // Import du hook personnalisé
 import { useAuth, type AuthParams } from "./hooks/useAuth";
 import { ValidationPatterns, type IdentifierType } from "@/lib/utils";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 interface FormErrors {
   identifier?: string;
@@ -216,7 +217,7 @@ export default function LoginPage() {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
         <div className="w-full flex items-center justify-center">
-          <Loader2 className="animate-spin h-8 w-8" />
+          <LoadingSpinner className="animate-spin h-8 w-8" />
         </div>
       </div>
     );
@@ -556,7 +557,7 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
             {t("dontHaveAccount")}{" "}
-            <Link href={`/${locale}/sign-up`} className="text-primary font-bold hover:underline">
+            <Link href={`/${locale}/inscription`} className="text-primary font-bold hover:underline">
               {t("signUp")}
             </Link>
           </p>

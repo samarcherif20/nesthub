@@ -3,7 +3,6 @@ import { useSignIn, useClerk } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { SignInResource } from "@clerk/types";
-// IMPORT des fonctions d'utils
 import {
   isClerkAPIError,
   isStandardError,
@@ -36,7 +35,6 @@ export function useAuth() {
   const router = useRouter();
   const t = useTranslations("Login");
 
-  // Récupérer l'ID Clerk à partir de l'identifiant
   const getClerkUserId = async (
     identifier: string,
     type: IdentifierType,
@@ -60,7 +58,6 @@ export function useAuth() {
     }
   };
 
-  // Vérifier le rôle dans la base de données
   const checkUserRole = async (
     identifier: string,
     type: IdentifierType,
@@ -82,12 +79,10 @@ export function useAuth() {
       logger.auth("Rôle dans la DB:", dbUser.role);
       logger.auth("Rôle sélectionné:", selectedRole);
 
-      // CAS 1: C'est un ADMIN - on accepte toujours
       if (dbUser.role === "ADMIN") {
         return { isValid: true, dbRole: "ADMIN" };
       }
 
-      // CAS 2: L'utilisateur n'a pas sélectionné de rôle
       if (!selectedRole) {
         return {
           isValid: false,
@@ -96,7 +91,6 @@ export function useAuth() {
         };
       }
 
-      // CAS 3: Vérification du rôle pour non-admin
       const roleMapping: Record<string, "renter" | "owner"> = {
         TENANT: "renter",
         PROPERTY_OWNER: "owner",
@@ -120,7 +114,6 @@ export function useAuth() {
     }
   };
 
-  // Gérer la 2FA - Version corrigée
   const handleSecondFactor = async (
     result: SignInResource,
     identifier: string,
@@ -131,20 +124,16 @@ export function useAuth() {
     try {
       logger.auth("2FA requis");
 
-      // ✅ Récupérer les stratégies sous forme de strings
       const strategies =
         result.supportedSecondFactors?.map((sf) => sf.strategy) || [];
 
-      // LOG POUR DIAGNOSTIC
-      console.log("📋 Stratégies 2FA disponibles (strings):", strategies);
+      console.log("📋 Stratégies 2FA disponibles:", strategies);
 
-      // Stocker les infos pour après la 2FA
       sessionStorage.setItem("pendingIdentifier", identifier);
       sessionStorage.setItem("pendingRole", role || "");
       sessionStorage.setItem("pendingIdentifierType", identifierType);
       sessionStorage.setItem("pendingUserRole", dbRole);
 
-      // ✅ Vérifier si email_code est dans le tableau de strings
       if (strategies.includes("email_code")) {
         logger.auth("2FA par email - Préparation...");
         await signIn?.prepareSecondFactor({ strategy: "email_code" });
@@ -153,11 +142,7 @@ export function useAuth() {
         const locale = pathname.split("/")[1] || "fr";
         router.push(`/${locale}/verify-email-code`);
       } else {
-        // Si email_code n'est pas disponible, afficher les stratégies disponibles
-        console.error(
-          "❌ email_code non disponible. Stratégies trouvées:",
-          strategies,
-        );
+        console.error("❌ email_code non disponible. Stratégies:", strategies);
         throw new Error(t("verificationFailed"));
       }
     } catch (error) {
@@ -166,7 +151,6 @@ export function useAuth() {
     }
   };
 
-  // Gestionnaire Google
   const handleGoogleLogin = async (): Promise<void> => {
     try {
       if (!signIn) return;
@@ -181,7 +165,6 @@ export function useAuth() {
     }
   };
 
-  // Gestionnaire Apple
   const handleAppleLogin = async (): Promise<void> => {
     try {
       if (!signIn) return;
@@ -196,7 +179,6 @@ export function useAuth() {
     }
   };
 
-  // Gestionnaire Facebook
   const handleFacebookLogin = async (): Promise<void> => {
     try {
       if (!signIn) return;
@@ -211,124 +193,138 @@ export function useAuth() {
     }
   };
 
-  // app/[locale]/(auth)/login/hooks/useAuth.ts
+  const handleSubmit = async ({
+    identifier,
+    password,
+    role,
+    identifierType,
+    rememberMe = false,
+  }: AuthParams): Promise<void> => {
+    try {
+      if (!signIn) throw new Error("SignIn not initialized");
 
-// VERSION CORRIGÉE DU HANDLER PRINCIPAL
-const handleSubmit = async ({
-  identifier,
-  password,
-  role,
-  identifierType,
-  rememberMe = false, 
-}: AuthParams): Promise<void> => {
-  try {
-    if (!signIn) throw new Error("SignIn not initialized");
-
-    logger.auth("Tentative de connexion:", {
-      identifier,
-      identifierType,
-      role,
-      rememberMe,
-    });
-
-    // Étape 1: Authentification Clerk
-    const result = await signIn.create({ identifier, password });
-    logger.auth("Statut:", result.status);
-    
-    if (rememberMe) {
-      localStorage.setItem('rememberMe', 'true');
-    } else {
-      localStorage.removeItem('rememberMe');
-    }
-
-    // Étape 2: Vérifier le rôle dans la DB
-    const roleCheck = await checkUserRole(identifier, identifierType, role);
-
-    if (!roleCheck.isValid) {
-      logger.warning("Rôle incorrect, annulation de la session");
-
-      if (result.status === "complete" && result.createdSessionId) {
-        await fetch("/api/clerk/end-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId: result.createdSessionId }),
-        });
+      // ✅ FIX 1: Clear any existing session before signing in
+      try {
+        await signOut();
+        await new Promise(resolve => setTimeout(resolve, 200));
+      } catch (_) {
+        // ignore — no session to clear
       }
 
-      await signOut({ redirectUrl: window.location.href });
-      throw new Error(roleCheck.errorMessage);
-    }
-
-    // Étape 3: Gestion selon le statut
-    if (result.status === "complete") {
-      logger.success("Activation de la session avec rôle:", roleCheck.dbRole);
-
-      if (setActive) {
-        await setActive({ session: result.createdSessionId });
-        
-        // 👇 ATTENDRE UN PEU POUR QUE LE COOKIE SOIT DISPONIBLE
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        // 👇 RÉCUPÉRER L'URL DE REDIRECTION STOCKÉE
-        const getRedirectUrl = async (): Promise<string> => {
-          try {
-            // Essayer de récupérer l'URL du cookie via l'API
-            const response = await fetch('/api/get-redirect-url');
-            if (response.ok) {
-              const data = await response.json();
-              if (data.url) {
-                console.log("🔄 URL de redirection trouvée:", data.url);
-                // Enlever le /fr/ du début si présent
-                const cleanUrl = data.url.replace(/^\/fr\//, '/');
-                return cleanUrl;
-              }
-            }
-          } catch (error) {
-            console.error("Erreur récupération URL:", error);
-          }
-          
-          // Fallback basé sur le rôle
-          if (roleCheck.dbRole === "ADMIN") {
-            return "../../../admin/dashboard";
-          } else if (roleCheck.dbRole === "PROPERTY_OWNER") {
-            return "/dashboard/owner";
-          } else {
-            return "/dashboard/renter";
-          }
-        };
-
-        const redirectUrl = await getRedirectUrl();
-        console.log("🚀 Redirection vers:", redirectUrl);
-        router.push(redirectUrl);
-      }
-    } else if (result.status === "needs_second_factor") {
-      await handleSecondFactor(
-        result,
+      logger.auth("Tentative de connexion:", {
         identifier,
+        identifierType,
         role,
-        identifierType,
-        roleCheck.dbRole || "",
-      );
-    } else {
-      throw new Error(t("error"));
-    }
-  } catch (error: unknown) {
-    logger.error("Erreur:", error);
+        rememberMe,
+      });
 
-    if (isStandardError(error)) {
-      throw error;
-    } else if (isClerkAPIError(error)) {
-      const translatedMessage = getClerkErrorMessage(
-        error,
-        identifierType,
-        t,
-      );
-      throw new Error(translatedMessage);
-    } else {
-      throw new Error(t("error"));
+      // Get locale from current path
+      const locale = window.location.pathname.split("/")[1] || "fr";
+
+      const result = await signIn.create({ identifier, password });
+      logger.auth("Statut:", result.status);
+
+      if (rememberMe) {
+        localStorage.setItem("rememberMe", "true");
+      } else {
+        localStorage.removeItem("rememberMe");
+      }
+
+      const roleCheck = await checkUserRole(identifier, identifierType, role);
+
+      if (!roleCheck.isValid) {
+        logger.warning("Rôle incorrect, annulation de la session");
+
+        if (result.status === "complete" && result.createdSessionId) {
+          await fetch("/api/clerk/end-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId: result.createdSessionId }),
+          });
+        }
+
+        await signOut({ redirectUrl: window.location.href });
+        throw new Error(roleCheck.errorMessage);
+      }
+
+      if (result.status === "complete") {
+        logger.success("Activation de la session avec rôle:", roleCheck.dbRole);
+
+        if (setActive) {
+          await setActive({ session: result.createdSessionId });
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // ✅ FIX 2: Role-based redirect with proper locale and path
+          const getRedirectUrl = async (): Promise<string> => {
+            try {
+              const response = await fetch("/api/get-redirect-url");
+              if (response.ok) {
+                const data = await response.json();
+                if (data.url) {
+                  const cleanUrl = data.url.startsWith(`/${locale}`)
+                    ? data.url
+                    : `/${locale}${data.url}`;
+
+                  // ✅ Don't use cookie redirect if it points to wrong role area
+                  const isAdminUrl = cleanUrl.includes("/admin");
+                  const isAdmin = roleCheck.dbRole === "ADMIN";
+
+                  if (isAdminUrl && !isAdmin) {
+                    // Non-admin trying to go to admin area — ignore cookie
+                  } else if (!isAdminUrl && isAdmin) {
+                    // Admin trying to go to non-admin area — ignore cookie
+                  } else {
+                    console.log("🔄 URL de redirection trouvée:", cleanUrl);
+                    return cleanUrl;
+                  }
+                }
+              }
+            } catch (error) {
+              console.error("Erreur récupération URL:", error);
+            }
+
+            // ✅ FIX 3: Fallback with proper locale prefix
+            if (roleCheck.dbRole === "ADMIN") {
+              return `/${locale}/admin/dashboard`;
+            } else if (roleCheck.dbRole === "PROPERTY_OWNER") {
+              return `/${locale}/dashboard/owner`;
+            } else {
+              return `/${locale}/dashboard/renter`;
+            }
+          };
+
+          const redirectUrl = await getRedirectUrl();
+          console.log("🚀 Redirection vers:", redirectUrl);
+          router.push(redirectUrl);
+        }
+      } else if (result.status === "needs_second_factor") {
+        await handleSecondFactor(
+          result,
+          identifier,
+          role,
+          identifierType,
+          roleCheck.dbRole || "",
+        );
+      } else {
+        throw new Error(t("error"));
+      }
+    } catch (error: unknown) {
+      logger.error("Erreur:", error);
+
+      if (isStandardError(error)) {
+        throw error;
+      } else if (isClerkAPIError(error)) {
+        const translatedMessage = getClerkErrorMessage(
+          error,
+          identifierType,
+          t,
+        );
+        throw new Error(translatedMessage);
+      } else {
+        throw new Error(t("error"));
+      }
     }
-  }
-};
+  };
 
   return {
     handleSubmit,

@@ -1,12 +1,14 @@
+// app/api/admin/invitations/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
 export async function DELETE(
   req: NextRequest, 
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { userId } = getAuth(req);
     
     if (!userId) {
@@ -21,8 +23,10 @@ export async function DELETE(
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    await prisma.adminInvitation.delete({ 
-      where: { id: params.id } 
+    // ✅ MODIFIER: Marquer comme révoqué au lieu de supprimer
+    await prisma.adminInvitation.update({ 
+      where: { id: id },
+      data: { revokedAt: new Date() }
     });
     
     return NextResponse.json({ success: true });

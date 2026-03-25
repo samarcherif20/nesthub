@@ -26,7 +26,7 @@ export default function HomePage() {
             Connexion
           </Link>
           <Link
-            href={`/${locale}/register`}
+            href={`/${locale}/inscription`}
             className="border border-slate-900 px-6 py-2 rounded"
           >
             Inscription

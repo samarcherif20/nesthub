@@ -26,7 +26,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
   const messages = await getMessages();
 
   return (
-    <ClerkProvider>
+    <ClerkProvider >
       <html 
         lang={locale} 
         dir={locale === "ar" ? "rtl" : "ltr"}

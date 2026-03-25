@@ -143,8 +143,8 @@ export function getClerkErrorMessage(
   
   // Log pour débogage (seulement en dev)
   if (process.env.NODE_ENV === 'development') {
-    console.log(`🔐 [LOGIN ERROR] Code: ${code}`);
-    console.log(`🔐 [LOGIN ERROR] Message: ${clerkError.message}`);
+    console.log(` [LOGIN ERROR] Code: ${code}`);
+    console.log(` [LOGIN ERROR] Message: ${clerkError.message}`);
   }
 
   // Mapping des codes d'erreur vers les clés de traduction
@@ -265,28 +265,28 @@ export function maskEmail(email: string): string {
 // ============================================
 export const logger = {
   info: (message: string, data?: unknown) => {
-    console.log(`ℹ️ [INFO] ${message}`, data !== undefined ? data : '');
+    console.log(` [INFO] ${message}`, data !== undefined ? data : '');
   },
   
   success: (message: string, data?: unknown) => {
-    console.log(`✅ [SUCCESS] ${message}`, data !== undefined ? data : '');
+    console.log(` [SUCCESS] ${message}`, data !== undefined ? data : '');
   },
   
   warning: (message: string, data?: unknown) => {
-    console.log(`⚠️ [WARNING] ${message}`, data !== undefined ? data : '');
+    console.log(` [WARNING] ${message}`, data !== undefined ? data : '');
   },
   
   error: (message: string, error?: unknown) => {
-    console.error(`❌ [ERROR] ${message}`, error !== undefined ? error : '');
+    console.error(` [ERROR] ${message}`, error !== undefined ? error : '');
   },
   
   auth: (message: string, data?: unknown) => {
-    console.log(`🔐 [AUTH] ${message}`, data !== undefined ? data : '');
+    console.log(` [AUTH] ${message}`, data !== undefined ? data : '');
   },
   
   debug: (message: string, data?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(`🐛 [DEBUG] ${message}`, data !== undefined ? data : '');
+      console.log(` [DEBUG] ${message}`, data !== undefined ? data : '');
     }
   }
 };
