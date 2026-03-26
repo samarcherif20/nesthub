@@ -15,6 +15,11 @@ const languages = [
   { code: "en", name: "English", flag: "/flags/en.webp" },
 ];
 
+// Helper function to set cookie
+const setLanguageCookie = (locale: string) => {
+  document.cookie = `preferred-language=${locale}; path=/; max-age=${60 * 60 * 24 * 365}`;
+};
+
 export default function LanguageSelector() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -38,6 +43,10 @@ export default function LanguageSelector() {
 
   const handleLanguageChange = (newLocale: string) => {
     setIsOpen(false);
+    
+    // Set cookie for middleware
+    setLanguageCookie(newLocale);
+    
     const segments = pathname.split("/");
     segments[1] = newLocale;
     router.push(segments.join("/"));
@@ -53,7 +62,6 @@ export default function LanguageSelector() {
         className="flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
         aria-label="Changer de langue"
       >
-        {/* Current Flag Image */}
         <div className="relative w-6 h-7">
           <Image
             src={currentLanguage.flag}
@@ -63,8 +71,6 @@ export default function LanguageSelector() {
             className="object-cover rounded-sm"
           />
         </div>
-
-       
 
         <svg
           className={`h-4 w-4 text-gray-500 transition-transform duration-200 ${
@@ -83,7 +89,6 @@ export default function LanguageSelector() {
         </svg>
       </button>
 
-      {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute right-2 mt-2 w-56 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 py-1 animate-fadeIn">
           {languages.map((language) => (
@@ -96,7 +101,6 @@ export default function LanguageSelector() {
                 ${currentLocale === language.code ? "bg-blue-50 text-blue-700" : "text-gray-700"}
               `}
             >
-              {/* Flag Image */}
               <div className="relative w-6 h-6 shrink-0">
                 <Image
                   src={language.flag}

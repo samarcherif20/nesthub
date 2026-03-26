@@ -4,49 +4,55 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { EyeOff, Eye, Loader2 } from "lucide-react";
+import { EyeOff, Eye, Loader2, CheckCircle } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { RiLockPasswordLine } from "react-icons/ri";
-import { MdOutlineDangerous } from "react-icons/md";
+import {
+  MdOutlineDangerous,
+  MdVerified,
+  MdAccountCircle,
+  MdOutlineCameraAlt,
+  MdLockOutline,
+  MdReportGmailerrorred,
+  MdOutlineAlternateEmail,
+  MdOutlineArrowForwardIos,
+  MdOutlineLocationOn,
+  MdMarkEmailRead,
+  MdPendingActions,
+} from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { MdOutlineHomeWork } from "react-icons/md";
 import { TbMapPinSearch } from "react-icons/tb";
-import { CheckCircle } from "lucide-react";
-import { FaRegCheckCircle } from "react-icons/fa";
-import { FaCheck } from "react-icons/fa";
-import { CiLock } from "react-icons/ci";
-import { FaCheckCircle } from "react-icons/fa";
+import {
+  FaRegCheckCircle,
+  FaCheckCircle,
+  FaCheck,
+  FaWhatsapp,
+  FaGavel,
+  FaUsers,
+  FaRegUser,
+} from "react-icons/fa";
 import { FaAddressCard } from "react-icons/fa";
 import { BsFillCreditCard2BackFill } from "react-icons/bs";
-import { MdAccountCircle } from "react-icons/md";
-import { MdOutlineCameraAlt } from "react-icons/md";
-import { MdVerified } from "react-icons/md";
-import { FaGavel } from "react-icons/fa6";
+import { GiPartyPopper } from "react-icons/gi";
+import { IoChevronBackSharp } from "react-icons/io5";
+import { LuBadgeInfo } from "react-icons/lu";
 import { TiCloudStorage } from "react-icons/ti";
 import { RiUserFollowFill } from "react-icons/ri";
-import { MdLockOutline } from "react-icons/md";
-import { FaUsers } from "react-icons/fa6";
-import { FaWhatsapp } from "react-icons/fa6";
-import { MdReportGmailerrorred } from "react-icons/md";
 import ImageCropper from "@/components/ui/ImageCropper";
 import { useInscription } from "./hooks/useInscription";
 import { useRouter } from "next/navigation";
-import { MdOutlineAlternateEmail } from "react-icons/md";
-import { MdOutlineArrowForwardIos } from "react-icons/md";
-import { MdOutlineLocationOn } from "react-icons/md";
-import { FaRegUser } from "react-icons/fa6";
-import { IoChevronBackSharp } from "react-icons/io5";
-import { LuBadgeInfo } from "react-icons/lu";
-import { GiPartyPopper } from "react-icons/gi";
-import { MdMarkEmailRead, MdPendingActions } from "react-icons/md";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-// ── Alert components (unchanged) ─────────────────────────────────────────────
+
+// ── Alert components ──
 const SuccessAlert = ({
   message,
   onClose,
+  t,
 }: {
   message: string;
   onClose: () => void;
+  t: any;
 }) => (
   <motion.div
     initial={{ opacity: 0, y: -50, scale: 0.9 }}
@@ -55,12 +61,12 @@ const SuccessAlert = ({
     transition={{ type: "spring", damping: 20 }}
     className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm"
   >
-    <div className="bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border border-white/20 backdrop-blur-lg">
+    <div className="bg-linear-to-r from-green-500 to-emerald-600 text-white rounded-2xl shadow-2xl p-4 flex items-center gap-3 border border-white/20 backdrop-blur-lg">
       <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
         <CheckCircle className="w-6 h-6 text-white" />
       </div>
       <div className="flex-1">
-        <p className="font-semibold text-sm">Email envoyé ! ✅</p>
+        <p className="font-semibold text-sm">{t("alerts.emailSent")}</p>
         <p className="text-xs text-white/90">{message}</p>
       </div>
       <button
@@ -77,10 +83,12 @@ const WhatsAppAlert = ({
   message,
   onConfirm,
   onClose,
+  t,
 }: {
   message: string;
   onConfirm: () => void;
   onClose: () => void;
+  t: any;
 }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.9 }}
@@ -99,7 +107,7 @@ const WhatsAppAlert = ({
             <FaWhatsapp />
           </span>
         </div>
-        <h3 className="text-xl font-bold mb-2">Code envoyé !</h3>
+        <h3 className="text-xl font-bold mb-2">{t("alerts.codeSentTitle")}</h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
           {message}
         </p>
@@ -107,14 +115,13 @@ const WhatsAppAlert = ({
           onClick={onConfirm}
           className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all"
         >
-          J'ai reçu le code
+          {t("alerts.gotCode")}
         </button>
       </div>
     </motion.div>
   </motion.div>
 );
 
-// ── Page (pure UI) ────────────────────────────────────────────────────────────
 export default function InscriptionPage() {
   const {
     t,
@@ -198,15 +205,15 @@ export default function InscriptionPage() {
     user,
     setCurrentUserId,
     currentUserId,
-    emailError, // ← AJOUTER
-    usernameError, // ← AJOUTER
-    phoneError, // ← AJOUTER
-    isCheckingEmail, // ← AJOUTER (optionnel)
-    isCheckingUsername, // ← AJOUTER (optionnel)
-    isCheckingPhone, // ← AJOUTER (optionnel)
+    emailError,
+    usernameError,
+    phoneError,
+    isCheckingEmail,
+    isCheckingUsername,
+    isCheckingPhone,
     acceptTerms,
     setAcceptTerms,
-    profilePhoto, // ← AJOUTE CECI
+    profilePhoto,
   } = useInscription();
 
   const router = useRouter();
@@ -274,12 +281,9 @@ export default function InscriptionPage() {
     );
   }
 
-  // ============================================================
-  // Rendu principal
-  // ============================================================
   return (
     <div className="min-h-screen w-full bg-background-light dark:bg-background-dark flex items-center justify-center p-3 sm:p-4 md:p-6">
-      <div className="w-full max-w-[min(100%,480px)] sm:max-w-[520px] md:max-w-[560px] lg:max-w-[600px] mx-auto">
+      <div className="w-full max-w-[min(100%,480px)] sm:max-w-130 md:max-w-140 lg:max-w-[600px] mx-auto">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-4 sm:mb-6 justify-center">
           <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14">
@@ -299,11 +303,11 @@ export default function InscriptionPage() {
         <div className="mb-8">
           <div className="flex items-start justify-between px-2 gap-2">
             {/* Étape 1 - Informations de connexion */}
-            <div className="flex flex-col items-center gap-1 min-w-[80px]">
+            <div className="flex flex-col items-center gap-1 min-w-20">
               <span
                 className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
                   currentStep >= 1
-                    ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30"
+                    ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30"
                     : "bg-slate-200 dark:bg-slate-800 text-slate-500"
                 }`}
               >
@@ -324,17 +328,17 @@ export default function InscriptionPage() {
             <div
               className={`w-20 h-0.5 mt-4 ${
                 currentStep > 1
-                  ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"
+                  ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500"
                   : "bg-slate-200 dark:bg-slate-800"
               }`}
             ></div>
 
             {/* Étape 2 - Identité réelle */}
-            <div className="flex flex-col items-center gap-1 min-w-[80px]">
+            <div className="flex flex-col items-center gap-1 min-w-20">
               <span
                 className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
                   currentStep >= 2
-                    ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30"
+                    ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30"
                     : "bg-slate-200 dark:bg-slate-800 text-slate-500"
                 }`}
               >
@@ -355,17 +359,17 @@ export default function InscriptionPage() {
             <div
               className={`w-20 h-0.5 mt-4 ${
                 currentStep > 2
-                  ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"
+                  ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500"
                   : "bg-slate-200 dark:bg-slate-800"
               }`}
             ></div>
 
             {/* Étape 3 - Vérification WhatsApp */}
-            <div className="flex flex-col items-center gap-1 min-w-[80px]">
+            <div className="flex flex-col items-center gap-1 min-w-20">
               <span
                 className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
                   currentStep >= 3
-                    ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30"
+                    ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30"
                     : "bg-slate-200 dark:bg-slate-800 text-slate-500"
                 }`}
               >
@@ -386,17 +390,17 @@ export default function InscriptionPage() {
             <div
               className={`w-20 h-0.5 mt-4 ${
                 currentStep > 3
-                  ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"
+                  ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500"
                   : "bg-slate-200 dark:bg-slate-800"
               }`}
             ></div>
 
             {/* Étape 4 - Documents d'identité */}
-            <div className="flex flex-col items-center gap-1 min-w-[80px]">
+            <div className="flex flex-col items-center gap-1 min-w-20">
               <span
                 className={`flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
                   currentStep >= 4
-                    ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30"
+                    ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-lg shadow-blue-500/30"
                     : "bg-slate-200 dark:bg-slate-800 text-slate-500"
                 }`}
               >
@@ -421,6 +425,8 @@ export default function InscriptionPage() {
             <SuccessAlert
               message={alertMessage}
               onClose={() => setShowSuccessAlert(false)}
+              t={t}
+
             />
           )}
 
@@ -432,6 +438,8 @@ export default function InscriptionPage() {
                 setCurrentStep(3);
               }}
               onClose={() => setShowWhatsappAlert(false)}
+              t={t}
+
             />
           )}
         </AnimatePresence>
@@ -460,9 +468,7 @@ export default function InscriptionPage() {
         )}
 
         <AnimatePresence mode="wait">
-          {/* ============================================================ */}
           {/* ÉTAPE 1 : COMPTE (EMAIL) */}
-          {/* ============================================================ */}
           {currentStep === 1 && !pendingVerification && (
             <motion.div
               key="signup"
@@ -484,7 +490,7 @@ export default function InscriptionPage() {
               {/* Sélection du rôle */}
               <div className="mb-3 sm:mb-4">
                 <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
-                  {t("chooseRole")} *
+                  {t("chooseRole")} <span className="text-red-500">*</span>
                 </p>
                 <div className="grid grid-cols-2 gap-2 sm:gap-3">
                   <button
@@ -492,9 +498,9 @@ export default function InscriptionPage() {
                     onClick={() => setRole("landlord")}
                     className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out cursor-pointer ${
                       role === "landlord"
-                        ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-black border-transparent shadow-lg shadow-blue-500/30"
-                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:text-black hover:border-transparent hover:shadow-lg hover:shadow-blue-500/20"
-                    } active:bg-gradient-to-r active:from-blue-500 active:via-purple-500 active:to-indigo-500 active:text-black active:border-transparent active:shadow-lg active:shadow-blue-500/30 active:scale-[0.98]`}
+                        ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-black border-transparent shadow-lg shadow-blue-500/30"
+                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:text-black hover:border-transparent hover:shadow-lg hover:shadow-blue-500/20"
+                    } active:bg-linear-to-r active:from-blue-500 active:via-purple-500 active:to-indigo-500 active:text-black active:border-transparent active:shadow-lg active:shadow-blue-500/30 active:scale-[0.98]`}
                   >
                     <MdOutlineHomeWork className="text-sm sm:text-base" />
                     {t("roleLandlord")}
@@ -505,9 +511,9 @@ export default function InscriptionPage() {
                     onClick={() => setRole("tenant")}
                     className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out cursor-pointer ${
                       role === "tenant"
-                        ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-black border-transparent shadow-lg shadow-blue-500/30"
-                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:text-black hover:border-transparent hover:shadow-lg hover:shadow-blue-500/20"
-                    } active:bg-gradient-to-r active:from-blue-500 active:via-purple-500 active:to-indigo-500 active:text-black active:border-transparent active:shadow-lg active:shadow-blue-500/30 active:scale-[0.98]`}
+                        ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-black border-transparent shadow-lg shadow-blue-500/30"
+                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:text-black hover:border-transparent hover:shadow-lg hover:shadow-blue-500/20"
+                    } active:bg-linear-to-r active:from-blue-500 active:via-purple-500 active:to-indigo-500 active:text-black active:border-transparent active:shadow-lg active:shadow-blue-500/30 active:scale-[0.98]`}
                   >
                     <TbMapPinSearch className="text-xs sm:text-sm" />
                     {t("roleTenant")}
@@ -734,23 +740,23 @@ export default function InscriptionPage() {
                     htmlFor="acceptTerms"
                     className="text-xs sm:text-sm text-gray-600 dark:text-gray-400"
                   >
-                    En continuant j'accepte les{" "}
+                    {t("acceptTerms.prefix")}{" "}
                     <Link
                       href="/fr/terms"
                       target="_blank"
                       className="font-semibold text-purple-800 dark:text-primary hover:underline"
                     >
-                      conditions d'utilisation
+                      {t("acceptTerms.terms")}
                     </Link>{" "}
-                    et la{" "}
+                    {t("acceptTerms.and")}{" "}
                     <Link
                       href="/fr/privacy"
                       target="_blank"
                       className="font-semibold text-purple-800 dark:text-primary hover:underline"
                     >
-                      politique de confidentialité .
+                      {t("acceptTerms.privacy")}
                     </Link>
-                    Veuiller les lire attentivement. *
+                    {t("acceptTerms.suffix")}
                   </label>
                 </div>
 
@@ -759,7 +765,7 @@ export default function InscriptionPage() {
                 <button
                   type="submit"
                   disabled={isLoading || !acceptTerms}
-                  className="w-full py-2 sm:py-2.5 md:py-3 bg-blue-400 text-black font-bold rounded-xl flex items-center justify-center gap-2 text-sm transition-all duration-300 ease-in-out hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full py-2 sm:py-2.5 md:py-3 bg-blue-400 text-black font-bold rounded-xl flex items-center justify-center gap-2 text-sm transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? (
                     <>
@@ -787,9 +793,7 @@ export default function InscriptionPage() {
               </p>
             </motion.div>
           )}
-          {/* ============================================================ */}
           {/* ÉTAPE 2 : IDENTITÉ (prénom, nom, téléphone) */}
-          {/* ============================================================ */}
           {currentStep === 2 && (
             <motion.div
               key="identity"
@@ -864,7 +868,7 @@ export default function InscriptionPage() {
                       {touchedStep2.firstName && !firstName.trim() && (
                         <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
                           <MdOutlineDangerous size={12} />
-                          Le prénom est requis
+                          {t("errors.firstNameRequired")}
                         </p>
                       )}
                     </div>
@@ -897,7 +901,7 @@ export default function InscriptionPage() {
                       {touchedStep2.lastName && !lastName.trim() && (
                         <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
                           <MdOutlineDangerous size={12} />
-                          Le nom est requis
+                          {t("errors.lastNameRequired")}
                         </p>
                       )}
                     </div>
@@ -948,7 +952,7 @@ export default function InscriptionPage() {
                     {touchedStep2.phoneNumber && !phoneNumber && (
                       <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
                         <MdOutlineDangerous size={12} />
-                        Le numéro de téléphone est requis
+                        {t("errors.phoneRequired")}
                       </p>
                     )}
 
@@ -958,7 +962,7 @@ export default function InscriptionPage() {
                       phoneNumber.length < 8 && (
                         <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
                           <MdOutlineDangerous size={12} />
-                          Le numéro doit contenir au moins 8 chiffres
+                          {t("errors.phoneTooShort")}
                         </p>
                       )}
 
@@ -966,7 +970,7 @@ export default function InscriptionPage() {
                     {isCheckingPhone && (
                       <p className="mt-1 text-xs text-gray-500 flex items-center gap-1">
                         <Loader2 className="animate-spin h-3 w-3" />
-                        Vérification...
+                        {t("checking")}
                       </p>
                     )}
                   </div>
@@ -1086,7 +1090,7 @@ export default function InscriptionPage() {
                       handleSendWhatsApp();
                     }}
                     disabled={isWhatsappLoading}
-                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isWhatsappLoading ? (
                       <>
@@ -1104,9 +1108,7 @@ export default function InscriptionPage() {
               </div>
             </motion.div>
           )}
-          {/* ============================================================ */}
           {/* ÉTAPE 3 : CODE WHATSAPP */}
-          {/* ============================================================ */}
           {currentStep === 3 && (
             <motion.div
               key="step3"
@@ -1119,10 +1121,10 @@ export default function InscriptionPage() {
               {/* En-tête */}
               <div className="mb-3 sm:mb-4 md:mb-5">
                 <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
-                  Vérification WhatsApp
+                  {t("whatsappStep.title")}
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  Étape 3 sur 4 : Validez votre numéro de téléphone
+                  {t("whatsappStep.subtitle")}
                 </p>
               </div>
 
@@ -1131,10 +1133,10 @@ export default function InscriptionPage() {
                 <FaWhatsapp className="text-green-600 dark:text-green-400 text-base sm:text-lg mt-0.5 shrink-0" />
                 <div>
                   <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
-                    Code envoyé par WhatsApp
+                    {t("whatsappStep.codeSentTitle")}
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    Nous avons envoyé un code à 6 chiffres au{" "}
+                    {t("whatsappStep.codeSentMessage")}{" "}
                     <span className="font-medium text-green-600 dark:text-green-400">
                       +216 {phoneNumber}
                     </span>
@@ -1146,7 +1148,8 @@ export default function InscriptionPage() {
                 {/* Code de vérification */}
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                    Code de vérification <span className="text-red-500">*</span>
+                    {t("whatsappStep.verificationCode")}{" "}
+                    <span className="text-red-500">*</span>
                   </label>
 
                   <div className="flex gap-2 sm:gap-3 justify-center my-4">
@@ -1171,7 +1174,6 @@ export default function InscriptionPage() {
                           newCode[index] = val[val.length - 1];
                           setWhatsappCode(newCode.join(""));
 
-                          // Focus next input
                           if (index < 5) {
                             const next = document.getElementById(
                               `otp-${index + 1}`,
@@ -1186,7 +1188,6 @@ export default function InscriptionPage() {
                             );
                             if (prev) (prev as HTMLInputElement).focus();
                           }
-                          // Vérification seulement sur Enter
                           if (e.key === "Enter" && whatsappCode.length === 6) {
                             e.preventDefault();
                             handleVerifyWhatsApp(e);
@@ -1208,12 +1209,12 @@ export default function InscriptionPage() {
                   {isWhatsappLoading && (
                     <p className="mt-1 text-xs text-gray-500 flex items-center justify-center gap-1">
                       <Loader2 className="animate-spin h-3 w-3" />
-                      Vérification...
+                      {t("whatsappStep.checking")}
                     </p>
                   )}
 
                   <p className="text-[10px] sm:text-xs text-center text-slate-500 mt-2">
-                    Entrez les 6 chiffres puis appuyez sur Entrée
+                    {t("whatsappStep.enterCodeInstruction")}
                   </p>
                 </div>
 
@@ -1225,23 +1226,23 @@ export default function InscriptionPage() {
                     className="order-2 sm:order-1 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-blue-400 text-black dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-[0.98]"
                   >
                     <IoChevronBackSharp className="text-sm sm:text-base" />
-                    Retour
+                    {t("whatsappStep.back")}
                   </button>
 
                   <button
                     type="button"
                     onClick={handleSendWhatsApp}
                     disabled={isWhatsappLoading}
-                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isWhatsappLoading ? (
                       <>
                         <Loader2 className="animate-spin h-4 w-4" />
-                        Envoi...
+                        {t("whatsappStep.sending")}...
                       </>
                     ) : (
                       <>
-                        Renvoyer le code
+                        {t("whatsappStep.resendCode")}
                         <MdOutlineArrowForwardIos className="h-3 w-3 sm:h-4 sm:w-4" />
                       </>
                     )}
@@ -1250,9 +1251,7 @@ export default function InscriptionPage() {
               </div>
             </motion.div>
           )}
-          {/* ============================================================ */}
           {/* ÉTAPE 4 : DOCUMENTS D'IDENTITÉ */}
-          {/* ============================================================ */}
           {currentStep === 4 && (
             <motion.div
               key="documents"
@@ -1267,11 +1266,10 @@ export default function InscriptionPage() {
                 <div className="flex items-start gap-2 sm:gap-3">
                   <div className="flex-1">
                     <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
-                      Vérification d'identité
+                      {t("documentsStep.title")}
                     </h1>
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                      Étape 4 sur 4 : Téléchargez vos documents officiels (OCR
-                      automatique)
+                      {t("documentsStep.subtitle")}
                     </p>
                   </div>
                 </div>
@@ -1285,7 +1283,7 @@ export default function InscriptionPage() {
                     <div className="flex items-center gap-2 mb-1">
                       <FaAddressCard className="text-slate-400 dark:text-slate-400 text-xs sm:text-sm" />
                       <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-400">
-                        Pièce d'identité
+                        {t("documentsStep.identityDocument")}
                       </h2>
                     </div>
 
@@ -1297,17 +1295,17 @@ export default function InscriptionPage() {
                           <FaAddressCard className="text-sky-500 dark:text-sky-400 text-xl sm:text-2xl" />
                         </div>
                         <h3 className="font-bold text-sm sm:text-base mb-1 text-gray-900 dark:text-white">
-                          CIN Recto
+                          {t("documentsStep.cinFront")}
                         </h3>
                         <p className="text-[10px] sm:text-xs opacity-60 mb-2">
-                          Face avant
+                          {t("documentsStep.frontSide")}
                         </p>
                         <div className="flex flex-wrap justify-center gap-1 mb-2">
                           <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
-                            Max 5MB
+                            {t("documentsStep.maxSize")}
                           </span>
                           <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
-                            JPG, PNG, PDF
+                            {t("documentsStep.formats")}
                           </span>
                         </div>
                         <input
@@ -1332,7 +1330,9 @@ export default function InscriptionPage() {
                           }}
                           className="w-full py-1.5 sm:py-2 bg-sky-500 hover:bg-sky-400 text-white font-medium rounded-lg text-xs sm:text-sm transition-all cursor-pointer"
                         >
-                          {cinRecto ? " Photo ajoutée" : "Choisir un fichier"}
+                          {cinRecto
+                            ? t("documentsStep.photoAdded")
+                            : t("documentsStep.chooseFile")}
                         </label>
                       </div>
 
@@ -1342,17 +1342,17 @@ export default function InscriptionPage() {
                           <BsFillCreditCard2BackFill className="text-sky-500 dark:text-sky-400 text-xl sm:text-2xl" />
                         </div>
                         <h3 className="font-bold text-sm sm:text-base mb-1 text-gray-900 dark:text-white">
-                          CIN Verso
+                          {t("documentsStep.cinBack")}
                         </h3>
                         <p className="text-[10px] sm:text-xs opacity-60 mb-2">
-                          Face arrière
+                          {t("documentsStep.backSide")}
                         </p>
                         <div className="flex flex-wrap justify-center gap-1 mb-2">
                           <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
-                            Max 5MB
+                            {t("documentsStep.maxSize")}
                           </span>
                           <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
-                            JPG, PNG, PDF
+                            {t("documentsStep.formats")}
                           </span>
                         </div>
                         <input
@@ -1377,17 +1377,23 @@ export default function InscriptionPage() {
                           }}
                           className="w-full py-1.5 sm:py-2 bg-sky-500 hover:bg-sky-400 text-white font-medium rounded-lg text-xs sm:text-sm transition-all cursor-pointer"
                         >
-                          {cinVerso ? " Photo ajoutée" : "Choisir un fichier"}
+                          {cinVerso
+                            ? t("documentsStep.photoAdded")
+                            : t("documentsStep.chooseFile")}
                         </label>
                       </div>
                     </div>
+
                     {/* Notice OCR */}
-          <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2.5 sm:p-3 flex items-start gap-2 border border-blue-200 dark:border-blue-800">
-            <MdVerified className="text-sky-600 dark:text-blue-400 text-sm sm:text-base mt-0.5 shrink-0" />
-            <div className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400">
-              <span className="font-semibold text-gray-900 dark:text-white">IA & OCR : </span> Notre système analysera instantanément votre document pour vérifier votre identité.
-            </div>
-          </div>
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2.5 sm:p-3 flex items-start gap-2 border border-blue-200 dark:border-blue-800">
+                      <MdVerified className="text-sky-600 dark:text-blue-400 text-sm sm:text-base mt-0.5 shrink-0" />
+                      <div className="text-[10px] sm:text-xs text-slate-600 dark:text-slate-400">
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {t("documentsStep.iaOcr")}:{" "}
+                        </span>
+                        {t("documentsStep.ocrDescription")}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Colonne droite : Photo & Sécurité */}
@@ -1397,13 +1403,14 @@ export default function InscriptionPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <MdAccountCircle className="text-slate-400 dark:text-slate-400 text-xs sm:text-sm" />
                         <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-400">
-                          Photo de profil
+                          {t("documentsStep.profilePhoto")}
                         </h2>
                       </div>
                       <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 sm:p-4 flex flex-col items-center border border-blue-200 dark:border-blue-800">
                         <div className="relative group">
                           <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full border-4 border-slate-400 dark:border-slate-500 flex items-center justify-center bg-blue-50 dark:bg-blue-900/20 overflow-hidden group-hover:border-sky-500 transition-all">
                             {profilePhoto && (
+                              // eslint-disable-next-line @next/next/no-img-element
                               <img
                                 src={URL.createObjectURL(profilePhoto)}
                                 alt="Profile"
@@ -1435,7 +1442,7 @@ export default function InscriptionPage() {
                           </label>
                         </div>
                         <p className="mt-2 text-[10px] sm:text-xs text-center text-slate-500">
-                          Visage clairement visible
+                          {t("documentsStep.faceVisible")}
                         </p>
                       </div>
                     </div>
@@ -1445,7 +1452,7 @@ export default function InscriptionPage() {
                       <div className="flex items-center gap-2 mb-2">
                         <MdVerified className="text-slate-400 dark:text-slate-400 text-xs sm:text-sm" />
                         <h2 className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-slate-400">
-                          Sécurité
+                          {t("documentsStep.security")}
                         </h2>
                       </div>
                       <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-3 border border-blue-200 dark:border-blue-800 grid grid-cols-3 gap-1 sm:gap-2">
@@ -1457,7 +1464,7 @@ export default function InscriptionPage() {
                             AES-256
                           </p>
                           <p className="text-[7px] sm:text-[8px] opacity-60">
-                            Bancaire
+                            {t("documentsStep.banking")}
                           </p>
                         </div>
                         <div className="flex flex-col items-center gap-0.5">
@@ -1468,7 +1475,7 @@ export default function InscriptionPage() {
                             RGPD
                           </p>
                           <p className="text-[7px] sm:text-[8px] opacity-60">
-                            Conforme
+                            {t("documentsStep.compliant")}
                           </p>
                         </div>
                         <div className="flex flex-col items-center gap-0.5">
@@ -1476,10 +1483,10 @@ export default function InscriptionPage() {
                             <TiCloudStorage className="text-purple-600 dark:text-purple-400 text-sm sm:text-base" />
                           </div>
                           <p className="text-[8px] sm:text-[9px] font-bold text-center">
-                            Cloud
+                            {t("documentsStep.cloud")}
                           </p>
                           <p className="text-[7px] sm:text-[8px] opacity-60">
-                            Souverain
+                            {t("documentsStep.sovereign")}
                           </p>
                         </div>
                       </div>
@@ -1495,15 +1502,15 @@ export default function InscriptionPage() {
                     className="order-2 sm:order-1 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-blue-400 text-black dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-[0.98]"
                   >
                     <IoChevronBackSharp className="text-sm sm:text-base" />
-                    Étape précédente
+                    {t("documentsStep.previousStep")}
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setShowOcrConfirm(true)}
-                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer"
+                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer"
                   >
-                    Terminer
+                    {t("documentsStep.finish")}
                     <MdOutlineArrowForwardIos className="h-3 w-3 sm:h-4 sm:w-4" />
                   </button>
                 </div>
@@ -1530,21 +1537,18 @@ export default function InscriptionPage() {
                   <FaCheckCircle className="text-indigo-700 text-xl" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold">
-                    Vérification des données
-                  </h3>
+                  <h3 className="text-lg font-bold">{t("ocrConfirm.title")}</h3>
                   <p className="text-xs text-slate-500">
-                    Confirmez les informations extraites par OCR
+                    {t("ocrConfirm.description")}
                   </p>
                 </div>
               </div>
 
               {/* Info Banner */}
               <div className="mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex gap-2">
-                <LuBadgeInfo className="text-blue-500 text-2xl mt-0.5"></LuBadgeInfo>
+                <LuBadgeInfo className="text-blue-500 text-2xl mt-0.5" />
                 <p className="text-xs text-blue-700 dark:text-blue-300">
-                  Les champs surlignés ont été extraits automatiquement.
-                  Vérifiez qu'ils correspondent à votre document.
+                  {t("ocrConfirm.infoBanner")}
                 </p>
               </div>
 
@@ -1552,7 +1556,7 @@ export default function InscriptionPage() {
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Prénom
+                    {t("ocrConfirm.firstName")}
                   </label>
                   <div className="relative">
                     <input
@@ -1569,7 +1573,7 @@ export default function InscriptionPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Nom
+                    {t("ocrConfirm.lastName")}
                   </label>
                   <div className="relative">
                     <input
@@ -1586,7 +1590,7 @@ export default function InscriptionPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Date de naissance
+                    {t("ocrConfirm.birthDate")}
                   </label>
                   <div className="relative">
                     <input
@@ -1603,7 +1607,7 @@ export default function InscriptionPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Numéro CIN
+                    {t("ocrConfirm.cinNumber")}
                   </label>
                   <div className="relative">
                     <input
@@ -1623,7 +1627,7 @@ export default function InscriptionPage() {
               <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 mb-5">
                 <MdVerified className="text-emerald-500 text-xl shrink-0" />
                 <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                  Vos données sont chiffrées et stockées selon les normes RGPD.
+                  {t("ocrConfirm.securityBanner")}
                 </p>
               </div>
 
@@ -1634,7 +1638,7 @@ export default function InscriptionPage() {
                   onClick={() => setShowOcrConfirm(false)}
                   className="px-4 py-2.5 border border-blue-300 dark:border-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-50 dark:hover:bg-blue-800 transition-colors"
                 >
-                  Modifier
+                  {t("ocrConfirm.modify")}
                 </button>
                 <button
                   type="button"
@@ -1642,7 +1646,6 @@ export default function InscriptionPage() {
                     const tempId = localStorage.getItem("currentUserId");
 
                     try {
-                      // 1. Save profile to DB using tempId (sua_xxx)
                       await fetch("/api/users/complete-profile", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
@@ -1658,8 +1661,6 @@ export default function InscriptionPage() {
                         }),
                       });
 
-                      // 2. Now sync the real Clerk user_xxx ID into DB
-                      // At this point user is signed in (Clerk created them at email link click)
                       if (
                         isUserLoaded &&
                         user &&
@@ -1667,13 +1668,6 @@ export default function InscriptionPage() {
                         tempId &&
                         tempId !== user.id
                       ) {
-                        console.log(
-                          " Final sync: updating clerkId",
-                          tempId,
-                          "→",
-                          user.id,
-                        );
-
                         await fetch("/api/users/update-clerk-id", {
                           method: "POST",
                           headers: { "Content-Type": "application/json" },
@@ -1685,7 +1679,6 @@ export default function InscriptionPage() {
 
                         localStorage.setItem("currentUserId", user.id);
                         setCurrentUserId(user.id);
-                        console.log("✅ Real Clerk ID synced to DB:", user.id);
                       }
                     } catch (error) {
                       console.error("❌ Erreur:", error);
@@ -1697,12 +1690,13 @@ export default function InscriptionPage() {
                   className="flex-1 bg-blue-400 hover:bg-blue-300 text-black font-bold py-2.5 px-6 rounded-lg flex items-center justify-center gap-2"
                 >
                   <MdVerified className="text-lg" />
-                  Confirmer l'identité
+                  {t("ocrConfirm.confirmIdentity")}
                 </button>
               </div>
             </motion.div>
           </motion.div>
         )}
+
         {/* Cropper Modal */}
         {showCropper && (
           <ImageCropper
@@ -1719,6 +1713,7 @@ export default function InscriptionPage() {
             }}
           />
         )}
+
         {/* Welcome Modal */}
         {showWelcome && (
           <motion.div
@@ -1737,14 +1732,13 @@ export default function InscriptionPage() {
                 <GiPartyPopper className="text-6xl" />
               </div>
               <h2 className="text-2xl font-black mb-2">
-                Bienvenue sur NestHub !
+                {t("welcomeModal.title")}
               </h2>
               <p className="text-slate-500 dark:text-slate-400 text-sm mb-2">
-                Votre compte a été créé avec succès.
+                {t("welcomeModal.message")}
               </p>
               <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-                Complétez votre profil pour augmenter votre score de confiance
-                et accéder à toutes les fonctionnalités.
+                {t("welcomeModal.submessage")}
               </p>
 
               {/* Trust badges */}
@@ -1754,7 +1748,7 @@ export default function InscriptionPage() {
                     <MdMarkEmailRead className="text-green-600 dark:text-green-400 text-xl" />
                   </div>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    Email vérifié
+                    {t("welcomeModal.emailVerified")}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
@@ -1762,7 +1756,7 @@ export default function InscriptionPage() {
                     <FaWhatsapp className="text-green-600 dark:text-green-400 text-xl" />
                   </div>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    WhatsApp vérifié
+                    {t("welcomeModal.whatsappVerified")}
                   </span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
@@ -1770,10 +1764,11 @@ export default function InscriptionPage() {
                     <MdPendingActions className="text-yellow-600 dark:text-yellow-400 text-xl" />
                   </div>
                   <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    CIN en attente
+                    {t("welcomeModal.cinPending")}
                   </span>
                 </div>
               </div>
+
               <button
                 onClick={async () => {
                   setIsCompletingProfile(true);
@@ -1789,7 +1784,7 @@ export default function InscriptionPage() {
                   }
                 }}
                 disabled={isCompletingProfile}
-                className={`w-full py-3 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-black font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${
+                className={`w-full py-3 bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-black font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${
                   isCompletingProfile
                     ? "opacity-70 cursor-not-allowed"
                     : "hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.98]"
@@ -1798,11 +1793,11 @@ export default function InscriptionPage() {
                 {isCompletingProfile ? (
                   <>
                     <Loader2 className="animate-spin h-4 w-4" />
-                    Redirection...
+                    {t("welcomeModal.redirecting")}
                   </>
                 ) : (
                   <>
-                    Compléter mon profil
+                    {t("welcomeModal.completeProfile")}
                     <MdOutlineArrowForwardIos className="h-4 w-4" />
                   </>
                 )}
@@ -1810,7 +1805,6 @@ export default function InscriptionPage() {
             </motion.div>
           </motion.div>
         )}
-
         {/* Footer */}
         <div className="mt-4 sm:mt-6 pt-3 text-[10px] text-slate-400 dark:text-slate-600 flex flex-wrap justify-center gap-3 sm:gap-4 border-t border-slate-100 dark:border-slate-800/50">
           <Link
@@ -1849,4 +1843,7 @@ export default function InscriptionPage() {
       </div>
     </div>
   );
+}
+function t(arg0: string): import("react").ReactNode {
+  throw new Error("Function not implemented.");
 }

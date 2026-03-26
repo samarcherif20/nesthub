@@ -6,6 +6,22 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { ValidationPatterns } from "@/lib/utils";
 
+// Helper function to get current locale from URL
+const getCurrentLocale = () => {
+  if (typeof window === 'undefined') return 'fr';
+  
+  const pathname = window.location.pathname;
+  const segments = pathname.split('/').filter(Boolean);
+  
+  const validLocales = ['fr', 'en', 'ar', 'de', 'es', 'it'];
+  
+  if (segments[0] && validLocales.includes(segments[0])) {
+    return segments[0];
+  }
+  
+  return localStorage.getItem('preferred-language') || 'fr';
+};
+
 export function useInscription() {
   const t = useTranslations("Inscription");
   const { isLoaded, signUp, setActive } = useSignUp();
@@ -165,6 +181,7 @@ export function useInscription() {
   };
 
   // Debounce simple
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
   const debounce = (func: Function, delay: number) => {
     let timeoutId: NodeJS.Timeout;
     return (...args: any[]) => {
@@ -235,10 +252,10 @@ export function useInscription() {
 
       const formattedPhone = `+216${value}`;
 
-      // ✅ NE PAS définir phoneError pour les erreurs de format
+      //  NE PAS définir phoneError pour les erreurs de format
       // Laisse ces erreurs être gérées par l'UI directement
       if (value.length < 8) {
-        // ✅ Ne pas setPhoneError ici - on utilise une erreur séparée
+        //  Ne pas setPhoneError ici - on utilise une erreur séparée
         return;
       }
 
@@ -263,7 +280,7 @@ export function useInscription() {
     if (phoneNumber && phoneNumber.length >= 8) {
       validatePhoneUniqueness(phoneNumber);
     } else if (phoneNumber && phoneNumber.length < 8) {
-      // ✅ Ne pas setPhoneError ici non plus - l'UI gère directement
+      //  Ne pas setPhoneError ici non plus - l'UI gère directement
       // setPhoneError(t("errors.phoneTooShort")); // Supprimé
     } else {
       setPhoneError("");
@@ -284,11 +301,12 @@ export function useInscription() {
     }
 
     const params = new URLSearchParams(window.location.search);
+    const currentLocale = getCurrentLocale();
 
     if (params.get("verified") === "true") {
       console.log(" verified=true detected");
       setCurrentStep(2);
-      window.history.replaceState({}, "", "/fr/inscription");
+      window.history.replaceState({}, "", `/${currentLocale}/inscription`);
       toast.success("Email vérifié !", {
         description: "Continuez votre inscription.",
       });
@@ -298,7 +316,7 @@ export function useInscription() {
       toast.error("Lien expiré", {
         description: "Le lien de vérification a expiré. Veuillez recommencer.",
       });
-      window.history.replaceState({}, "", "/fr/inscription");
+      window.history.replaceState({}, "", `/${currentLocale}/inscription`);
     }
   }, []);
 
@@ -307,7 +325,7 @@ export function useInscription() {
     if (isUserLoaded && user && user.id) {
       const tempId = localStorage.getItem("currentUserId");
       if (tempId && tempId !== user.id && tempId.startsWith("sua_")) {
-        console.log("🔄 Real Clerk user detected! Syncing ID...");
+        console.log(" Real Clerk user detected! Syncing ID...");
         fetch("/api/users/update-clerk-id", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -319,7 +337,7 @@ export function useInscription() {
           .then(() => {
             localStorage.setItem("currentUserId", user.id);
             setCurrentUserId(user.id);
-            console.log("✅ Database updated with real Clerk ID:", user.id);
+            console.log(" Database updated with real Clerk ID:", user.id);
           })
           .catch(console.error);
       }
@@ -553,7 +571,7 @@ export function useInscription() {
       return false;
     }
 
-    // 🔥 VALIDATION D'UNICITÉ EMAIL - au moment du clic
+    // VALIDATION D'UNICITÉ EMAIL - au moment du clic
     setIsCheckingEmail(true);
     const emailExists = await checkEmailExists(email);
     setIsCheckingEmail(false);
@@ -566,7 +584,7 @@ export function useInscription() {
       setEmailError("");
     }
 
-    // 🔥 VALIDATION D'UNICITÉ USERNAME - au moment du clic
+    //  VALIDATION D'UNICITÉ USERNAME - au moment du clic
     setIsCheckingUsername(true);
     const usernameExists = await checkUsernameExists(username);
     setIsCheckingUsername(false);
@@ -637,6 +655,7 @@ export function useInscription() {
       }
 
       const userIdToUse = temporaryClerkId;
+      const currentLocale = getCurrentLocale();
 
       const response = await fetch("/api/users/create", {
         method: "POST",
@@ -646,6 +665,7 @@ export function useInscription() {
           email,
           username,
           role,
+          preferredLocale: currentLocale,
         }),
       });
 
@@ -661,11 +681,16 @@ export function useInscription() {
       localStorage.setItem("pendingUsername", username);
       localStorage.setItem("pendingPassword", password);
       localStorage.setItem("pendingRole", role ?? "");
+      localStorage.setItem("preferred-language", currentLocale);
 
+      const verifyUrl = `${window.location.origin}/${currentLocale}/inscription/verify-catch`;
+      console.log("📧 Verification URL:", verifyUrl);
+      
       await signUp.prepareEmailAddressVerification({
         strategy: "email_link",
-        redirectUrl: `${window.location.origin}/fr/inscription/verify-catch`,
+        redirectUrl: verifyUrl,
       });
+      
       setAlertMessage(`Un lien de vérification a été envoyé à ${email}`);
       setShowSuccessAlert(true);
     } catch (error: any) {
@@ -732,7 +757,8 @@ export function useInscription() {
     localStorage.removeItem("pendingPassword");
     localStorage.removeItem("pendingRole");
     await signOut();
-    router.push("/fr/complete-profile");
+    const currentLocale = getCurrentLocale();
+    router.push(`/${currentLocale}/complete-profile`);
   };
 
   const handleGoToDashboard = async () => {
@@ -743,7 +769,8 @@ export function useInscription() {
     localStorage.removeItem("pendingPassword");
     localStorage.removeItem("pendingRole");
     await signOut();
-    router.push("/fr/dashboard");
+    const currentLocale = getCurrentLocale();
+    router.push(`/${currentLocale}/dashboard`);
   };
 
   return {

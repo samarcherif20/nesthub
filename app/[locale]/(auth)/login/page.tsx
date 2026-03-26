@@ -1,11 +1,11 @@
 // app/[locale]/(auth)/login/page.tsx
-'use client';
+"use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
-import { EyeOff, Eye, User, Mail } from "lucide-react";
+import { EyeOff, Eye, User, Mail, X } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { LiaUserShieldSolid } from "react-icons/lia";
 import { RiLockPasswordLine } from "react-icons/ri";
@@ -14,7 +14,7 @@ import { Loader2, LogIn } from "lucide-react";
 import { HiOutlineExclamationTriangle } from "react-icons/hi2";
 
 // Importer votre composant Alert
-import Alert from "@/components/ui/Alert"; // Ajustez le chemin selon votre structure
+import Alert from "@/components/ui/Alert";
 
 import {
   Avatar,
@@ -46,28 +46,33 @@ export default function LoginPage() {
     identifier: false,
     password: false,
   });
-  const [identifierType, setIdentifierType] = useState<IdentifierType>("unknown");
+  const [identifierType, setIdentifierType] =
+    useState<IdentifierType>("unknown");
   const [mounted, setMounted] = useState(false);
-    const [rememberMe, setRememberMe] = useState(false); // 👈 AJOUTE
+  const [rememberMe, setRememberMe] = useState(false);
 
-  
-  // États pour les alertes
+  // États pour les alertes (uniquement pour les succès et infos)
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
-  const [alertType, setAlertType] = useState<'success' | 'error' | 'info' | 'warning'>('info');
+  const [alertType, setAlertType] = useState<
+    "success" | "error" | "info" | "warning"
+  >("info");
   const [showAlert, setShowAlert] = useState(false);
-  
+
+  // États pour le bandeau d'erreur général
+  const [showGeneralError, setShowGeneralError] = useState(false);
+  const [generalErrorMessage, setGeneralErrorMessage] = useState<string>("");
+  const [generalErrorTimer, setGeneralErrorTimer] =
+    useState<NodeJS.Timeout | null>(null);
+
   const t = useTranslations("Login");
   const locale = useLocale();
-  
-  const [showGeneralError, setShowGeneralError] = useState(true);
 
-  
   // Récupérer toutes les fonctions du hook
-  const { 
-    handleSubmit: authSubmit, 
-    handleGoogleLogin, 
-    handleAppleLogin, 
-    handleFacebookLogin 
+  const {
+    handleSubmit: authSubmit,
+    handleGoogleLogin,
+    handleAppleLogin,
+    handleFacebookLogin,
   } = useAuth();
 
   useEffect(() => {
@@ -78,27 +83,51 @@ export default function LoginPage() {
     setIdentifierType(ValidationPatterns.detectIdentifierType(identifier));
   }, [identifier]);
 
-  // Fonction pour afficher une alerte
-  const showAlertMessage = (type: 'success' | 'error' | 'info' | 'warning', message: string) => {
+  // Fonction pour afficher une alerte flottante (succès et infos)
+  const showAlertMessage = (
+    type: "success" | "error" | "info" | "warning",
+    message: string,
+  ) => {
+    // Pour les erreurs, on ne passe pas par l'alerte flottante
+    if (type === "error") return;
     setAlertType(type);
     setAlertMessage(message);
     setShowAlert(true);
-    
-    // Optionnel: auto-cacher après 5 secondes (déjà géré par le composant)
   };
 
-  // Remplacer l'affichage d'erreur générale par l'alerte
-  useEffect(() => {
-    if (errors.general && showGeneralError) {
-      showAlertMessage('error', errors.general);
+  // Fonction pour afficher le bandeau d'erreur général
+  const showGeneralErrorBanner = (message: string) => {
+    // Nettoyer le timer existant
+    if (generalErrorTimer) {
+      clearTimeout(generalErrorTimer);
     }
-  }, [errors.general, showGeneralError]);
+    setGeneralErrorMessage(message);
+    setShowGeneralError(true);
+
+    // Timer pour fermer automatiquement après 5 secondes
+    const timer = setTimeout(() => {
+      setShowGeneralError(false);
+      setGeneralErrorMessage("");
+    }, 5000);
+    setGeneralErrorTimer(timer);
+  };
+
+  // Fonction pour fermer manuellement le bandeau d'erreur
+  const closeGeneralError = () => {
+    if (generalErrorTimer) {
+      clearTimeout(generalErrorTimer);
+    }
+    setShowGeneralError(false);
+    setGeneralErrorMessage("");
+  };
 
   const validateIdentifier = (value: string): string | undefined => {
     if (!value.trim()) return t("identifierRequired");
     const type = ValidationPatterns.detectIdentifierType(value);
-    if (type === "email" && !ValidationPatterns.isEmail(value)) return t("emailInvalid");
-    if (type === "username" && !ValidationPatterns.isUsername(value)) return t("usernameInvalid");
+    if (type === "email" && !ValidationPatterns.isEmail(value))
+      return t("emailInvalid");
+    if (type === "username" && !ValidationPatterns.isUsername(value))
+      return t("usernameInvalid");
     if (type === "unknown") return t("identifierInvalid");
     return undefined;
   };
@@ -119,51 +148,57 @@ export default function LoginPage() {
   };
 
   const handleBlur = (field: "identifier" | "password") => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
     if (field === "identifier") {
-      setErrors(prev => ({ ...prev, identifier: validateIdentifier(identifier) }));
+      setErrors((prev) => ({
+        ...prev,
+        identifier: validateIdentifier(identifier),
+      }));
     } else {
-      setErrors(prev => ({ ...prev, password: validatePassword(password) }));
+      setErrors((prev) => ({ ...prev, password: validatePassword(password) }));
     }
   };
 
   const handleIdentifierChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setIdentifier(value);
-    
-    setShowGeneralError(false);
-    setShowAlert(false); // Cacher l'alerte quand l'utilisateur commence à taper
-    setErrors(prev => ({ ...prev, general: undefined }));
-    
+
+    // Effacer l'erreur générale quand l'utilisateur tape
+    if (showGeneralError) {
+      closeGeneralError();
+    }
+    setErrors((prev) => ({ ...prev, general: undefined }));
+
     if (touched.identifier) {
       const error = validateIdentifier(value);
-      setErrors(prev => ({ ...prev, identifier: error }));
+      setErrors((prev) => ({ ...prev, identifier: error }));
     } else {
-      setErrors(prev => ({ ...prev, identifier: undefined }));
+      setErrors((prev) => ({ ...prev, identifier: undefined }));
     }
   };
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setPassword(value);
-    
-    setShowGeneralError(false);
-    setShowAlert(false); // Cacher l'alerte quand l'utilisateur commence à taper
-    setErrors(prev => ({ ...prev, general: undefined }));
-    
+
+    // Effacer l'erreur générale quand l'utilisateur tape
+    if (showGeneralError) {
+      closeGeneralError();
+    }
+    setErrors((prev) => ({ ...prev, general: undefined }));
+
     if (touched.password) {
       const error = validatePassword(value);
-      setErrors(prev => ({ ...prev, password: error }));
+      setErrors((prev) => ({ ...prev, password: error }));
     } else {
-      setErrors(prev => ({ ...prev, password: undefined }));
+      setErrors((prev) => ({ ...prev, password: undefined }));
     }
   };
 
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setTouched({ identifier: true, password: true });
-    setShowGeneralError(true);
-    
+
     if (!validateForm()) {
       return;
     }
@@ -172,44 +207,54 @@ export default function LoginPage() {
     setErrors({});
 
     try {
-      await authSubmit({ identifier, password, role, identifierType, rememberMe } as AuthParams);
-      
-      // Exemple d'alerte de succès après connexion
-      showAlertMessage('success', 'Connexion réussie ! Redirection en cours...');
-      
+      await authSubmit({
+        identifier,
+        password,
+        role,
+        identifierType,
+        rememberMe,
+      } as AuthParams);
+
+      // Succès : alerte flottante
+      showAlertMessage("success", t("successLogin"));
+
       // La redirection sera gérée par le hook useAuth
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
+      // Erreur : affichée dans le bandeau rouge
+      showGeneralErrorBanner(error.message);
       setErrors({ general: error.message });
     } finally {
       setLoading(false);
     }
   };
 
-  // Gestionnaires OAuth avec alertes
+  // Gestionnaires OAuth
   const handleGoogle = async () => {
     try {
-      showAlertMessage('info', 'Redirection vers Google...');
+      showAlertMessage("info", t("redirectGoogle"));
       await handleGoogleLogin();
     } catch (error) {
-      showAlertMessage('error', 'Erreur lors de la connexion avec Google');
+      // Erreur : bandeau rouge
+      showGeneralErrorBanner(t("errorGoogle"));
     }
   };
 
   const handleApple = async () => {
     try {
-      showAlertMessage('info', 'Redirection vers Apple...');
+      showAlertMessage("info", t("redirectApple"));
       await handleAppleLogin();
     } catch (error) {
-      showAlertMessage('error', 'Erreur lors de la connexion avec Apple');
+      showGeneralErrorBanner(t("errorApple"));
     }
   };
 
   const handleFacebook = async () => {
     try {
-      showAlertMessage('info', 'Redirection vers Facebook...');
+      showAlertMessage("info", t("redirectFacebook"));
       await handleFacebookLogin();
     } catch (error) {
-      showAlertMessage('error', 'Erreur lors de la connexion avec Facebook');
+      showGeneralErrorBanner(t("errorFacebook"));
     }
   };
 
@@ -224,23 +269,40 @@ export default function LoginPage() {
   }
 
   const getIdentifierIcon = () => {
-    if (identifierType === "email") return <TfiEmail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />;
-    if (identifierType === "username") return <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />;
-    return <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />;
+    if (identifierType === "email")
+      return (
+        <TfiEmail
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          size={16}
+        />
+      );
+    if (identifierType === "username")
+      return (
+        <User
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          size={16}
+        />
+      );
+    return (
+      <Mail
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        size={16}
+      />
+    );
   };
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
-      {/* Alert Container */}
-      <div className="fixed top-5 right-5 z-[100] space-y-2 w-full max-w-sm">
-          {showAlert && alertMessage && (
-            <Alert
-              type={alertType}
-              message={alertMessage}
-              onClose={() => setShowAlert(false)}
-              autoClose={5000}
-            />
-          )}
+      {/* Alert Container - uniquement pour les succès et infos */}
+      <div className="fixed top-5 right-5 z-100 space-y-2 w-full max-w-sm">
+        {showAlert && alertMessage && (
+          <Alert
+            type={alertType}
+            message={alertMessage}
+            onClose={() => setShowAlert(false)}
+            autoClose={5000}
+          />
+        )}
       </div>
 
       {/* Left Side: Lifestyle Hero */}
@@ -330,10 +392,33 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* L'ancien bloc d'erreur générale a été supprimé - maintenant géré par Alert */}
+          {/* General error banner - avant le sélecteur de rôle */}
+          {showGeneralError && generalErrorMessage && (
+            <div className="mb-4 p-3 bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-lg flex items-start justify-between gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="flex items-start gap-2">
+                <HiOutlineExclamationTriangle
+                  className="text-red-500 dark:text-red-400 shrink-0 mt-0.5"
+                  size={18}
+                />
+                <p className="text-sm text-red-600 dark:text-red-400">
+                  {generalErrorMessage}
+                </p>
+              </div>
+              <button
+                onClick={closeGeneralError}
+                className="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors shrink-0"
+                aria-label="Fermer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          )}
 
           <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 px-1">
-            {t("profileType")} {!role && <span className="text-yellow-500 ml-1">(Optionnel)</span>}
+            {t("profileType")}{" "}
+            {!role && (
+              <span className="text-yellow-500 ml-1">{t("optional")}</span>
+            )}
           </p>
 
           <div className="segmented-control mb-4 bg-gray-100 dark:bg-white/5 p-1 rounded-xl flex">
@@ -364,14 +449,19 @@ export default function LoginPage() {
           <form className="space-y-3" onSubmit={onSubmit} noValidate>
             {/* Identifier Input */}
             <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1" htmlFor="identifier">
+              <label
+                className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                htmlFor="identifier"
+              >
                 {t("emailOrUsername")}
               </label>
               <div className="relative">
                 {getIdentifierIcon()}
                 <input
                   className={`w-full pl-10 pr-3 py-2.5 sm:py-3 text-sm bg-gray-50 dark:bg-white/5 border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white ${
-                    touched.identifier && errors.identifier ? "border-red-500 dark:border-red-500" : "border-gray-200 dark:border-white/10"
+                    touched.identifier && errors.identifier
+                      ? "border-red-500 dark:border-red-500"
+                      : "border-gray-200 dark:border-white/10"
                   }`}
                   id="identifier"
                   name="identifier"
@@ -395,18 +485,29 @@ export default function LoginPage() {
             {/* Password Input */}
             <div>
               <div className="flex justify-between mb-1">
-                <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300" htmlFor="password">
+                <label
+                  className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300"
+                  htmlFor="password"
+                >
                   {t("password")}
                 </label>
-                <Link href={`/${locale}/forgot-password`} className="text-xs font-semibold text-purple-800 dark:text-primary hover:underline">
+                <Link
+                  href={`/${locale}/forgot-password`}
+                  className="text-xs font-semibold text-purple-800 dark:text-primary hover:underline"
+                >
                   {t("forgotPassword")}
                 </Link>
               </div>
               <div className="relative">
-                <RiLockPasswordLine className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                <RiLockPasswordLine
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
                 <input
                   className={`w-full pl-10 pr-10 py-2.5 sm:py-3 text-sm bg-gray-50 dark:bg-white/5 border rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all dark:text-white ${
-                    touched.password && errors.password ? "border-red-500 dark:border-red-500" : "border-gray-200 dark:border-white/10"
+                    touched.password && errors.password
+                      ? "border-red-500 dark:border-red-500"
+                      : "border-gray-200 dark:border-white/10"
                   }`}
                   name="password"
                   id="password"
@@ -423,7 +524,11 @@ export default function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
-                  {showPassword ? <Eye className="w-4 h-4 sm:w-5 sm:h-5" /> : <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />}
+                  {showPassword ? (
+                    <Eye className="w-4 h-4 sm:w-5 sm:h-5" />
+                  ) : (
+                    <EyeOff className="w-4 h-4 sm:w-5 sm:h-5" />
+                  )}
                 </button>
               </div>
               {touched.password && errors.password && (
@@ -435,18 +540,18 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between py-1">
-    <label className="flex items-center gap-2 cursor-pointer group">
-      <input 
-        type="checkbox"
-        checked={rememberMe}
-        onChange={(e) => setRememberMe(e.target.checked)}
-        className="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary h-3 w-3 sm:h-4 sm:w-4" 
-      />
-      <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-300 transition-colors">
-        {t("rememberMe")}
-      </span>
-    </label>
-  </div>
+              <label className="flex items-center gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary h-3 w-3 sm:h-4 sm:w-4"
+                />
+                <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-slate-300 transition-colors">
+                  {t("rememberMe")}
+                </span>
+              </label>
+            </div>
 
             <button
               type="submit"
@@ -538,11 +643,17 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
             {t("termsPrefix")}{" "}
-            <Link href={`/${locale}/terms`} className="font-medium text-purple-800 dark:text-primary hover:underline">
+            <Link
+              href={`/${locale}/terms`}
+              className="font-medium text-purple-800 dark:text-primary hover:underline"
+            >
               {t("termsOfUse")}
             </Link>{" "}
             {t("and")}{" "}
-            <Link href={`/${locale}/privacy`} className="font-medium text-purple-800 dark:text-primary hover:underline">
+            <Link
+              href={`/${locale}/privacy`}
+              className="font-medium text-purple-800 dark:text-primary hover:underline"
+            >
               {t("privacyPolicy")}
             </Link>
             {t("termsSuffix")}
@@ -557,17 +668,26 @@ export default function LoginPage() {
 
           <p className="mt-4 text-center text-xs text-slate-500 dark:text-slate-400">
             {t("dontHaveAccount")}{" "}
-            <Link href={`/${locale}/inscription`} className="text-primary font-bold hover:underline">
+            <Link
+              href={`/${locale}/inscription`}
+              className="text-primary font-bold hover:underline"
+            >
               {t("signUp")}
             </Link>
           </p>
 
           <div className="mt-4 pt-3 text-[10px] text-slate-400 dark:text-slate-600 flex justify-between w-full border-t border-slate-100 dark:border-slate-800/50">
             <div className="flex gap-3">
-              <Link href={`/${locale}/legal`} className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors">
+              <Link
+                href={`/${locale}/legal`}
+                className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
+              >
                 {t("legal")}
               </Link>
-              <Link href={`/${locale}/privacy`} className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors">
+              <Link
+                href={`/${locale}/privacy`}
+                className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
+              >
                 {t("privacy")}
               </Link>
             </div>

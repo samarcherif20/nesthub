@@ -32,7 +32,54 @@ export default clerkMiddleware(async (auth, req) => {
   if (pathname.includes("/inscription/verify-catch")) {
     return intlMiddleware(req);
   }
-
+  // ========================================
+  // 🌐 LANGUAGE PERSISTENCE - HANDLE REDIRECTS
+  // ========================================
+  // Extract pathname without query parameters
+  const currentPathname = req.nextUrl.pathname;
+  
+  // Check if the path already has a locale
+  const pathSegments = currentPathname.split("/").filter(Boolean);
+  const hasLocaleInPath = pathSegments[0] && isValidLocale(pathSegments[0]);
+  
+  // For paths that already have a locale, just update the cookie and continue
+  // DON'T return early - let the normal flow continue
+  if (hasLocaleInPath) {
+    const currentLocale = pathSegments[0];
+    const response = NextResponse.next();
+    response.cookies.set("preferred-language", currentLocale, {
+      maxAge: 60 * 60 * 24 * 365,
+      path: "/",
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+    });
+    // IMPORTANT: Don't return here! Just set the cookie and let the request continue
+    // We'll apply this response later
+  }
+  
+  // For paths WITHOUT locale, check if we need to redirect
+  // But ONLY for specific paths that should have a locale
+  if (!hasLocaleInPath && !currentPathname.startsWith("/api/") && 
+      !currentPathname.includes("/_next") && 
+      !currentPathname.includes("/favicon.ico") &&
+      !currentPathname.includes("/flags/")) {
+    
+    const storedLang = req.cookies.get("preferred-language")?.value;
+    
+    // Only redirect if we have a stored language AND the path is not already the root with locale
+    if (storedLang && isValidLocale(storedLang)) {
+      // Don't redirect if it's the root path without locale - let intlMiddleware handle it
+      if (currentPathname !== "/") {
+        const newPath = `/${storedLang}${currentPathname}`;
+        console.log(`🌐 Redirecting to preferred language: ${newPath}`);
+        return NextResponse.redirect(new URL(newPath, req.url));
+      }
+    }
+  }
+  // ========================================
+  // END OF LANGUAGE PERSISTENCE
+  // ========================================
   // ========================================
   // API routes — AJOUT des routes publiques
   // ========================================

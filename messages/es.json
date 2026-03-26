@@ -12,10 +12,89 @@
     "admin": "Administración",
     "logout": "Desconectar"
   },
+  "AcceptInvite": {
+    "loading": "Comprobando tu invitación...",
+    "invalidLink": "Enlace no válido",
+    "noToken": "No se proporciona ningún token de invitación.",
+    "backToHome": "De vuelta a casa",
+    "alreadyUsed": "Invitación ya utilizada",
+    "expired": "Enlace caducado",
+    "alreadyUsedMessage": "Esta invitación ya ha sido aceptada. Inicie sesión normalmente.",
+    "expiredMessage": "Los enlaces de invitación son válidos por 48 horas. Éste ha caducado.",
+    "invalidMessage": "Este enlace de invitación no es válido o no se encuentra.",
+    "newLink": "Nuevo enlace",
+    "login": "Acceso",
+    "needHelp": "¿Necesitar ayuda? Póngase en contacto con su administrador.",
+    "successMessage": "¡Invitación aceptada exitosamente! Redirección...",
+    "successExisting": "Derechos de administrador agregados",
+    "successNew": "Cuenta creada",
+    "welcomeExisting": "¡Felicitaciones! 🎉",
+    "welcomeNew": "¡Bienvenido al equipo! 🎉",
+    "successExistingMessage": "Su cuenta {email} ahora tiene derechos de administrador.",
+    "successNewMessage": "Su cuenta de administrador de {email} está lista.",
+    "redirecting": "Redirigir al panel...",
+    "accessAdmin": "Accede al panel de administración",
+    "invitationReceived": "Invitación recibida",
+    "existingAccountDetected": "Cuenta existente detectada",
+    "existingAccountMessage": "Ya tienes una cuenta. Acepte la invitación para obtener derechos de administrador.",
+    "invitedBy": "Invitación de",
+    "acceptAndGetRights": "Aceptar y obtener derechos de administrador",
+    "loginFirst": "Inicia sesión primero",
+    "youHaveBeenInvited": "¡Has sido invitado!",
+    "joinAsAdmin": "Únase a nuestra plataforma {appName} como administrador.",
+    "emailLabel": "Correo electrónico",
+    "firstName": "Nombre de pila",
+    "lastName": "Nombre",
+    "username": "Nombre de usuario",
+    "password": "Contraseña",
+    "firstNameRequired": "El nombre es obligatorio",
+    "firstNameMinLength": "El nombre debe contener al menos 2 caracteres.",
+    "lastNameRequired": "El nombre es obligatorio",
+    "lastNameMinLength": "El nombre debe contener al menos 2 caracteres.",
+    "usernameRequired": "El nombre de usuario es obligatorio",
+    "usernameInvalid": "El nombre de usuario debe contener entre 3 y 20 caracteres (letras, números, _)",
+    "passwordRequired": "Se requiere contraseña",
+    "passwordMinLength": "La contraseña debe contener al menos 8 caracteres",
+    "passwordUppercase": "La contraseña debe contener al menos una letra mayúscula",
+    "passwordLowercase": "La contraseña debe contener al menos una minúscula.",
+    "passwordNumber": "La contraseña debe contener al menos un dígito",
+    "firstNamePlaceholder": "nombre de pila",
+    "lastNamePlaceholder": "nombre",
+    "usernamePlaceholder": "nombre de usuario",
+    "passwordPlaceholder": "Mínimo 8 caracteres",
+    "acceptTermsPrefix": "Acepto el",
+    "acceptTermsAnd": "y el",
+    "termsOfUse": "condiciones de uso",
+    "privacyPolicy": "política de privacidad",
+    "creating": "Creación en proceso...",
+    "acceptInvitation": "acepta la invitación",
+    "e2eEncryption": "Cifrado E2E",
+    "secureAccess": "Acceso seguro",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "signIn": "Acceso",
+    "roleAssigned": "Rol asignado",
+    "adminRole": "Administrador de NESTHUB",
+    "invitationFrom": "Invitación de:",
+    "autoVerification": "Verificación automática",
+    "autoVerificationDesc": "Como administrador, su cuenta será verificada de inmediato.",
+    "expiryTime": "48 horas",
+    "expiryLabel": "El enlace caduca",
+    "fullAccess": "Acceso completo",
+    "fullAccessLabel": "Panel de administrador"
+  },
   "Login": {
+    "newCodeSent": "¡Se ha enviado un nuevo código!",
+    "successLogin": "¡Conexión exitosa! Redirección en curso...",
+    "redirectGoogle": "Redirigir a Google...",
+    "redirectApple": "Redirigir a Apple...",
+    "redirectFacebook": "Redirigir a Facebook...",
+    "errorGoogle": "Error al iniciar sesión con Google",
+    "errorApple": "Error al iniciar sesión con Apple",
+    "errorFacebook": "Error al conectar con Facebook",
+    "optional": "(Opcional)",
     "welcome": "Bienvenido !",
     "subtitle": "Inicia sesión para acceder a tu espacio seguro.",
-    "signUpTitle": "Crea una cuenta",
+    "signUpTitle": "Crear una cuenta",
     "signUpSubtitle": "Regístrese para comenzar su viaje",
     "heroTitle": "El eslabón inteligente para un nido apretado...",
     "heroSubtitle": "Una plataforma completa e inteligente dedicada al alquiler y la gestión de propiedades, con confianza y transparencia.",
@@ -54,7 +133,7 @@
     "emailNotFound": "No se encontró ninguna cuenta con este correo electrónico",
     "usernameNotFound": "No se encontraron cuentas con este nombre de usuario",
     "emailOrUsername": "Correo electrónico o nombre de usuario",
-    "emailOrUsernamePlaceholder": "por ejemplo: john@example.com o john_doe",
+    "emailOrUsernamePlaceholder": "contacto@ejemplo.com",
     "identifierRequired": "Se requiere correo electrónico o nombre de usuario",
     "identifierInvalid": "Formato no válido. ¡Ingrese un correo electrónico o nombre de usuario válido!",
     "userNotFoundInDB": "Cuenta encontrada pero no sincronizada. ¡Por favor contacte al soporte!",
@@ -122,6 +201,7 @@
     "cancel": "Cancelar",
     "invitationDesAdmins": "Invitación de administrador",
     "usersManagement": {
+      "unauthorized": "Acceso no autorizado",
       "page": {
         "title": "Gestión de usuarios",
         "description": "Administrar todos los usuarios de la plataforma"
@@ -129,28 +209,36 @@
       "actions": {
         "export": "Exportar datos",
         "reset": "Restablecer filtros",
+        "advancedFilters": "Filtros avanzados",
         "view": "Ver perfil",
         "suspend": "Suspender",
         "ban": "Prohibición",
-        "activate": "Permitir"
+        "activate": "Permitir",
+        "warn": "Advertencia",
+        "reactivate": "Reactivar",
+        "unlock": "Desatascar",
+        "lock": "para bloquear",
+        "escalate": "Escalada",
+        "history": "Histórico",
+        "addNote": "Añadir una nota"
       },
       "filters": {
         "searchPlaceholder": "Busca por nombre, correo electrónico, teléfono...",
         "role": {
-          "label": "Role",
           "all": "Todos los roles",
           "admin": "Administración",
           "property_owner": "Dueño",
           "tenant": "Arrendatario"
         },
         "status": {
-          "label": "Estado",
           "all": "Todos los estados",
           "active": "Activo",
           "pending": "En espera",
           "suspended": "Suspendido",
           "banned": "Prohibido",
           "rejected": "Rechazado",
+          "security_locked": "Bloqueado (seguridad)",
+          "manually_blocked": "Bloqueado (manual)",
           "inactive": "Inactivo"
         },
         "verification": {
@@ -184,240 +272,254 @@
           "id": "IDENTIFICACIÓN"
         }
       },
-      "stats": {
-        "totalUsers": "Usuarios totales",
-        "newUsers30d": "Nuevo (30 días)",
-        "activeUsers": "Activos",
-        "pendingUsers": "En espera",
-        "suspendedUsers": "Colgante",
-        "bannedUsers": "Prohibido",
-        "verifiedIdentity": "Verificado",
-        "pendingApprovals": "Esperando verificación",
-        "averageReliability": "Fiabilidad media"
+      "totalUsers": "Usuarios totales",
+      "newUsers30d": "Nuevo (30 días)",
+      "activeUsers": "Activos",
+      "pendingUsers": "En espera",
+      "suspendedUsers": "Colgante",
+      "bannedUsers": "Prohibido",
+      "verifiedIdentity": "Verificado",
+      "pendingApprovals": "Esperando verificación",
+      "averageReliability": "Fiabilidad media",
+      "pendingValidation": "Esperando validación"
+    },
+    "export": {
+      "csv": {
+        "title": "CSV",
+        "description": "Para Excel/análisis"
       },
-      "badges": {
-        "verified": "Verificado",
-        "pending": "En espera",
-        "rejected": "Rechazado",
-        "unverified": "No verificado",
-        "reliability": "Fiabilidad",
-        "fraud": "Fraude"
-      },
-      "alerts": {
-        "sessionExpired": "La sesión expiró: inicie sesión nuevamente",
-        "unauthorized": "Acceso no autorizado",
-        "loadingError": "Error de carga",
-        "exportError": "Error durante la exportación",
-        "exportSuccess": "Exportación exitosa"
-      },
-      "messages": {
-        "noUsers": "No se encontraron usuarios",
-        "loading": "Cargando..."
-      },
-      "activateModal": {
-        "title": "Reactivar cuenta",
-        "description": "¿Quieres restaurar el acceso completo para este usuario?",
-        "confirm": "Reactivar cuenta",
-        "cancel": "Cancelar",
-        "processing": "Tratamiento...",
-        "currentStatus": "Esta cuenta actualmente es {status}",
-        "status": {
-          "suspended": "suspendido",
-          "banned": "prohibido",
-          "locked": "obstruido",
-          "inactive": "inactivo",
-          "rejected": "rechazado",
-          "unknown": "desconocido"
+      "pdf": {
+        "title": "PDF",
+        "description": "Para imprimir"
+      }
+    },
+    "badges": {
+      "verified": "Verificado",
+      "pending": "En espera",
+      "rejected": "Rechazado",
+      "unverified": "No verificado",
+      "reliability": "Fiabilidad",
+      "fraud": "Fraude"
+    },
+    "alerts": {
+      "sessionExpired": "La sesión expiró: inicie sesión nuevamente",
+      "unauthorized": "Acceso no autorizado",
+      "loadingError": "Error de carga",
+      "exportError": "Error durante la exportación",
+      "exportSuccess": "Exportación exitosa"
+    },
+    "messages": {
+      "noUsers": "No se encontraron usuarios",
+      "loading": "Cargando..."
+    },
+    "activateModal": {
+      "title": "Reactivar cuenta",
+      "description": "¿Quieres restaurar el acceso completo para este usuario?",
+      "confirm": "Reactivar cuenta",
+      "cancel": "Cancelar",
+      "processing": "Tratamiento...",
+      "currentStatus": "Esta cuenta actualmente es {status}",
+      "status": {
+        "suspended": "suspendido",
+        "banned": "prohibido",
+        "locked": "obstruido",
+        "inactive": "inactivo",
+        "rejected": "rechazado",
+        "unknown": "desconocido"
+      }
+    },
+    "warningModal": {
+      "title": "enviar una advertencia",
+      "description": "Esta acción se guardará en el historial.",
+      "reason": "Patrón",
+      "reliability": "Fiab.",
+      "specifyReason": "Especifique el motivo",
+      "optionalMessage": "Mensaje (opcional)",
+      "explainReason": "Explica la razón...",
+      "additionalDetails": "Detalles adicionales...",
+      "infoMessage": "El usuario recibirá una advertencia visible en su panel de control.",
+      "emailSent": "Correo electrónico enviado.",
+      "previousWarnings": "Ya hay {count} advertencias.",
+      "cancel": "Cancelar",
+      "send": "Enviar",
+      "notifyByEmail": "Notificar al usuario por correo electrónico",
+      "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificarles de esta advertencia.",
+      "processing": "Envío...",
+      "error": "Error al enviar advertencia",
+      "reasons": {
+        "inappropriateBehavior": {
+          "label": "Comportamiento inapropiado",
+          "description": "Lenguaje o actitud inapropiados."
+        },
+        "spam": {
+          "label": "Correo basura",
+          "description": "Mensajes publicitarios no solicitados"
+        },
+        "falseInformation": {
+          "label": "noticias falsas",
+          "description": "Información de perfil engañosa"
+        },
+        "paymentIssues": {
+          "label": "Problemas de pago",
+          "description": "Pagos atrasados ​​o rechazados"
+        },
+        "multipleAccounts": {
+          "label": "Varias cuentas",
+          "description": "Creando varias cuentas"
+        },
+        "other": {
+          "label": "Otro",
+          "description": "Motivo personalizado"
         }
+      }
+    },
+    "addNoteModal": {
+      "title": "Agregar una nota interna",
+      "description": "Visible sólo para administradores",
+      "noteContent": "contenido de la nota",
+      "placeholder": "Escribe tu nota aquí...",
+      "addNote": "Agregar nota",
+      "adding": "Suma...",
+      "cancel": "Cancelar",
+      "enterLinkUrl": "Ingrese la URL del enlace:",
+      "error": "Error al agregar la nota"
+    },
+    "banModal": {
+      "title": "Prohibir permanentemente al usuario",
+      "description": "Esta acción es irreversible.",
+      "reason": "Razón de la prohibición",
+      "selectReason": "Selecciona un motivo...",
+      "evidence": "Evidencia y detalles",
+      "evidencePlaceholder": "Detalle los motivos y adjunte enlaces a las pruebas si es necesario...",
+      "notify": "Notificar al usuario por correo electrónico",
+      "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificarles de esta prohibición.",
+      "confirmLabel": "Tipo",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar prohibición",
+      "processing": "Tratamiento..."
+    },
+    "escalateModal": {
+      "title": "Escalada gradual",
+      "description": "Sistema de sanción gradual",
+      "currentLevel": "Nivel actual",
+      "applySanction": "Seleccione el siguiente paso",
+      "reason": "Motivo de la escalada",
+      "reasonPlaceholder": "Describa las razones que justifican esta sanción...",
+      "warning": "Advertencia",
+      "suspension": "Suspensión",
+      "ban": "Destierro",
+      "alreadyApplied": "Ya aplicado al usuario",
+      "locked": "Bloqueado: se requiere el siguiente paso",
+      "historyNote": "Este motivo quedará registrado en el historial de moderación.",
+      "apply": "Aplicar escalada",
+      "notify": "Notificar al usuario por correo electrónico",
+      "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificarles de esta sanción.",
+      "cancel": "Cancelar",
+      "processing": "Tratamiento..."
+    },
+    "suspendModal": {
+      "title": "Suspender temporalmente al usuario",
+      "description": "El usuario no podrá iniciar sesión durante el tiempo elegido.",
+      "duration": "Duración de la suspensión",
+      "day": "1 dia",
+      "days": "{count} días",
+      "reason": "Motivo de la suspensión",
+      "selectReason": "Selecciona un motivo",
+      "details": "Patrón detallado",
+      "detailsPlaceholder": "Explique brevemente el por qué de esta medida...",
+      "emailNotification": "notificación enviada",
+      "notificationInfo": "Se enviará un correo electrónico al usuario para informarle de la suspensión.",
+      "enterLinkUrl": "Ingrese la URL del enlace",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar suspensión",
+      "processing": "Tratamiento...",
+      "reasons": {
+        "spam": "Spam o abuso",
+        "tos": "Violación de los términos de uso.",
+        "safety": "Seguridad de la cuenta",
+        "other": "Otra razón"
       },
-      "warningModal": {
-        "title": "enviar una advertencia",
-        "description": "Esta acción se guardará en el historial.",
-        "reason": "Patrón",
-        "reliability": "Fiab.",
-        "specifyReason": "Especifique el motivo",
-        "optionalMessage": "Mensaje (opcional)",
-        "explainReason": "Explica la razón...",
-        "additionalDetails": "Detalles adicionales...",
-        "infoMessage": "El usuario recibirá una advertencia visible en su panel de control.",
-        "emailSent": "Correo electrónico enviado.",
-        "previousWarnings": "⚠️ Ya {cuente} advertencia(s).",
-        "cancel": "Cancelar",
-        "send": "Enviar",
-        "notifyByEmail": "Notificar al usuario por correo electrónico",
-        "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificarles de esta advertencia.",
-        "processing": "Envío...",
-        "error": "Error al enviar advertencia",
-        "reasons": {
-          "inappropriateBehavior": {
-            "label": "Comportamiento inapropiado",
-            "description": "Lenguaje o actitud inapropiados."
-          },
-          "spam": {
-            "label": "Correo basura",
-            "description": "Mensajes publicitarios no solicitados"
-          },
-          "falseInformation": {
-            "label": "noticias falsas",
-            "description": "Información de perfil engañosa"
-          },
-          "paymentIssues": {
-            "label": "Problemas de pago",
-            "description": "Pagos atrasados ​​o rechazados"
-          },
-          "multipleAccounts": {
-            "label": "Varias cuentas",
-            "description": "Creando varias cuentas"
-          },
-          "other": {
-            "label": "Otro",
-            "description": "Motivo personalizado"
-          }
-        }
+      "emailNotificationTitle": "Notificación por correo electrónico",
+      "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificarles de esta suspensión.",
+      "notify": "Notificar al usuario por correo electrónico"
+    },
+    "lockUnlockModal": {
+      "lockTitle": "Bloquear cuenta",
+      "unlockTitle": "Desbloquear cuenta",
+      "lockDescription": "Bloquee manualmente el acceso a esta cuenta.",
+      "unlockDescription": "Esta cuenta fue bloqueada después de varios intentos fallidos de inicio de sesión.",
+      "reason": "Razón del bloqueo",
+      "reasonPlaceholder": "¿Por qué bloquear esta cuenta?...",
+      "notifyLock": "Notificar al usuario del bloqueo",
+      "notifyUnlock": "Notificar al usuario del desbloqueo",
+      "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificar esto.",
+      "failedAttempts": "Intentos fallidos",
+      "lock": "para bloquear",
+      "unlock": "Desatascar",
+      "cancel": "Cancelar",
+      "processing": "Tratamiento...",
+      "enterLinkUrl": "Ingrese la URL del enlace:"
+    },
+    "actionsHistoryModal": {
+      "title": "Historial de acciones",
+      "subtitle": "Administración de NESTHUB",
+      "close": "Cerca",
+      "admin": {
+        "default": "Administración"
       },
-      "addNoteModal": {
-        "title": "Agregar una nota interna",
-        "description": "Visible sólo para administradores",
-        "noteContent": "contenido de la nota",
-        "placeholder": "Escribe tu nota aquí...",
-        "addNote": "Agregar nota",
-        "adding": "Suma...",
-        "cancel": "Cancelar",
-        "enterLinkUrl": "Ingrese la URL del enlace:",
-        "error": "Error al agregar la nota"
+      "search": {
+        "placeholder": "Busque un administrador, usuario o patrón..."
       },
-      "banModal": {
-        "title": "Prohibir permanentemente al usuario",
-        "description": "Esta acción es irreversible.",
-        "reason": "Razón de la prohibición",
-        "selectReason": "Selecciona un motivo...",
-        "evidence": "Evidencia y detalles",
-        "evidencePlaceholder": "Detalle los motivos y adjunte enlaces a las pruebas si es necesario...",
-        "notify": "Notificar al usuario por correo electrónico",
-        "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificarles de esta prohibición.",
-        "confirmLabel": "Tipo",
-        "cancel": "Cancelar",
-        "confirm": "Confirmar prohibición",
-        "processing": "Tratamiento..."
+      "filters": {
+        "label": "Filtrar por",
+        "all": "Todos los tipos"
       },
-      "escalateModal": {
-        "title": "Escalada gradual",
-        "description": "Sistema de sanción gradual",
-        "currentLevel": "Nivel actual",
-        "applySanction": "Seleccione el siguiente paso",
-        "reason": "Motivo de la escalada",
-        "reasonPlaceholder": "Describa las razones que justifican esta sanción...",
-        "warning": "Advertencia",
+      "actionTypes": {
         "suspension": "Suspensión",
+        "suspensionUndone": "Suspensión cancelada",
         "ban": "Destierro",
-        "alreadyApplied": "Ya aplicado al usuario",
-        "locked": "Bloqueado: se requiere el siguiente paso",
-        "historyNote": "Este motivo quedará registrado en el historial de moderación.",
-        "apply": "Aplicar escalada",
-        "notify": "Notificar al usuario por correo electrónico",
-        "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificarles de esta sanción.",
-        "cancel": "Cancelar",
-        "processing": "Tratamiento..."
+        "banUndone": "Prohibición cancelada",
+        "activation": "Reactivación",
+        "unlock": "Desbloqueo",
+        "lock": "Bloqueo",
+        "lockUndone": "Bloque cancelado",
+        "warning": "Advertencia",
+        "escalation": "Escalada",
+        "escalationUndone": "Escalada cancelada",
+        "note": "nota interna",
+        "rejectVerification": "Rechazo de verificación",
+        "validateVerification": "Verificación de validación",
+        "undone": "Acción cancelada"
       },
-      "suspendModal": {
-        "title": "Suspender temporalmente al usuario",
-        "description": "El usuario no podrá iniciar sesión durante el tiempo elegido.",
-        "duration": "Duración de la suspensión",
-        "day": "1 dia",
-        "days": "{count} días",
-        "reason": "Motivo de la suspensión",
-        "selectReason": "Selecciona un motivo",
-        "details": "Patrón detallado",
-        "detailsPlaceholder": "Explique brevemente el por qué de esta medida...",
-        "emailNotification": "notificación enviada",
-        "notificationInfo": "Se enviará un correo electrónico al usuario para informarle de la suspensión.",
-        "enterLinkUrl": "Ingrese la URL del enlace",
-        "cancel": "Cancelar",
-        "confirm": "Confirmar suspensión",
-        "processing": "Tratamiento...",
-        "reasons": {
-          "spam": "Spam o abuso",
-          "tos": "Violación de los términos de uso.",
-          "safety": "Seguridad de la cuenta",
-          "other": "Otra razón"
-        },
-        "emailNotificationTitle": "Notificación por correo electrónico",
-        "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificarles de esta suspensión.",
-        "notify": "Notificar al usuario por correo electrónico"
+      "status": {
+        "active": "Activo",
+        "suspended": "Suspendido",
+        "banned": "Prohibido",
+        "pending": "En espera",
+        "locked": "Obstruido",
+        "inactive": "Inactivo",
+        "rejected": "Rechazado"
       },
-      "lockUnlockModal": {
-        "lockTitle": "Bloquear cuenta",
-        "unlockTitle": "Desbloquear cuenta",
-        "lockDescription": "Bloquee manualmente el acceso a esta cuenta.",
-        "unlockDescription": "Esta cuenta fue bloqueada después de varios intentos fallidos de inicio de sesión.",
-        "reason": "Razón del bloqueo",
-        "reasonPlaceholder": "¿Por qué bloquear esta cuenta?...",
-        "notifyLock": "Notificar al usuario del bloqueo",
-        "notifyUnlock": "Notificar al usuario del desbloqueo",
-        "emailNotificationMessage": "Se enviará un correo electrónico a {email} para notificar esto.",
-        "failedAttempts": "Intentos fallidos",
-        "lock": "para bloquear",
-        "unlock": "Desatascar",
-        "cancel": "Cancelar",
-        "processing": "Tratamiento...",
-        "enterLinkUrl": "Ingrese la URL del enlace:"
+      "user": {
+        "target": "Usuario"
       },
-      "actionsHistoryModal": {
-        "title": "Historial de acciones",
-        "subtitle": "Administración de NESTHUB",
-        "close": "Cerca",
-        "admin": {
-          "default": "Administración"
-        },
-        "search": {
-          "placeholder": "Busque un administrador, usuario o patrón..."
-        },
-        "filters": {
-          "label": "Filtrar por",
-          "all": "Todos los tipos"
-        },
-        "actionTypes": {
-          "suspension": "Suspensión",
-          "ban": "Destierro",
-          "activation": "Reactivación",
-          "unlock": "Desbloqueo",
-          "lock": "Bloqueo",
-          "warning": "Advertencia",
-          "escalation": "Escalada",
-          "note": "nota interna",
-          "rejectVerification": "Rechazo de verificación",
-          "validateVerification": "Verificación de validación"
-        },
-        "status": {
-          "active": "Activo",
-          "suspended": "Suspendido",
-          "banned": "Prohibido",
-          "pending": "En espera",
-          "locked": "Obstruido",
-          "inactive": "Inactivo",
-          "rejected": "Rechazado"
-        },
-        "user": {
-          "target": "Usuario"
-        },
-        "action": {
-          "reason": "Patrón"
-        },
-        "undo": {
-          "button": "Cancelar",
-          "processing": "Cancelación...",
-          "title": "Cancelar esta acción"
-        },
-        "results": {
-          "showing": "Mostrando desde {start} hasta {end} en {total} resultados",
-          "empty": "No se encontraron acciones"
-        },
-        "errors": {
-          "tokenNotAvailable": "Ficha no disponible",
-          "apiError": "Error de API:",
-          "loadFailed": "No se puede cargar el historial de acciones",
-          "retry": "Intentar otra vez"
-        }
+      "action": {
+        "reason": "Patrón"
+      },
+      "undo": {
+        "button": "Cancelar",
+        "processing": "Cancelación...",
+        "title": "Cancelar esta acción"
+      },
+      "results": {
+        "showing": "Mostrando desde {start} hasta {end} en {total} resultados",
+        "empty": "No se encontraron acciones"
+      },
+      "errors": {
+        "tokenNotAvailable": "Ficha no disponible",
+        "apiError": "Error de API:",
+        "loadFailed": "No se puede cargar el historial de acciones",
+        "retry": "Intentar otra vez"
       }
     }
   },
@@ -432,7 +534,7 @@
     "confirm": "Confirmar",
     "back": "Atrás"
   },
-  "CGU": {
+  "Terms": {
     "title": "Condiciones Generales de Uso",
     "version": "Versión",
     "lastUpdate": "Última actualización:",
@@ -580,7 +682,7 @@
           "desc": "Apellido, nombre, fecha de nacimiento."
         },
         "coordonnees": {
-          "label": "Detalles de contacto",
+          "label": "Datos de contacto",
           "desc": "Dirección de correo electrónico, número de teléfono, dirección postal."
         },
         "profil": {
@@ -754,5 +856,398 @@
       "button": "Póngase en contacto con el DPO",
       "helpCenter": "Centro de ayuda"
     }
+  },
+  "Inscription": {
+    "title": "Registro",
+    "step": "Paso {paso} de 4",
+    "Compte": "1.Cuenta",
+    "Documents": "2.Documentos",
+    "verificationEmail": "Verificación",
+    "validation": "3.Validación",
+    "chooseRole": "Por favor elige un rol",
+    "roleLandlord": "Dueño",
+    "roleTenant": "Arrendatario",
+    "username": "Nombre de usuario",
+    "email": "Dirección de correo electrónico",
+    "password": "Contraseña",
+    "confirmPassword": "Confirmar Contraseña",
+    "continue": "siguiente paso",
+    "weak": "Débil",
+    "medium": "PROMEDIO",
+    "good": "Bien",
+    "strong": "Fuerte",
+    "strength": "Seguridad de la contraseña",
+    "required": "Todos los campos son obligatorios",
+    "invalidEmail": "Dirección de correo electrónico no válida",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "usernameLength": "El nombre de usuario debe tener entre 3 y 20 caracteres.",
+    "passwordLength": "La contraseña debe contener al menos 8 caracteres",
+    "passwordStrength": "La contraseña es demasiado débil. Utilice letras mayúsculas, números y caracteres especiales.",
+    "accountCreated": "¡Cuenta creada exitosamente! Se ha enviado un código de verificación a su correo electrónico.",
+    "verificationCodeSent": "Hemos enviado un código de verificación a {email}",
+    "verificationCode": "Código de verificación",
+    "verify": "Controlar",
+    "back": "paso previo",
+    "resendCode": "Reenviar código",
+    "codeResent": "¡Se te ha enviado un nuevo código!",
+    "invalidCode": "código no válido",
+    "verificationFailed": "La verificación falló",
+    "verificationSuccess": "¡Felicitaciones! Su cuenta ha sido verificada exitosamente.",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "login": "Acceso",
+    "termsOfUse": "Condiciones de uso",
+    "privacyPolicy": "política de privacidad",
+    "help": "¿Necesitar ayuda?",
+    "security": "Seguridad",
+    "securityMessage": "Esta plataforma utiliza cifrado AES-256 de extremo a extremo para garantizar la seguridad de sus datos inmobiliarios.",
+    "usernameReserved": "Su nombre de usuario @{username} está reservado para los próximos 30 minutos.",
+    "stepValidated": "¡Paso 1/4 validado!",
+    "usernameInfo": "3-20 caracteres, letras y números únicamente. Este nombre será visible en la plataforma.",
+    "passwordInfo": "Usa caracteres especiales",
+    "professionalEmail": "Dirección de correo electrónico profesional",
+    "publicIdentity": "Identidad pública",
+    "step1Description": "Paso 1 de 4: Configura tu acceso seguro.",
+    "emailSent": "Hemos enviado un código de 6 dígitos a",
+    "enterCode": "Ingrese el código de 6 dígitos",
+    "didNotReceiveCode": "¿No recibiste el código?",
+    "step1Title": "Información de inicio de sesión",
+    "step2Title": "verdadera identidad",
+    "step3Title": "Verificación telefónica",
+    "step4Title": "Documentos de identidad",
+    "identityTitle": "Verificación de identidad",
+    "identitySubtitle": "Paso 2 de 4: Identidad real (privada)",
+    "privacyTitle": "Confidencialidad garantizada",
+    "privacyDescription": "Su verdadera identidad es confidencial y no se compartirá públicamente.",
+    "personalInfoTitle": "Información personal",
+    "firstName": "nombre real",
+    "firstNamePlaceholder": "Ej: Mohamed",
+    "lastName": "nombre real",
+    "lastNamePlaceholder": "Ej: Ben Hssin",
+    "phoneNumber": "Número de teléfono",
+    "phonePlaceholder": "27.929.630",
+    "whatsappWarning": "Antes de continuar, activa WhatsApp:",
+    "activateWhatsapp": "Activa WhatsApp en 1 clic",
+    "whatsappInstruction": "Haga clic → WhatsApp se abre → haga clic en Enviar → vuelva aquí",
+    "address": "Dirección de residencia",
+    "optional": "Opcional",
+    "addressPlaceholder": "Introduce tu dirección completa",
+    "publicProfileTitle": "Perfil público",
+    "bio": "Biografía pública",
+    "bioPlaceholder": "Describe tu experiencia inmobiliaria o lo que estás buscando...",
+    "sending": "Envío",
+    "requiredFieldsError": "Por favor complete todos los campos requeridos",
+    "errors": {
+      "chooseRole": "Por favor elija un rol (Propietario o Inquilino)",
+      "usernameRequired": "Por favor ingrese un nombre de usuario",
+      "usernameInvalid": "El nombre de usuario debe tener entre 3 y 20 caracteres (solo letras y números)",
+      "emailRequired": "Por favor ingrese una dirección de correo electrónico",
+      "emailInvalid": "Por favor, introduce una dirección de correo electrónico válida",
+      "passwordRequired": "Por favor ingrese una contraseña",
+      "passwordTooShort": "La contraseña debe contener al menos 8 caracteres",
+      "passwordWeak": "La contraseña es demasiado débil. Utilice letras mayúsculas, números y caracteres especiales.",
+      "confirmPasswordRequired": "Por favor confirma tu contraseña",
+      "passwordsDoNotMatch": "Las contraseñas no coinciden",
+      "codeRequired": "Por favor ingresa el código de 6 dígitos",
+      "codeInvalid": "código no válido",
+      "emailAlreadyExists": "Este correo electrónico ya está en uso.",
+      "usernameAlreadyExists": "Este nombre de usuario ya está en uso",
+      "phoneAlreadyExists": "Este número de teléfono ya está en uso.",
+      "phoneTooShort": "El número debe contener al menos 8 dígitos.",
+      "phoneRequired": "Por favor ingresa tu número de teléfono",
+      "userIdNotFound": "ID de usuario no encontrado",
+      "whatsappSendFailed": "No se pudo enviar el código de WhatsApp",
+      "invalidCodeLength": "Se requiere código de 6 dígitos",
+      "missingInfo": "Información faltante",
+      "clerkNotInitialized": "Empleado no inicializado",
+      "signupIdMissing": "No se puede recuperar el ID de registro",
+      "userCreationFailed": "Error al crear cuenta",
+      "firstNameRequired": "El nombre es obligatorio",
+      "lastNameRequired": "El nombre es obligatorio"
+    },
+    "documentsStep": {
+      "title": "Verificación de identidad",
+      "subtitle": "Paso 4 de 4: Sube tus documentos oficiales (OCR automático)",
+      "identityDocument": "Documento de identidad",
+      "cinFront": "CIN frontal",
+      "cinBack": "CIN reverso",
+      "frontSide": "Lado frontal",
+      "backSide": "parte trasera",
+      "maxSize": "Máximo 5 MB",
+      "formats": "JPG, PNG, PDF",
+      "photoAdded": "Foto agregada",
+      "chooseFile": "Elige un archivo",
+      "iaOcr": "IA y OCR",
+      "ocrDescription": "Nuestro sistema analizará instantáneamente su documento para verificar su identidad.",
+      "profilePhoto": "Foto de perfil",
+      "faceVisible": "Cara claramente visible",
+      "security": "Seguridad",
+      "banking": "Bancario",
+      "compliant": "Obediente",
+      "cloud": "Nube",
+      "sovereign": "Soberano",
+      "previousStep": "Paso anterior",
+      "finish": "para terminar"
+    },
+    "ocrConfirm": {
+      "title": "Verificación de datos",
+      "description": "Confirmar la información extraída por OCR",
+      "infoBanner": "Los campos resaltados se han extraído automáticamente. Comprueba que coincidan con tu documento.",
+      "firstName": "Nombre de pila",
+      "lastName": "Nombre",
+      "birthDate": "Fecha de nacimiento",
+      "cinNumber": "número NIC",
+      "securityBanner": "Sus datos se cifran y almacenan de acuerdo con los estándares GDPR.",
+      "modify": "para modificar",
+      "confirmIdentity": "Confirmar identidad"
+    },
+    "welcomeModal": {
+      "title": "¡Bienvenido a NESTHUB!",
+      "message": "Su cuenta ha sido creada exitosamente.",
+      "submessage": "Complete su perfil para aumentar su puntuación de confianza y acceder a todas las funciones.",
+      "emailVerified": "Correo electrónico verificado",
+      "whatsappVerified": "WhatsApp verificado",
+      "cinPending": "NIC pendiente",
+      "completeProfile": "Completa mi perfil",
+      "redirecting": "Redirección..."
+    },
+    "checking": "Verificación...",
+    "whatsappStep": {
+      "title": "Verificación de WhatsApp",
+      "subtitle": "Paso 3 de 4: Valida tu número de teléfono",
+      "codeSentTitle": "Código enviado por WhatsApp",
+      "codeSentMessage": "Hemos enviado un código de 6 dígitos a",
+      "verificationCode": "Código de verificación",
+      "checking": "Verificación...",
+      "enterCodeInstruction": "Ingrese los 6 dígitos y luego presione Enter",
+      "back": "Atrás",
+      "sending": "Envío",
+      "resendCode": "Reenviar código"
+    },
+    "toasts": {
+      "emailVerified": "Correo electrónico verificado!",
+      "continueRegistration": "Continúe su registro.",
+      "linkExpired": "Enlace caducado",
+      "linkExpiredDescription": "El enlace de verificación ha caducado. Por favor, empieza de nuevo.",
+      "versoAdded": "¡Se agregó la parte trasera!",
+      "versoProcessed": "La parte trasera ha sido tratada.",
+      "ocrSuccess": "¡OCR terminado!",
+      "ocrSuccessDescription": "La información fue extraída exitosamente.",
+      "ocrError": "error de reconocimiento óptico de caracteres",
+      "ocrErrorDescription": "No se puede extraer información. Complete manualmente."
+    },
+    "whatsapp": {
+      "codeSent": "Se envió un código de verificación en WhatsApp al +216 {teléfono}"
+    },
+    "alerts": {
+      "verificationEmailSent": "Se ha enviado un enlace de verificación a {email}",
+      "emailSent": "Correo electrónico enviado!",
+      "codeSentTitle": "¡Código enviado!",
+      "gotCode": "Recibí el código"
+    },
+    "acceptTerms": {
+      "prefix": "Al continuar acepto el",
+      "terms": "condiciones de uso",
+      "and": "y el",
+      "privacy": "política de privacidad",
+      "suffix": ". Por favor léalos atentamente. *"
+    }
+  },
+  "VerifyCatch": {
+    "title": "Verificación en curso",
+    "description": "Espere mientras verificamos su cuenta..."
+  },
+  "AdminInvitations": {
+    "title": "Gestión de invitaciones",
+    "description": "Invite a nuevos administradores: enlaces seguros válidos durante 48 horas",
+    "inviteAdmin": "Invitar a un administrador",
+    "secureLink": "Enlace seguro · caduca en 48 horas",
+    "newAdminEmail": "Nuevo correo electrónico de administrador",
+    "responsibility": "Responsabilidad",
+    "infoText": "Se enviará un enlace único por correo electrónico y caducará dentro de",
+    "sending": "Envío en curso",
+    "generateInvitation": "Generar la invitación",
+    "activeLinks": "Enlaces activos",
+    "expired": "Venció",
+    "revoked": "Revocado",
+    "email": "Correo electrónico",
+    "expiresIn": "Vence en",
+    "status": "Estado",
+    "actions": "Comportamiento",
+    "accepted": "Aceptado",
+    "active": "Activo",
+    "copyLink": "Copiar enlace",
+    "copied": "¡Copiado!",
+    "revoke": "Revocar",
+    "resend": "Reenviar",
+    "noInvitations": "No hay invitaciones en curso",
+    "createInvitationHint": "Utilice el formulario de la izquierda para crear uno.",
+    "unauthorized": "Acceso no autorizado",
+    "emailRequired": "Se requiere correo electrónico",
+    "emailInvalid": "Correo electrónico no válido",
+    "invitationSent": "Invitación enviada a {email} ✓",
+    "invitationRevoked": "Invitación revocada",
+    "revokeError": "Error durante la revocación",
+    "invitationResent": "Invitación devuelta a {email} ✓",
+    "currentInvitations": "Invitaciones actuales",
+    "realTimeExpiry": "Seguimiento de vencimientos en tiempo real",
+    "expiryApplication": "Aplicación de caducidad de 48h",
+    "securityText": "El sistema de invitación de confianza cero de NESTHUB genera tokens de acceso transitorios. Si un invitado no completa el registro dentro del período de 48 horas, el token cifrado se elimina automáticamente de la caché de la puerta de enlace. Esto evita la reutilización de enlaces no autorizados durante mucho tiempo.",
+    "autoPurge": "Purga automática",
+    "limitedAccess": "Acceso limitado",
+    "policy": "Política"
+  },
+  "AdminContent": {
+    "title": "Gestión de contenidos estáticos",
+    "description": "Edite y administre sus páginas legales e informativas.",
+    "unauthorized": "Acceso no autorizado",
+    "adminRequired": "Debes ser administrador.",
+    "allPages": "Todo",
+    "published": "Publicado",
+    "drafts": "Damas",
+    "noPagesFound": "No se encontraron páginas",
+    "pageTitlePlaceholder": "Título de la página…",
+    "editorPlaceholder": "Escribe tu contenido aquí...",
+    "restoring": "Restauración en curso…",
+    "history": "Histórico",
+    "draft": "Borrador",
+    "publish": "Publicar",
+    "cancel": "Cancelar",
+    "selectPage": "Seleccione una página",
+    "selectPageHint": "Haga clic en una página a la izquierda para comenzar a editar",
+    "versionHistory": "Historial de versiones",
+    "versionHistoryDesc": "Ver y restaurar versiones anteriores",
+    "currentVersion": "Versión actual",
+    "versionRestoredBadge": "Versión restaurada",
+    "previousVersions": "Versiones anteriores ({count})",
+    "noPreviousVersions": "Sin versión anterior",
+    "restored": "Restaurado",
+    "titleLabel": "Título",
+    "contentLabel": "Contenido",
+    "contentModified": "modificado",
+    "restoreThisVersion": "Restaurar esta versión",
+    "showLess": "Ver menos",
+    "showAll": "Ver todo ({count} más)",
+    "deletePage": "Eliminar página",
+    "deleteConfirmation": "Esta acción es irreversible.",
+    "delete": "BORRAR",
+    "pagePublished": "Página publicada exitosamente ✓",
+    "draftSaved": "Borrador guardado ✓",
+    "saveError": "Error al guardar",
+    "pageDeleted": "Página eliminada exitosamente",
+    "deleteError": "Error al eliminar",
+    "versionRestored": "Versión {versión} restaurada exitosamente ✓",
+    "restoreError": "Error durante la restauración"
+  },
+  "VerificationDetail": {
+    "unauthorized": "Acceso no autorizado",
+    "requestNotFound": "Solicitud no encontrada",
+    "queue": "Cola",
+    "request": "Pedido",
+    "pending": "Esperando validación",
+    "documentsProvided": "Documentos proporcionados",
+    "cinFront": "NIC frontal",
+    "cinBack": "Volver NIC",
+    "download": "Descargar",
+    "memberSince": "Miembro desde",
+    "ocrData": "Datos extraídos (OCR)",
+    "firstName": "Nombre de pila",
+    "lastName": "Nombre",
+    "cinNumber": "número NIC",
+    "dateOfBirth": "Fecha de nacimiento",
+    "placeOfBirth": "Lugar de nacimiento",
+    "nationality": "Nacionalidad",
+    "expiryDate": "Fecha de caducidad",
+    "address": "DIRECCIÓN",
+    "finalizeVerification": "Finalizar verificación",
+    "internalNote": "Nota interna (opcional)",
+    "internalNotePlaceholder": "Agregue una nota para la auditoría...",
+    "validate": "PARA VALIDAR",
+    "reject": "DESPEDIR",
+    "processing": "Tratamiento...",
+    "rejectionReason": "Motivo del rechazo",
+    "rejectionPlaceholder": "Documento borroso, caducado, datos no coincidentes...",
+    "confirmRejection": "Confirmar rechazo",
+    "rejectionReasons": {
+      "blurry": "documento borroso",
+      "expired": "NIC caducado",
+      "nameMismatch": "nombre diferente",
+      "photoNotCompliant": "Foto incorrecta"
+    }
+  },
+  "Verifications": {
+    "unauthorized": "Acceso no autorizado",
+    "adminRequired": "Debes ser administrador.",
+    "title": "Cola de verificación",
+    "description": "Gestionar solicitudes de validación de identidad",
+    "searchPlaceholder": "Buscar un usuario...",
+    "refresh": "Refrescar",
+    "processRequest": "Procesar la solicitud",
+    "justNow": "Ahora mismo",
+    "minutesAgo": "Hace {count} minutos",
+    "oneHourAgo": "Hace 1 hora",
+    "hoursAgo": "Hace {count} horas",
+    "daysAgo": "Hace {count} días",
+    "stats": {
+      "pending": "En espera",
+      "processedToday": "Tratados AJD",
+      "documents": "archivos",
+      "averageTime": "tiempo promedio",
+      "minutes": "mín."
+    },
+    "table": {
+      "user": "Usuario",
+      "role": "Role",
+      "date": "Fecha",
+      "status": "Estado",
+      "action": "Acción"
+    },
+    "role": {
+      "owner": "DUEÑO",
+      "tenant": "ARRENDATARIO"
+    },
+    "status": {
+      "pending": "En espera"
+    },
+    "empty": {
+      "title": "¡Todos los controles están completos!",
+      "description": "Felicitaciones, su cola está vacía. Se le notificará tan pronto como un nuevo propietario envíe sus documentos.",
+      "backToDashboard": "Volver al panel",
+      "viewHistory": "Ver historial"
+    }
+  },
+  "SSOCallback": {
+    "connecting": "Conexión en progreso, por favor espere...",
+    "pleaseWait": "Verificando tu información",
+    "redirecting": "Redirección en curso..."
+  },
+  "ForgotPassword": {
+    "title": "Contraseña olvidada",
+    "subtitle": "Ingrese su correo electrónico para recibir un enlace de reinicio",
+    "emailLabel": "Correo electrónico",
+    "emailPlaceholder": "tu@correo electrónico.com",
+    "sendResetLink": "Enviar enlace",
+    "sending": "Envío en curso...",
+    "backToLogin": "Volver a iniciar sesión",
+    "securityBadge": "Cifrado AES-256 • Cumple con GDPR",
+    "legal": "Avisos legales",
+    "privacy": "Confidencialidad"
+  },
+  "ResetPassword": {
+    "title": "Restablecer contraseña",
+    "subtitle": "Crea una nueva contraseña segura",
+    "subtitleWithEmail": "Crea una nueva contraseña para {correo electrónico}",
+    "successTitle": "¡Contraseña cambiada!",
+    "successMessage": "Su contraseña se ha restablecido correctamente. Serás redirigido a la página de inicio de sesión.",
+    "newPasswordLabel": "Nueva contraseña",
+    "newPasswordPlaceholder": "••••••••",
+    "confirmPasswordLabel": "Confirmar Contraseña",
+    "confirmPasswordPlaceholder": "••••••••",
+    "resetPassword": "Reiniciar",
+    "resetting": "Reiniciar...",
+    "backToLogin": "Volver a iniciar sesión",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "securityBadge": "Cifrado AES-256 • Cumple con GDPR",
+    "legal": "Avisos legales",
+    "privacy": "Confidencialidad"
   }
 }

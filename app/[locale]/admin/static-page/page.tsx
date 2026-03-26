@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { useAdminContent } from "./hooks/useAdminContent";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Alert from "@/components/ui/Alert";
 import { decodeJWT } from "@/lib/utils/jwt";
@@ -106,6 +107,7 @@ const card3dSel = "shadow-[0_3px_0_0_rgba(var(--primary-rgb),0.3),0_6px_20px_-4p
 const block3d   = "shadow-[0_6px_0_0_rgba(0,0,0,0.07),0_12px_28px_-6px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.4),0_12px_28px_-6px_rgba(0,0,0,0.5)]";
 
 export default function AdminContentPage() {
+  const t = useTranslations("AdminContent");
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
   const router = useRouter();
@@ -239,10 +241,10 @@ export default function AdminContentPage() {
       status: publish ? "published" : "draft",
     });
     if (result.success) {
-      showAlert("success", publish ? "Page publiée avec succès ✓" : "Brouillon enregistré ✓");
+      showAlert("success", publish ? t("pagePublished") : t("draftSaved"));
       closeEditor();
     } else {
-      showAlert("error", result.error || "Erreur lors de l'enregistrement");
+      showAlert("error", result.error || t("saveError"));
     }
     setSaving(false);
   };
@@ -254,9 +256,9 @@ export default function AdminContentPage() {
       setShowDeleteModal(false); 
       setPageToDelete(null);
       if (selectedPage?.id === pageToDelete) closeEditor();
-      showAlert("success", "Page supprimée avec succès");
+      showAlert("success", t("pageDeleted"));
     } else {
-      showAlert("error", result.error || "Erreur lors de la suppression");
+      showAlert("error", result.error || t("deleteError"));
     }
   };
 
@@ -275,26 +277,24 @@ export default function AdminContentPage() {
       setEditorTitle(restoredTitle);
       setLastRestoredId(version.id);
       
-      // Mettre à jour la page sélectionnée avec le numéro de version restauré
       setSelectedPage(prev => prev ? {
         ...prev, 
         title: restoredTitle, 
         htmlContent: restoredHtml,
         status: "restored", 
         updatedAt: new Date().toISOString(),
-        version: restoredVersion, // Garder le même numéro de version
+        version: restoredVersion,
       } : null);
       
       await loadVersions(selectedPage.id);
       await fetchPages();
       
-      // Fermer le panneau d'historique après restauration
       setShowVersions(false);
       setShowFullHistory(false);
       
-      showAlert("success", `Version ${restoredVersion} restaurée avec succès ✓`);
+      showAlert("success", t("versionRestored", { version: restoredVersion }));
     } else {
-      showAlert("error", result.error || "Erreur lors de la restauration");
+      showAlert("error", result.error || t("restoreError"));
     }
     setEditorLoading(false);
     setRestoring(null);
@@ -309,8 +309,8 @@ export default function AdminContentPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-10 bg-white dark:bg-slate-900 rounded-2xl shadow-lg">
           <MdLock className="text-6xl text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Accès non autorisé</h1>
-          <p className="text-slate-500">Vous devez être administrateur.</p>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">{t("unauthorized")}</h1>
+          <p className="text-slate-500">{t("adminRequired")}</p>
         </div>
       </div>
     );
@@ -334,9 +334,9 @@ export default function AdminContentPage() {
       <div className="flex-1 flex flex-col h-full overflow-hidden p-6 gap-5">
         {/* Header */}
         <div className="flex-shrink-0">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Gestion du contenu statique</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t("title")}</h2>
           <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">
-            Modifier et gérer vos pages juridiques et informatives.
+            {t("description")}
           </p>
         </div>
 
@@ -348,9 +348,9 @@ export default function AdminContentPage() {
             <div className="flex-shrink-0 p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
               <div className="flex gap-1">
                 {[
-                  { v: "ALL", l: "Toutes", count: pages.length },
-                  { v: "published", l: "Publiées", count: pages.filter(p => p.status === "published").length },
-                  { v: "draft", l: "Brouillons", count: pages.filter(p => p.status === "draft").length },
+                  { v: "ALL", l: t("allPages"), count: pages.length },
+                  { v: "published", l: t("published"), count: pages.filter(p => p.status === "published").length },
+                  { v: "draft", l: t("drafts"), count: pages.filter(p => p.status === "draft").length },
                 ].map(({ v, l, count }) => (
                   <button 
                     key={v} 
@@ -381,7 +381,7 @@ export default function AdminContentPage() {
               ) : filteredPages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-40 gap-3 text-slate-400">
                   <TbFileOff className="text-5xl opacity-30" />
-                  <p className="text-sm">Aucune page trouvée</p>
+                  <p className="text-sm">{t("noPagesFound")}</p>
                 </div>
               ) : (
                 <div className="p-3 space-y-2">
@@ -453,7 +453,7 @@ export default function AdminContentPage() {
                     type="text"
                     value={editorTitle}
                     onChange={e => setEditorTitle(e.target.value)}
-                    placeholder="Titre de la page…"
+                    placeholder={t("pageTitlePlaceholder")}
                     className="w-full text-xl font-bold bg-transparent border-none outline-none text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600"
                   />
                 </div>
@@ -464,14 +464,14 @@ export default function AdminContentPage() {
                     <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
                       <div className="flex flex-col items-center gap-3 text-indigo-600 dark:text-indigo-400">
                         <LoadingSpinner />
-                        <span className="text-sm font-medium">Restauration en cours…</span>
+                        <span className="text-sm font-medium">{t("restoring")}</span>
                       </div>
                     </div>
                   )}
                   <RichTextEditor
                     value={editorContent}
                     onChange={setEditorContent}
-                    placeholder="Écrivez votre contenu ici…"
+                    placeholder={t("editorPlaceholder")}
                   />
                 </div>
 
@@ -508,7 +508,7 @@ export default function AdminContentPage() {
                           : "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 dark:hover:border-indigo-600 dark:hover:text-indigo-400"
                       }`}
                     >
-                      <BsClockHistory className="text-xs" />Historique
+                      <BsClockHistory className="text-xs" />{t("history")}
                     </button>
 
                     {(() => {
@@ -527,7 +527,7 @@ export default function AdminContentPage() {
                       onClick={closeEditor}
                       className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-500 border border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     >
-                      <MdCancel className="text-sm" />Annuler
+                      <MdCancel className="text-sm" />{t("cancel")}
                     </button>
 
                     <button 
@@ -535,7 +535,7 @@ export default function AdminContentPage() {
                       disabled={saving}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 transition-all disabled:opacity-50"
                     >
-                      <MdSave className="text-sm" />{saving ? "…" : "Brouillon"}
+                      <MdSave className="text-sm" />{saving ? "…" : t("draft")}
                     </button>
 
                     <button 
@@ -543,7 +543,7 @@ export default function AdminContentPage() {
                       disabled={saving}
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-primary hover:bg-primary/90 text-white shadow-sm transition-all disabled:opacity-50"
                     >
-                      <MdPublish className="text-sm" />{saving ? "…" : "Publier"}
+                      <MdPublish className="text-sm" />{saving ? "…" : t("publish")}
                     </button>
                   </div>
                 </div>
@@ -554,8 +554,8 @@ export default function AdminContentPage() {
                   <RiFileEditLine className="text-4xl text-indigo-400 dark:text-indigo-500" />
                 </div>
                 <div className="text-center">
-                  <p className="text-base font-semibold text-slate-600 dark:text-slate-300">Sélectionnez une page</p>
-                  <p className="text-sm text-slate-400 mt-1">Cliquez sur une page à gauche pour commencer l'édition</p>
+                  <p className="text-base font-semibold text-slate-600 dark:text-slate-300">{t("selectPage")}</p>
+                  <p className="text-sm text-slate-400 mt-1">{t("selectPageHint")}</p>
                 </div>
               </div>
             )}
@@ -580,7 +580,7 @@ export default function AdminContentPage() {
                   <div className="w-8 h-8 rounded-xl bg-indigo-500 flex items-center justify-center shadow-sm">
                     <BsClockHistory className="text-white text-sm" />
                   </div>
-                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">Historique des versions</h3>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">{t("versionHistory")}</h3>
                 </div>
                 <button 
                   onClick={() => setShowVersions(false)}
@@ -590,7 +590,7 @@ export default function AdminContentPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 ml-10">
-                Consultez et restaurez les versions précédentes
+                {t("versionHistoryDesc")}
               </p>
             </div>
 
@@ -599,7 +599,7 @@ export default function AdminContentPage() {
               <div className="flex items-center gap-2 mb-2">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-                  Version actuelle
+                  {t("currentVersion")}
                 </span>
                 <span className="ml-auto text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-lg">
                   {formatCurrentVersion()}
@@ -621,7 +621,7 @@ export default function AdminContentPage() {
                     </div>
                     {selectedPage.status === "restored" && (
                       <span className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
-                        <MdRestore className="text-xs" />Version restaurée
+                        <MdRestore className="text-xs" />{t("versionRestoredBadge")}
                       </span>
                     )}
                   </div>
@@ -633,13 +633,13 @@ export default function AdminContentPage() {
             {/* Previous versions */}
             <div className="flex-1 overflow-y-auto p-4">
               <p className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-3">
-                Versions précédentes ({versions.length})
+                {t("previousVersions", { count: versions.length })}
               </p>
 
               {versions.length === 0 ? (
                 <div className="text-center py-10 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-400">
                   <BsClockHistory className="text-3xl mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">Aucune version précédente</p>
+                  <p className="text-sm">{t("noPreviousVersions")}</p>
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -668,7 +668,7 @@ export default function AdminContentPage() {
                           </span>
                           {isLast && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">
-                              <MdRestore className="text-[10px]" />Restaurée
+                              <MdRestore className="text-[10px]" />{t("restored")}
                             </span>
                           )}
                           <div className="flex-1 h-px bg-slate-100 dark:bg-slate-700/60 min-w-[8px]" />
@@ -689,13 +689,13 @@ export default function AdminContentPage() {
                             {version.details.previous.title && version.details.new?.title &&
                              version.details.previous.title !== version.details.new.title && (
                               <div className="line-clamp-1">
-                                <span className="font-medium">Titre :</span>{" "}
+                                <span className="font-medium">{t("titleLabel")} :</span>{" "}
                                 {version.details.previous.title} → {version.details.new.title}
                               </div>
                             )}
                             {version.details.previous.htmlContent && (
                               <div className="text-slate-400">
-                                <span className="font-medium">Contenu :</span> modifié
+                                <span className="font-medium">{t("contentLabel")} :</span> {t("contentModified")}
                               </div>
                             )}
                           </div>
@@ -707,9 +707,9 @@ export default function AdminContentPage() {
                           className="w-full flex items-center justify-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700/60 hover:bg-primary hover:text-white transition-all text-xs font-medium disabled:opacity-50 group text-slate-600 dark:text-slate-300"
                         >
                           {isRestoringThis ? (
-                            <><LoadingSpinner />Restauration…</>
+                            <><LoadingSpinner />{t("restoring")}…</>
                           ) : (
-                            <><MdRestore className="text-sm group-hover:rotate-12 transition-transform" />Restaurer cette version</>
+                            <><MdRestore className="text-sm group-hover:rotate-12 transition-transform" />{t("restoreThisVersion")}</>
                           )}
                         </button>
                       </div>
@@ -722,9 +722,9 @@ export default function AdminContentPage() {
                       className="w-full py-2 text-xs font-medium text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center justify-center gap-1.5"
                     >
                       {showFullHistory ? (
-                        <><MdArrowBack className="text-sm rotate-90" />Voir moins</>
+                        <><MdArrowBack className="text-sm rotate-90" />{t("showLess")}</>
                       ) : (
-                        <><MdArrowForward className="text-sm rotate-90" />Voir tout ({versions.length - PREVIEW} de plus)</>
+                        <><MdArrowForward className="text-sm rotate-90" />{t("showAll", { count: versions.length - PREVIEW })}</>
                       )}
                     </button>
                   )}
@@ -743,23 +743,23 @@ export default function AdminContentPage() {
               <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
                 <MdDelete className="text-red-500 text-xl" />
               </div>
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white">Supprimer la page</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t("deletePage")}</h3>
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-5">
-              Cette action est irréversible.
+              {t("deleteConfirmation")}
             </p>
             <div className="flex justify-end gap-2">
               <button 
                 onClick={() => setShowDeleteModal(false)}
                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
               >
-                Annuler
+                {t("cancel")}
               </button>
               <button 
                 onClick={handleDeletePage}
                 className="px-4 py-2 text-sm font-medium bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors"
               >
-                Supprimer
+                {t("delete")}
               </button>
             </div>
           </div>

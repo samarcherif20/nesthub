@@ -2,7 +2,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
-import { isClerkAPIError, isStandardError, getClerkErrorMessage, logger, maskEmail } from "@/lib/utils";
+import {
+  isClerkAPIError,
+  isStandardError,
+  getClerkErrorMessage,
+  logger,
+  maskEmail,
+} from "@/lib/utils";
 
 interface InvitationInfo {
   valid: boolean;
@@ -34,20 +40,21 @@ export function useAcceptInvite() {
   const checkInvitation = async (token: string) => {
     setChecking(true);
     setError(null);
-    
+
     try {
       logger.auth("Vérification de l'invitation:", { token });
-      
-      const response = await fetch(`/api/admin/invitations/accept?token=${token}`);
+
+      const response = await fetch(
+        `/api/admin/invitations/accept?token=${token}`,
+      );
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || "Erreur lors de la vérification");
       }
-      
+
       setInfo(data);
       logger.success("Invitation valide:", { email: data.email });
-      
     } catch (err: any) {
       logger.error("Erreur vérification invitation:", err);
       setError(err.message || "Erreur de vérification");
@@ -58,36 +65,52 @@ export function useAcceptInvite() {
   };
 
   // Accepter l'invitation (nouveau compte)
-  const acceptInvite = async ({ token, firstName, lastName, username, password }: AcceptInviteParams) => {
+  const acceptInvite = async ({
+    token,
+    firstName,
+    lastName,
+    username,
+    password,
+  }: AcceptInviteParams) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      logger.auth("Acceptation de l'invitation:", { token, firstName, lastName, username });
-      
+      logger.auth("Acceptation de l'invitation:", {
+        token,
+        firstName,
+        lastName,
+        username,
+      });
+
       const response = await fetch("/api/admin/invitations/accept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, firstName, lastName, username, password }),
+        body: JSON.stringify({
+          token,
+          firstName,
+          lastName,
+          username,
+          password,
+        }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || "Erreur lors de l'acceptation");
       }
-      
+
       logger.success("Compte créé avec succès");
       setSuccess(true);
-      
+
       // Redirection après 3 secondes
       setTimeout(() => {
         router.push(`/${locale}/admin/dashboard`);
       }, 3000);
-      
     } catch (err: any) {
       logger.error("Erreur acceptation invitation:", err);
-      
+
       if (isClerkAPIError(err)) {
         const errorMessage = getClerkErrorMessage(err, "email", (key) => {
           // Traductions simples pour les erreurs
@@ -118,30 +141,29 @@ export function useAcceptInvite() {
   const acceptExisting = async (token: string) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       logger.auth("Acceptation pour compte existant:", { token });
-      
+
       const response = await fetch("/api/admin/invitations/accept", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || "Erreur lors de l'acceptation");
       }
-      
+
       logger.success("Droits admin ajoutés");
       setSuccess(true);
-      
+
       // Redirection après 3 secondes
       setTimeout(() => {
         router.push(`/${locale}/admin/dashboard`);
       }, 3000);
-      
     } catch (err: any) {
       logger.error("Erreur acceptation invitation:", err);
       setError(err.message || "Erreur lors de l'acceptation");

@@ -12,7 +12,86 @@
     "admin": "Administration",
     "logout": "Disconnect"
   },
+  "AcceptInvite": {
+    "loading": "Checking your invitation...",
+    "invalidLink": "Invalid link",
+    "noToken": "No invitation token provided.",
+    "backToHome": "Back to home",
+    "alreadyUsed": "Invitation already used",
+    "expired": "Link expired",
+    "alreadyUsedMessage": "This invitation has already been accepted. Log in normally.",
+    "expiredMessage": "Invitation links are valid for 48 hours. This one has expired.",
+    "invalidMessage": "This invitation link is invalid or not found.",
+    "newLink": "New link",
+    "login": "Log in",
+    "needHelp": "Need help? Contact your administrator.",
+    "successMessage": "Invitation successfully accepted! Redirection...",
+    "successExisting": "Admin rights added",
+    "successNew": "Account created",
+    "welcomeExisting": "Congratulations ! 🎉",
+    "welcomeNew": "Welcome to the team! 🎉",
+    "successExistingMessage": "Your {email} account now has administrator rights.",
+    "successNewMessage": "Your {email} administrator account is ready.",
+    "redirecting": "Redirect to dashboard...",
+    "accessAdmin": "Access the admin panel",
+    "invitationReceived": "Invitation received",
+    "existingAccountDetected": "Existing account detected",
+    "existingAccountMessage": "You already have an account. Accept the invitation to gain administrator rights.",
+    "invitedBy": "Invitation from",
+    "acceptAndGetRights": "Accept and obtain admin rights",
+    "loginFirst": "Log in first",
+    "youHaveBeenInvited": "You have been invited!",
+    "joinAsAdmin": "Join our {appName} platform as an administrator.",
+    "emailLabel": "E-mail",
+    "firstName": "First name",
+    "lastName": "Name",
+    "username": "User name",
+    "password": "Password",
+    "firstNameRequired": "First name is required",
+    "firstNameMinLength": "The first name must contain at least 2 characters",
+    "lastNameRequired": "Name is required",
+    "lastNameMinLength": "The name must contain at least 2 characters",
+    "usernameRequired": "Username is required",
+    "usernameInvalid": "Username must contain 3-20 characters (letters, numbers, _)",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must contain at least 8 characters",
+    "passwordUppercase": "Password must contain at least one capital letter",
+    "passwordLowercase": "The password must contain at least one lowercase",
+    "passwordNumber": "Password must contain at least one digit",
+    "firstNamePlaceholder": "first name",
+    "lastNamePlaceholder": "name",
+    "usernamePlaceholder": "username",
+    "passwordPlaceholder": "Minimum 8 characters",
+    "acceptTermsPrefix": "I accept the",
+    "acceptTermsAnd": "and the",
+    "termsOfUse": "conditions of use",
+    "privacyPolicy": "Privacy Policy",
+    "creating": "Creation in progress...",
+    "acceptInvitation": "Accept the invitation",
+    "e2eEncryption": "E2E encryption",
+    "secureAccess": "Secure access",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Log in",
+    "roleAssigned": "Assigned role",
+    "adminRole": "NESTHUB Administrator",
+    "invitationFrom": "Invitation from:",
+    "autoVerification": "Automatic verification",
+    "autoVerificationDesc": "As an administrator, your account will be verified immediately.",
+    "expiryTime": "48 hours",
+    "expiryLabel": "Link expires",
+    "fullAccess": "Full access",
+    "fullAccessLabel": "Administrator panel"
+  },
   "Login": {
+    "newCodeSent": "A new code has been sent!",
+    "successLogin": "Connection successful! Redirection in progress...",
+    "redirectGoogle": "Redirect to Google...",
+    "redirectApple": "Redirect to Apple...",
+    "redirectFacebook": "Redirect to Facebook...",
+    "errorGoogle": "Error signing in with Google",
+    "errorApple": "Error signing in with Apple",
+    "errorFacebook": "Error connecting with Facebook",
+    "optional": "(Optional)",
     "welcome": "Welcome !",
     "subtitle": "Log in to access your secure space.",
     "signUpTitle": "Create an account",
@@ -54,7 +133,7 @@
     "emailNotFound": "No account found with this email",
     "usernameNotFound": "No accounts found with this username",
     "emailOrUsername": "Email or username",
-    "emailOrUsernamePlaceholder": "ex: john@example.com or john_doe",
+    "emailOrUsernamePlaceholder": "contact@example.com",
     "identifierRequired": "Email or username required",
     "identifierInvalid": "Invalid format. Please enter a valid email or username!",
     "userNotFoundInDB": "Account found but not synchronized. Please contact support!",
@@ -122,6 +201,7 @@
     "cancel": "Cancel",
     "invitationDesAdmins": "Admin Invitation",
     "usersManagement": {
+      "unauthorized": "Unauthorized access",
       "page": {
         "title": "User Management",
         "description": "Manage all platform users"
@@ -129,28 +209,36 @@
       "actions": {
         "export": "Export Data",
         "reset": "Reset filters",
+        "advancedFilters": "Advanced filters",
         "view": "View profile",
         "suspend": "Suspend",
         "ban": "Ban",
-        "activate": "Enable"
+        "activate": "Enable",
+        "warn": "Warning",
+        "reactivate": "Reactivate",
+        "unlock": "Unblock",
+        "lock": "To block",
+        "escalate": "Escalation",
+        "history": "Historical",
+        "addNote": "Add a note"
       },
       "filters": {
         "searchPlaceholder": "Search by name, email, phone...",
         "role": {
-          "label": "Role",
           "all": "All roles",
           "admin": "Admin",
           "property_owner": "Owner",
           "tenant": "Tenant"
         },
         "status": {
-          "label": "Status",
           "all": "All statuses",
           "active": "Active",
           "pending": "On hold",
           "suspended": "Suspended",
           "banned": "Banned",
           "rejected": "Rejected",
+          "security_locked": "Blocked (security)",
+          "manually_blocked": "Blocked (manual)",
           "inactive": "Inactive"
         },
         "verification": {
@@ -184,240 +272,254 @@
           "id": "ID"
         }
       },
-      "stats": {
-        "totalUsers": "Total users",
-        "newUsers30d": "New (30 days)",
-        "activeUsers": "Assets",
-        "pendingUsers": "On hold",
-        "suspendedUsers": "Hanging",
-        "bannedUsers": "Banned",
-        "verifiedIdentity": "Verified",
-        "pendingApprovals": "Waiting for verification",
-        "averageReliability": "Average reliability"
+      "totalUsers": "Total users",
+      "newUsers30d": "New (30 days)",
+      "activeUsers": "Assets",
+      "pendingUsers": "On hold",
+      "suspendedUsers": "Hanging",
+      "bannedUsers": "Banned",
+      "verifiedIdentity": "Verified",
+      "pendingApprovals": "Waiting for verification",
+      "averageReliability": "Average reliability",
+      "pendingValidation": "Waiting for validation"
+    },
+    "export": {
+      "csv": {
+        "title": "CSV",
+        "description": "For Excel / analysis"
       },
-      "badges": {
-        "verified": "Verified",
-        "pending": "On hold",
-        "rejected": "Rejected",
-        "unverified": "Not verified",
-        "reliability": "Reliability",
-        "fraud": "Fraud"
-      },
-      "alerts": {
-        "sessionExpired": "Session expired - please log in again",
-        "unauthorized": "Unauthorized access",
-        "loadingError": "Loading error",
-        "exportError": "Error during export",
-        "exportSuccess": "Export successful"
-      },
-      "messages": {
-        "noUsers": "No users found",
-        "loading": "Loading..."
-      },
-      "activateModal": {
-        "title": "Reactivate account",
-        "description": "Do you want to restore full access for this user?",
-        "confirm": "Reactivate account",
-        "cancel": "Cancel",
-        "processing": "Treatment...",
-        "currentStatus": "This account is currently {status}",
-        "status": {
-          "suspended": "suspended",
-          "banned": "banned",
-          "locked": "blocked",
-          "inactive": "inactive",
-          "rejected": "rejected",
-          "unknown": "unknown"
+      "pdf": {
+        "title": "PDF",
+        "description": "For printing"
+      }
+    },
+    "badges": {
+      "verified": "Verified",
+      "pending": "On hold",
+      "rejected": "Rejected",
+      "unverified": "Not verified",
+      "reliability": "Reliability",
+      "fraud": "Fraud"
+    },
+    "alerts": {
+      "sessionExpired": "Session expired - please log in again",
+      "unauthorized": "Unauthorized access",
+      "loadingError": "Loading error",
+      "exportError": "Error during export",
+      "exportSuccess": "Export successful"
+    },
+    "messages": {
+      "noUsers": "No users found",
+      "loading": "Loading..."
+    },
+    "activateModal": {
+      "title": "Reactivate account",
+      "description": "Do you want to restore full access for this user?",
+      "confirm": "Reactivate account",
+      "cancel": "Cancel",
+      "processing": "Treatment...",
+      "currentStatus": "This account is currently {status}",
+      "status": {
+        "suspended": "suspended",
+        "banned": "banned",
+        "locked": "blocked",
+        "inactive": "inactive",
+        "rejected": "rejected",
+        "unknown": "unknown"
+      }
+    },
+    "warningModal": {
+      "title": "Send a warning",
+      "description": "This action will be saved in history",
+      "reason": "Pattern",
+      "reliability": "Fiab.",
+      "specifyReason": "Specify the reason",
+      "optionalMessage": "Message (optional)",
+      "explainReason": "Explain the reason...",
+      "additionalDetails": "Additional details...",
+      "infoMessage": "The user will receive a visible warning in their dashboard.",
+      "emailSent": "Email sent.",
+      "previousWarnings": "Already {count} warning(s).",
+      "cancel": "Cancel",
+      "send": "Send",
+      "notifyByEmail": "Notify the user by email",
+      "emailNotificationMessage": "An email will be sent to {email} to notify them of this warning.",
+      "processing": "Sending...",
+      "error": "Error sending warning",
+      "reasons": {
+        "inappropriateBehavior": {
+          "label": "Inappropriate behavior",
+          "description": "Inappropriate language or attitude"
+        },
+        "spam": {
+          "label": "Spam",
+          "description": "Unsolicited advertising messages"
+        },
+        "falseInformation": {
+          "label": "Fake news",
+          "description": "Misleading profile information"
+        },
+        "paymentIssues": {
+          "label": "Payment issues",
+          "description": "Late or refused payments"
+        },
+        "multipleAccounts": {
+          "label": "Multiple accounts",
+          "description": "Creating multiple accounts"
+        },
+        "other": {
+          "label": "Other",
+          "description": "Custom reason"
         }
+      }
+    },
+    "addNoteModal": {
+      "title": "Add an internal note",
+      "description": "Visible only to administrators",
+      "noteContent": "Content of the note",
+      "placeholder": "Write your note here...",
+      "addNote": "Add note",
+      "adding": "Addition...",
+      "cancel": "Cancel",
+      "enterLinkUrl": "Enter the link URL:",
+      "error": "Error adding note"
+    },
+    "banModal": {
+      "title": "Permanently ban the user",
+      "description": "This action is irreversible",
+      "reason": "Reason for ban",
+      "selectReason": "Select a reason...",
+      "evidence": "Evidence and details",
+      "evidencePlaceholder": "Detail the reasons and attach links to the evidence if necessary...",
+      "notify": "Notify the user by email",
+      "emailNotificationMessage": "An email will be sent to {email} to notify them of this ban.",
+      "confirmLabel": "Type",
+      "cancel": "Cancel",
+      "confirm": "Confirm ban",
+      "processing": "Treatment..."
+    },
+    "escalateModal": {
+      "title": "Gradual escalation",
+      "description": "Gradual sanction system",
+      "currentLevel": "Current level",
+      "applySanction": "Select next step",
+      "reason": "Reason for escalation",
+      "reasonPlaceholder": "Describe the reasons justifying this sanction...",
+      "warning": "Warning",
+      "suspension": "Suspension",
+      "ban": "Banishment",
+      "alreadyApplied": "Already applied to user",
+      "locked": "Locked - Next Step Required",
+      "historyNote": "This reason will be recorded in the moderation history.",
+      "apply": "Apply escalation",
+      "notify": "Notify the user by email",
+      "emailNotificationMessage": "An email will be sent to {email} to notify them of this sanction.",
+      "cancel": "Cancel",
+      "processing": "Treatment..."
+    },
+    "suspendModal": {
+      "title": "Temporarily suspend the user",
+      "description": "The user will not be able to log in for the chosen duration",
+      "duration": "Length of suspension",
+      "day": "1 day",
+      "days": "{count} days",
+      "reason": "Reason for suspension",
+      "selectReason": "Select a reason",
+      "details": "Detailed pattern",
+      "detailsPlaceholder": "Briefly explain the reason for this measure...",
+      "emailNotification": "notification sent",
+      "notificationInfo": "An email will be sent to the user to inform them of the suspension.",
+      "enterLinkUrl": "Enter the link URL",
+      "cancel": "Cancel",
+      "confirm": "Confirm suspension",
+      "processing": "Treatment...",
+      "reasons": {
+        "spam": "Spam or abuse",
+        "tos": "Violation of the terms of use",
+        "safety": "Account security",
+        "other": "Other reason"
       },
-      "warningModal": {
-        "title": "Send a warning",
-        "description": "This action will be saved in history",
-        "reason": "Pattern",
-        "reliability": "Fiab.",
-        "specifyReason": "Specify the reason",
-        "optionalMessage": "Message (optional)",
-        "explainReason": "Explain the reason...",
-        "additionalDetails": "Additional details...",
-        "infoMessage": "The user will receive a visible warning in their dashboard.",
-        "emailSent": "Email sent.",
-        "previousWarnings": "⚠️ Already {count} warning(s).",
-        "cancel": "Cancel",
-        "send": "Send",
-        "notifyByEmail": "Notify the user by email",
-        "emailNotificationMessage": "An email will be sent to {email} to notify them of this warning.",
-        "processing": "Sending...",
-        "error": "Error sending warning",
-        "reasons": {
-          "inappropriateBehavior": {
-            "label": "Inappropriate behavior",
-            "description": "Inappropriate language or attitude"
-          },
-          "spam": {
-            "label": "Spam",
-            "description": "Unsolicited advertising messages"
-          },
-          "falseInformation": {
-            "label": "Fake news",
-            "description": "Misleading profile information"
-          },
-          "paymentIssues": {
-            "label": "Payment issues",
-            "description": "Late or refused payments"
-          },
-          "multipleAccounts": {
-            "label": "Multiple accounts",
-            "description": "Creating multiple accounts"
-          },
-          "other": {
-            "label": "Other",
-            "description": "Custom reason"
-          }
-        }
+      "emailNotificationTitle": "Email notification",
+      "emailNotificationMessage": "An email will be sent to {email} to notify them of this suspension.",
+      "notify": "Notify the user by email"
+    },
+    "lockUnlockModal": {
+      "lockTitle": "Block account",
+      "unlockTitle": "Unblock account",
+      "lockDescription": "Manually block access to this account.",
+      "unlockDescription": "This account was blocked after several failed login attempts.",
+      "reason": "Reason for blocking",
+      "reasonPlaceholder": "Why block this account?...",
+      "notifyLock": "Notify user of blocking",
+      "notifyUnlock": "Notify user of unblocking",
+      "emailNotificationMessage": "An email will be sent to {email} to notify this.",
+      "failedAttempts": "Failed attempts",
+      "lock": "To block",
+      "unlock": "Unblock",
+      "cancel": "Cancel",
+      "processing": "Treatment...",
+      "enterLinkUrl": "Enter the link URL:"
+    },
+    "actionsHistoryModal": {
+      "title": "Stock History",
+      "subtitle": "NESTHUB Administration",
+      "close": "Close",
+      "admin": {
+        "default": "Admin"
       },
-      "addNoteModal": {
-        "title": "Add an internal note",
-        "description": "Visible only to administrators",
-        "noteContent": "Content of the note",
-        "placeholder": "Write your note here...",
-        "addNote": "Add note",
-        "adding": "Addition...",
-        "cancel": "Cancel",
-        "enterLinkUrl": "Enter the link URL:",
-        "error": "Error adding note"
+      "search": {
+        "placeholder": "Search for an admin, user or pattern..."
       },
-      "banModal": {
-        "title": "Permanently ban the user",
-        "description": "This action is irreversible",
-        "reason": "Reason for ban",
-        "selectReason": "Select a reason...",
-        "evidence": "Evidence and details",
-        "evidencePlaceholder": "Detail the reasons and attach links to the evidence if necessary...",
-        "notify": "Notify the user by email",
-        "emailNotificationMessage": "An email will be sent to {email} to notify them of this ban.",
-        "confirmLabel": "Type",
-        "cancel": "Cancel",
-        "confirm": "Confirm ban",
-        "processing": "Treatment..."
+      "filters": {
+        "label": "Filter by",
+        "all": "All types"
       },
-      "escalateModal": {
-        "title": "Gradual escalation",
-        "description": "Gradual sanction system",
-        "currentLevel": "Current level",
-        "applySanction": "Select next step",
-        "reason": "Reason for escalation",
-        "reasonPlaceholder": "Describe the reasons justifying this sanction...",
-        "warning": "Warning",
+      "actionTypes": {
         "suspension": "Suspension",
+        "suspensionUndone": "Suspension canceled",
         "ban": "Banishment",
-        "alreadyApplied": "Already applied to user",
-        "locked": "Locked - Next Step Required",
-        "historyNote": "This reason will be recorded in the moderation history.",
-        "apply": "Apply escalation",
-        "notify": "Notify the user by email",
-        "emailNotificationMessage": "An email will be sent to {email} to notify them of this sanction.",
-        "cancel": "Cancel",
-        "processing": "Treatment..."
+        "banUndone": "Ban canceled",
+        "activation": "Reactivation",
+        "unlock": "Unblocking",
+        "lock": "Blocking",
+        "lockUndone": "Block canceled",
+        "warning": "Warning",
+        "escalation": "Escalation",
+        "escalationUndone": "Escalation canceled",
+        "note": "Internal note",
+        "rejectVerification": "Verification rejection",
+        "validateVerification": "Validation verification",
+        "undone": "Action canceled"
       },
-      "suspendModal": {
-        "title": "Temporarily suspend the user",
-        "description": "The user will not be able to log in for the chosen duration",
-        "duration": "Length of suspension",
-        "day": "1 day",
-        "days": "{count} days",
-        "reason": "Reason for suspension",
-        "selectReason": "Select a reason",
-        "details": "Detailed pattern",
-        "detailsPlaceholder": "Briefly explain the reason for this measure...",
-        "emailNotification": "notification sent",
-        "notificationInfo": "An email will be sent to the user to inform them of the suspension.",
-        "enterLinkUrl": "Enter the link URL",
-        "cancel": "Cancel",
-        "confirm": "Confirm suspension",
-        "processing": "Treatment...",
-        "reasons": {
-          "spam": "Spam or abuse",
-          "tos": "Violation of the terms of use",
-          "safety": "Account security",
-          "other": "Other reason"
-        },
-        "emailNotificationTitle": "Email notification",
-        "emailNotificationMessage": "An email will be sent to {email} to notify them of this suspension.",
-        "notify": "Notify the user by email"
+      "status": {
+        "active": "Active",
+        "suspended": "Suspended",
+        "banned": "Banned",
+        "pending": "On hold",
+        "locked": "Blocked",
+        "inactive": "Inactive",
+        "rejected": "Rejected"
       },
-      "lockUnlockModal": {
-        "lockTitle": "Block account",
-        "unlockTitle": "Unblock account",
-        "lockDescription": "Manually block access to this account.",
-        "unlockDescription": "This account was blocked after several failed login attempts.",
-        "reason": "Reason for blocking",
-        "reasonPlaceholder": "Why block this account?...",
-        "notifyLock": "Notify user of blocking",
-        "notifyUnlock": "Notify user of unblocking",
-        "emailNotificationMessage": "An email will be sent to {email} to notify this.",
-        "failedAttempts": "Failed attempts",
-        "lock": "To block",
-        "unlock": "Unblock",
-        "cancel": "Cancel",
-        "processing": "Treatment...",
-        "enterLinkUrl": "Enter the link URL:"
+      "user": {
+        "target": "User"
       },
-      "actionsHistoryModal": {
-        "title": "Stock History",
-        "subtitle": "NESTHUB Administration",
-        "close": "Close",
-        "admin": {
-          "default": "Admin"
-        },
-        "search": {
-          "placeholder": "Search for an admin, user or pattern..."
-        },
-        "filters": {
-          "label": "Filter by",
-          "all": "All types"
-        },
-        "actionTypes": {
-          "suspension": "Suspension",
-          "ban": "Banishment",
-          "activation": "Reactivation",
-          "unlock": "Unblocking",
-          "lock": "Blocking",
-          "warning": "Warning",
-          "escalation": "Escalation",
-          "note": "Internal note",
-          "rejectVerification": "Verification rejection",
-          "validateVerification": "Validation verification"
-        },
-        "status": {
-          "active": "Active",
-          "suspended": "Suspended",
-          "banned": "Banned",
-          "pending": "On hold",
-          "locked": "Blocked",
-          "inactive": "Inactive",
-          "rejected": "Rejected"
-        },
-        "user": {
-          "target": "User"
-        },
-        "action": {
-          "reason": "Pattern"
-        },
-        "undo": {
-          "button": "Cancel",
-          "processing": "Cancelation...",
-          "title": "Cancel this action"
-        },
-        "results": {
-          "showing": "Showing {start} to {end} on {total} results",
-          "empty": "No actions found"
-        },
-        "errors": {
-          "tokenNotAvailable": "Token not available",
-          "apiError": "API error:",
-          "loadFailed": "Unable to load action history",
-          "retry": "Try again"
-        }
+      "action": {
+        "reason": "Pattern"
+      },
+      "undo": {
+        "button": "Cancel",
+        "processing": "Cancelation...",
+        "title": "Cancel this action"
+      },
+      "results": {
+        "showing": "Showing {start} to {end} on {total} results",
+        "empty": "No actions found"
+      },
+      "errors": {
+        "tokenNotAvailable": "Token not available",
+        "apiError": "API error:",
+        "loadFailed": "Unable to load action history",
+        "retry": "Try again"
       }
     }
   },
@@ -432,7 +534,7 @@
     "confirm": "Confirm",
     "back": "Back"
   },
-  "CGU": {
+  "Terms": {
     "title": "General Conditions of Use",
     "version": "Version",
     "lastUpdate": "Last update:",
@@ -754,5 +856,398 @@
       "button": "Contact the DPO",
       "helpCenter": "Help Center"
     }
+  },
+  "Inscription": {
+    "title": "Registration",
+    "step": "Step {step} of 4",
+    "Compte": "1.Account",
+    "Documents": "2.Documents",
+    "verificationEmail": "Verification",
+    "validation": "3.Validation",
+    "chooseRole": "Please choose a role",
+    "roleLandlord": "Owner",
+    "roleTenant": "Tenant",
+    "username": "User name",
+    "email": "E-mail address",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "continue": "next step",
+    "weak": "Weak",
+    "medium": "AVERAGE",
+    "good": "Good",
+    "strong": "Strong",
+    "strength": "Password strength",
+    "required": "All fields are required",
+    "invalidEmail": "Invalid email address",
+    "passwordMismatch": "Passwords do not match",
+    "usernameLength": "Username must be between 3 and 20 characters",
+    "passwordLength": "Password must contain at least 8 characters",
+    "passwordStrength": "The password is too weak. Use capital letters, numbers and special characters",
+    "accountCreated": "Account created successfully! A verification code has been sent to your email.",
+    "verificationCodeSent": "We have sent a verification code to {email}",
+    "verificationCode": "Verification code",
+    "verify": "Check",
+    "back": "previous step",
+    "resendCode": "Resend code",
+    "codeResent": "A new code has been sent to you!",
+    "invalidCode": "Invalid code",
+    "verificationFailed": "Verification failed",
+    "verificationSuccess": "Congratulations ! Your account has been successfully verified.",
+    "alreadyHaveAccount": "Already have an account?",
+    "login": "Log in",
+    "termsOfUse": "Terms of Use",
+    "privacyPolicy": "Privacy Policy",
+    "help": "Need help?",
+    "security": "Security",
+    "securityMessage": "This platform uses end-to-end AES-256 encryption to ensure the security of your real estate data.",
+    "usernameReserved": "Your username @{username} is reserved for the next 30 minutes.",
+    "stepValidated": "Step 1/4 validated!",
+    "usernameInfo": "3-20 characters, letters and numbers only. This name will be visible on the platform.",
+    "passwordInfo": "Use special characters",
+    "professionalEmail": "Professional email address",
+    "publicIdentity": "Public Identity",
+    "step1Description": "Step 1 of 4: Configure your secure access.",
+    "emailSent": "We have sent a 6-digit code to",
+    "enterCode": "Enter the 6-digit code",
+    "didNotReceiveCode": "Didn't receive the code?",
+    "step1Title": "Login information",
+    "step2Title": "Real identity",
+    "step3Title": "Phone Verification",
+    "step4Title": "Identity documents",
+    "identityTitle": "Identity Verification",
+    "identitySubtitle": "Step 2 of 4: Real Identity (Private)",
+    "privacyTitle": "Confidentiality guaranteed",
+    "privacyDescription": "Your real identity is confidential and will not be shared publicly.",
+    "personalInfoTitle": "Personal Information",
+    "firstName": "Real first name",
+    "firstNamePlaceholder": "ex: Mohamed",
+    "lastName": "Real name",
+    "lastNamePlaceholder": "ex: Ben hssin",
+    "phoneNumber": "Phone number",
+    "phonePlaceholder": "27,929,630",
+    "whatsappWarning": "Before continuing, activate WhatsApp:",
+    "activateWhatsapp": "Activate WhatsApp in 1 click",
+    "whatsappInstruction": "Click → WhatsApp opens → click Send → come back here",
+    "address": "Residence address",
+    "optional": "Optional",
+    "addressPlaceholder": "Enter your full address",
+    "publicProfileTitle": "Public Profile",
+    "bio": "Public bio",
+    "bioPlaceholder": "Describe your real estate experience or what you are looking for...",
+    "sending": "Sending",
+    "requiredFieldsError": "Please complete all required fields",
+    "errors": {
+      "chooseRole": "Please choose a role (Owner or Tenant)",
+      "usernameRequired": "Please enter a username",
+      "usernameInvalid": "Username must be between 3 and 20 characters (letters and numbers only)",
+      "emailRequired": "Please enter an email address",
+      "emailInvalid": "Please enter a valid email address",
+      "passwordRequired": "Please enter a password",
+      "passwordTooShort": "Password must contain at least 8 characters",
+      "passwordWeak": "The password is too weak. Use capital letters, numbers and special characters",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "codeRequired": "Please enter the 6-digit code",
+      "codeInvalid": "Invalid code",
+      "emailAlreadyExists": "This email is already in use",
+      "usernameAlreadyExists": "This username is already taken",
+      "phoneAlreadyExists": "This phone number is already in use",
+      "phoneTooShort": "The number must contain at least 8 digits",
+      "phoneRequired": "Please enter your phone number",
+      "userIdNotFound": "User ID not found",
+      "whatsappSendFailed": "Failed to send WhatsApp code",
+      "invalidCodeLength": "6-digit code required",
+      "missingInfo": "Missing information",
+      "clerkNotInitialized": "Clerk not initialized",
+      "signupIdMissing": "Unable to retrieve registration ID",
+      "userCreationFailed": "Error creating account",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Name is required"
+    },
+    "documentsStep": {
+      "title": "Identity verification",
+      "subtitle": "Step 4 of 4: Upload your official documents (automatic OCR)",
+      "identityDocument": "Identity document",
+      "cinFront": "CIN Front",
+      "cinBack": "CIN Verso",
+      "frontSide": "Front side",
+      "backSide": "Back side",
+      "maxSize": "Max 5MB",
+      "formats": "JPG, PNG, PDF",
+      "photoAdded": "Photo added",
+      "chooseFile": "Choose a file",
+      "iaOcr": "AI & OCR",
+      "ocrDescription": "Our system will instantly analyze your document to verify your identity.",
+      "profilePhoto": "Profile picture",
+      "faceVisible": "Face clearly visible",
+      "security": "Security",
+      "banking": "Banking",
+      "compliant": "Compliant",
+      "cloud": "Cloud",
+      "sovereign": "Sovereign",
+      "previousStep": "Previous step",
+      "finish": "To end"
+    },
+    "ocrConfirm": {
+      "title": "Data verification",
+      "description": "Confirm the information extracted by OCR",
+      "infoBanner": "The highlighted fields have been automatically extracted. Check that they match your document.",
+      "firstName": "First name",
+      "lastName": "Name",
+      "birthDate": "Date of birth",
+      "cinNumber": "CIN number",
+      "securityBanner": "Your data is encrypted and stored according to GDPR standards.",
+      "modify": "To modify",
+      "confirmIdentity": "Confirm identity"
+    },
+    "welcomeModal": {
+      "title": "Welcome to NESTHUB!",
+      "message": "Your account has been successfully created.",
+      "submessage": "Complete your profile to increase your trust score and access all features.",
+      "emailVerified": "Email verified",
+      "whatsappVerified": "WhatsApp verified",
+      "cinPending": "CIN pending",
+      "completeProfile": "Complete my profile",
+      "redirecting": "Redirection..."
+    },
+    "checking": "Verification...",
+    "whatsappStep": {
+      "title": "WhatsApp Verification",
+      "subtitle": "Step 3 of 4: Validate your phone number",
+      "codeSentTitle": "Code sent by WhatsApp",
+      "codeSentMessage": "We have sent a 6-digit code to",
+      "verificationCode": "Verification code",
+      "checking": "Verification...",
+      "enterCodeInstruction": "Enter the 6 digits then press Enter",
+      "back": "Back",
+      "sending": "Sending",
+      "resendCode": "Resend code"
+    },
+    "toasts": {
+      "emailVerified": "Email verified!",
+      "continueRegistration": "Continue your registration.",
+      "linkExpired": "Link expired",
+      "linkExpiredDescription": "The verification link has expired. Please start again.",
+      "versoAdded": "Back side added!",
+      "versoProcessed": "The back side has been treated.",
+      "ocrSuccess": "OCR finished!",
+      "ocrSuccessDescription": "The information was successfully extracted.",
+      "ocrError": "OCR error",
+      "ocrErrorDescription": "Unable to extract information. Fill in manually."
+    },
+    "whatsapp": {
+      "codeSent": "A verification code has been sent on WhatsApp to +216 {phone}"
+    },
+    "alerts": {
+      "verificationEmailSent": "A verification link has been sent to {email}",
+      "emailSent": "Email sent!",
+      "codeSentTitle": "Code sent!",
+      "gotCode": "I received the code"
+    },
+    "acceptTerms": {
+      "prefix": "By continuing I accept the",
+      "terms": "conditions of use",
+      "and": "and the",
+      "privacy": "Privacy Policy",
+      "suffix": ". Please read them carefully. *"
+    }
+  },
+  "VerifyCatch": {
+    "title": "Verification in progress",
+    "description": "Please wait while we verify your account..."
+  },
+  "AdminInvitations": {
+    "title": "Invitation management",
+    "description": "Invite new administrators — secure links valid for 48 hours",
+    "inviteAdmin": "Invite an administrator",
+    "secureLink": "Secure link · expires in 48 hours",
+    "newAdminEmail": "New admin email",
+    "responsibility": "Responsibility",
+    "infoText": "A unique link will be sent by email and will expire within",
+    "sending": "Sending in progress",
+    "generateInvitation": "Generate the invitation",
+    "activeLinks": "Active links",
+    "expired": "Expired",
+    "revoked": "Revoked",
+    "email": "E-mail",
+    "expiresIn": "Expires in",
+    "status": "Status",
+    "actions": "Actions",
+    "accepted": "Accepted",
+    "active": "Active",
+    "copyLink": "Copy link",
+    "copied": "Copied!",
+    "revoke": "Revoke",
+    "resend": "Resend",
+    "noInvitations": "No invitations in progress",
+    "createInvitationHint": "Use the form on the left to create one",
+    "unauthorized": "Unauthorized access",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email",
+    "invitationSent": "Invitation sent to {email} ✓",
+    "invitationRevoked": "Invitation revoked",
+    "revokeError": "Error during revocation",
+    "invitationResent": "Invitation returned to {email} ✓",
+    "currentInvitations": "Current invitations",
+    "realTimeExpiry": "Real-time expiration tracking",
+    "expiryApplication": "Application of 48h expiration",
+    "securityText": "NESTHUB's zero-trust invitation system generates transient access tokens. If an invitee does not complete registration within the 48-hour window, the encrypted token is automatically purged from the gateway cache. This prevents long-standing unauthorized link reuse.",
+    "autoPurge": "Auto purge",
+    "limitedAccess": "Limited access",
+    "policy": "Policy"
+  },
+  "AdminContent": {
+    "title": "Static Content Management",
+    "description": "Edit and manage your legal and informational pages.",
+    "unauthorized": "Unauthorized access",
+    "adminRequired": "You must be an administrator.",
+    "allPages": "All",
+    "published": "Published",
+    "drafts": "Drafts",
+    "noPagesFound": "No pages found",
+    "pageTitlePlaceholder": "Page title…",
+    "editorPlaceholder": "Write your content here…",
+    "restoring": "Restoration in progress…",
+    "history": "Historical",
+    "draft": "Draft",
+    "publish": "Publish",
+    "cancel": "Cancel",
+    "selectPage": "Select a page",
+    "selectPageHint": "Click on a page on the left to start editing",
+    "versionHistory": "Version history",
+    "versionHistoryDesc": "View and restore previous versions",
+    "currentVersion": "Current version",
+    "versionRestoredBadge": "Restored version",
+    "previousVersions": "Previous versions ({count})",
+    "noPreviousVersions": "No previous version",
+    "restored": "Restored",
+    "titleLabel": "Title",
+    "contentLabel": "Content",
+    "contentModified": "amended",
+    "restoreThisVersion": "Restore this version",
+    "showLess": "See less",
+    "showAll": "See all ({count} more)",
+    "deletePage": "Delete page",
+    "deleteConfirmation": "This action is irreversible.",
+    "delete": "DELETE",
+    "pagePublished": "Page published successfully ✓",
+    "draftSaved": "Saved draft ✓",
+    "saveError": "Error saving",
+    "pageDeleted": "Page deleted successfully",
+    "deleteError": "Error while deleting",
+    "versionRestored": "Version {version} successfully restored ✓",
+    "restoreError": "Error during restore"
+  },
+  "VerificationDetail": {
+    "unauthorized": "Unauthorized access",
+    "requestNotFound": "Request not found",
+    "queue": "Queue",
+    "request": "Request",
+    "pending": "Waiting for validation",
+    "documentsProvided": "Documents provided",
+    "cinFront": "Front CIN",
+    "cinBack": "Back CIN",
+    "download": "Download",
+    "memberSince": "Member since",
+    "ocrData": "Extracted data (OCR)",
+    "firstName": "First name",
+    "lastName": "Name",
+    "cinNumber": "CIN number",
+    "dateOfBirth": "Date of birth",
+    "placeOfBirth": "Place of birth",
+    "nationality": "Nationality",
+    "expiryDate": "Expiry date",
+    "address": "Address",
+    "finalizeVerification": "Finalize verification",
+    "internalNote": "Internal note (optional)",
+    "internalNotePlaceholder": "Add a note for the audit...",
+    "validate": "TO VALIDATE",
+    "reject": "DISMISS",
+    "processing": "Treatment...",
+    "rejectionReason": "Reason for rejection",
+    "rejectionPlaceholder": "Blurred document, expired, non-matching data...",
+    "confirmRejection": "Confirm rejection",
+    "rejectionReasons": {
+      "blurry": "Blurred document",
+      "expired": "CIN expired",
+      "nameMismatch": "Different name",
+      "photoNotCompliant": "Incorrect photo"
+    }
+  },
+  "Verifications": {
+    "unauthorized": "Unauthorized access",
+    "adminRequired": "You must be an administrator.",
+    "title": "Verification queue",
+    "description": "Manage identity validation requests",
+    "searchPlaceholder": "Search for a user...",
+    "refresh": "Refresh",
+    "processRequest": "Process the request",
+    "justNow": "Right now",
+    "minutesAgo": "{count} min ago",
+    "oneHourAgo": "1 hour ago",
+    "hoursAgo": "{count} hours ago",
+    "daysAgo": "{count} days ago",
+    "stats": {
+      "pending": "On hold",
+      "processedToday": "AJD treaties",
+      "documents": "files",
+      "averageTime": "Average time",
+      "minutes": "min"
+    },
+    "table": {
+      "user": "User",
+      "role": "Role",
+      "date": "Date",
+      "status": "Status",
+      "action": "Action"
+    },
+    "role": {
+      "owner": "OWNER",
+      "tenant": "TENANT"
+    },
+    "status": {
+      "pending": "On hold"
+    },
+    "empty": {
+      "title": "All checks are complete!",
+      "description": "Congratulations, your queue is empty. You will be notified as soon as a new owner submits their documents.",
+      "backToDashboard": "Return to dashboard",
+      "viewHistory": "View history"
+    }
+  },
+  "SSOCallback": {
+    "connecting": "Connection in progress, please wait...",
+    "pleaseWait": "Verifying your information",
+    "redirecting": "Redirection in progress..."
+  },
+  "ForgotPassword": {
+    "title": "Forgotten password",
+    "subtitle": "Enter your email to receive a reset link",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "your@email.com",
+    "sendResetLink": "Send link",
+    "sending": "Sending in progress...",
+    "backToLogin": "Return to login",
+    "securityBadge": "AES-256 encryption • GDPR compliant",
+    "legal": "Legal notices",
+    "privacy": "Confidentiality"
+  },
+  "ResetPassword": {
+    "title": "Reset Password",
+    "subtitle": "Create a new secure password",
+    "subtitleWithEmail": "Create a new password for {email}",
+    "successTitle": "Password changed!",
+    "successMessage": "Your password has been successfully reset. You will be redirected to the login page.",
+    "newPasswordLabel": "New Password",
+    "newPasswordPlaceholder": "••••••••",
+    "confirmPasswordLabel": "Confirm password",
+    "confirmPasswordPlaceholder": "••••••••",
+    "resetPassword": "Reset",
+    "resetting": "Reset...",
+    "backToLogin": "Return to login",
+    "passwordsDoNotMatch": "Passwords do not match",
+    "securityBadge": "AES-256 encryption • GDPR compliant",
+    "legal": "Legal notices",
+    "privacy": "Confidentiality"
   }
 }

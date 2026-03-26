@@ -142,7 +142,7 @@ export function useAuth() {
         const locale = pathname.split("/")[1] || "fr";
         router.push(`/${locale}/verify-email-code`);
       } else {
-        console.error("❌ email_code non disponible. Stratégies:", strategies);
+        console.error(" email_code non disponible. Stratégies:", strategies);
         throw new Error(t("verificationFailed"));
       }
     } catch (error) {
@@ -203,10 +203,10 @@ export function useAuth() {
     try {
       if (!signIn) throw new Error("SignIn not initialized");
 
-      // ✅ FIX 1: Clear any existing session before signing in
+      //  FIX 1: Clear any existing session before signing in
       try {
         await signOut();
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise((resolve) => setTimeout(resolve, 200));
       } catch (_) {
         // ignore — no session to clear
       }
@@ -252,9 +252,9 @@ export function useAuth() {
 
         if (setActive) {
           await setActive({ session: result.createdSessionId });
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
 
-          // ✅ FIX 2: Role-based redirect with proper locale and path
+          //  FIX 2: Role-based redirect with proper locale and path
           const getRedirectUrl = async (): Promise<string> => {
             try {
               const response = await fetch("/api/get-redirect-url");
@@ -265,7 +265,7 @@ export function useAuth() {
                     ? data.url
                     : `/${locale}${data.url}`;
 
-                  // ✅ Don't use cookie redirect if it points to wrong role area
+                  //  Don't use cookie redirect if it points to wrong role area
                   const isAdminUrl = cleanUrl.includes("/admin");
                   const isAdmin = roleCheck.dbRole === "ADMIN";
 
@@ -274,7 +274,7 @@ export function useAuth() {
                   } else if (!isAdminUrl && isAdmin) {
                     // Admin trying to go to non-admin area — ignore cookie
                   } else {
-                    console.log("🔄 URL de redirection trouvée:", cleanUrl);
+                    console.log(" URL de redirection trouvée:", cleanUrl);
                     return cleanUrl;
                   }
                 }
@@ -283,7 +283,7 @@ export function useAuth() {
               console.error("Erreur récupération URL:", error);
             }
 
-            // ✅ FIX 3: Fallback with proper locale prefix
+            //  FIX 3: Fallback with proper locale prefix
             if (roleCheck.dbRole === "ADMIN") {
               return `/${locale}/admin/dashboard`;
             } else if (roleCheck.dbRole === "PROPERTY_OWNER") {
@@ -294,7 +294,7 @@ export function useAuth() {
           };
 
           const redirectUrl = await getRedirectUrl();
-          console.log("🚀 Redirection vers:", redirectUrl);
+          console.log(" Redirection vers:", redirectUrl);
           router.push(redirectUrl);
         }
       } else if (result.status === "needs_second_factor") {

@@ -2,7 +2,12 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { getClerkErrorMessage, getClerkErrorCode, logger, ClerkLoginErrorCodes } from "@/lib/utils";
+import {
+  getClerkErrorMessage,
+  getClerkErrorCode,
+  logger,
+  ClerkLoginErrorCodes,
+} from "@/lib/utils";
 
 interface ErrorState {
   message: string;
@@ -19,7 +24,9 @@ export function useVerifyCode() {
   const [trustDevice, setTrustDevice] = useState(false);
   const [timeLeft, setTimeLeft] = useState(600);
   const [mounted, setMounted] = useState(false);
-  const [pendingIdentifier, setPendingIdentifier] = useState<string | null>(null);
+  const [pendingIdentifier, setPendingIdentifier] = useState<string | null>(
+    null,
+  );
   const [pendingUserRole, setPendingUserRole] = useState<string | null>(null);
 
   const { signIn, setActive } = useSignIn();
@@ -92,7 +99,7 @@ export function useVerifyCode() {
     router.push("/fr/login");
   }, [router]);
 
-  // ✅ Version qui utilise la ref pour être sûre d'avoir les 6 chiffres
+  //  Version qui utilise la ref pour être sûre d'avoir les 6 chiffres
   const checkAndSubmit = useCallback(() => {
     const fullCode = codeRef.current.join("");
     if (fullCode.length === 6) {
@@ -100,171 +107,182 @@ export function useVerifyCode() {
     }
   }, []);
 
-  const handleSubmitWithCode = useCallback(async (fullCode: string) => {
-    setLoading(true);
-    setError(null);
-    logger.auth("Tentative de vérification 2FA");
+  const handleSubmitWithCode = useCallback(
+    async (fullCode: string) => {
+      setLoading(true);
+      setError(null);
+      logger.auth("Tentative de vérification 2FA");
 
-    try {
-      if (!signIn) throw new Error("SignIn not initialized");
+      try {
+        if (!signIn) throw new Error("SignIn not initialized");
 
-      const result = await signIn.attemptSecondFactor({
-        strategy: "email_code",
-        code: fullCode,
-      });
+        const result = await signIn.attemptSecondFactor({
+          strategy: "email_code",
+          code: fullCode,
+        });
 
-      logger.success("Vérification 2FA réussie", { status: result.status });
+        logger.success("Vérification 2FA réussie", { status: result.status });
 
-      if (result.status === "complete") {
-        await setActive({ session: result.createdSessionId });
+        if (result.status === "complete") {
+          await setActive({ session: result.createdSessionId });
 
-        // ✅ Récupérer le rôle du sessionStorage AU MOMENT de la redirection
-        const userRole = sessionStorage.getItem("pendingUserRole");
-        console.log("👤 Rôle utilisateur pour redirection:", userRole);
+          //  Récupérer le rôle du sessionStorage AU MOMENT de la redirection
+          const userRole = sessionStorage.getItem("pendingUserRole");
+          console.log("👤 Rôle utilisateur pour redirection:", userRole);
 
-        // Nettoyer le sessionStorage
-        sessionStorage.removeItem("pendingIdentifier");
-        sessionStorage.removeItem("pendingRole");
-        sessionStorage.removeItem("pendingIdentifierType");
-        sessionStorage.removeItem("pendingUserRole");
+          // Nettoyer le sessionStorage
+          sessionStorage.removeItem("pendingIdentifier");
+          sessionStorage.removeItem("pendingRole");
+          sessionStorage.removeItem("pendingIdentifierType");
+          sessionStorage.removeItem("pendingUserRole");
 
-        // Redirection selon le rôle
-        if (userRole === "ADMIN") {
-          console.log("🚀 Redirection vers admin dashboard");
-          router.push("/admin/dashboard");
-        } else if (userRole === "PROPERTY_OWNER") {
-          console.log("🚀 Redirection vers owner dashboard");
-          router.push("/dashboard/owner");
-        } else {
-          console.log("🚀 Redirection vers renter dashboard");
-          router.push("/dashboard/renter");
+          // Redirection selon le rôle
+          if (userRole === "ADMIN") {
+            console.log(" Redirection vers admin dashboard");
+            router.push("/admin/dashboard");
+          } else if (userRole === "PROPERTY_OWNER") {
+            console.log(" Redirection vers owner dashboard");
+            router.push("/dashboard/owner");
+          } else {
+            console.log(" Redirection vers renter dashboard");
+            router.push("/dashboard/renter");
+          }
         }
+      } catch (err: unknown) {
+        logger.error("Erreur vérification 2FA:", err);
+
+        const errorCode = getClerkErrorCode(err);
+
+        if (
+          errorCode === ClerkLoginErrorCodes.CODE_INCORRECT ||
+          errorCode === ClerkLoginErrorCodes.VERIFICATION_FAILED
+        ) {
+          setError({
+            type: "invalid",
+            message: t("incorrectCode"),
+          });
+        } else if (errorCode === ClerkLoginErrorCodes.CODE_EXPIRED) {
+          setError({
+            type: "expired",
+            message: t("codeExpired"),
+          });
+        } else {
+          const errorMessage = getClerkErrorMessage(err, "email", t);
+          setError({
+            type: "generic",
+            message: errorMessage,
+          });
+        }
+
+        // Réinitialiser les inputs en cas d'erreur
+        setCode(["", "", "", "", "", ""]);
+        codeRef.current = ["", "", "", "", "", ""];
+
+        // Remettre le focus sur le premier input
+        setTimeout(() => {
+          if (inputRefs[0].current) {
+            inputRefs[0].current.focus();
+          }
+        }, 100);
+      } finally {
+        setLoading(false);
       }
-    } catch (err: unknown) {
-      logger.error("Erreur vérification 2FA:", err);
+    },
+    [signIn, setActive, router, t, inputRefs],
+  );
 
-      const errorCode = getClerkErrorCode(err);
-
-      if (
-        errorCode === ClerkLoginErrorCodes.CODE_INCORRECT ||
-        errorCode === ClerkLoginErrorCodes.VERIFICATION_FAILED
-      ) {
-        setError({
-          type: "invalid",
-          message: t("incorrectCode"),
-        });
-      } else if (errorCode === ClerkLoginErrorCodes.CODE_EXPIRED) {
-        setError({
-          type: "expired",
-          message: t("codeExpired"),
-        });
+  const handleSubmit = useCallback(
+    async (e?: React.FormEvent) => {
+      if (e) {
+        e.preventDefault();
+      }
+      const fullCode = code.join("");
+      if (fullCode.length === 6) {
+        await handleSubmitWithCode(fullCode);
       } else {
-        const errorMessage = getClerkErrorMessage(err, "email", t);
         setError({
           type: "generic",
-          message: errorMessage,
+          message: t("codeRequired"),
         });
       }
-      
-      // Réinitialiser les inputs en cas d'erreur
-      setCode(["", "", "", "", "", ""]);
-      codeRef.current = ["", "", "", "", "", ""];
-      
-      // Remettre le focus sur le premier input
-      setTimeout(() => {
-        if (inputRefs[0].current) {
-          inputRefs[0].current.focus();
+    },
+    [code, handleSubmitWithCode, t],
+  );
+
+  const handleChange = useCallback(
+    (index: number, value: string) => {
+      const numericValue = value.replace(/[^0-9]/g, "");
+
+      if (numericValue.length > 1) {
+        const newCode = [...code];
+        const chars = numericValue.split("");
+
+        for (let i = 0; i < chars.length && index + i < 6; i++) {
+          newCode[index + i] = chars[i];
         }
-      }, 100);
-      
-    } finally {
-      setLoading(false);
-    }
-  }, [signIn, setActive, router, t, inputRefs]);
 
-  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
-    if (e) {
-      e.preventDefault();
-    }
-    const fullCode = code.join("");
-    if (fullCode.length === 6) {
-      await handleSubmitWithCode(fullCode);
-    } else {
-      setError({
-        type: "generic",
-        message: t("codeRequired"),
-      });
-    }
-  }, [code, handleSubmitWithCode, t]);
+        setCode(newCode);
+        codeRef.current = newCode;
 
-  const handleChange = useCallback((index: number, value: string) => {
-    const numericValue = value.replace(/[^0-9]/g, "");
-    
-    if (numericValue.length > 1) {
-      const newCode = [...code];
-      const chars = numericValue.split("");
-      
-      for (let i = 0; i < chars.length && index + i < 6; i++) {
-        newCode[index + i] = chars[i];
-      }
-      
-      setCode(newCode);
-      codeRef.current = newCode;
-      
-      const lastIndex = Math.min(index + chars.length - 1, 5);
-      if (lastIndex < 5) {
-        setTimeout(() => {
-          inputRefs[lastIndex + 1].current?.focus();
-        }, 10);
-      }
-      
-      if (codeRef.current.every(c => c !== "")) {
-        setTimeout(() => checkAndSubmit(), 50);
-      }
-      
-      return;
-    }
-    
-    if (numericValue.length === 1) {
-      const newCode = [...code];
-      newCode[index] = numericValue;
-      setCode(newCode);
-      codeRef.current = newCode;
-      
-      if (index < 5) {
-        setTimeout(() => {
-          inputRefs[index + 1].current?.focus();
-        }, 10);
-      }
-      
-      if (codeRef.current.every(c => c !== "")) {
-        setTimeout(() => checkAndSubmit(), 50);
-      }
-    }
-    
-    if (numericValue.length === 0) {
-      const newCode = [...code];
-      newCode[index] = "";
-      setCode(newCode);
-      codeRef.current = newCode;
-    }
-  }, [code, inputRefs, checkAndSubmit]);
+        const lastIndex = Math.min(index + chars.length - 1, 5);
+        if (lastIndex < 5) {
+          setTimeout(() => {
+            inputRefs[lastIndex + 1].current?.focus();
+          }, 10);
+        }
 
-  const handleKeyDown = useCallback((index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace") {
-      if (!code[index] && index > 0) {
+        if (codeRef.current.every((c) => c !== "")) {
+          setTimeout(() => checkAndSubmit(), 50);
+        }
+
+        return;
+      }
+
+      if (numericValue.length === 1) {
+        const newCode = [...code];
+        newCode[index] = numericValue;
+        setCode(newCode);
+        codeRef.current = newCode;
+
+        if (index < 5) {
+          setTimeout(() => {
+            inputRefs[index + 1].current?.focus();
+          }, 10);
+        }
+
+        if (codeRef.current.every((c) => c !== "")) {
+          setTimeout(() => checkAndSubmit(), 50);
+        }
+      }
+
+      if (numericValue.length === 0) {
+        const newCode = [...code];
+        newCode[index] = "";
+        setCode(newCode);
+        codeRef.current = newCode;
+      }
+    },
+    [code, inputRefs, checkAndSubmit],
+  );
+
+  const handleKeyDown = useCallback(
+    (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Backspace") {
+        if (!code[index] && index > 0) {
+          inputRefs[index - 1].current?.focus();
+        }
+      }
+
+      if (e.key === "ArrowLeft" && index > 0) {
         inputRefs[index - 1].current?.focus();
       }
-    }
-    
-    if (e.key === "ArrowLeft" && index > 0) {
-      inputRefs[index - 1].current?.focus();
-    }
-    
-    if (e.key === "ArrowRight" && index < 5) {
-      inputRefs[index + 1].current?.focus();
-    }
-  }, [code, inputRefs]);
+
+      if (e.key === "ArrowRight" && index < 5) {
+        inputRefs[index + 1].current?.focus();
+      }
+    },
+    [code, inputRefs],
+  );
 
   const handleResend = useCallback(async () => {
     setResendLoading(true);

@@ -3,14 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { decodeJWT } from "@/lib/utils/jwt";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Alert from "@/components/ui/Alert";
 import Pagination from "@/components/ui/Pagination";
 import { Loader2 } from "lucide-react";
 import { IoDocumentTextOutline, IoFilterOutline } from "react-icons/io5";
-// En haut du fichier, ajoutez useAuth dans l'import
-import {  useAuth } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 import {
   IoMailOutline, IoKeyOutline, IoInformationCircleOutline,
   IoLinkOutline, IoCloseCircleOutline, IoRefreshOutline,
@@ -20,7 +20,7 @@ import {
 import { MdOutlineTimer, MdOutlineCheckCircle, MdOutlineDangerous } from "react-icons/md";
 import { BsClockHistory } from "react-icons/bs";
 import { FiInbox } from "react-icons/fi";
-import { useInvitations ,Invitation} from "./hooks/useInvitations";
+import { useInvitations, Invitation } from "./hooks/useInvitations";
 
 // ─── Shadows ─────────────────────────────────────────────────
 const block3d = "shadow-[0_6px_0_0_rgba(0,0,0,0.06),0_12px_28px_-6px_rgba(0,0,0,0.11)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.38),0_12px_28px_-6px_rgba(0,0,0,0.48)]";
@@ -52,6 +52,7 @@ const getAvatarCls = (email: string) => {
 };
 
 export default function AdminInvitationsPage() {
+  const t = useTranslations("AdminInvitations");
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
   const router = useRouter();
@@ -103,8 +104,8 @@ export default function AdminInvitationsPage() {
   }, [isAdmin]);
 
   const validateEmail = (v: string) => {
-    if (!v.trim()) return "L'email est requis";
-    if (!v.includes("@") || !v.includes(".")) return "Email invalide";
+    if (!v.trim()) return t("emailRequired");
+    if (!v.includes("@") || !v.includes(".")) return t("emailInvalid");
     return undefined;
   };
 
@@ -128,7 +129,7 @@ export default function AdminInvitationsPage() {
     
     try {
       await createInvitation(email, role);
-      showAlert("success", `Invitation envoyée à ${email} ✓`);
+      showAlert("success", t("invitationSent", { email }));
       setEmail("");
       setRole("User Management");
       setTouched({ email: false });
@@ -147,16 +148,16 @@ export default function AdminInvitationsPage() {
   const handleRevoke = async (id: string) => {
     try {
       await revokeInvitation(id);
-      showAlert("success", "Invitation révoquée");
+      showAlert("success", t("invitationRevoked"));
     } catch {
-      showAlert("error", "Erreur lors de la révocation");
+      showAlert("error", t("revokeError"));
     }
   };
 
   const handleResend = async (invEmail: string, invRole: string) => {
     try {
       await resendInvitation(invEmail, invRole);
-      showAlert("success", `Invitation renvoyée à ${invEmail} ✓`);
+      showAlert("success", t("invitationResent", { email: invEmail }));
     } catch (err: any) {
       showAlert("error", err.message);
     }
@@ -171,7 +172,7 @@ export default function AdminInvitationsPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-10 bg-white dark:bg-slate-900 rounded-2xl shadow-lg">
           <IoLockClosedOutline className="text-6xl text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Accès non autorisé</h1>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">{t("unauthorized")}</h1>
         </div>
       </div>
     );
@@ -188,9 +189,9 @@ export default function AdminInvitationsPage() {
       {/* ── HEADER ── */}
       <div className="flex-shrink-0 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Gestion des invitations</h2>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t("title")}</h2>
           <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">
-            Invitez de nouveaux administrateurs — liens sécurisés valides 48h
+            {t("description")}
           </p>
         </div>
       </div>
@@ -208,8 +209,8 @@ export default function AdminInvitationsPage() {
                 <IoPersonAddOutline className="text-white text-base" />
               </div>
               <div>
-                <h3 className="text-sm font-bold text-violet-900 dark:text-violet-100 leading-tight">Inviter un administrateur</h3>
-                <p className="text-[11px] text-primary dark:text-white">Lien sécurisé · expire dans 48h</p>
+                <h3 className="text-sm font-bold text-violet-900 dark:text-violet-100 leading-tight">{t("inviteAdmin")}</h3>
+                <p className="text-[11px] text-primary dark:text-white">{t("secureLink")}</p>
               </div>
             </div>
 
@@ -217,7 +218,7 @@ export default function AdminInvitationsPage() {
               {/* Email */}
               <div>
                 <label className="block text-xs font-semibold text-primary dark:text-violet-300 mb-1.5">
-                  Email du nouvel admin
+                  {t("newAdminEmail")}
                 </label>
                 <div className="relative">
                   <IoMailOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-base" />
@@ -243,7 +244,7 @@ export default function AdminInvitationsPage() {
               {/* Role */}
               <div>
                 <label className="block text-xs font-semibold text-primary dark:text-violet-300 mb-1.5">
-                  Responsabilité
+                  {t("responsibility")}
                 </label>
                 <select
                   value={role} onChange={e => setRole(e.target.value)}
@@ -257,7 +258,7 @@ export default function AdminInvitationsPage() {
               <div className="flex items-start gap-2.5 p-3 bg-indigo-50/50 dark:bg-indigo-900/15 rounded-xl border border-indigo-200/50 dark:border-indigo-800/50">
                 <IoInformationCircleOutline className="text-indigo-500 text-sm mt-0.5 flex-shrink-0" />
                 <p className="text-[11px] text-indigo-500 dark:text-indigo-400 leading-relaxed">
-                  Un lien unique sera envoyé par email et expirera dans{" "}
+                  {t("infoText")}{" "}
                   <strong className="text-indigo-700 dark:text-indigo-300">48 heures</strong>.
                 </p>
               </div>
@@ -270,8 +271,8 @@ export default function AdminInvitationsPage() {
                 className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-600 hover:from-violet-600 hover:via-indigo-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 text-sm"
               >
                 {submitting
-                  ? <><Loader2 className="animate-spin h-4 w-4" />Envoi en cours…</>
-                  : <><IoKeyOutline className="text-base" />Générer l'invitation</>
+                  ? <><Loader2 className="animate-spin h-4 w-4" />{t("sending")}…</>
+                  : <><IoKeyOutline className="text-base" />{t("generateInvitation")}</>
                 }
               </button>
             </form>
@@ -280,9 +281,9 @@ export default function AdminInvitationsPage() {
           {/* Stats cards */}
           <div className="grid grid-cols-3 gap-4 flex-shrink-0">
             {[
-              { label: "Liens actifs",  count: stats.active,  countCls: "text-indigo-600 dark:text-indigo-400", Icon: IoLinkOutline,  grad: "from-indigo-500 to-blue-500",  bg: "border-indigo-100 dark:border-indigo-900/40" },
-              { label: "Expirées", count: stats.expired, countCls: "text-rose-500", Icon: IoTimerOutline, grad: "from-rose-400 to-red-500", bg: "border-rose-100 dark:border-rose-900/40" },
-              { label: "Révoquées", count: stats.revoked, countCls: "text-red-500", Icon: IoCloseCircleOutline, grad: "from-red-400 to-red-500", bg: "border-red-100 dark:border-red-900/40" },
+              { label: t("activeLinks"),  count: stats.active,  countCls: "text-indigo-600 dark:text-indigo-400", Icon: IoLinkOutline,  grad: "from-indigo-500 to-blue-500",  bg: "border-indigo-100 dark:border-indigo-900/40" },
+              { label: t("expired"), count: stats.expired, countCls: "text-rose-500", Icon: IoTimerOutline, grad: "from-rose-400 to-red-500", bg: "border-rose-100 dark:border-rose-900/40" },
+              { label: t("revoked"), count: stats.revoked, countCls: "text-red-500", Icon: IoCloseCircleOutline, grad: "from-red-400 to-red-500", bg: "border-red-100 dark:border-red-900/40" },
             ].map(({ label, count, countCls, Icon, grad, bg }) => (
               <div key={label} className={`bg-white dark:bg-slate-900 rounded-2xl border ${bg} p-4 flex flex-col gap-2 ${card3d}`}>
                 <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shadow-sm`}>
@@ -308,8 +309,8 @@ export default function AdminInvitationsPage() {
                   <BsClockHistory className="text-white text-sm" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-100">Invitations en cours</h3>
-                  <p className="text-[11px] text-gray-800 dark:text-white">Suivi de l'expiration en temps réel</p>
+                  <h3 className="text-sm font-bold text-indigo-900 dark:text-indigo-100">{t("currentInvitations")}</h3>
+                  <p className="text-[11px] text-gray-800 dark:text-white">{t("realTimeExpiry")}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -325,12 +326,12 @@ export default function AdminInvitationsPage() {
               <table className="w-full text-sm">
                 <thead className="sticky top-0 z-10">
                   <tr className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b border-indigo-100 dark:border-indigo-900/30">
-                    {["Email","Responsabilité","Expire dans","Statut","Actions"].map(h => (
+                    {[t("email"), t("responsibility"), t("expiresIn"), t("status"), t("actions")].map(h => (
                       <th key={h} className="px-5 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
                         {h}
                       </th>
                     ))}
-                  </tr>
+                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
                   {invitations.map(inv => {
@@ -363,7 +364,7 @@ export default function AdminInvitationsPage() {
                         <td className="px-5 py-3.5">
                           {isAcc || isExpired || isRevoked ? (
                             <span className="text-xs font-bold text-slate-400 dark:text-slate-600 uppercase tracking-wide">
-                              {isAcc ? "Acceptée" : isRevoked ? "Révoquée" : "Expirée"}
+                              {isAcc ? t("accepted") : isRevoked ? t("revoked") : t("expired")}
                             </span>
                           ) : (
                             <div className="flex flex-col gap-1">
@@ -383,19 +384,19 @@ export default function AdminInvitationsPage() {
                         <td className="px-5 py-3.5">
                           {isAcc ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Acceptée
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />{t("accepted")}
                             </span>
                           ) : isRevoked ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800">
-                              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />Révoquée
+                              <span className="w-1.5 h-1.5 rounded-full bg-red-500" />{t("revoked")}
                             </span>
                           ) : isExpired ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700">
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />Expirée
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />{t("expired")}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />Active
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />{t("active")}
                             </span>
                           )}
                         </td>
@@ -404,7 +405,7 @@ export default function AdminInvitationsPage() {
                           <div className="flex items-center gap-1">
                             {isActive && (
                               <>
-                                <button onClick={() => handleCopyLink(inv.token)} title="Copier le lien"
+                                <button onClick={() => handleCopyLink(inv.token)} title={t("copyLink")}
                                   className="p-1.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors relative">
                                   {copiedToken === inv.token
                                     ? <MdOutlineCheckCircle className="text-base text-emerald-500" />
@@ -412,11 +413,11 @@ export default function AdminInvitationsPage() {
                                   }
                                   {copiedToken === inv.token && (
                                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] py-1 px-2 rounded-lg whitespace-nowrap z-10">
-                                      Copié !
+                                      {t("copied")}
                                     </span>
                                   )}
                                 </button>
-                                <button onClick={() => handleRevoke(inv.id)} title="Révoquer"
+                                <button onClick={() => handleRevoke(inv.id)} title={t("revoke")}
                                   className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors">
                                   <IoCloseCircleOutline className="text-base" />
                                 </button>
@@ -425,7 +426,7 @@ export default function AdminInvitationsPage() {
                             {(isExpired || isRevoked) && (
                               <button onClick={() => handleResend(inv.email, inv.role)}
                                 className="text-xs font-semibold text-violet-500 hover:text-violet-700 dark:hover:text-violet-300 hover:underline transition-colors">
-                                Renvoyer
+                                {t("resend")}
                               </button>
                             )}
                           </div>
@@ -438,8 +439,8 @@ export default function AdminInvitationsPage() {
                     <tr>
                       <td colSpan={5} className="px-6 py-16 text-center">
                         <FiInbox className="text-5xl text-indigo-200 dark:text-indigo-800 mb-3 mx-auto" />
-                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Aucune invitation en cours</p>
-                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Utilisez le formulaire à gauche pour en créer une</p>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{t("noInvitations")}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t("createInvitationHint")}</p>
                       </td>
                     </tr>
                   )}
@@ -469,21 +470,19 @@ export default function AdminInvitationsPage() {
         <div className="flex-1 space-y-1.5 relative z-10">
           <div className="flex items-center gap-2">
             <IoTimerOutline className="text-red-400 text-base flex-shrink-0" />
-            <h4 className="text-red-400 text-sm font-black">Application de l'expiration 48h</h4>
+            <h4 className="text-red-400 text-sm font-black">{t("expiryApplication")}</h4>
           </div>
           <p className="text-sm leading-relaxed text-slate-400">
-            NESTHUB's zero-trust invitation system generates transient access tokens. If an invitee does not complete
-            registration within the <span className="text-white font-bold">48-hour window</span>, the encrypted token
-            is automatically purged from the gateway cache. This prevents long-standing unauthorized link reuse.
+            {t("securityText")}
           </p>
           <div className="flex gap-3 pt-1">
             <div className="flex items-center gap-1.5">
               <IoShieldCheckmarkOutline className="text-indigo-400 text-sm" />
-              <span className="text-xs font-bold text-white uppercase tracking-tighter">Purge auto</span>
+              <span className="text-xs font-bold text-white uppercase tracking-tighter">{t("autoPurge")}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <IoLockClosedOutline className="text-indigo-400 text-sm" />
-              <span className="text-xs font-bold text-white uppercase tracking-tighter">Accès limité</span>
+              <span className="text-xs font-bold text-white uppercase tracking-tighter">{t("limitedAccess")}</span>
             </div>
           </div>
         </div>
@@ -493,7 +492,7 @@ export default function AdminInvitationsPage() {
             <IoDocumentTextOutline className="text-xl" />
           </div>
           <a href="#" className="text-[10px] font-bold text-slate-300 hover:text-white underline decoration-indigo-500 transition-colors">
-            Politique
+            {t("policy")}
           </a>
         </div>
       </div>

@@ -1,24 +1,22 @@
-// app/[locale]/accept-invite/page.tsx (version équilibrée)
-'use client';
+// app/[locale]/accept-invite/page.tsx
+"use client";
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useLocale } from "next-intl";
-import {  User, Loader2, LogIn } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
+import { User, Loader2, LogIn } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { GrUserAdmin } from "react-icons/gr";
 import { RiMailOpenLine } from "react-icons/ri";
 import { MdMarkEmailRead } from "react-icons/md";
-
 import { MdOutlineDangerous, MdOutlineVerified } from "react-icons/md";
-
-import { 
-  RiShieldKeyholeLine, 
-  RiShieldCheckLine, 
-  RiAdminLine, 
-  RiEyeLine, 
+import {
+  RiShieldKeyholeLine,
+  RiShieldCheckLine,
+  RiAdminLine,
+  RiEyeLine,
   RiEyeOffLine,
   RiUserLine,
   RiMailLine,
@@ -28,8 +26,7 @@ import {
   RiErrorWarningLine,
   RiCheckboxCircleLine,
   RiCloseLine,
- 
-  RiShieldUserLine
+  RiShieldUserLine,
 } from "react-icons/ri";
 
 // Composants
@@ -49,6 +46,7 @@ interface FormErrors {
 }
 
 export default function AcceptInvitePage() {
+  const t = useTranslations("AcceptInvite");
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const locale = useLocale();
@@ -59,7 +57,7 @@ export default function AcceptInvitePage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // États de validation
   const [touched, setTouched] = useState({
     firstName: false,
@@ -68,12 +66,12 @@ export default function AcceptInvitePage() {
     password: false,
   });
   const [errors, setErrors] = useState<FormErrors>({});
-  
+
   // États pour les alertes
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [showErrorAlert, setShowErrorAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-  
+
   // États pour le montage
   const [mounted, setMounted] = useState(false);
 
@@ -113,32 +111,32 @@ export default function AcceptInvitePage() {
   // Gérer le succès
   useEffect(() => {
     if (success) {
-      setAlertMessage("Invitation acceptée avec succès ! Redirection...");
+      setAlertMessage(t("successMessage"));
       setShowSuccessAlert(true);
     }
-  }, [success]);
+  }, [success, t]);
 
   // Validation des champs avec ValidationPatterns
   const validateField = (field: string, value: string): string => {
-    switch(field) {
+    switch (field) {
       case "firstName":
-        if (!value.trim()) return "Le prénom est requis";
-        if (value.trim().length < 2) return "Le prénom doit contenir au moins 2 caractères";
+        if (!value.trim()) return t("firstNameRequired");
+        if (value.trim().length < 2) return t("firstNameMinLength");
         return "";
       case "lastName":
-        if (!value.trim()) return "Le nom est requis";
-        if (value.trim().length < 2) return "Le nom doit contenir au moins 2 caractères";
+        if (!value.trim()) return t("lastNameRequired");
+        if (value.trim().length < 2) return t("lastNameMinLength");
         return "";
       case "username":
-        if (!value.trim()) return "Le nom d'utilisateur est requis";
-        if (!ValidationPatterns.isUsername(value)) return "Le nom d'utilisateur doit contenir 3-20 caractères (lettres, chiffres, _)";
+        if (!value.trim()) return t("usernameRequired");
+        if (!ValidationPatterns.isUsername(value)) return t("usernameInvalid");
         return "";
       case "password":
-        if (!value) return "Le mot de passe est requis";
-        if (value.length < 8) return "Le mot de passe doit contenir au moins 8 caractères";
-        if (!/[A-Z]/.test(value)) return "Le mot de passe doit contenir au moins une majuscule";
-        if (!/[a-z]/.test(value)) return "Le mot de passe doit contenir au moins une minuscule";
-        if (!/[0-9]/.test(value)) return "Le mot de passe doit contenir au moins un chiffre";
+        if (!value) return t("passwordRequired");
+        if (value.length < 8) return t("passwordMinLength");
+        if (!/[A-Z]/.test(value)) return t("passwordUppercase");
+        if (!/[a-z]/.test(value)) return t("passwordLowercase");
+        if (!/[0-9]/.test(value)) return t("passwordNumber");
         return "";
       default:
         return "";
@@ -146,34 +144,50 @@ export default function AcceptInvitePage() {
   };
 
   const handleBlur = (field: string) => {
-    setTouched(prev => ({ ...prev, [field]: true }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
     let value = "";
-    switch(field) {
-      case "firstName": value = firstName; break;
-      case "lastName": value = lastName; break;
-      case "username": value = username; break;
-      case "password": value = password; break;
+    switch (field) {
+      case "firstName":
+        value = firstName;
+        break;
+      case "lastName":
+        value = lastName;
+        break;
+      case "username":
+        value = username;
+        break;
+      case "password":
+        value = password;
+        break;
     }
     const error = validateField(field, value);
-    setErrors(prev => ({ ...prev, [field]: error }));
+    setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
   const handleChange = (field: string, value: string) => {
-    switch(field) {
-      case "firstName": setFirstName(value); break;
-      case "lastName": setLastName(value); break;
-      case "username": setUsername(value); break;
-      case "password": setPassword(value); break;
+    switch (field) {
+      case "firstName":
+        setFirstName(value);
+        break;
+      case "lastName":
+        setLastName(value);
+        break;
+      case "username":
+        setUsername(value);
+        break;
+      case "password":
+        setPassword(value);
+        break;
     }
-    
+
     setShowErrorAlert(false);
     setError(null);
-    
+
     if (touched[field as keyof typeof touched]) {
       const error = validateField(field, value);
-      setErrors(prev => ({ ...prev, [field]: error }));
+      setErrors((prev) => ({ ...prev, [field]: error }));
     } else {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
+      setErrors((prev) => ({ ...prev, [field]: undefined }));
     }
   };
 
@@ -185,19 +199,28 @@ export default function AcceptInvitePage() {
       password: validateField("password", password),
     };
     setErrors(newErrors);
-    return !Object.values(newErrors).some(error => error !== "");
+    return !Object.values(newErrors).some((error) => error !== "");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    setTouched({ firstName: true, lastName: true, username: true, password: true });
-    
+
+    setTouched({
+      firstName: true,
+      lastName: true,
+      username: true,
+      password: true,
+    });
+
     if (!validateForm() || !token) {
       return;
     }
 
-    logger.auth("Soumission formulaire acceptation", { firstName, lastName, username });
+    logger.auth("Soumission formulaire acceptation", {
+      firstName,
+      lastName,
+      username,
+    });
     await acceptInvite({
       token,
       firstName: firstName.trim(),
@@ -234,8 +257,7 @@ export default function AcceptInvitePage() {
           <div className="text-center">
             <LoadingSpinner />
             <p className="mt-4 text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-              
-              Vérification de votre invitation...
+              {t("loading")}
             </p>
           </div>
         </div>
@@ -247,7 +269,6 @@ export default function AcceptInvitePage() {
   if (!token) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
-        {/* Alert Container */}
         <div className="fixed top-5 right-5 z-[100] w-full max-w-sm">
           {showErrorAlert && (
             <Alert
@@ -268,17 +289,17 @@ export default function AcceptInvitePage() {
               </div>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Lien invalide
+              {t("invalidLink")}
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              Aucun token d'invitation fourni.
+              {t("noToken")}
             </p>
             <Link
               href="/"
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-400 text-black font-bold rounded-xl hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 transition-all"
             >
               <RiArrowRightLine />
-              Retour à l'accueil
+              {t("backToHome")}
             </Link>
           </div>
         </div>
@@ -290,10 +311,9 @@ export default function AcceptInvitePage() {
   if (!info?.valid) {
     const isUsed = info?.reason === "already_used";
     const isExpired = info?.reason === "expired" || isUsed;
-    
+
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
-        {/* Alert Container */}
         <div className="fixed top-5 right-5 z-[100] w-full max-w-sm">
           {showErrorAlert && (
             <Alert
@@ -317,17 +337,21 @@ export default function AcceptInvitePage() {
                 )}
               </div>
             </div>
-            
+
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {isUsed ? "Invitation déjà utilisée" : isExpired ? "Lien expiré" : "Lien invalide"}
+              {isUsed
+                ? t("alreadyUsed")
+                : isExpired
+                  ? t("expired")
+                  : t("invalidLink")}
             </h1>
-            
+
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
               {isUsed
-                ? "Cette invitation a déjà été acceptée. Connectez-vous normalement."
+                ? t("alreadyUsedMessage")
                 : isExpired
-                ? "Les liens d'invitation sont valides 48h. Celui-ci a expiré."
-                : "Ce lien d'invitation est invalide ou introuvable."}
+                  ? t("expiredMessage")
+                  : t("invalidMessage")}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -337,7 +361,7 @@ export default function AcceptInvitePage() {
                   className="px-6 py-2.5 bg-blue-400 text-black font-bold rounded-xl hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 transition-all flex items-center justify-center gap-2"
                 >
                   <RiMailLine />
-                  Nouveau lien
+                  {t("newLink")}
                 </button>
               )}
               <Link
@@ -345,13 +369,11 @@ export default function AcceptInvitePage() {
                 className="px-6 py-2.5 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-semibold rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-all flex items-center justify-center gap-2"
               >
                 <LogIn className="w-4 h-4" />
-                {isUsed ? "Se connecter" : "Retour à l'accueil"}
+                {isUsed ? t("login") : t("backToHome")}
               </Link>
             </div>
 
-            <p className="mt-8 text-xs text-gray-400">
-              Besoin d'aide ? Contactez votre administrateur.
-            </p>
+            <p className="mt-8 text-xs text-gray-400">{t("needHelp")}</p>
           </div>
         </div>
       </div>
@@ -362,7 +384,6 @@ export default function AcceptInvitePage() {
   if (success) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
-        {/* Alert Container */}
         <div className="fixed top-5 right-5 z-[100] w-full max-w-sm">
           {showSuccessAlert && (
             <Alert
@@ -385,24 +406,34 @@ export default function AcceptInvitePage() {
 
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200 dark:border-emerald-800 mb-4">
               <RiCheckboxCircleLine className="text-sm" />
-              {info.hasExistingAccount ? "Droits admin ajoutés" : "Compte créé"}
+              {info.hasExistingAccount ? t("successExisting") : t("successNew")}
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              {info.hasExistingAccount ? "Félicitations ! 🎉" : "Bienvenue dans l'équipe ! 🎉"}
+              {info.hasExistingAccount ? t("welcomeExisting") : t("welcomeNew")}
             </h1>
-            
+
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
               {info.hasExistingAccount ? (
-                <>Votre compte <span className="font-semibold text-gray-900 dark:text-white">{maskEmail(info.email || "")}</span> a maintenant les droits administrateur.</>
+                <>
+                  {t("successExistingMessage").replace(
+                    "{email}",
+                    maskEmail(info.email || ""),
+                  )}
+                </>
               ) : (
-                <>Votre compte administrateur <span className="font-semibold text-gray-900 dark:text-white">{maskEmail(info.email || "")}</span> est prêt.</>
+                <>
+                  {t("successNewMessage").replace(
+                    "{email}",
+                    maskEmail(info.email || ""),
+                  )}
+                </>
               )}
             </p>
 
             <p className="text-xs text-gray-400 mb-6 flex items-center justify-center gap-2">
               <Loader2 className="animate-spin h-4 w-4" />
-              Redirection vers le tableau de bord...
+              {t("redirecting")}
             </p>
 
             <Link
@@ -410,7 +441,7 @@ export default function AcceptInvitePage() {
               className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-400 text-black font-bold rounded-xl hover:bg-gradient-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 transition-all"
             >
               <RiAdminLine className="text-base" />
-              Accéder au panel admin
+              {t("accessAdmin")}
             </Link>
           </div>
         </div>
@@ -422,7 +453,6 @@ export default function AcceptInvitePage() {
   if (info.hasExistingAccount) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
-        {/* Alert Container */}
         <div className="fixed top-5 right-5 z-[100] w-full max-w-sm">
           {showErrorAlert && (
             <Alert
@@ -446,23 +476,26 @@ export default function AcceptInvitePage() {
           <div className="max-w-md w-full">
             <div className="bg-white dark:bg-slate-900 rounded-3xl border border-indigo-100 dark:border-indigo-900/40 shadow-2xl overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600" />
-              
+
               <div className="p-8">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-200 dark:border-indigo-800 mb-4">
-                  <TfiEmail className="text-xs" /> Invitation reçue
+                  <TfiEmail className="text-xs" /> {t("invitationReceived")}
                 </div>
 
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Compte existant détecté
+                  {t("existingAccountDetected")}
                 </h1>
-                
+
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-                  Email : <span className="font-semibold text-indigo-600 dark:text-indigo-400">{info.email}</span>
+                  {t("emailLabel")} :{" "}
+                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                    {info.email}
+                  </span>
                 </p>
 
                 <div className="mb-6 p-4 bg-indigo-50/50 dark:bg-indigo-900/15 rounded-xl border border-indigo-100 dark:border-indigo-800/40">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Vous avez déjà un compte. Acceptez l'invitation pour obtenir les droits administrateur.
+                    {t("existingAccountMessage")}
                   </p>
                 </div>
 
@@ -472,8 +505,12 @@ export default function AcceptInvitePage() {
                       {info.invitedBy.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-xs text-indigo-400 uppercase tracking-wide">Invitation de</p>
-                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">{info.invitedBy.name}</p>
+                      <p className="text-xs text-indigo-400 uppercase tracking-wide">
+                        {t("invitedBy")}
+                      </p>
+                      <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                        {info.invitedBy.name}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -486,12 +523,12 @@ export default function AcceptInvitePage() {
                   {loading ? (
                     <>
                       <Loader2 className="animate-spin h-5 w-5" />
-                      Traitement...
+                      {t("creating")}
                     </>
                   ) : (
                     <>
                       <RiShieldUserLine />
-                      Accepter et obtenir les droits admin
+                      {t("acceptAndGetRights")}
                     </>
                   )}
                 </button>
@@ -500,7 +537,7 @@ export default function AcceptInvitePage() {
                   href="/login"
                   className="block text-center text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-3 flex items-center justify-center gap-1"
                 >
-                  Se connecter d'abord
+                  {t("loginFirst")}
                   <RiArrowRightLine />
                 </Link>
               </div>
@@ -511,7 +548,7 @@ export default function AcceptInvitePage() {
     );
   }
 
-  // État NOUVEAU COMPTE - Version équilibrée
+  // État NOUVEAU COMPTE
   return (
     <div className="flex min-h-screen w-full bg-background-light dark:bg-background-dark">
       {/* Alert Container */}
@@ -537,7 +574,6 @@ export default function AcceptInvitePage() {
       {/* Main Content - Centered */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-[1100px] grid md:grid-cols-2 gap-9 items-start">
-          
           {/* Left Side - Carte élégante */}
           <div className="hidden md:block">
             <div className="bg-purple-100/50 dark:bg-slate-900 rounded-2xl shadow-xl border border-indigo-100 dark:border-indigo-900/40 p-8 mt-19">
@@ -565,19 +601,21 @@ export default function AcceptInvitePage() {
               <div className="bg-gradient-to-br from-indigo-50 to-violet-50/50 dark:from-indigo-900/10 dark:to-violet-900/5 rounded-xl p-6 border border-indigo-100 dark:border-indigo-800/40 mb-7 translate-y-4.5">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center text-white shadow-md flex-shrink-0">
-                    <GrUserAdmin  className="text-lg" />
+                    <GrUserAdmin className="text-lg" />
                   </div>
                   <div className="flex-1">
                     <p className="text-xs text-violet-600 uppercase tracking-wider font-semibold mb-1">
-                      Rôle assigné
+                      {t("roleAssigned")}
                     </p>
                     <p className="text-base font-bold text-slate-800 dark:text-white mb-2">
-                      Administrateur NESTHUB
+                      {t("adminRole")}
                     </p>
                     {info.invitedBy && (
                       <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-                        <span>Invitation de :</span>
-                        <span className="font-semibold text-violet-700 dark:text-indigo-400">{info.invitedBy.email}</span>
+                        <span>{t("invitationFrom")}</span>
+                        <span className="font-semibold text-violet-700 dark:text-indigo-400">
+                          {info.invitedBy.email}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -586,15 +624,15 @@ export default function AcceptInvitePage() {
 
               {/* Badge de vérification */}
               <div className="flex items-start gap-3 p-4 bg-green-50 dark:bg-green-900/10 rounded-xl border border-green-200 dark:border-green-800/30 mb-6 mt-10">
-                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 flex-shrink-0 ">
+                <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-600 dark:text-green-400 flex-shrink-0">
                   <MdOutlineVerified size={16} />
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-green-700 dark:text-green-300">
-                    Vérification automatique
+                    {t("autoVerification")}
                   </p>
                   <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                    En tant qu'administrateur, votre compte sera vérifié immédiatement.
+                    {t("autoVerificationDesc")}
                   </p>
                 </div>
               </div>
@@ -602,12 +640,20 @@ export default function AcceptInvitePage() {
               {/* Stats */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-violet-100/75 dark:bg-slate-800/30 rounded-xl p-4 text-center">
-                  <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">48 heures</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Expiration du lien</p>
+                  <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">
+                    {t("expiryTime")}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {t("expiryLabel")}
+                  </p>
                 </div>
                 <div className="bg-violet-100/75 dark:bg-slate-800/30 rounded-xl p-4 text-center">
-                  <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">Accès complet</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Panel administrateur</p>
+                  <p className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">
+                    {t("fullAccess")}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                    {t("fullAccessLabel")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -617,45 +663,51 @@ export default function AcceptInvitePage() {
           <div className="flex flex-col">
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-indigo-100 dark:border-indigo-900/40 overflow-hidden">
               <div className="h-1.5 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600" />
-              
+
               <div className="p-8">
                 {/* Badge */}
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold border border-indigo-200 dark:border-indigo-800 mb-5">
-                  <TfiEmail className="text-xs" /> Invitation reçue
+                  <TfiEmail className="text-xs" /> {t("invitationReceived")}
                 </div>
 
                 <h1 className="text-3xl font-black text-slate-900 dark:text-white leading-tight mb-2">
-  Vous avez été invité !
-</h1>
+                  {t("youHaveBeenInvited")}
+                </h1>
 
-<p className="text-slate-600 dark:text-slate-400 mb-3">
-  Rejoignez  notre plateforme <span className="font-bold text-slate-800 dark:text-slate-200">NESTHUB</span> en tant qu'administrateur.
-</p>
+                <p className="text-slate-600 dark:text-slate-400 mb-3">
+                  {t("joinAsAdmin").replace("{appName}", "NESTHUB")}
+                </p>
 
-{/* Version avec l'icône à côté de l'email */}
-<div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mb-6">
-  <RiMailOpenLine className="text-indigo-400" size={16} />
- <span className="font-semibold text-indigo-600 dark:text-indigo-400">: {info.email}</span>
-</div>
+                <div className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 mb-6">
+                  <RiMailOpenLine className="text-indigo-400" size={16} />
+                  <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                    {t("emailLabel")} : {info.email}
+                  </span>
+                </div>
 
                 <form className="space-y-4" onSubmit={handleSubmit} noValidate>
                   {/* Prénom et Nom - inline */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                        Prénom
+                        {t("firstName")}
                       </label>
                       <div className="relative">
-                        <RiUserLine className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <RiUserLine
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                          size={16}
+                        />
                         <input
                           type="text"
                           value={firstName}
-                          onChange={(e) => handleChange("firstName", e.target.value)}
+                          onChange={(e) =>
+                            handleChange("firstName", e.target.value)
+                          }
                           onBlur={() => handleBlur("firstName")}
-                          placeholder="prénom"
+                          placeholder={t("firstNamePlaceholder")}
                           className={`w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-900 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all ${
-                            touched.firstName && errors.firstName 
-                              ? "border-red-500 dark:border-red-500" 
+                            touched.firstName && errors.firstName
+                              ? "border-red-500 dark:border-red-500"
                               : "border-slate-200 dark:border-slate-700"
                           }`}
                           disabled={loading}
@@ -671,19 +723,24 @@ export default function AcceptInvitePage() {
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                        Nom
+                        {t("lastName")}
                       </label>
                       <div className="relative">
-                        <RiUserLine className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                        <RiUserLine
+                          className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                          size={16}
+                        />
                         <input
                           type="text"
                           value={lastName}
-                          onChange={(e) => handleChange("lastName", e.target.value)}
+                          onChange={(e) =>
+                            handleChange("lastName", e.target.value)
+                          }
                           onBlur={() => handleBlur("lastName")}
-                          placeholder="nom"
+                          placeholder={t("lastNamePlaceholder")}
                           className={`w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-900 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all ${
-                            touched.lastName && errors.lastName 
-                              ? "border-red-500 dark:border-red-500" 
+                            touched.lastName && errors.lastName
+                              ? "border-red-500 dark:border-red-500"
                               : "border-slate-200 dark:border-slate-700"
                           }`}
                           disabled={loading}
@@ -701,19 +758,24 @@ export default function AcceptInvitePage() {
                   {/* Username */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                      Nom d'utilisateur
+                      {t("username")}
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      <User
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={16}
+                      />
                       <input
                         type="text"
                         value={username}
-                        onChange={(e) => handleChange("username", e.target.value)}
+                        onChange={(e) =>
+                          handleChange("username", e.target.value)
+                        }
                         onBlur={() => handleBlur("username")}
-                        placeholder="nom_utilisateur"
+                        placeholder={t("usernamePlaceholder")}
                         className={`w-full pl-9 pr-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-900 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all ${
-                          touched.username && errors.username 
-                            ? "border-red-500 dark:border-red-500" 
+                          touched.username && errors.username
+                            ? "border-red-500 dark:border-red-500"
                             : "border-slate-200 dark:border-slate-700"
                         }`}
                         disabled={loading}
@@ -730,19 +792,24 @@ export default function AcceptInvitePage() {
                   {/* Mot de passe */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1.5">
-                      Mot de passe
+                      {t("password")}
                     </label>
                     <div className="relative">
-                      <RiLockLine className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                      <RiLockLine
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        size={16}
+                      />
                       <input
                         type={showPassword ? "text" : "password"}
                         value={password}
-                        onChange={(e) => handleChange("password", e.target.value)}
+                        onChange={(e) =>
+                          handleChange("password", e.target.value)
+                        }
                         onBlur={() => handleBlur("password")}
-                        placeholder="Minimum 8 caractères"
+                        placeholder={t("passwordPlaceholder")}
                         className={`w-full pl-9 pr-10 py-2.5 text-sm bg-slate-50 dark:bg-slate-900 border rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all ${
-                          touched.password && errors.password 
-                            ? "border-red-500 dark:border-red-500" 
+                          touched.password && errors.password
+                            ? "border-red-500 dark:border-red-500"
                             : "border-slate-200 dark:border-slate-700"
                         }`}
                         disabled={loading}
@@ -752,7 +819,11 @@ export default function AcceptInvitePage() {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600"
                       >
-                        {showPassword ? <RiEyeLine size={18} /> : <RiEyeOffLine size={18} />}
+                        {showPassword ? (
+                          <RiEyeLine size={18} />
+                        ) : (
+                          <RiEyeOffLine size={18} />
+                        )}
                       </button>
                     </div>
                     {touched.password && errors.password && (
@@ -770,14 +841,23 @@ export default function AcceptInvitePage() {
                       id="terms"
                       className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500 h-4 w-4"
                     />
-                    <label htmlFor="terms" className="text-xs text-slate-500 dark:text-slate-400">
-                      J'accepte les{" "}
-                      <Link href={`/${locale}/terms`} className="text-violet-800 dark:text-indigo-400 hover:underline font-medium">
-                        conditions d'utilisation
+                    <label
+                      htmlFor="terms"
+                      className="text-xs text-slate-500 dark:text-slate-400"
+                    >
+                      {t("acceptTermsPrefix")}{" "}
+                      <Link
+                        href={`/${locale}/terms`}
+                        className="text-violet-800 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        {t("termsOfUse")}
                       </Link>{" "}
-                      et la{" "}
-                      <Link href={`/${locale}/privacy`} className="text-violet-800 dark:text-indigo-400 hover:underline font-medium">
-                        politique de confidentialité
+                      {t("acceptTermsAnd")}{" "}
+                      <Link
+                        href={`/${locale}/privacy`}
+                        className="text-violet-800 dark:text-indigo-400 hover:underline font-medium"
+                      >
+                        {t("privacyPolicy")}
                       </Link>
                     </label>
                   </div>
@@ -791,12 +871,12 @@ export default function AcceptInvitePage() {
                     {loading ? (
                       <>
                         <Loader2 className="animate-spin h-5 w-5" />
-                        Création en cours...
+                        {t("creating")}
                       </>
                     ) : (
                       <>
-                        <MdMarkEmailRead  size={16} />
-                        Accepter l'invitation
+                        <MdMarkEmailRead size={16} />
+                        {t("acceptInvitation")}
                       </>
                     )}
                   </button>
@@ -806,21 +886,24 @@ export default function AcceptInvitePage() {
                 <div className="mt-6 flex items-center justify-center gap-6 text-xs font-medium text-slate-400">
                   <div className="flex items-center gap-1.5">
                     <RiLockLine size={14} />
-                    <span>Chiffrement E2E</span>
+                    <span>{t("e2eEncryption")}</span>
                   </div>
                   <div className="w-px h-4 bg-slate-300 dark:bg-slate-700"></div>
                   <div className="flex items-center gap-1.5">
                     <RiShieldCheckLine size={14} />
-                    <span>Accès sécurisé</span>
+                    <span>{t("secureAccess")}</span>
                   </div>
                 </div>
               </div>
             </div>
 
             <p className="text-center text-xs text-slate-500 dark:text-slate-400 mt-4">
-              Déjà un compte ?{" "}
-              <Link href="/login" className="text-primary dark:text-white font-bold hover:underline">
-                Se connecter
+              {t("alreadyHaveAccount")}{" "}
+              <Link
+                href="/login"
+                className="text-primary dark:text-white font-bold hover:underline"
+              >
+                {t("signIn")}
               </Link>
             </p>
           </div>

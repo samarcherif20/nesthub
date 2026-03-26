@@ -12,7 +12,7 @@ import Alert from "@/components/ui/Alert";
 
 export default function VerifyEmailCodePage() {
   const t = useTranslations("Login");
-  
+
   const {
     code,
     loading,
@@ -131,7 +131,7 @@ export default function VerifyEmailCodePage() {
                     type="text"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    maxLength={1} // ✅ TOUS les champs maxLength={1}
+                    maxLength={1}
                     value={digit}
                     onChange={(e) => handleChange(index, e.target.value)}
                     onKeyDown={(e) => handleKeyDown(index, e)}

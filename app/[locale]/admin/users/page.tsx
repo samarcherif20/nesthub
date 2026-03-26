@@ -113,7 +113,7 @@ export default function AdminUsersPage({
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-10 bg-white dark:bg-slate-900 rounded-2xl shadow-lg">
           <RiUserSharedLine className="text-6xl text-red-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-red-600 mb-2">Accès non autorisé</h1>
+          <h1 className="text-2xl font-bold text-red-600 mb-2">{t("unauthorized")}</h1>
         </div>
       </div>
     );
@@ -131,9 +131,9 @@ export default function AdminUsersPage({
     { value: "TEMPORARILY_SUSPENDED", label: t("filters.status.suspended") },
     { value: "PERMANENTLY_BANNED", label: t("filters.status.banned") },
     { value: "REJECTED", label: t("filters.status.rejected") },
-    { value: "SECURITY_LOCKED", label: "Bloqués (sécurité)" },
-    { value: "MANUALLY_BLOCKED", label: "Bloqués (manuel)" },
-    { value: "INACTIVE", label: "Inactifs" },
+    { value: "SECURITY_LOCKED", label: t("filters.status.security_locked") },
+    { value: "MANUALLY_BLOCKED", label: t("filters.status.manually_blocked") },
+    { value: "INACTIVE", label: t("filters.status.inactive") },
   ];
 
   return (
@@ -154,7 +154,7 @@ export default function AdminUsersPage({
           <button onClick={openActionsHistory}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all text-sm font-medium">
             <IoArrowUndoOutline className="text-base" />
-            Historique
+            {t("actions.history")}
           </button>
           {/* Export button */}
           <div className="relative">
@@ -170,16 +170,16 @@ export default function AdminUsersPage({
                   className="w-full text-left px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center gap-3 transition-colors">
                   <BsFiletypeCsv className="text-emerald-500 text-lg" />
                   <div>
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">CSV</p>
-                    <p className="text-xs text-slate-400">Pour Excel / analyse</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t("export.csv.title")}</p>
+                    <p className="text-xs text-slate-400">{t("export.csv.description")}</p>
                   </div>
                 </button>
                 <button onClick={() => handleExport("pdf")}
                   className="w-full text-left px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center gap-3 border-t border-indigo-50 dark:border-indigo-900/20 transition-colors">
                   <BsFiletypePdf className="text-red-500 text-lg" />
                   <div>
-                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">PDF</p>
-                    <p className="text-xs text-slate-400">Pour impression</p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t("export.pdf.title")}</p>
+                    <p className="text-xs text-slate-400">{t("export.pdf.description")}</p>
                   </div>
                 </button>
               </div>
@@ -209,7 +209,7 @@ export default function AdminUsersPage({
               cls: "text-emerald-600 dark:text-emerald-400",
             },
             {
-              title: "En attente de validation",
+              title: t("stats.pendingValidation"),
               value: stats.pendingValidationUsers || 0,
               Icon: MdOutlinePending,
               grad: "from-amber-400 to-orange-500",
@@ -273,13 +273,13 @@ export default function AdminUsersPage({
                   : "bg-white dark:bg-slate-800 border-indigo-200 dark:border-indigo-800 text-indigo-500 hover:border-indigo-400"
               }`}>
               <IoFilterOutline className="text-sm" />
-              Filtres avancés
+              {t("actions.advancedFilters")}
             </button>
             {/* Reset */}
             <button onClick={resetFilters}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors">
               <IoCloseOutline className="text-sm" />
-              Réinitialiser
+              {t("actions.reset")}
             </button>
           </div>
 
@@ -303,7 +303,7 @@ export default function AdminUsersPage({
                 <input type="number" min="0" max="100" value={filters.minReliability}
                   onChange={e => setFilter("minReliability", e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors"
-                  placeholder="Min 0%" />
+                  placeholder={t("filters.advanced.minReliabilityPlaceholder")} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-1.5">
@@ -312,7 +312,7 @@ export default function AdminUsersPage({
                 <input type="number" min="0" max="100" value={filters.maxFraud}
                   onChange={e => setFilter("maxFraud", e.target.value)}
                   className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors"
-                  placeholder="Max 100%" />
+                  placeholder={t("filters.advanced.maxFraudPlaceholder")} />
               </div>
             </div>
           )}
@@ -337,12 +337,12 @@ export default function AdminUsersPage({
                       onChange={handleSelectAll}
                       className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
                   </th>
-                  {["Utilisateur", "Contact", "Rôle", "Statut", "Vérification", "Fiabilité", "Inscription", "Actions"].map(h => (
+                  {[t("table.headers.user"), t("table.headers.contact"), t("table.headers.role"), t("table.headers.status"), t("table.headers.verification"), t("table.headers.reliability"), t("table.headers.registration"), t("table.headers.actions")].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
                       {h}
                     </th>
                   ))}
-                </tr>
+                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
                 {users.map(user => (
@@ -419,7 +419,7 @@ export default function AdminUsersPage({
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1">
                         <button onClick={e => { e.stopPropagation(); openAddNoteModal(user); }}
-                          title="Ajouter une note"
+                          title={t("actions.addNote")}
                           className="p-1.5 text-indigo-300 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
                           <IoCreateOutline className="text-base" />
                         </button>
@@ -463,30 +463,30 @@ export default function AdminUsersPage({
                   {u.status === "ACTIVE" && (
                     <button onClick={() => { openWarningModal(u); closeMenu(); }}
                       className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-700 dark:text-slate-300 hover:text-amber-600 flex items-center gap-2.5 transition-colors">
-                      <IoWarningOutline className="text-base text-amber-500" />Avertissement
+                      <IoWarningOutline className="text-base text-amber-500" />{t("actions.warn")}
                     </button>
                   )}
                   {(u.status === "TEMPORARILY_SUSPENDED" || u.status === "PERMANENTLY_BANNED") && (
                     <button onClick={() => { openActivateModal(u); closeMenu(); }}
                       className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-700 dark:text-slate-300 hover:text-emerald-600 flex items-center gap-2.5 transition-colors">
-                      <IoCheckmarkCircleOutline className="text-base text-emerald-500" />Réactiver
+                      <IoCheckmarkCircleOutline className="text-base text-emerald-500" />{t("actions.reactivate")}
                     </button>
                   )}
                   {(u.status === "SECURITY_LOCKED" || u.status === "MANUALLY_BLOCKED") && (
                     <button onClick={() => { openActivateModal(u); closeMenu(); }}
                       className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-700 dark:text-slate-300 hover:text-emerald-600 flex items-center gap-2.5 transition-colors">
-                      <IoCheckmarkCircleOutline className="text-base text-emerald-500" />Débloquer
+                      <IoCheckmarkCircleOutline className="text-base text-emerald-500" />{t("actions.unlock")}
                     </button>
                   )}
                   {u.status === "ACTIVE" && (
                     <>
                       <button onClick={() => { openLockUnlockModal(u); closeMenu(); }}
                         className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-700 dark:text-slate-300 hover:text-amber-600 flex items-center gap-2.5 transition-colors border-t border-slate-50 dark:border-slate-800">
-                        <IoLockClosedOutline className="text-base text-amber-500" />Bloquer
+                        <IoLockClosedOutline className="text-base text-amber-500" />{t("actions.lock")}
                       </button>
                       <button onClick={() => { openSuspendModal(u); closeMenu(); }}
                         className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-700 dark:text-slate-300 hover:text-amber-600 flex items-center gap-2.5 transition-colors">
-                        <IoPauseCircleOutline className="text-base text-amber-500" />Suspendre
+                        <IoPauseCircleOutline className="text-base text-amber-500" />{t("actions.suspend")}
                       </button>
                     </>
                   )}
@@ -494,11 +494,11 @@ export default function AdminUsersPage({
                     <>
                       <button onClick={() => { openBanModal(u); closeMenu(); }}
                         className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-700 dark:text-slate-300 hover:text-red-600 flex items-center gap-2.5 transition-colors border-t border-slate-50 dark:border-slate-800">
-                        <IoBanOutline className="text-base text-red-500" />Bannir
+                        <IoBanOutline className="text-base text-red-500" />{t("actions.ban")}
                       </button>
                       <button onClick={() => { openEscalateModal(u); closeMenu(); }}
                         className="w-full text-left px-4 py-2.5 text-sm hover:bg-violet-50 dark:hover:bg-violet-900/20 text-slate-700 dark:text-slate-300 hover:text-violet-600 flex items-center gap-2.5 transition-colors">
-                        <IoArrowUpCircleOutline className="text-base text-violet-500" />Escalade
+                        <IoArrowUpCircleOutline className="text-base text-violet-500" />{t("actions.escalate")}
                       </button>
                     </>
                   )}

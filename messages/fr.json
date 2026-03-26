@@ -12,7 +12,88 @@
     "admin": "Administration",
     "logout": "Déconnexion"
   },
+
+  "AcceptInvite": {
+    "loading": "Vérification de votre invitation...",
+    "invalidLink": "Lien invalide",
+    "noToken": "Aucun token d'invitation fourni.",
+    "backToHome": "Retour à l'accueil",
+    "alreadyUsed": "Invitation déjà utilisée",
+    "expired": "Lien expiré",
+    "alreadyUsedMessage": "Cette invitation a déjà été acceptée. Connectez-vous normalement.",
+    "expiredMessage": "Les liens d'invitation sont valides 48h. Celui-ci a expiré.",
+    "invalidMessage": "Ce lien d'invitation est invalide ou introuvable.",
+    "newLink": "Nouveau lien",
+    "login": "Se connecter",
+    "needHelp": "Besoin d'aide ? Contactez votre administrateur.",
+    "successMessage": "Invitation acceptée avec succès ! Redirection...",
+    "successExisting": "Droits admin ajoutés",
+    "successNew": "Compte créé",
+    "welcomeExisting": "Félicitations ! 🎉",
+    "welcomeNew": "Bienvenue dans l'équipe ! 🎉",
+    "successExistingMessage": "Votre compte {email} a maintenant les droits administrateur.",
+    "successNewMessage": "Votre compte administrateur {email} est prêt.",
+    "redirecting": "Redirection vers le tableau de bord...",
+    "accessAdmin": "Accéder au panel admin",
+    "invitationReceived": "Invitation reçue",
+    "existingAccountDetected": "Compte existant détecté",
+    "existingAccountMessage": "Vous avez déjà un compte. Acceptez l'invitation pour obtenir les droits administrateur.",
+    "invitedBy": "Invitation de",
+    "acceptAndGetRights": "Accepter et obtenir les droits admin",
+    "loginFirst": "Se connecter d'abord",
+    "youHaveBeenInvited": "Vous avez été invité !",
+    "joinAsAdmin": "Rejoignez notre plateforme {appName} en tant qu'administrateur.",
+    "emailLabel": "Email",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "username": "Nom d'utilisateur",
+    "password": "Mot de passe",
+    "firstNameRequired": "Le prénom est requis",
+    "firstNameMinLength": "Le prénom doit contenir au moins 2 caractères",
+    "lastNameRequired": "Le nom est requis",
+    "lastNameMinLength": "Le nom doit contenir au moins 2 caractères",
+    "usernameRequired": "Le nom d'utilisateur est requis",
+    "usernameInvalid": "Le nom d'utilisateur doit contenir 3-20 caractères (lettres, chiffres, _)",
+    "passwordRequired": "Le mot de passe est requis",
+    "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères",
+    "passwordUppercase": "Le mot de passe doit contenir au moins une majuscule",
+    "passwordLowercase": "Le mot de passe doit contenir au moins une minuscule",
+    "passwordNumber": "Le mot de passe doit contenir au moins un chiffre",
+    "firstNamePlaceholder": "prénom",
+    "lastNamePlaceholder": "nom",
+    "usernamePlaceholder": "nom_utilisateur",
+    "passwordPlaceholder": "Minimum 8 caractères",
+    "acceptTermsPrefix": "J'accepte les",
+    "acceptTermsAnd": "et la",
+    "termsOfUse": "conditions d'utilisation",
+    "privacyPolicy": "politique de confidentialité",
+    "creating": "Création en cours...",
+    "acceptInvitation": "Accepter l'invitation",
+    "e2eEncryption": "Chiffrement E2E",
+    "secureAccess": "Accès sécurisé",
+    "alreadyHaveAccount": "Déjà un compte ?",
+    "signIn": "Se connecter",
+    "roleAssigned": "Rôle assigné",
+    "adminRole": "Administrateur NESTHUB",
+    "invitationFrom": "Invitation de :",
+    "autoVerification": "Vérification automatique",
+    "autoVerificationDesc": "En tant qu'administrateur, votre compte sera vérifié immédiatement.",
+    "expiryTime": "48 heures",
+    "expiryLabel": "Expiration du lien",
+    "fullAccess": "Accès complet",
+    "fullAccessLabel": "Panel administrateur"
+  },
+
   "Login": {
+    "newCodeSent": "Un nouveau code a été envoyé !",
+    "successLogin": "Connexion réussie ! Redirection en cours...",
+    "redirectGoogle": "Redirection vers Google...",
+    "redirectApple": "Redirection vers Apple...",
+    "redirectFacebook": "Redirection vers Facebook...",
+    "errorGoogle": "Erreur lors de la connexion avec Google",
+    "errorApple": "Erreur lors de la connexion avec Apple",
+    "errorFacebook": "Erreur lors de la connexion avec Facebook",
+    "optional": "(Optionnel)",
     "welcome": "Bienvenue !",
     "subtitle": "Connectez-vous pour accéder à votre espace sécurisé.",
     "signUpTitle": "Créer un compte",
@@ -95,7 +176,7 @@
     "2faAlt": "Vérification à deux facteurs",
     "back": "Retour"
   },
-  "admin": {
+    "admin": {
     "dashboard": "Tableau de bord",
     "users": "Utilisateurs",
     "properties": "Propriétés",
@@ -122,6 +203,13 @@
     "cancel": "Annuler",
     "invitationDesAdmins": "Invitation des admins",
     "usersManagement": {
+      "unauthorized": "Accès non autorisé",
+      "stats": {
+        "totalUsers": "Utilisateurs totaux",
+        "newUsers30d": "Nouveaux utilisateurs (30 jours)",
+        "pendingValidation": "En attente de validation",
+        "verifiedIdentity": "Identité vérifiée"
+      },
       "page": {
         "title": "Gestion des Utilisateurs",
         "description": "Gérez tous les utilisateurs de la plateforme"
@@ -129,45 +217,54 @@
       "actions": {
         "export": "Exporter Données",
         "reset": "Réinitialiser les filtres",
+        "advancedFilters": "Filtres avancés",
         "view": "Voir profil",
         "suspend": "Suspendre",
         "ban": "Bannir",
-        "activate": "Activer"
+        "activate": "Activer",
+        "warn": "Avertissement",
+        "reactivate": "Réactiver",
+        "unlock": "Débloquer",
+        "lock": "Bloquer",
+        "escalate": "Escalade",
+        "history": "Historique",
+        "addNote": "Ajouter une note"
       },
       "filters": {
         "searchPlaceholder": "Rechercher par nom, email, téléphone...",
         "role": {
-          "label": "Rôle",
           "all": "Tous les rôles",
           "admin": "Admin",
           "property_owner": "Propriétaire",
           "tenant": "Locataire"
         },
         "status": {
-          "label": "Statut",
           "all": "Tous les statuts",
           "active": "Actif",
           "pending": "En attente",
           "suspended": "Suspendu",
           "banned": "Banni",
           "rejected": "Rejeté",
-          "inactive": "Inactif"
+          "security_locked": "Bloqués (sécurité)",
+          "manually_blocked": "Bloqués (manuel)",
+          "inactive": "Inactifs"
         },
-        "verification": {
-          "label": "Vérification",
-          "all": "Toutes",
-          "verified": "Vérifié",
-          "pending": "En attente",
-          "rejected": "Rejeté"
-        },
-        "advanced": {
-          "title": "Filtres avancés",
-          "dateRange": "Période d'inscription",
-          "minReliability": "Score fiabilité minimum",
-          "maxFraud": "Score fraude maximum",
-          "minReliabilityPlaceholder": "≥ 50",
-          "maxFraudPlaceholder": "≤ 30"
-        }
+        
+      "advanced": {
+        "title": "Filtres avancés",
+        "dateRange": "Période d'inscription",
+        "minReliability": "Score fiabilité minimum",
+        "maxFraud": "Score fraude maximum",
+        "minReliabilityPlaceholder": "≥ 50",
+        "maxFraudPlaceholder": "≤ 30"
+      }
+      },
+      "verification": {
+        "label": "Vérification",
+        "all": "Toutes",
+        "verified": "Vérifié",
+        "pending": "En attente",
+        "rejected": "Rejeté"
       },
       "table": {
         "headers": {
@@ -184,16 +281,25 @@
           "id": "ID"
         }
       },
-      "stats": {
-        "totalUsers": "Utilisateurs totaux",
-        "newUsers30d": "Nouveaux (30j)",
-        "activeUsers": "Actifs",
-        "pendingUsers": "En attente",
-        "suspendedUsers": "Suspendus",
-        "bannedUsers": "Bannis",
-        "verifiedIdentity": "Vérifiés",
-        "pendingApprovals": "En attente vérif",
-        "averageReliability": "Fiabilité moyenne"
+      "totalUsers": "Utilisateurs totaux",
+      "newUsers30d": "Nouveaux (30j)",
+      "activeUsers": "Actifs",
+      "pendingUsers": "En attente",
+      "suspendedUsers": "Suspendus",
+      "bannedUsers": "Bannis",
+      "verifiedIdentity": "Vérifiés",
+      "pendingApprovals": "En attente vérif",
+      "averageReliability": "Fiabilité moyenne",
+      "pendingValidation": "En attente de validation",
+      "export": {
+        "csv": {
+          "title": "CSV",
+          "description": "Pour Excel / analyse"
+        },
+        "pdf": {
+          "title": "PDF",
+          "description": "Pour impression"
+        }
       },
       "badges": {
         "verified": "Vérifié",
@@ -823,7 +929,7 @@
     "privacyDescription": "Votre identité réelle est confidentielle et ne sera pas partagée publiquement.",
     "personalInfoTitle": "Informations Personnelles",
     "firstName": "Prénom réel",
-    "firstNamePlaceholder": "ex:",
+    "firstNamePlaceholder": "ex: Mohamed",
     "lastName": "Nom réel",
     "lastNamePlaceholder": "ex: Ben hssin",
     "phoneNumber": "Numéro de téléphone",
@@ -842,7 +948,7 @@
     "errors": {
       "chooseRole": "Veuillez choisir un rôle (Propriétaire ou Locataire)",
       "usernameRequired": "Veuillez entrer un nom d'utilisateur",
-      "usernameInvalid": "Le nom d'utilisateur doit contenir entre 3 et 20 caractères",
+      "usernameInvalid": "Le nom d'utilisateur doit contenir entre 3 et 20 caractères (lettres et chiffres uniquement)",
       "emailRequired": "Veuillez entrer une adresse email",
       "emailInvalid": "Veuillez entrer une adresse email valide",
       "passwordRequired": "Veuillez entrer un mot de passe",
@@ -855,8 +961,284 @@
       "emailAlreadyExists": "Cet email est déjà utilisé",
       "usernameAlreadyExists": "Ce nom d'utilisateur est déjà pris",
       "phoneAlreadyExists": "Ce numéro de téléphone est déjà utilisé",
-      "phoneTooShort": "Le numéro doit contenir au moins 8 chiffres"
+      "phoneTooShort": "Le numéro doit contenir au moins 8 chiffres",
+      "phoneRequired": "Veuillez entrer votre numéro de téléphone",
+      "userIdNotFound": "ID utilisateur non trouvé",
+      "whatsappSendFailed": "Échec de l'envoi du code WhatsApp",
+      "invalidCodeLength": "Code à 6 chiffres requis",
+      "missingInfo": "Informations manquantes",
+      "clerkNotInitialized": "Clerk non initialisé",
+      "signupIdMissing": "Impossible de récupérer l'ID d'inscription",
+      "userCreationFailed": "Erreur lors de la création du compte",
+      "firstNameRequired": "Le prénom est requis",
+      "lastNameRequired": "Le nom est requis"
+    },
+    "documentsStep": {
+      "title": "Vérification d'identité",
+      "subtitle": "Étape 4 sur 4 : Téléchargez vos documents officiels (OCR automatique)",
+      "identityDocument": "Pièce d'identité",
+      "cinFront": "CIN Recto",
+      "cinBack": "CIN Verso",
+      "frontSide": "Face avant",
+      "backSide": "Face arrière",
+      "maxSize": "Max 5MB",
+      "formats": "JPG, PNG, PDF",
+      "photoAdded": "Photo ajoutée",
+      "chooseFile": "Choisir un fichier",
+      "iaOcr": "IA & OCR",
+      "ocrDescription": "Notre système analysera instantanément votre document pour vérifier votre identité.",
+      "profilePhoto": "Photo de profil",
+      "faceVisible": "Visage clairement visible",
+      "security": "Sécurité",
+      "banking": "Bancaire",
+      "compliant": "Conforme",
+      "cloud": "Cloud",
+      "sovereign": "Souverain",
+      "previousStep": "Étape précédente",
+      "finish": "Terminer"
+    },
+    "ocrConfirm": {
+      "title": "Vérification des données",
+      "description": "Confirmez les informations extraites par OCR",
+      "infoBanner": "Les champs surlignés ont été extraits automatiquement. Vérifiez qu'ils correspondent à votre document.",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "birthDate": "Date de naissance",
+      "cinNumber": "Numéro CIN",
+      "securityBanner": "Vos données sont chiffrées et stockées selon les normes RGPD.",
+      "modify": "Modifier",
+      "confirmIdentity": "Confirmer l'identité"
+    },
+    "welcomeModal": {
+      "title": "Bienvenue sur NESTHUB !",
+      "message": "Votre compte a été créé avec succès.",
+      "submessage": "Complétez votre profil pour augmenter votre score de confiance et accéder à toutes les fonctionnalités.",
+      "emailVerified": "Email vérifié",
+      "whatsappVerified": "WhatsApp vérifié",
+      "cinPending": "CIN en attente",
+      "completeProfile": "Compléter mon profil",
+      "redirecting": "Redirection..."
+    },
+
+    "checking": "Vérification...",
+    "whatsappStep": {
+      "title": "Vérification WhatsApp",
+      "subtitle": "Étape 3 sur 4 : Validez votre numéro de téléphone",
+      "codeSentTitle": "Code envoyé par WhatsApp",
+      "codeSentMessage": "Nous avons envoyé un code à 6 chiffres au",
+      "verificationCode": "Code de vérification",
+      "checking": "Vérification...",
+      "enterCodeInstruction": "Entrez les 6 chiffres puis appuyez sur Entrée",
+      "back": "Retour",
+      "sending": "Envoi",
+      "resendCode": "Renvoyer le code"
+    },
+
+    "toasts": {
+      "emailVerified": "Email vérifié !",
+      "continueRegistration": "Continuez votre inscription.",
+      "linkExpired": "Lien expiré",
+      "linkExpiredDescription": "Le lien de vérification a expiré. Veuillez recommencer.",
+      "versoAdded": "Verso ajouté !",
+      "versoProcessed": "La face arrière a été traitée.",
+      "ocrSuccess": "OCR terminé !",
+      "ocrSuccessDescription": "Les informations ont été extraites avec succès.",
+      "ocrError": "Erreur OCR",
+      "ocrErrorDescription": "Impossible d'extraire les informations. Remplissez manuellement."
+    },
+    "whatsapp": {
+      "codeSent": "Un code de vérification a été envoyé sur WhatsApp au +216 {phone}"
+    },
+
+    "alerts": {
+      "verificationEmailSent": "Un lien de vérification a été envoyé à {email}",
+      "emailSent": "Email envoyé ! ",
+      "codeSentTitle": "Code envoyé !",
+      "gotCode": "J'ai reçu le code"
+    },
+
+    "acceptTerms": {
+      "prefix": "En continuant j'accepte les",
+      "terms": "conditions d'utilisation",
+      "and": "et la",
+      "privacy": "politique de confidentialité",
+      "suffix": ". Veuillez les lire attentivement. *"
     }
+  },
+
+ 
+  "VerifyCatch": {
+    "title": "Vérification en cours",
+    "description": "Veuillez patienter pendant que nous vérifions votre compte..."
+  },
+
+  "AdminInvitations": {
+    "title": "Gestion des invitations",
+    "description": "Invitez de nouveaux administrateurs — liens sécurisés valides 48h",
+    "inviteAdmin": "Inviter un administrateur",
+    "secureLink": "Lien sécurisé · expire dans 48h",
+    "newAdminEmail": "Email du nouvel admin",
+    "responsibility": "Responsabilité",
+    "infoText": "Un lien unique sera envoyé par email et expirera dans",
+    "sending": "Envoi en cours",
+    "generateInvitation": "Générer l'invitation",
+    "activeLinks": "Liens actifs",
+    "expired": "Expirées",
+    "revoked": "Révoquées",
+    "email": "Email",
+    "expiresIn": "Expire dans",
+    "status": "Statut",
+    "actions": "Actions",
+    "accepted": "Acceptée",
+    "active": "Active",
+    "copyLink": "Copier le lien",
+    "copied": "Copié !",
+    "revoke": "Révoquer",
+    "resend": "Renvoyer",
+    "noInvitations": "Aucune invitation en cours",
+    "createInvitationHint": "Utilisez le formulaire à gauche pour en créer une",
+    "unauthorized": "Accès non autorisé",
+    "emailRequired": "L'email est requis",
+    "emailInvalid": "Email invalide",
+    "invitationSent": "Invitation envoyée à {email} ✓",
+    "invitationRevoked": "Invitation révoquée",
+    "revokeError": "Erreur lors de la révocation",
+    "invitationResent": "Invitation renvoyée à {email} ✓",
+    "currentInvitations": "Invitations en cours",
+    "realTimeExpiry": "Suivi de l'expiration en temps réel",
+    "expiryApplication": "Application de l'expiration 48h",
+    "securityText": "NESTHUB's zero-trust invitation system generates transient access tokens. If an invitee does not complete registration within the 48-hour window, the encrypted token is automatically purged from the gateway cache. This prevents long-standing unauthorized link reuse.",
+    "autoPurge": "Purge auto",
+    "limitedAccess": "Accès limité",
+    "policy": "Politique"
+  },
+  
+  "AdminContent": {
+    "title": "Gestion du contenu statique",
+    "description": "Modifier et gérer vos pages juridiques et informatives.",
+    "unauthorized": "Accès non autorisé",
+    "adminRequired": "Vous devez être administrateur.",
+    "allPages": "Toutes",
+    "published": "Publiées",
+    "drafts": "Brouillons",
+    "noPagesFound": "Aucune page trouvée",
+    "pageTitlePlaceholder": "Titre de la page…",
+    "editorPlaceholder": "Écrivez votre contenu ici…",
+    "restoring": "Restauration en cours…",
+    "history": "Historique",
+    "draft": "Brouillon",
+    "publish": "Publier",
+    "cancel": "Annuler",
+    "selectPage": "Sélectionnez une page",
+    "selectPageHint": "Cliquez sur une page à gauche pour commencer l'édition",
+    "versionHistory": "Historique des versions",
+    "versionHistoryDesc": "Consultez et restaurez les versions précédentes",
+    "currentVersion": "Version actuelle",
+    "versionRestoredBadge": "Version restaurée",
+    "previousVersions": "Versions précédentes ({count})",
+    "noPreviousVersions": "Aucune version précédente",
+    "restored": "Restaurée",
+    "titleLabel": "Titre",
+    "contentLabel": "Contenu",
+    "contentModified": "modifié",
+    "restoreThisVersion": "Restaurer cette version",
+    "showLess": "Voir moins",
+    "showAll": "Voir tout ({count} de plus)",
+    "deletePage": "Supprimer la page",
+    "deleteConfirmation": "Cette action est irréversible.",
+    "delete": "Supprimer",
+    "pagePublished": "Page publiée avec succès ✓",
+    "draftSaved": "Brouillon enregistré ✓",
+    "saveError": "Erreur lors de l'enregistrement",
+    "pageDeleted": "Page supprimée avec succès",
+    "deleteError": "Erreur lors de la suppression",
+    "versionRestored": "Version {version} restaurée avec succès ✓",
+    "restoreError": "Erreur lors de la restauration"
+  },
+  
+  "VerificationDetail": {
+    "unauthorized": "Accès non autorisé",
+    "requestNotFound": "Demande non trouvée",
+    "queue": "File d'attente",
+    "request": "Demande",
+    "pending": "En attente de validation",
+    "documentsProvided": "Documents fournis",
+    "cinFront": "Recto CIN",
+    "cinBack": "Verso CIN",
+    "download": "Télécharger",
+    "memberSince": "Membre depuis",
+    "ocrData": "Données extraites (OCR)",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "cinNumber": "Numéro CIN",
+    "dateOfBirth": "Date naissance",
+    "placeOfBirth": "Lieu naissance",
+    "nationality": "Nationalité",
+    "expiryDate": "Date expiration",
+    "address": "Adresse",
+    "finalizeVerification": "Finaliser la vérification",
+    "internalNote": "Note interne (optionnelle)",
+    "internalNotePlaceholder": "Ajouter une note pour l'audit...",
+    "validate": "VALIDER",
+    "reject": "REJETER",
+    "processing": "Traitement...",
+    "rejectionReason": "Motif de rejet",
+    "rejectionPlaceholder": "Document flou, expiré, données non concordantes...",
+    "confirmRejection": "Confirmer le rejet",
+    "rejectionReasons": {
+      "blurry": "Document flou",
+      "expired": "CIN expirée",
+      "nameMismatch": "Nom différent",
+      "photoNotCompliant": "Photo non conforme"
+    }
+  },
+  
+  "Verifications": {
+    "unauthorized": "Accès non autorisé",
+    "adminRequired": "Vous devez être administrateur.",
+    "title": "File de vérification",
+    "description": "Gérez les demandes de validation d'identité",
+    "searchPlaceholder": "Rechercher un utilisateur...",
+    "refresh": "Actualiser",
+    "processRequest": "Traiter la demande",
+    "justNow": "À l'instant",
+    "minutesAgo": "Il y a {count} min",
+    "oneHourAgo": "Il y a 1 heure",
+    "hoursAgo": "Il y a {count} heures",
+    "daysAgo": "Il y a {count} jours",
+    "stats": {
+      "pending": "En attente",
+      "processedToday": "Traités ajd",
+      "documents": "dossiers",
+      "averageTime": "Temps moyen",
+      "minutes": "min"
+    },
+    "table": {
+      "user": "Utilisateur",
+      "role": "Rôle",
+      "date": "Date",
+      "status": "Statut",
+      "action": "Action"
+    },
+    "role": {
+      "owner": "PROPRIÉTAIRE",
+      "tenant": "LOCATAIRE"
+    },
+    "status": {
+      "pending": "En attente"
+    },
+    "empty": {
+      "title": "Toutes les vérifications sont terminées !",
+      "description": "Félicitations, votre file d'attente est vide. Vous serez notifié dès qu'un nouveau propriétaire soumettra ses documents.",
+      "backToDashboard": "Retour au tableau de bord",
+      "viewHistory": "Voir l'historique"
+    }
+  },
+  
+  "SSOCallback": {
+    "connecting": "Connexion en cours, veuillez patienter...",
+    "pleaseWait": "Vérification de vos informations",
+    "redirecting": "Redirection en cours..."
   },
   
   "ForgotPassword": {
@@ -866,17 +1248,33 @@
     "emailPlaceholder": "votre@email.com",
     "sendResetLink": "Envoyer le lien",
     "sending": "Envoi en cours...",
-    "backToLogin": "Retour à la connexion"
+    "backToLogin": "Retour à la connexion",
+    "securityBadge": "Chiffrement AES-256 • Conforme RGPD",
+    "legal": "Mentions légales",
+    "privacy": "Confidentialité"
   },
   "ResetPassword": {
     "title": "Réinitialiser le mot de passe",
     "subtitle": "Créez un nouveau mot de passe sécurisé",
+    "subtitleWithEmail": "Créez un nouveau mot de passe pour {email}",
+    "successTitle": "Mot de passe modifié !",
+    "successMessage": "Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la page de connexion.",
     "newPasswordLabel": "Nouveau mot de passe",
     "newPasswordPlaceholder": "••••••••",
     "confirmPasswordLabel": "Confirmer le mot de passe",
     "confirmPasswordPlaceholder": "••••••••",
     "resetPassword": "Réinitialiser",
     "resetting": "Réinitialisation...",
-    "backToLogin": "Retour à la connexion"
+    "backToLogin": "Retour à la connexion",
+    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+    "securityBadge": "Chiffrement AES-256 • Conforme RGPD",
+    "legal": "Mentions légales",
+    "privacy": "Confidentialité"
   }
 }
+  
+
+
+
+
+

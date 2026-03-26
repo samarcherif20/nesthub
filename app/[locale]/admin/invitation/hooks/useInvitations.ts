@@ -31,46 +31,73 @@ export interface PaginationInfo {
 export function useInvitations() {
   const { getToken } = useAuth();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [stats, setStats] = useState<InvitationStats>({ active: 0, expired: 0, revoked: 0 });
-  const [pagination, setPagination] = useState<PaginationInfo>({ page: 1, limit: 10, total: 0, totalPages: 1 });
+  const [stats, setStats] = useState<InvitationStats>({
+    active: 0,
+    expired: 0,
+    revoked: 0,
+  });
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1,
+  });
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const fetchInvitations = async (page = 1) => {
     try {
       const token = await getToken({ template: "my-app-template" });
-      const response = await fetch(`/api/admin/invitations?page=${page}&limit=10`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await fetch(
+        `/api/admin/invitations?page=${page}&limit=10`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (!response.ok) throw new Error();
       const data = await response.json();
 
-      const invs: Invitation[] = Array.isArray(data.invitations) ? data.invitations : [];
+      const invs: Invitation[] = Array.isArray(data.invitations)
+        ? data.invitations
+        : [];
       setInvitations(invs);
 
       setStats({
-        active: invs.filter(i => i.status === "active" || i.status === "pending").length,
-        expired: invs.filter(i => i.status === "expired").length,
-        revoked: invs.filter(i => i.status === "revoked").length,
+        active: invs.filter(
+          (i) => i.status === "active" || i.status === "pending",
+        ).length,
+        expired: invs.filter((i) => i.status === "expired").length,
+        revoked: invs.filter((i) => i.status === "revoked").length,
       });
 
       setPagination(
         data.pagination && typeof data.pagination.total === "number"
           ? data.pagination
-          : { page: 1, limit: 10, total: invs.length, totalPages: Math.max(1, Math.ceil(invs.length / 10)) }
+          : {
+              page: 1,
+              limit: 10,
+              total: invs.length,
+              totalPages: Math.max(1, Math.ceil(invs.length / 10)),
+            },
       );
     } catch (error) {
       console.error("Erreur chargement invitations:", error);
     }
   };
 
-  const createInvitation = async (email: string, role: string): Promise<boolean> => {
+  const createInvitation = async (
+    email: string,
+    role: string,
+  ): Promise<boolean> => {
     setSubmitting(true);
     try {
       const token = await getToken({ template: "my-app-template" });
       const response = await fetch("/api/admin/invitations", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ email, role }),
       });
       const data = await response.json();
@@ -100,13 +127,19 @@ export function useInvitations() {
     await fetchInvitations(pagination.page);
   };
 
-  const resendInvitation = async (email: string, role: string): Promise<void> => {
+  const resendInvitation = async (
+    email: string,
+    role: string,
+  ): Promise<void> => {
     setSubmitting(true);
     try {
       const token = await getToken({ template: "my-app-template" });
       const response = await fetch("/api/admin/invitations", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({ email, role }),
       });
       const data = await response.json();

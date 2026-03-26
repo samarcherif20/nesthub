@@ -5,28 +5,28 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     console.log("📦 Données reçues:", body);
-    
-    const { userId, email, username, role } = body;
+
+    const { userId, email, username, role, preferredLocale } = body;
 
     // Vérifier si l'email existe déjà
     const existingEmail = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
     });
     if (existingEmail) {
       return NextResponse.json(
         { error: "Cet email est déjà utilisé" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Vérifier si le username existe déjà
     const existingUsername = await prisma.user.findUnique({
-      where: { username }  // ← Maintenant ça marchera !
+      where: { username }, // ← Maintenant ça marchera !
     });
     if (existingUsername) {
       return NextResponse.json(
         { error: "Ce nom d'utilisateur est déjà pris" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -38,7 +38,8 @@ export async function POST(req: Request) {
       email,
       username,
       role: userRole,
-      updatedAt: new Date()
+      preferredLocale: preferredLocale || "fr",
+      updatedAt: new Date(),
     });
 
     // Créer l'utilisateur
@@ -46,18 +47,18 @@ export async function POST(req: Request) {
       data: {
         clerkId: userId,
         email: email,
-        username: username,      // ← MAINTENANT LE CHAMP EXISTE !
+        username: username, // ← MAINTENANT LE CHAMP EXISTE !
         firstName: null,
         lastName: null,
         phoneNumber: null,
         role: userRole,
+        preferredLocale: preferredLocale || "fr", // ← ADD THIS LINE
         updatedAt: new Date(),
       },
     });
 
     console.log("✅ Utilisateur créé:", user);
     return NextResponse.json({ success: true, user });
-    
   } catch (error: any) {
     console.error("❌ ERREUR COMPLÈTE:", error);
     if (error.code) {
@@ -65,14 +66,14 @@ export async function POST(req: Request) {
       console.error("📌 Message:", error.message);
       console.error("📌 Meta:", error.meta);
     }
-    
+
     return NextResponse.json(
-      { 
-        error: "Erreur serveur", 
+      {
+        error: "Erreur serveur",
         details: error.message,
-        code: error.code 
+        code: error.code,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
