@@ -11,6 +11,7 @@ enum UserRole {
   ADMIN
   PROPERTY_OWNER
   TENANT
+  BOTH
 }
 
 enum AccountStatus {
@@ -71,11 +72,59 @@ model User {
   reportsReceived      UserReport[]          @relation("ReportedUser")
   reportsMade          UserReport[]          @relation("Reporter")
   stats                UserStats?
-  verificationRequests VerificationRequest[]  @relation("UserVerificationRequests")
-  verifiedRequests     VerificationRequest[]  @relation("AdminReviewedVerifications")
-  verificationActions  VerificationAction[]   @relation("AdminVerificationActions")
+  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
+  verifiedRequests     VerificationRequest[] @relation("AdminReviewedVerifications")
+  verificationActions  VerificationAction[]  @relation("AdminVerificationActions")
   otpCodes             OtpCode[]
   identityVerification IdentityVerification?
+
+  // ============================================
+  // RELATIONS SPRINT 2
+  // ============================================
+
+  // Annonces (Listing)
+  listings Listing[] @relation("UserListings")
+
+  // Réservations
+  tenantBookings Booking[] @relation("TenantBookings")
+  ownerBookings  Booking[] @relation("OwnerBookings")
+
+  // Co-locataires
+  tenantCoTenants CoTenant[] @relation("TenantCoTenants")
+  coTenantInvites CoTenant[] @relation("CoTenantUsers")
+
+  // Messages
+  sentMessages     BookingMessage[] @relation("SentMessages")
+  receivedMessages BookingMessage[] @relation("ReceivedMessages")
+
+  // Favoris
+  favorites     Favorite[]
+  favoriteLists FavoriteList[]
+
+  // Alertes
+  searchAlerts SearchAlert[]
+
+  // Notifications
+  notifications Notification[]
+
+  // Avis
+  reviewsWritten  Review[] @relation("ReviewsWritten")
+  reviewsReceived Review[] @relation("ReviewsReceived")
+
+  // Signalements
+  listingReports ListingReport[] @relation("ListingReports")
+
+  // Litiges
+  openedDisputes   Dispute[] @relation("OpenedDisputes")
+  assignedDisputes Dispute[] @relation("AssignedDisputes")
+
+  // Messages litiges
+  disputeMessages DisputeMessage[] @relation("DisputeMessages")
+
+  // Historique
+  searchHistory      SearchHistory[]
+  mapViews           MapView[]
+  listingComparisons ListingComparison[]
 
   @@index([email])
   @@index([status])
@@ -86,13 +135,13 @@ model User {
 }
 
 model PasswordResetToken {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   email     String
-  token     String   @unique
+  token     String    @unique
   expiresAt DateTime
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
   usedAt    DateTime?
-  
+
   @@index([email])
   @@index([token])
 }
@@ -131,7 +180,7 @@ model IdentityVerification {
 
 model AdminInvitation {
   id         String    @id @default(uuid())
-  email      String    
+  email      String
   token      String    @unique
   invitedBy  String
   role       UserRole  @default(ADMIN)
@@ -170,10 +219,10 @@ model VerificationRequest {
   processedAt      DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  
-  user         User @relation("UserVerificationRequests", fields: [userId], references: [id], onDelete: Cascade)
-  validatedBy  User? @relation("AdminReviewedVerifications", fields: [reviewedBy], references: [id])
-  
+
+  user        User  @relation("UserVerificationRequests", fields: [userId], references: [id], onDelete: Cascade)
+  validatedBy User? @relation("AdminReviewedVerifications", fields: [reviewedBy], references: [id])
+
   actions VerificationAction[]
 
   @@index([userId])
@@ -193,9 +242,9 @@ model VerificationAction {
   adminComment   String?
   rejectionMotif String?
   createdAt      DateTime           @default(now())
-  
+
   request VerificationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  admin   User                 @relation("AdminVerificationActions", fields: [performedBy], references: [id])
+  admin   User                @relation("AdminVerificationActions", fields: [performedBy], references: [id])
 
   @@index([requestId])
   @@index([performedBy])
@@ -378,4 +427,706 @@ model EmailLog {
   @@index([userId])
   @@index([createdAt])
   @@map("email_logs")
+}
+
+// ============================================
+// SPRINT 2 - MARKETPLACE ENGINE
+// ============================================
+
+// ============================================
+// ENUMS SPRINT 2
+// ============================================
+
+enum ListingType {
+  APARTMENT
+  VILLA
+  STUDIO
+  DUPLEX
+  HOUSE
+  ROOM
+}
+
+enum ListingStatus {
+  DRAFT
+  PENDING_REVIEW
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+  SUSPENDED
+}
+
+enum RentalType {
+  SHORT_TERM
+  LONG_TERM
+  BOTH
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum BookingStatus {
+  PENDING
+  ACCEPTED
+  PAID
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  COMPLETED
+  CANCELLED
+  REJECTED
+  EXPIRED
+  DISPUTED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+  HELD
+  RELEASED
+}
+
+enum NotificationType {
+  BOOKING_REQUEST
+  BOOKING_ACCEPTED
+  BOOKING_REJECTED
+  BOOKING_CANCELLED
+  PAYMENT_RECEIVED
+  PAYMENT_REFUNDED
+  NEW_MESSAGE
+  NEW_REVIEW
+  CHECKIN_REMINDER
+  CHECKOUT_REMINDER
+  LISTING_ACTIVATED
+  LISTING_SUSPENDED
+  SEARCH_ALERT
+  FAVORITE_PRICE_CHANGE
+  SYSTEM_ALERT
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+  PUSH
+}
+
+enum SearchAlertFrequency {
+  INSTANT
+  DAILY
+  WEEKLY
+}
+
+// ============================================
+// MODELS SPRINT 2
+// ============================================
+
+model Listing {
+  id          String        @id @default(cuid())
+  title       String        @db.VarChar(100)
+  slug        String        @unique
+  description String?       @db.Text
+  type        ListingType   @default(APARTMENT)
+  status      ListingStatus @default(DRAFT)
+
+  // Localisation
+  governorate  String
+  delegation   String
+  street       String?
+  neighborhood String?
+  postalCode   String?
+  latitude     Float?
+  longitude    Float?
+
+  // Caractéristiques
+  rooms       Int     @default(1)
+  bathrooms   Int     @default(1)
+  maxGuests        Int            @default(2)  // ✅ AJOUTER CETTE LIGNE
+  surfaceArea Int?
+  floorNumber Int?
+  hasElevator Boolean @default(false)
+
+  // Prix
+  rentalType      RentalType @default(SHORT_TERM)
+  pricePerNight   Float?
+  pricePerMonth   Float?
+  securityDeposit Float?
+
+  // Équipements et règles
+  equipment   Json?
+  services    Json?
+  houseRules  Json?
+  customRules String?
+
+  // Statistiques
+  viewCount      Int    @default(0)
+  bookingCount   Int    @default(0)
+  favoriteCount  Int    @default(0)
+  conversionRate Float? @default(0)
+
+  // Flags
+  isArchived  Boolean @default(false)
+  isBlocked   Boolean @default(false)
+  blockReason String?
+
+  // Relations
+  ownerId String
+  owner   User   @relation("UserListings", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  photos         ListingMedia[]
+  availability   AvailabilityCalendar[]
+  blockedDates   BlockedDate[]
+  pricingRules   PricingRule[]
+  stats          ListingStats[]
+  bookings       Booking[]
+  favorites      Favorite[]
+  searchAlerts   SearchAlert[]          @relation("AlertListing")
+  listingReports ListingReport[]
+
+  // Timestamps
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  archivedAt  DateTime?
+
+  @@index([ownerId])
+  @@index([status])
+  @@index([type])
+  @@index([governorate])
+  @@index([createdAt])
+  @@index([slug])
+  @@map("listings")
+}
+
+model ListingMedia {
+  id            String    @id @default(cuid())
+  listingId     String
+  listing       Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  url           String    @db.Text
+  thumbnailUrl  String?   @db.Text
+  blurHash      String?
+  type          MediaType @default(IMAGE)
+  position      Int       @default(0)
+  caption       String?
+  isMain        Boolean   @default(false)
+  isWatermarked Boolean   @default(false)
+  watermarkUrl  String?   @db.Text
+  width         Int?
+  height        Int?
+  fileSize      Int?
+  uploadedAt    DateTime  @default(now())
+
+  @@index([listingId])
+  @@index([position])
+  @@map("listing_media")
+}
+
+model AvailabilityCalendar {
+  id                String   @id @default(cuid())
+  listingId         String
+  listing           Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  date              DateTime
+  isAvailable       Boolean  @default(true)
+  customPrice       Float?
+  minStay           Int?
+  maxStay           Int?
+  availableBookings Int      @default(0)
+  blockedReason     String?
+  blockedById       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([listingId, date])
+  @@index([listingId])
+  @@index([date])
+  @@index([isAvailable])
+  @@map("availability_calendar")
+}
+
+model BlockedDate {
+  id                String    @id @default(cuid())
+  listingId         String
+  listing           Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  startDate         DateTime
+  endDate           DateTime
+  reason            String?
+  isRecurring       Boolean   @default(false)
+  recurrencePattern String?
+  recurrenceEndDate DateTime?
+  blockedById       String
+  createdAt         DateTime  @default(now())
+
+  @@unique([listingId, startDate])
+  @@index([listingId])
+  @@index([startDate])
+  @@index([endDate])
+  @@map("blocked_dates")
+}
+
+model PricingRule {
+  id                String   @id @default(cuid())
+  listingId         String
+  listing           Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  name              String
+  description       String?
+  priceMultiplier   Float?
+  fixedPrice        Float?
+  startDate         DateTime
+  endDate           DateTime
+  isRecurring       Boolean  @default(false)
+  recurrencePattern String?
+  appliesToWeekend  Boolean  @default(false)
+  appliesToWeekday  Boolean  @default(false)
+  daysOfWeek        Json?
+  minStay           Int?
+  maxStay           Int?
+  isActive          Boolean  @default(true)
+  priority          Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([listingId])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([isActive])
+  @@map("pricing_rules")
+}
+
+model ListingStats {
+  id               String   @id @default(cuid())
+  listingId        String
+  listing          Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  date             DateTime
+  views            Int      @default(0)
+  uniqueViews      Int      @default(0)
+  clicks           Int      @default(0)
+  messages         Int      @default(0)
+  bookings         Int      @default(0)
+  favorites        Int      @default(0)
+  conversionRate   Float?   @default(0)
+  revenue          Float?   @default(0)
+  positionInSearch Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([listingId, date])
+  @@index([listingId])
+  @@index([date])
+  @@map("listing_stats")
+}
+
+model Booking {
+  id                 String        @id @default(cuid())
+  reference          String        @unique
+  listingId          String
+  listing            Listing       @relation(fields: [listingId], references: [id], onDelete: Restrict)
+  tenantId           String
+  tenant             User          @relation("TenantBookings", fields: [tenantId], references: [id])
+  ownerId            String?
+  owner              User?         @relation("OwnerBookings", fields: [ownerId], references: [id])
+  checkIn            DateTime
+  checkOut           DateTime
+  guests             Int           @default(1)
+  totalNights        Int
+  pricePerNight      Float
+  totalPrice         Float
+  cleaningFee        Float?        @default(0)
+  serviceFee         Float?        @default(0)
+  securityDeposit    Float?        @default(0)
+  totalWithFees      Float
+  commission         Float?        @default(0)
+  ownerPayout        Float?
+  status             BookingStatus @default(PENDING)
+  paymentStatus      PaymentStatus @default(PENDING)
+  tenantMessage      String?       @db.Text
+  ownerResponse      String?       @db.Text
+  cancellationReason String?
+  cancellationFee    Float?        @default(0)
+  refundAmount       Float?        @default(0)
+  checkedInAt        DateTime?
+  checkedOutAt       DateTime?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  expiresAt          DateTime?
+  confirmedAt        DateTime?
+  cancelledAt        DateTime?
+
+  // Relations
+  payments      Payment[]
+  messages      BookingMessage[]
+  coTenants     CoTenant[]
+  review        Review?
+  dispute       Dispute?
+  notifications Notification[]
+
+  @@index([listingId])
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([checkIn])
+  @@index([checkOut])
+  @@index([reference])
+  @@map("bookings")
+}
+
+model Payment {
+  id                    String        @id @default(cuid())
+  bookingId             String
+  booking               Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount                Float
+  currency              String        @default("TND")
+  type                  String
+  status                PaymentStatus @default(PENDING)
+  provider              String        @default("KONNECT")
+  providerTransactionId String?
+  providerData          Json?
+  receiptUrl            String?
+  refundAmount          Float?
+  refundReason          String?
+  refundedAt            DateTime?
+  paidAt                DateTime?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([providerTransactionId])
+  @@map("payments")
+}
+
+model CoTenant {
+  id                      String    @id @default(cuid())
+  bookingId               String
+  booking                 Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  tenantId                String
+  coTenantId              String
+  inviteeEmail            String
+  invitationToken         String?   @unique
+  status                  String    @default("PENDING")
+  fullName                String?
+  phoneNumber             String?
+  email                   String?
+  cinNumber               String?
+  isIdentityVerified      Boolean   @default(false)
+  isResponsibleForPayment Boolean   @default(false)
+  paymentSharePercent     Int?
+  canCommunicateWithOwner Boolean   @default(true)
+  hasSignedContract       Boolean   @default(false)
+  invitedAt               DateTime  @default(now())
+  acceptedAt              DateTime?
+
+  tenant   User  @relation("TenantCoTenants", fields: [tenantId], references: [id])
+  coTenant User? @relation("CoTenantUsers", fields: [coTenantId], references: [id])
+
+  @@index([bookingId])
+  @@index([invitationToken])
+  @@map("co_tenants")
+}
+
+model BookingMessage {
+  id          String    @id @default(cuid())
+  bookingId   String
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  senderId    String
+  receiverId  String
+  content     String    @db.Text
+  isRead      Boolean   @default(false)
+  readAt      DateTime?
+  attachments Json?
+  createdAt   DateTime  @default(now())
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  @@index([bookingId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@map("booking_messages")
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  listingId String
+  listing   Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  listId    String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  user User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  list FavoriteList? @relation(fields: [listId], references: [id])
+
+  @@unique([userId, listingId])
+  @@index([userId])
+  @@index([listingId])
+  @@map("favorites")
+}
+
+model FavoriteList {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  isPublic    Boolean  @default(false)
+  shareToken  String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  favorites Favorite[]
+
+  @@index([userId])
+  @@map("favorite_lists")
+}
+
+model SearchAlert {
+  id         String               @id @default(cuid())
+  userId     String
+  name       String
+  criteria   Json
+  frequency  SearchAlertFrequency @default(DAILY)
+  isActive   Boolean              @default(true)
+  lastSentAt DateTime?
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  matchedListings Listing[]      @relation("AlertListing")
+  notifications   Notification[]
+
+  @@index([userId])
+  @@index([isActive])
+  @@map("search_alerts")
+}
+
+model Notification {
+  id          String                @id @default(cuid())
+  userId      String
+  type        NotificationType
+  title       String
+  content     String                @db.Text
+  data        Json?
+  channels    NotificationChannel[]
+  isRead      Boolean               @default(false)
+  readAt      DateTime?
+  sentAt      DateTime?
+  deliveredAt DateTime?
+  createdAt   DateTime              @default(now())
+
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking   Booking?     @relation(fields: [bookingId], references: [id])
+  bookingId String?
+  alert     SearchAlert? @relation(fields: [alertId], references: [id])
+  alertId   String?
+
+  @@index([userId])
+  @@index([type])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model Review {
+  id          String    @id @default(cuid())
+  bookingId   String    @unique
+  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reviewerId  String
+  targetId    String
+  targetType  String
+  rating      Int
+  comment     String?   @db.Text
+  response    String?   @db.Text
+  responseAt  DateTime?
+  isPublished Boolean   @default(true)
+  isFlagged   Boolean   @default(false)
+  flagReason  String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  reviewer User @relation("ReviewsWritten", fields: [reviewerId], references: [id])
+  target   User @relation("ReviewsReceived", fields: [targetId], references: [id])
+
+  @@index([bookingId])
+  @@index([reviewerId])
+  @@index([targetId])
+  @@index([targetType])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model ListingReport {
+  id          String    @id @default(cuid())
+  listingId   String
+  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  reporterId  String
+  reason      String
+  description String?   @db.Text
+  status      String    @default("PENDING")
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  actionTaken String?
+  adminNote   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  reporter User @relation("ListingReports", fields: [reporterId], references: [id])
+
+  @@index([listingId])
+  @@index([reporterId])
+  @@index([status])
+  @@map("listing_reports")
+}
+
+model Dispute {
+  id              String    @id @default(cuid())
+  bookingId       String    @unique
+  booking         Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  openedBy        String
+  type            String
+  description     String    @db.Text
+  status          String    @default("OPEN")
+  priority        String    @default("NORMAL")
+  assignedTo      String?
+  resolution      String?   @db.Text
+  resolutionDate  DateTime?
+  refundAmount    Float?
+  depositWithheld Boolean?  @default(false)
+  withheldAmount  Float?
+  evidence        Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  resolvedAt      DateTime?
+
+  openedByUser  User             @relation("OpenedDisputes", fields: [openedBy], references: [id])
+  assignedAdmin User?            @relation("AssignedDisputes", fields: [assignedTo], references: [id])
+  messages      DisputeMessage[]
+
+  @@index([bookingId])
+  @@index([status])
+  @@index([priority])
+  @@map("disputes")
+}
+
+model DisputeMessage {
+  id          String   @id @default(cuid())
+  disputeId   String
+  dispute     Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  senderId    String
+  content     String   @db.Text
+  attachments Json?
+  isInternal  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  sender User @relation("DisputeMessages", fields: [senderId], references: [id])
+
+  @@index([disputeId])
+  @@index([createdAt])
+  @@map("dispute_messages")
+}
+
+model SearchHistory {
+  id               String    @id @default(cuid())
+  userId           String
+  query            String?
+  filters          Json?
+  resultsCount     Int
+  clickedListingId String?
+  clickedAt        DateTime?
+  sessionId        String?
+  createdAt        DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([sessionId])
+  @@map("search_history")
+}
+
+model MapView {
+  id                String   @id @default(cuid())
+  sessionId         String
+  userId            String?
+  centerLat         Float
+  centerLng         Float
+  zoomLevel         Float
+  bounds            Json?
+  visibleListingIds String[]
+  viewedAt          DateTime @default(now())
+  expiresAt         DateTime
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("map_views")
+}
+
+model ListingComparison {
+  id         String   @id @default(cuid())
+  tenantId   String
+  name       String
+  listingIds String[]
+  result     Json?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant User @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("listing_comparisons")
+}
+
+model Equipment {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  nameAr    String?
+  icon      String?
+  category  String
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([category])
+  @@index([isActive])
+  @@map("equipment")
+}
+
+model Governorate {
+  id        String  @id @default(cuid())
+  code      String  @unique
+  name      String
+  nameAr    String
+  centerLat Float?
+  centerLng Float?
+  order     Int     @default(0)
+  isActive  Boolean @default(true)
+
+  delegations Delegation[]
+
+  @@map("governorates")
+}
+
+model Delegation {
+  id            String  @id @default(cuid())
+  governorateId String
+  code          String  @unique
+  name          String
+  nameAr        String
+  postalCode    String?
+  latitude      Float?
+  longitude     Float?
+  order         Int     @default(0)
+  isActive      Boolean @default(true)
+
+  governorate Governorate @relation(fields: [governorateId], references: [id], onDelete: Cascade)
+
+  @@index([governorateId])
+  @@map("delegations")
 }

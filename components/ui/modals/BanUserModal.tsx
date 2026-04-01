@@ -1,206 +1,200 @@
-// components/modals/BanUserModal.tsx
+// app/[locale]/(dashboard)/owner/layout.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import Modal from '@/components/ui/Modal';
-import RichTextEditor from '@/components/ui/editor/RichTextEditor';
-import NotificationCheckbox from "@/components/ui/NotificationCheckbox";
-import { User } from '@/lib/types/user';
-import { useTranslations } from 'next-intl';
-import { IoBanOutline } from 'react-icons/io5';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
+import { useEffect, useState } from 'react';
 
-const BAN_REASONS = [
-  { value: 'SPAM', label: 'Spam / Publicité' },
-  { value: 'HARASSMENT', label: 'Harcèlement' },
-  { value: 'TOS_VIOLATION', label: 'Violation des conditions d\'utilisation' },
-  { value: 'FRAUD', label: 'Fraude ou tentative de phishing' },
-  { value: 'IDENTITY_THEFT', label: 'Usurpation d\'identité' },
-  { value: 'MULTIPLE_WARNINGS', label: 'Avertissements multiples ignorés' },
-  { value: 'ILLEGAL_ACTIVITY', label: 'Activité illégale' },
-  { value: 'OTHER', label: 'Autre raison' },
-];
-
+// Fonction pip pour les images depuis Vercel Blob
 const pip = (url: string) =>
   `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
 
-interface BanUserModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user: User | null;
-  onConfirm: (userId: string, reason: string, motif: string, notify: boolean) => Promise<void>;
+// Interface pour les données utilisateur depuis la base
+interface AppUser {
+  id: string;
+  username: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  profilePictureUrl: string | null;
+  role: string;
+  isIdentityVerified: boolean;
+  status: string;
 }
 
-export default function BanUserModal({ isOpen, onClose, user, onConfirm }: BanUserModalProps) {
-  const t = useTranslations('admin.usersManagement.banModal');
-  const [reason, setReason] = useState('');
-  const [motif, setMotif] = useState('');
-  const [notify, setNotify] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [confirmText, setConfirmText] = useState('');
+export default function OwnerLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode;
+  params: { locale: string };
+}) {
+  const pathname = usePathname();
+  const { user: clerkUser } = useUser();
+  const locale = params.locale;
+  const [appUser, setAppUser] = useState<AppUser | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Reset quand le modal se ferme
+  // Récupérer les données utilisateur depuis la base
   useEffect(() => {
-    if (!isOpen) {
-      setReason('');
-      setMotif('');
-      setNotify(false);
-      setConfirmText('');
-      setLoading(false);
-    }
-  }, [isOpen]);
+    const fetchAppUser = async () => {
+      try {
+        const res = await fetch('/api/user/profile');
+        if (res.ok) {
+          const data = await res.json();
+          setAppUser(data);
+        }
+      } catch (error) {
+        console.error('Erreur chargement utilisateur:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleConfirm = async () => {
-    if (!user || !reason || confirmText !== 'BANNIR') return;
-    setLoading(true);
-    try {
-      await onConfirm(user.id, reason, motif, notify);
-      onClose();
-    } catch (error) {
-      console.error('Erreur bannissement:', error);
-    } finally {
+    if (clerkUser) {
+      fetchAppUser();
+    } else {
       setLoading(false);
     }
+  }, [clerkUser]);
+
+  const navItems = [
+    { href: `/${locale}/owner/dashboard`, label: 'Dashboard', icon: 'dashboard' },
+    { href: `/${locale}/owner/listings`, label: 'My Listings', icon: 'home_work' },
+    { href: `/${locale}/owner/calendar`, label: 'Calendar', icon: 'calendar_month' },
+    { href: `/${locale}/owner/reservations`, label: 'Reservations', icon: 'book_online' },
+    { href: `/${locale}/owner/messages`, label: 'Messages', icon: 'chat_bubble' },
+    { href: `/${locale}/owner/analytics`, label: 'Analytics', icon: 'monitoring' },
+  ];
+
+  const isActive = (href: string) => {
+    if (href === `/${locale}/owner/dashboard` && pathname === `/${locale}/owner/dashboard`) return true;
+    if (href !== `/${locale}/owner/dashboard` && pathname?.startsWith(href)) return true;
+    return false;
   };
 
-  if (!user) return null;
+  // Déterminer le nom d'affichage
+  const displayName = appUser?.username || appUser?.firstName || clerkUser?.emailAddresses[0]?.emailAddress?.split('@')[0] || 'Owner';
+  const initial = displayName.charAt(0).toUpperCase();
+
+  // Déterminer le statut de vérification
+  const isVerified = appUser?.isIdentityVerified === true;
+  
+  // Déterminer le statut du compte
+  const isActiveAccount = appUser?.status === 'ACTIVE';
+  const isSuspended = appUser?.status === 'TEMPORARILY_SUSPENDED';
+  const isBanned = appUser?.status === 'PERMANENTLY_BANNED';
+
+  if (loading) {
+    return (
+      <div className="flex">
+        <aside className="flex flex-col pt-24 pb-8 px-4 fixed left-0 top-0 h-screen w-64 border-r border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 z-40">
+          <div className="flex flex-col items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          </div>
+        </aside>
+        <main className="flex-1 ml-64 min-h-screen">
+          {children}
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      showCloseButton={true}
-      className="max-w-2xl"
-      title={
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400">
-            <IoBanOutline className="text-xl" />
-          </div>
-          <div className="flex flex-col">
-            <h2 className="text-slate-900 dark:text-white text-sm font-bold leading-tight">
-              {t('title')}
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400 text-xs">
-              {t('description')}
-            </p>
-          </div>
-        </div>
-      }
-    >
-      <div className="p-4 space-y-2">
-        {/* User Identity Header - compact */}
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700">
-          {user.profilePictureUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img 
-              src={pip(user.profilePictureUrl)} 
-              alt={`${user.firstName} ${user.lastName}`}
-              className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 object-cover"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 dark:text-red-400 font-bold text-xs">
-              {user.firstName?.[0]}{user.lastName?.[0]}
+    <div className="flex">
+      {/* Sidebar - Fixed Left */}
+      <aside className="flex flex-col pt-24 pb-8 px-4 fixed left-0 top-0 h-screen w-64 border-r border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 z-40">
+        {/* Profile Section */}
+        <div className="flex flex-col items-center mb-10 px-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-600 to-purple-600 p-0.5 shadow-lg mb-4">
+            <div className="w-full h-full rounded-2xl overflow-hidden bg-white dark:bg-slate-800 flex items-center justify-center">
+              {appUser?.profilePictureUrl ? (
+                <img
+                  src={pip(appUser.profilePictureUrl)}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
+              ) : clerkUser?.imageUrl ? (
+                <img
+                  src={clerkUser.imageUrl}
+                  alt={displayName}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-2xl font-bold text-blue-600">{initial}</span>
+              )}
             </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-xs text-slate-900 dark:text-white truncate">
-              {user.firstName} {user.lastName}
-            </h3>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
           </div>
-          <span className="text-[8px] font-medium px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded uppercase tracking-wider whitespace-nowrap">
-            NESTHUB
-          </span>
-        </div>
-
-        {/* Ban Reason Dropdown */}
-        <div className="space-y-1">
-          <label className="block text-slate-700 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wider">
-            {t('reason')} <span className="text-red-500">*</span>
-          </label>
-          <select
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="w-full px-2 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
-          >
-            <option value="">{t('selectReason')}</option>
-            {BAN_REASONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Detailed Evidence avec RichTextEditor */}
-        {reason && (
-          <div className="space-y-1">
-            <label className="block text-slate-700 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wider">
-              {t('evidence')}
-            </label>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white font-['Plus_Jakarta_Sans']">Owner Suite</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 font-['Inter'] tracking-wide uppercase mt-1">
+            Premium Management
+          </p>
+          
+          {/* Badges de statut */}
+          <div className="flex flex-col items-center gap-1 mt-2">
+            {isVerified && (
+              <span className="inline-flex items-center text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
+                ✓ Vérifié
+              </span>
+            )}
             
-            <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
-              <RichTextEditor
-                value={motif}
-                onChange={setMotif}
-                placeholder={t('evidencePlaceholder')}
-                compact={true}
-              />
-            </div>
+            {isSuspended && (
+              <span className="inline-flex items-center text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-full">
+                ⚠️ Suspendu
+              </span>
+            )}
+            
+            {isBanned && (
+              <span className="inline-flex items-center text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-0.5 rounded-full">
+                🚫 Banni
+              </span>
+            )}
           </div>
-        )}
-
-        {/* Notification Checkbox */}
-        <div className="pt-1">
-          <NotificationCheckbox
-            notify={notify}
-            setNotify={setNotify}
-            userEmail={user.email}
-            label={t('notify') || "Notifier l'utilisateur par email"}
-            message="Un email sera envoyé à {email} pour le notifier de ce bannissement."
-            colorScheme="red"
-          />
         </div>
 
-        {/* Security Confirmation Input */}
-        <div className="p-2 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 rounded-lg">
-          <label className="block text-[10px] font-medium text-red-800 dark:text-red-300 mb-1">
-            {t('confirmLabel')} <span className="font-bold underline">BANNIR</span>
-          </label>
-          <input
-            type="text"
-            value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
-            className="w-full px-2 py-1 text-xs rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-red-500 focus:border-red-500 uppercase font-bold text-center tracking-widest"
-            placeholder="BANNIR"
-          />
-        </div>
-      </div>
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1.5 font-['Inter'] text-sm">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`
+                flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200
+                ${isActive(item.href)
+                  ? 'text-blue-700 dark:text-blue-400 font-bold bg-blue-50/50 dark:bg-blue-900/20 translate-x-1'
+                  : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }
+              `}
+            >
+              <span 
+                className="material-symbols-outlined text-xl"
+                style={isActive(item.href) ? { fontVariationSettings: "'FILL' 1" } : undefined}
+              >
+                {item.icon}
+              </span>
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </nav>
 
-      {/* Modal Footer */}
-      <div className="p-4 bg-slate-50 dark:bg-slate-800/30 flex justify-end gap-2 border-t border-slate-100 dark:border-slate-700">
-        <button
-          onClick={onClose}
-          className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-          type="button"
-        >
-          {t('cancel')}
-        </button>
-        <button
-          onClick={handleConfirm}
-          disabled={loading || !reason || confirmText !== 'BANNIR'}
-          className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 shadow-sm transition-all disabled:opacity-50 flex items-center gap-1"
-          type="button"
-        >
-          {loading ? (
-            <>
-              <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              {t('processing')}
-            </>
-          ) : (
-            t('confirm')
-          )}
-        </button>
-      </div>
-    </Modal>
+        {/* Upgrade Card */}
+        <div className="mt-auto px-4">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-900 rounded-2xl p-5 text-white shadow-xl">
+            <p className="text-xs font-semibold text-blue-300 mb-1">PRO PLAN</p>
+            <p className="text-sm font-medium mb-4 leading-relaxed">
+              Accédez aux statistiques avancées
+            </p>
+            <button className="w-full bg-white text-slate-900 text-xs font-bold py-2.5 rounded-lg hover:bg-blue-50 transition-colors">
+              Upgrade to Pro
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 ml-64 min-h-screen">
+        {children}
+      </main>
+    </div>
   );
 }
