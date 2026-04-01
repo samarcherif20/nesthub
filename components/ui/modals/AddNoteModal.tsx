@@ -17,6 +17,8 @@ interface AddNoteModalProps {
 }
 
 const MAX_CHARS = 500;
+const pip = (url: string) =>
+  `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
 
 export default function AddNoteModal({ isOpen, onClose, user, onAddNote }: AddNoteModalProps) {
   const t = useTranslations('admin.usersManagement.addNoteModal');
@@ -85,15 +87,16 @@ export default function AddNoteModal({ isOpen, onClose, user, onAddNote }: AddNo
         {/* User Info Section - même taille que l'original */}
         <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-100 dark:border-slate-700">
           {/* Avatar */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             {user.profilePictureUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
               <img 
-                src={user.profilePictureUrl} 
+                src={pip(user.profilePictureUrl)} 
                 alt={`${user.firstName} ${user.lastName}`}
                 className="w-8 h-8 rounded-full border border-slate-200 dark:border-slate-600 object-cover"
               />
             ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-xs">
+              <div className="w-8 h-8 rounded-full bg-linear-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-white font-bold text-xs">
                 {user.firstName?.[0]}{user.lastName?.[0]}
               </div>
             )}

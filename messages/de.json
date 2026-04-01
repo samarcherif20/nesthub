@@ -202,6 +202,12 @@
     "invitationDesAdmins": "Admin-Einladung",
     "usersManagement": {
       "unauthorized": "Unbefugter Zugriff",
+      "stats": {
+        "totalUsers": "Gesamtzahl der Benutzer",
+        "newUsers30d": "Neue Benutzer (30 Tage)",
+        "pendingValidation": "Warten auf Bestätigung",
+        "verifiedIdentity": "Verifizierte Identität"
+      },
       "page": {
         "title": "Benutzerverwaltung",
         "description": "Verwalten Sie alle Plattformbenutzer"
@@ -241,13 +247,6 @@
           "manually_blocked": "Blockiert (manuell)",
           "inactive": "Inaktiv"
         },
-        "verification": {
-          "label": "Überprüfung",
-          "all": "Alle",
-          "verified": "Verifiziert",
-          "pending": "In der Warteschleife",
-          "rejected": "Abgelehnt"
-        },
         "advanced": {
           "title": "Erweiterte Filter",
           "dateRange": "Anmeldezeitraum",
@@ -256,6 +255,13 @@
           "minReliabilityPlaceholder": "≥50",
           "maxFraudPlaceholder": "≤ 30"
         }
+      },
+      "verification": {
+        "label": "Überprüfung",
+        "all": "Alle",
+        "verified": "Verifiziert",
+        "pending": "In der Warteschleife",
+        "rejected": "Abgelehnt"
       },
       "table": {
         "headers": {
@@ -281,245 +287,245 @@
       "verifiedIdentity": "Verifiziert",
       "pendingApprovals": "Warten auf Bestätigung",
       "averageReliability": "Durchschnittliche Zuverlässigkeit",
-      "pendingValidation": "Warten auf Bestätigung"
-    },
-    "export": {
-      "csv": {
-        "title": "CSV",
-        "description": "Für Excel / Analyse"
-      },
-      "pdf": {
-        "title": "PDF",
-        "description": "Zum Ausdrucken"
-      }
-    },
-    "badges": {
-      "verified": "Verifiziert",
-      "pending": "In der Warteschleife",
-      "rejected": "Abgelehnt",
-      "unverified": "Nicht verifiziert",
-      "reliability": "Zuverlässigkeit",
-      "fraud": "Betrug"
-    },
-    "alerts": {
-      "sessionExpired": "Sitzung abgelaufen – bitte melden Sie sich erneut an",
-      "unauthorized": "Unbefugter Zugriff",
-      "loadingError": "Fehler beim Laden",
-      "exportError": "Fehler beim Export",
-      "exportSuccess": "Export erfolgreich"
-    },
-    "messages": {
-      "noUsers": "Keine Benutzer gefunden",
-      "loading": "Laden..."
-    },
-    "activateModal": {
-      "title": "Konto reaktivieren",
-      "description": "Möchten Sie den Vollzugriff für diesen Benutzer wiederherstellen?",
-      "confirm": "Konto reaktivieren",
-      "cancel": "Stornieren",
-      "processing": "Behandlung...",
-      "currentStatus": "Dieses Konto hat derzeit den Status {status}",
-      "status": {
-        "suspended": "ausgesetzt",
-        "banned": "verboten",
-        "locked": "blockiert",
-        "inactive": "inaktiv",
-        "rejected": "abgelehnt",
-        "unknown": "unbekannt"
-      }
-    },
-    "warningModal": {
-      "title": "Senden Sie eine Warnung",
-      "description": "Diese Aktion wird im Verlauf gespeichert",
-      "reason": "Muster",
-      "reliability": "Fiab.",
-      "specifyReason": "Geben Sie den Grund an",
-      "optionalMessage": "Nachricht (optional)",
-      "explainReason": "Erklären Sie den Grund...",
-      "additionalDetails": "Weitere Details...",
-      "infoMessage": "Der Benutzer erhält eine sichtbare Warnung in seinem Dashboard.",
-      "emailSent": "E-Mail gesendet.",
-      "previousWarnings": "Bereits {count} Warnung(en).",
-      "cancel": "Stornieren",
-      "send": "Schicken",
-      "notifyByEmail": "Benachrichtigen Sie den Benutzer per E-Mail",
-      "emailNotificationMessage": "Eine E-Mail wird an {email} gesendet, um sie über diese Warnung zu informieren.",
-      "processing": "Senden...",
-      "error": "Fehler beim Senden der Warnung",
-      "reasons": {
-        "inappropriateBehavior": {
-          "label": "Unangemessenes Verhalten",
-          "description": "Unangemessene Sprache oder Einstellung"
+      "pendingValidation": "Warten auf Bestätigung",
+      "export": {
+        "csv": {
+          "title": "CSV",
+          "description": "Für Excel / Analyse"
         },
-        "spam": {
-          "label": "Spam",
-          "description": "Unaufgeforderte Werbebotschaften"
-        },
-        "falseInformation": {
-          "label": "Fake-News",
-          "description": "Irreführende Profilinformationen"
-        },
-        "paymentIssues": {
-          "label": "Zahlungsprobleme",
-          "description": "Verspätete oder verweigerte Zahlungen"
-        },
-        "multipleAccounts": {
-          "label": "Mehrere Konten",
-          "description": "Mehrere Konten erstellen"
-        },
-        "other": {
-          "label": "Andere",
-          "description": "Benutzerdefinierter Grund"
+        "pdf": {
+          "title": "PDF",
+          "description": "Zum Ausdrucken"
         }
-      }
-    },
-    "addNoteModal": {
-      "title": "Fügen Sie eine interne Notiz hinzu",
-      "description": "Nur für Administratoren sichtbar",
-      "noteContent": "Inhalt der Notiz",
-      "placeholder": "Schreiben Sie hier Ihre Notiz...",
-      "addNote": "Notiz hinzufügen",
-      "adding": "Zusatz...",
-      "cancel": "Stornieren",
-      "enterLinkUrl": "Geben Sie die Link-URL ein:",
-      "error": "Fehler beim Hinzufügen der Notiz"
-    },
-    "banModal": {
-      "title": "Sperren Sie den Benutzer dauerhaft",
-      "description": "Diese Aktion ist irreversibel",
-      "reason": "Grund für das Verbot",
-      "selectReason": "Wählen Sie einen Grund aus...",
-      "evidence": "Beweise und Details",
-      "evidencePlaceholder": "Erläutern Sie die Gründe und fügen Sie ggf. Links zu den Beweisen hinzu ...",
-      "notify": "Benachrichtigen Sie den Benutzer per E-Mail",
-      "emailNotificationMessage": "Eine E-Mail wird an {email} gesendet, um sie über dieses Verbot zu informieren.",
-      "confirmLabel": "Typ",
-      "cancel": "Stornieren",
-      "confirm": "Verbot bestätigen",
-      "processing": "Behandlung..."
-    },
-    "escalateModal": {
-      "title": "Allmähliche Eskalation",
-      "description": "Stufenweises Sanktionssystem",
-      "currentLevel": "Aktueller Stand",
-      "applySanction": "Wählen Sie den nächsten Schritt",
-      "reason": "Grund für die Eskalation",
-      "reasonPlaceholder": "Beschreiben Sie die Gründe, die diese Sanktion rechtfertigen...",
-      "warning": "Warnung",
-      "suspension": "Suspension",
-      "ban": "Verbannung",
-      "alreadyApplied": "Bereits auf den Benutzer angewendet",
-      "locked": "Gesperrt – nächster Schritt erforderlich",
-      "historyNote": "Dieser Grund wird im Moderationsverlauf erfasst.",
-      "apply": "Eskalation anwenden",
-      "notify": "Benachrichtigen Sie den Benutzer per E-Mail",
-      "emailNotificationMessage": "Es wird eine E-Mail an {email} gesendet, um sie über diese Sanktion zu informieren.",
-      "cancel": "Stornieren",
-      "processing": "Behandlung..."
-    },
-    "suspendModal": {
-      "title": "Sperren Sie den Benutzer vorübergehend",
-      "description": "Der Benutzer kann sich für die gewählte Dauer nicht anmelden",
-      "duration": "Dauer der Aussetzung",
-      "day": "1 Tag",
-      "days": "{count} Tage",
-      "reason": "Grund für die Suspendierung",
-      "selectReason": "Wählen Sie einen Grund aus",
-      "details": "Detailliertes Muster",
-      "detailsPlaceholder": "Erklären Sie kurz den Grund für diese Maßnahme...",
-      "emailNotification": "Benachrichtigung gesendet",
-      "notificationInfo": "Der Benutzer wird per E-Mail über die Aussetzung informiert.",
-      "enterLinkUrl": "Geben Sie die Link-URL ein",
-      "cancel": "Stornieren",
-      "confirm": "Bestätigen Sie die Sperre",
-      "processing": "Behandlung...",
-      "reasons": {
-        "spam": "Spam oder Missbrauch",
-        "tos": "Verstoß gegen die Nutzungsbedingungen",
-        "safety": "Kontosicherheit",
-        "other": "Anderer Grund"
       },
-      "emailNotificationTitle": "E-Mail-Benachrichtigung",
-      "emailNotificationMessage": "Eine E-Mail wird an {email} gesendet, um sie über diese Aussetzung zu informieren.",
-      "notify": "Benachrichtigen Sie den Benutzer per E-Mail"
-    },
-    "lockUnlockModal": {
-      "lockTitle": "Konto sperren",
-      "unlockTitle": "Konto entsperren",
-      "lockDescription": "Blockieren Sie den Zugriff auf dieses Konto manuell.",
-      "unlockDescription": "Dieses Konto wurde nach mehreren fehlgeschlagenen Anmeldeversuchen gesperrt.",
-      "reason": "Grund für die Sperrung",
-      "reasonPlaceholder": "Warum dieses Konto sperren?...",
-      "notifyLock": "Benachrichtigen Sie den Benutzer über die Blockierung",
-      "notifyUnlock": "Benachrichtigen Sie den Benutzer über die Entsperrung",
-      "emailNotificationMessage": "Zur Benachrichtigung wird eine E-Mail an {email} gesendet.",
-      "failedAttempts": "Fehlgeschlagene Versuche",
-      "lock": "Blockieren",
-      "unlock": "Entsperren",
-      "cancel": "Stornieren",
-      "processing": "Behandlung...",
-      "enterLinkUrl": "Geben Sie die Link-URL ein:"
-    },
-    "actionsHistoryModal": {
-      "title": "Aktienhistorie",
-      "subtitle": "NESTHUB-Verwaltung",
-      "close": "Schließen",
-      "admin": {
-        "default": "Admin"
-      },
-      "search": {
-        "placeholder": "Suchen Sie nach einem Administrator, Benutzer oder Muster ..."
-      },
-      "filters": {
-        "label": "Filtern nach",
-        "all": "Alle Arten"
-      },
-      "actionTypes": {
-        "suspension": "Suspension",
-        "suspensionUndone": "Suspendierung aufgehoben",
-        "ban": "Verbannung",
-        "banUndone": "Verbot aufgehoben",
-        "activation": "Reaktivierung",
-        "unlock": "Entsperren",
-        "lock": "Blockierung",
-        "lockUndone": "Sperre aufgehoben",
-        "warning": "Warnung",
-        "escalation": "Eskalation",
-        "escalationUndone": "Eskalation abgebrochen",
-        "note": "Interner Hinweis",
-        "rejectVerification": "Ablehnung der Verifizierung",
-        "validateVerification": "Validierungsüberprüfung",
-        "undone": "Aktion abgebrochen"
-      },
-      "status": {
-        "active": "Aktiv",
-        "suspended": "Ausgesetzt",
-        "banned": "Verboten",
+      "badges": {
+        "verified": "Verifiziert",
         "pending": "In der Warteschleife",
-        "locked": "Blockiert",
-        "inactive": "Inaktiv",
-        "rejected": "Abgelehnt"
+        "rejected": "Abgelehnt",
+        "unverified": "Nicht verifiziert",
+        "reliability": "Zuverlässigkeit",
+        "fraud": "Betrug"
       },
-      "user": {
-        "target": "Benutzer"
+      "alerts": {
+        "sessionExpired": "Sitzung abgelaufen – bitte melden Sie sich erneut an",
+        "unauthorized": "Unbefugter Zugriff",
+        "loadingError": "Fehler beim Laden",
+        "exportError": "Fehler beim Export",
+        "exportSuccess": "Export erfolgreich"
       },
-      "action": {
-        "reason": "Muster"
+      "messages": {
+        "noUsers": "Keine Benutzer gefunden",
+        "loading": "Laden..."
       },
-      "undo": {
-        "button": "Stornieren",
-        "processing": "Stornierung...",
-        "title": "Brechen Sie diese Aktion ab"
+      "activateModal": {
+        "title": "Konto reaktivieren",
+        "description": "Möchten Sie den Vollzugriff für diesen Benutzer wiederherstellen?",
+        "confirm": "Konto reaktivieren",
+        "cancel": "Stornieren",
+        "processing": "Behandlung...",
+        "currentStatus": "Dieses Konto hat derzeit den Status {status}",
+        "status": {
+          "suspended": "ausgesetzt",
+          "banned": "verboten",
+          "locked": "blockiert",
+          "inactive": "inaktiv",
+          "rejected": "abgelehnt",
+          "unknown": "unbekannt"
+        }
       },
-      "results": {
-        "showing": "Anzeige von {start} bis {end} bei {total} Ergebnissen",
-        "empty": "Keine Aktionen gefunden"
+      "warningModal": {
+        "title": "Senden Sie eine Warnung",
+        "description": "Diese Aktion wird im Verlauf gespeichert",
+        "reason": "Muster",
+        "reliability": "Fiab.",
+        "specifyReason": "Geben Sie den Grund an",
+        "optionalMessage": "Nachricht (optional)",
+        "explainReason": "Erklären Sie den Grund...",
+        "additionalDetails": "Weitere Details...",
+        "infoMessage": "Der Benutzer erhält eine sichtbare Warnung in seinem Dashboard.",
+        "emailSent": "E-Mail gesendet.",
+        "previousWarnings": "Bereits {count} Warnung(en).",
+        "cancel": "Stornieren",
+        "send": "Schicken",
+        "notifyByEmail": "Benachrichtigen Sie den Benutzer per E-Mail",
+        "emailNotificationMessage": "Eine E-Mail wird an {email} gesendet, um sie über diese Warnung zu informieren.",
+        "processing": "Senden...",
+        "error": "Fehler beim Senden der Warnung",
+        "reasons": {
+          "inappropriateBehavior": {
+            "label": "Unangemessenes Verhalten",
+            "description": "Unangemessene Sprache oder Einstellung"
+          },
+          "spam": {
+            "label": "Spam",
+            "description": "Unaufgeforderte Werbebotschaften"
+          },
+          "falseInformation": {
+            "label": "Fake-News",
+            "description": "Irreführende Profilinformationen"
+          },
+          "paymentIssues": {
+            "label": "Zahlungsprobleme",
+            "description": "Verspätete oder verweigerte Zahlungen"
+          },
+          "multipleAccounts": {
+            "label": "Mehrere Konten",
+            "description": "Mehrere Konten erstellen"
+          },
+          "other": {
+            "label": "Andere",
+            "description": "Benutzerdefinierter Grund"
+          }
+        }
       },
-      "errors": {
-        "tokenNotAvailable": "Token nicht verfügbar",
-        "apiError": "API-Fehler:",
-        "loadFailed": "Der Aktionsverlauf konnte nicht geladen werden",
-        "retry": "Versuchen Sie es erneut"
+      "addNoteModal": {
+        "title": "Fügen Sie eine interne Notiz hinzu",
+        "description": "Nur für Administratoren sichtbar",
+        "noteContent": "Inhalt der Notiz",
+        "placeholder": "Schreiben Sie hier Ihre Notiz...",
+        "addNote": "Notiz hinzufügen",
+        "adding": "Zusatz...",
+        "cancel": "Stornieren",
+        "enterLinkUrl": "Geben Sie die Link-URL ein:",
+        "error": "Fehler beim Hinzufügen der Notiz"
+      },
+      "banModal": {
+        "title": "Sperren Sie den Benutzer dauerhaft",
+        "description": "Diese Aktion ist irreversibel",
+        "reason": "Grund für das Verbot",
+        "selectReason": "Wählen Sie einen Grund aus...",
+        "evidence": "Beweise und Details",
+        "evidencePlaceholder": "Erläutern Sie die Gründe und fügen Sie ggf. Links zu den Beweisen hinzu ...",
+        "notify": "Benachrichtigen Sie den Benutzer per E-Mail",
+        "emailNotificationMessage": "Eine E-Mail wird an {email} gesendet, um sie über dieses Verbot zu informieren.",
+        "confirmLabel": "Typ",
+        "cancel": "Stornieren",
+        "confirm": "Verbot bestätigen",
+        "processing": "Behandlung..."
+      },
+      "escalateModal": {
+        "title": "Allmähliche Eskalation",
+        "description": "Stufenweises Sanktionssystem",
+        "currentLevel": "Aktueller Stand",
+        "applySanction": "Wählen Sie den nächsten Schritt",
+        "reason": "Grund für die Eskalation",
+        "reasonPlaceholder": "Beschreiben Sie die Gründe, die diese Sanktion rechtfertigen...",
+        "warning": "Warnung",
+        "suspension": "Suspension",
+        "ban": "Verbannung",
+        "alreadyApplied": "Bereits auf den Benutzer angewendet",
+        "locked": "Gesperrt – nächster Schritt erforderlich",
+        "historyNote": "Dieser Grund wird im Moderationsverlauf erfasst.",
+        "apply": "Eskalation anwenden",
+        "notify": "Benachrichtigen Sie den Benutzer per E-Mail",
+        "emailNotificationMessage": "Es wird eine E-Mail an {email} gesendet, um sie über diese Sanktion zu informieren.",
+        "cancel": "Stornieren",
+        "processing": "Behandlung..."
+      },
+      "suspendModal": {
+        "title": "Sperren Sie den Benutzer vorübergehend",
+        "description": "Der Benutzer kann sich für die gewählte Dauer nicht anmelden",
+        "duration": "Dauer der Aussetzung",
+        "day": "1 Tag",
+        "days": "{count} Tage",
+        "reason": "Grund für die Suspendierung",
+        "selectReason": "Wählen Sie einen Grund aus",
+        "details": "Detailliertes Muster",
+        "detailsPlaceholder": "Erklären Sie kurz den Grund für diese Maßnahme...",
+        "emailNotification": "Benachrichtigung gesendet",
+        "notificationInfo": "Der Benutzer wird per E-Mail über die Aussetzung informiert.",
+        "enterLinkUrl": "Geben Sie die Link-URL ein",
+        "cancel": "Stornieren",
+        "confirm": "Bestätigen Sie die Sperre",
+        "processing": "Behandlung...",
+        "reasons": {
+          "spam": "Spam oder Missbrauch",
+          "tos": "Verstoß gegen die Nutzungsbedingungen",
+          "safety": "Kontosicherheit",
+          "other": "Anderer Grund"
+        },
+        "emailNotificationTitle": "E-Mail-Benachrichtigung",
+        "emailNotificationMessage": "Eine E-Mail wird an {email} gesendet, um sie über diese Aussetzung zu informieren.",
+        "notify": "Benachrichtigen Sie den Benutzer per E-Mail"
+      },
+      "lockUnlockModal": {
+        "lockTitle": "Konto sperren",
+        "unlockTitle": "Konto entsperren",
+        "lockDescription": "Blockieren Sie den Zugriff auf dieses Konto manuell.",
+        "unlockDescription": "Dieses Konto wurde nach mehreren fehlgeschlagenen Anmeldeversuchen gesperrt.",
+        "reason": "Grund für die Sperrung",
+        "reasonPlaceholder": "Warum dieses Konto sperren?...",
+        "notifyLock": "Benachrichtigen Sie den Benutzer über die Blockierung",
+        "notifyUnlock": "Benachrichtigen Sie den Benutzer über die Entsperrung",
+        "emailNotificationMessage": "Zur Benachrichtigung wird eine E-Mail an {email} gesendet.",
+        "failedAttempts": "Fehlgeschlagene Versuche",
+        "lock": "Blockieren",
+        "unlock": "Entsperren",
+        "cancel": "Stornieren",
+        "processing": "Behandlung...",
+        "enterLinkUrl": "Geben Sie die Link-URL ein:"
+      },
+      "actionsHistoryModal": {
+        "title": "Aktienhistorie",
+        "subtitle": "NESTHUB-Verwaltung",
+        "close": "Schließen",
+        "admin": {
+          "default": "Admin"
+        },
+        "search": {
+          "placeholder": "Suchen Sie nach einem Administrator, Benutzer oder Muster ..."
+        },
+        "filters": {
+          "label": "Filtern nach",
+          "all": "Alle Arten"
+        },
+        "actionTypes": {
+          "suspension": "Suspension",
+          "suspensionUndone": "Suspendierung aufgehoben",
+          "ban": "Verbannung",
+          "banUndone": "Verbot aufgehoben",
+          "activation": "Reaktivierung",
+          "unlock": "Entsperren",
+          "lock": "Blockierung",
+          "lockUndone": "Sperre aufgehoben",
+          "warning": "Warnung",
+          "escalation": "Eskalation",
+          "escalationUndone": "Eskalation abgebrochen",
+          "note": "Interner Hinweis",
+          "rejectVerification": "Ablehnung der Verifizierung",
+          "validateVerification": "Validierungsüberprüfung",
+          "undone": "Aktion abgebrochen"
+        },
+        "status": {
+          "active": "Aktiv",
+          "suspended": "Ausgesetzt",
+          "banned": "Verboten",
+          "pending": "In der Warteschleife",
+          "locked": "Blockiert",
+          "inactive": "Inaktiv",
+          "rejected": "Abgelehnt"
+        },
+        "user": {
+          "target": "Benutzer"
+        },
+        "action": {
+          "reason": "Muster"
+        },
+        "undo": {
+          "button": "Stornieren",
+          "processing": "Stornierung...",
+          "title": "Brechen Sie diese Aktion ab"
+        },
+        "results": {
+          "showing": "Anzeige von {start} bis {end} bei {total} Ergebnissen",
+          "empty": "Keine Aktionen gefunden"
+        },
+        "errors": {
+          "tokenNotAvailable": "Token nicht verfügbar",
+          "apiError": "API-Fehler:",
+          "loadFailed": "Der Aktionsverlauf konnte nicht geladen werden",
+          "retry": "Versuchen Sie es erneut"
+        }
       }
     }
   },
@@ -986,7 +992,7 @@
       "cloud": "Wolke",
       "sovereign": "Souverän",
       "previousStep": "Vorheriger Schritt",
-      "finish": "Zum Schluss"
+      "finish": "Zum Abschluss"
     },
     "ocrConfirm": {
       "title": "Datenüberprüfung",
@@ -1139,39 +1145,92 @@
     "restoreError": "Fehler beim Wiederherstellen"
   },
   "VerificationDetail": {
-    "unauthorized": "Unbefugter Zugriff",
-    "requestNotFound": "Anfrage nicht gefunden",
-    "queue": "Warteschlange",
-    "request": "Anfrage",
-    "pending": "Warten auf Bestätigung",
-    "documentsProvided": "Unterlagen zur Verfügung gestellt",
-    "cinFront": "Vorderes CIN",
-    "cinBack": "Zurück CIN",
+    "backk": "Zurück",
+    "verification": "Verifizierungsanfrage-Nr.:",
+    "pending": "In der Warteschleife",
+    "front": "Front",
+    "back": "Zurück",
+    "zoomOut": "Herauszoomen",
+    "zoomIn": "Zoom",
+    "rotateLeft": "Biegen Sie links ab",
+    "rotateRight": "Biegen Sie rechts ab",
+    "flip": "Zurückkehren",
     "download": "Herunterladen",
-    "memberSince": "Mitglied seit",
-    "ocrData": "Extrahierte Daten (OCR)",
+    "fullscreen": "Vollbild",
+    "mirror": "Spiegel",
+    "clickToExpand": "Zum Vergrößern anklicken",
+    "noImage": "Keine Bilder",
+    "notDetected": "Nicht erkannt",
+    "owner": "Eigentümer",
+    "tenant": "Mieter",
+    "verified": "Verifiziert",
+    "notVerified": "Nicht verifiziert",
+    "extractedData": "Extrahierte Daten",
     "firstName": "Vorname",
     "lastName": "Name",
+    "birthDate": "Geburtsdatum",
+    "gender": "Geschlecht",
     "cinNumber": "CIN-Nummer",
-    "dateOfBirth": "Geburtsdatum",
-    "placeOfBirth": "Geburtsort",
-    "nationality": "Nationalität",
-    "expiryDate": "Verfallsdatum",
-    "address": "Adresse",
-    "finalizeVerification": "Verifizierung abschließen",
-    "internalNote": "Interne Notiz (optional)",
-    "internalNotePlaceholder": "Fügen Sie eine Notiz für die Prüfung hinzu...",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "ocrScore": "OCR-Score",
+    "internalNote": "Interner Hinweis",
+    "internalNotePlaceholder": "Fügen Sie eine interne Notiz hinzu (nur für Administratoren sichtbar)...",
     "validate": "ZUR VALIDIERUNG",
     "reject": "ZURÜCKWEISEN",
-    "processing": "Behandlung...",
     "rejectionReason": "Grund für die Ablehnung",
-    "rejectionPlaceholder": "Unscharfes Dokument, abgelaufen, nicht übereinstimmende Daten ...",
+    "required": "Obligatorisch",
+    "rejectionReasonPlaceholder": "Erklären Sie, warum dieser Antrag abgelehnt wurde...",
     "confirmRejection": "Ablehnung bestätigen",
-    "rejectionReasons": {
-      "blurry": "Verschwommenes Dokument",
-      "expired": "CIN ist abgelaufen",
-      "nameMismatch": "Anderer Name",
-      "photoNotCompliant": "Falsches Foto"
+    "unauthorized": "Unbefugter Zugriff",
+    "adminRequired": "Diese Seite ist Administratoren vorbehalten.",
+    "noData": "Keine Daten gefunden",
+    "reload": "Neu laden",
+    "fullscreenImage": "Vollbild",
+    "userDetails": "Benutzerdetails",
+    "role": "Rolle",
+    "submittedAt": "Eingereicht am",
+    "status": "Status",
+    "action": "Aktion",
+    "processRequest": "Zu behandeln",
+    "refresh": "Aktualisieren",
+    "searchPlaceholder": "Nach einem Benutzer suchen...",
+    "justNow": "Im Augenblick",
+    "minutesAgo": "Vor {count} Minuten",
+    "oneHourAgo": "Vor 1 Stunde",
+    "hoursAgo": "Vor {count} Stunden",
+    "daysAgo": "Vor {count} Tagen",
+    "validateId": "ID VALIDIEREN",
+    "rejectId": "ID ABLEHNEN",
+    "finalizeVerification": "Verifizierung abschließen",
+    "reviewInstruction": "Prüfen Sie die oben genannten Informationen sorgfältig, bevor Sie eine Entscheidung treffen. Aktionen werden zur Prüfung aufgezeichnet.",
+    "identityDetails": "Identitätsdetails",
+    "skipForNow": "Überspringen Sie es vorerst",
+    "cancel": "Stornieren",
+    "confirmDecision": "Bestätigen Sie die Entscheidung",
+    "memberSince": "Mitglied seit",
+    "propertiesListed": "aufgeführten Immobilien",
+    "userId": "BENUTZER-ID",
+    "tier1Account": "TIER-1-KONTO",
+    "stats": {
+      "pending": "In der Warteschleife",
+      "processedToday": "Heute bearbeitet",
+      "documents": "Unterlagen",
+      "averageTime": "Durchschnittliche Zeit",
+      "minutes": "min"
+    },
+    "table": {
+      "user": "Benutzer",
+      "role": "Rolle",
+      "date": "Datum",
+      "status": "Status",
+      "action": "Aktion"
+    },
+    "empty": {
+      "title": "Keine Verifizierungsanfrage",
+      "description": "Alle Anfragen wurden bearbeitet oder es liegen noch keine Einreichungen vor.",
+      "backToDashboard": "Zurück zum Dashboard",
+      "viewHistory": "Verlauf anzeigen"
     }
   },
   "Verifications": {
@@ -1249,5 +1308,49 @@
     "securityBadge": "AES-256-Verschlüsselung • DSGVO-konform",
     "legal": "Rechtliche Hinweise",
     "privacy": "Vertraulichkeit"
+  },
+  "VerificationsHistory": {
+    "title": "Audit-Historie",
+    "subtitle": "Alle bereits bearbeiteten Verifizierungsanfragen anzeigen",
+    "backToPending": "Zurück zu den ausstehenden Anfragen",
+    "refresh": "Aktualisieren",
+    "searchPlaceholder": "Suche nach Name oder E-Mail...",
+    "status": {
+      "validated": "Validiert",
+      "rejected": "Abgelehnt",
+      "pending": "In der Warteschleife"
+    },
+    "filters": {
+      "all": "Alle",
+      "validated": "Validiert",
+      "rejected": "Abgelehnt"
+    },
+    "stats": {
+      "total": "Gesamtzahl der Schecks",
+      "totalDescription": "Komplette Geschichte",
+      "approvalRate": "Zustimmungsrate",
+      "rejected": "Anfragen abgelehnt",
+      "rejectedDescription": "Erfordern Aufmerksamkeit"
+    },
+    "table": {
+      "submittedAt": "Einreichungsdatum",
+      "user": "Benutzer",
+      "email": "E-Mail",
+      "status": "Status",
+      "processedAt": "Bearbeitungsdatum",
+      "processedBy": "Verarbeitet von",
+      "notes": "Grund/Kommentar",
+      "action": "Aktion",
+      "view": "Sehen"
+    },
+    "empty": {
+      "title": "Keine Anfragen bearbeitet",
+      "description": "Bestätigte oder abgelehnte Anfragen werden hier angezeigt"
+    },
+    "pagination": {
+      "showing": "Anzeige von",
+      "of": "An",
+      "results": "Ergebnisse"
+    }
   }
 }

@@ -283,7 +283,7 @@ export default function AdminInvitationsPage() {
             {[
               { label: t("activeLinks"),  count: stats.active,  countCls: "text-indigo-600 dark:text-indigo-400", Icon: IoLinkOutline,  grad: "from-indigo-500 to-blue-500",  bg: "border-indigo-100 dark:border-indigo-900/40" },
               { label: t("expired"), count: stats.expired, countCls: "text-rose-500", Icon: IoTimerOutline, grad: "from-rose-400 to-red-500", bg: "border-rose-100 dark:border-rose-900/40" },
-              { label: t("revoked"), count: stats.revoked, countCls: "text-red-500", Icon: IoCloseCircleOutline, grad: "from-red-400 to-red-500", bg: "border-red-100 dark:border-red-900/40" },
+              { label: t("revoked"), count: stats.revoked, countCls: "text-orange-500", Icon: IoCloseCircleOutline, grad: "from-orange-400 to-orange-600", bg: "border-orange-100 dark:border-orange-900/40" },
             ].map(({ label, count, countCls, Icon, grad, bg }) => (
               <div key={label} className={`bg-white dark:bg-slate-900 rounded-2xl border ${bg} p-4 flex flex-col gap-2 ${card3d}`}>
                 <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shadow-sm`}>

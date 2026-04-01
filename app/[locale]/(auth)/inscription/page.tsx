@@ -43,6 +43,7 @@ import ImageCropper from "@/components/ui/ImageCropper";
 import { useInscription } from "./hooks/useInscription";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { toast } from "sonner";
 
 // ── Alert components ──
 const SuccessAlert = ({
@@ -196,7 +197,10 @@ export default function InscriptionPage() {
     setDateNaissance,
     cinNumber,
     setCinNumber,
-    handleOCR,
+    // ← ajoute ces 3
+    isUploadingCIN,
+    uploadCINError, 
+    handleUploadCIN,
     handleConfirmIdentity,
     handleGoToCompleteProfile,
     handleGoToDashboard,
@@ -426,7 +430,6 @@ export default function InscriptionPage() {
               message={alertMessage}
               onClose={() => setShowSuccessAlert(false)}
               t={t}
-
             />
           )}
 
@@ -439,7 +442,6 @@ export default function InscriptionPage() {
               }}
               onClose={() => setShowWhatsappAlert(false)}
               t={t}
-
             />
           )}
         </AnimatePresence>
@@ -1317,7 +1319,6 @@ export default function InscriptionPage() {
                             const file = e.target.files?.[0];
                             if (file) {
                               setCinRecto(file);
-                              handleOCR(file, "recto");
                             }
                           }}
                         />
@@ -1507,8 +1508,18 @@ export default function InscriptionPage() {
 
                   <button
                     type="button"
-                    onClick={() => setShowOcrConfirm(true)}
-                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer"
+                    disabled={!cinRecto || !cinVerso || !profilePhoto}
+                    onClick={() => {
+                      if (!cinRecto || !cinVerso || !profilePhoto) {
+                        toast.error("Documents manquants", {
+                          description:
+                            "Veuillez uploader les 3 fichiers avant de continuer.",
+                        });
+                        return;
+                      }
+                      setShowOcrConfirm(true);
+                    }}
+                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ..."
                   >
                     {t("documentsStep.finish")}
                     <MdOutlineArrowForwardIos className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1635,62 +1646,21 @@ export default function InscriptionPage() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowOcrConfirm(false)}
-                  className="px-4 py-2.5 border border-blue-300 dark:border-blue-700 rounded-lg text-sm font-semibold hover:bg-blue-50 dark:hover:bg-blue-800 transition-colors"
+                  onClick={handleConfirmIdentity}
+                  disabled={isUploadingCIN}
+                  className="flex-1 bg-blue-400 hover:bg-blue-300 text-black font-bold py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
                 >
-                  {t("ocrConfirm.modify")}
-                </button>
-                <button
-                  type="button"
-                  onClick={async () => {
-                    const tempId = localStorage.getItem("currentUserId");
-
-                    try {
-                      await fetch("/api/users/complete-profile", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          userId: tempId,
-                          firstName,
-                          lastName,
-                          dateNaissance,
-                          cinNumber,
-                          address,
-                          bio,
-                          phoneNumber: `+216${phoneNumber}`,
-                        }),
-                      });
-
-                      if (
-                        isUserLoaded &&
-                        user &&
-                        user.id &&
-                        tempId &&
-                        tempId !== user.id
-                      ) {
-                        await fetch("/api/users/update-clerk-id", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({
-                            oldClerkId: tempId,
-                            newClerkId: user.id,
-                          }),
-                        });
-
-                        localStorage.setItem("currentUserId", user.id);
-                        setCurrentUserId(user.id);
-                      }
-                    } catch (error) {
-                      console.error("❌ Erreur:", error);
-                    } finally {
-                      setShowOcrConfirm(false);
-                      setShowWelcome(true);
-                    }
-                  }}
-                  className="flex-1 bg-blue-400 hover:bg-blue-300 text-black font-bold py-2.5 px-6 rounded-lg flex items-center justify-center gap-2"
-                >
-                  <MdVerified className="text-lg" />
-                  {t("ocrConfirm.confirmIdentity")}
+                  {isUploadingCIN ? (
+                    <>
+                      <Loader2 className="animate-spin h-4 w-4" />
+                      Upload en cours... (10-20s)
+                    </>
+                  ) : (
+                    <>
+                      <MdVerified className="text-lg" />
+                      {t("ocrConfirm.confirmIdentity")}
+                    </>
+                  )}
                 </button>
               </div>
             </motion.div>
@@ -1705,10 +1675,8 @@ export default function InscriptionPage() {
             onCropComplete={(croppedFile) => {
               if (cropperSide === "recto") {
                 setCinRecto(croppedFile);
-                handleOCR(croppedFile, "recto");
               } else {
                 setCinVerso(croppedFile);
-                handleOCR(croppedFile, "verso");
               }
             }}
           />
@@ -1843,7 +1811,4 @@ export default function InscriptionPage() {
       </div>
     </div>
   );
-}
-function t(arg0: string): import("react").ReactNode {
-  throw new Error("Function not implemented.");
 }

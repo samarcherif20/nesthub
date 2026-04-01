@@ -176,7 +176,7 @@
     "2faAlt": "Vérification à deux facteurs",
     "back": "Retour"
   },
-    "admin": {
+  "admin": {
     "dashboard": "Tableau de bord",
     "users": "Utilisateurs",
     "properties": "Propriétés",
@@ -249,15 +249,15 @@
           "manually_blocked": "Bloqués (manuel)",
           "inactive": "Inactifs"
         },
-        
-      "advanced": {
-        "title": "Filtres avancés",
-        "dateRange": "Période d'inscription",
-        "minReliability": "Score fiabilité minimum",
-        "maxFraud": "Score fraude maximum",
-        "minReliabilityPlaceholder": "≥ 50",
-        "maxFraudPlaceholder": "≤ 30"
-      }
+
+        "advanced": {
+          "title": "Filtres avancés",
+          "dateRange": "Période d'inscription",
+          "minReliability": "Score fiabilité minimum",
+          "maxFraud": "Score fraude maximum",
+          "minReliabilityPlaceholder": "≥ 50",
+          "maxFraudPlaceholder": "≤ 30"
+        }
       },
       "verification": {
         "label": "Vérification",
@@ -1066,7 +1066,6 @@
     }
   },
 
- 
   "VerifyCatch": {
     "title": "Vérification en cours",
     "description": "Veuillez patienter pendant que nous vérifions votre compte..."
@@ -1112,7 +1111,7 @@
     "limitedAccess": "Accès limité",
     "policy": "Politique"
   },
-  
+
   "AdminContent": {
     "title": "Gestion du contenu statique",
     "description": "Modifier et gérer vos pages juridiques et informatives.",
@@ -1155,44 +1154,103 @@
     "versionRestored": "Version {version} restaurée avec succès ✓",
     "restoreError": "Erreur lors de la restauration"
   },
-  
+
+
   "VerificationDetail": {
-    "unauthorized": "Accès non autorisé",
-    "requestNotFound": "Demande non trouvée",
-    "queue": "File d'attente",
-    "request": "Demande",
-    "pending": "En attente de validation",
-    "documentsProvided": "Documents fournis",
-    "cinFront": "Recto CIN",
-    "cinBack": "Verso CIN",
+     "alreadyValidated": "Cette demande a déjà été validée",
+  "alreadyRejected": "Cette demande a déjà été rejetée",
+  "validated": "Validée",
+  "rejected": "Rejetée",
+    "backk": "Retour",
+  "verification": "Demende de vérification n° : ",
+    "pending": "En attente",
+    "front": "Recto",
+    "back": "Verso",
+    "zoomOut": "Dézoomer",
+    "zoomIn": "Zoomer",
+    "rotateLeft": "Tourner à gauche",
+    "rotateRight": "Tourner à droite",
+    "flip": "Retourner",
     "download": "Télécharger",
-    "memberSince": "Membre depuis",
-    "ocrData": "Données extraites (OCR)",
+    "fullscreen": "Plein écran",
+    "mirror": "Miroir",
+    "clickToExpand": "Cliquer pour agrandir",
+    "noImage": "Aucune image",
+    "notDetected": "Non détecté",
+    "owner": "Propriétaire",
+    "tenant": "Locataire",
+    "verified": "Vérifié",
+    "notVerified": "Non vérifié",
+    "extractedData": "Données extraites",
     "firstName": "Prénom",
     "lastName": "Nom",
+    "birthDate": "Date de naissance",
+    "gender": "Genre",
     "cinNumber": "Numéro CIN",
-    "dateOfBirth": "Date naissance",
-    "placeOfBirth": "Lieu naissance",
-    "nationality": "Nationalité",
-    "expiryDate": "Date expiration",
-    "address": "Adresse",
-    "finalizeVerification": "Finaliser la vérification",
-    "internalNote": "Note interne (optionnelle)",
-    "internalNotePlaceholder": "Ajouter une note pour l'audit...",
+    "email": "Email",
+    "phone": "Téléphone",
+    "ocrScore": "Score OCR",
+    "internalNote": "Note interne",
+    "internalNotePlaceholder": "Ajouter une note interne (visible uniquement par les admins)...",
     "validate": "VALIDER",
     "reject": "REJETER",
-    "processing": "Traitement...",
-    "rejectionReason": "Motif de rejet",
-    "rejectionPlaceholder": "Document flou, expiré, données non concordantes...",
+    "rejectionReason": "Motif du rejet",
+    "required": "Obligatoire",
+    "rejectionReasonPlaceholder": "Expliquez pourquoi cette demande est rejetée...",
     "confirmRejection": "Confirmer le rejet",
-    "rejectionReasons": {
-      "blurry": "Document flou",
-      "expired": "CIN expirée",
-      "nameMismatch": "Nom différent",
-      "photoNotCompliant": "Photo non conforme"
+    "unauthorized": "Accès non autorisé",
+    "adminRequired": "Cette page est réservée aux administrateurs.",
+    "noData": "Aucune donnée trouvée",
+    "reload": "Recharger",
+    "fullscreenImage": "Image en plein écran",
+    "userDetails": "Détails de l'utilisateur",
+    "role": "Rôle",
+    "submittedAt": "Soumis le",
+    "status": "Statut",
+    "action": "Action",
+    "processRequest": "Traiter",
+    "refresh": "Actualiser",
+    "searchPlaceholder": "Rechercher un utilisateur...",
+    "justNow": "À l'instant",
+    "minutesAgo": "il y a {count} min",
+    "oneHourAgo": "il y a 1 heure",
+    "hoursAgo": "il y a {count} heures",
+    "daysAgo": "il y a {count} jours",
+    "validateId": "VALIDER L'ID",
+    "rejectId": "REJETER L'ID",
+    "finalizeVerification": "Finaliser la vérification",
+    "reviewInstruction": "Vérifiez attentivement les informations ci-dessus avant de prendre une décision. Les actions sont enregistrées pour l'audit.",
+    "identityDetails": "Détails d'identité",
+    "skipForNow": "Passer pour l'instant",
+    "cancel": "Annuler",
+    "confirmDecision": "Confirmer la décision",
+    "memberSince": "Membre depuis",
+    "propertiesListed": "propriétés listées",
+    "userId": "ID UTILISATEUR",
+    "tier1Account": "COMPTE TIER 1",
+    "stats": {
+      "pending": "En attente",
+      "processedToday": "Traité aujourd'hui",
+      "documents": "documents",
+      "averageTime": "Temps moyen",
+      "minutes": "min"
+    },
+    "table": {
+      "user": "Utilisateur",
+      "role": "Rôle",
+      "date": "Date",
+      "status": "Statut",
+      "action": "Action"
+    },
+    "empty": {
+      "title": "Aucune demande de vérification",
+      "description": "Toutes les demandes ont été traitées ou il n'y a pas encore de soumissions.",
+      "backToDashboard": "Retour au tableau de bord",
+      "viewHistory": "Voir l'historique"
     }
-  },
-  
+  }
+,
+
   "Verifications": {
     "unauthorized": "Accès non autorisé",
     "adminRequired": "Vous devez être administrateur.",
@@ -1234,13 +1292,13 @@
       "viewHistory": "Voir l'historique"
     }
   },
-  
+
   "SSOCallback": {
     "connecting": "Connexion en cours, veuillez patienter...",
     "pleaseWait": "Vérification de vos informations",
     "redirecting": "Redirection en cours..."
   },
-  
+
   "ForgotPassword": {
     "title": "Mot de passe oublié",
     "subtitle": "Entrez votre email pour recevoir un lien de réinitialisation",
@@ -1270,11 +1328,57 @@
     "securityBadge": "Chiffrement AES-256 • Conforme RGPD",
     "legal": "Mentions légales",
     "privacy": "Confidentialité"
+  },
+  "VerificationsHistory": {
+    "title": "Historique des vérifications",
+    "subtitle": "Consultez toutes les demandes de vérification déjà traitées",
+    "backToPending": "Retour aux demandes en attente",
+    "refresh": "Actualiser",
+    "searchPlaceholder": "Rechercher par nom ou email...",
+    
+    "status": {
+      "validated": "Validée",
+      "rejected": "Rejetée",
+      "pending": "En attente"
+    },
+    
+    "filters": {
+      "all": "Toutes",
+      "validated": "Validées",
+      "rejected": "Rejetées"
+    },
+    
+    "stats": {
+      "total": "Total des vérifications",
+      "totalDescription": "Historique complet",
+      "approvalRate": "Taux d'approbation",
+      "rejected": "Demandes rejetées",
+      "rejectedDescription": "Nécessitent une attention"
+    },
+    
+    "table": {
+      "submittedAt": "Date de soumission",
+      "user": "Utilisateur",
+      "email": "Email",
+      "status": "Statut",
+      "processedAt": "Date de traitement",
+      "processedBy": "Traité par",
+      "notes": "Motif / Commentaire",
+      "action": "Action",
+      "view": "Voir"
+    },
+    
+    "empty": {
+      "title": "Aucune demande traitée",
+      "description": "Les demandes validées ou rejetées apparaîtront ici"
+    },
+    
+    "pagination": {
+      "showing": "Affichage de",
+      "of": "sur",
+      "results": "résultats"
+    }
   }
+
 }
   
-
-
-
-
-

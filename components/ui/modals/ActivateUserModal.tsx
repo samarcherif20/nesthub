@@ -13,6 +13,10 @@ interface ActivateUserModalProps {
   onConfirm: (userId: string) => Promise<void>;
 }
 
+// Add the pip helper function (or import it from a shared utils file)
+const pip = (url: string) =>
+  `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
+
 export default function ActivateUserModal({
   isOpen,
   onClose,
@@ -22,11 +26,13 @@ export default function ActivateUserModal({
 
   const t = useTranslations("admin.usersManagement.activateModal");
   const [loading, setLoading] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Reset quand le modal se ferme
   useEffect(() => {
     if (!isOpen) {
       setLoading(false);
+      setImageError(false);
     }
   }, [isOpen]);
 
@@ -88,11 +94,13 @@ export default function ActivateUserModal({
 
         {/* User Card - compact */}
         <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700">
-          {user?.profilePictureUrl ? (
+          {user?.profilePictureUrl && !imageError ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={user.profilePictureUrl}
+              src={pip(user.profilePictureUrl)}
               alt="avatar"
               className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-gray-600"
+              onError={() => setImageError(true)}
             />
           ) : (
             <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">

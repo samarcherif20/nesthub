@@ -9,6 +9,9 @@ import { IoWarningOutline } from "react-icons/io5";
 import { useTranslations } from "next-intl";
 import NotificationCheckbox from "@/components/ui/NotificationCheckbox";
 
+const pip = (url: string) =>
+  `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
+
 interface WarningUserModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -114,7 +117,7 @@ export default function WarningUserModal({
         <div className="flex items-center gap-3 p-3 rounded-lg bg-orange-50/50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-800/30">
           {user.profilePictureUrl ? (
             <img
-              src={user.profilePictureUrl}
+              src={pip(user.profilePictureUrl)}
               alt={`${user.firstName} ${user.lastName}`}
               className="w-10 h-10 rounded-full object-cover border border-orange-200 dark:border-orange-700"
             />

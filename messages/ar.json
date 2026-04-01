@@ -130,7 +130,7 @@
     "error": "لقد حدث خطأ. يرجى المحاولة مرة أخرى",
     "usernameRequired": "اسم المستخدم مطلوب",
     "usernameInvalid": "تنسيق اسم المستخدم غير صالح!",
-    "emailNotFound": "لم يتم العثور على حساب مع هذا البريد الإلكتروني",
+    "emailNotFound": "لم يتم العثور على حسابات مع هذا البريد الإلكتروني",
     "usernameNotFound": "لم يتم العثور على حسابات باسم المستخدم هذا",
     "emailOrUsername": "البريد الإلكتروني أو اسم المستخدم",
     "emailOrUsernamePlaceholder": "contact@example.com",
@@ -202,6 +202,12 @@
     "invitationDesAdmins": "دعوة المشرف",
     "usersManagement": {
       "unauthorized": "الوصول غير المصرح به",
+      "stats": {
+        "totalUsers": "إجمالي المستخدمين",
+        "newUsers30d": "المستخدمون الجدد (30 يومًا)",
+        "pendingValidation": "في انتظار التحقق من الصحة",
+        "verifiedIdentity": "هوية تم التحقق منها"
+      },
       "page": {
         "title": "إدارة المستخدم",
         "description": "إدارة جميع مستخدمي المنصة"
@@ -241,13 +247,6 @@
           "manually_blocked": "محظور (يدويًا)",
           "inactive": "غير نشط"
         },
-        "verification": {
-          "label": "تَحَقّق",
-          "all": "الجميع",
-          "verified": "تم التحقق منه",
-          "pending": "في الانتظار",
-          "rejected": "مرفوض"
-        },
         "advanced": {
           "title": "مرشحات متقدمة",
           "dateRange": "فترة التسجيل",
@@ -256,6 +255,13 @@
           "minReliabilityPlaceholder": "≥50",
           "maxFraudPlaceholder": "≥ 30"
         }
+      },
+      "verification": {
+        "label": "تَحَقّق",
+        "all": "الجميع",
+        "verified": "تم التحقق منه",
+        "pending": "في الانتظار",
+        "rejected": "مرفوض"
       },
       "table": {
         "headers": {
@@ -281,245 +287,245 @@
       "verifiedIdentity": "تم التحقق منه",
       "pendingApprovals": "في انتظار التحقق",
       "averageReliability": "متوسط ​​الموثوقية",
-      "pendingValidation": "في انتظار التحقق من الصحة"
-    },
-    "export": {
-      "csv": {
-        "title": "CSV",
-        "description": "لإكسل / التحليل"
-      },
-      "pdf": {
-        "title": "قوات الدفاع الشعبي",
-        "description": "للطباعة"
-      }
-    },
-    "badges": {
-      "verified": "تم التحقق منه",
-      "pending": "في الانتظار",
-      "rejected": "مرفوض",
-      "unverified": "لم يتم التحقق منها",
-      "reliability": "مصداقية",
-      "fraud": "احتيال"
-    },
-    "alerts": {
-      "sessionExpired": "انتهت الجلسة - يرجى تسجيل الدخول مرة أخرى",
-      "unauthorized": "الوصول غير المصرح به",
-      "loadingError": "خطأ في التحميل",
-      "exportError": "حدث خطأ أثناء التصدير",
-      "exportSuccess": "تم التصدير بنجاح"
-    },
-    "messages": {
-      "noUsers": "لم يتم العثور على مستخدمين",
-      "loading": "تحميل..."
-    },
-    "activateModal": {
-      "title": "إعادة تنشيط الحساب",
-      "description": "هل تريد استعادة الوصول الكامل لهذا المستخدم؟",
-      "confirm": "إعادة تنشيط الحساب",
-      "cancel": "يلغي",
-      "processing": "علاج...",
-      "currentStatus": "هذا الحساب حاليًا {status}",
-      "status": {
-        "suspended": "معلق",
-        "banned": "محظور",
-        "locked": "محظور",
-        "inactive": "غير نشط",
-        "rejected": "مرفوض",
-        "unknown": "مجهول"
-      }
-    },
-    "warningModal": {
-      "title": "إرسال تحذير",
-      "description": "سيتم حفظ هذا الإجراء في التاريخ",
-      "reason": "نمط",
-      "reliability": "فياب.",
-      "specifyReason": "حدد السبب",
-      "optionalMessage": "الرسالة (اختياري)",
-      "explainReason": "وضح السبب...",
-      "additionalDetails": "تفاصيل اضافية...",
-      "infoMessage": "سيتلقى المستخدم تحذيرًا مرئيًا في لوحة التحكم الخاصة به.",
-      "emailSent": "تم إرسال البريد الإلكتروني.",
-      "previousWarnings": "يوجد بالفعل {count} تحذير (تحذيرات).",
-      "cancel": "يلغي",
-      "send": "يرسل",
-      "notifyByEmail": "إخطار المستخدم عن طريق البريد الإلكتروني",
-      "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا التحذير.",
-      "processing": "إرسال...",
-      "error": "حدث خطأ أثناء إرسال التحذير",
-      "reasons": {
-        "inappropriateBehavior": {
-          "label": "سلوك غير لائق",
-          "description": "لغة أو موقف غير لائق"
+      "pendingValidation": "في انتظار التحقق من الصحة",
+      "export": {
+        "csv": {
+          "title": "CSV",
+          "description": "لإكسل / التحليل"
         },
-        "spam": {
-          "label": "رسائل إلكترونية مزعجة",
-          "description": "رسائل إعلانية غير مرغوب فيها"
-        },
-        "falseInformation": {
-          "label": "أخبار كاذبة",
-          "description": "معلومات الملف الشخصي مضللة"
-        },
-        "paymentIssues": {
-          "label": "قضايا الدفع",
-          "description": "المدفوعات المتأخرة أو المرفوضة"
-        },
-        "multipleAccounts": {
-          "label": "حسابات متعددة",
-          "description": "إنشاء حسابات متعددة"
-        },
-        "other": {
-          "label": "آخر",
-          "description": "سبب مخصص"
+        "pdf": {
+          "title": "قوات الدفاع الشعبي",
+          "description": "للطباعة"
         }
-      }
-    },
-    "addNoteModal": {
-      "title": "أضف ملاحظة داخلية",
-      "description": "مرئية فقط للمسؤولين",
-      "noteContent": "محتوى المذكرة",
-      "placeholder": "أكتب ملاحظتك هنا...",
-      "addNote": "أضف ملاحظة",
-      "adding": "إضافة...",
-      "cancel": "يلغي",
-      "enterLinkUrl": "أدخل عنوان URL للرابط:",
-      "error": "حدث خطأ أثناء إضافة الملاحظة"
-    },
-    "banModal": {
-      "title": "حظر المستخدم بشكل دائم",
-      "description": "هذا الإجراء لا رجعة فيه",
-      "reason": "سبب الحظر",
-      "selectReason": "حدد السبب...",
-      "evidence": "الأدلة والتفاصيل",
-      "evidencePlaceholder": "قم بتفصيل الأسباب وإرفاق روابط للأدلة إذا لزم الأمر ...",
-      "notify": "إخطار المستخدم عن طريق البريد الإلكتروني",
-      "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا الحظر.",
-      "confirmLabel": "يكتب",
-      "cancel": "يلغي",
-      "confirm": "تأكيد الحظر",
-      "processing": "علاج..."
-    },
-    "escalateModal": {
-      "title": "التصعيد التدريجي",
-      "description": "نظام العقوبات التدريجي",
-      "currentLevel": "المستوى الحالي",
-      "applySanction": "حدد الخطوة التالية",
-      "reason": "سبب التصعيد",
-      "reasonPlaceholder": "وبيان أسباب هذه العقوبة..",
-      "warning": "تحذير",
-      "suspension": "تعليق",
-      "ban": "النفي",
-      "alreadyApplied": "تم تطبيقه بالفعل على المستخدم",
-      "locked": "مغلق - الخطوة التالية مطلوبة",
-      "historyNote": "سيتم تسجيل هذا السبب في سجل الإشراف.",
-      "apply": "تطبيق التصعيد",
-      "notify": "إخطار المستخدم عن طريق البريد الإلكتروني",
-      "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإخطارهم بهذه العقوبة.",
-      "cancel": "يلغي",
-      "processing": "علاج..."
-    },
-    "suspendModal": {
-      "title": "تعليق المستخدم مؤقتًا",
-      "description": "لن يتمكن المستخدم من تسجيل الدخول خلال المدة المختارة",
-      "duration": "طول التعليق",
-      "day": "يوم واحد",
-      "days": "{عدد} أيام",
-      "reason": "سبب الإيقاف",
-      "selectReason": "حدد سببًا",
-      "details": "نمط مفصل",
-      "detailsPlaceholder": "اشرح باختصار سبب هذا الإجراء ...",
-      "emailNotification": "تم إرسال الإخطار",
-      "notificationInfo": "سيتم إرسال بريد إلكتروني إلى المستخدم لإبلاغه بالتعليق.",
-      "enterLinkUrl": "أدخل عنوان URL للرابط",
-      "cancel": "يلغي",
-      "confirm": "تأكيد التعليق",
-      "processing": "علاج...",
-      "reasons": {
-        "spam": "البريد العشوائي أو إساءة الاستخدام",
-        "tos": "انتهاك شروط الاستخدام",
-        "safety": "أمان الحساب",
-        "other": "سبب آخر"
       },
-      "emailNotificationTitle": "إشعار البريد الإلكتروني",
-      "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا التعليق.",
-      "notify": "إخطار المستخدم عن طريق البريد الإلكتروني"
-    },
-    "lockUnlockModal": {
-      "lockTitle": "حظر الحساب",
-      "unlockTitle": "إلغاء حظر الحساب",
-      "lockDescription": "حظر الوصول إلى هذا الحساب يدويًا.",
-      "unlockDescription": "تم حظر هذا الحساب بعد عدة محاولات تسجيل دخول فاشلة.",
-      "reason": "سبب المنع",
-      "reasonPlaceholder": "لماذا أغلق هذا الحساب؟...",
-      "notifyLock": "إعلام المستخدم بالحظر",
-      "notifyUnlock": "إعلام المستخدم بإلغاء الحظر",
-      "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامك بذلك.",
-      "failedAttempts": "محاولات فاشلة",
-      "lock": "لمنع",
-      "unlock": "إلغاء الحظر",
-      "cancel": "يلغي",
-      "processing": "علاج...",
-      "enterLinkUrl": "أدخل عنوان URL للرابط:"
-    },
-    "actionsHistoryModal": {
-      "title": "تاريخ الأسهم",
-      "subtitle": "إدارة نيستهب",
-      "close": "يغلق",
-      "admin": {
-        "default": "مسؤل"
-      },
-      "search": {
-        "placeholder": "ابحث عن مسؤول أو مستخدم أو نمط..."
-      },
-      "filters": {
-        "label": "تصفية حسب",
-        "all": "جميع الأنواع"
-      },
-      "actionTypes": {
-        "suspension": "تعليق",
-        "suspensionUndone": "تم إلغاء التعليق",
-        "ban": "النفي",
-        "banUndone": "تم إلغاء الحظر",
-        "activation": "إعادة التنشيط",
-        "unlock": "رفع الحظر",
-        "lock": "الحظر",
-        "lockUndone": "تم إلغاء الحظر",
-        "warning": "تحذير",
-        "escalation": "التصعيد",
-        "escalationUndone": "تم إلغاء التصعيد",
-        "note": "ملاحظة داخلية",
-        "rejectVerification": "رفض التحقق",
-        "validateVerification": "التحقق من الصحة",
-        "undone": "تم إلغاء الإجراء"
-      },
-      "status": {
-        "active": "نشيط",
-        "suspended": "معلق",
-        "banned": "محظور",
+      "badges": {
+        "verified": "تم التحقق منه",
         "pending": "في الانتظار",
-        "locked": "محظور",
-        "inactive": "غير نشط",
-        "rejected": "مرفوض"
+        "rejected": "مرفوض",
+        "unverified": "لم يتم التحقق منها",
+        "reliability": "مصداقية",
+        "fraud": "احتيال"
       },
-      "user": {
-        "target": "مستخدم"
+      "alerts": {
+        "sessionExpired": "انتهت الجلسة - يرجى تسجيل الدخول مرة أخرى",
+        "unauthorized": "الوصول غير المصرح به",
+        "loadingError": "خطأ في التحميل",
+        "exportError": "حدث خطأ أثناء التصدير",
+        "exportSuccess": "تم التصدير بنجاح"
       },
-      "action": {
-        "reason": "نمط"
+      "messages": {
+        "noUsers": "لم يتم العثور على مستخدمين",
+        "loading": "تحميل..."
       },
-      "undo": {
-        "button": "يلغي",
-        "processing": "الإلغاء...",
-        "title": "إلغاء هذا الإجراء"
+      "activateModal": {
+        "title": "إعادة تنشيط الحساب",
+        "description": "هل تريد استعادة الوصول الكامل لهذا المستخدم؟",
+        "confirm": "إعادة تنشيط الحساب",
+        "cancel": "يلغي",
+        "processing": "علاج...",
+        "currentStatus": "هذا الحساب حاليًا {status}",
+        "status": {
+          "suspended": "معلق",
+          "banned": "محظور",
+          "locked": "محظور",
+          "inactive": "غير نشط",
+          "rejected": "مرفوض",
+          "unknown": "مجهول"
+        }
       },
-      "results": {
-        "showing": "عرض {البدء} إلى {النهاية} في النتائج {total}.",
-        "empty": "لم يتم العثور على أي إجراءات"
+      "warningModal": {
+        "title": "إرسال تحذير",
+        "description": "سيتم حفظ هذا الإجراء في التاريخ",
+        "reason": "نمط",
+        "reliability": "فياب.",
+        "specifyReason": "حدد السبب",
+        "optionalMessage": "الرسالة (اختياري)",
+        "explainReason": "وضح السبب...",
+        "additionalDetails": "تفاصيل اضافية...",
+        "infoMessage": "سيتلقى المستخدم تحذيرًا مرئيًا في لوحة التحكم الخاصة به.",
+        "emailSent": "تم إرسال البريد الإلكتروني.",
+        "previousWarnings": "يوجد بالفعل {count} تحذير (تحذيرات).",
+        "cancel": "يلغي",
+        "send": "يرسل",
+        "notifyByEmail": "إخطار المستخدم عن طريق البريد الإلكتروني",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا التحذير.",
+        "processing": "إرسال...",
+        "error": "حدث خطأ أثناء إرسال التحذير",
+        "reasons": {
+          "inappropriateBehavior": {
+            "label": "سلوك غير لائق",
+            "description": "لغة أو موقف غير مناسب"
+          },
+          "spam": {
+            "label": "رسائل إلكترونية مزعجة",
+            "description": "رسائل إعلانية غير مرغوب فيها"
+          },
+          "falseInformation": {
+            "label": "أخبار كاذبة",
+            "description": "معلومات الملف الشخصي مضللة"
+          },
+          "paymentIssues": {
+            "label": "قضايا الدفع",
+            "description": "المدفوعات المتأخرة أو المرفوضة"
+          },
+          "multipleAccounts": {
+            "label": "حسابات متعددة",
+            "description": "إنشاء حسابات متعددة"
+          },
+          "other": {
+            "label": "آخر",
+            "description": "سبب مخصص"
+          }
+        }
       },
-      "errors": {
-        "tokenNotAvailable": "الرمز غير متوفر",
-        "apiError": "خطأ في واجهة برمجة التطبيقات:",
-        "loadFailed": "غير قادر على تحميل سجل الإجراءات",
-        "retry": "حاول ثانية"
+      "addNoteModal": {
+        "title": "أضف ملاحظة داخلية",
+        "description": "مرئية فقط للمسؤولين",
+        "noteContent": "محتوى المذكرة",
+        "placeholder": "أكتب ملاحظتك هنا...",
+        "addNote": "أضف ملاحظة",
+        "adding": "إضافة...",
+        "cancel": "يلغي",
+        "enterLinkUrl": "أدخل عنوان URL للرابط:",
+        "error": "حدث خطأ أثناء إضافة الملاحظة"
+      },
+      "banModal": {
+        "title": "حظر المستخدم بشكل دائم",
+        "description": "هذا الإجراء لا رجعة فيه",
+        "reason": "سبب الحظر",
+        "selectReason": "حدد السبب...",
+        "evidence": "الأدلة والتفاصيل",
+        "evidencePlaceholder": "قم بتفصيل الأسباب وإرفاق روابط للأدلة إذا لزم الأمر ...",
+        "notify": "إخطار المستخدم عن طريق البريد الإلكتروني",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا الحظر.",
+        "confirmLabel": "يكتب",
+        "cancel": "يلغي",
+        "confirm": "تأكيد الحظر",
+        "processing": "علاج..."
+      },
+      "escalateModal": {
+        "title": "التصعيد التدريجي",
+        "description": "نظام العقوبات التدريجي",
+        "currentLevel": "المستوى الحالي",
+        "applySanction": "حدد الخطوة التالية",
+        "reason": "سبب التصعيد",
+        "reasonPlaceholder": "وبيان أسباب هذه العقوبة..",
+        "warning": "تحذير",
+        "suspension": "تعليق",
+        "ban": "النفي",
+        "alreadyApplied": "تم تطبيقه بالفعل على المستخدم",
+        "locked": "مغلق - الخطوة التالية مطلوبة",
+        "historyNote": "سيتم تسجيل هذا السبب في سجل الإشراف.",
+        "apply": "تطبيق التصعيد",
+        "notify": "إخطار المستخدم عن طريق البريد الإلكتروني",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإخطارهم بهذه العقوبة.",
+        "cancel": "يلغي",
+        "processing": "علاج..."
+      },
+      "suspendModal": {
+        "title": "تعليق المستخدم مؤقتًا",
+        "description": "لن يتمكن المستخدم من تسجيل الدخول خلال المدة المختارة",
+        "duration": "طول التعليق",
+        "day": "يوم واحد",
+        "days": "{عدد} أيام",
+        "reason": "سبب الإيقاف",
+        "selectReason": "حدد سببًا",
+        "details": "نمط مفصل",
+        "detailsPlaceholder": "اشرح باختصار سبب هذا الإجراء ...",
+        "emailNotification": "تم إرسال الإخطار",
+        "notificationInfo": "سيتم إرسال بريد إلكتروني إلى المستخدم لإبلاغه بالتعليق.",
+        "enterLinkUrl": "أدخل عنوان URL للرابط",
+        "cancel": "يلغي",
+        "confirm": "تأكيد التعليق",
+        "processing": "علاج...",
+        "reasons": {
+          "spam": "البريد العشوائي أو إساءة الاستخدام",
+          "tos": "انتهاك شروط الاستخدام",
+          "safety": "أمان الحساب",
+          "other": "سبب آخر"
+        },
+        "emailNotificationTitle": "إشعار البريد الإلكتروني",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا التعليق.",
+        "notify": "إخطار المستخدم عن طريق البريد الإلكتروني"
+      },
+      "lockUnlockModal": {
+        "lockTitle": "حظر الحساب",
+        "unlockTitle": "إلغاء حظر الحساب",
+        "lockDescription": "حظر الوصول إلى هذا الحساب يدويًا.",
+        "unlockDescription": "تم حظر هذا الحساب بعد عدة محاولات تسجيل دخول فاشلة.",
+        "reason": "سبب المنع",
+        "reasonPlaceholder": "لماذا أغلق هذا الحساب؟...",
+        "notifyLock": "إعلام المستخدم بالحظر",
+        "notifyUnlock": "إعلام المستخدم بإلغاء الحظر",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامك بذلك.",
+        "failedAttempts": "محاولات فاشلة",
+        "lock": "لمنع",
+        "unlock": "إلغاء الحظر",
+        "cancel": "يلغي",
+        "processing": "علاج...",
+        "enterLinkUrl": "أدخل عنوان URL للرابط:"
+      },
+      "actionsHistoryModal": {
+        "title": "تاريخ الأسهم",
+        "subtitle": "إدارة نيستهب",
+        "close": "يغلق",
+        "admin": {
+          "default": "مسؤل"
+        },
+        "search": {
+          "placeholder": "ابحث عن مسؤول أو مستخدم أو نمط..."
+        },
+        "filters": {
+          "label": "تصفية حسب",
+          "all": "جميع الأنواع"
+        },
+        "actionTypes": {
+          "suspension": "تعليق",
+          "suspensionUndone": "تم إلغاء التعليق",
+          "ban": "النفي",
+          "banUndone": "تم إلغاء الحظر",
+          "activation": "إعادة التنشيط",
+          "unlock": "رفع الحظر",
+          "lock": "الحظر",
+          "lockUndone": "تم إلغاء الحظر",
+          "warning": "تحذير",
+          "escalation": "التصعيد",
+          "escalationUndone": "تم إلغاء التصعيد",
+          "note": "ملاحظة داخلية",
+          "rejectVerification": "رفض التحقق",
+          "validateVerification": "التحقق من الصحة",
+          "undone": "تم إلغاء الإجراء"
+        },
+        "status": {
+          "active": "نشيط",
+          "suspended": "معلق",
+          "banned": "محظور",
+          "pending": "في الانتظار",
+          "locked": "محظور",
+          "inactive": "غير نشط",
+          "rejected": "مرفوض"
+        },
+        "user": {
+          "target": "مستخدم"
+        },
+        "action": {
+          "reason": "نمط"
+        },
+        "undo": {
+          "button": "يلغي",
+          "processing": "الإلغاء...",
+          "title": "إلغاء هذا الإجراء"
+        },
+        "results": {
+          "showing": "عرض {البدء} إلى {النهاية} في النتائج {total}.",
+          "empty": "لم يتم العثور على أي إجراءات"
+        },
+        "errors": {
+          "tokenNotAvailable": "الرمز غير متوفر",
+          "apiError": "خطأ في واجهة برمجة التطبيقات:",
+          "loadFailed": "غير قادر على تحميل سجل الإجراءات",
+          "retry": "حاول ثانية"
+        }
       }
     }
   },
@@ -720,7 +726,7 @@
           "desc": "قم بتحليل المستندات الخاصة بك عن طريق التعرف الضوئي على الحروف (OCR) لتعيين شارة \"تم التحقق منه\"."
         },
         "3": {
-          "title": "درجة الموثوقية",
+          "title": "نقاط الموثوقية",
           "desc": "احسب درجة الموثوقية (0-100) لنظام موثوق به."
         },
         "4": {
@@ -984,7 +990,7 @@
       "banking": "الخدمات المصرفية",
       "compliant": "متوافق",
       "cloud": "سحاب",
-      "sovereign": "السيادية",
+      "sovereign": "السيادي",
       "previousStep": "الخطوة السابقة",
       "finish": "حتى النهاية"
     },
@@ -1139,39 +1145,92 @@
     "restoreError": "خطأ أثناء الاستعادة"
   },
   "VerificationDetail": {
-    "unauthorized": "الوصول غير المصرح به",
-    "requestNotFound": "لم يتم العثور على الطلب",
-    "queue": "طابور",
-    "request": "طلب",
-    "pending": "في انتظار التحقق من الصحة",
-    "documentsProvided": "الوثائق المقدمة",
-    "cinFront": "سين الأمامية",
-    "cinBack": "العودة سين",
+    "backk": "خلف",
+    "verification": "رقم طلب التحقق:",
+    "pending": "في الانتظار",
+    "front": "أمام",
+    "back": "خلف",
+    "zoomOut": "تصغير",
+    "zoomIn": "تكبير",
+    "rotateLeft": "انعطف لليسار",
+    "rotateRight": "انعطف يمينا",
+    "flip": "يعود",
     "download": "تحميل",
-    "memberSince": "عضو منذ",
-    "ocrData": "البيانات المستخرجة (التعرف الضوئي على الحروف)",
+    "fullscreen": "شاشة كاملة",
+    "mirror": "مرآة",
+    "clickToExpand": "انقر للتكبير",
+    "noImage": "لا توجد صور",
+    "notDetected": "لم يتم الكشف عنها",
+    "owner": "مالك",
+    "tenant": "مستأجر",
+    "verified": "تم التحقق منه",
+    "notVerified": "لم يتم التحقق منها",
+    "extractedData": "البيانات المستخرجة",
     "firstName": "الاسم الأول",
     "lastName": "اسم",
+    "birthDate": "تاريخ الميلاد",
+    "gender": "جنس",
     "cinNumber": "رقم CIN",
-    "dateOfBirth": "تاريخ الميلاد",
-    "placeOfBirth": "مكان الميلاد",
-    "nationality": "جنسية",
-    "expiryDate": "تاريخ انتهاء الصلاحية",
-    "address": "عنوان",
-    "finalizeVerification": "الانتهاء من التحقق",
-    "internalNote": "ملاحظة داخلية (اختيارية)",
-    "internalNotePlaceholder": "إضافة ملاحظة للتدقيق...",
+    "email": "بريد إلكتروني",
+    "phone": "هاتف",
+    "ocrScore": "درجة التعرف الضوئي على الحروف",
+    "internalNote": "ملاحظة داخلية",
+    "internalNotePlaceholder": "أضف ملاحظة داخلية (مرئية فقط للمسؤولين)...",
     "validate": "للتحقق",
     "reject": "رفض",
-    "processing": "علاج...",
     "rejectionReason": "سبب الرفض",
-    "rejectionPlaceholder": "مستند غير واضح، منتهية الصلاحية، بيانات غير متطابقة...",
+    "required": "إلزامي",
+    "rejectionReasonPlaceholder": "توضيح سبب رفض هذا الطلب...",
     "confirmRejection": "تأكيد الرفض",
-    "rejectionReasons": {
-      "blurry": "وثيقة غير واضحة",
-      "expired": "انتهت صلاحية CIN",
-      "nameMismatch": "اسم مختلف",
-      "photoNotCompliant": "صورة غير صحيحة"
+    "unauthorized": "الوصول غير المصرح به",
+    "adminRequired": "هذه الصفحة مخصصة للمسؤولين.",
+    "noData": "لم يتم العثور على بيانات",
+    "reload": "إعادة تحميل",
+    "fullscreenImage": "صورة ملء الشاشة",
+    "userDetails": "تفاصيل المستخدم",
+    "role": "دور",
+    "submittedAt": "تم تقديمه بتاريخ",
+    "status": "حالة",
+    "action": "فعل",
+    "processRequest": "لعلاج",
+    "refresh": "ينعش",
+    "searchPlaceholder": "البحث عن مستخدم...",
+    "justNow": "الآن",
+    "minutesAgo": "{count} قبل دقيقة",
+    "oneHourAgo": "منذ ساعة واحدة",
+    "hoursAgo": "{count} قبل ساعات",
+    "daysAgo": "منذ {count} أيام",
+    "validateId": "التحقق من صحة الهوية",
+    "rejectId": "رفض الهوية",
+    "finalizeVerification": "الانتهاء من التحقق",
+    "reviewInstruction": "تحقق من المعلومات المذكورة أعلاه بعناية قبل اتخاذ القرار. يتم تسجيل الإجراءات للتدقيق.",
+    "identityDetails": "تفاصيل الهوية",
+    "skipForNow": "تخطي الآن",
+    "cancel": "يلغي",
+    "confirmDecision": "تأكيد القرار",
+    "memberSince": "عضو منذ",
+    "propertiesListed": "الخصائص المدرجة",
+    "userId": "معرف المستخدم",
+    "tier1Account": "حساب المستوى 1",
+    "stats": {
+      "pending": "في الانتظار",
+      "processedToday": "تمت معالجتها اليوم",
+      "documents": "وثائق",
+      "averageTime": "متوسط ​​الوقت",
+      "minutes": "دقيقة"
+    },
+    "table": {
+      "user": "مستخدم",
+      "role": "دور",
+      "date": "تاريخ",
+      "status": "حالة",
+      "action": "فعل"
+    },
+    "empty": {
+      "title": "لا يوجد طلب التحقق",
+      "description": "تمت معالجة كافة الطلبات أو لا توجد طلبات حتى الآن.",
+      "backToDashboard": "العودة إلى لوحة القيادة",
+      "viewHistory": "عرض التاريخ"
     }
   },
   "Verifications": {
@@ -1249,5 +1308,49 @@
     "securityBadge": "تشفير AES-256 • متوافق مع اللائحة العامة لحماية البيانات",
     "legal": "إشعارات قانونية",
     "privacy": "السرية"
+  },
+  "VerificationsHistory": {
+    "title": "تاريخ التدقيق",
+    "subtitle": "عرض جميع طلبات التحقق التي تمت معالجتها بالفعل",
+    "backToPending": "العودة إلى الطلبات المعلقة",
+    "refresh": "ينعش",
+    "searchPlaceholder": "البحث بالاسم أو البريد الإلكتروني...",
+    "status": {
+      "validated": "تم التحقق من صحتها",
+      "rejected": "مرفوض",
+      "pending": "في الانتظار"
+    },
+    "filters": {
+      "all": "الجميع",
+      "validated": "تم التحقق من صحتها",
+      "rejected": "مرفوض"
+    },
+    "stats": {
+      "total": "إجمالي الشيكات",
+      "totalDescription": "التاريخ الكامل",
+      "approvalRate": "معدل الموافقة",
+      "rejected": "تم رفض الطلبات",
+      "rejectedDescription": "تتطلب الاهتمام"
+    },
+    "table": {
+      "submittedAt": "تاريخ التقديم",
+      "user": "مستخدم",
+      "email": "بريد إلكتروني",
+      "status": "حالة",
+      "processedAt": "تاريخ المعالجة",
+      "processedBy": "تمت معالجتها بواسطة",
+      "notes": "السبب/ التعليق",
+      "action": "فعل",
+      "view": "يرى"
+    },
+    "empty": {
+      "title": "لم تتم معالجة أي طلبات",
+      "description": "ستظهر هنا الطلبات التي تم التحقق منها أو المرفوضة"
+    },
+    "pagination": {
+      "showing": "عرض",
+      "of": "على",
+      "results": "نتائج"
+    }
   }
 }

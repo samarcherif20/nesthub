@@ -71,7 +71,9 @@ model User {
   reportsReceived      UserReport[]          @relation("ReportedUser")
   reportsMade          UserReport[]          @relation("Reporter")
   stats                UserStats?
-  verificationRequests VerificationRequest[]
+  verificationRequests VerificationRequest[]  @relation("UserVerificationRequests")
+  verifiedRequests     VerificationRequest[]  @relation("AdminReviewedVerifications")
+  verificationActions  VerificationAction[]   @relation("AdminVerificationActions")
   otpCodes             OtpCode[]
   identityVerification IdentityVerification?
 
@@ -94,6 +96,7 @@ model PasswordResetToken {
   @@index([email])
   @@index([token])
 }
+
 model OtpCode {
   id          String   @id @default(uuid())
   userId      String
@@ -134,7 +137,7 @@ model AdminInvitation {
   role       UserRole  @default(ADMIN)
   expiresAt  DateTime
   acceptedAt DateTime?
-  revokedAt  DateTime? // Ajouter ce champ
+  revokedAt  DateTime?
   createdAt  DateTime  @default(now())
 
   @@index([email])
@@ -167,13 +170,37 @@ model VerificationRequest {
   processedAt      DateTime?
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
-  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  user         User @relation("UserVerificationRequests", fields: [userId], references: [id], onDelete: Cascade)
+  validatedBy  User? @relation("AdminReviewedVerifications", fields: [reviewedBy], references: [id])
+  
+  actions VerificationAction[]
 
   @@index([userId])
   @@index([status])
   @@index([submittedAt])
   @@index([reviewedBy])
   @@map("verification_requests")
+}
+
+model VerificationAction {
+  id             String             @id @default(uuid())
+  requestId      String
+  action         String
+  performedBy    String
+  previousStatus VerificationStatus
+  newStatus      VerificationStatus
+  adminComment   String?
+  rejectionMotif String?
+  createdAt      DateTime           @default(now())
+  
+  request VerificationRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  admin   User                 @relation("AdminVerificationActions", fields: [performedBy], references: [id])
+
+  @@index([requestId])
+  @@index([performedBy])
+  @@index([createdAt])
+  @@map("verification_actions")
 }
 
 model UserAction {

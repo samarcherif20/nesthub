@@ -9,6 +9,9 @@ import { User } from '@/lib/types/user';
 import { useTranslations } from 'next-intl';
 import { IoLockClosedOutline, IoLockOpenOutline } from 'react-icons/io5';
 
+const pip = (url: string) =>
+  `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
+
 interface LockUnlockModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -89,7 +92,7 @@ export default function LockUnlockModal({ isOpen, onClose, user, onLock, onUnloc
         <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700">
           {user.profilePictureUrl ? (
             <img 
-              src={user.profilePictureUrl} 
+              src={pip(user.profilePictureUrl)} 
               alt={`${user.firstName} ${user.lastName}`}
               className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 object-cover"
             />

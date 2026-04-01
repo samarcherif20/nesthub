@@ -130,7 +130,7 @@
     "error": "An error has occurred. Please try again",
     "usernameRequired": "Username is required",
     "usernameInvalid": "Invalid username format!",
-    "emailNotFound": "No account found with this email",
+    "emailNotFound": "No accounts found with this email",
     "usernameNotFound": "No accounts found with this username",
     "emailOrUsername": "Email or username",
     "emailOrUsernamePlaceholder": "contact@example.com",
@@ -202,6 +202,12 @@
     "invitationDesAdmins": "Admin Invitation",
     "usersManagement": {
       "unauthorized": "Unauthorized access",
+      "stats": {
+        "totalUsers": "Total users",
+        "newUsers30d": "New users (30 days)",
+        "pendingValidation": "Waiting for validation",
+        "verifiedIdentity": "Verified identity"
+      },
       "page": {
         "title": "User Management",
         "description": "Manage all platform users"
@@ -241,13 +247,6 @@
           "manually_blocked": "Blocked (manual)",
           "inactive": "Inactive"
         },
-        "verification": {
-          "label": "Verification",
-          "all": "All",
-          "verified": "Verified",
-          "pending": "On hold",
-          "rejected": "Rejected"
-        },
         "advanced": {
           "title": "Advanced filters",
           "dateRange": "Registration period",
@@ -256,6 +255,13 @@
           "minReliabilityPlaceholder": "≥50",
           "maxFraudPlaceholder": "≤ 30"
         }
+      },
+      "verification": {
+        "label": "Verification",
+        "all": "All",
+        "verified": "Verified",
+        "pending": "On hold",
+        "rejected": "Rejected"
       },
       "table": {
         "headers": {
@@ -281,245 +287,245 @@
       "verifiedIdentity": "Verified",
       "pendingApprovals": "Waiting for verification",
       "averageReliability": "Average reliability",
-      "pendingValidation": "Waiting for validation"
-    },
-    "export": {
-      "csv": {
-        "title": "CSV",
-        "description": "For Excel / analysis"
-      },
-      "pdf": {
-        "title": "PDF",
-        "description": "For printing"
-      }
-    },
-    "badges": {
-      "verified": "Verified",
-      "pending": "On hold",
-      "rejected": "Rejected",
-      "unverified": "Not verified",
-      "reliability": "Reliability",
-      "fraud": "Fraud"
-    },
-    "alerts": {
-      "sessionExpired": "Session expired - please log in again",
-      "unauthorized": "Unauthorized access",
-      "loadingError": "Loading error",
-      "exportError": "Error during export",
-      "exportSuccess": "Export successful"
-    },
-    "messages": {
-      "noUsers": "No users found",
-      "loading": "Loading..."
-    },
-    "activateModal": {
-      "title": "Reactivate account",
-      "description": "Do you want to restore full access for this user?",
-      "confirm": "Reactivate account",
-      "cancel": "Cancel",
-      "processing": "Treatment...",
-      "currentStatus": "This account is currently {status}",
-      "status": {
-        "suspended": "suspended",
-        "banned": "banned",
-        "locked": "blocked",
-        "inactive": "inactive",
-        "rejected": "rejected",
-        "unknown": "unknown"
-      }
-    },
-    "warningModal": {
-      "title": "Send a warning",
-      "description": "This action will be saved in history",
-      "reason": "Pattern",
-      "reliability": "Fiab.",
-      "specifyReason": "Specify the reason",
-      "optionalMessage": "Message (optional)",
-      "explainReason": "Explain the reason...",
-      "additionalDetails": "Additional details...",
-      "infoMessage": "The user will receive a visible warning in their dashboard.",
-      "emailSent": "Email sent.",
-      "previousWarnings": "Already {count} warning(s).",
-      "cancel": "Cancel",
-      "send": "Send",
-      "notifyByEmail": "Notify the user by email",
-      "emailNotificationMessage": "An email will be sent to {email} to notify them of this warning.",
-      "processing": "Sending...",
-      "error": "Error sending warning",
-      "reasons": {
-        "inappropriateBehavior": {
-          "label": "Inappropriate behavior",
-          "description": "Inappropriate language or attitude"
+      "pendingValidation": "Waiting for validation",
+      "export": {
+        "csv": {
+          "title": "CSV",
+          "description": "For Excel / analysis"
         },
-        "spam": {
-          "label": "Spam",
-          "description": "Unsolicited advertising messages"
-        },
-        "falseInformation": {
-          "label": "Fake news",
-          "description": "Misleading profile information"
-        },
-        "paymentIssues": {
-          "label": "Payment issues",
-          "description": "Late or refused payments"
-        },
-        "multipleAccounts": {
-          "label": "Multiple accounts",
-          "description": "Creating multiple accounts"
-        },
-        "other": {
-          "label": "Other",
-          "description": "Custom reason"
+        "pdf": {
+          "title": "PDF",
+          "description": "For printing"
         }
-      }
-    },
-    "addNoteModal": {
-      "title": "Add an internal note",
-      "description": "Visible only to administrators",
-      "noteContent": "Content of the note",
-      "placeholder": "Write your note here...",
-      "addNote": "Add note",
-      "adding": "Addition...",
-      "cancel": "Cancel",
-      "enterLinkUrl": "Enter the link URL:",
-      "error": "Error adding note"
-    },
-    "banModal": {
-      "title": "Permanently ban the user",
-      "description": "This action is irreversible",
-      "reason": "Reason for ban",
-      "selectReason": "Select a reason...",
-      "evidence": "Evidence and details",
-      "evidencePlaceholder": "Detail the reasons and attach links to the evidence if necessary...",
-      "notify": "Notify the user by email",
-      "emailNotificationMessage": "An email will be sent to {email} to notify them of this ban.",
-      "confirmLabel": "Type",
-      "cancel": "Cancel",
-      "confirm": "Confirm ban",
-      "processing": "Treatment..."
-    },
-    "escalateModal": {
-      "title": "Gradual escalation",
-      "description": "Gradual sanction system",
-      "currentLevel": "Current level",
-      "applySanction": "Select next step",
-      "reason": "Reason for escalation",
-      "reasonPlaceholder": "Describe the reasons justifying this sanction...",
-      "warning": "Warning",
-      "suspension": "Suspension",
-      "ban": "Banishment",
-      "alreadyApplied": "Already applied to user",
-      "locked": "Locked - Next Step Required",
-      "historyNote": "This reason will be recorded in the moderation history.",
-      "apply": "Apply escalation",
-      "notify": "Notify the user by email",
-      "emailNotificationMessage": "An email will be sent to {email} to notify them of this sanction.",
-      "cancel": "Cancel",
-      "processing": "Treatment..."
-    },
-    "suspendModal": {
-      "title": "Temporarily suspend the user",
-      "description": "The user will not be able to log in for the chosen duration",
-      "duration": "Length of suspension",
-      "day": "1 day",
-      "days": "{count} days",
-      "reason": "Reason for suspension",
-      "selectReason": "Select a reason",
-      "details": "Detailed pattern",
-      "detailsPlaceholder": "Briefly explain the reason for this measure...",
-      "emailNotification": "notification sent",
-      "notificationInfo": "An email will be sent to the user to inform them of the suspension.",
-      "enterLinkUrl": "Enter the link URL",
-      "cancel": "Cancel",
-      "confirm": "Confirm suspension",
-      "processing": "Treatment...",
-      "reasons": {
-        "spam": "Spam or abuse",
-        "tos": "Violation of the terms of use",
-        "safety": "Account security",
-        "other": "Other reason"
       },
-      "emailNotificationTitle": "Email notification",
-      "emailNotificationMessage": "An email will be sent to {email} to notify them of this suspension.",
-      "notify": "Notify the user by email"
-    },
-    "lockUnlockModal": {
-      "lockTitle": "Block account",
-      "unlockTitle": "Unblock account",
-      "lockDescription": "Manually block access to this account.",
-      "unlockDescription": "This account was blocked after several failed login attempts.",
-      "reason": "Reason for blocking",
-      "reasonPlaceholder": "Why block this account?...",
-      "notifyLock": "Notify user of blocking",
-      "notifyUnlock": "Notify user of unblocking",
-      "emailNotificationMessage": "An email will be sent to {email} to notify this.",
-      "failedAttempts": "Failed attempts",
-      "lock": "To block",
-      "unlock": "Unblock",
-      "cancel": "Cancel",
-      "processing": "Treatment...",
-      "enterLinkUrl": "Enter the link URL:"
-    },
-    "actionsHistoryModal": {
-      "title": "Stock History",
-      "subtitle": "NESTHUB Administration",
-      "close": "Close",
-      "admin": {
-        "default": "Admin"
-      },
-      "search": {
-        "placeholder": "Search for an admin, user or pattern..."
-      },
-      "filters": {
-        "label": "Filter by",
-        "all": "All types"
-      },
-      "actionTypes": {
-        "suspension": "Suspension",
-        "suspensionUndone": "Suspension canceled",
-        "ban": "Banishment",
-        "banUndone": "Ban canceled",
-        "activation": "Reactivation",
-        "unlock": "Unblocking",
-        "lock": "Blocking",
-        "lockUndone": "Block canceled",
-        "warning": "Warning",
-        "escalation": "Escalation",
-        "escalationUndone": "Escalation canceled",
-        "note": "Internal note",
-        "rejectVerification": "Verification rejection",
-        "validateVerification": "Validation verification",
-        "undone": "Action canceled"
-      },
-      "status": {
-        "active": "Active",
-        "suspended": "Suspended",
-        "banned": "Banned",
+      "badges": {
+        "verified": "Verified",
         "pending": "On hold",
-        "locked": "Blocked",
-        "inactive": "Inactive",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "unverified": "Not verified",
+        "reliability": "Reliability",
+        "fraud": "Fraud"
       },
-      "user": {
-        "target": "User"
+      "alerts": {
+        "sessionExpired": "Session expired - please log in again",
+        "unauthorized": "Unauthorized access",
+        "loadingError": "Loading error",
+        "exportError": "Error during export",
+        "exportSuccess": "Export successful"
       },
-      "action": {
-        "reason": "Pattern"
+      "messages": {
+        "noUsers": "No users found",
+        "loading": "Loading..."
       },
-      "undo": {
-        "button": "Cancel",
-        "processing": "Cancelation...",
-        "title": "Cancel this action"
+      "activateModal": {
+        "title": "Reactivate account",
+        "description": "Do you want to restore full access for this user?",
+        "confirm": "Reactivate account",
+        "cancel": "Cancel",
+        "processing": "Treatment...",
+        "currentStatus": "This account is currently {status}",
+        "status": {
+          "suspended": "suspended",
+          "banned": "banned",
+          "locked": "blocked",
+          "inactive": "inactive",
+          "rejected": "rejected",
+          "unknown": "unknown"
+        }
       },
-      "results": {
-        "showing": "Showing {start} to {end} on {total} results",
-        "empty": "No actions found"
+      "warningModal": {
+        "title": "Send a warning",
+        "description": "This action will be saved in history",
+        "reason": "Pattern",
+        "reliability": "Fiab.",
+        "specifyReason": "Specify the reason",
+        "optionalMessage": "Message (optional)",
+        "explainReason": "Explain the reason...",
+        "additionalDetails": "Additional details...",
+        "infoMessage": "The user will receive a visible warning in their dashboard.",
+        "emailSent": "Email sent.",
+        "previousWarnings": "Already {count} warning(s).",
+        "cancel": "Cancel",
+        "send": "Send",
+        "notifyByEmail": "Notify the user by email",
+        "emailNotificationMessage": "An email will be sent to {email} to notify them of this warning.",
+        "processing": "Sending...",
+        "error": "Error sending warning",
+        "reasons": {
+          "inappropriateBehavior": {
+            "label": "Inappropriate behavior",
+            "description": "Inappropriate language or attitude"
+          },
+          "spam": {
+            "label": "Spam",
+            "description": "Unsolicited advertising messages"
+          },
+          "falseInformation": {
+            "label": "Fake news",
+            "description": "Misleading profile information"
+          },
+          "paymentIssues": {
+            "label": "Payment issues",
+            "description": "Late or refused payments"
+          },
+          "multipleAccounts": {
+            "label": "Multiple accounts",
+            "description": "Creating multiple accounts"
+          },
+          "other": {
+            "label": "Other",
+            "description": "Custom reason"
+          }
+        }
       },
-      "errors": {
-        "tokenNotAvailable": "Token not available",
-        "apiError": "API error:",
-        "loadFailed": "Unable to load action history",
-        "retry": "Try again"
+      "addNoteModal": {
+        "title": "Add an internal note",
+        "description": "Visible only to administrators",
+        "noteContent": "Content of the note",
+        "placeholder": "Write your note here...",
+        "addNote": "Add note",
+        "adding": "Addition...",
+        "cancel": "Cancel",
+        "enterLinkUrl": "Enter the link URL:",
+        "error": "Error adding note"
+      },
+      "banModal": {
+        "title": "Permanently ban the user",
+        "description": "This action is irreversible",
+        "reason": "Reason for ban",
+        "selectReason": "Select a reason...",
+        "evidence": "Evidence and details",
+        "evidencePlaceholder": "Detail the reasons and attach links to the evidence if necessary...",
+        "notify": "Notify the user by email",
+        "emailNotificationMessage": "An email will be sent to {email} to notify them of this ban.",
+        "confirmLabel": "Type",
+        "cancel": "Cancel",
+        "confirm": "Confirm ban",
+        "processing": "Treatment..."
+      },
+      "escalateModal": {
+        "title": "Gradual escalation",
+        "description": "Gradual sanction system",
+        "currentLevel": "Current level",
+        "applySanction": "Select next step",
+        "reason": "Reason for escalation",
+        "reasonPlaceholder": "Describe the reasons justifying this sanction...",
+        "warning": "Warning",
+        "suspension": "Suspension",
+        "ban": "Banishment",
+        "alreadyApplied": "Already applied to user",
+        "locked": "Locked - Next Step Required",
+        "historyNote": "This reason will be recorded in the moderation history.",
+        "apply": "Apply escalation",
+        "notify": "Notify the user by email",
+        "emailNotificationMessage": "An email will be sent to {email} to notify them of this sanction.",
+        "cancel": "Cancel",
+        "processing": "Treatment..."
+      },
+      "suspendModal": {
+        "title": "Temporarily suspend the user",
+        "description": "The user will not be able to log in for the chosen duration",
+        "duration": "Length of suspension",
+        "day": "1 day",
+        "days": "{count} days",
+        "reason": "Reason for suspension",
+        "selectReason": "Select a reason",
+        "details": "Detailed pattern",
+        "detailsPlaceholder": "Briefly explain the reason for this measure...",
+        "emailNotification": "notification sent",
+        "notificationInfo": "An email will be sent to the user to inform them of the suspension.",
+        "enterLinkUrl": "Enter the link URL",
+        "cancel": "Cancel",
+        "confirm": "Confirm suspension",
+        "processing": "Treatment...",
+        "reasons": {
+          "spam": "Spam or abuse",
+          "tos": "Violation of the terms of use",
+          "safety": "Account security",
+          "other": "Other reason"
+        },
+        "emailNotificationTitle": "Email notification",
+        "emailNotificationMessage": "An email will be sent to {email} to notify them of this suspension.",
+        "notify": "Notify the user by email"
+      },
+      "lockUnlockModal": {
+        "lockTitle": "Block account",
+        "unlockTitle": "Unblock account",
+        "lockDescription": "Manually block access to this account.",
+        "unlockDescription": "This account was blocked after several failed login attempts.",
+        "reason": "Reason for blocking",
+        "reasonPlaceholder": "Why block this account?...",
+        "notifyLock": "Notify user of blocking",
+        "notifyUnlock": "Notify user of unblocking",
+        "emailNotificationMessage": "An email will be sent to {email} to notify this.",
+        "failedAttempts": "Failed attempts",
+        "lock": "To block",
+        "unlock": "Unblock",
+        "cancel": "Cancel",
+        "processing": "Treatment...",
+        "enterLinkUrl": "Enter the link URL:"
+      },
+      "actionsHistoryModal": {
+        "title": "Stock History",
+        "subtitle": "NESTHUB Administration",
+        "close": "Close",
+        "admin": {
+          "default": "Admin"
+        },
+        "search": {
+          "placeholder": "Search for an admin, user or pattern..."
+        },
+        "filters": {
+          "label": "Filter by",
+          "all": "All types"
+        },
+        "actionTypes": {
+          "suspension": "Suspension",
+          "suspensionUndone": "Suspension canceled",
+          "ban": "Banishment",
+          "banUndone": "Ban canceled",
+          "activation": "Reactivation",
+          "unlock": "Unblocking",
+          "lock": "Blocking",
+          "lockUndone": "Block canceled",
+          "warning": "Warning",
+          "escalation": "Escalation",
+          "escalationUndone": "Escalation canceled",
+          "note": "Internal note",
+          "rejectVerification": "Verification rejection",
+          "validateVerification": "Validation verification",
+          "undone": "Action canceled"
+        },
+        "status": {
+          "active": "Active",
+          "suspended": "Suspended",
+          "banned": "Banned",
+          "pending": "On hold",
+          "locked": "Blocked",
+          "inactive": "Inactive",
+          "rejected": "Rejected"
+        },
+        "user": {
+          "target": "User"
+        },
+        "action": {
+          "reason": "Pattern"
+        },
+        "undo": {
+          "button": "Cancel",
+          "processing": "Cancelation...",
+          "title": "Cancel this action"
+        },
+        "results": {
+          "showing": "Showing {start} to {end} on {total} results",
+          "empty": "No actions found"
+        },
+        "errors": {
+          "tokenNotAvailable": "Token not available",
+          "apiError": "API error:",
+          "loadFailed": "Unable to load action history",
+          "retry": "Try again"
+        }
       }
     }
   },
@@ -720,7 +726,7 @@
           "desc": "Analyze your documents by OCR to assign the “Verified” badge."
         },
         "3": {
-          "title": "Reliability score",
+          "title": "Reliability Score",
           "desc": "Calculate your reliability score (0-100) for a trusted system."
         },
         "4": {
@@ -1139,39 +1145,92 @@
     "restoreError": "Error during restore"
   },
   "VerificationDetail": {
-    "unauthorized": "Unauthorized access",
-    "requestNotFound": "Request not found",
-    "queue": "Queue",
-    "request": "Request",
-    "pending": "Waiting for validation",
-    "documentsProvided": "Documents provided",
-    "cinFront": "Front CIN",
-    "cinBack": "Back CIN",
+    "backk": "Back",
+    "verification": "Verification request no.:",
+    "pending": "On hold",
+    "front": "Front",
+    "back": "Back",
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom",
+    "rotateLeft": "Turn left",
+    "rotateRight": "Turn right",
+    "flip": "Return",
     "download": "Download",
-    "memberSince": "Member since",
-    "ocrData": "Extracted data (OCR)",
+    "fullscreen": "Full screen",
+    "mirror": "Mirror",
+    "clickToExpand": "Click to enlarge",
+    "noImage": "No pictures",
+    "notDetected": "Not detected",
+    "owner": "Owner",
+    "tenant": "Tenant",
+    "verified": "Verified",
+    "notVerified": "Not verified",
+    "extractedData": "Extracted data",
     "firstName": "First name",
     "lastName": "Name",
+    "birthDate": "Date of birth",
+    "gender": "Gender",
     "cinNumber": "CIN number",
-    "dateOfBirth": "Date of birth",
-    "placeOfBirth": "Place of birth",
-    "nationality": "Nationality",
-    "expiryDate": "Expiry date",
-    "address": "Address",
-    "finalizeVerification": "Finalize verification",
-    "internalNote": "Internal note (optional)",
-    "internalNotePlaceholder": "Add a note for the audit...",
+    "email": "E-mail",
+    "phone": "Phone",
+    "ocrScore": "OCR score",
+    "internalNote": "Internal note",
+    "internalNotePlaceholder": "Add an internal note (visible only to admins)...",
     "validate": "TO VALIDATE",
     "reject": "DISMISS",
-    "processing": "Treatment...",
     "rejectionReason": "Reason for rejection",
-    "rejectionPlaceholder": "Blurred document, expired, non-matching data...",
+    "required": "Mandatory",
+    "rejectionReasonPlaceholder": "Explain why this request is rejected...",
     "confirmRejection": "Confirm rejection",
-    "rejectionReasons": {
-      "blurry": "Blurred document",
-      "expired": "CIN expired",
-      "nameMismatch": "Different name",
-      "photoNotCompliant": "Incorrect photo"
+    "unauthorized": "Unauthorized access",
+    "adminRequired": "This page is reserved for administrators.",
+    "noData": "No data found",
+    "reload": "Reload",
+    "fullscreenImage": "Full screen image",
+    "userDetails": "User details",
+    "role": "Role",
+    "submittedAt": "Submitted on",
+    "status": "Status",
+    "action": "Action",
+    "processRequest": "To treat",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search for a user...",
+    "justNow": "Right now",
+    "minutesAgo": "{count} min ago",
+    "oneHourAgo": "1 hour ago",
+    "hoursAgo": "{count} hours ago",
+    "daysAgo": "{count} days ago",
+    "validateId": "VALIDATE ID",
+    "rejectId": "REJECT ID",
+    "finalizeVerification": "Finalize verification",
+    "reviewInstruction": "Check the above information carefully before making a decision. Actions are recorded for auditing.",
+    "identityDetails": "Identity details",
+    "skipForNow": "Skip for now",
+    "cancel": "Cancel",
+    "confirmDecision": "Confirm the decision",
+    "memberSince": "Member since",
+    "propertiesListed": "listed properties",
+    "userId": "USER ID",
+    "tier1Account": "TIER 1 ACCOUNT",
+    "stats": {
+      "pending": "On hold",
+      "processedToday": "Processed today",
+      "documents": "documents",
+      "averageTime": "Average time",
+      "minutes": "min"
+    },
+    "table": {
+      "user": "User",
+      "role": "Role",
+      "date": "Date",
+      "status": "Status",
+      "action": "Action"
+    },
+    "empty": {
+      "title": "No verification request",
+      "description": "All requests have been processed or there are no submissions yet.",
+      "backToDashboard": "Return to dashboard",
+      "viewHistory": "View history"
     }
   },
   "Verifications": {
@@ -1249,5 +1308,49 @@
     "securityBadge": "AES-256 encryption • GDPR compliant",
     "legal": "Legal notices",
     "privacy": "Confidentiality"
+  },
+  "VerificationsHistory": {
+    "title": "Verification history",
+    "subtitle": "View all verification requests already processed",
+    "backToPending": "Back to pending requests",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search by name or email...",
+    "status": {
+      "validated": "Validated",
+      "rejected": "Rejected",
+      "pending": "On hold"
+    },
+    "filters": {
+      "all": "All",
+      "validated": "Validated",
+      "rejected": "Rejected"
+    },
+    "stats": {
+      "total": "Total checks",
+      "totalDescription": "Complete history",
+      "approvalRate": "Approval rate",
+      "rejected": "Requests rejected",
+      "rejectedDescription": "Require attention"
+    },
+    "table": {
+      "submittedAt": "Submission date",
+      "user": "User",
+      "email": "E-mail",
+      "status": "Status",
+      "processedAt": "Processing date",
+      "processedBy": "Processed by",
+      "notes": "Reason / Comment",
+      "action": "Action",
+      "view": "See"
+    },
+    "empty": {
+      "title": "No requests processed",
+      "description": "Validated or rejected requests will appear here"
+    },
+    "pagination": {
+      "showing": "Display of",
+      "of": "on",
+      "results": "results"
+    }
   }
 }

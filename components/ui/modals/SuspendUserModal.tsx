@@ -9,6 +9,9 @@ import { useTranslations } from "next-intl";
 import NotificationCheckbox from "@/components/ui/NotificationCheckbox";
 import { IoPauseCircleOutline } from "react-icons/io5";
 
+const pip = (url: string) =>
+  `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
+
 interface SuspendUserModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -87,8 +90,9 @@ export default function SuspendUserModal({
         {/* User Identity Header - compact */}
         <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700">
           {user.profilePictureUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={user.profilePictureUrl}
+              src={pip(user.profilePictureUrl)}
               alt={`${user.firstName} ${user.lastName}`}
               className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 object-cover"
             />

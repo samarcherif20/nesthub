@@ -20,6 +20,16 @@ const BAN_REASONS = [
   { value: 'OTHER', label: 'Autre raison' },
 ];
 
+const pip = (url: string) =>
+  `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
+
+interface BanUserModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  user: User | null;
+  onConfirm: (userId: string, reason: string, motif: string, notify: boolean) => Promise<void>;
+}
+
 export default function BanUserModal({ isOpen, onClose, user, onConfirm }: BanUserModalProps) {
   const t = useTranslations('admin.usersManagement.banModal');
   const [reason, setReason] = useState('');
@@ -80,8 +90,9 @@ export default function BanUserModal({ isOpen, onClose, user, onConfirm }: BanUs
         {/* User Identity Header - compact */}
         <div className="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700">
           {user.profilePictureUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img 
-              src={user.profilePictureUrl} 
+              src={pip(user.profilePictureUrl)} 
               alt={`${user.firstName} ${user.lastName}`}
               className="w-8 h-8 rounded-full border border-gray-200 dark:border-gray-600 object-cover"
             />

@@ -8,18 +8,18 @@ import { ValidationPatterns } from "@/lib/utils";
 
 // Helper function to get current locale from URL
 const getCurrentLocale = () => {
-  if (typeof window === 'undefined') return 'fr';
-  
+  if (typeof window === "undefined") return "fr";
+
   const pathname = window.location.pathname;
-  const segments = pathname.split('/').filter(Boolean);
-  
-  const validLocales = ['fr', 'en', 'ar', 'de', 'es', 'it'];
-  
+  const segments = pathname.split("/").filter(Boolean);
+
+  const validLocales = ["fr", "en", "ar", "de", "es", "it"];
+
   if (segments[0] && validLocales.includes(segments[0])) {
     return segments[0];
   }
-  
-  return localStorage.getItem('preferred-language') || 'fr';
+
+  return localStorage.getItem("preferred-language") || "fr";
 };
 
 export function useInscription() {
@@ -275,7 +275,7 @@ export function useInscription() {
   // ============================================
   // EFFETS POUR LA VALIDATION EN TEMPS RÉEL
   // ============================================
-  
+
   useEffect(() => {
     if (phoneNumber && phoneNumber.length >= 8) {
       validatePhoneUniqueness(phoneNumber);
@@ -344,50 +344,61 @@ export function useInscription() {
     }
   }, [isUserLoaded, user]);
 
-  const handleOCR = async (file: File, side: "recto" | "verso") => {
-    if (side !== "recto") {
-      toast.success("Verso ajouté !", {
-        description: "La face arrière a été traitée.",
-      });
-      return;
+  // Remplace handleOCR par ceci
+  const [isUploadingCIN, setIsUploadingCIN] = useState(false);
+  const [uploadCINError, setUploadCINError] = useState("");
+
+  const handleUploadCIN = async (): Promise<boolean> => {
+    if (!cinRecto || !cinVerso || !profilePhoto) {
+      setUploadCINError("Veuillez uploader les 3 fichiers");
+      return false;
     }
 
-    setIsOcrLoading(true);
+    const userId = currentUserId || localStorage.getItem("currentUserId");
+    if (!userId) {
+      setUploadCINError("ID utilisateur introuvable");
+      return false;
+    }
+
+    setIsUploadingCIN(true);
+    setUploadCINError("");
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("userId", userId);
+      formData.append("cinRecto", cinRecto);
+      formData.append("cinVerso", cinVerso);
+      formData.append("profilePhoto", profilePhoto);
 
-      const response = await fetch("/api/ocr", {
+      const res = await fetch("/api/registration/upload-cin", {
         method: "POST",
         body: formData,
       });
+      const data = await res.json();
 
-      const data = await response.json();
-      console.log(" OCR résultat:", data);
+      if (!res.ok) throw new Error(data.error || "Erreur upload");
 
-      if (!data.success) {
-        throw new Error(data.error || "Erreur OCR");
-      }
+      // Pré-remplir les champs avec ce que Vision a extrait
+      if (data.extracted?.firstName) setFirstName(data.extracted.firstName);
+      if (data.extracted?.lastName) setLastName(data.extracted.lastName);
+      if (data.extracted?.dateOfBirth)
+        setDateNaissance(data.extracted.dateOfBirth);
+      if (data.extracted?.cinNumber) setCinNumber(data.extracted.cinNumber);
 
-      const { parsed } = data;
-
-      if (parsed.firstName) setFirstName(parsed.firstName);
-      if (parsed.lastName) setLastName(parsed.lastName);
-      if (parsed.birthDate) setDateNaissance(parsed.birthDate);
-      if (parsed.cinNumber) setCinNumber(parsed.cinNumber);
-
-      toast.success("OCR terminé !", {
-        description: "Les informations ont été extraites avec succès.",
+      toast.success("Documents uploadés !", {
+        description: data.ocrSuccess
+          ? `CIN détecté : ${data.cinNumber || "en attente validation"}`
+          : "Upload réussi, données à confirmer manuellement.",
       });
-    } catch (error) {
-      console.error(" OCR erreur:", error);
-      toast.error("Erreur OCR", {
-        description:
-          "Impossible d'extraire les informations. Remplissez manuellement.",
-      });
+
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Erreur inconnue";
+      setUploadCINError(msg);
+      toast.error("Erreur upload", { description: msg });
+      return false;
     } finally {
-      setIsOcrLoading(false);
+      setIsUploadingCIN(false);
     }
   };
 
@@ -561,7 +572,12 @@ export function useInscription() {
     }
 
     // Validation des formats de base
-    if (usernameErrorVal || emailErrorVal || passwordErrorVal || confirmErrorVal) {
+    if (
+      usernameErrorVal ||
+      emailErrorVal ||
+      passwordErrorVal ||
+      confirmErrorVal
+    ) {
       setFormError(t("required"));
       return false;
     }
@@ -575,7 +591,7 @@ export function useInscription() {
     setIsCheckingEmail(true);
     const emailExists = await checkEmailExists(email);
     setIsCheckingEmail(false);
-    
+
     if (emailExists) {
       setEmailError(t("errors.emailAlreadyExists"));
       setFormError(t("errors.emailAlreadyExists"));
@@ -588,7 +604,7 @@ export function useInscription() {
     setIsCheckingUsername(true);
     const usernameExists = await checkUsernameExists(username);
     setIsCheckingUsername(false);
-    
+
     if (usernameExists) {
       setUsernameError(t("errors.usernameAlreadyExists"));
       setFormError(t("errors.usernameAlreadyExists"));
@@ -685,12 +701,12 @@ export function useInscription() {
 
       const verifyUrl = `${window.location.origin}/${currentLocale}/inscription/verify-catch`;
       console.log("📧 Verification URL:", verifyUrl);
-      
+
       await signUp.prepareEmailAddressVerification({
         strategy: "email_link",
         redirectUrl: verifyUrl,
       });
-      
+
       setAlertMessage(`Un lien de vérification a été envoyé à ${email}`);
       setShowSuccessAlert(true);
     } catch (error: any) {
@@ -707,8 +723,12 @@ export function useInscription() {
   };
 
   const handleConfirmIdentity = async () => {
-    const tempId = localStorage.getItem("currentUserId");
+    // 1. Upload CIN + Vision OCR
+    const uploadOk = await handleUploadCIN();
+    if (!uploadOk) return; // stoppe si l'upload a échoué
 
+    // 2. Complete profile (données texte)
+    const tempId = currentUserId || localStorage.getItem("currentUserId");
     try {
       await fetch("/api/users/complete-profile", {
         method: "POST",
@@ -725,24 +745,18 @@ export function useInscription() {
         }),
       });
 
-      if (isUserLoaded && user && user.id && tempId && tempId !== user.id) {
-        console.log(" Final sync: updating clerkId", tempId, "→", user.id);
-
+      // Sync Clerk ID si nécessaire
+      if (isUserLoaded && user?.id && tempId && tempId !== user.id) {
         await fetch("/api/users/update-clerk-id", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            oldClerkId: tempId,
-            newClerkId: user.id,
-          }),
+          body: JSON.stringify({ oldClerkId: tempId, newClerkId: user.id }),
         });
-
         localStorage.setItem("currentUserId", user.id);
         setCurrentUserId(user.id);
-        console.log(" Real Clerk ID synced to DB:", user.id);
       }
     } catch (error) {
-      console.error(" Erreur:", error);
+      console.error("Erreur complete-profile:", error);
     } finally {
       setShowOcrConfirm(false);
       setShowWelcome(true);
@@ -867,7 +881,7 @@ export function useInscription() {
     cinNumber,
     setCinNumber,
     isOcrLoading,
-    handleOCR,
+    handleUploadCIN,
     handleConfirmIdentity,
     // welcome
     handleGoToCompleteProfile,
@@ -879,6 +893,7 @@ export function useInscription() {
     currentUserId,
     acceptTerms,
     setAcceptTerms,
-    
+    isUploadingCIN,
+    uploadCINError,
   };
 }

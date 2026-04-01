@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAdminAuth, isAuthError } from '@/lib/auth-admin';
+import { getAuth } from '@clerk/nextjs/server';
 import { Prisma } from '@prisma/client';
 
 interface RouteParams {
-  params: {
-    requestId: string;
-  };
+  params: Promise<{ requestId: string }>;
 }
 
 interface ActionBody {
@@ -29,27 +27,48 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
-    const auth = getAdminAuth(request);
+    const { userId } = getAuth(request);
     
-    if (isAuthError(auth)) {
+    if (!userId) {
       return NextResponse.json(
-        { error: auth.error }, 
-        { status: auth.status }
+        { error: 'Non authentifié' }, 
+        { status: 401 }
       );
     }
 
+    const admin = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { role: true },
+    });
+
+    if (admin?.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Accès non autorisé' }, 
+        { status: 403 }
+      );
+    }
+
+    const { requestId } = await params;
+    
     const verificationRequest = await prisma.verificationRequest.findUnique({
-      where: { id: params.requestId },
+      where: { id: requestId },
       include: {
         user: {
           include: {
             stats: true,
-            verificationRequests: {
-              orderBy: { submittedAt: 'desc' },
-              take: 5,
-            }
           }
-        }
+        },
+        actions: {
+          orderBy: { createdAt: 'desc' },
+        },
+        validatedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
       }
     });
 
@@ -77,12 +96,24 @@ export async function PATCH(
   { params }: RouteParams
 ) {
   try {
-    const auth = getAdminAuth(request);
+    const { userId } = getAuth(request);
     
-    if (isAuthError(auth)) {
+    if (!userId) {
       return NextResponse.json(
-        { error: auth.error }, 
-        { status: auth.status }
+        { error: 'Non authentifié' }, 
+        { status: 401 }
+      );
+    }
+
+    const adminUser = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true, role: true },
+    });
+
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Accès non autorisé' }, 
+        { status: 403 }
       );
     }
 
@@ -96,8 +127,10 @@ export async function PATCH(
       );
     }
 
+    const { requestId } = await params;
+
     const verificationRequest = await prisma.verificationRequest.findUnique({
-      where: { id: params.requestId },
+      where: { id: requestId },
       include: { user: true }
     });
 
@@ -115,20 +148,30 @@ export async function PATCH(
       );
     }
 
+    let newStatus: 'VALIDATED' | 'REJECTED';
+    let updateData: any = {
+      reviewedBy: adminUser.id,
+      reviewedAt: new Date(),
+      processedAt: new Date(),
+      adminComment,
+    };
+
     if (action === 'VALIDATE') {
+      newStatus = 'VALIDATED';
+      updateData.status = 'VALIDATED';
+      updateData.rejectionMotif = null;
+      
       const extractedData = verificationRequest.extractedData as CinExtractedData | null;
       const cinNumber = extractedData?.cinNumber;
 
       await prisma.$transaction([
+        // Mettre à jour la demande
         prisma.verificationRequest.update({
-          where: { id: params.requestId },
-          data: {
-            status: 'VALIDATED',
-            reviewedBy: auth.userId,
-            reviewedAt: new Date(),
-            adminComment,
-          }
+          where: { id: requestId },
+          data: updateData,
         }),
+        
+        // Mettre à jour l'utilisateur
         prisma.user.update({
           where: { id: verificationRequest.userId },
           data: {
@@ -137,25 +180,41 @@ export async function PATCH(
             cinNumber: cinNumber || null,
             cinData: verificationRequest.extractedData as Prisma.JsonValue,
             status: 'ACTIVE',
-          }
+          },
         }),
+        
+        // Créer l'action dans VerificationAction
+        prisma.verificationAction.create({
+          data: {
+            requestId,
+            action: 'VALIDATE',
+            performedBy: adminUser.id,
+            previousStatus: verificationRequest.status,
+            newStatus,
+            adminComment,
+          },
+        }),
+        
+        // Créer le log dans UserAction
         prisma.userAction.create({
           data: {
             userId: verificationRequest.userId,
             actionType: 'VALIDATE_VERIFICATION',
-            performedBy: auth.userId,
+            performedBy: adminUser.id,
             internalNote: adminComment,
-          }
+          },
         }),
+        
+        // Créer le log dans AuditLog
         prisma.auditLog.create({
           data: {
-            adminId: auth.userId,
+            adminId: adminUser.id,
             action: 'VALIDATE_VERIFICATION',
             actionType: 'VERIFICATION',
             targetType: 'VERIFICATION_REQUEST',
-            targetId: params.requestId,
-          }
-        })
+            targetId: requestId,
+          },
+        }),
       ]);
 
       return NextResponse.json({ 
@@ -172,36 +231,52 @@ export async function PATCH(
         );
       }
 
+      newStatus = 'REJECTED';
+      updateData.status = 'REJECTED';
+      updateData.rejectionMotif = rejectionMotif;
+
       await prisma.$transaction([
+        // Mettre à jour la demande
         prisma.verificationRequest.update({
-          where: { id: params.requestId },
-          data: {
-            status: 'REJECTED',
-            reviewedBy: auth.userId,
-            reviewedAt: new Date(),
-            rejectionMotif,
-            adminComment,
-          }
+          where: { id: requestId },
+          data: updateData,
         }),
+        
+        // Créer l'action dans VerificationAction
+        prisma.verificationAction.create({
+          data: {
+            requestId,
+            action: 'REJECT',
+            performedBy: adminUser.id,
+            previousStatus: verificationRequest.status,
+            newStatus,
+            adminComment,
+            rejectionMotif,
+          },
+        }),
+        
+        // Créer le log dans UserAction
         prisma.userAction.create({
           data: {
             userId: verificationRequest.userId,
             actionType: 'REJECT_VERIFICATION',
-            performedBy: auth.userId,
+            performedBy: adminUser.id,
             motif: rejectionMotif,
             internalNote: adminComment,
-          }
+          },
         }),
+        
+        // Créer le log dans AuditLog
         prisma.auditLog.create({
           data: {
-            adminId: auth.userId,
+            adminId: adminUser.id,
             action: 'REJECT_VERIFICATION',
             actionType: 'VERIFICATION',
             targetType: 'VERIFICATION_REQUEST',
-            targetId: params.requestId,
+            targetId: requestId,
             motif: rejectionMotif,
-          }
-        })
+          },
+        }),
       ]);
 
       return NextResponse.json({ 

@@ -153,7 +153,7 @@ export default function VerificationsPage({ params }: { params: Promise<{ locale
                       {h}
                     </th>
                   ))}
-                 </tr>
+                  </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
                 {requests.map((req) => (
@@ -163,7 +163,11 @@ export default function VerificationsPage({ params }: { params: Promise<{ locale
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 flex-shrink-0">
                           {req.user.profilePictureUrl ? (
-                            <Image src={req.user.profilePictureUrl} alt={req.user.firstName || ''} width={36} height={36} className="object-cover w-full h-full" />
+                            <img 
+                              src={`/api/admin/serve-image?url=${encodeURIComponent(req.user.profilePictureUrl)}`}
+                              alt={req.user.firstName || ''} 
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs">
                               {req.user.firstName?.[0]}{req.user.lastName?.[0]}
@@ -255,25 +259,7 @@ export default function VerificationsPage({ params }: { params: Promise<{ locale
                 </Link>
               </div>
 
-              {stats && (stats.processedToday > 0 || stats.averageProcessingTime > 0) && (
-                <div className="mt-12 flex items-center gap-8 py-4 px-8 bg-white dark:bg-slate-900 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 shadow-sm">
-                  {stats.processedToday > 0 && (
-                    <div className="flex flex-col items-center">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t("stats.processedToday")}</span>
-                      <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">{stats.processedToday} {t("stats.documents")}</span>
-                    </div>
-                  )}
-                  {stats.averageProcessingTime > 0 && (
-                    <>
-                      <div className="w-px h-8 bg-indigo-100 dark:bg-indigo-900/30" />
-                      <div className="flex flex-col items-center">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{t("stats.averageTime")}</span>
-                        <span className="text-xl font-black text-violet-600 dark:text-violet-400">{stats.averageProcessingTime} {t("stats.minutes")}</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
+              
             </div>
           )}
         </div>

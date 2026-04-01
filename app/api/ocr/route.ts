@@ -1,33 +1,64 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { writeFile, unlink } from 'fs/promises';
+import { join } from 'path';
+import { tmpdir } from 'os';
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-
+    // Récupérer le fichier uploadé
+    const formData = await request.formData();
+    const file = formData.get('file') as File;
+    
     if (!file) {
       return NextResponse.json(
-        { error: "Fichier requis" },
+        { error: 'Aucun fichier fourni' },
         { status: 400 }
       );
     }
-
-    // Envoyer l'image au service Python
-    const pythonFormData = new FormData();
-    pythonFormData.append("file", file);
-
-    const response = await fetch("http://localhost:8000/ocr", {
-      method: "POST",
-      body: pythonFormData,
+    
+    // Vérifier le type de fichier
+    if (!file.type.startsWith('image/')) {
+      return NextResponse.json(
+        { error: 'Le fichier doit être une image' },
+        { status: 400 }
+      );
+    }
+    
+    // Sauvegarder temporairement l'image
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    
+    const tempFilePath = join(tmpdir(), `upload_${Date.now()}.jpg`);
+    await writeFile(tempFilePath, buffer);
+    
+    // Envoyer au service Python
+    const formDataPython = new FormData();
+    const blob = new Blob([buffer], { type: file.type });
+    formDataPython.append('file', blob, file.name);
+    
+    const pythonResponse = await fetch('http://localhost:5000/ocr', {
+      method: 'POST',
+      body: formDataPython,
     });
-
-    const data = await response.json();
-    return NextResponse.json(data);
-
-  } catch (error: any) {
-    console.error("❌ Erreur OCR:", error);
+    
+    const result = await pythonResponse.json();
+    
+    // Nettoyer
+    await unlink(tempFilePath);
+    
+    if (!pythonResponse.ok) {
+      return NextResponse.json(
+        { error: result.error || 'Erreur du service OCR' },
+        { status: pythonResponse.status }
+      );
+    }
+    
+    return NextResponse.json(result);
+    
+  } catch (error) {
+    console.error('Erreur OCR:', error);
     return NextResponse.json(
-      { error: error.message || "Erreur serveur" },
+      { error: 'Erreur lors du traitement de l\'image' },
       { status: 500 }
     );
   }
