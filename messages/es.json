@@ -130,7 +130,7 @@
     "error": "Ha ocurrido un error. Por favor inténtalo de nuevo",
     "usernameRequired": "El nombre de usuario es obligatorio",
     "usernameInvalid": "¡Formato de nombre de usuario no válido!",
-    "emailNotFound": "No se encontraron cuentas con este correo electrónico",
+    "emailNotFound": "No se encontró ninguna cuenta con este correo electrónico",
     "usernameNotFound": "No se encontraron cuentas con este nombre de usuario",
     "emailOrUsername": "Correo electrónico o nombre de usuario",
     "emailOrUsernamePlaceholder": "contacto@ejemplo.com",
@@ -1042,7 +1042,7 @@
       "ocrErrorDescription": "No se puede extraer información. Complete manualmente."
     },
     "whatsapp": {
-      "codeSent": "Se envió un código de verificación en WhatsApp al +216 {teléfono}"
+      "codeSent": "Se envió un código de verificación en WhatsApp al +216 {phone}"
     },
     "alerts": {
       "verificationEmailSent": "Se ha enviado un enlace de verificación a {email}",
@@ -1145,6 +1145,10 @@
     "restoreError": "Error durante la restauración"
   },
   "VerificationDetail": {
+    "alreadyValidated": "Esta solicitud ya ha sido validada.",
+    "alreadyRejected": "Esta solicitud ya ha sido rechazada.",
+    "validated": "Validado",
+    "rejected": "Rechazado",
     "backk": "Atrás",
     "verification": "Solicitud de verificación no.:",
     "pending": "En espera",
@@ -1352,5 +1356,425 @@
       "of": "seguro",
       "results": "resultados"
     }
+  },
+  "OwnerLayout": {
+    "header": {
+      "tenantSpace": "Espacio para inquilinos",
+      "ownerSpace": "Área del propietario",
+      "searchPlaceholder": "Buscar un anuncio...",
+      "addListing": "Agregar",
+      "owner": "Dueño",
+      "ownerBadge": "DUEÑO"
+    },
+    "nav": {
+      "dashboard": "Panel",
+      "listings": "Mis anuncios",
+      "calendar": "Calendario",
+      "reservations": "Reservas",
+      "messages": "Mensajes",
+      "analytics": "Estadística"
+    },
+    "sidebar": {
+      "ownerSuite": "Espacio propietario",
+      "ownerRole": "Dueño",
+      "verified": "Verificado",
+      "pro": "plan profesional",
+      "proDesc": "Accede a estadísticas avanzadas y aumenta tu visibilidad.",
+      "upgrade": "Hazte profesional",
+      "collapse": "Reducir",
+      "logout": "Desconectar"
+    },
+    "profile": {
+      "myProfile": "mi perfil",
+      "settings": "Ajustes",
+      "logout": "Finalizar la sesión"
+    },
+    "notifications": {
+      "title": "Notificaciones",
+      "empty": "Sin notificaciones"
+    },
+    "search": {
+      "cancel": "Cancelar",
+      "noResults": "Sin resultados"
+    },
+    "logout": {
+      "confirm": "Desconectar",
+      "message": "¿Está seguro de que desea cerrar sesión?",
+      "cancel": "Cancelar"
+    }
+  },
+  "CreateListing": {
+    "pageTitle": "Crear un anuncio",
+    "stepOf": "paso {actual} en {total}",
+    "saving": "Respaldo...",
+    "saveDraft": "Guardar borrador",
+    "publishing": "Publicación...",
+    "publish": "Publicar el anuncio",
+    "steps": {
+      "typeLocation": "Tipo y ubicación",
+      "characteristics": "Características",
+      "equipment": "Equipo",
+      "photos": "Fotos",
+      "pricing": "Precios",
+      "preview": "Avance"
+    },
+    "nav": {
+      "previous": "Anterior",
+      "continue": "Continuar"
+    },
+    "propertyTypes": {
+      "APARTMENT": "Departamento",
+      "VILLA": "Villa",
+      "STUDIO": "Estudio",
+      "DUPLEX": "Dúplex",
+      "HOUSE": "Hogar",
+      "ROOM": "Dormitorio"
+    },
+    "step1": {
+      "typeTitle": "¿Qué tipo de propiedad ofrecen?",
+      "titleSectionTitle": "Dale un nombre a tu anuncio",
+      "titleLabel": "Título del anuncio",
+      "titlePlaceholder": "Ej: Magnífica villa con vistas al mar en Hammamet",
+      "descriptionLabel": "Descripción",
+      "descriptionPlaceholder": "Describe las ventajas de tu alojamiento, los barrios cercanos, qué lo hace único...",
+      "locationTitle": "¿Dónde está ubicada su propiedad?",
+      "governorate": "Gobernación",
+      "delegation": "Delegación",
+      "street": "Barrio / Calle",
+      "delegationPlaceholder": "Ej: La Marsa",
+      "streetPlaceholder": "Ej: Rue de la Marsa Plage",
+      "choose": "Elegir...",
+      "mapHint": "Posición aproximada en el mapa.",
+      "adjustMap": "Ajustar",
+      "exactLocation": "Ubicación exacta",
+      "positionSelected": "Posición seleccionada",
+      "mapClickHint": "Haga clic en el mapa para mostrar la ubicación exacta de su propiedad"
+    },
+    "step2": {
+      "title": "Describe tu propiedad",
+      "rooms": "Alojamiento",
+      "roomsDesc": "Habitaciones privadas de noche",
+      "bathrooms": "Baños",
+      "bathroomsDesc": "Cuartos de baño o duchas",
+      "maxGuests": "Número máximo de viajeros",
+      "maxGuestsDesc": "Capacidad total de recepción",
+      "surface": "Espacio habitable (m²)",
+      "floor": "Número de piso",
+      "floorPlaceholder": "0 para la República Democrática del Congo",
+      "elevator": "Ascensor",
+      "elevatorDesc": "¿El edificio tiene ascensor?",
+      "balcony": "Balcón",
+      "parking": "Aparcamiento"
+    },
+    "step3": {
+      "equipmentTitle": "¿Qué equipo ofrece?",
+      "servicesTitle": "Servicios incluidos",
+      "rulesTitle": "Reglas de la casa",
+      "customRulesLabel": "Reglas personalizadas",
+      "customRulesPlaceholder": "Añade tus instrucciones específicas para viajeros (máximo 500 caracteres)..."
+    },
+    "equipment": {
+      "wifi": "wifi",
+      "ac": "Aire acondicionado",
+      "heating": "Calefacción",
+      "kitchen": "Cocina equipada",
+      "parking": "Aparcamiento",
+      "pool": "Piscina",
+      "gym": "Gimnasia",
+      "washer": "Lavadora",
+      "tv": "Televisión",
+      "balcony": "Balcón",
+      "dishwasher": "Lavavajillas",
+      "dryer": "Secadora",
+      "elevator": "Ascensor",
+      "airConditioning": "Aire acondicionado",
+      "workspace": "Espacio de trabajo"
+    },
+    "services": {
+      "cleaning": "Servicio de limpieza incluido",
+      "cleaningDesc": "Limpieza profesional periódica",
+      "linen": "Ropa de hogar",
+      "linenDesc": "Sábanas y toallas incluidas.",
+      "pets": "Se admiten mascotas",
+      "petsDesc": "Tus acompañantes son bienvenidos",
+      "smoking": "Se aceptan fumadores",
+      "smokingDesc": "En áreas exteriores exclusivas",
+      "breakfast": "Desayuno incluido",
+      "breakfastDesc": "Desayuno servido todas las mañanas.",
+      "airportTransfer": "Traslado al aeropuerto",
+      "airportTransferDesc": "Servicio de traslado disponible bajo petición"
+    },
+    "houseRules": {
+      "noParties": "No hay fiestas ni eventos.",
+      "noSmoke": "No fumador",
+      "noPets": "No se aceptan mascotas",
+      "quietAfter22": "Se requiere silencio después de las 10 p.m.",
+      "checkInAfter": "Entrada después de las 14:00 horas.",
+      "checkOutBefore": "Salida antes de las 11 a.m."
+    },
+    "step4": {
+      "title": "Añade tus fotos",
+      "dropHere": "Arrastra tus fotos aquí",
+      "dropHint": "Optimiza tus reservas con al menos 5 fotografías en alta definición (máximo 20)",
+      "or": "O",
+      "browseFiles": "Explorar mis archivos",
+      "minPhotosWarning": "Añade otras {count} fotos para alcanzar el mínimo requerido",
+      "yourPhotos": "Tus fotos",
+      "dragReorder": "Desliza para reordenar",
+      "mainPhoto": "Foto principal",
+      "setMain": "Establecer como principal",
+      "delete": "BORRAR",
+      "add": "Agregar",
+      "tipsTitle": "Consejos fotográficos",
+      "tip1": "Favorece la luz natural abriendo cortinas y contraventanas.",
+      "tip2": "Ordene el interior para lograr una apariencia limpia y profesional.",
+      "tip3": "Utilice el formato apaisado para dar sensación de espacio.",
+      "tip4": "Muestre cada estancia importante: salón, dormitorios, cocina, baño.",
+      "uploading": "Descargar...",
+      "uploadError": "Error al descargar"
+    },
+    "step5": {
+      "rentalTypeTitle": "Tipo de alquiler",
+      "SHORT_TERM": "Corto plazo",
+      "LONG_TERM": "Largo plazo",
+      "BOTH": "Ambos",
+      "pricesTitle": "Establece tus precios",
+      "pricePerNight": "Precio por noche",
+      "pricePerMonth": "Precio por mes",
+      "night": "noche",
+      "month": "mes",
+      "localAvg": "Promedio en tu zona: {precio} TND",
+      "feesTitle": "Tarifas adicionales",
+      "deposit": "Depósito",
+      "depositDesc": "Depósito de seguridad reembolsable al final de la estancia.",
+      "depositAmount": "monto de la fianza",
+      "cleaningFee": "Tarifas de limpieza",
+      "cleaningFeeDesc": "Se factura una vez por estancia",
+      "cleaningFeeAmount": "Importe de los gastos de limpieza",
+      "smartPricing": "Precios inteligentes",
+      "seasonalTitle": "Precios estacionales",
+      "seasonalDesc": "Aumenta tus ingresos un 25% activando tarifas especiales para fines de semana y temporada alta.",
+      "weekend": "Fin de semana",
+      "summer": "Verano (junio-agosto)",
+      "weekendMultiplier": "Multiplicador de fin de semana",
+      "summerMultiplier": "Multiplicador de verano",
+      "estimatedRevenue": "Ingresos estimados",
+      "estimatedRevenueDesc": "Dependiendo de tu configuración, podrías generar entre {min} TND y {max} TND por mes.",
+      "additionalFees": "Tarifas adicionales",
+      "electricityFee": "Costos de electricidad",
+      "waterFee": "Cargos de agua",
+      "serviceFee": "Tarifas de servicio"
+    },
+    "preview": {
+      "noTitle": "Título del anuncio",
+      "rooms": "alojamiento",
+      "bathrooms": "baño",
+      "guests": "viajeros",
+      "readyTitle": "¡Tu anuncio está listo!",
+      "readyDesc": "Verifique la información anterior y luego publique su anuncio. Será visible después de la validación.",
+      "perNight": "por noche",
+      "perMonth": "por mes",
+      "equipment": "Equipo",
+      "services": "Servicios",
+      "rules": "Normas",
+      "location": "Ubicación"
+    },
+    "sidebar": {
+      "tipTitle": "Consejos de expertos",
+      "tip1": "Un título atractivo atrae a un 40% más de viajeros.",
+      "tip2": "5 fotos mínimo aumentan tus posibilidades de reservar.",
+      "tip3": "Un precio competitivo mejora tu visibilidad en los resultados.",
+      "tip4": "Detalla bien tus comodidades para atraer a más viajeros.",
+      "whyNesthub": "¿Por qué NestHub?",
+      "benefit1": "Pagos seguros garantizados",
+      "benefit2": "Soporte al propietario los 7 días de la semana",
+      "benefit3": "Cero tarifas ocultas",
+      "benefit4": "Seguro incluido para cada reserva."
+    },
+    "validation": {
+      "titleRequired": "Se requiere título",
+      "titleMin": "El título debe contener al menos 3 caracteres.",
+      "governorateRequired": "Se requiere gobernación",
+      "delegationRequired": "Se requiere delegación",
+      "photosMin": "Añade al menos 5 fotos.",
+      "priceRequired": "Se requiere precio",
+      "pricePositive": "El precio debe ser positivo.",
+      "descriptionMax": "La descripción no puede exceder los 2000 caracteres."
+    },
+    "success": {
+      "published": "¡Su anuncio ha sido publicado exitosamente!",
+      "draftSaved": "Tu borrador ha sido guardado.",
+      "redirecting": "Redirección en curso..."
+    },
+    "error": {
+      "generic": "Ha ocurrido un error",
+      "uploadFailed": "No se pudieron subir fotos",
+      "saveFailed": "Error en la copia de seguridad",
+      "publishFailed": "No se pudo publicar"
+    }
+  },
+  "OwnerListings": {
+    "title": "Gestión de cartera",
+    "description": "Administre sus propiedades, realice un seguimiento del rendimiento y maximice su retorno de la inversión con nuestras herramientas inteligentes.",
+    "addProperty": "Agregar una propiedad",
+    "tabs": {
+      "all": "Todo",
+      "active": "Publicado",
+      "inactive": "Inactivo",
+      "draft": "Damas"
+    },
+    "stats": {
+      "totalRevenue": "Ingresos totales",
+      "activeListings": "Anuncios activos",
+      "totalViews": "Vistas totales",
+      "occupancyRate": "Tasa de ocupación",
+      "properties": "propiedades",
+      "stablePortfolio": "Cartera estable",
+      "views": "Vistas",
+      "bookings": "Reservas",
+      "price": "Precio",
+      "published": "Publicado el",
+      "notPublished": "Inédito"
+    },
+    "status": {
+      "active": "Publicado",
+      "inactive": "Inactivo",
+      "draft": "Borrador",
+      "archived": "Archivo"
+    },
+    "badge": {
+      "verified": "Verificado"
+    },
+    "unit": {
+      "night": "noche",
+      "month": "mes"
+    },
+    "aiInsights": {
+      "title": "Consejos de IA",
+      "draftTip": "Su anuncio está en borrador. Publícalo para empezar a recibir reservas.",
+      "lowViewsTip": "Optimice sus fotos y título para atraer más visitantes.",
+      "highDemandTip": "¡Se espera una fuerte demanda! Sube ligeramente tus precios."
+    },
+    "actions": {
+      "view": "Ver",
+      "edit": "para modificar",
+      "delete": "BORRAR"
+    },
+    "empty": {
+      "title": "Sin anuncios",
+      "description": "Aún no has creado un anuncio. Comience a compartir su propiedad ahora.",
+      "cta": "Crear mi primer anuncio"
+    },
+    "searchPlaceholder": "Busque una propiedad...",
+    "filter": "Filtrar",
+    "deleteConfirm": "¿Estás seguro de que deseas eliminar este anuncio? Esta acción es irreversible.",
+    "pagination": {
+      "showing": "Mostrando del {inicio} al {fin} en {total} propiedades"
+    },
+    "footer": {
+      "legal": "Avisos legales",
+      "aiPolicy": "Política de IA",
+      "aiStatus": "Motor de IA: optimizado"
+    }
+  },
+  "Users": {
+    "stats": {
+      "totalUsers": "Usuarios totales",
+      "newUsers30d": "Nuevo (30 días)",
+      "pendingValidation": "En espera",
+      "verifiedIdentity": "Verificado"
+    }
+  },
+  "ListingDetail": {
+    "backToListings": "Volver a anuncios",
+    "reviews": "aviso",
+    "viewAllPhotos": "Mostrar todas las fotos ({count})",
+    "hostedBy": "Alojamiento completo: {nombre}",
+    "guests": "viajeros",
+    "bedrooms": "alojamiento",
+    "bathrooms": "baños",
+    "elevator": "Ascensor",
+    "elevatorDesc": "Fácil acceso a todos los pisos.",
+    "greatLocation": "Ubicación ideal",
+    "greatLocationDesc": "El 100% de los viajeros calificó el lugar con 5 estrellas.",
+    "freeCancellation": "Cancelación gratuita",
+    "freeCancellationDesc": "Cancelación gratuita hasta 7 días antes de la llegada.",
+    "about": "Acerca de este alojamiento",
+    "noDescription": "No hay descripción disponible en este momento.",
+    "amenities": "Equipo",
+    "showAllAmenities": "Mostrar todos los equipos",
+    "availability": "Disponibilidad",
+    "selectDates": "Añade las fechas de tu viaje para ver el precio exacto",
+    "checkIn": "Llegada",
+    "checkOut": "Partida",
+    "guest": "viajero",
+    "nights": "noches",
+    "night": "noche",
+    "cleaningFee": "Tarifas de limpieza",
+    "serviceFee": "Tarifas de servicio",
+    "total": "Total",
+    "requestToBook": "Solicitud de reserva",
+    "noChargeYet": "No se le cobrará ningún importe en este momento",
+    "reportListing": "Reportar este anuncio",
+    "reviewDate": "• mayo de 2024",
+    "sampleReview": "¡Estancia inolvidable! La villa es incluso más bonita que en las fotos. El anfitrión es genial y está lleno de excelentes recomendaciones para restaurantes locales.",
+    "showAllReviews": "Mostrar {count} reseñas",
+    "unit": {
+      "night": "noche",
+      "month": "mes"
+    },
+    "equipment": {
+      "wifi": "wifi",
+      "ac": "Aire acondicionado",
+      "heating": "Calefacción",
+      "kitchen": "Cocina equipada",
+      "parking": "Aparcamiento gratuito",
+      "pool": "piscina privada",
+      "gym": "Gimnasia",
+      "washer": "Lavadora",
+      "tv": "Televisión",
+      "balcony": "Balcón",
+      "elevator": "Ascensor",
+      "workspace": "Espacio de trabajo",
+      "dryer": "Secadora",
+      "dishwasher": "Lavavajillas"
+    },
+    "notFound": {
+      "title": "Anuncio no encontrado",
+      "description": "El anuncio que buscas no existe o ha sido eliminado.",
+      "back": "Volver a mis anuncios"
+    }
+  },
+  "EditListing": {
+    "title": "Título del anuncio",
+    "autoSave": "Copia de seguridad automática activa",
+    "saveDraft": "Guardar borrador",
+    "step1": "Paso 1 de 4",
+    "step2": "Paso 2 de 4",
+    "step3": "Paso 3 de 4",
+    "step4": "Paso 4 de 4",
+    "detailsTitle": "Detalles de la propiedad",
+    "photosTitle": "Galería de fotos",
+    "pricingTitle": "Precios",
+    "publishTitle": "Publicación",
+    "detailsDesc": "Actualiza la información básica de tu propiedad.",
+    "photosDesc": "Añade o modifica fotos de tu propiedad.",
+    "pricingDesc": "Establecer tarifas y cargos adicionales.",
+    "publishDesc": "Administre el estado de publicación de su anuncio.",
+    "propertyType": "Tipo de propiedad",
+    "titlePlaceholder": "Ej: Magnífica villa con vista al mar",
+    "description": "Descripción",
+    "descriptionPlaceholder": "Describe las ventajas de tu alojamiento...",
+    "location": "Ubicación",
+    "currentAddress": "Dirección actual",
+    "modify": "para modificar",
+    "back": "Atrás",
+    "saveChanges": "Guardar cambios",
+    "preview": "Avance",
+    "lastSaved": "Última edición hace {time}",
+    "tabDetails": "Detalles",
+    "tabPhotos": "Fotos",
+    "tabPricing": "Precio",
+    "tabPublish": "Publicación"
   }
 }

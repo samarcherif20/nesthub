@@ -32,6 +32,7 @@ import { RiSettings3Line } from "react-icons/ri";
 import { MdOutlineReportGmailerrorred } from "react-icons/md";
 import { TiUserAddOutline } from "react-icons/ti";
 import { PiHandWaving } from "react-icons/pi";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 // Types
 interface Counters {
@@ -100,18 +101,15 @@ const DEFAULT_NOTIFICATIONS: Notification[] = [
 
 export default function AdminLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = React.use(params);
-  const tLayout = useTranslations("admin");
+ const pathname = usePathname();
+  const locale = pathname?.split("/")[1] || "fr";  const tLayout = useTranslations("admin");
 
   const { user, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
-  const pathname = usePathname();
 
   // États
   const [mounted, setMounted] = useState(false);
@@ -337,7 +335,7 @@ export default function AdminLayout({
   if (!mounted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+        <LoadingSpinner className=" h-12 w-12 "></LoadingSpinner>
       </div>
     );
   }
@@ -346,7 +344,7 @@ export default function AdminLayout({
   if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent"></div>
+        <LoadingSpinner className=" h-12 w-12 "></LoadingSpinner>
       </div>
     );
   }

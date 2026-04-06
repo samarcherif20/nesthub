@@ -130,7 +130,7 @@
     "error": "An error has occurred. Please try again",
     "usernameRequired": "Username is required",
     "usernameInvalid": "Invalid username format!",
-    "emailNotFound": "No accounts found with this email",
+    "emailNotFound": "No account found with this email",
     "usernameNotFound": "No accounts found with this username",
     "emailOrUsername": "Email or username",
     "emailOrUsernamePlaceholder": "contact@example.com",
@@ -726,7 +726,7 @@
           "desc": "Analyze your documents by OCR to assign the “Verified” badge."
         },
         "3": {
-          "title": "Reliability Score",
+          "title": "Reliability score",
           "desc": "Calculate your reliability score (0-100) for a trusted system."
         },
         "4": {
@@ -1145,6 +1145,10 @@
     "restoreError": "Error during restore"
   },
   "VerificationDetail": {
+    "alreadyValidated": "This request has already been validated",
+    "alreadyRejected": "This request has already been rejected",
+    "validated": "Validated",
+    "rejected": "Rejected",
     "backk": "Back",
     "verification": "Verification request no.:",
     "pending": "On hold",
@@ -1310,7 +1314,7 @@
     "privacy": "Confidentiality"
   },
   "VerificationsHistory": {
-    "title": "Verification history",
+    "title": "Audit history",
     "subtitle": "View all verification requests already processed",
     "backToPending": "Back to pending requests",
     "refresh": "Refresh",
@@ -1352,5 +1356,425 @@
       "of": "on",
       "results": "results"
     }
+  },
+  "OwnerLayout": {
+    "header": {
+      "tenantSpace": "Tenant Space",
+      "ownerSpace": "Owner Area",
+      "searchPlaceholder": "Search for an ad...",
+      "addListing": "Add",
+      "owner": "Owner",
+      "ownerBadge": "OWNER"
+    },
+    "nav": {
+      "dashboard": "Dashboard",
+      "listings": "My ads",
+      "calendar": "Calendar",
+      "reservations": "Reservations",
+      "messages": "Messages",
+      "analytics": "Statistics"
+    },
+    "sidebar": {
+      "ownerSuite": "Owner space",
+      "ownerRole": "Owner",
+      "verified": "Verified",
+      "pro": "Pro plan",
+      "proDesc": "Access advanced statistics and boost your visibility.",
+      "upgrade": "Go Pro",
+      "collapse": "Reduce",
+      "logout": "Disconnect"
+    },
+    "profile": {
+      "myProfile": "My profile",
+      "settings": "Settings",
+      "logout": "Log out"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "empty": "No notifications"
+    },
+    "search": {
+      "cancel": "Cancel",
+      "noResults": "No results"
+    },
+    "logout": {
+      "confirm": "Disconnect",
+      "message": "Are you sure you want to log out?",
+      "cancel": "Cancel"
+    }
+  },
+  "CreateListing": {
+    "pageTitle": "Create an ad",
+    "stepOf": "{current} step on {total}",
+    "saving": "Backup...",
+    "saveDraft": "Save draft",
+    "publishing": "Publication...",
+    "publish": "Publish the ad",
+    "steps": {
+      "typeLocation": "Type & Location",
+      "characteristics": "Features",
+      "equipment": "Equipment",
+      "photos": "Photos",
+      "pricing": "Pricing",
+      "preview": "Preview"
+    },
+    "nav": {
+      "previous": "Previous",
+      "continue": "Continue"
+    },
+    "propertyTypes": {
+      "APARTMENT": "Apartment",
+      "VILLA": "Villa",
+      "STUDIO": "Studio",
+      "DUPLEX": "Duplex",
+      "HOUSE": "Home",
+      "ROOM": "Bedroom"
+    },
+    "step1": {
+      "typeTitle": "What type of property do you offer?",
+      "titleSectionTitle": "Give your ad a name",
+      "titleLabel": "Ad title",
+      "titlePlaceholder": "Ex: Magnificent villa with sea view in Hammamet",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Describe the advantages of your accommodation, the nearby neighborhoods, what makes it unique...",
+      "locationTitle": "Where is your property located?",
+      "governorate": "Governorate",
+      "delegation": "Delegation",
+      "street": "Neighborhood / Street",
+      "delegationPlaceholder": "Ex: La Marsa",
+      "streetPlaceholder": "Ex: Rue de la Marsa Plage",
+      "choose": "Choose...",
+      "mapHint": "Approximate position on the map",
+      "adjustMap": "Adjust",
+      "exactLocation": "Exact location",
+      "positionSelected": "Selected position",
+      "mapClickHint": "Click on the map to show the exact location of your property"
+    },
+    "step2": {
+      "title": "Describe your property",
+      "rooms": "Rooms",
+      "roomsDesc": "Private night rooms",
+      "bathrooms": "Bathrooms",
+      "bathroomsDesc": "Shower rooms or bathrooms",
+      "maxGuests": "Maximum number of travelers",
+      "maxGuestsDesc": "Total reception capacity",
+      "surface": "Living space (m²)",
+      "floor": "Floor number",
+      "floorPlaceholder": "0 for DRC",
+      "elevator": "Elevator",
+      "elevatorDesc": "Does the building have an elevator?",
+      "balcony": "Balcony",
+      "parking": "Parking"
+    },
+    "step3": {
+      "equipmentTitle": "What equipment do you offer?",
+      "servicesTitle": "Services included",
+      "rulesTitle": "House Rules",
+      "customRulesLabel": "Custom Rules",
+      "customRulesPlaceholder": "Add your specific instructions for travelers (max 500 characters)..."
+    },
+    "equipment": {
+      "wifi": "Wi-Fi",
+      "ac": "Air conditioning",
+      "heating": "Heating",
+      "kitchen": "Equipped kitchen",
+      "parking": "Parking",
+      "pool": "Pool",
+      "gym": "Gym",
+      "washer": "Washing machine",
+      "tv": "Television",
+      "balcony": "Balcony",
+      "dishwasher": "Dishwasher",
+      "dryer": "Dryer",
+      "elevator": "Elevator",
+      "airConditioning": "Air conditioning",
+      "workspace": "Workspace"
+    },
+    "services": {
+      "cleaning": "Housekeeping included",
+      "cleaningDesc": "Regular professional cleaning",
+      "linen": "Household linens",
+      "linenDesc": "Sheets and towels provided",
+      "pets": "Pets allowed",
+      "petsDesc": "Your companions are welcome",
+      "smoking": "Smokers accepted",
+      "smokingDesc": "In dedicated outdoor areas",
+      "breakfast": "Breakfast included",
+      "breakfastDesc": "Breakfast served every morning",
+      "airportTransfer": "Airport transfer",
+      "airportTransferDesc": "Shuttle available on request"
+    },
+    "houseRules": {
+      "noParties": "No parties or events",
+      "noSmoke": "Non-smoker",
+      "noPets": "Pets not accepted",
+      "quietAfter22": "Quiet required after 10 p.m.",
+      "checkInAfter": "Check-in after 2 p.m.",
+      "checkOutBefore": "Check out before 11am"
+    },
+    "step4": {
+      "title": "Add your photos",
+      "dropHere": "Drag your photos here",
+      "dropHint": "Optimize your reservations with at least 5 high definition photos (max. 20)",
+      "or": "Or",
+      "browseFiles": "Browse my files",
+      "minPhotosWarning": "Add another {count} photo(s) to reach the minimum required",
+      "yourPhotos": "Your photos",
+      "dragReorder": "Swipe to reorder",
+      "mainPhoto": "Main photo",
+      "setMain": "Set as primary",
+      "delete": "DELETE",
+      "add": "Add",
+      "tipsTitle": "Photo tips",
+      "tip1": "Favor natural light by opening curtains and shutters.",
+      "tip2": "Tidy up the interior for a clean, professional look.",
+      "tip3": "Use landscape format to give a feeling of space.",
+      "tip4": "Show each important room: living room, bedrooms, kitchen, bathroom.",
+      "uploading": "Download...",
+      "uploadError": "Error while downloading"
+    },
+    "step5": {
+      "rentalTypeTitle": "Type of rental",
+      "SHORT_TERM": "Short term",
+      "LONG_TERM": "Long term",
+      "BOTH": "Both",
+      "pricesTitle": "Set your prices",
+      "pricePerNight": "Price per night",
+      "pricePerMonth": "Price per month",
+      "night": "night",
+      "month": "month",
+      "localAvg": "Average in your area: {price} TND",
+      "feesTitle": "Additional fees",
+      "deposit": "Deposit",
+      "depositDesc": "Refundable security deposit at end of stay",
+      "depositAmount": "Bail amount",
+      "cleaningFee": "Cleaning fees",
+      "cleaningFeeDesc": "Billed once per stay",
+      "cleaningFeeAmount": "Amount of cleaning fees",
+      "smartPricing": "Smart pricing",
+      "seasonalTitle": "Seasonal pricing",
+      "seasonalDesc": "Boost your revenue by 25% by activating special rates for weekends and high season.",
+      "weekend": "Weekend",
+      "summer": "Summer (June-August)",
+      "weekendMultiplier": "Weekend multiplier",
+      "summerMultiplier": "Summer multiplier",
+      "estimatedRevenue": "Estimated income",
+      "estimatedRevenueDesc": "Depending on your settings, you could generate between {min} TND and {max} TND per month.",
+      "additionalFees": "Additional fees",
+      "electricityFee": "Electricity costs",
+      "waterFee": "Water charges",
+      "serviceFee": "Service fees"
+    },
+    "preview": {
+      "noTitle": "Ad title",
+      "rooms": "rooms",
+      "bathrooms": "bathroom",
+      "guests": "travelers",
+      "readyTitle": "Your ad is ready!",
+      "readyDesc": "Check the information above then publish your ad. It will be visible after validation.",
+      "perNight": "per night",
+      "perMonth": "per month",
+      "equipment": "Equipment",
+      "services": "Services",
+      "rules": "Rules",
+      "location": "Location"
+    },
+    "sidebar": {
+      "tipTitle": "Expert advice",
+      "tip1": "A catchy title attracts 40% more travelers.",
+      "tip2": "5 photos minimum increase your chances of booking.",
+      "tip3": "A competitive price improves your visibility in the results.",
+      "tip4": "Detail your amenities well to attract more travelers.",
+      "whyNesthub": "Why NestHub?",
+      "benefit1": "Guaranteed secure payments",
+      "benefit2": "Owner support 7 days a week",
+      "benefit3": "Zero hidden fees",
+      "benefit4": "Insurance included for each reservation"
+    },
+    "validation": {
+      "titleRequired": "Title is required",
+      "titleMin": "The title must contain at least 3 characters",
+      "governorateRequired": "Governorship is required",
+      "delegationRequired": "Delegation is required",
+      "photosMin": "Add at least 5 photos",
+      "priceRequired": "Price is required",
+      "pricePositive": "The price must be positive",
+      "descriptionMax": "The description cannot exceed 2000 characters"
+    },
+    "success": {
+      "published": "Your ad has been successfully published!",
+      "draftSaved": "Your draft has been saved",
+      "redirecting": "Redirection in progress..."
+    },
+    "error": {
+      "generic": "An error has occurred",
+      "uploadFailed": "Failed to upload photos",
+      "saveFailed": "Backup failed",
+      "publishFailed": "Failed to publish"
+    }
+  },
+  "OwnerListings": {
+    "title": "Portfolio Management",
+    "description": "Manage your properties, track performance and maximize your ROI with our smart tools.",
+    "addProperty": "Add a property",
+    "tabs": {
+      "all": "All",
+      "active": "Published",
+      "inactive": "Inactive",
+      "draft": "Drafts"
+    },
+    "stats": {
+      "totalRevenue": "Total revenue",
+      "activeListings": "Active ads",
+      "totalViews": "Total Views",
+      "occupancyRate": "Occupancy rate",
+      "properties": "properties",
+      "stablePortfolio": "Stable portfolio",
+      "views": "Views",
+      "bookings": "Reservations",
+      "price": "Price",
+      "published": "Published on",
+      "notPublished": "Unpublished"
+    },
+    "status": {
+      "active": "Published",
+      "inactive": "Inactive",
+      "draft": "Draft",
+      "archived": "Archive"
+    },
+    "badge": {
+      "verified": "Verified"
+    },
+    "unit": {
+      "night": "night",
+      "month": "month"
+    },
+    "aiInsights": {
+      "title": "AI Tips",
+      "draftTip": "Your ad is in draft. Publish it to start receiving bookings.",
+      "lowViewsTip": "Optimize your photos and title to attract more visitors.",
+      "highDemandTip": "Strong demand expected! Raise your prices slightly."
+    },
+    "actions": {
+      "view": "See",
+      "edit": "To modify",
+      "delete": "DELETE"
+    },
+    "empty": {
+      "title": "No ads",
+      "description": "You have not yet created an ad. Start sharing your property now.",
+      "cta": "Create my first ad"
+    },
+    "searchPlaceholder": "Search for a property...",
+    "filter": "Filter",
+    "deleteConfirm": "Are you sure you want to remove this ad? This action is irreversible.",
+    "pagination": {
+      "showing": "Showing {start} to {end} on {total} properties"
+    },
+    "footer": {
+      "legal": "Legal notices",
+      "aiPolicy": "AI policy",
+      "aiStatus": "AI Engine: Optimized"
+    }
+  },
+  "Users": {
+    "stats": {
+      "totalUsers": "Total users",
+      "newUsers30d": "New (30 days)",
+      "pendingValidation": "On hold",
+      "verifiedIdentity": "Verified"
+    }
+  },
+  "ListingDetail": {
+    "backToListings": "Back to announcements",
+    "reviews": "notice",
+    "viewAllPhotos": "Show all photos ({count})",
+    "hostedBy": "Entire accommodation: {name}",
+    "guests": "travelers",
+    "bedrooms": "rooms",
+    "bathrooms": "bathrooms",
+    "elevator": "Elevator",
+    "elevatorDesc": "Easy access to all floors",
+    "greatLocation": "Ideal location",
+    "greatLocationDesc": "100% of travelers rated the location 5 stars.",
+    "freeCancellation": "Free cancellation",
+    "freeCancellationDesc": "Free cancellation up to 7 days before arrival.",
+    "about": "About this accommodation",
+    "noDescription": "No description available at this time.",
+    "amenities": "Equipment",
+    "showAllAmenities": "Show all equipment",
+    "availability": "Availability",
+    "selectDates": "Add your travel dates to see the exact price",
+    "checkIn": "Arrival",
+    "checkOut": "Departure",
+    "guest": "traveler",
+    "nights": "nights",
+    "night": "night",
+    "cleaningFee": "Cleaning fees",
+    "serviceFee": "Service fees",
+    "total": "Total",
+    "requestToBook": "Request to book",
+    "noChargeYet": "No amount will be charged to you at this time",
+    "reportListing": "Report this ad",
+    "reviewDate": "• May 2024",
+    "sampleReview": "Unforgettable stay! The villa is even more beautiful than in the photos. The host is great, full of great recommendations for local restaurants.",
+    "showAllReviews": "Show {count} reviews",
+    "unit": {
+      "night": "night",
+      "month": "month"
+    },
+    "equipment": {
+      "wifi": "Wi-Fi",
+      "ac": "Air conditioning",
+      "heating": "Heating",
+      "kitchen": "Equipped kitchen",
+      "parking": "Free parking",
+      "pool": "Private swimming pool",
+      "gym": "Gym",
+      "washer": "Washing machine",
+      "tv": "Television",
+      "balcony": "Balcony",
+      "elevator": "Elevator",
+      "workspace": "Workspace",
+      "dryer": "Dryer",
+      "dishwasher": "Dishwasher"
+    },
+    "notFound": {
+      "title": "Ad not found",
+      "description": "The ad you are looking for does not exist or has been deleted.",
+      "back": "Back to my ads"
+    }
+  },
+  "EditListing": {
+    "title": "Ad title",
+    "autoSave": "Auto backup active",
+    "saveDraft": "Save draft",
+    "step1": "Step 1 of 4",
+    "step2": "Step 2 of 4",
+    "step3": "Step 3 of 4",
+    "step4": "Step 4 of 4",
+    "detailsTitle": "Property Details",
+    "photosTitle": "Photo gallery",
+    "pricingTitle": "Pricing",
+    "publishTitle": "Publication",
+    "detailsDesc": "Update your property's basic information.",
+    "photosDesc": "Add or modify photos of your property.",
+    "pricingDesc": "Set rates and additional charges.",
+    "publishDesc": "Manage the publishing status of your ad.",
+    "propertyType": "Property Type",
+    "titlePlaceholder": "Ex: Magnificent villa with sea view",
+    "description": "Description",
+    "descriptionPlaceholder": "Describe the advantages of your accommodation...",
+    "location": "Location",
+    "currentAddress": "Current address",
+    "modify": "To modify",
+    "back": "Back",
+    "saveChanges": "Save changes",
+    "preview": "Preview",
+    "lastSaved": "Last edited {time} ago",
+    "tabDetails": "Details",
+    "tabPhotos": "Photos",
+    "tabPricing": "Price",
+    "tabPublish": "Publication"
   }
 }

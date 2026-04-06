@@ -9,6 +9,9 @@ import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
 import Image from "next/image";
 
+// Composant Map
+import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
+
 // Icônes React
 import {
   Home,
@@ -38,7 +41,23 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Shield,
+  Verified,
+  TrendingUp,
+  ArrowLeft,
+  X,
+  Grid3x3,
+  ZoomIn,
+  ChevronDown,
+  ChevronUp,
+  Navigation,
+  Coffee,
+  ShoppingBag,
+  Bus,
 } from "lucide-react";
+import { MdCheckBoxOutlineBlank } from "react-icons/md";
+import { FaSquare } from "react-icons/fa";
+import { BsBoundingBox } from "react-icons/bs";
 
 interface Listing {
   id: string;
@@ -91,16 +110,45 @@ interface Listing {
       totalReviews: number;
     } | null;
   };
-  availability?: Array<{
-    date: string;
-    isAvailable: boolean;
-    customPrice: number | null;
-  }>;
 }
 
 // Fonction pip pour les images Vercel Blob
 const pip = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
+
+// Icônes des équipements
+const getEquipmentIcon = (key: string) => {
+  const icons: Record<string, any> = {
+    wifi: Wifi,
+    ac: Wind,
+    heating: Wind,
+    kitchen: Utensils,
+    parking: Car,
+    pool: Waves,
+    tv: Tv,
+    washer: Wifi,
+    dryer: Wifi,
+    gym: Wifi,
+  };
+  return icons[key] || CheckCircle;
+};
+
+// Noms lisibles des équipements
+const getEquipmentLabel = (key: string, t: any) => {
+  const labels: Record<string, string> = {
+    wifi: "Wi-Fi haut débit",
+    ac: "Climatisation",
+    heating: "Chauffage",
+    kitchen: "Cuisine équipée",
+    parking: "Parking gratuit",
+    pool: "Piscine",
+    tv: "Smart TV",
+    washer: "Lave-linge",
+    dryer: "Sèche-linge",
+    gym: "Salle de sport",
+  };
+  return labels[key] || key;
+};
 
 export default function ListingDetailPage({
   params,
@@ -116,14 +164,25 @@ export default function ListingDetailPage({
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [showAllPhotos, setShowAllPhotos] = useState(false);
+  const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
   const [checkInDate, setCheckInDate] = useState("");
   const [checkOutDate, setCheckOutDate] = useState("");
   const [guests, setGuests] = useState(1);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
+  const [showAllAmenities, setShowAllAmenities] = useState(false);
+// Dans app/[locale]/(dashboard)/owner/listings/[id]/page.tsx
+// Remplacez l'effet existant par :
+
 
   useEffect(() => {
     fetchListing();
-  }, [id]);
+    // Simuler la vérification des favoris
+    if (user) {
+      checkIfFavorite();
+    }
+  }, [id, user]);
 
   const fetchListing = async () => {
     setLoading(true);
@@ -139,6 +198,18 @@ export default function ListingDetailPage({
       console.error("Error fetching listing:", error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const checkIfFavorite = async () => {
+    try {
+      const res = await fetch(`/api/favorites/check?listingId=${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setIsFavorite(data.isFavorite);
+      }
+    } catch (error) {
+      console.error("Error checking favorite:", error);
     }
   };
 
@@ -161,17 +232,35 @@ export default function ListingDetailPage({
     }
   };
 
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: listing?.title,
+          text: "Découvrez cette superbe annonce !",
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.error("Error sharing:", error);
+      }
+    } else {
+      // Fallback: copier l'URL
+      navigator.clipboard.writeText(window.location.href);
+      alert("Lien copié dans le presse-papier !");
+    }
+  };
+
   const calculateTotalPrice = () => {
     if (!listing?.pricePerNight || !checkInDate || !checkOutDate) return null;
     const checkIn = new Date(checkInDate);
     const checkOut = new Date(checkOutDate);
     const nights = Math.ceil(
-      (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
+      (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)
     );
     if (nights <= 0) return null;
     const subtotal = listing.pricePerNight * nights;
     const cleaningFee = listing.cleaningFee || 0;
-    const serviceFee = Math.round(subtotal * 0.1); // 10% de frais de service
+    const serviceFee = Math.round(subtotal * 0.1);
     return {
       nights,
       subtotal,
@@ -182,513 +271,572 @@ export default function ListingDetailPage({
   };
 
   const priceDetails = calculateTotalPrice();
+  const pricePerUnit = listing?.pricePerNight || listing?.pricePerMonth;
+  const priceUnit = listing?.pricePerNight ? "nuit" : "mois";
+  const averageRating = listing?.owner?.stats?.averageRating || 0;
+  const totalReviews = listing?.owner?.stats?.totalReviews || 0;
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "APARTMENT":
-        return Building2;
-      case "VILLA":
-        return Home;
-      case "STUDIO":
-        return Hotel;
-      case "DUPLEX":
-        return Layers;
-      default:
-        return Building2;
-    }
-  };
+  // Calcul du Trust Score (simulé basé sur les données)
+  const trustScore = Math.min(
+    85 +
+      (listing?.owner?.isIdentityVerified ? 10 : 0) +
+      (listing?.bookingCount ? Math.min(listing.bookingCount, 5) : 0),
+    98
+  );
 
-  const getEquipmentIcon = (key: string) => {
-    const icons: Record<string, any> = {
-      wifi: Wifi,
-      ac: Wind,
-      heating: Wind,
-      kitchen: Utensils,
-      parking: Car,
-      pool: Waves,
-      tv: Tv,
-    };
-    return icons[key] || CheckCircle;
-  };
+  // Vérifications de sécurité
+  const safetyChecks = [
+    { label: "Identité vérifiée", active: listing?.owner?.isIdentityVerified || false, icon: Verified },
+    { label: "5+ réservations", active: (listing?.bookingCount || 0) >= 5, icon: Calendar },
+    { label: "Dépôt de garantie", active: (listing?.securityDeposit || 0) > 0, icon: Shield },
+    { label: "Réponse rapide", active: true, icon: Clock },
+  ];
+
+  // Équipements principaux (affichage limité)
+  const mainEquipment = Object.entries(listing?.equipment || {})
+    .filter(([, value]) => value === true)
+    .slice(0, 6);
+
+  const allEquipment = Object.entries(listing?.equipment || {})
+    .filter(([, value]) => value === true);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f8f7] dark:bg-[#10221b]">
-        <Loader2 size={48} className="animate-spin text-[#0df293]" />
+      <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
+        <Loader2 size={48} className="animate-spin text-primary" />
       </div>
     );
   }
 
   if (!listing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f8f7] dark:bg-[#10221b]">
+      <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
         <div className="text-center">
           <Home size={64} className="mx-auto text-slate-400 mb-4" />
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-            {t("notFound.title")}
+            Annonce non trouvée
           </h2>
           <p className="text-slate-500 dark:text-slate-400 mb-6">
-            {t("notFound.description")}
+            L'annonce que vous recherchez n'existe pas ou a été supprimée.
           </p>
           <Link
-            href={`/${locale}/owner/listings`}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#0df293] text-slate-900 rounded-xl font-semibold hover:opacity-90"
+            href={`/${locale}/dashboard/owner/listings`}
+            className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-semibold hover:opacity-90"
           >
-            <ChevronLeft size={18} />
-            {t("notFound.back")}
+            <ArrowLeft size={18} />
+            Retour aux annonces
           </Link>
         </div>
       </div>
     );
   }
 
-  const TypeIcon = getTypeIcon(listing.type);
   const mainPhoto = listing.photos.find((p) => p.isMain) || listing.photos[0];
-  const pricePerUnit = listing.pricePerNight || listing.pricePerMonth;
-  const priceUnit = listing.pricePerNight ? t("unit.night") : t("unit.month");
-  const averageRating = listing.owner?.stats?.averageRating || 0;
-  const totalReviews = listing.owner?.stats?.totalReviews || 0;
+  const previewPhotos = listing.photos.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-[#f5f8f7] dark:bg-[#10221b] ">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <Link
-            href={`/${locale}/dashbard/owner/listings`}
-            className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
-          >
-            <ChevronLeft size={20} />
-            <span className="text-sm font-medium">{t("backToListings")}</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleFavorite}
-              className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <Heart
-                size={20}
-                className={
-                  isFavorite ? "fill-red-500 text-red-500" : "text-slate-500"
-                }
-              />
-            </button>
-            <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-              <Share2 size={20} className="text-slate-500" />
-            </button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-background-light dark:bg-background-dark">
+     
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Title & Location */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-2">
+      <main className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumbs */}
+        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 font-medium mb-6">
+          <Link href={`/${locale}`} className="hover:text-primary">Accueil</Link>
+          <ChevronRight size={14} />
+          <Link href={`/${locale}/dashboard/owner/listings`} className="hover:text-primary">Mes annonces</Link>
+          <ChevronRight size={14} />
+          <span className="text-slate-900 dark:text-slate-200">{listing.title}</span>
+        </div>
+
+        {/* Title & Meta */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">
             {listing.title}
           </h1>
-          <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
+          <div className="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400">
             <div className="flex items-center gap-1">
-              <Star size={16} className="fill-yellow-400 text-yellow-400" />
-              <span>{averageRating.toFixed(1)}</span>
-              <span>
-                ({totalReviews} {t("reviews")})
-              </span>
-            </div>
-            <span>•</span>
-            <div className="flex items-center gap-1">
-              <MapPin size={16} />
-              <span>
+              <MapPin size={18} className="text-primary" />
+              <span className="text-sm font-medium">
                 {listing.governorate}
                 {listing.delegation ? `, ${listing.delegation}` : ""}
+                {listing.street ? `, ${listing.street}` : ""}
               </span>
             </div>
+            <div className="flex items-center gap-1">
+              <Star size={18} className="fill-yellow-400 text-yellow-400" />
+              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                {averageRating.toFixed(1)}
+              </span>
+              <span className="text-sm">({totalReviews} avis)</span>
+            </div>
+            {listing.owner?.isIdentityVerified && (
+              <div className="flex items-center gap-1">
+                <Verified size={18} className="text-emerald-500" />
+                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-[11px]">
+                  Identité vérifiée
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Photo Gallery */}
-        <section className="grid grid-cols-4 grid-rows-2 gap-3 h-[500px] mb-12 rounded-3xl overflow-hidden shadow-lg">
-          {listing.photos.slice(0, 5).map((photo, idx) => {
-            const isMain = idx === 0;
-            return (
-              <div
-                key={photo.id}
-                className={`relative group cursor-pointer overflow-hidden ${
-                  isMain ? "col-span-2 row-span-2" : ""
-                }`}
-                onClick={() => setSelectedImage(idx)}
-              >
-                <img
-                  src={pip(photo.url)}
-                  alt={listing.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-all" />
-                {idx === 4 && listing.photos.length > 5 && (
-                  <button
-                    onClick={() => setShowAllPhotos(true)}
-                    className="absolute bottom-6 right-6 bg-white/90 backdrop-blur px-4 py-2 rounded-xl text-sm font-bold shadow-sm border border-slate-200/20 flex items-center gap-2"
-                  >
-                    <span className="material-symbols-outlined text-lg">
-                      grid_view
-                    </span>
-                    {t("viewAllPhotos", { count: listing.photos.length })}
-                  </button>
-                )}
+        {/* Gallery Grid - Style inspiration */}
+        <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-3 h-[400px] md:h-[500px] mb-12 rounded-2xl overflow-hidden group">
+          {/* Large Image */}
+          <div className="md:col-span-2 md:row-span-2 relative overflow-hidden cursor-pointer"
+               onClick={() => { setGalleryStartIndex(0); setShowGalleryModal(true); }}>
+            <img
+              src={pip(previewPhotos[0]?.url)}
+              alt={listing.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            {listing.photos.length > 5 && (
+              <div className="absolute bottom-6 left-6">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowAllPhotos(true); }}
+                  className="bg-white/90 backdrop-blur-sm text-slate-900 px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-xl hover:bg-white transition-all"
+                >
+                  <Grid3x3 size={18} />
+                  Voir toutes les photos ({listing.photos.length})
+                </button>
               </div>
-            );
-          })}
-        </section>
+            )}
+          </div>
+
+          {/* Small Previews */}
+          {previewPhotos.slice(1, 5).map((photo, idx) => (
+            <div
+              key={photo.id}
+              className="hidden md:block relative overflow-hidden cursor-pointer"
+              onClick={() => { setGalleryStartIndex(idx + 1); setShowGalleryModal(true); }}
+            >
+              <img
+                src={pip(photo.url)}
+                alt={`${listing.title} - ${idx + 2}`}
+                className="w-full h-full object-cover hover:opacity-90 transition-opacity"
+              />
+              {idx === 3 && listing.photos.length > 5 && (
+                <div className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-colors">
+                  <span className="text-white font-bold text-lg">
+                    +{listing.photos.length - 5} photos
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
 
         {/* Main Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
-          {/* Left Column: Details */}
-          <div className="lg:col-span-2 space-y-12">
-            {/* Host Info */}
-            <div className="flex justify-between items-center pb-8 border-b border-slate-200 dark:border-slate-800">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                  {t("hostedBy", {
-                    name: listing.owner?.firstName || listing.owner?.username,
-                  })}
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400">
-                  {listing.maxGuests} {t("guests")} • {listing.rooms}{" "}
-                  {t("bedrooms")} • {listing.bathrooms} {t("bathrooms")}
-                </p>
-              </div>
-              <div className="relative">
-                <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
-                  {listing.owner?.profilePictureUrl ? (
-                    <img
-                      src={pip(listing.owner.profilePictureUrl)}
-                      alt={listing.owner?.firstName || ""}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white text-xl font-bold">
-                      {(
-                        listing.owner?.firstName?.[0] ||
-                        listing.owner?.username?.[0] ||
-                        "U"
-                      ).toUpperCase()}
-                    </div>
-                  )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          {/* Left Column - Details */}
+          <div className="lg:col-span-2 space-y-10">
+            {/* Quick Stats */}
+            <div className="flex flex-wrap gap-8 py-6 border-y border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                  <Bed size={20} className="text-slate-700 dark:text-slate-300" />
                 </div>
-                {listing.owner?.isIdentityVerified && (
-                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-0.5 rounded-full border-2 border-white">
-                    <CheckCircle size={12} className="fill-current" />
-                  </div>
-                )}
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Chambres</p>
+                  <p className="text-lg font-bold">{listing.rooms} {listing.rooms === 1 ? "chambre" : "chambres"}</p>
+                </div>
               </div>
-            </div>
-
-            {/* Unique Selling Points */}
-            <div className="space-y-6">
-              {listing.hasElevator && (
-                <div className="flex gap-4">
-                  <span className="material-symbols-outlined text-2xl text-slate-900">
-                    elevator
-                  </span>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                  <Bath size={20} className="text-slate-700 dark:text-slate-300" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Salles de bain</p>
+                  <p className="text-lg font-bold">{listing.bathrooms} {listing.bathrooms === 1 ? "sdb" : "sdb"}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                  <Users size={20} className="text-slate-700 dark:text-slate-300" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Voyageurs max</p>
+                  <p className="text-lg font-bold">{listing.maxGuests} personnes</p>
+                </div>
+              </div>
+              {listing.surfaceArea && (
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <BsBoundingBox   className="material-symbols-outlined text-xl"/>
+                  </div>
                   <div>
-                    <h4 className="font-bold">{t("elevator")}</h4>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">
-                      {t("elevatorDesc")}
-                    </p>
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Surface</p>
+                    <p className="text-lg font-bold">{listing.surfaceArea} m²</p>
                   </div>
                 </div>
               )}
-              <div className="flex gap-4">
-                <MapPin size={24} className="text-slate-900" />
-                <div>
-                  <h4 className="font-bold">{t("greatLocation")}</h4>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">
-                    {t("greatLocationDesc")}
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <Calendar size={24} className="text-slate-900" />
-                <div>
-                  <h4 className="font-bold">{t("freeCancellation")}</h4>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">
-                    {t("freeCancellationDesc")}
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Description */}
-            <div className="py-8 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-xl font-bold mb-4">{t("about")}</h3>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap">
-                {listing.description || t("noDescription")}
+            <section>
+              <h3 className="text-2xl font-bold mb-4">À propos de ce bien</h3>
+              <p className={`text-slate-600 dark:text-slate-400 leading-relaxed ${!showFullDescription ? "line-clamp-4" : ""}`}>
+                {listing.description || "Aucune description fournie."}
               </p>
-            </div>
-
-            {/* Amenities */}
-            <div className="py-8 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-xl font-bold mb-6">{t("amenities")}</h3>
-              <div className="grid grid-cols-2 gap-y-4">
-                {Object.entries(listing.equipment || {})
-                  .filter(([, value]) => value === true)
-                  .slice(0, 8)
-                  .map(([key]) => {
-                    const Icon = getEquipmentIcon(key);
-                    return (
-                      <div key={key} className="flex items-center gap-4">
-                        <Icon size={20} className="text-slate-600" />
-                        <span className="text-slate-700 dark:text-slate-300">
-                          {t(`equipment.${key}`)}
-                        </span>
-                      </div>
-                    );
-                  })}
-              </div>
-              {Object.keys(listing.equipment || {}).filter(
-                (k) => listing.equipment?.[k],
-              ).length > 8 && (
-                <button className="mt-8 border border-slate-300 dark:border-slate-700 px-6 py-3 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-                  {t("showAllAmenities")}
+              {listing.description && listing.description.length > 300 && (
+                <button
+                  onClick={() => setShowFullDescription(!showFullDescription)}
+                  className="text-primary font-bold flex items-center gap-1 mt-2 hover:underline"
+                >
+                  {showFullDescription ? "Voir moins" : "Lire la suite"}
+                  {showFullDescription ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                 </button>
               )}
-            </div>
+            </section>
 
-            {/* Calendar */}
-            <div className="py-8 border-t border-slate-200 dark:border-slate-800">
-              <h3 className="text-xl font-bold mb-4">{t("availability")}</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">
-                {t("selectDates")}
-              </p>
-              <div className="bg-slate-100 dark:bg-slate-800 p-6 rounded-2xl">
-                <div className="flex items-center justify-between mb-4">
-                  <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg">
-                    <ChevronLeft size={20} />
-                  </button>
-                  <span className="font-semibold">Juin 2024</span>
-                  <button className="p-2 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg">
-                    <ChevronRight size={20} />
-                  </button>
+            {/* Amenities */}
+            <section>
+              <h3 className="text-2xl font-bold mb-6">Équipements et services</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {(showAllAmenities ? allEquipment : mainEquipment).map(([key, value]) => {
+                  const Icon = getEquipmentIcon(key);
+                  return (
+                    <div key={key} className="flex items-center gap-3 group">
+                      <Icon size={18} className="text-slate-500 group-hover:text-primary transition-colors" />
+                      <span className="font-medium text-sm">{getEquipmentLabel(key, t)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              {allEquipment.length > 6 && (
+                <button
+                  onClick={() => setShowAllAmenities(!showAllAmenities)}
+                  className="mt-6 px-6 py-3 border-2 border-slate-300 dark:border-slate-600 font-bold rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all"
+                >
+                  {showAllAmenities ? "Voir moins" : `Voir tous les ${allEquipment.length} équipements`}
+                </button>
+              )}
+            </section>
+
+            {/* Trust & Safety Section */}
+            <section className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-8 border border-primary/20">
+              <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
+                <div className="relative flex-shrink-0">
+                  <svg className="w-32 h-32 transform -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      fill="transparent"
+                      r="58"
+                      stroke="currentColor"
+                      strokeWidth="8"
+                      className="text-primary/10"
+                    />
+                    <circle
+                      cx="64"
+                      cy="64"
+                      fill="transparent"
+                      r="58"
+                      stroke="currentColor"
+                      strokeDasharray="364.4"
+                      strokeDashoffset={364.4 - (364.4 * trustScore) / 100}
+                      strokeLinecap="round"
+                      strokeWidth="8"
+                      className="text-primary"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-3xl font-black text-primary leading-none">{trustScore}</span>
+                    <span className="text-[10px] font-bold text-primary/70 uppercase tracking-tighter">Trust Score</span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">
-                  {["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"].map(
-                    (day) => (
-                      <span key={day}>{day}</span>
-                    ),
-                  )}
-                </div>
-                <div className="grid grid-cols-7 gap-2 text-center">
-                  {Array.from({ length: 35 }, (_, i) => {
-                    const day = i - 4;
-                    const isAvailable =
-                      day >= 1 && day <= 30 && day !== 10 && day !== 11;
-                    return (
-                      <div
-                        key={i}
-                        className={`p-3 rounded-full text-sm font-semibold cursor-pointer transition-colors ${
-                          day < 1 || day > 30
-                            ? "text-slate-300 dark:text-slate-600"
-                            : !isAvailable
-                              ? "bg-slate-200 dark:bg-slate-700 text-slate-400 line-through cursor-not-allowed"
-                              : day >= 3 && day <= 7
-                                ? "bg-[#0df293] text-slate-900"
-                                : "hover:bg-slate-200 dark:hover:bg-slate-700"
-                        }`}
-                      >
-                        {day >= 1 && day <= 30 ? day : ""}
-                      </div>
-                    );
-                  })}
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-2xl font-black">Confiance &amp; Sécurité</h3>
+                    <Shield size={20} className="text-primary" />
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm leading-relaxed">
+                    Notre algorithme IA a analysé plus de 250 points de données pour ce propriétaire.
+                    Identité vérifiée, taux de remboursement des dépôts à 100%, et temps de réponse constant.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {safetyChecks.map((check, idx) => {
+                      const Icon = check.icon;
+                      return (
+                        <span
+                          key={idx}
+                          className={`px-3 py-1.5 border rounded-full text-xs font-bold flex items-center gap-1.5 ${
+                            check.active
+                              ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-green-600"
+                              : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
+                          }`}
+                        >
+                          {check.active && <CheckCircle size={14} className="text-green-500" />}
+                          {check.label}
+                        </span>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
+            </section>
+
+            {/* Location Map */}
+            <section>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-2xl font-bold">Localisation et quartier</h3>
+                {listing.latitude && listing.longitude && (
+                  <a
+                    href={`https://www.google.com/maps?q=${listing.latitude},${listing.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary font-bold flex items-center gap-1 hover:underline text-sm"
+                  >
+                    Ouvrir dans Maps <Navigation size={14} />
+                  </a>
+                )}
+              </div>
+              <div className="h-[400px] w-full rounded-2xl overflow-hidden shadow-inner border border-slate-200 dark:border-slate-700">
+                {listing.latitude && listing.longitude ? (
+                  <MapPickerWrapper
+                    latitude={listing.latitude}
+                    longitude={listing.longitude}
+                    onLocationChange={() => {}}
+                    readOnly
+                  />
+                ) : (
+                  <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <p className="text-slate-500">Position non disponible</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Points d'intérêt à proximité (simulés) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center gap-4">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Bus size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">Transport en commun</p>
+                    <p className="text-xs text-slate-500 font-medium">À 5 min à pied</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center gap-4">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <ShoppingBag size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">Supermarché</p>
+                    <p className="text-xs text-slate-500 font-medium">À 8 min à pied</p>
+                  </div>
+                </div>
+                <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center gap-4">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Coffee size={20} className="text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm">Café à proximité</p>
+                    <p className="text-xs text-slate-500 font-medium">À 2 min à pied</p>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
 
-          {/* Right Column: Sticky Booking Widget */}
-          <div className="relative">
-            <div className="sticky top-28 bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_24px_-4px_rgba(24,28,34,0.1)] border border-slate-200 dark:border-slate-800">
-              <div className="flex justify-between items-end mb-6">
-                <div>
-                  <span className="text-2xl font-extrabold">
-                    {pricePerUnit} TND
-                  </span>
-                  <span className="text-slate-500 dark:text-slate-400">
-                    {" "}
-                    / {priceUnit}
-                  </span>
-                </div>
-                <div className="text-sm font-medium flex items-center gap-1">
-                  <Star size={14} className="fill-yellow-400 text-yellow-400" />
-                  <span>{averageRating.toFixed(1)}</span>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden mb-6">
-                <div className="grid grid-cols-2 border-b border-slate-200 dark:border-slate-700">
-                  <div className="p-3 border-r border-slate-200 dark:border-slate-700">
-                    <label className="block text-[10px] font-bold uppercase text-slate-500">
-                      {t("checkIn")}
-                    </label>
-                    <input
-                      type="date"
-                      value={checkInDate}
-                      onChange={(e) => setCheckInDate(e.target.value)}
-                      className="w-full text-sm bg-transparent focus:outline-none"
-                    />
+          {/* Right Column - Sticky Booking Widget */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-28 space-y-6">
+              {/* Booking Card */}
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none">
+                <div className="flex justify-between items-end mb-6">
+                  <div>
+                    <span className="text-2xl font-black">{pricePerUnit} TND</span>
+                    <span className="text-slate-500 font-medium"> / {priceUnit}</span>
                   </div>
-                  <div className="p-3">
-                    <label className="block text-[10px] font-bold uppercase text-slate-500">
-                      {t("checkOut")}
-                    </label>
-                    <input
-                      type="date"
-                      value={checkOutDate}
-                      onChange={(e) => setCheckOutDate(e.target.value)}
-                      className="w-full text-sm bg-transparent focus:outline-none"
-                    />
-                  </div>
-                </div>
-                <div className="p-3">
-                  <label className="block text-[10px] font-bold uppercase text-slate-500">
-                    {t("guests")}
-                  </label>
-                  <select
-                    value={guests}
-                    onChange={(e) => setGuests(parseInt(e.target.value))}
-                    className="w-full text-sm bg-transparent focus:outline-none"
-                  >
-                    {Array.from(
-                      { length: listing.maxGuests },
-                      (_, i) => i + 1,
-                    ).map((n) => (
-                      <option key={n} value={n}>
-                        {n} {n === 1 ? t("guest") : t("guests")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <button
-                disabled={!checkInDate || !checkOutDate}
-                className="w-full py-4 bg-gradient-to-r from-[#0df293] to-emerald-500 text-slate-900 rounded-full font-bold text-lg mb-6 shadow-lg shadow-[#0df293]/20 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t("requestToBook")}
-              </button>
-
-              <p className="text-center text-slate-500 dark:text-slate-400 text-sm mb-6">
-                {t("noChargeYet")}
-              </p>
-
-              {priceDetails && (
-                <div className="space-y-4">
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span className="underline">
-                      {pricePerUnit} TND x {priceDetails.nights}{" "}
-                      {priceDetails.nights === 1 ? t("night") : t("nights")}
-                    </span>
-                    <span>{priceDetails.subtotal} TND</span>
-                  </div>
-                  {priceDetails.cleaningFee > 0 && (
-                    <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                      <span className="underline">{t("cleaningFee")}</span>
-                      <span>{priceDetails.cleaningFee} TND</span>
+                  {averageRating > 4.5 && (
+                    <div className="text-right">
+                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">Très bien noté</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                    <span className="underline">{t("serviceFee")}</span>
-                    <span>{priceDetails.serviceFee} TND</span>
+                </div>
+
+                <div className="space-y-4 mb-6">
+                  <div className="grid grid-cols-2 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+                    <div className="p-3 border-r border-slate-200 dark:border-slate-700">
+                      <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Arrivée</label>
+                      <input
+                        type="date"
+                        value={checkInDate}
+                        onChange={(e) => setCheckInDate(e.target.value)}
+                        className="bg-transparent border-none p-0 text-sm font-bold w-full focus:ring-0"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Départ</label>
+                      <input
+                        type="date"
+                        value={checkOutDate}
+                        onChange={(e) => setCheckOutDate(e.target.value)}
+                        className="bg-transparent border-none p-0 text-sm font-bold w-full focus:ring-0"
+                      />
+                    </div>
                   </div>
-                  <div className="pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-between font-extrabold text-lg">
-                    <span>{t("total")}</span>
-                    <span>{priceDetails.total} TND</span>
+                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-3">
+                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Voyageurs</label>
+                    <select
+                      value={guests}
+                      onChange={(e) => setGuests(parseInt(e.target.value))}
+                      className="bg-transparent border-none p-0 text-sm font-bold w-full focus:ring-0"
+                    >
+                      {Array.from({ length: listing.maxGuests }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {n} {n === 1 ? "voyageur" : "voyageurs"}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Report Button */}
-            <div className="mt-8 p-6 flex items-center justify-center gap-4 bg-slate-100 dark:bg-slate-800 rounded-2xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
-              <span className="material-symbols-outlined text-slate-500 text-2xl">
-                flag
-              </span>
-              <span className="text-sm font-medium underline text-slate-600 dark:text-slate-400">
-                {t("reportListing")}
-              </span>
+                {priceDetails && (
+                  <div className="space-y-3 mb-6">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 underline">
+                        {pricePerUnit} TND × {priceDetails.nights} {priceDetails.nights === 1 ? "nuit" : "nuits"}
+                      </span>
+                      <span className="font-bold">{priceDetails.subtotal} TND</span>
+                    </div>
+                    {priceDetails.cleaningFee > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-slate-500 underline">Frais de ménage</span>
+                        <span className="font-bold">{priceDetails.cleaningFee} TND</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500 underline">Frais de service</span>
+                      <span className="font-bold">{priceDetails.serviceFee} TND</span>
+                    </div>
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between">
+                      <span className="font-black text-lg">Total</span>
+                      <span className="font-black text-lg">{priceDetails.total} TND</span>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  disabled={!checkInDate || !checkOutDate}
+                  className="w-full bg-primary text-white font-black py-4 rounded-xl hover:bg-primary/90 transition-all transform active:scale-95 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {checkInDate && checkOutDate ? "Contacter le propriétaire" : "Sélectionnez des dates"}
+                </button>
+                <p className="text-center text-xs text-slate-400 font-medium">Vous ne serez pas débité maintenant</p>
+              </div>
+
+              {/* Owner Card */}
+              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 flex items-center gap-4 border border-slate-100 dark:border-slate-800">
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+                    {listing.owner?.profilePictureUrl ? (
+                      <img
+                        src={pip(listing.owner.profilePictureUrl)}
+                        alt={listing.owner?.firstName || ""}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xl font-bold">
+                        {(listing.owner?.firstName?.[0] || listing.owner?.username?.[0] || "U").toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  {listing.owner?.isIdentityVerified && (
+                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 border-2 border-white dark:border-slate-800 w-5 h-5 rounded-full flex items-center justify-center">
+                      <CheckCircle size={12} className="text-white" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Proposé par</p>
+                  <p className="font-bold text-lg">
+                    {listing.owner?.firstName || listing.owner?.username || "Propriétaire"}
+                  </p>
+                  <Link
+                    href={`/${locale}/profile/${listing.owner?.id}`}
+                    className="text-primary text-sm font-bold hover:underline"
+                  >
+                    Voir le profil
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Reviews Section */}
-        <section className="mt-20 py-12 border-t border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2 mb-8">
-            <Star size={24} className="fill-yellow-400 text-yellow-400" />
-            <h3 className="text-2xl font-bold">
-              {averageRating.toFixed(1)} • {totalReviews} {t("reviews")}
-            </h3>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {/* Placeholder for reviews */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700"></div>
-                <div>
-                  <h4 className="font-bold">Sami K.</h4>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm">
-                    {t("reviewDate")}
-                  </p>
-                </div>
-              </div>
-              <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-                {t("sampleReview")}
-              </p>
+        {totalReviews > 0 && (
+          <section className="mt-20 py-12 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 mb-8">
+              <Star size={28} className="fill-yellow-400 text-yellow-400" />
+              <h3 className="text-2xl font-bold">
+                {averageRating.toFixed(1)} • {totalReviews} avis
+              </h3>
             </div>
-          </div>
-          <button className="mt-12 border border-slate-300 dark:border-slate-700 px-8 py-3 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-            {t("showAllReviews", { count: totalReviews })}
-          </button>
-        </section>
+            <button className="border border-slate-300 dark:border-slate-700 px-8 py-3 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+              Voir tous les avis
+            </button>
+          </section>
+        )}
       </main>
 
-      {/* All Photos Modal */}
-      {showAllPhotos && (
+      {/* Gallery Modal - Pour agrandir et naviguer */}
+      {showGalleryModal && (
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
           <div className="flex justify-between items-center p-4">
             <button
-              onClick={() => setShowAllPhotos(false)}
+              onClick={() => setShowGalleryModal(false)}
               className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
             >
-              <XCircle size={24} />
+              <X size={24} />
             </button>
             <span className="text-white font-medium">
-              {selectedImage + 1} / {listing.photos.length}
+              {galleryStartIndex + 1} / {listing.photos.length}
             </span>
+            <div className="w-10" />
           </div>
           <div className="flex-1 flex items-center justify-center p-8">
             <img
-              src={pip(listing.photos[selectedImage]?.url)}
+              src={pip(listing.photos[galleryStartIndex]?.url)}
               alt={listing.title}
               className="max-w-full max-h-full object-contain"
             />
           </div>
           <div className="flex justify-center gap-4 p-4">
             <button
-              onClick={() => setSelectedImage((prev) => Math.max(0, prev - 1))}
-              disabled={selectedImage === 0}
+              onClick={() => setGalleryStartIndex((prev) => Math.max(0, prev - 1))}
+              disabled={galleryStartIndex === 0}
               className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white disabled:opacity-50 transition-colors"
             >
               <ChevronLeft size={24} />
             </button>
             <button
               onClick={() =>
-                setSelectedImage((prev) =>
-                  Math.min(listing.photos.length - 1, prev + 1),
+                setGalleryStartIndex((prev) =>
+                  Math.min(listing.photos.length - 1, prev + 1)
                 )
               }
-              disabled={selectedImage === listing.photos.length - 1}
+              disabled={galleryStartIndex === listing.photos.length - 1}
               className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white disabled:opacity-50 transition-colors"
             >
               <ChevronRight size={24} />
             </button>
+          </div>
+          {/* Miniatures */}
+          <div className="flex justify-center gap-2 p-4 overflow-x-auto">
+            {listing.photos.map((photo, idx) => (
+              <button
+                key={photo.id}
+                onClick={() => setGalleryStartIndex(idx)}
+                className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                  idx === galleryStartIndex ? "border-primary" : "border-transparent opacity-60"
+                }`}
+              >
+                <img src={pip(photo.url)} alt="" className="w-full h-full object-cover" />
+              </button>
+            ))}
           </div>
         </div>
       )}

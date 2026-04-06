@@ -1660,6 +1660,14 @@
     "title": "Portfolio Management",
     "description": "Gérez vos propriétés, suivez les performances et maximisez votre ROI avec nos outils intelligents.",
     "addProperty": "Ajouter une propriété",
+     "deleteModal": {
+      "title": "Supprimer l'annonce",
+      "description": "Cette action est irréversible. L'annonce et toutes ses données seront définitivement supprimées.",
+      "warning": "Attention : Cette action ne peut pas être annulée",
+      "cancel": "Annuler",
+      "confirm": "Supprimer",
+      "deleting": "Suppression..."
+    },
     "tabs": {
       "all": "Toutes",
       "active": "Publiées",
@@ -1686,8 +1694,9 @@
       "archived": "Archivé"
     },
     "badge": {
-      "verified": "Vérifié"
-    },
+
+      "live": "En ligne",
+      "verified": "Vérifié"    },
     "unit": {
       "night": "nuit",
       "month": "mois"
@@ -1710,7 +1719,6 @@
     },
     "searchPlaceholder": "Rechercher une propriété...",
     "filter": "Filtrer",
-    "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette annonce ? Cette action est irréversible.",
     "pagination": {
       "showing": "Affichage de {start} à {end} sur {total} propriétés"
     },

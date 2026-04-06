@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation"; // ✅ Add usePathname
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 
@@ -64,12 +64,12 @@ const block3d =
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
 
-export default function AdminUsersPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = React.use(params);
+// ✅ Accept async params (Next.js 15+ standard)
+export default function AdminUsersPage() {
+  // ✅ Hydration-safe, synchronous locale extraction
+  const pathname = usePathname();
+  const locale = pathname?.split("/")[1] || "fr";
+  
   const t = useTranslations("admin.usersManagement");
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
@@ -108,8 +108,11 @@ export default function AdminUsersPage({
           setIsAdmin(false);
           return;
         }
-        setIsAdmin(decodeJWT(token)?.role === "ADMIN");
-      } catch {
+        const decoded = decodeJWT(token);
+        console.log("Rôle décodé:", decoded?.role);
+        setIsAdmin(decoded?.role === "ADMIN");
+      } catch (error) {
+        console.error("Erreur vérification admin:", error);
         setIsAdmin(false);
       }
     };
@@ -173,16 +176,19 @@ export default function AdminUsersPage({
       userId,
     });
   };
+  
   const closeMenu = () => setMenuPosition({ top: 0, left: 0, userId: null });
 
-  if (!isUserLoaded || isAdmin === null)
+  // Vérification de chargement
+  if (!isUserLoaded || isAdmin === null) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner />
       </div>
     );
+  }
 
-  if (isAdmin === false)
+  if (isAdmin === false) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-10 bg-white dark:bg-slate-900 rounded-2xl shadow-lg">
@@ -193,6 +199,8 @@ export default function AdminUsersPage({
         </div>
       </div>
     );
+  }
+
 
   const roleOptions = [
     { value: "ALL", label: t("filters.role.all") },

@@ -27,11 +27,10 @@ import { MdOutlineCalendarMonth } from "react-icons/md";
 import { MdOutlineBookOnline } from "react-icons/md";
 import { MdOutlineChatBubble } from "react-icons/md";
 import { MdOutlineAnalytics } from "react-icons/md";
-import { MdOutlineAdd } from "react-icons/md";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
-// Fonction pip pour les images Vercel Blob
-const pipAvatar  = (url: string) =>
+// Fonction pip pour les images Vercel Blob (avatar)
+const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
 
 interface AppUser {
@@ -47,29 +46,36 @@ interface AppUser {
 
 // Couleurs pour l'avatar
 const avatarColors = [
-  "bg-blue-500", "bg-indigo-500", "bg-purple-500", "bg-violet-500",
-  "bg-sky-500", "bg-cyan-500", "bg-emerald-500", "bg-teal-500",
+  "bg-blue-500",
+  "bg-indigo-500",
+  "bg-purple-500",
+  "bg-violet-500",
+  "bg-sky-500",
+  "bg-cyan-500",
+  "bg-emerald-500",
+  "bg-teal-500",
 ];
 
 export default function OwnerLayout({
   children,
-  params,
 }: {
   children: React.ReactNode;
-  params: Promise<{ locale: string }>;
 }) {
-  const { locale } = React.use(params);
+  const pathname = usePathname();
+  
+  const locale = pathname?.split("/")[1] || "fr";
+
   const t = useTranslations("OwnerLayout");
   const { user: clerkUser, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
-  const pathname = usePathname();
 
   // États
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const [isNotificationsDropdownOpen, setIsNotificationsDropdownOpen] = useState(false);
+  const [isNotificationsDropdownOpen, setIsNotificationsDropdownOpen] =
+    useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
@@ -132,16 +138,22 @@ export default function OwnerLayout({
 
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(target)) {
+
+      if (
+        profileDropdownRef.current &&
+        !profileDropdownRef.current.contains(target)
+      ) {
         setIsProfileDropdownOpen(false);
       }
-      
-      if (notificationsDropdownRef.current && !notificationsDropdownRef.current.contains(target)) {
+
+      if (
+        notificationsDropdownRef.current &&
+        !notificationsDropdownRef.current.contains(target)
+      ) {
         setIsNotificationsDropdownOpen(false);
       }
     };
-    
+
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [mounted]);
@@ -184,12 +196,39 @@ export default function OwnerLayout({
 
   // Navigation items
   const navItems = [
-    { name: t("nav.dashboard"), href: `/${locale}/dashboard/owner`, icon: LuLayoutDashboard },
-    { name: t("nav.listings"), href: `/${locale}/dashboard/owner/listings`, icon: MdOutlineHomeWork },
-    { name: t("nav.calendar"), href: `/${locale}/dashboard/owner/calendar`, icon: MdOutlineCalendarMonth },
-    { name: t("nav.reservations"), href: `/${locale}/dashboard/owner/reservations`, icon: MdOutlineBookOnline },
-    { name: t("nav.messages"), href: `/${locale}/dashboard/owner/messages`, icon: MdOutlineChatBubble },
-    { name: t("nav.analytics"), href: `/${locale}/dashboard/owner/analytics`, icon: MdOutlineAnalytics },
+    {
+      name: t("nav.dashboard"),
+      href: `/${locale}/dashboard/owner`,
+      icon: LuLayoutDashboard,
+    },
+    {
+      name: t("nav.listings"),
+      href: `/${locale}/dashboard/owner/listings`,
+      icon: MdOutlineHomeWork,
+    },
+    {
+      name: t("nav.calendar"),
+      href: `/${locale}/dashboard/owner/calendar`,
+      icon: MdOutlineCalendarMonth,
+    },
+    {
+      name: t("nav.reservations"),
+      href: `/${locale}/dashboard/owner/reservations`,
+      icon: MdOutlineBookOnline,
+    },
+    {
+      name: t("nav.messages"),
+      href: `/${locale}/dashboard/owner/messages`,
+      icon: MdOutlineChatBubble,
+    },
+    {
+      name: t("nav.analytics"),
+      href: `/${locale}/dashboard/owner/analytics`,
+      icon: MdOutlineAnalytics,
+    },
+    {name: t("nav.team"),
+      href: `/${locale}/dashboard/owner/team`,
+      icon: LuLayoutDashboard,}
   ];
 
   const isActive = (href: string) => {
@@ -201,31 +240,37 @@ export default function OwnerLayout({
 
   // Fonction pour obtenir l'URL de l'avatar (priorité: Blob > Clerk > fallback)
   const getAvatarUrl = () => {
-    // Priorité 1: Image depuis Vercel Blob (base de données) - utilise pip pour l'URL
     if (appUser?.profilePictureUrl && !avatarError) {
-    return pipAvatar(appUser.profilePictureUrl); // ✅ Utiliser l'API avatar
-  }
-  // Priorité 2: Image depuis Clerk
-  if (clerkUser?.imageUrl && !avatarError) {
-    return clerkUser.imageUrl;
-  }
-  return null;
-};
+      return pipAvatar(appUser.profilePictureUrl);
+    }
+    if (clerkUser?.imageUrl && !avatarError) {
+      return clerkUser.imageUrl;
+    }
+    return null;
+  };
+
   // Affichage du username
-  const displayUsername = appUser?.username || clerkUser?.username || clerkUser?.firstName || "Propriétaire";
+  const displayUsername =
+    appUser?.username ||
+    clerkUser?.username ||
+    clerkUser?.firstName ||
+    "Propriétaire";
   const initial = displayUsername.charAt(0).toUpperCase();
   const isVerified = appUser?.isIdentityVerified === true;
-
+  
   // Loader
   if (!mounted || !isLoaded || loading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f5f6fb] dark:bg-slate-950">
-      <LoadingSpinner />
-    </div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#f5f6fb] dark:bg-slate-950">
+        <LoadingSpinner />
+      </div>
     );
   }
 
-  if (!isSignedIn || (appUser && appUser.role !== "PROPERTY_OWNER" && appUser.role !== "BOTH")) {
+  if (
+    !isSignedIn ||
+    (appUser && appUser.role !== "PROPERTY_OWNER" && appUser.role !== "BOTH")
+  ) {
     return null;
   }
 
@@ -233,7 +278,7 @@ export default function OwnerLayout({
   const mainML = sidebarCollapsed ? "ml-20" : "ml-64";
 
   return (
-    <div className="flex h-screen bg-[#f5f6fb] dark:bg-slate-950 overflow-hidden">
+    <div className="flex h-screen bg-light dark:bg-slate-950 overflow-hidden">
       {/* Overlay mobile */}
       {isSidebarOpen && (
         <div
@@ -253,7 +298,7 @@ export default function OwnerLayout({
           flex flex-col shadow-xl lg:shadow-none
         `}
       >
-        {/* Logo */}
+         {/* Logo */}
         <div className="h-16 flex items-center px-4 border-b border-slate-200 dark:border-slate-800 gap-8">
           <div className="relative w-8 h-8 shrink-0">
                       <Image
@@ -275,6 +320,7 @@ export default function OwnerLayout({
           )}
         </div>
 
+
         {/* Toggle sidebar button */}
         <button
           onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
@@ -288,9 +334,13 @@ export default function OwnerLayout({
         </button>
 
         {/* Profile section */}
-        <div className={`flex flex-col items-center py-6 px-4 border-b border-slate-100 dark:border-slate-800 ${sidebarCollapsed ? "px-2" : ""}`}>
+        <div
+          className={`flex flex-col items-center py-6 px-4 border-b border-slate-100 dark:border-slate-800 ${sidebarCollapsed ? "px-2" : ""}`}
+        >
           <div className="relative">
-            <div className={`rounded-full overflow-hidden ring-2 ring-blue-100 dark:ring-blue-900 shadow-lg ${sidebarCollapsed ? "w-10 h-10" : "w-14 h-14"}`}>
+            <div
+              className={`rounded-full overflow-hidden ring-2 ring-blue-100 dark:ring-blue-900 shadow-lg ${sidebarCollapsed ? "w-10 h-10" : "w-14 h-14"}`}
+            >
               {getAvatarUrl() ? (
                 <img
                   src={getAvatarUrl()!}
@@ -299,7 +349,9 @@ export default function OwnerLayout({
                   onError={() => setAvatarError(true)}
                 />
               ) : (
-                <div className={`w-full h-full ${avatarColor} flex items-center justify-center text-white font-bold text-lg`}>
+                <div
+                  className={`w-full h-full ${avatarColor} flex items-center justify-center text-white font-bold text-lg`}
+                >
                   {initial}
                 </div>
               )}
@@ -370,7 +422,9 @@ export default function OwnerLayout({
               >
                 <RiLogoutCircleLine size={18} />
                 {!sidebarCollapsed && (
-                  <span className="font-medium text-sm">{t("sidebar.logout")}</span>
+                  <span className="font-medium text-sm">
+                    {t("sidebar.logout")}
+                  </span>
                 )}
               </button>
             </li>
@@ -388,8 +442,18 @@ export default function OwnerLayout({
             className="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
             aria-label="Ouvrir le menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           </button>
 
@@ -412,7 +476,9 @@ export default function OwnerLayout({
                 <div className="absolute right-0 mt-2 w-[450px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
                   <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-slate-200 dark:border-slate-800">
                     <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-                      {isSearching ? "Recherche..." : `${searchResults.length} résultat(s)`}
+                      {isSearching
+                        ? "Recherche..."
+                        : `${searchResults.length} résultat(s)`}
                     </p>
                   </div>
                   <div className="max-h-[400px] overflow-y-auto">
@@ -422,14 +488,21 @@ export default function OwnerLayout({
                       </div>
                     ) : searchResults.length > 0 ? (
                       searchResults.map((result, index) => (
-                        <div key={index} className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b last:border-b-0">
+                        <div
+                          key={index}
+                          className="px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b last:border-b-0"
+                        >
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
                               <MdOutlineHomeWork size={16} />
                             </div>
                             <div>
-                              <p className="text-sm font-medium">{result.title}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">{result.governorate}</p>
+                              <p className="text-sm font-medium">
+                                {result.title}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {result.governorate}
+                              </p>
                             </div>
                           </div>
                         </div>
@@ -455,7 +528,9 @@ export default function OwnerLayout({
             {/* Notifications dropdown */}
             <div className="relative" ref={notificationsDropdownRef}>
               <button
-                onClick={() => setIsNotificationsDropdownOpen(!isNotificationsDropdownOpen)}
+                onClick={() =>
+                  setIsNotificationsDropdownOpen(!isNotificationsDropdownOpen)
+                }
                 className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
               >
                 <IoMdNotificationsOutline size={20} />
@@ -480,11 +555,13 @@ export default function OwnerLayout({
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                 className="flex items-center gap-1 sm:gap-3 py-1.5 pl-2 sm:pl-3 pr-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
               >
-                <div className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center text-white font-medium overflow-hidden`}>
+                <div
+                  className={`w-8 h-8 rounded-full ${avatarColor} flex items-center justify-center text-white font-medium overflow-hidden`}
+                >
                   {getAvatarUrl() ? (
-                    <img 
-                      src={getAvatarUrl()!} 
-                      alt="Avatar" 
+                    <img
+                      src={getAvatarUrl()!}
+                      alt="Avatar"
                       className="w-full h-full object-cover"
                       onError={() => setAvatarError(true)}
                     />
@@ -500,18 +577,22 @@ export default function OwnerLayout({
                     {t("header.owner")}
                   </p>
                 </div>
-                <FaChevronDown className={`hidden sm:block text-slate-400 text-xs transition-transform ${isProfileDropdownOpen ? "rotate-180" : ""}`} />
+                <FaChevronDown
+                  className={`hidden sm:block text-slate-400 text-xs transition-transform ${isProfileDropdownOpen ? "rotate-180" : ""}`}
+                />
               </button>
 
               {isProfileDropdownOpen && (
                 <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 py-2 z-50">
                   <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-medium overflow-hidden`}>
+                      <div
+                        className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-medium overflow-hidden`}
+                      >
                         {getAvatarUrl() ? (
-                          <img 
-                            src={getAvatarUrl()!} 
-                            alt="Avatar" 
+                          <img
+                            src={getAvatarUrl()!}
+                            alt="Avatar"
                             className="w-full h-full object-cover"
                             onError={() => setAvatarError(true)}
                           />
@@ -574,15 +655,11 @@ export default function OwnerLayout({
                 </div>
               )}
             </div>
-
-           
           </div>
         </header>
 
         {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {children}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>
 
       {/* Logout modal */}
@@ -649,14 +726,19 @@ export default function OwnerLayout({
                 </div>
               ) : searchResults.length > 0 ? (
                 searchResults.map((result, index) => (
-                  <div key={index} className="p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b">
+                  <div
+                    key={index}
+                    className="p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
                         <MdOutlineHomeWork size={20} />
                       </div>
                       <div>
                         <p className="text-base font-medium">{result.title}</p>
-                        <p className="text-sm text-slate-500">{result.governorate}</p>
+                        <p className="text-sm text-slate-500">
+                          {result.governorate}
+                        </p>
                       </div>
                     </div>
                   </div>

@@ -1,15 +1,14 @@
 // app/[locale]/(dashboard)/owner/listings/[id]/edit/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRef, useState, useMemo } from "react";
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import { toast } from "sonner";
+import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
+import { Toggle } from "@/components/ui/Toggle";
+import { useEditListing } from "./hooks/useEditListing";
+import Alert from "@/components/ui/Alert";
 
-// Icônes React
 import {
   Home,
   Building2,
@@ -25,58 +24,74 @@ import {
   Trash2,
   Plus,
   ChevronLeft,
-  Star,
+  ChevronRight,
   MapPin,
   DollarSign,
+  CheckCircle,
+  Loader2,
   Save,
-  Cloud,
   Rocket,
   Camera,
   Sun,
   Sparkles,
+  Wifi,
+  Wind,
+  Flame,
+  Utensils,
+  Car,
+  Waves,
+  Dumbbell,
+  Tv,
+  Trees,
+  WashingMachine,
+  Fan,
   Shield,
   Calendar,
-  Loader2,
+  Star,
+  AlertCircle,
+  EyeOff,
+  Coffee,
+  Smartphone,
+  Lock,
+  Music,
+  BookOpen,
+  TrendingUp,
+  Zap,
+  Award,
 } from "lucide-react";
 
-interface Listing {
-  id: string;
-  title: string;
-  type: string;
-  description: string;
-  governorate: string;
-  delegation: string;
-  street: string;
-  latitude: number | null;
-  longitude: number | null;
-  rooms: number;
-  bathrooms: number;
-  maxGuests: number;
-  surfaceArea: number | null;
-  floorNumber: number | null;
-  hasElevator: boolean;
-  equipment: Record<string, boolean>;
-  services: Record<string, boolean>;
-  houseRules: Record<string, boolean>;
-  customRules: string;
-  photos: Array<{ id: string; url: string; thumbnailUrl: string; isMain: boolean; position: number }>;
-  rentalType: string;
-  pricePerNight: number | null;
-  pricePerMonth: number | null;
-  securityDeposit: number | null;
-  cleaningFee: number | null;
-  status: string;
-  viewCount: number;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Fonction pour obtenir l'URL d'affichage
 const getDisplayUrl = (url: string) => {
   if (!url) return null;
-  if (url.startsWith('blob:')) return url;
+  if (url.startsWith("blob:")) return url;
   return `/api/listings/image?url=${encodeURIComponent(url)}`;
 };
+
+const governorates = [
+  "Tunis",
+  "Ariana",
+  "Ben Arous",
+  "Manouba",
+  "Nabeul",
+  "Zaghouan",
+  "Bizerte",
+  "Béja",
+  "Jendouba",
+  "Le Kef",
+  "Siliana",
+  "Kairouan",
+  "Kasserine",
+  "Sidi Bouzid",
+  "Sousse",
+  "Monastir",
+  "Mahdia",
+  "Sfax",
+  "Gafsa",
+  "Tozeur",
+  "Kébili",
+  "Gabès",
+  "Médenine",
+  "Tataouine",
+];
 
 const propertyTypes = [
   { value: "APARTMENT", label: "Appartement", icon: Building2 },
@@ -86,12 +101,115 @@ const propertyTypes = [
   { value: "DUPLEX", label: "Duplex", icon: Layers },
 ];
 
-const governorates = [
-  "Tunis", "Ariana", "Ben Arous", "Manouba", "Nabeul", "Zaghouan",
-  "Bizerte", "Béja", "Jendouba", "Le Kef", "Siliana", "Kairouan",
-  "Kasserine", "Sidi Bouzid", "Sousse", "Monastir", "Mahdia",
-  "Sfax", "Gafsa", "Tozeur", "Kébili", "Gabès", "Médenine", "Tataouine",
+const equipmentList = [
+  { id: "wifi", label: "WiFi", icon: Wifi },
+  { id: "ac", label: "Climatisation", icon: Wind },
+  { id: "heating", label: "Chauffage", icon: Flame },
+  { id: "kitchen", label: "Cuisine", icon: Utensils },
+  { id: "parking", label: "Parking", icon: Car },
+  { id: "pool", label: "Piscine", icon: Waves },
+  { id: "gym", label: "Salle sport", icon: Dumbbell },
+  { id: "washer", label: "Lave-linge", icon: WashingMachine },
+  { id: "tv", label: "Télévision", icon: Tv },
+  { id: "balcony", label: "Balcon", icon: Trees },
+  { id: "dishwasher", label: "Lave-vaisselle", icon: Utensils },
+  { id: "dryer", label: "Sèche-linge", icon: Fan },
+  { id: "coffee", label: "Cafetière", icon: Coffee },
+  { id: "smartlock", label: "Serrure connectée", icon: Smartphone },
+  { id: "speaker", label: "Enceinte", icon: Music },
+  { id: "workplace", label: "Espace travail", icon: BookOpen },
 ];
+
+const SECTIONS = [
+  { id: "details", label: "Informations", icon: Home },
+  { id: "photos", label: "Photos", icon: Camera },
+  { id: "pricing", label: "Tarification", icon: DollarSign },
+  { id: "publish", label: "Publication", icon: Rocket },
+];
+
+function calculateCompletionScore(listing: any, photosLength: number): number {
+  let score = 0;
+  let total = 0;
+
+  total += 5;
+  if (listing.title && listing.title.length >= 10) score += 5;
+  else if (listing.title && listing.title.length > 0) score += 3;
+
+  total += 10;
+  if (listing.description && listing.description.length >= 200) score += 10;
+  else if (listing.description && listing.description.length >= 100) score += 7;
+  else if (listing.description && listing.description.length > 0) score += 4;
+
+  total += 15;
+  if (photosLength >= 10) score += 15;
+  else if (photosLength >= 7) score += 12;
+  else if (photosLength >= 5) score += 10;
+  else if (photosLength >= 3) score += 6;
+  else if (photosLength >= 1) score += 3;
+
+  total += 15;
+  if (listing.governorate && listing.delegation && listing.latitude)
+    score += 15;
+  else if (listing.governorate && listing.latitude) score += 10;
+  else if (listing.governorate) score += 5;
+
+  total += 15;
+  if (listing.pricePerNight || listing.pricePerMonth) score += 15;
+
+  total += 10;
+  if (
+    listing.type &&
+    listing.rooms >= 1 &&
+    listing.bathrooms >= 1 &&
+    listing.maxGuests >= 1
+  )
+    score += 10;
+  else if (listing.type && (listing.rooms >= 1 || listing.bathrooms >= 1))
+    score += 6;
+  else if (listing.type) score += 3;
+
+  total += 15;
+  const equipmentCount = Object.values(listing.equipment || {}).filter(
+    Boolean,
+  ).length;
+  if (equipmentCount >= 8) score += 15;
+  else if (equipmentCount >= 5) score += 10;
+  else if (equipmentCount >= 3) score += 6;
+  else if (equipmentCount >= 1) score += 3;
+
+  total += 5;
+  if (listing.status === "ACTIVE") score += 5;
+  else if (listing.status === "DRAFT") score += 2;
+
+  total += 10;
+  if (listing.customRules && listing.customRules.length > 0) score += 5;
+  if (listing.securityDeposit || listing.cleaningFee) score += 5;
+
+  return Math.round((score / total) * 100);
+}
+
+function QualityRing({ score }: { score: number }) {
+  const color = score >= 80 ? "#10b981" : score >= 50 ? "#f59e0b" : "#ef4444";
+  return (
+    <div className="relative w-14 h-14 flex items-center justify-center">
+      <div className="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-slate-700"></div>
+      <div
+        className="absolute rounded-full"
+        style={{
+          width: "56px",
+          height: "56px",
+          borderRadius: "50%",
+          background: `conic-gradient(${color} 0deg ${score * 3.6}deg, #e2e8f0 ${score * 3.6}deg 360deg)`,
+          mask: "radial-gradient(circle, transparent 58%, black 59%)",
+          WebkitMask: "radial-gradient(circle, transparent 58%, black 59%)",
+        }}
+      />
+      <span className="absolute text-sm font-black" style={{ color }}>
+        {score}
+      </span>
+    </div>
+  );
+}
 
 export default function EditListingPage({
   params,
@@ -99,192 +217,68 @@ export default function EditListingPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale, id } = React.use(params);
-  const router = useRouter();
-  const { user } = useUser();
-  const t = useTranslations("EditListing");
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [active, setActive] = useState("details");
 
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [activeSection, setActiveSection] = useState("details");
+  const {
+    listing,
+    loading,
+    saving,
+    lastSaved,
+    uploadingPhotos,
+    alert,
+    setAlert,
+    setField,
+    save,
+    handleFileChange,
+    removePhoto,
+    setMainPhoto,
+  } = useEditListing(id, locale);
 
-  useEffect(() => {
-    fetchListing();
-  }, [id]);
-
-  const fetchListing = async () => {
-    try {
-      const res = await fetch(`/api/listings/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setListing(data);
-      } else {
-        toast.error("Annonce non trouvée");
-        router.push(`/${locale}/dashboard/owner/listings`);
-      }
-    } catch (error) {
-      console.error("Error fetching listing:", error);
-      toast.error("Erreur de chargement");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Mise à jour des données (sans les photos)
-  const updateListing = async (updatedData: Partial<Listing>) => {
-    if (!listing) return;
-    setSaving(true);
-    try {
-      // Ne pas envoyer les photos dans la mise à jour
-      const { photos, stats, ...dataToSend } = { ...listing, ...updatedData };
-      
-      const res = await fetch(`/api/listings/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(dataToSend),
-      });
-      
-      if (res.ok) {
-        const data = await res.json();
-        setListing(data);
-        setLastSaved(new Date());
-        toast.success("Modifications enregistrées");
-      } else {
-        const error = await res.json();
-        toast.error(error.error || "Erreur lors de l'enregistrement");
-      }
-    } catch (error) {
-      console.error("Error updating listing:", error);
-      toast.error("Erreur serveur");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Upload d'une photo
-  const handlePhotoUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    
-    const file = files[0];
-    const formData = new FormData();
-    formData.append('photo', file);
-    
-    try {
-      const res = await fetch(`/api/listings/${id}/upload-photo`, {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (res.ok) {
-        const newPhoto = await res.json();
-        setListing(prev => prev ? {
-          ...prev,
-          photos: [...prev.photos, newPhoto]
-        } : null);
-        toast.success("Photo ajoutée");
-      } else {
-        toast.error("Erreur lors de l'ajout");
-      }
-    } catch (error) {
-      console.error("Error uploading photo:", error);
-      toast.error("Erreur serveur");
-    }
-  };
-
-  // Suppression d'une photo
-  const handleDeletePhoto = async (photoId: string) => {
-    if (!confirm("Supprimer cette photo ?")) return;
-    
-    try {
-      const res = await fetch(`/api/listings/${id}/photos?photoId=${photoId}`, {
-        method: 'DELETE',
-      });
-      
-      if (res.ok) {
-        setListing(prev => prev ? {
-          ...prev,
-          photos: prev.photos.filter(p => p.id !== photoId)
-        } : null);
-        toast.success("Photo supprimée");
-      } else {
-        toast.error("Erreur lors de la suppression");
-      }
-    } catch (error) {
-      console.error("Error deleting photo:", error);
-      toast.error("Erreur serveur");
-    }
-  };
-
-  // Définir la photo principale
-  const handleSetMainPhoto = async (photoId: string) => {
-    if (!listing) return;
-    
-    try {
-      // Mettre à jour localement
-      setListing({
-        ...listing,
-        photos: listing.photos.map(p => ({
-          ...p,
-          isMain: p.id === photoId
-        }))
-      });
-      
-      // Appeler l'API pour réorganiser
-      const newOrder = listing.photos.map(p => p.id);
-      const index = newOrder.indexOf(photoId);
-      if (index !== -1) {
-        newOrder.splice(index, 1);
-        newOrder.unshift(photoId);
-      }
-      
-      await fetch(`/api/listings/${id}/photos`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photoIds: newOrder }),
-      });
-      
-      toast.success("Photo principale définie");
-    } catch (error) {
-      console.error("Error setting main photo:", error);
-      toast.error("Erreur");
-      // Recharger les données
-      fetchListing();
-    }
-  };
-
-  const handleInputChange = (field: keyof Listing, value: any) => {
-    if (listing) {
-      setListing({ ...listing, [field]: value });
-    }
-  };
-
-  const sections = [
-    { id: "details", label: "Détails", icon: Edit },
-    { id: "photos", label: "Photos", icon: Camera },
-    { id: "pricing", label: "Tarification", icon: DollarSign },
-    { id: "publish", label: "Publication", icon: Rocket },
-  ];
+  const completionScore = useMemo(() => {
+    if (!listing) return 0;
+    return calculateCompletionScore(listing, listing.photos?.length || 0);
+  }, [listing]);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f8f7] dark:bg-[#10221b]">
-        <Loader2 size={48} className="animate-spin text-[#0df293]" />
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 flex items-center justify-center animate-pulse shadow-lg">
+            <Edit size={20} className="text-white" />
+          </div>
+          <div className="flex gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce"
+                style={{ animationDelay: `${i * 0.12}s` }}
+              />
+            ))}
+          </div>
+          <p className="text-sm text-slate-500 mt-2 animate-pulse">
+            Chargement de votre annonce...
+          </p>
+        </div>
       </div>
     );
   }
 
   if (!listing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f8f7] dark:bg-[#10221b]">
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-slate-950">
         <div className="text-center">
-          <Home size={64} className="mx-auto text-slate-400 mb-4" />
-          <h2 className="text-xl font-bold mb-2">Annonce non trouvée</h2>
+          <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+            <Home size={24} className="text-slate-400 dark:text-slate-500" />
+          </div>
+          <p className="text-slate-600 dark:text-slate-400 font-medium mb-3">
+            Annonce introuvable
+          </p>
           <Link
             href={`/${locale}/dashboard/owner/listings`}
-            className="text-[#0df293] hover:underline"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all"
           >
-            Retour aux annonces
+            <ChevronLeft size={14} /> Retour
           </Link>
         </div>
       </div>
@@ -292,590 +286,1039 @@ export default function EditListingPage({
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f8f7] dark:bg-[#10221b] pb-32">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <aside className="lg:w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-6">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-1">
-                  Modifier l'annonce
-                </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                  <Cloud size={14} />
-                  Sauvegarde auto active
-                </p>
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-950">
+      {/* Alert en haut à droite */}
+      {alert && (
+        <div className="fixed top-20 right-6 z-50 max-w-md">
+          <Alert
+            type={alert.type}
+            message={alert.message}
+            onClose={() => setAlert(null)}
+            autoClose={5000}
+          />
+        </div>
+      )}
+
+      {/* HEADER STICKY */}
+      <div className="sticky top-0 z-40 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+        <div className="px-6 py-4">
+          <nav className="flex items-center gap-2 text-slate-400 text-xs font-medium tracking-wide uppercase mb-2">
+            <Link
+              href={`/${locale}/dashboard/owner/listings`}
+              className="hover:text-indigo-600 transition-colors"
+            >
+              Mes Annonces
+            </Link>
+            <ChevronRight size={12} />
+            <span className="text-slate-600 dark:text-slate-400">
+              {listing.title}
+            </span>
+          </nav>
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Modifier l'annonce
+              </h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+                Affinez votre annonce pour attirer plus de voyageurs
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
+                  listing.status === "ACTIVE"
+                    ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                    : listing.status === "DRAFT"
+                      ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                      : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
+                }`}
+              >
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    listing.status === "ACTIVE"
+                      ? "bg-emerald-500 animate-pulse"
+                      : listing.status === "DRAFT"
+                        ? "bg-slate-400"
+                        : "bg-amber-500"
+                  }`}
+                />
+                {listing.status === "ACTIVE"
+                  ? "Publiée"
+                  : listing.status === "DRAFT"
+                    ? "Brouillon"
+                    : "Masquée"}
               </div>
-
-              <nav className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-slate-200 dark:border-slate-800">
-                <div className="space-y-1">
-                  {sections.map((section) => {
-                    const Icon = section.icon;
-                    const isActive = activeSection === section.id;
-                    return (
-                      <button
-                        key={section.id}
-                        onClick={() => setActiveSection(section.id)}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                          isActive
-                            ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-bold"
-                            : "text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        <Icon size={18} className={isActive ? "text-blue-600" : ""} />
-                        <span className="text-sm">{section.label}</span>
-                      </button>
-                    );
+              {lastSaved && (
+                <span className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">
+                  Sauvegardé{" "}
+                  {lastSaved.toLocaleTimeString("fr-FR", {
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
-                </div>
-              </nav>
-
+                </span>
+              )}
               <button
-                onClick={() => updateListing({})}
+                onClick={() => save()}
                 disabled={saving}
-                className="w-full py-3 px-4 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md disabled:opacity-50"
               >
                 {saving ? (
-                  <Loader2 size={16} className="animate-spin mx-auto" />
+                  <Loader2 size={14} className="animate-spin" />
                 ) : (
-                  "Enregistrer le brouillon"
+                  <Save size={14} />
                 )}
+                Sauvegarder
               </button>
             </div>
-          </aside>
-
-          {/* Main Content */}
-          <main className="flex-1">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 p-6 md:p-8">
-              {/* Header */}
-              <div className="mb-8">
-                <div className="flex items-center gap-2 text-sm text-[#0df293] font-semibold mb-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#0df293]"></span>
-                  {activeSection === "details" && "Étape 1 sur 4"}
-                  {activeSection === "photos" && "Étape 2 sur 4"}
-                  {activeSection === "pricing" && "Étape 3 sur 4"}
-                  {activeSection === "publish" && "Étape 4 sur 4"}
-                </div>
-                <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white">
-                  {activeSection === "details" && "Détails de la propriété"}
-                  {activeSection === "photos" && "Galerie photos"}
-                  {activeSection === "pricing" && "Tarification"}
-                  {activeSection === "publish" && "Publication"}
-                </h1>
-                <p className="text-slate-500 dark:text-slate-400 mt-2">
-                  {activeSection === "details" && "Mettez à jour les informations de base de votre bien."}
-                  {activeSection === "photos" && "Ajoutez ou modifiez les photos de votre bien."}
-                  {activeSection === "pricing" && "Définissez les tarifs et les frais supplémentaires."}
-                  {activeSection === "publish" && "Gérez le statut de publication de votre annonce."}
-                </p>
-              </div>
-
-              {/* Details Section */}
-              {activeSection === "details" && (
-                <div className="space-y-8">
-                  {/* Property Type */}
-                  <div>
-                    <label className="text-sm font-bold text-slate-500 dark:text-slate-400 block mb-4">
-                      Type de propriété
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-                      {propertyTypes.map((type) => {
-                        const Icon = type.icon;
-                        const isSelected = listing.type === type.value;
-                        return (
-                          <button
-                            key={type.value}
-                            onClick={() => handleInputChange("type", type.value)}
-                            className={`p-4 rounded-xl border-2 transition-all duration-200 flex flex-col items-center gap-2 ${
-                              isSelected
-                                ? "border-[#0df293] bg-[#0df293]/5"
-                                : "border-transparent bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700"
-                            }`}
-                          >
-                            <Icon size={24} className={isSelected ? "text-[#0df293]" : "text-slate-400"} />
-                            <span className={`text-sm font-medium ${isSelected ? "text-[#0df293]" : "text-slate-600 dark:text-slate-400"}`}>
-                              {type.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Title & Description */}
-                  <div className="space-y-4">
-                    <div>
-                      <label className="text-sm font-bold text-slate-500 dark:text-slate-400 block mb-2">
-                        Titre de l'annonce
-                      </label>
-                      <input
-                        type="text"
-                        value={listing.title}
-                        onChange={(e) => handleInputChange("title", e.target.value)}
-                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-4 focus:ring-[#0df293]/20 transition-all text-slate-900 dark:text-white"
-                        placeholder="Ex: Magnifique villa avec vue mer"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-sm font-bold text-slate-500 dark:text-slate-400 block mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        value={listing.description || ""}
-                        onChange={(e) => handleInputChange("description", e.target.value)}
-                        rows={6}
-                        className="w-full p-4 bg-slate-50 dark:bg-slate-800 border-none rounded-xl focus:ring-4 focus:ring-[#0df293]/20 transition-all text-slate-900 dark:text-white resize-none"
-                        placeholder="Décrivez les atouts de votre logement..."
-                      />
-                    </div>
-                  </div>
-
-                  {/* Location */}
-                  <div>
-                    <label className="text-sm font-bold text-slate-500 dark:text-slate-400 block mb-4">
-                      Emplacement
-                    </label>
-                    <div className="relative rounded-2xl overflow-hidden h-64 shadow-lg">
-                      <div className="w-full h-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 flex items-center justify-center">
-                        <div className="text-center">
-                          <MapPin size={48} className="text-blue-500 mx-auto mb-2" />
-                          <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {listing.governorate}{listing.delegation ? `, ${listing.delegation}` : ""}
-                          </p>
-                          <p className="text-xs text-slate-500">{listing.street}</p>
-                        </div>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent flex items-end p-6">
-                        <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xl flex items-center gap-4 w-full">
-                          <MapPin size={20} className="text-blue-600" />
-                          <div className="flex-1">
-                            <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">
-                              Adresse actuelle
-                            </p>
-                            <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                              {listing.street || listing.delegation || listing.governorate || "Adresse non définie"}
-                            </p>
-                          </div>
-                          <button className="text-blue-600 text-sm font-bold hover:underline">
-                            Modifier
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Characteristics */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-sm font-bold text-slate-500 block mb-2">Chambres</label>
-                      <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                        <Bed size={18} className="text-slate-400" />
-                        <input
-                          type="number"
-                          value={listing.rooms}
-                          onChange={(e) => handleInputChange("rooms", parseInt(e.target.value))}
-                          className="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white"
-                          min={1}
-                          max={20}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-bold text-slate-500 block mb-2">Salles de bain</label>
-                      <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                        <Bath size={18} className="text-slate-400" />
-                        <input
-                          type="number"
-                          value={listing.bathrooms}
-                          onChange={(e) => handleInputChange("bathrooms", parseInt(e.target.value))}
-                          className="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white"
-                          min={1}
-                          max={10}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-bold text-slate-500 block mb-2">Voyageurs max</label>
-                      <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                        <Users size={18} className="text-slate-400" />
-                        <input
-                          type="number"
-                          value={listing.maxGuests}
-                          onChange={(e) => handleInputChange("maxGuests", parseInt(e.target.value))}
-                          className="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white"
-                          min={1}
-                          max={30}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-bold text-slate-500 block mb-2">Surface (m²)</label>
-                      <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                        <Ruler size={18} className="text-slate-400" />
-                        <input
-                          type="number"
-                          value={listing.surfaceArea || ""}
-                          onChange={(e) => handleInputChange("surfaceArea", e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white"
-                          placeholder="120"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="text-sm font-bold text-slate-500 block mb-2">Étage</label>
-                      <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                        <ArrowUp size={18} className="text-slate-400" />
-                        <input
-                          type="number"
-                          value={listing.floorNumber || ""}
-                          onChange={(e) => handleInputChange("floorNumber", e.target.value ? parseInt(e.target.value) : null)}
-                          className="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white"
-                          placeholder="0 (RDC)"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                      <div className="flex items-center gap-2">
-                        <ArrowUp size={18} className="text-slate-400" />
-                        <span className="text-sm font-medium">Ascenseur</span>
-                      </div>
-                      <button
-                        onClick={() => handleInputChange("hasElevator", !listing.hasElevator)}
-                        className={`relative w-12 h-6 rounded-full transition-colors ${
-                          listing.hasElevator ? "bg-[#0df293]" : "bg-slate-300 dark:bg-slate-600"
-                        }`}
-                      >
-                        <span
-                          className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-transform ${
-                            listing.hasElevator ? "translate-x-6" : "translate-x-0"
-                          }`}
-                        />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Photos Section */}
-              {activeSection === "photos" && (
-                <div className="space-y-6">
-                  {/* Upload button */}
-                  <div className="flex justify-between items-center">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      id="photo-upload"
-                      className="hidden"
-                      onChange={(e) => handlePhotoUpload(e.target.files)}
-                    />
-                    <button
-                      onClick={() => document.getElementById('photo-upload')?.click()}
-                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
-                    >
-                      <Plus size={18} />
-                      Ajouter une photo
-                    </button>
-                    <p className="text-xs text-slate-500">
-                      {listing.photos.length}/20 photos
-                    </p>
-                  </div>
-
-                  {/* Photo grid */}
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {listing.photos.map((photo) => (
-                      <div
-                        key={photo.id}
-                        className={`relative group rounded-xl overflow-hidden aspect-square bg-slate-100 dark:bg-slate-800 ${
-                          photo.isMain ? "ring-2 ring-[#0df293] ring-offset-2 dark:ring-offset-slate-900" : ""
-                        }`}
-                      >
-                        <img
-                          src={getDisplayUrl(photo.url) || ""}
-                          alt=""
-                          className="w-full h-full object-cover"
-                        />
-                        {photo.isMain && (
-                          <div className="absolute top-2 left-2">
-                            <span className="bg-[#0df293] text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                              Principale
-                            </span>
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
-                        <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-all">
-                          {!photo.isMain && (
-                            <button
-                              onClick={() => handleSetMainPhoto(photo.id)}
-                              className="w-7 h-7 rounded-full bg-white/90 text-amber-500 flex items-center justify-center shadow-md hover:bg-white"
-                              title="Définir comme principale"
-                            >
-                              <Star size={14} />
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeletePhoto(photo.id)}
-                            className="w-7 h-7 rounded-full bg-white/90 text-rose-500 flex items-center justify-center shadow-md hover:bg-white"
-                            title="Supprimer"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                    {listing.photos.length < 20 && (
-                      <button
-                        onClick={() => document.getElementById('photo-upload')?.click()}
-                        className="aspect-square rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-2 text-slate-400 hover:border-[#0df293] hover:text-[#0df293] transition-all"
-                      >
-                        <Plus size={24} />
-                        <span className="text-[10px] font-bold uppercase">Ajouter</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Photo tips */}
-                  <div className="p-6 bg-gradient-to-br from-blue-600 to-purple-700 rounded-2xl text-white">
-                    <p className="text-xs font-bold uppercase tracking-widest text-blue-200 mb-2">
-                      Conseils photo
-                    </p>
-                    <ul className="space-y-2">
-                      <li className="flex items-start gap-2">
-                        <Sun size={16} className="shrink-0 mt-0.5" />
-                        <p className="text-sm">Privilégiez la lumière naturelle</p>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Sparkles size={16} className="shrink-0 mt-0.5" />
-                        <p className="text-sm">Rangez l'intérieur pour un rendu épuré</p>
-                      </li>
-                      <li className="flex items-start gap-2">
-                        <Camera size={16} className="shrink-0 mt-0.5" />
-                        <p className="text-sm">Utilisez le format paysage</p>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              {/* Pricing Section */}
-              {activeSection === "pricing" && (
-                <div className="space-y-6">
-                  <div>
-                    <label className="text-sm font-bold text-slate-500 block mb-2">Type de location</label>
-                    <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-full w-fit">
-                      {["SHORT_TERM", "LONG_TERM", "BOTH"].map((type) => (
-                        <button
-                          key={type}
-                          onClick={() => handleInputChange("rentalType", type)}
-                          className={`px-6 py-2 rounded-full text-sm font-bold transition-all ${
-                            listing.rentalType === type
-                              ? "bg-white dark:bg-slate-700 text-[#0df293] shadow-sm"
-                              : "text-slate-500 hover:text-slate-700"
-                          }`}
-                        >
-                          {type === "SHORT_TERM" && "Court terme"}
-                          {type === "LONG_TERM" && "Long terme"}
-                          {type === "BOTH" && "Les deux"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Sun size={18} className="text-blue-500" />
-                        <label className="text-xs font-bold uppercase text-slate-400">Prix par nuit</label>
-                      </div>
-                      <div className="flex items-baseline gap-2">
-                        <input
-                          type="number"
-                          value={listing.pricePerNight || ""}
-                          onChange={(e) => handleInputChange("pricePerNight", e.target.value ? parseFloat(e.target.value) : null)}
-                          className="w-full text-2xl font-bold bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white"
-                          placeholder="0"
-                        />
-                        <span className="text-sm font-bold text-slate-400">TND / nuit</span>
-                      </div>
-                    </div>
-                    <div className="p-5 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                      <div className="flex items-center gap-2 mb-3">
-                        <Calendar size={18} className="text-purple-500" />
-                        <label className="text-xs font-bold uppercase text-slate-400">Prix par mois</label>
-                      </div>
-                      <div className="flex items-baseline gap-2">
-                        <input
-                          type="number"
-                          value={listing.pricePerMonth || ""}
-                          onChange={(e) => handleInputChange("pricePerMonth", e.target.value ? parseFloat(e.target.value) : null)}
-                          className="w-full text-2xl font-bold bg-transparent border-none focus:ring-0 text-slate-900 dark:text-white"
-                          placeholder="0"
-                        />
-                        <span className="text-sm font-bold text-slate-400">TND / mois</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <Shield size={18} className="text-emerald-600" />
-                        <div>
-                          <p className="font-bold text-sm">Caution</p>
-                          <p className="text-xs text-slate-400">Dépôt de garantie remboursable</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {listing.securityDeposit !== null && (
-                          <input
-                            type="number"
-                            value={listing.securityDeposit}
-                            onChange={(e) => handleInputChange("securityDeposit", parseFloat(e.target.value))}
-                            className="w-20 bg-white dark:bg-slate-700 rounded-lg py-1.5 px-2 text-sm text-right"
-                          />
-                        )}
-                        <button
-                          onClick={() => handleInputChange("securityDeposit", listing.securityDeposit === null ? 500 : null)}
-                          className={`relative w-12 h-6 rounded-full transition-colors ${
-                            listing.securityDeposit !== null ? "bg-[#0df293]" : "bg-slate-300"
-                          }`}
-                        >
-                          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                            listing.securityDeposit !== null ? "translate-x-6" : "translate-x-0"
-                          }`} />
-                        </button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <Sparkles size={18} className="text-blue-600" />
-                        <div>
-                          <p className="font-bold text-sm">Frais de ménage</p>
-                          <p className="text-xs text-slate-400">Facturés une fois par séjour</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        {listing.cleaningFee !== null && (
-                          <input
-                            type="number"
-                            value={listing.cleaningFee}
-                            onChange={(e) => handleInputChange("cleaningFee", parseFloat(e.target.value))}
-                            className="w-20 bg-white dark:bg-slate-700 rounded-lg py-1.5 px-2 text-sm text-right"
-                          />
-                        )}
-                        <button
-                          onClick={() => handleInputChange("cleaningFee", listing.cleaningFee === null ? 50 : null)}
-                          className={`relative w-12 h-6 rounded-full transition-colors ${
-                            listing.cleaningFee !== null ? "bg-[#0df293]" : "bg-slate-300"
-                          }`}
-                        >
-                          <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-                            listing.cleaningFee !== null ? "translate-x-6" : "translate-x-0"
-                          }`} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Publish Section */}
-              {activeSection === "publish" && (
-                <div className="space-y-6">
-                  <div className="p-6 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`w-3 h-3 rounded-full ${listing.status === "ACTIVE" ? "bg-green-500" : "bg-amber-500"}`} />
-                      <p className="font-bold">
-                        Statut actuel : {listing.status === "ACTIVE" ? "Publié" : listing.status === "DRAFT" ? "Brouillon" : "Inactif"}
-                      </p>
-                    </div>
-                    <div className="flex gap-3">
-                      {listing.status !== "ACTIVE" && (
-                        <button
-                          onClick={() => updateListing({ status: "ACTIVE" })}
-                          className="px-6 py-3 bg-[#0df293] text-slate-900 rounded-xl font-bold hover:bg-[#0df293]/80 transition-colors"
-                        >
-                          Publier l'annonce
-                        </button>
-                      )}
-                      {listing.status === "ACTIVE" && (
-                        <button
-                          onClick={() => updateListing({ status: "INACTIVE" })}
-                          className="px-6 py-3 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-colors"
-                        >
-                          Désactiver l'annonce
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-6 bg-[#0df293]/10 rounded-xl border border-[#0df293]/30">
-                    <div className="flex items-center gap-3 mb-4">
-                      <Rocket size={20} className="text-[#0df293]" />
-                      <p className="font-bold text-[#0df293]">Prêt à être publié</p>
-                    </div>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
-                      Votre annonce sera visible par tous les locataires une fois publiée.
-                    </p>
-                    <Link
-                      href={`/${locale}/dashboard/owner/listings/${listing.id}`}
-                      className="inline-flex items-center gap-2 text-[#0df293] font-semibold hover:underline"
-                    >
-                      <Eye size={16} />
-                      Prévisualiser l'annonce
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6">
-              <button
-                onClick={() => router.push(`/${locale}/dashboard/owner/listings`)}
-                className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-semibold hover:text-slate-700 transition-colors"
-              >
-                <ChevronLeft size={18} />
-                Retour
-              </button>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => updateListing({})}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl font-medium hover:bg-slate-200 transition-colors disabled:opacity-50"
-                >
-                  {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-                  Sauvegarder
-                </button>
-                <Link
-                  href={`/${locale}/dashboard/owner/listings/${listing.id}`}
-                  className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#0df293] to-emerald-500 text-slate-900 rounded-xl font-bold hover:opacity-90 transition-all"
-                >
-                  <Eye size={16} />
-                  Prévisualiser
-                </Link>
-              </div>
-            </div>
-          </main>
+          </div>
         </div>
       </div>
 
-      {/* Auto-save indicator */}
-      {lastSaved && (
-        <div className="fixed bottom-8 right-8 hidden lg:flex items-center gap-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md p-2 rounded-full shadow-2xl border border-white/20">
-          <div className="flex items-center gap-2 pl-4 pr-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-tight">
-              Dernière modif il y a {Math.floor((Date.now() - lastSaved.getTime()) / 1000)}s
-            </span>
+      {/* MAIN LAYOUT - Scrollable content */}
+      <div className="flex-1 overflow-y-auto">
+        <div className="px-6 py-6">
+          <div className="flex flex-col lg:flex-row gap-8">
+            {/* LEFT SIDEBAR - Sticky */}
+            <aside className="w-full lg:w-64 shrink-0 space-y-4 sticky top-6">
+              <nav className="bg-transparent rounded-xl p-1">
+                {SECTIONS.map((s) => {
+                  const Icon = s.icon;
+                  const isActive = active === s.id;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => setActive(s.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all mb-1 last:mb-0 ${
+                        isActive
+                          ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+                      }`}
+                    >
+                      <Icon
+                        size={18}
+                        className={
+                          isActive
+                            ? "text-indigo-600 dark:text-indigo-400"
+                            : "text-slate-400"
+                        }
+                      />
+                      {s.label}
+                      {isActive && (
+                        <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Complétude Card */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg transition-all duration-300 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Complétude
+                  </p>
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center shadow-sm">
+                    <Award size={14} className="text-white" />
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <QualityRing score={completionScore} />
+                  <div>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                      {completionScore >= 80
+                        ? "Excellent"
+                        : completionScore >= 50
+                          ? "Correcte"
+                          : "À améliorer"}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      {completionScore < 80 &&
+                        `+${80 - completionScore}% pour exceller`}
+                      {completionScore >= 80 && "Prêt à être publié"}
+                    </p>
+                  </div>
+                </div>
+                {completionScore < 100 && (
+                  <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-700">
+                    <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-sky-500 to-violet-600 rounded-full transition-all duration-500"
+                        style={{ width: `${completionScore}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Astuce Card */}
+              <div className="relative overflow-hidden rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 p-5">
+                <div className="absolute inset-0 bg-gradient-to-br from-sky-500 via-indigo-500 to-violet-600 opacity-95"></div>
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                      <Sparkles size={14} className="text-white" />
+                    </div>
+                    <p className="text-xs font-bold uppercase tracking-wider text-white/90">
+                      Conseil d'Expert
+                    </p>
+                  </div>
+                  <p className="text-sm text-white leading-relaxed font-medium">
+                    Les annonces complètes reçoivent{" "}
+                    <strong className="font-black text-white underline decoration-2">
+                      +50% de réservations
+                    </strong>{" "}
+                    et bénéficient d'une meilleure visibilité.
+                  </p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse"></div>
+                    <p className="text-[10px] text-white/70 font-medium uppercase tracking-wider">
+                      Recommandation IA
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+
+            {/* MAIN CONTENT */}
+            <main className="flex-1 min-w-0">
+              <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-900 shadow-sm overflow-hidden">
+                {/* Section Header */}
+                <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 flex items-center justify-center shadow-sm">
+                      {React.createElement(
+                        SECTIONS.find((s) => s.id === active)!.icon,
+                        { size: 14, className: "text-white" },
+                      )}
+                    </div>
+                    <div>
+                      <h2 className="text-base font-bold text-slate-800 dark:text-white">
+                        {SECTIONS.find((s) => s.id === active)!.label}
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {active === "details" &&
+                          "Informations de base, localisation et équipements"}
+                        {active === "photos" &&
+                          "Gérez les photos de votre annonce"}
+                        {active === "pricing" &&
+                          "Prix, frais et type de location"}
+                        {active === "publish" &&
+                          "Contrôlez la visibilité de votre annonce"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section Content */}
+                <div className="p-6">
+                  {/* DETAILS SECTION */}
+                  {active === "details" && (
+                    <div className="space-y-8">
+                      {/* Titre & Description */}
+                      <div className="grid grid-cols-12 gap-6">
+                        <div className="col-span-12 lg:col-span-3">
+                          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                            Titre et Description
+                          </label>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Comment votre bien sera perçu
+                          </p>
+                        </div>
+                        <div className="col-span-12 lg:col-span-9 space-y-4">
+                          <input
+                            type="text"
+                            value={listing.title}
+                            onChange={(e) => setField("title", e.target.value)}
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            placeholder="Titre de l'annonce"
+                          />
+                          <textarea
+                            value={listing.description || ""}
+                            onChange={(e) =>
+                              setField("description", e.target.value)
+                            }
+                            rows={4}
+                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            placeholder="Décrivez votre bien en détail..."
+                          />
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-100 dark:border-slate-700"></div>
+
+                      {/* Type & Capacité */}
+                      <div className="grid grid-cols-12 gap-6">
+                        <div className="col-span-12 lg:col-span-3">
+                          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                            Configuration
+                          </label>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Type et capacité d'accueil
+                          </p>
+                        </div>
+                        <div className="col-span-12 lg:col-span-9 space-y-4">
+                          <div className="grid grid-cols-2 gap-3">
+                            <select
+                              value={listing.type}
+                              onChange={(e) => setField("type", e.target.value)}
+                              className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                            >
+                              {propertyTypes.map((pt) => (
+                                <option key={pt.value} value={pt.value}>
+                                  {pt.label}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="flex items-center px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <Users
+                                size={16}
+                                className="text-slate-400 dark:text-slate-500 mr-2"
+                              />
+                              <input
+                                type="number"
+                                value={listing.maxGuests}
+                                onChange={(e) =>
+                                  setField(
+                                    "maxGuests",
+                                    parseInt(e.target.value) || 1,
+                                  )
+                                }
+                                className="w-full bg-transparent focus:outline-none"
+                                min={1}
+                              />
+                              <span className="text-slate-400 dark:text-slate-500 text-sm ml-2">
+                                voyageurs
+                              </span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-3 gap-3">
+                            {[
+                              {
+                                label: "Chambres",
+                                icon: Bed,
+                                field: "rooms",
+                                min: 1,
+                              },
+                              {
+                                label: "Sdb",
+                                icon: Bath,
+                                field: "bathrooms",
+                                min: 1,
+                              },
+                              {
+                                label: "Surface m²",
+                                icon: Ruler,
+                                field: "surfaceArea",
+                                optional: true,
+                              },
+                            ].map(
+                              ({ label, icon: Icon, field, min, optional }) => (
+                                <div
+                                  key={field}
+                                  className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg"
+                                >
+                                  <Icon
+                                    size={16}
+                                    className="text-slate-400 dark:text-slate-500"
+                                  />
+                                  <input
+                                    type="number"
+                                    min={min}
+                                    value={(listing as any)[field] ?? ""}
+                                    onChange={(e) =>
+                                      setField(
+                                        field as any,
+                                        e.target.value
+                                          ? parseInt(e.target.value)
+                                          : optional
+                                            ? null
+                                            : min,
+                                      )
+                                    }
+                                    className="w-full bg-transparent focus:outline-none"
+                                  />
+                                </div>
+                              ),
+                            )}
+                          </div>
+                          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                            <div className="flex items-center gap-2">
+                              <ArrowUp
+                                size={16}
+                                className="text-slate-400 dark:text-slate-500"
+                              />
+                              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                Ascenseur
+                              </span>
+                            </div>
+                            <Toggle
+                              checked={listing.hasElevator}
+                              onChange={(v) => setField("hasElevator", v)}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-100 dark:border-slate-700"></div>
+
+                      {/* Localisation */}
+                      <div className="grid grid-cols-12 gap-6">
+                        <div className="col-span-12 lg:col-span-3">
+                          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                            Localisation
+                          </label>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Adresse exacte après réservation
+                          </p>
+                        </div>
+                        <div className="col-span-12 lg:col-span-9 space-y-4">
+                          <div className="grid grid-cols-3 gap-3">
+                            <select
+                              value={listing.governorate}
+                              onChange={(e) =>
+                                setField("governorate", e.target.value)
+                              }
+                              className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
+                            >
+                              <option value="">Gouvernorat</option>
+                              {governorates.map((g) => (
+                                <option key={g} value={g}>
+                                  {g}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              type="text"
+                              value={listing.delegation || ""}
+                              onChange={(e) =>
+                                setField("delegation", e.target.value)
+                              }
+                              placeholder="Délégation"
+                              className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
+                            />
+                            <input
+                              type="text"
+                              value={listing.street || ""}
+                              onChange={(e) =>
+                                setField("street", e.target.value)
+                              }
+                              placeholder="Rue / Quartier"
+                              className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
+                            />
+                          </div>
+                          <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 h-56">
+                            <MapPickerWrapper
+                              latitude={listing.latitude}
+                              longitude={listing.longitude}
+                              onLocationChange={(lat, lng) => {
+                                setField("latitude", lat);
+                                setField("longitude", lng);
+                              }}
+                              onAddressChange={(addr) => console.log(addr)}
+                            />
+                          </div>
+                          {listing.latitude !== null ? (
+                            <div className="flex items-center gap-2 p-2.5 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                              <CheckCircle
+                                size={14}
+                                className="text-emerald-600 dark:text-emerald-400"
+                              />
+                              <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
+                                Position définie
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                              <AlertCircle
+                                size={14}
+                                className="text-amber-600 dark:text-amber-400"
+                              />
+                              <span className="text-xs text-amber-700 dark:text-amber-400">
+                                Cliquez sur la carte pour définir la position
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="border-t border-slate-100 dark:border-slate-700"></div>
+
+                      {/* Équipements */}
+                      <div className="grid grid-cols-12 gap-6">
+                        <div className="col-span-12 lg:col-span-3">
+                          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                            Équipements
+                          </label>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Sélectionnez les équipements
+                          </p>
+                        </div>
+                        <div className="col-span-12 lg:col-span-9">
+                          <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-2">
+                            {equipmentList.map(
+                              ({ id: eqId, label, icon: Icon }) => {
+                                const active = !!(listing.equipment ?? {})[
+                                  eqId
+                                ];
+                                return (
+                                  <button
+                                    key={eqId}
+                                    type="button"
+                                    onClick={() =>
+                                      setField("equipment", {
+                                        ...(listing.equipment ?? {}),
+                                        [eqId]: !active,
+                                      })
+                                    }
+                                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
+                                      active
+                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
+                                        : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-indigo-300"
+                                    }`}
+                                  >
+                                    <Icon
+                                      size={16}
+                                      className={
+                                        active
+                                          ? "text-indigo-600 dark:text-indigo-400"
+                                          : "text-slate-400"
+                                      }
+                                    />
+                                    <span className="text-[10px] font-medium">
+                                      {label}
+                                    </span>
+                                  </button>
+                                );
+                              },
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PHOTOS SECTION */}
+                  {active === "photos" && (
+                    <div className="space-y-6">
+                      <input
+                        ref={fileRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e.target.files)}
+                      />
+
+                      <div
+                        onClick={() => fileRef.current?.click()}
+                        className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg hover:border-indigo-400 transition-all cursor-pointer"
+                      >
+                        <div className="flex flex-col items-center justify-center py-10 gap-2">
+                          {uploadingPhotos ? (
+                            <Loader2
+                              size={28}
+                              className="text-indigo-500 animate-spin"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 flex items-center justify-center">
+                              <Camera size={20} className="text-white" />
+                            </div>
+                          )}
+                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {uploadingPhotos
+                              ? "Téléchargement..."
+                              : "Cliquez pour ajouter des photos"}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {listing.photos.length}/20 photos
+                          </p>
+                        </div>
+                      </div>
+
+                      {listing.photos.length < 5 && (
+                        <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <AlertCircle
+                            size={14}
+                            className="text-amber-600 dark:text-amber-400"
+                          />
+                          <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                            Minimum 5 photos recommandées — il en manque{" "}
+                            {5 - listing.photos.length}
+                          </span>
+                        </div>
+                      )}
+
+                      {listing.photos.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          {listing.photos.map((photo) => (
+                            <div
+                              key={photo.id}
+                              className={`relative group rounded-lg overflow-hidden aspect-square bg-slate-100 dark:bg-slate-700 ${
+                                photo.isMain
+                                  ? "ring-2 ring-indigo-500 ring-offset-1"
+                                  : ""
+                              }`}
+                            >
+                              <img
+                                src={getDisplayUrl(photo.url) ?? ""}
+                                alt=""
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                              />
+                              {photo.isMain && (
+                                <div className="absolute top-1 left-1">
+                                  <span className="bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                                    Main
+                                  </span>
+                                </div>
+                              )}
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all" />
+                              <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
+                                {!photo.isMain && (
+                                  <button
+                                    onClick={() => setMainPhoto(photo.id)}
+                                    className="w-6 h-6 rounded-md bg-white/90 text-amber-500 flex items-center justify-center"
+                                  >
+                                    <Star size={10} />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => removePhoto(photo.id)}
+                                  className="w-6 h-6 rounded-md bg-white/90 text-rose-500 flex items-center justify-center"
+                                >
+                                  <Trash2 size={10} />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                          {listing.photos.length < 20 && (
+                            <button
+                              onClick={() => fileRef.current?.click()}
+                              className="aspect-square rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-indigo-400 hover:text-indigo-600 transition-all"
+                            >
+                              <Plus size={20} />
+                              <span className="text-[10px] font-bold">
+                                Ajouter
+                              </span>
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* PRICING SECTION */}
+                  {active === "pricing" && (
+                    <div className="space-y-6">
+                      <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-full w-fit">
+                        {[
+                          { v: "SHORT_TERM", l: "Court terme" },
+                          { v: "LONG_TERM", l: "Long terme" },
+                          { v: "BOTH", l: "Les deux" },
+                        ].map(({ v, l }) => (
+                          <button
+                            key={v}
+                            onClick={() => setField("rentalType", v)}
+                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                              listing.rentalType === v
+                                ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm"
+                                : "text-slate-500 dark:text-slate-400"
+                            }`}
+                          >
+                            {l}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        {[
+                          {
+                            field: "pricePerNight",
+                            label: "Prix par nuit",
+                            unit: "/nuit",
+                            icon: Sun,
+                          },
+                          {
+                            field: "pricePerMonth",
+                            label: "Prix par mois",
+                            unit: "/mois",
+                            icon: Calendar,
+                          },
+                        ].map(({ field, label, unit, icon: Icon }) => (
+                          <div
+                            key={field}
+                            className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700"
+                          >
+                            <div className="flex items-center gap-2 mb-2">
+                              <Icon size={14} className="text-indigo-500" />
+                              <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                {label}
+                              </label>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-sm font-semibold text-slate-400">
+                                TND
+                              </span>
+                              <input
+                                type="number"
+                                value={(listing as any)[field] ?? ""}
+                                onChange={(e) =>
+                                  setField(
+                                    field as any,
+                                    e.target.value
+                                      ? parseFloat(e.target.value)
+                                      : null,
+                                  )
+                                }
+                                placeholder="0"
+                                className="flex-1 text-2xl font-bold bg-transparent focus:outline-none"
+                              />
+                            </div>
+                            <p className="text-xs text-slate-400 mt-2">
+                              {unit}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="space-y-3">
+                        {[
+                          {
+                            field: "securityDeposit",
+                            label: "Caution",
+                            desc: "Remboursable",
+                            icon: Shield,
+                            def: 500,
+                          },
+                          {
+                            field: "cleaningFee",
+                            label: "Frais ménage",
+                            desc: "Une seule fois",
+                            icon: Sparkles,
+                            def: 50,
+                          },
+                        ].map(({ field, label, desc, icon: Icon, def }) => (
+                          <div
+                            key={field}
+                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Icon size={14} className="text-indigo-500" />
+                              <div>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                  {label}
+                                </p>
+                                <p className="text-xs text-slate-400 dark:text-slate-500">
+                                  {desc}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {(listing as any)[field] !== null && (
+                                <div className="flex items-center gap-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1">
+                                  <input
+                                    type="number"
+                                    value={(listing as any)[field] ?? ""}
+                                    onChange={(e) =>
+                                      setField(
+                                        field as any,
+                                        e.target.value
+                                          ? parseFloat(e.target.value)
+                                          : null,
+                                      )
+                                    }
+                                    className="w-14 text-right text-sm font-medium bg-transparent focus:outline-none"
+                                  />
+                                  <span className="text-xs text-slate-400">
+                                    TND
+                                  </span>
+                                </div>
+                              )}
+                              <Toggle
+                                checked={(listing as any)[field] !== null}
+                                onChange={(v) =>
+                                  setField(field as any, v ? def : null)
+                                }
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PUBLISH SECTION */}
+                  {active === "publish" && (
+                    <div className="space-y-6">
+                      <div
+                        className={`p-4 rounded-lg border ${
+                          listing.status === "ACTIVE"
+                            ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800"
+                            : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              listing.status === "ACTIVE"
+                                ? "bg-emerald-100 dark:bg-emerald-900/50"
+                                : "bg-slate-100 dark:bg-slate-800"
+                            }`}
+                          >
+                            {listing.status === "ACTIVE" ? (
+                              <CheckCircle
+                                size={18}
+                                className="text-emerald-600 dark:text-emerald-400"
+                              />
+                            ) : (
+                              <AlertCircle
+                                size={18}
+                                className="text-slate-500 dark:text-slate-400"
+                              />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <p className="font-semibold text-slate-800 dark:text-white">
+                              {listing.status === "ACTIVE"
+                                ? "Annonce publiée"
+                                : listing.status === "DRAFT"
+                                  ? "Brouillon"
+                                  : "Masquée"}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {listing.status === "ACTIVE"
+                                ? "Visible dans les recherches"
+                                : "Non visible par les locataires"}
+                            </p>
+                          </div>
+                          {listing.status === "ACTIVE" && (
+                            <span className="flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-bold">
+                              <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />{" "}
+                              En direct
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {listing.status !== "ACTIVE" && (
+                            <button
+                              onClick={() => save({ status: "ACTIVE" })}
+                              className="px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-xs font-semibold"
+                            >
+                              <Rocket size={12} className="inline mr-1" />{" "}
+                              Publier
+                            </button>
+                          )}
+                          {listing.status === "ACTIVE" && (
+                            <button
+                              onClick={() => save({ status: "INACTIVE" })}
+                              className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-xs font-semibold"
+                            >
+                              <EyeOff size={12} className="inline mr-1" />{" "}
+                              Masquer
+                            </button>
+                          )}
+                          <Link
+                            href={`/${locale}/listings/${listing.id}`}
+                            target="_blank"
+                            className="px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-lg text-xs font-semibold"
+                          >
+                            <Eye size={12} className="inline mr-1" /> Aperçu
+                          </Link>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          {
+                            icon: Eye,
+                            label: "Vues",
+                            value: listing.viewCount.toLocaleString("fr-FR"),
+                          },
+                          {
+                            icon: Calendar,
+                            label: "Créé",
+                            value: new Date(
+                              listing.createdAt,
+                            ).toLocaleDateString("fr-FR", {
+                              day: "2-digit",
+                              month: "short",
+                            }),
+                          },
+                          {
+                            icon: Award,
+                            label: "Score",
+                            value: `${completionScore}%`,
+                          },
+                        ].map(({ icon: Icon, label, value }) => (
+                          <div
+                            key={label}
+                            className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 text-center"
+                          >
+                            <Icon
+                              size={14}
+                              className="text-indigo-500 mx-auto mb-1"
+                            />
+                            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                              {label}
+                            </p>
+                            <p className="text-sm font-bold text-slate-700 dark:text-white">
+                              {value}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            Complétude
+                          </h3>
+                          <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
+                            {completionScore}%
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {[
+                            {
+                              label: "Titre",
+                              done:
+                                !!listing.title && listing.title.length >= 10,
+                            },
+                            {
+                              label: "Description",
+                              done: !!(
+                                listing.description &&
+                                listing.description.length >= 100
+                              ),
+                            },
+                            {
+                              label: "Photos (5+)",
+                              done: listing.photos.length >= 5,
+                            },
+                            {
+                              label: "Localisation",
+                              done: !!(listing.governorate && listing.latitude),
+                            },
+                            {
+                              label: "Prix",
+                              done: !!(
+                                listing.pricePerNight || listing.pricePerMonth
+                              ),
+                            },
+                            {
+                              label: "Équipements",
+                              done:
+                                Object.values(listing.equipment || {}).filter(
+                                  Boolean,
+                                ).length >= 3,
+                            },
+                          ].map(({ label, done }) => (
+                            <div
+                              key={label}
+                              className="flex items-center gap-2"
+                            >
+                              <CheckCircle
+                                size={12}
+                                className={
+                                  done
+                                    ? "text-emerald-500 dark:text-emerald-400"
+                                    : "text-slate-300 dark:text-slate-600"
+                                }
+                              />
+                              <span className="text-xs text-slate-600 dark:text-slate-400 flex-1">
+                                {label}
+                              </span>
+                              <span
+                                className={`text-[10px] font-medium ${done ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}
+                              >
+                                {done ? "✓" : "—"}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bottom Navigation */}
+                  <div className="flex items-center justify-between pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
+                    <Link
+                      href={`/${locale}/dashboard/owner/listings`}
+                      className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors"
+                    >
+                      <ChevronLeft size={14} /> Retour
+                    </Link>
+                    <div className="flex items-center gap-2">
+                      {active !== "details" && (
+                        <button
+                          onClick={() =>
+                            setActive(
+                              SECTIONS[
+                                SECTIONS.findIndex((s) => s.id === active) - 1
+                              ].id,
+                            )
+                          }
+                          className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          Précédent
+                        </button>
+                      )}
+                      {active !== "publish" ? (
+                        <button
+                          onClick={() =>
+                            setActive(
+                              SECTIONS[
+                                SECTIONS.findIndex((s) => s.id === active) + 1
+                              ].id,
+                            )
+                          }
+                          className="px-5 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all"
+                        >
+                          Suivant <ChevronRight size={14} className="inline" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => save()}
+                          disabled={saving}
+                          className="px-5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all disabled:opacity-50"
+                        >
+                          {saving ? (
+                            <Loader2
+                              size={12}
+                              className="animate-spin inline mr-1"
+                            />
+                          ) : (
+                            <Save size={12} className="inline mr-1" />
+                          )}
+                          Sauvegarder
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </main>
           </div>
-          <div className="h-8 w-px bg-slate-200 dark:bg-slate-700" />
+        </div>
+      </div>
+
+      {/* Auto-save Toast */}
+      {lastSaved && (
+        <div className="fixed bottom-6 right-6 flex items-center gap-2 bg-white dark:bg-slate-800 py-2 pl-3 pr-2 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 z-50">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+            Sauvegardé{" "}
+            {lastSaved.toLocaleTimeString("fr-FR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </span>
           <button
-            onClick={() => updateListing({})}
-            className="bg-[#0df293] text-slate-900 p-3 rounded-full flex items-center justify-center hover:bg-[#0df293]/80 transition-colors"
+            onClick={() => save()}
+            className="w-6 h-6 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-full flex items-center justify-center hover:shadow active:scale-90 transition-all"
           >
-            <Save size={16} />
+            <Save size={11} />
           </button>
         </div>
       )}

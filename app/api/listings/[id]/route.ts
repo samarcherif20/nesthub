@@ -14,9 +14,31 @@ export async function GET(
   { params }: RouteParams
 ) {
   try {
+    const { userId: clerkId } = getAuth(request);
     const { id } = await params;
     
-    const listing = await ListingService.getListingById(id, true);
+    let shouldIncrementViews = true;
+    
+    if (clerkId) {
+      const user = await prisma.user.findUnique({
+        where: { clerkId },
+        select: { id: true },
+      });
+      
+      if (user) {
+        const listing = await prisma.listing.findFirst({
+          where: { id, ownerId: user.id },
+          select: { id: true },
+        });
+        
+        if (listing) {
+          shouldIncrementViews = false;
+          console.log(`🚫 Vue non comptée - propriétaire: ${id}`);
+        }
+      }
+    }
+    
+    const listing = await ListingService.getListingById(id, shouldIncrementViews);
 
     if (!listing) {
       return NextResponse.json({ error: 'Annonce non trouvée' }, { status: 404 });
@@ -53,12 +75,15 @@ export async function PUT(
 
     const body = await request.json();
     
-    // ✅ Filtrer les champs qui ne sont pas dans le schéma de mise à jour
+    console.log('📦 [PUT] Body reçu complet:', JSON.stringify(body, null, 2));
+    
+    // ✅ EXTRAIRE les photos pour les traiter séparément
     const { photos, stats, createdAt, updatedAt, viewCount, bookingCount, ...updateData } = body;
     
-    console.log('📦 [PUT] Données à mettre à jour:', updateData);
+    console.log('📦 [PUT] Données à mettre à jour (sans photos):', updateData);
+    console.log('📸 [PUT] Photos reçues:', photos?.length || 0);
     
-    // Validation
+    // ✅ Valider les données (sans les photos)
     const validationResult = updateListingSchema.safeParse(updateData);
     if (!validationResult.success) {
       console.error('❌ Erreurs validation:', validationResult.error.issues);
@@ -74,7 +99,8 @@ export async function PUT(
       );
     }
 
-    const listing = await ListingService.updateListing(id, user.id, validationResult.data);
+    // ✅ Appeler updateListing avec les photos séparément
+    const listing = await ListingService.updateListing(id, user.id, validationResult.data, photos);
 
     await prisma.userAction.create({
       data: {
@@ -177,7 +203,7 @@ export async function PATCH(
     const { userId: clerkId } = getAuth(request);
     const { id } = await params;
     const body = await request.json();
-    const { action } = body;
+    const { status, action } = body;
     
     if (!clerkId) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
@@ -194,30 +220,56 @@ export async function PATCH(
 
     let result;
     
-    switch (action) {
-      case 'RESTORE':
-        result = await ListingService.restoreListing(id, user.id);
-        break;
-        
-      case 'TOGGLE_STATUS':
-        const listing = await prisma.listing.findUnique({
-          where: { id },
-          select: { status: true, ownerId: true },
-        });
-        
-        if (!listing || listing.ownerId !== user.id) {
-          return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
-        }
-        
-        const newStatus = listing.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-        result = await prisma.listing.update({
-          where: { id },
-          data: { status: newStatus },
-        });
-        break;
-        
-      default:
-        return NextResponse.json({ error: 'Action non reconnue' }, { status: 400 });
+    if (status) {
+      const existingListing = await prisma.listing.findFirst({
+        where: { id, ownerId: user.id },
+      });
+      
+      if (!existingListing) {
+        return NextResponse.json({ error: 'Annonce non trouvée' }, { status: 404 });
+      }
+      
+      result = await prisma.listing.update({
+        where: { id },
+        data: { status },
+      });
+      
+      await prisma.listingHistory.create({
+        data: {
+          listingId: id,
+          actionType: 'STATUS_CHANGE',
+          oldValue: { status: existingListing.status },
+          newValue: { status },
+          changedBy: user.id,
+        },
+      });
+    }
+    else if (action) {
+      switch (action) {
+        case 'RESTORE':
+          result = await ListingService.restoreListing(id, user.id);
+          break;
+        case 'TOGGLE_STATUS':
+          const listing = await prisma.listing.findUnique({
+            where: { id },
+            select: { status: true, ownerId: true },
+          });
+          
+          if (!listing || listing.ownerId !== user.id) {
+            return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+          }
+          
+          const newStatus = listing.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+          result = await prisma.listing.update({
+            where: { id },
+            data: { status: newStatus },
+          });
+          break;
+        default:
+          return NextResponse.json({ error: 'Action non reconnue' }, { status: 400 });
+      }
+    } else {
+      return NextResponse.json({ error: 'Status ou action manquant' }, { status: 400 });
     }
     
     return NextResponse.json(result);

@@ -130,7 +130,7 @@
     "error": "لقد حدث خطأ. يرجى المحاولة مرة أخرى",
     "usernameRequired": "اسم المستخدم مطلوب",
     "usernameInvalid": "تنسيق اسم المستخدم غير صالح!",
-    "emailNotFound": "لم يتم العثور على حسابات مع هذا البريد الإلكتروني",
+    "emailNotFound": "لم يتم العثور على حساب مع هذا البريد الإلكتروني",
     "usernameNotFound": "لم يتم العثور على حسابات باسم المستخدم هذا",
     "emailOrUsername": "البريد الإلكتروني أو اسم المستخدم",
     "emailOrUsernamePlaceholder": "contact@example.com",
@@ -354,7 +354,7 @@
         "reasons": {
           "inappropriateBehavior": {
             "label": "سلوك غير لائق",
-            "description": "لغة أو موقف غير مناسب"
+            "description": "لغة أو موقف غير لائق"
           },
           "spam": {
             "label": "رسائل إلكترونية مزعجة",
@@ -933,7 +933,7 @@
     "phonePlaceholder": "27,929,630",
     "whatsappWarning": "قبل المتابعة قم بتفعيل الواتساب:",
     "activateWhatsapp": "تفعيل الواتس اب بنقرة واحدة",
-    "whatsappInstruction": "انقر على ← فتح تطبيق WhatsApp ← انقر على إرسال ← العودة إلى هنا",
+    "whatsappInstruction": "انقر على ← يفتح تطبيق WhatsApp ← انقر على إرسال ← العودة إلى هنا",
     "address": "عنوان الإقامة",
     "optional": "خياري",
     "addressPlaceholder": "أدخل عنوانك الكامل",
@@ -990,7 +990,7 @@
       "banking": "الخدمات المصرفية",
       "compliant": "متوافق",
       "cloud": "سحاب",
-      "sovereign": "السيادي",
+      "sovereign": "السيادية",
       "previousStep": "الخطوة السابقة",
       "finish": "حتى النهاية"
     },
@@ -1145,6 +1145,10 @@
     "restoreError": "خطأ أثناء الاستعادة"
   },
   "VerificationDetail": {
+    "alreadyValidated": "لقد تم بالفعل التحقق من صحة هذا الطلب",
+    "alreadyRejected": "لقد تم رفض هذا الطلب بالفعل",
+    "validated": "تم التحقق من صحتها",
+    "rejected": "مرفوض",
     "backk": "خلف",
     "verification": "رقم طلب التحقق:",
     "pending": "في الانتظار",
@@ -1352,5 +1356,425 @@
       "of": "على",
       "results": "نتائج"
     }
+  },
+  "OwnerLayout": {
+    "header": {
+      "tenantSpace": "مساحة المستأجر",
+      "ownerSpace": "منطقة المالك",
+      "searchPlaceholder": "ابحث عن اعلان...",
+      "addListing": "يضيف",
+      "owner": "مالك",
+      "ownerBadge": "مالك"
+    },
+    "nav": {
+      "dashboard": "لوحة القيادة",
+      "listings": "إعلاناتي",
+      "calendar": "تقويم",
+      "reservations": "التحفظات",
+      "messages": "رسائل",
+      "analytics": "إحصائيات"
+    },
+    "sidebar": {
+      "ownerSuite": "مساحة المالك",
+      "ownerRole": "مالك",
+      "verified": "تم التحقق منه",
+      "pro": "خطة احترافية",
+      "proDesc": "الوصول إلى الإحصائيات المتقدمة وتعزيز ظهورك.",
+      "upgrade": "اذهب برو",
+      "collapse": "يقلل",
+      "logout": "قطع الاتصال"
+    },
+    "profile": {
+      "myProfile": "ملفي الشخصي",
+      "settings": "إعدادات",
+      "logout": "تسجيل الخروج"
+    },
+    "notifications": {
+      "title": "إشعارات",
+      "empty": "لا الإخطارات"
+    },
+    "search": {
+      "cancel": "يلغي",
+      "noResults": "لا توجد نتائج"
+    },
+    "logout": {
+      "confirm": "قطع الاتصال",
+      "message": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
+      "cancel": "يلغي"
+    }
+  },
+  "CreateListing": {
+    "pageTitle": "إنشاء إعلان",
+    "stepOf": "الخطوة {الحالية} على {total}",
+    "saving": "نسخة احتياطية...",
+    "saveDraft": "حفظ المسودة",
+    "publishing": "منشور...",
+    "publish": "نشر الإعلان",
+    "steps": {
+      "typeLocation": "النوع والموقع",
+      "characteristics": "سمات",
+      "equipment": "معدات",
+      "photos": "صور",
+      "pricing": "التسعير",
+      "preview": "معاينة"
+    },
+    "nav": {
+      "previous": "سابق",
+      "continue": "يكمل"
+    },
+    "propertyTypes": {
+      "APARTMENT": "شقة",
+      "VILLA": "فيلا",
+      "STUDIO": "استوديو",
+      "DUPLEX": "دوبلكس",
+      "HOUSE": "بيت",
+      "ROOM": "غرفة نوم"
+    },
+    "step1": {
+      "typeTitle": "ما نوع العقار الذي تقدمونه؟",
+      "titleSectionTitle": "قم بتسمية إعلانك",
+      "titleLabel": "عنوان الإعلان",
+      "titlePlaceholder": "مثال: فيلا رائعة مطلة على البحر في الحمامات",
+      "descriptionLabel": "وصف",
+      "descriptionPlaceholder": "قم بوصف مميزات مكان إقامتك، والأحياء القريبة، وما الذي يجعله فريدًا من نوعه...",
+      "locationTitle": "أين تقع الممتلكات الخاصة بك؟",
+      "governorate": "محافظة",
+      "delegation": "وفد",
+      "street": "الحي / الشارع",
+      "delegationPlaceholder": "على سبيل المثال: المرسى",
+      "streetPlaceholder": "على سبيل المثال: شارع المرسى بلاج",
+      "choose": "يختار...",
+      "mapHint": "الموقع التقريبي على الخريطة",
+      "adjustMap": "يُعدِّل",
+      "exactLocation": "الموقع الدقيق",
+      "positionSelected": "الموقف المحدد",
+      "mapClickHint": "انقر على الخريطة لإظهار الموقع الدقيق لممتلكاتك"
+    },
+    "step2": {
+      "title": "قم بوصف الممتلكات الخاصة بك",
+      "rooms": "الغرف",
+      "roomsDesc": "غرف ليلية خاصة",
+      "bathrooms": "الحمامات",
+      "bathroomsDesc": "غرف الاستحمام أو الحمامات",
+      "maxGuests": "الحد الأقصى لعدد المسافرين",
+      "maxGuestsDesc": "إجمالي القدرة على الاستقبال",
+      "surface": "مساحة المعيشة (م²)",
+      "floor": "رقم الطابق",
+      "floorPlaceholder": "0 لجمهورية الكونغو الديمقراطية",
+      "elevator": "مصعد",
+      "elevatorDesc": "هل المبنى به مصعد؟",
+      "balcony": "شرفة",
+      "parking": "وقوف السيارات"
+    },
+    "step3": {
+      "equipmentTitle": "ما هي المعدات التي تقدمها؟",
+      "servicesTitle": "الخدمات متضمنة",
+      "rulesTitle": "قواعد المنزل",
+      "customRulesLabel": "القواعد المخصصة",
+      "customRulesPlaceholder": "أضف تعليماتك المحددة للمسافرين (بحد أقصى 500 حرف)..."
+    },
+    "equipment": {
+      "wifi": "واي فاي",
+      "ac": "تكييف",
+      "heating": "التدفئة",
+      "kitchen": "مطبخ مجهز",
+      "parking": "وقوف السيارات",
+      "pool": "حمام سباحة",
+      "gym": "نادي رياضي",
+      "washer": "غسالة",
+      "tv": "تلفزيون",
+      "balcony": "شرفة",
+      "dishwasher": "غسالة الأواني",
+      "dryer": "مجفف",
+      "elevator": "مصعد",
+      "airConditioning": "تكييف",
+      "workspace": "مساحة العمل"
+    },
+    "services": {
+      "cleaning": "خدمة تنظيف الغرف متضمنة",
+      "cleaningDesc": "التنظيف المهني المنتظم",
+      "linen": "بياضات منزلية",
+      "linenDesc": "يتم توفير الملاءات والمناشف",
+      "pets": "مسموح بالحيوانات الأليفة",
+      "petsDesc": "رفاقك موضع ترحيب",
+      "smoking": "يقبل المدخنين",
+      "smokingDesc": "في مناطق خارجية مخصصة",
+      "breakfast": "وجبة الإفطار متضمنة",
+      "breakfastDesc": "يتم تقديم وجبة الإفطار كل صباح",
+      "airportTransfer": "نقل المطار",
+      "airportTransferDesc": "خدمة نقل مكوكية متاحة عند الطلب"
+    },
+    "houseRules": {
+      "noParties": "لا الحفلات والمناسبات",
+      "noSmoke": "غير مدخن",
+      "noPets": "لا يتم قبول الحيوانات الأليفة",
+      "quietAfter22": "الهدوء مطلوب بعد الساعة 10 مساءً.",
+      "checkInAfter": "تسجيل الوصول بعد الساعة 2 ظهرًا",
+      "checkOutBefore": "تسجيل الخروج قبل الساعة 11 صباحا"
+    },
+    "step4": {
+      "title": "أضف صورك",
+      "dropHere": "اسحب صورك هنا",
+      "dropHint": "قم بتحسين حجوزاتك باستخدام ما لا يقل عن 5 صور عالية الدقة (بحد أقصى 20)",
+      "or": "أو",
+      "browseFiles": "تصفح ملفاتي",
+      "minPhotosWarning": "أضف {count} صورة (صور) أخرى للوصول إلى الحد الأدنى المطلوب",
+      "yourPhotos": "صورك",
+      "dragReorder": "اسحب لإعادة الترتيب",
+      "mainPhoto": "الصورة الرئيسية",
+      "setMain": "تعيين كإعداد أساسي",
+      "delete": "يمسح",
+      "add": "يضيف",
+      "tipsTitle": "نصائح الصورة",
+      "tip1": "تفضل الضوء الطبيعي عن طريق فتح الستائر والمصاريع.",
+      "tip2": "قم بترتيب الجزء الداخلي للحصول على مظهر نظيف واحترافي.",
+      "tip3": "استخدم التنسيق الأفقي لإضفاء إحساس بالمساحة.",
+      "tip4": "أظهر كل غرفة مهمة: غرفة المعيشة، غرف النوم، المطبخ، الحمام.",
+      "uploading": "تحميل...",
+      "uploadError": "حدث خطأ أثناء التنزيل"
+    },
+    "step5": {
+      "rentalTypeTitle": "نوع الإيجار",
+      "SHORT_TERM": "على المدى القصير",
+      "LONG_TERM": "على المدى الطويل",
+      "BOTH": "كلاهما",
+      "pricesTitle": "تحديد الأسعار الخاصة بك",
+      "pricePerNight": "سعر الليلة الواحدة",
+      "pricePerMonth": "السعر شهريا",
+      "night": "ليلة",
+      "month": "شهر",
+      "localAvg": "المتوسط ​​في منطقتك: {price} TND",
+      "feesTitle": "رسوم إضافية",
+      "deposit": "إيداع",
+      "depositDesc": "وديعة تأمين قابلة للاسترداد في نهاية الإقامة",
+      "depositAmount": "مبلغ الكفالة",
+      "cleaningFee": "رسوم التنظيف",
+      "cleaningFeeDesc": "تتم المحاسبة مرة واحدة لكل إقامة",
+      "cleaningFeeAmount": "مقدار رسوم التنظيف",
+      "smartPricing": "التسعير الذكي",
+      "seasonalTitle": "التسعير الموسمي",
+      "seasonalDesc": "عزز إيراداتك بنسبة 25% عن طريق تفعيل الأسعار الخاصة لعطلات نهاية الأسبوع وموسم الذروة.",
+      "weekend": "عطلة نهاية الأسبوع",
+      "summer": "الصيف (يونيو-أغسطس)",
+      "weekendMultiplier": "مضاعف عطلة نهاية الأسبوع",
+      "summerMultiplier": "مضاعف الصيف",
+      "estimatedRevenue": "الدخل المقدر",
+      "estimatedRevenueDesc": "اعتمادًا على إعداداتك، يمكنك إنشاء مبلغ يتراوح بين {min} TND و{max} TND شهريًا.",
+      "additionalFees": "رسوم إضافية",
+      "electricityFee": "تكاليف الكهرباء",
+      "waterFee": "رسوم المياه",
+      "serviceFee": "رسوم الخدمة"
+    },
+    "preview": {
+      "noTitle": "عنوان الإعلان",
+      "rooms": "غرف",
+      "bathrooms": "حمام",
+      "guests": "مسافرين",
+      "readyTitle": "إعلانك جاهز!",
+      "readyDesc": "تحقق من المعلومات أعلاه ثم قم بنشر إعلانك. وسوف تكون مرئية بعد التحقق من الصحة.",
+      "perNight": "في الليلة الواحدة",
+      "perMonth": "كل شهر",
+      "equipment": "معدات",
+      "services": "خدمات",
+      "rules": "قواعد",
+      "location": "موقع"
+    },
+    "sidebar": {
+      "tipTitle": "نصيحة الخبراء",
+      "tip1": "يجذب العنوان الجذاب عدداً أكبر من المسافرين بنسبة 40%.",
+      "tip2": "5 صور كحد أدنى تزيد فرصك في الحجز.",
+      "tip3": "السعر التنافسي يحسن ظهورك في النتائج.",
+      "tip4": "قم بتفصيل وسائل الراحة الخاصة بك جيدًا لجذب المزيد من المسافرين.",
+      "whyNesthub": "لماذا نيست هاب؟",
+      "benefit1": "مدفوعات آمنة مضمونة",
+      "benefit2": "دعم المالك 7 أيام في الأسبوع",
+      "benefit3": "صفر رسوم خفية",
+      "benefit4": "التأمين متضمن لكل حجز"
+    },
+    "validation": {
+      "titleRequired": "العنوان مطلوب",
+      "titleMin": "يجب أن يحتوي العنوان على 3 أحرف على الأقل",
+      "governorateRequired": "الحاكم مطلوب",
+      "delegationRequired": "التفويض مطلوب",
+      "photosMin": "أضف 5 صور على الأقل",
+      "priceRequired": "السعر مطلوب",
+      "pricePositive": "يجب أن يكون السعر إيجابيا",
+      "descriptionMax": "لا يمكن أن يتجاوز الوصف 2000 حرف"
+    },
+    "success": {
+      "published": "لقد تم نشر إعلانك بنجاح!",
+      "draftSaved": "تم حفظ مسودتك",
+      "redirecting": "جاري إعادة التوجيه..."
+    },
+    "error": {
+      "generic": "لقد حدث خطأ",
+      "uploadFailed": "فشل تحميل الصور",
+      "saveFailed": "فشل النسخ الاحتياطي",
+      "publishFailed": "فشل النشر"
+    }
+  },
+  "OwnerListings": {
+    "title": "إدارة المحافظ",
+    "description": "قم بإدارة عقاراتك وتتبع الأداء وحقق أقصى عائد على الاستثمار باستخدام أدواتنا الذكية.",
+    "addProperty": "أضف خاصية",
+    "tabs": {
+      "all": "الجميع",
+      "active": "تم النشر",
+      "inactive": "غير نشط",
+      "draft": "المسودات"
+    },
+    "stats": {
+      "totalRevenue": "إجمالي الإيرادات",
+      "activeListings": "إعلانات نشطة",
+      "totalViews": "إجمالي المشاهدات",
+      "occupancyRate": "معدل الإشغال",
+      "properties": "ملكيات",
+      "stablePortfolio": "محفظة مستقرة",
+      "views": "وجهات النظر",
+      "bookings": "التحفظات",
+      "price": "سعر",
+      "published": "تم النشر بتاريخ",
+      "notPublished": "غير منشورة"
+    },
+    "status": {
+      "active": "تم النشر",
+      "inactive": "غير نشط",
+      "draft": "مسودة",
+      "archived": "أرشيف"
+    },
+    "badge": {
+      "verified": "تم التحقق منه"
+    },
+    "unit": {
+      "night": "ليلة",
+      "month": "شهر"
+    },
+    "aiInsights": {
+      "title": "نصائح الذكاء الاصطناعي",
+      "draftTip": "إعلانك في المسودة. انشرها لبدء تلقي الحجوزات.",
+      "lowViewsTip": "قم بتحسين صورك وعنوانك لجذب المزيد من الزوار.",
+      "highDemandTip": "توقع طلب قوي! ارفع أسعارك قليلاً."
+    },
+    "actions": {
+      "view": "يرى",
+      "edit": "للتعديل",
+      "delete": "يمسح"
+    },
+    "empty": {
+      "title": "لا إعلانات",
+      "description": "لم تقم بإنشاء إعلان بعد. ابدأ بمشاركة ممتلكاتك الآن.",
+      "cta": "إنشاء إعلاني الأول"
+    },
+    "searchPlaceholder": "ابحث عن عقار...",
+    "filter": "فلتر",
+    "deleteConfirm": "هل أنت متأكد أنك تريد إزالة هذا الإعلان؟ هذا الإجراء لا رجعة فيه.",
+    "pagination": {
+      "showing": "عرض {البدء} إلى {النهاية} على خصائص {total}."
+    },
+    "footer": {
+      "legal": "إشعارات قانونية",
+      "aiPolicy": "سياسة الذكاء الاصطناعي",
+      "aiStatus": "محرك الذكاء الاصطناعي: الأمثل"
+    }
+  },
+  "Users": {
+    "stats": {
+      "totalUsers": "إجمالي المستخدمين",
+      "newUsers30d": "جديد (30 يومًا)",
+      "pendingValidation": "في الانتظار",
+      "verifiedIdentity": "تم التحقق منه"
+    }
+  },
+  "ListingDetail": {
+    "backToListings": "العودة إلى الإعلانات",
+    "reviews": "يلاحظ",
+    "viewAllPhotos": "عرض جميع الصور ({count})",
+    "hostedBy": "الإقامة الكاملة: {الاسم}",
+    "guests": "مسافرين",
+    "bedrooms": "غرف",
+    "bathrooms": "الحمامات",
+    "elevator": "مصعد",
+    "elevatorDesc": "سهولة الوصول إلى جميع الطوابق",
+    "greatLocation": "موقع مثالي",
+    "greatLocationDesc": "100% من المسافرين قاموا بتقييم الموقع بـ 5 نجوم.",
+    "freeCancellation": "إلغاء مجاني",
+    "freeCancellationDesc": "إلغاء مجاني حتى 7 أيام قبل الوصول.",
+    "about": "حول هذا السكن",
+    "noDescription": "لا يوجد وصف متاح في هذا الوقت.",
+    "amenities": "معدات",
+    "showAllAmenities": "عرض جميع المعدات",
+    "availability": "التوفر",
+    "selectDates": "أضف تواريخ سفرك لمعرفة السعر الدقيق",
+    "checkIn": "الوصول",
+    "checkOut": "رحيل",
+    "guest": "مسافر",
+    "nights": "الليالي",
+    "night": "ليلة",
+    "cleaningFee": "رسوم التنظيف",
+    "serviceFee": "رسوم الخدمة",
+    "total": "المجموع",
+    "requestToBook": "طلب الحجز",
+    "noChargeYet": "لن يتم تحصيل أي مبلغ منك في هذا الوقت",
+    "reportListing": "الإبلاغ عن هذا الإعلان",
+    "reviewDate": "• مايو 2024",
+    "sampleReview": "إقامة لا تنسى! الفيلا أجمل مما في الصور. المضيف رائع ومليء بالتوصيات الرائعة للمطاعم المحلية.",
+    "showAllReviews": "عرض {count} من التعليقات",
+    "unit": {
+      "night": "ليلة",
+      "month": "شهر"
+    },
+    "equipment": {
+      "wifi": "واي فاي",
+      "ac": "تكييف",
+      "heating": "التدفئة",
+      "kitchen": "مطبخ مجهز",
+      "parking": "مواقف مجانية للسيارات",
+      "pool": "حمام سباحة خاص",
+      "gym": "نادي رياضي",
+      "washer": "غسالة",
+      "tv": "تلفزيون",
+      "balcony": "شرفة",
+      "elevator": "مصعد",
+      "workspace": "مساحة العمل",
+      "dryer": "مجفف",
+      "dishwasher": "غسالة الأواني"
+    },
+    "notFound": {
+      "title": "لم يتم العثور على الإعلان",
+      "description": "الإعلان الذي تبحث عنه غير موجود أو تم حذفه.",
+      "back": "العودة إلى إعلاناتي"
+    }
+  },
+  "EditListing": {
+    "title": "عنوان الإعلان",
+    "autoSave": "النسخ الاحتياطي التلقائي نشط",
+    "saveDraft": "حفظ المسودة",
+    "step1": "الخطوة 1 من 4",
+    "step2": "الخطوة 2 من 4",
+    "step3": "الخطوة 3 من 4",
+    "step4": "الخطوة 4 من 4",
+    "detailsTitle": "تفاصيل العقار",
+    "photosTitle": "معرض الصور",
+    "pricingTitle": "التسعير",
+    "publishTitle": "النشر",
+    "detailsDesc": "قم بتحديث المعلومات الأساسية لملكيتك.",
+    "photosDesc": "إضافة أو تعديل الصور من الممتلكات الخاصة بك.",
+    "pricingDesc": "تحديد الأسعار والرسوم الإضافية.",
+    "publishDesc": "إدارة حالة نشر إعلانك.",
+    "propertyType": "نوع العقار",
+    "titlePlaceholder": "مثال: فيلا رائعة مطلة على البحر",
+    "description": "وصف",
+    "descriptionPlaceholder": "اوصف مميزات سكنك...",
+    "location": "موقع",
+    "currentAddress": "العنوان الحالي",
+    "modify": "للتعديل",
+    "back": "خلف",
+    "saveChanges": "حفظ التغييرات",
+    "preview": "معاينة",
+    "lastSaved": "تم آخر تعديل منذ {time}.",
+    "tabDetails": "تفاصيل",
+    "tabPhotos": "صور",
+    "tabPricing": "سعر",
+    "tabPublish": "النشر"
   }
 }

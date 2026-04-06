@@ -167,6 +167,7 @@ export default clerkMiddleware(async (auth, req) => {
        "/sso-callback", // Add this line
          "/forgot-password",  // Ajouter
   "/reset-password",   // Ajouter
+  "/listings/[id]"
     ];
     const isPublicPage = publicPaths.includes(pathWithoutLocale);
 

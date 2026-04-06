@@ -6,8 +6,8 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
-  totalItems: number;
-  pageSize: number;
+  totalItems?: number;  // Optionnel
+  pageSize?: number;     // Optionnel
   onPageChange: (page: number) => void;
   className?: string;
 }
@@ -20,17 +20,24 @@ export default function Pagination({
   onPageChange,
   className = '',
 }: PaginationProps) {
-  const startItem = (currentPage - 1) * pageSize + 1;
-  const endItem   = Math.min(currentPage * pageSize, totalItems);
+  // Calcul des plages uniquement si totalItems et pageSize sont fournis
+  const startItem = totalItems && pageSize ? (currentPage - 1) * pageSize + 1 : null;
+  const endItem = totalItems && pageSize ? Math.min(currentPage * pageSize, totalItems) : null;
 
   return (
     <div className={`flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-800 ${className}`}>
-      <p className="text-sm text-slate-500">
-        Affichage{' '}
-        <span className="font-medium text-slate-900 dark:text-white">{startItem}</span> à{' '}
-        <span className="font-medium text-slate-900 dark:text-white">{endItem}</span> sur{' '}
-        <span className="font-medium text-slate-900 dark:text-white">{totalItems}</span> résultats
-      </p>
+      {/* Afficher les infos seulement si les données sont disponibles */}
+      {totalItems !== undefined && pageSize !== undefined && (
+        <p className="text-sm text-slate-500">
+          Affichage{' '}
+          <span className="font-medium text-slate-900 dark:text-white">{startItem}</span> à{' '}
+          <span className="font-medium text-slate-900 dark:text-white">{endItem}</span> sur{' '}
+          <span className="font-medium text-slate-900 dark:text-white">{totalItems}</span> résultats
+        </p>
+      )}
+
+      {/* Espace vide pour maintenir l'alignement si pas d'infos */}
+      {(!totalItems || !pageSize) && <div />}
 
       <div className="flex items-center gap-2">
         {/* Prev */}
@@ -43,29 +50,37 @@ export default function Pagination({
         </button>
 
         {/* Page numbers */}
-        {[...Array(Math.min(5, totalPages))].map((_, i) => {
-          let pageNum: number;
-          if (totalPages <= 5)            pageNum = i + 1;
-          else if (currentPage <= 3)      pageNum = i + 1;
-          else if (currentPage >= totalPages - 2) pageNum = totalPages - 4 + i;
-          else                            pageNum = currentPage - 2 + i;
+        {(() => {
+          const maxVisible = 4;
+          const pages: number[] = [];
+          
+          if (totalPages <= maxVisible) {
+            for (let i = 1; i <= totalPages; i++) pages.push(i);
+          } else if (currentPage <= 3) {
+            for (let i = 1; i <= maxVisible; i++) pages.push(i);
+          } else if (currentPage >= totalPages - 2) {
+            for (let i = totalPages - maxVisible + 1; i <= totalPages; i++) pages.push(i);
+          } else {
+            for (let i = currentPage - 2; i <= currentPage + 2; i++) pages.push(i);
+          }
 
-          const isActive = currentPage === pageNum;
-
-          return (
-            <button
-              key={i}
-              onClick={() => onPageChange(pageNum)}
-              className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
-                isActive
-                  ? 'bg-gradient-to-br from-sky-400 via-blue-500 to-purple-600 text-white shadow-md shadow-blue-500/30 border-0'
-                  : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
-              }`}
-            >
-              {pageNum}
-            </button>
-          );
-        })}
+          return pages.map((pageNum) => {
+            const isActive = currentPage === pageNum;
+            return (
+              <button
+                key={pageNum}
+                onClick={() => onPageChange(pageNum)}
+                className={`w-9 h-9 flex items-center justify-center rounded-lg text-sm font-medium transition-all ${
+                  isActive
+                    ? 'bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-md shadow-indigo-500/30 border-0'
+                    : 'border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                }`}
+              >
+                {pageNum}
+              </button>
+            );
+          });
+        })()}
 
         {/* Next */}
         <button
