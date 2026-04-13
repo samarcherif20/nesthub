@@ -9,18 +9,49 @@ const intlMiddleware = createMiddleware({
   localePrefix: "always",
 });
 
+// ✅ Fonction pour obtenir la locale depuis la requête
+function getLocaleFromRequest(req: any): string {
+  const pathname = req.nextUrl.pathname;
+  const pathSegments = pathname.split("/").filter(Boolean);
+  if (pathSegments[0] && isValidLocale(pathSegments[0])) {
+    return pathSegments[0];
+  }
+  const cookieLang = req.cookies.get("preferred-language")?.value;
+  if (cookieLang && isValidLocale(cookieLang)) {
+    return cookieLang;
+  }
+  return defaultLocale;
+}
+
 export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
+  const locale = getLocaleFromRequest(req);
+
+  // ✅ Redirection de /sign-in vers /{locale}/login
+  if (pathname === "/sign-in" || pathname.startsWith("/sign-in?")) {
+    return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
+  }
+
+  // ✅ Redirection de /login sans locale vers /{locale}/login
+  if (pathname === "/login" || pathname.startsWith("/login?")) {
+    if (!pathname.includes(`/${locale}/login`)) {
+      return NextResponse.redirect(
+        new URL(`/${locale}/login${req.nextUrl.search}`, req.url),
+      );
+    }
+    return NextResponse.next();
+  }
+
   const { userId, sessionClaims, getToken } = await auth();
 
   // 🔥 Récupérer le token avec le template personnalisé
   const token = await getToken({ template: "my-app-template" });
-  
+
   // Décoder le token pour extraire le rôle
   let roleFromToken = null;
   if (token) {
     try {
-      const decoded = JSON.parse(atob(token.split('.')[1]));
+      const decoded = JSON.parse(atob(token.split(".")[1]));
       roleFromToken = decoded.role;
       console.log("🔐 Rôle depuis le token JWT:", roleFromToken);
     } catch (e) {
@@ -37,11 +68,11 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   // Extract pathname without query parameters
   const currentPathname = req.nextUrl.pathname;
-  
+
   // Check if the path already has a locale
   const pathSegments = currentPathname.split("/").filter(Boolean);
   const hasLocaleInPath = pathSegments[0] && isValidLocale(pathSegments[0]);
-  
+
   // For paths that already have a locale, just update the cookie and continue
   // DON'T return early - let the normal flow continue
   if (hasLocaleInPath) {
@@ -57,16 +88,18 @@ export default clerkMiddleware(async (auth, req) => {
     // IMPORTANT: Don't return here! Just set the cookie and let the request continue
     // We'll apply this response later
   }
-  
+
   // For paths WITHOUT locale, check if we need to redirect
   // But ONLY for specific paths that should have a locale
-  if (!hasLocaleInPath && !currentPathname.startsWith("/api/") && 
-      !currentPathname.includes("/_next") && 
-      !currentPathname.includes("/favicon.ico") &&
-      !currentPathname.includes("/flags/")) {
-    
+  if (
+    !hasLocaleInPath &&
+    !currentPathname.startsWith("/api/") &&
+    !currentPathname.includes("/_next") &&
+    !currentPathname.includes("/favicon.ico") &&
+    !currentPathname.includes("/flags/")
+  ) {
     const storedLang = req.cookies.get("preferred-language")?.value;
-    
+
     // Only redirect if we have a stored language AND the path is not already the root with locale
     if (storedLang && isValidLocale(storedLang)) {
       // Don't redirect if it's the root path without locale - let intlMiddleware handle it
@@ -104,8 +137,9 @@ export default clerkMiddleware(async (auth, req) => {
       "/api/auth/register",
       "/api/cron/reactivate-users",
       "/api/get-redirect-url",
-          "/api/auth/reset-password", // ✅ AJOUTER CETTE LIGNE
-
+      "/api/auth/reset-password", //
+      "/api/cohost/invitations/accept", // ✅ AJOUTE CETTE LIGNE
+      "/api/admin/invitations/accept", // ✅ AJOUTE CETTE LIGNE ✅ AJOUTER CETTE LIGNE
     ];
 
     const isPublicApiRoute = publicApiRoutes.some((route) =>
@@ -140,7 +174,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Déterminer locale et chemin
   // ========================================
   const pathParts = pathname.split("/").filter(Boolean);
-  const locale =
+  const localeFromPath =
     pathParts[0] && isValidLocale(pathParts[0]) ? pathParts[0] : defaultLocale;
   const pathWithoutLocale = "/" + pathParts.slice(1).join("/");
 
@@ -164,10 +198,10 @@ export default clerkMiddleware(async (auth, req) => {
       "/verify-email-code",
       "/terms",
       "/privacy",
-       "/sso-callback", // Add this line
-         "/forgot-password",  // Ajouter
-  "/reset-password",   // Ajouter
-  "/listings/[id]"
+      "/sso-callback", // Add this line
+      "/forgot-password", // Ajouter
+      "/reset-password", // Ajouter
+      "/listings/[id]",
     ];
     const isPublicPage = publicPaths.includes(pathWithoutLocale);
 
@@ -185,6 +219,7 @@ export default clerkMiddleware(async (auth, req) => {
     const publicPaths = [
       "/",
       "/login",
+      "/accept-invite",
       "/inscription/verify",
       "/inscription/verify-catch",
       "/inscription",
@@ -196,9 +231,9 @@ export default clerkMiddleware(async (auth, req) => {
       "/verify-email-code",
       "/terms",
       "/privacy",
-       "/sso-callback", // Add this line
-         "/forgot-password",  // Ajouter
-  "/reset-password",   // Ajouter
+      "/sso-callback", // Add this line
+      "/forgot-password", // Ajouter
+      "/reset-password", // Ajouter
     ];
     const isPublicPage = publicPaths.includes(pathWithoutLocale);
     const isStaticAsset =
@@ -209,7 +244,7 @@ export default clerkMiddleware(async (auth, req) => {
 
       const redirectUrl = pathWithoutLocale + req.nextUrl.search;
       const response = NextResponse.redirect(
-        new URL(`/${locale}/login`, req.url),
+        new URL(`/${localeFromPath}/login`, req.url),
       );
 
       response.cookies.set("redirectAfterLogin", redirectUrl, {
@@ -230,16 +265,16 @@ export default clerkMiddleware(async (auth, req) => {
   if (pathWithoutLocale.startsWith("/admin")) {
     console.log("🔐 Accès admin tenté pour:", pathWithoutLocale);
     console.log("🔐 userId:", userId);
-    
+
     // 🔥 Utiliser le rôle du token JWT d'abord
     const userRole = roleFromToken;
     console.log("🔐 Rôle depuis token JWT:", userRole);
-    
+
     if (!userId) {
       console.log("🔴 Pas d'userId, redirection vers login");
       const redirectUrl = pathWithoutLocale + req.nextUrl.search;
       const response = NextResponse.redirect(
-        new URL(`/${locale}/login`, req.url),
+        new URL(`/${localeFromPath}/login`, req.url),
       );
 
       response.cookies.set("redirectAfterLogin", redirectUrl, {
@@ -255,7 +290,7 @@ export default clerkMiddleware(async (auth, req) => {
 
     // 🔑 Récupérer le rôle depuis la base de données (fallback si token n'a pas le rôle)
     let role = userRole;
-    
+
     if (!role) {
       try {
         const { prisma } = await import("@/lib/prisma");
@@ -269,25 +304,26 @@ export default clerkMiddleware(async (auth, req) => {
         console.log("🔐 Rôle récupéré depuis DB (fallback):", role);
       } catch (error) {
         console.error("❌ Erreur récupération rôle depuis DB:", error);
-        return NextResponse.redirect(new URL(`/${locale}/`, req.url));
+        return NextResponse.redirect(new URL(`/${localeFromPath}/`, req.url));
       }
     }
 
     if (role !== "ADMIN") {
       console.log("❌ Accès admin refusé - rôle:", role);
-      return NextResponse.redirect(new URL(`/${locale}/`, req.url));
+      return NextResponse.redirect(new URL(`/${localeFromPath}/`, req.url));
     }
 
     console.log("✅ Accès admin autorisé pour:", userId);
     return intlResponse;
   }
-  
+
   // ========================================
   // Pages publiques
   // ========================================
   const publicPaths = [
     "/",
     "/login",
+    "/accept-invite",
     "/inscription/verify",
     "/complete-profile",
     "/inscription",
@@ -299,9 +335,9 @@ export default clerkMiddleware(async (auth, req) => {
     "/verify-email-code",
     "/terms",
     "/privacy",
-     "/sso-callback", // Add this line
-       "/forgot-password",  // Ajouter
-  "/reset-password",   // Ajouter
+    "/sso-callback", // Add this line
+    "/forgot-password", // Ajouter
+    "/reset-password", // Ajouter
   ];
 
   if (publicPaths.includes(pathWithoutLocale)) {
@@ -312,7 +348,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Routes protégées
   // ========================================
   if (!userId) {
-    return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
+    return NextResponse.redirect(new URL(`/${localeFromPath}/login`, req.url));
   }
 
   if (pathWithoutLocale.startsWith("/admin/verifications")) {

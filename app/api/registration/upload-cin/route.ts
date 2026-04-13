@@ -1,133 +1,170 @@
-// app/api/registration/upload-cin/route.ts
-export const runtime = "nodejs";
-export const maxDuration = 30;
+// app/api/users/avatar/route.ts
+import { NextRequest, NextResponse } from 'next/server';
+import { getAuth } from '@clerk/nextjs/server';
+import { put, del } from '@vercel/blob';
+import { prisma } from '@/lib/prisma';
 
-import { put } from "@vercel/blob";
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+// GET - Afficher l'image (déjà existant, fonctionne)
+export async function GET(req: NextRequest) {
+  try {
+    const { userId: clerkId } = getAuth(req);
+    const blobUrl = req.nextUrl.searchParams.get('url');
+    
+    if (!clerkId) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+    
+    if (!blobUrl) {
+      return NextResponse.json({ error: 'URL manquante' }, { status: 400 });
+    }
+    
+    const response = await fetch(blobUrl, {
+      headers: {
+        'Authorization': `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}`
+      }
+    });
+    
+    if (!response.ok) {
+      return NextResponse.json({ error: 'Image non trouvée' }, { status: 404 });
+    }
+    
+    const buffer = await response.arrayBuffer();
+    const contentType = response.headers.get('content-type') || 'image/jpeg';
+    
+    return new NextResponse(buffer, {
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=3600',
+      },
+    });
+    
+  } catch (error) {
+    console.error('[users/avatar] GET Erreur:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
 
+// POST - Uploader une nouvelle photo de profil (inspiré de upload-cin)
 export async function POST(req: NextRequest) {
   try {
+    const { userId: clerkId } = getAuth(req);
+    
+    if (!clerkId) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+    
     const formData = await req.formData();
-    const clerkId = formData.get("userId") as string;
-    const cinRecto = formData.get("cinRecto") as File;
-    const cinVerso = formData.get("cinVerso") as File;
-    const profilePhoto = formData.get("profilePhoto") as File;
-
-    if (!clerkId || !cinRecto || !cinVerso || !profilePhoto) {
-      return NextResponse.json({ error: "Champs manquants" }, { status: 400 });
+    const file = formData.get('file') as File;
+    
+    if (!file) {
+      return NextResponse.json({ error: 'Fichier manquant' }, { status: 400 });
     }
-
-    console.log("📸 Upload pour clerkId:", clerkId);
-
-    // Lire les buffers
-    const [rectoBuf, versoBuf, photoBuf] = await Promise.all([
-      cinRecto.arrayBuffer().then((b) => Buffer.from(b)),
-      cinVerso.arrayBuffer().then((b) => Buffer.from(b)),
-      profilePhoto.arrayBuffer().then((b) => Buffer.from(b)),
-    ]);
-
-    // ── 1. Upload Vercel Blob ─────────────────────────────────────────────
+    
+    // Vérifier le type
+    if (!file.type.startsWith('image/')) {
+      return NextResponse.json({ error: 'Format non supporté. Utilisez JPG ou PNG.' }, { status: 400 });
+    }
+    
+    // Vérifier la taille (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Fichier trop volumineux (max 5MB)' }, { status: 400 });
+    }
+    
+    console.log("📸 Upload avatar pour clerkId:", clerkId);
+    
+    // Lire le buffer
+    const fileBuf = await file.arrayBuffer().then((b) => Buffer.from(b));
+    
+    // Upload vers Vercel Blob (comme dans upload-cin)
     const ts = Date.now();
-    const [rectoBlob, versoBlob, photoBlob] = await Promise.all([
-      put(`users/${clerkId}/cin-recto-${ts}`, rectoBuf, {
-        access: "private",
-        contentType: cinRecto.type,
-        addRandomSuffix: true,
-      }),
-      put(`users/${clerkId}/cin-verso-${ts}`, versoBuf, {
-        access: "private",
-        contentType: cinVerso.type,
-        addRandomSuffix: true,
-      }),
-      put(`users/${clerkId}/selfie-${ts}`, photoBuf, {
-        access: "private",
-        contentType: profilePhoto.type,
-        addRandomSuffix: true,
-      }),
-    ]);
-
-    console.log("✅ Uploads Vercel Blob réussis");
-
-    // ── 2. OCR DÉSACTIVÉ TEMPORAIREMENT ──────────────────────────────────
-    const extracted = {
-      cinNumber: "12345678",
-      firstName: "Test",
-      lastName: "User",
-      dateOfBirth: "1990-01-01",
-      placeOfBirth: "Tunis",
-      expiryDate: "2030-01-01",
-      gender: "M",
-      rawText: "Test OCR désactivé",
-      confidence: 100,
-    };
-    const ocrSuccess = true;
-
-    console.log("📝 OCR désactivé - données factices utilisées");
-
-    // ── 3. Chercher l'utilisateur par clerkId ──────────────────────────────
+    const blob = await put(`users/${clerkId}/avatar-${ts}`, fileBuf, {
+      access: "private",  // Même configuration que upload-cin
+      contentType: file.type,
+      addRandomSuffix: true,
+    });
+    
+    console.log("✅ Upload avatar réussi:", blob.url);
+    
+    // Récupérer l'ancienne photo pour la supprimer plus tard
     const user = await prisma.user.findUnique({
-      where: { clerkId: clerkId },
+      where: { clerkId },
+      select: { profilePictureUrl: true },
     });
-
-    if (!user) {
-      console.log("⚠️ Utilisateur non trouvé pour clerkId:", clerkId);
-      return NextResponse.json(
-        {
-          error:
-            "Utilisateur non trouvé. Veuillez compléter l'étape 1 d'abord.",
-        },
-        { status: 404 },
-      );
-    }
-
-    console.log("✅ Utilisateur trouvé:", user.id, user.email);
-
-    // ── 4. Mettre à jour l'utilisateur (sans dateNaissance) ────────────────
+    
+    // Mettre à jour l'utilisateur
     await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        profilePictureUrl: photoBlob.url,
-        cinNumber: extracted.cinNumber,
-        cinData: extracted as object,
-        firstName: extracted.firstName,
-        lastName: extracted.lastName,
-        // ✅ Pas de dateNaissance - les dates sont dans cinData
-        isIdentityVerified: false,
-      },
+      where: { clerkId },
+      data: { profilePictureUrl: blob.url },
     });
-
-    // ── 5. Créer la demande de vérification ────────────────────────────────
-    const verificationRequest = await prisma.verificationRequest.create({
-      data: {
-        userId: user.id,
-        documentFrontUrl: rectoBlob.url,
-        documentBackUrl: versoBlob.url,
-        selfieUrl: photoBlob.url,
-        extractedData: extracted as object,
-        rawOcrText: extracted.rawText,
-        ocrSuccess,
-        confidenceScore: extracted.confidence,
-        status: "PENDING",
-      },
-    });
-
-    console.log("✅ Demande de vérification créée:", verificationRequest.id);
-
+    
+    // Supprimer l'ancienne photo (si elle existe et n'est pas de Clerk)
+    if (user?.profilePictureUrl && !user.profilePictureUrl.includes('clerk.com')) {
+      try {
+        // Extraire le pathname de l'URL
+        const oldUrl = new URL(user.profilePictureUrl);
+        const oldPathname = oldUrl.pathname;
+        await del(oldPathname);
+        console.log("🗑️ Ancienne avatar supprimée:", oldPathname);
+      } catch (err) {
+        console.log("⚠️ Impossible de supprimer l'ancienne image:", err);
+      }
+    }
+    
     return NextResponse.json({
       success: true,
-      ocrSuccess,
-      cinNumber: extracted.cinNumber,
-      confidence: extracted.confidence,
-      extracted,
-      urls: {
-        cinRecto: rectoBlob.url,
-        cinVerso: versoBlob.url,
-        profilePhoto: photoBlob.url,
-      },
+      profilePictureUrl: blob.url,
     });
+    
   } catch (error) {
-    console.error("[upload-cin] Erreur:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error('[users/avatar] POST Erreur:', error);
+    return NextResponse.json({ error: 'Erreur serveur lors de l\'upload' }, { status: 500 });
+  }
+}
+
+// DELETE - Supprimer la photo de profil
+export async function DELETE(req: NextRequest) {
+  try {
+    const { userId: clerkId } = getAuth(req);
+    
+    if (!clerkId) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+    
+    // Récupérer l'utilisateur
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { profilePictureUrl: true },
+    });
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+    }
+    
+    // Supprimer le blob si ce n'est pas une image Clerk
+    if (user.profilePictureUrl && !user.profilePictureUrl.includes('clerk.com')) {
+      try {
+        const url = new URL(user.profilePictureUrl);
+        const pathname = url.pathname;
+        await del(pathname);
+        console.log("🗑️ Avatar supprimée:", pathname);
+      } catch (err) {
+        console.log("⚠️ Impossible de supprimer l'image:", err);
+      }
+    }
+    
+    // Mettre à null dans la base
+    await prisma.user.update({
+      where: { clerkId },
+      data: { profilePictureUrl: null },
+    });
+    
+    return NextResponse.json({
+      success: true,
+      message: 'Photo de profil supprimée',
+    });
+    
+  } catch (error) {
+    console.error('[users/avatar] DELETE Erreur:', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

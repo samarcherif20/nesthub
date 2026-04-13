@@ -1,104 +1,115 @@
 {
   "metadata": {
-    "title": "NESTHUB - الإيجار الذكي في تونس",
-    "description": "منصة تأجير العقارات الآمنة"
+    "title": "NESTHUB - تأجير ذكي في تونس",
+    "description": "منصة تأجير عقاري آمنة"
   },
   "navigation": {
-    "home": "مرحباً",
-    "login": "اتصال",
+    "home": "الرئيسية",
+    "login": "دخول",
     "register": "تسجيل",
-    "dashboard": "لوحة القيادة",
+    "dashboard": "لوحة التحكم",
     "profile": "ملفي الشخصي",
-    "admin": "إدارة",
-    "logout": "قطع الاتصال"
+    "admin": "الإدارة",
+    "logout": "تسجيل الخروج"
   },
+
   "AcceptInvite": {
-    "loading": "جارٍ التحقق من دعوتك...",
-    "invalidLink": "رابط غير صالح",
-    "noToken": "لم يتم توفير رمز الدعوة.",
-    "backToHome": "العودة إلى المنزل",
-    "alreadyUsed": "تم استخدام الدعوة بالفعل",
-    "expired": "انتهت صلاحية الرابط",
-    "alreadyUsedMessage": "لقد تم قبول هذه الدعوة بالفعل. تسجيل الدخول بشكل طبيعي.",
-    "expiredMessage": "روابط الدعوة صالحة لمدة 48 ساعة. لقد انتهت صلاحية هذا واحد.",
-    "invalidMessage": "رابط الدعوة هذا غير صالح أو لم يتم العثور عليه.",
-    "newLink": "رابط جديد",
+    "loading": "جاري التحقق من الدعوة...",
+    "invalidLink": "رابط الدعوة غير صحيح",
+    "noToken": "لم يتم العثور على رمز الدعوة",
+    "backToHome": "العودة إلى الرئيسية",
+    "alreadyUsed": "تم قبول الدعوة بالفعل",
+    "alreadyUsedMessage": "تم قبول هذه الدعوة من قبل شخص آخر.",
+    "expired": "انتهت صلاحية الدعوة",
+    "expiredMessage": "انتهت صلاحية رابط الدعوة. يرجى طلب رابط جديد.",
+    "invalidMessage": "رابط الدعوة غير صحيح.",
+    "newLink": "طلب رابط جديد",
     "login": "تسجيل الدخول",
-    "needHelp": "بحاجة الى مساعدة؟ اتصل بالمسؤول.",
-    "successMessage": "تم قبول الدعوة بنجاح! إعادة التوجيه...",
-    "successExisting": "تمت إضافة حقوق المسؤول",
-    "successNew": "تم إنشاء الحساب",
-    "welcomeExisting": "تهانينا! 🎉",
-    "welcomeNew": "مرحبا بكم في الفريق! 🎉",
-    "successExistingMessage": "يتمتع حساب {email} الخاص بك الآن بحقوق المسؤول.",
-    "successNewMessage": "حساب المسؤول {email} الخاص بك جاهز.",
-    "redirecting": "إعادة التوجيه إلى لوحة التحكم...",
-    "accessAdmin": "الوصول إلى لوحة الإدارة",
-    "invitationReceived": "تم استلام الدعوة",
+    "needHelp": "هل تحتاج إلى مساعدة؟ تواصل مع الدعم",
+    "successMessage": "تم قبول الدعوة بنجاح!",
+    "successNew": "حساب جديد",
+    "successExisting": "تم إضافة الصلاحيات",
+    "welcomeAdmin": "أهلا وسهلا بك في فريق الإدارة",
+    "welcomeCohost": "أهلا وسهلا بك في فريق الإدارة",
+    "successNewMessage": "تم إنشاء حسابك بنجاح باستخدام البريد الإلكتروني {email}",
+    "successExistingMessage": "تم تفعيل وصولك على الحساب المرتبط بـ {email}",
+    "redirecting": "إعادة التوجيه إلى مساحتك",
+    "accessAdmin": "الوصول إلى لوحة التحكم",
+    "accessOwner": "الوصول إلى مساحتي",
     "existingAccountDetected": "تم اكتشاف حساب موجود",
-    "existingAccountMessage": "لديك حساب بالفعل. اقبل الدعوة للحصول على حقوق المسؤول.",
-    "invitedBy": "دعوة من",
-    "acceptAndGetRights": "قبول والحصول على حقوق المسؤول",
-    "loginFirst": "تسجيل الدخول أولا",
-    "youHaveBeenInvited": "لقد تمت دعوتك!",
-    "joinAsAdmin": "انضم إلى نظامنا الأساسي {appName} كمسؤول.",
-    "emailLabel": "بريد إلكتروني",
+    "emailLabel": "البريد الإلكتروني",
+    "existingAccountMessage": "لديك حساب بالفعل. انقر أدناه لإضافة صلاحيات المسؤول.",
+    "existingAccountMessageCohost": "لديك حساب بالفعل. انقر أدناه لإضافة صلاحيات مدير الممتلكات.",
+    "invitedBy": "تم دعوتك من قبل",
+    "propertyConcerned": "العقار المعني",
+    "acceptAndGetRights": "قبول والحصول على الصلاحيات",
+    "acceptAndGetAccess": "قبول والحصول على الوصول",
+    "loginFirst": "يرجى تسجيل الدخول أولاً",
     "firstName": "الاسم الأول",
-    "lastName": "اسم",
-    "username": "اسم المستخدم",
-    "password": "كلمة المرور",
+    "firstNamePlaceholder": "مثال: أنس",
     "firstNameRequired": "الاسم الأول مطلوب",
-    "firstNameMinLength": "يجب أن يحتوي الاسم الأول على حرفين على الأقل",
-    "lastNameRequired": "الاسم مطلوب",
-    "lastNameMinLength": "يجب أن يحتوي الاسم على حرفين على الأقل",
+    "firstNameMinLength": "يجب أن يحتوي الاسم الأول على حد أدنى 2 حرف",
+    "lastName": "الاسم الأخير",
+    "lastNamePlaceholder": "مثال: ترابلسي",
+    "lastNameRequired": "الاسم الأخير مطلوب",
+    "lastNameMinLength": "يجب أن يحتوي الاسم الأخير على حد أدنى 2 حرف",
+    "username": "اسم المستخدم",
+    "usernamePlaceholder": "مثال: anis_trabelsi",
     "usernameRequired": "اسم المستخدم مطلوب",
-    "usernameInvalid": "يجب أن يحتوي اسم المستخدم على 3-20 حرفًا (أحرف، أرقام، _)",
-    "passwordRequired": "كلمة المرور مطلوبة",
-    "passwordMinLength": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل",
-    "passwordUppercase": "يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل",
-    "passwordLowercase": "يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل",
-    "passwordNumber": "يجب أن تحتوي كلمة المرور على رقم واحد على الأقل",
-    "firstNamePlaceholder": "الاسم الأول",
-    "lastNamePlaceholder": "اسم",
-    "usernamePlaceholder": "اسم المستخدم",
+    "usernameInvalid": "أحرف وأرقام وشرط سفلي فقط",
+    "password": "كلمة المرور",
     "passwordPlaceholder": "الحد الأدنى 8 أحرف",
-    "acceptTermsPrefix": "أنا أقبل",
-    "acceptTermsAnd": "و",
+    "passwordRequired": "كلمة المرور مطلوبة",
+    "passwordMinLength": "الحد الأدنى 8 أحرف",
+    "passwordUppercase": "حرف واحد على الأقل كبير",
+    "passwordLowercase": "حرف واحد على الأقل صغير",
+    "passwordNumber": "رقم واحد على الأقل",
+    "acceptTermsPrefix": "أوافق على",
     "termsOfUse": "شروط الاستخدام",
+    "acceptTermsAnd": "و",
     "privacyPolicy": "سياسة الخصوصية",
-    "creating": "جاري الانشاء...",
-    "acceptInvitation": "اقبل الدعوة",
-    "e2eEncryption": "تشفير E2E",
-    "secureAccess": "الوصول الآمن",
+    "creating": "جاري الإنشاء...",
+    "acceptInvitation": "قبول الدعوة",
+    "e2eEncryption": "التشفير من طرف إلى طرف",
+    "secureAccess": "وصول آمن",
     "alreadyHaveAccount": "هل لديك حساب بالفعل؟",
     "signIn": "تسجيل الدخول",
-    "roleAssigned": "الدور المعين",
-    "adminRole": "مدير نيستثوب",
-    "invitationFrom": "دعوة من:",
+    "invitationReceived": "تم استقبال الدعوة",
+    "youHaveBeenInvited": "تم دعوتك",
+    "joinAsAdmin": "انضم إلى فريق الإدارة في {appName}",
+    "joinAsCohost": "انضم إلى فريق إدارة هذا العقار",
+    "roleAssigned": "تم تعيين الدور",
+    "adminRole": "مسؤول NESTHUB",
+    "cohostRole": "مدير ممتلكات",
+    "invitationFrom": "دعوة من",
     "autoVerification": "التحقق التلقائي",
-    "autoVerificationDesc": "كمسؤول، سيتم التحقق من حسابك على الفور.",
-    "expiryTime": "48 ساعة",
-    "expiryLabel": "تنتهي صلاحية الرابط",
-    "fullAccess": "الوصول الكامل",
-    "fullAccessLabel": "لوحة المسؤول"
+    "autoVerificationDesc": "يتم التحقق من هويتك تلقائياً عبر رابط الدعوة الآمن.",
+    "expiryTime": "مدة الصلاحية",
+    "expiryLabel": "7 أيام",
+    "limitedAccess": "وصول محدود",
+    "fullAccess": "وصول كامل",
+    "cohostAccessLabel": "إدارة العقار فقط",
+    "fullAccessLabel": "مكتب NESTHUB الخلفي"
   },
+
   "Login": {
+    "completeLogin": "جاري تسجيل الدخول...",
     "newCodeSent": "تم إرسال رمز جديد!",
-    "successLogin": "تم الاتصال بنجاح! جاري إعادة التوجيه...",
-    "redirectGoogle": "إعادة التوجيه إلى جوجل...",
-    "redirectApple": "إعادة التوجيه إلى أبل...",
-    "redirectFacebook": "إعادة التوجيه إلى الفيسبوك...",
-    "errorGoogle": "حدث خطأ أثناء تسجيل الدخول باستخدام Google",
-    "errorApple": "حدث خطأ أثناء تسجيل الدخول باستخدام Apple",
-    "errorFacebook": "حدث خطأ أثناء الاتصال بالفيسبوك",
-    "optional": "(خياري)",
-    "welcome": "مرحباً !",
-    "subtitle": "قم بتسجيل الدخول للوصول إلى مساحتك الآمنة.",
+    "successLogin": "تم تسجيل الدخول بنجاح! جاري إعادة التوجيه...",
+    "redirectGoogle": "إعادة التوجيه إلى Google...",
+    "redirectApple": "إعادة التوجيه إلى Apple...",
+    "redirectFacebook": "إعادة التوجيه إلى Facebook...",
+    "errorGoogle": "خطأ في تسجيل الدخول عبر Google",
+    "errorApple": "خطأ في تسجيل الدخول عبر Apple",
+    "errorFacebook": "خطأ في تسجيل الدخول عبر Facebook",
+    "optional": "(اختياري)",
+    "welcome": "أهلا وسهلا!",
+    "subtitle": "تسجيل الدخول للوصول إلى مساحتك الآمنة.",
     "signUpTitle": "إنشاء حساب",
-    "signUpSubtitle": "سجل لتبدأ رحلتك",
-    "heroTitle": "الرابط الذكي لعش محكم...",
-    "heroSubtitle": "منصة كاملة وذكية مخصصة لتأجير وإدارة الممتلكات، بثقة وشفافية.",
-    "joinStats": "انضم إلى +3000 مالك ومستأجر",
+    "signUpSubtitle": "قم بالتسجيل لبدء رحلتك",
+    "heroTitle": "الرابط الذكي للعش الهادئ...",
+    "heroSubtitle": "منصة شاملة وذكية مخصصة للتأجير وإدارة الممتلكات، بثقة وشفافية.",
+    "joinStats": "انضم إلى أكثر من 3000 مالك ومستأجر",
     "renter": "مستأجر",
     "owner": "مالك",
     "email": "عنوان البريد الإلكتروني",
@@ -106,110 +117,110 @@
     "password": "كلمة المرور",
     "forgotPassword": "هل نسيت كلمة المرور؟",
     "login": "تسجيل الدخول",
-    "signUp": "يسجل",
+    "signUp": "التسجيل",
     "processing": "جاري المعالجة...",
-    "orContinueWith": "أو الاستمرار مع",
-    "termsPrefix": "من خلال التسجيل أو تسجيل الدخول، فإنك توافق على لدينا",
+    "orContinueWith": "أو متابعة باستخدام",
+    "termsPrefix": "من خلال التسجيل أو تسجيل الدخول، فإنك توافق على",
     "termsOfUse": "شروط الاستخدام",
-    "and": "ولدينا",
+    "and": "و",
     "privacyPolicy": "سياسة الخصوصية",
     "termsSuffix": ".",
     "signIn": "تسجيل الدخول",
     "alreadyHaveAccount": "هل لديك حساب بالفعل؟",
-    "dontHaveAccount": "ليس لديك حساب بعد؟",
-    "accessInfo": "يتم اكتشاف وصولك تلقائيًا بناءً على بيانات الاعتماد الخاصة بك. لا تحتاج ملفات تعريف المسؤول إلى التحديد اليدوي.",
+    "dontHaveAccount": "ليس لديك حساب؟",
+    "accessInfo": "يتم اكتشاف وصولك تلقائياً بناءً على بيانات اعتمادك. ملفات تعريف المسؤول لا تحتاج إلى تحديد يدوي.",
     "profileType": "نوع الملف الشخصي",
-    "rememberMe": "ابق على اتصال",
+    "rememberMe": "تذكرني",
     "legal": "إشعارات قانونية",
-    "privacy": "السرية",
+    "privacy": "الخصوصية",
     "emailRequired": "البريد الإلكتروني مطلوب",
-    "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صالح",
+    "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
     "passwordRequired": "كلمة المرور مطلوبة",
-    "userNotFound": "لم يتم العثور على حسابات مع عنوان البريد الإلكتروني هذا",
+    "userNotFound": "لم يتم العثور على حساب بهذا العنوان البريد الإلكتروني",
     "incorrectPassword": "كلمة مرور غير صحيحة. يرجى المحاولة مرة أخرى!",
-    "error": "لقد حدث خطأ. يرجى المحاولة مرة أخرى",
+    "error": "حدث خطأ. يرجى المحاولة مرة أخرى",
     "usernameRequired": "اسم المستخدم مطلوب",
-    "usernameInvalid": "تنسيق اسم المستخدم غير صالح!",
-    "emailNotFound": "لم يتم العثور على حساب مع هذا البريد الإلكتروني",
-    "usernameNotFound": "لم يتم العثور على حسابات باسم المستخدم هذا",
+    "usernameInvalid": "صيغة اسم المستخدم غير صحيحة!",
+    "emailNotFound": "لم يتم العثور على حساب بهذا البريد الإلكتروني",
+    "usernameNotFound": "لم يتم العثور على حساب باسم المستخدم هذا",
     "emailOrUsername": "البريد الإلكتروني أو اسم المستخدم",
     "emailOrUsernamePlaceholder": "contact@example.com",
     "identifierRequired": "البريد الإلكتروني أو اسم المستخدم مطلوب",
-    "identifierInvalid": "التنسيق غير صالح. الرجاء إدخال بريد إلكتروني أو اسم مستخدم صالح!",
-    "userNotFoundInDB": "تم العثور على الحساب ولكن لم تتم مزامنته. يرجى الاتصال بالدعم!",
-    "wrongRoleRenter": "هذا الحساب مالك. الرجاء تحديد \"المالك\"!",
-    "wrongRoleOwner": "هذا الحساب مستأجر. الرجاء تحديد \"المستأجر\"!",
-    "tooManyAttempts": "محاولات كثيرة جدًا. حاول مرة أخرى لاحقا!",
+    "identifierInvalid": "صيغة غير صحيحة. يرجى إدخال بريد إلكتروني أو اسم مستخدم صحيح!",
+    "userNotFoundInDB": "تم العثور على الحساب لكن لم يتم مزامنته. يرجى التواصل مع الدعم!",
+    "wrongRoleRenter": "هذا الحساب مخصص لمالك. يرجى اختيار 'مالك'!",
+    "wrongRoleOwner": "هذا الحساب مخصص لمستأجر. يرجى اختيار 'مستأجر'!",
+    "tooManyAttempts": "محاولات كثيرة جداً. حاول لاحقاً!",
     "emailAlreadyExists": "هذا البريد الإلكتروني قيد الاستخدام بالفعل",
-    "passwordTooShort": "كلمة المرور قصيرة جدًا (8 أحرف على الأقل)",
-    "passwordCompromised": "لقد تم اختراق كلمة المرور هذه. الرجاء اختيار آخر",
+    "passwordTooShort": "كلمة المرور قصيرة جداً (الحد الأدنى 8 أحرف)",
+    "passwordCompromised": "هذه كلمة المرور مخترقة. يرجى اختيار كلمة مرور أخرى",
     "verificationFailed": "فشل التحقق",
-    "sessionExists": "الجلسة موجودة بالفعل",
-    "profileTypeRequired": "الرجاء تحديد نوع الملف الشخصي",
+    "sessionExists": "توجد جلسة موجودة",
+    "profileTypeRequired": "يرجى اختيار نوع الملف الشخصي",
     "incorrectCode": "رمز التحقق غير صحيح.",
-    "accountLocked": "حسابك مغلق مؤقتا. يرجى المحاولة مرة أخرى في وقت لاحق.",
-    "accountSuspended": "لقد تم تعليق حسابك. يرجى الاتصال بالدعم.",
-    "verificationCode": "رمز التحقق المكون من 6 أرقام",
-    "verificationCodeSent": "تم إرسال رمز التحقق إلى عنوان بريدك الإلكتروني.",
-    "verify": "يفحص",
+    "accountLocked": "حسابك مقفل مؤقتاً. يرجى المحاولة لاحقاً.",
+    "accountSuspended": "تم إيقاف حسابك. يرجى التواصل مع الدعم.",
+    "verificationCode": "رمز التحقق من 6 أرقام",
+    "verificationCodeSent": "تم إرسال رمز التحقق إلى عنوانك البريدي الإلكتروني.",
+    "verify": "تحقق",
     "resendCode": "إعادة إرسال الرمز",
     "backToLogin": "العودة إلى تسجيل الدخول",
-    "codeRequired": "الرجاء إدخال الرمز المكون من 6 أرقام",
-    "codeInvalid": "رمز غير صالح. الرجاء إدخال رمز مكون من 6 أرقام.",
-    "codeExpired": "لقد انتهت صلاحية هذا الرمز. يرجى طلب واحدة جديدة.",
-    "secureAccess": "تأمين الوصول الخاص بك",
-    "enterCodeSentTo": "أدخل الرمز المكون من 6 أرقام المرسل إليه",
-    "trustDevice": "ثق بهذا الجهاز لمدة 30 يومًا",
-    "trustDeviceTooltip": "من خلال تمكين هذا الخيار، لن تضطر بعد الآن إلى إدخال رمز التحقق على هذا المتصفح لمدة 30 يومًا القادمة.",
-    "verifying": "تَحَقّق...",
-    "limitedTimeCode": "رمز زمني محدود",
-    "codeExpiresIn": "تنتهي صلاحية هذا الرمز في",
-    "didNotReceiveCode": "لم تتلق الرمز؟",
-    "resend": "إعادة الإرسال",
-    "sending": "إرسال...",
-    "codeResent": "تم إرسال رمز جديد إليك!",
-    "requestNewCode": "اطلب رمزًا جديدًا",
-    "close": "يغلق",
-    "securityBadge": "تشفير AES-256 • متوافق مع اللائحة العامة لحماية البيانات",
-    "2faAlt": "التحقق الثنائي",
-    "back": "خلف"
+    "codeRequired": "يرجى إدخال الرمز من 6 أرقام",
+    "codeInvalid": "رمز غير صحيح. يرجى إدخال رمز من 6 أرقام.",
+    "codeExpired": "انتهت صلاحية هذا الرمز. يرجى طلب واحد جديد.",
+    "secureAccess": "أمّن وصولك",
+    "enterCodeSentTo": "أدخل رمز من 6 أرقام تم إرساله إلى",
+    "trustDevice": "ثق بهذا الجهاز لمدة 30 يوم",
+    "trustDeviceTooltip": "بتفعيل هذا الخيار، لن تضطر إلى إدخال رمز التحقق على متصفح الويب هذا لمدة 30 يوم القادمة.",
+    "verifying": "جاري التحقق...",
+    "limitedTimeCode": "رمز محدود الوقت",
+    "codeExpiresIn": "انتهاء صلاحية هذا الرمز في",
+    "didNotReceiveCode": "لم تستقبل الرمز؟",
+    "resend": "إعادة إرسال",
+    "sending": "جاري الإرسال...",
+    "codeResent": "تم إرسال رمز جديد لك!",
+    "requestNewCode": "طلب رمز جديد",
+    "close": "إغلاق",
+    "securityBadge": "تشفير AES-256 • متوافق GDPR",
+    "2faAlt": "التحقق من عاملين",
+    "back": "عودة"
   },
   "admin": {
-    "dashboard": "لوحة القيادة",
-    "users": "المستخدمين",
-    "properties": "ملكيات",
+    "dashboard": "لوحة التحكم",
+    "users": "المستخدمون",
+    "properties": "الممتلكات",
     "transactions": "المعاملات",
-    "verifications": "التحقق",
+    "verifications": "التحقيقات",
     "reports": "التقارير",
     "disputes": "النزاعات",
     "staticPages": "الصفحات الثابتة",
-    "settings": "إعدادات",
+    "settings": "الإعدادات",
     "adminPanel": "لوحة الإدارة",
-    "administrator": "المسؤول",
-    "logout": "قطع الاتصال",
-    "searchPlaceholder": "للبحث...",
-    "searching": "بحث...",
-    "results": "نتائج",
+    "administrator": "مسؤول",
+    "logout": "تسجيل الخروج",
+    "searchPlaceholder": "بحث...",
+    "searching": "جاري البحث...",
+    "results": "النتائج",
     "noResults": "لم يتم العثور على نتائج",
-    "notifications": "إشعارات",
-    "new": "أخبار)",
-    "viewAll": "رؤية جميع الإخطارات",
+    "notifications": "التنبيهات",
+    "new": "جديد/جديدة",
+    "viewAll": "عرض جميع التنبيهات",
     "myProfile": "ملفي الشخصي",
-    "security": "حماية",
-    "confirmLogout": "تأكيد قطع الاتصال",
-    "logoutMessage": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
-    "cancel": "يلغي",
-    "invitationDesAdmins": "دعوة المشرف",
+    "security": "الأمان",
+    "confirmLogout": "تأكيد تسجيل الخروج",
+    "logoutMessage": "هل أنت متأكد من رغبتك في تسجيل الخروج؟",
+    "cancel": "إلغاء",
+    "invitationDesAdmins": "دعوة المسؤولين",
     "usersManagement": {
-      "unauthorized": "الوصول غير المصرح به",
+      "unauthorized": "وصول غير مصرح",
       "stats": {
         "totalUsers": "إجمالي المستخدمين",
-        "newUsers30d": "المستخدمون الجدد (30 يومًا)",
-        "pendingValidation": "في انتظار التحقق من الصحة",
-        "verifiedIdentity": "هوية تم التحقق منها"
+        "newUsers30d": "مستخدمون جدد (30 يوم)",
+        "pendingValidation": "في انتظار التحقق",
+        "verifiedIdentity": "هوية معتمدة"
       },
       "page": {
-        "title": "إدارة المستخدم",
+        "title": "إدارة المستخدمين",
         "description": "إدارة جميع مستخدمي المنصة"
       },
       "actions": {
@@ -217,314 +228,315 @@
         "reset": "إعادة تعيين المرشحات",
         "advancedFilters": "مرشحات متقدمة",
         "view": "عرض الملف الشخصي",
-        "suspend": "تعليق",
+        "suspend": "إيقاف مؤقت",
         "ban": "حظر",
-        "activate": "يُمكَِن",
+        "activate": "تفعيل",
         "warn": "تحذير",
-        "reactivate": "إعادة التنشيط",
-        "unlock": "إلغاء الحظر",
-        "lock": "لمنع",
-        "escalate": "التصعيد",
-        "history": "تاريخية",
-        "addNote": "أضف ملاحظة"
+        "reactivate": "إعادة تفعيل",
+        "unlock": "فتح",
+        "lock": "قفل",
+        "escalate": "تصعيد",
+        "history": "السجل",
+        "addNote": "إضافة ملاحظة"
       },
       "filters": {
-        "searchPlaceholder": "البحث بالاسم والبريد الإلكتروني والهاتف ...",
+        "searchPlaceholder": "البحث بالاسم أو البريد الإلكتروني أو الهاتف...",
         "role": {
           "all": "جميع الأدوار",
-          "admin": "مسؤل",
-          "property_owner": "مالك",
+          "admin": "مسؤول",
+          "property_owner": "مالك عقار",
           "tenant": "مستأجر"
         },
         "status": {
           "all": "جميع الحالات",
-          "active": "نشيط",
-          "pending": "في الانتظار",
-          "suspended": "معلق",
+          "active": "نشط",
+          "pending": "معلق",
+          "suspended": "موقوف",
           "banned": "محظور",
           "rejected": "مرفوض",
-          "security_locked": "محظور (الأمان)",
-          "manually_blocked": "محظور (يدويًا)",
+          "security_locked": "مقفول (أمان)",
+          "manually_blocked": "مقفول (يدوي)",
           "inactive": "غير نشط"
         },
+
         "advanced": {
           "title": "مرشحات متقدمة",
-          "dateRange": "فترة التسجيل",
-          "minReliability": "الحد الأدنى من درجة الموثوقية",
-          "maxFraud": "الحد الأقصى لدرجة الاحتيال",
-          "minReliabilityPlaceholder": "≥50",
-          "maxFraudPlaceholder": "≥ 30"
+          "dateRange": "نطاق التسجيل",
+          "minReliability": "الحد الأدنى لسجل الموثوقية",
+          "maxFraud": "الحد الأقصى لسجل الاحتيال",
+          "minReliabilityPlaceholder": "≥ 50",
+          "maxFraudPlaceholder": "≤ 30"
         }
       },
       "verification": {
-        "label": "تَحَقّق",
-        "all": "الجميع",
-        "verified": "تم التحقق منه",
-        "pending": "في الانتظار",
+        "label": "التحقق",
+        "all": "الكل",
+        "verified": "معتمد",
+        "pending": "معلق",
         "rejected": "مرفوض"
       },
       "table": {
         "headers": {
-          "user": "مستخدم",
-          "contact": "اتصال",
-          "role": "دور",
-          "status": "حالة",
-          "verification": "تَحَقّق",
-          "reliability": "مصداقية",
-          "registration": "تسجيل",
+          "user": "المستخدم",
+          "contact": "الاتصال",
+          "role": "الدور",
+          "status": "الحالة",
+          "verification": "التحقق",
+          "reliability": "الموثوقية",
+          "registration": "التسجيل",
           "actions": "الإجراءات"
         },
         "user": {
-          "id": "بطاقة تعريف"
+          "id": "معرّف"
         }
       },
       "totalUsers": "إجمالي المستخدمين",
-      "newUsers30d": "جديد (30 يومًا)",
-      "activeUsers": "أصول",
-      "pendingUsers": "في الانتظار",
-      "suspendedUsers": "معلق",
+      "newUsers30d": "جدد (30ي)",
+      "activeUsers": "نشط",
+      "pendingUsers": "معلق",
+      "suspendedUsers": "موقوف",
       "bannedUsers": "محظور",
-      "verifiedIdentity": "تم التحقق منه",
-      "pendingApprovals": "في انتظار التحقق",
-      "averageReliability": "متوسط ​​الموثوقية",
-      "pendingValidation": "في انتظار التحقق من الصحة",
+      "verifiedIdentity": "معتمد",
+      "pendingApprovals": "معلق التحقق",
+      "averageReliability": "متوسط الموثوقية",
+      "pendingValidation": "في انتظار التحقق",
       "export": {
         "csv": {
           "title": "CSV",
-          "description": "لإكسل / التحليل"
+          "description": "لـ Excel / التحليل"
         },
         "pdf": {
-          "title": "قوات الدفاع الشعبي",
+          "title": "PDF",
           "description": "للطباعة"
         }
       },
       "badges": {
-        "verified": "تم التحقق منه",
-        "pending": "في الانتظار",
+        "verified": "معتمد",
+        "pending": "معلق",
         "rejected": "مرفوض",
-        "unverified": "لم يتم التحقق منها",
-        "reliability": "مصداقية",
+        "unverified": "غير معتمد",
+        "reliability": "الموثوقية",
         "fraud": "احتيال"
       },
       "alerts": {
-        "sessionExpired": "انتهت الجلسة - يرجى تسجيل الدخول مرة أخرى",
-        "unauthorized": "الوصول غير المصرح به",
-        "loadingError": "خطأ في التحميل",
-        "exportError": "حدث خطأ أثناء التصدير",
-        "exportSuccess": "تم التصدير بنجاح"
+        "sessionExpired": "انتهت صلاحية الجلسة - يرجى تسجيل الدخول مرة أخرى",
+        "unauthorized": "وصول غير مصرح",
+        "loadingError": "خطأ التحميل",
+        "exportError": "خطأ في التصدير",
+        "exportSuccess": "نجح التصدير"
       },
       "messages": {
         "noUsers": "لم يتم العثور على مستخدمين",
-        "loading": "تحميل..."
+        "loading": "جاري التحميل..."
       },
       "activateModal": {
-        "title": "إعادة تنشيط الحساب",
+        "title": "إعادة تفعيل الحساب",
         "description": "هل تريد استعادة الوصول الكامل لهذا المستخدم؟",
-        "confirm": "إعادة تنشيط الحساب",
-        "cancel": "يلغي",
-        "processing": "علاج...",
-        "currentStatus": "هذا الحساب حاليًا {status}",
+        "confirm": "إعادة تفعيل الحساب",
+        "cancel": "إلغاء",
+        "processing": "جاري المعالجة...",
+        "currentStatus": "هذا الحساب حالياً {status}",
         "status": {
-          "suspended": "معلق",
+          "suspended": "موقوف",
           "banned": "محظور",
-          "locked": "محظور",
+          "locked": "مقفول",
           "inactive": "غير نشط",
           "rejected": "مرفوض",
-          "unknown": "مجهول"
+          "unknown": "غير معروف"
         }
       },
       "warningModal": {
         "title": "إرسال تحذير",
-        "description": "سيتم حفظ هذا الإجراء في التاريخ",
-        "reason": "نمط",
-        "reliability": "فياب.",
+        "description": "سيتم تسجيل هذا الإجراء في السجل",
+        "reason": "السبب",
+        "reliability": "الموثوقية",
         "specifyReason": "حدد السبب",
         "optionalMessage": "الرسالة (اختياري)",
-        "explainReason": "وضح السبب...",
-        "additionalDetails": "تفاصيل اضافية...",
-        "infoMessage": "سيتلقى المستخدم تحذيرًا مرئيًا في لوحة التحكم الخاصة به.",
+        "explainReason": "اشرح السبب...",
+        "additionalDetails": "تفاصيل إضافية...",
+        "infoMessage": "سيتلقى المستخدم تحذيراً مرئياً في لوحة التحكم الخاصة به.",
         "emailSent": "تم إرسال البريد الإلكتروني.",
-        "previousWarnings": "يوجد بالفعل {count} تحذير (تحذيرات).",
-        "cancel": "يلغي",
-        "send": "يرسل",
-        "notifyByEmail": "إخطار المستخدم عن طريق البريد الإلكتروني",
-        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا التحذير.",
-        "processing": "إرسال...",
-        "error": "حدث خطأ أثناء إرسال التحذير",
+        "previousWarnings": "بالفعل {count} تحذير(ات).",
+        "cancel": "إلغاء",
+        "send": "إرسال",
+        "notifyByEmail": "إخطار المستخدم بالبريد الإلكتروني",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإخطاره بهذا التحذير.",
+        "processing": "جاري الإرسال...",
+        "error": "خطأ إرسال التحذير",
         "reasons": {
           "inappropriateBehavior": {
             "label": "سلوك غير لائق",
-            "description": "لغة أو موقف غير لائق"
+            "description": "لغة أو موقف غير مناسب"
           },
           "spam": {
-            "label": "رسائل إلكترونية مزعجة",
-            "description": "رسائل إعلانية غير مرغوب فيها"
+            "label": "بريد مزعج",
+            "description": "رسائل إعلانية غير مطلوبة"
           },
           "falseInformation": {
-            "label": "أخبار كاذبة",
-            "description": "معلومات الملف الشخصي مضللة"
+            "label": "معلومات خاطئة",
+            "description": "معلومات كاذبة على الملف الشخصي"
           },
           "paymentIssues": {
-            "label": "قضايا الدفع",
-            "description": "المدفوعات المتأخرة أو المرفوضة"
+            "label": "مشاكل الدفع",
+            "description": "دفعات متأخرة أو مرفوضة"
           },
           "multipleAccounts": {
             "label": "حسابات متعددة",
             "description": "إنشاء حسابات متعددة"
           },
           "other": {
-            "label": "آخر",
+            "label": "أخرى",
             "description": "سبب مخصص"
           }
         }
       },
       "addNoteModal": {
-        "title": "أضف ملاحظة داخلية",
+        "title": "إضافة ملاحظة داخلية",
         "description": "مرئية فقط للمسؤولين",
-        "noteContent": "محتوى المذكرة",
-        "placeholder": "أكتب ملاحظتك هنا...",
-        "addNote": "أضف ملاحظة",
-        "adding": "إضافة...",
-        "cancel": "يلغي",
+        "noteContent": "محتوى الملاحظة",
+        "placeholder": "اكتب ملاحظتك هنا...",
+        "addNote": "إضافة الملاحظة",
+        "adding": "جاري الإضافة...",
+        "cancel": "إلغاء",
         "enterLinkUrl": "أدخل عنوان URL للرابط:",
-        "error": "حدث خطأ أثناء إضافة الملاحظة"
+        "error": "خطأ في إضافة الملاحظة"
       },
       "banModal": {
-        "title": "حظر المستخدم بشكل دائم",
-        "description": "هذا الإجراء لا رجعة فيه",
+        "title": "حظر المستخدم نهائياً",
+        "description": "هذا الإجراء لا يمكن عكسه",
         "reason": "سبب الحظر",
-        "selectReason": "حدد السبب...",
+        "selectReason": "اختر سبباً...",
         "evidence": "الأدلة والتفاصيل",
-        "evidencePlaceholder": "قم بتفصيل الأسباب وإرفاق روابط للأدلة إذا لزم الأمر ...",
-        "notify": "إخطار المستخدم عن طريق البريد الإلكتروني",
-        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا الحظر.",
-        "confirmLabel": "يكتب",
-        "cancel": "يلغي",
+        "evidencePlaceholder": "اشرح الأسباب وأرفق الروابط للأدلة إن أمكن...",
+        "notify": "إخطار المستخدم بالبريد الإلكتروني",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإخطاره بهذا الحظر.",
+        "confirmLabel": "اكتب",
+        "cancel": "إلغاء",
         "confirm": "تأكيد الحظر",
-        "processing": "علاج..."
+        "processing": "جاري المعالجة..."
       },
       "escalateModal": {
         "title": "التصعيد التدريجي",
-        "description": "نظام العقوبات التدريجي",
+        "description": "نظام العقوبات المتدرجة",
         "currentLevel": "المستوى الحالي",
-        "applySanction": "حدد الخطوة التالية",
+        "applySanction": "اختر الخطوة التالية",
         "reason": "سبب التصعيد",
-        "reasonPlaceholder": "وبيان أسباب هذه العقوبة..",
+        "reasonPlaceholder": "صف الأسباب التي تبرر هذه العقوبة...",
         "warning": "تحذير",
-        "suspension": "تعليق",
-        "ban": "النفي",
+        "suspension": "إيقاف مؤقت",
+        "ban": "حظر",
         "alreadyApplied": "تم تطبيقه بالفعل على المستخدم",
-        "locked": "مغلق - الخطوة التالية مطلوبة",
-        "historyNote": "سيتم تسجيل هذا السبب في سجل الإشراف.",
+        "locked": "مقفول - الخطوة التالية مطلوبة",
+        "historyNote": "سيتم تسجيل هذا السبب في سجل الاعتدال.",
         "apply": "تطبيق التصعيد",
-        "notify": "إخطار المستخدم عن طريق البريد الإلكتروني",
-        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإخطارهم بهذه العقوبة.",
-        "cancel": "يلغي",
-        "processing": "علاج..."
+        "notify": "إخطار المستخدم بالبريد الإلكتروني",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإخطاره بهذه العقوبة.",
+        "cancel": "إلغاء",
+        "processing": "جاري المعالجة..."
       },
       "suspendModal": {
-        "title": "تعليق المستخدم مؤقتًا",
-        "description": "لن يتمكن المستخدم من تسجيل الدخول خلال المدة المختارة",
-        "duration": "طول التعليق",
+        "title": "إيقاف المستخدم مؤقتاً",
+        "description": "لن يتمكن المستخدم من تسجيل الدخول طوال مدة الإيقاف المختارة",
+        "duration": "مدة الإيقاف",
         "day": "يوم واحد",
-        "days": "{عدد} أيام",
+        "days": "{count} أيام",
         "reason": "سبب الإيقاف",
-        "selectReason": "حدد سببًا",
-        "details": "نمط مفصل",
-        "detailsPlaceholder": "اشرح باختصار سبب هذا الإجراء ...",
-        "emailNotification": "تم إرسال الإخطار",
-        "notificationInfo": "سيتم إرسال بريد إلكتروني إلى المستخدم لإبلاغه بالتعليق.",
+        "selectReason": "اختر سبباً",
+        "details": "السبب التفصيلي",
+        "detailsPlaceholder": "اشرح بإيجاز سبب هذا الإجراء...",
+        "emailNotification": "تم إرسال إخطار",
+        "notificationInfo": "سيتم إرسال بريد إلكتروني للمستخدم لإخطاره بالإيقاف.",
         "enterLinkUrl": "أدخل عنوان URL للرابط",
-        "cancel": "يلغي",
-        "confirm": "تأكيد التعليق",
-        "processing": "علاج...",
+        "cancel": "إلغاء",
+        "confirm": "تأكيد الإيقاف",
+        "processing": "جاري المعالجة...",
         "reasons": {
-          "spam": "البريد العشوائي أو إساءة الاستخدام",
-          "tos": "انتهاك شروط الاستخدام",
+          "spam": "بريد مزعج أو إساءة",
+          "tos": "انتهاك شروط الخدمة",
           "safety": "أمان الحساب",
           "other": "سبب آخر"
         },
-        "emailNotificationTitle": "إشعار البريد الإلكتروني",
-        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامهم بهذا التعليق.",
-        "notify": "إخطار المستخدم عن طريق البريد الإلكتروني"
+        "emailNotificationTitle": "إخطار بالبريد الإلكتروني",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإخطاره بهذا الإيقاف.",
+        "notify": "إخطار المستخدم بالبريد الإلكتروني"
       },
       "lockUnlockModal": {
-        "lockTitle": "حظر الحساب",
-        "unlockTitle": "إلغاء حظر الحساب",
-        "lockDescription": "حظر الوصول إلى هذا الحساب يدويًا.",
-        "unlockDescription": "تم حظر هذا الحساب بعد عدة محاولات تسجيل دخول فاشلة.",
-        "reason": "سبب المنع",
-        "reasonPlaceholder": "لماذا أغلق هذا الحساب؟...",
-        "notifyLock": "إعلام المستخدم بالحظر",
-        "notifyUnlock": "إعلام المستخدم بإلغاء الحظر",
-        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإعلامك بذلك.",
+        "lockTitle": "قفل الحساب",
+        "unlockTitle": "فتح الحساب",
+        "lockDescription": "قفل الوصول يدوياً إلى هذا الحساب.",
+        "unlockDescription": "تم قفل هذا الحساب بعد عدة محاولات دخول فاشلة.",
+        "reason": "سبب القفل",
+        "reasonPlaceholder": "لماذا تريد قفل هذا الحساب؟...",
+        "notifyLock": "إخطار المستخدم بالقفل",
+        "notifyUnlock": "إخطار المستخدم بالفتح",
+        "emailNotificationMessage": "سيتم إرسال بريد إلكتروني إلى {email} لإخطاره.",
         "failedAttempts": "محاولات فاشلة",
-        "lock": "لمنع",
-        "unlock": "إلغاء الحظر",
-        "cancel": "يلغي",
-        "processing": "علاج...",
+        "lock": "قفل",
+        "unlock": "فتح",
+        "cancel": "إلغاء",
+        "processing": "جاري المعالجة...",
         "enterLinkUrl": "أدخل عنوان URL للرابط:"
       },
       "actionsHistoryModal": {
-        "title": "تاريخ الأسهم",
-        "subtitle": "إدارة نيستهب",
-        "close": "يغلق",
+        "title": "سجل الإجراءات",
+        "subtitle": "إدارة NESTHUB",
+        "close": "إغلاق",
         "admin": {
-          "default": "مسؤل"
+          "default": "مسؤول"
         },
         "search": {
-          "placeholder": "ابحث عن مسؤول أو مستخدم أو نمط..."
+          "placeholder": "ابحث عن مسؤول أو مستخدم أو سبب..."
         },
         "filters": {
           "label": "تصفية حسب",
           "all": "جميع الأنواع"
         },
         "actionTypes": {
-          "suspension": "تعليق",
-          "suspensionUndone": "تم إلغاء التعليق",
-          "ban": "النفي",
-          "banUndone": "تم إلغاء الحظر",
-          "activation": "إعادة التنشيط",
-          "unlock": "رفع الحظر",
-          "lock": "الحظر",
-          "lockUndone": "تم إلغاء الحظر",
+          "suspension": "إيقاف",
+          "suspensionUndone": "إلغاء الإيقاف",
+          "ban": "حظر",
+          "banUndone": "إلغاء الحظر",
+          "activation": "إعادة تفعيل",
+          "unlock": "فتح",
+          "lock": "قفل",
+          "lockUndone": "إلغاء القفل",
           "warning": "تحذير",
-          "escalation": "التصعيد",
-          "escalationUndone": "تم إلغاء التصعيد",
+          "escalation": "تصعيد",
+          "escalationUndone": "إلغاء التصعيد",
           "note": "ملاحظة داخلية",
           "rejectVerification": "رفض التحقق",
-          "validateVerification": "التحقق من الصحة",
+          "validateVerification": "تأكيد التحقق",
           "undone": "تم إلغاء الإجراء"
         },
         "status": {
-          "active": "نشيط",
-          "suspended": "معلق",
+          "active": "نشط",
+          "suspended": "موقوف",
           "banned": "محظور",
-          "pending": "في الانتظار",
-          "locked": "محظور",
+          "pending": "معلق",
+          "locked": "مقفول",
           "inactive": "غير نشط",
           "rejected": "مرفوض"
         },
         "user": {
-          "target": "مستخدم"
+          "target": "المستخدم"
         },
         "action": {
-          "reason": "نمط"
+          "reason": "السبب"
         },
         "undo": {
-          "button": "يلغي",
-          "processing": "الإلغاء...",
+          "button": "إلغاء",
+          "processing": "جاري الإلغاء...",
           "title": "إلغاء هذا الإجراء"
         },
         "results": {
-          "showing": "عرض {البدء} إلى {النهاية} في النتائج {total}.",
-          "empty": "لم يتم العثور على أي إجراءات"
+          "showing": "عرض {start} إلى {end} من {total} النتائج",
+          "empty": "لم يتم العثور على إجراءات"
         },
         "errors": {
-          "tokenNotAvailable": "الرمز غير متوفر",
-          "apiError": "خطأ في واجهة برمجة التطبيقات:",
-          "loadFailed": "غير قادر على تحميل سجل الإجراءات",
-          "retry": "حاول ثانية"
+          "tokenNotAvailable": "الرمز غير متاح",
+          "apiError": "خطأ API:",
+          "loadFailed": "فشل تحميل سجل الإجراءات",
+          "retry": "حاول مجدداً"
         }
       }
     }
@@ -532,277 +544,277 @@
   "common": {
     "yes": "نعم",
     "no": "لا",
-    "save": "يحفظ",
-    "cancel": "يلغي",
-    "delete": "يمسح",
-    "edit": "للتعديل",
-    "close": "يغلق",
-    "confirm": "يتأكد",
-    "back": "خلف"
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تحرير",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "back": "عودة"
   },
   "Terms": {
-    "title": "الشروط العامة للاستخدام",
-    "version": "إصدار",
-    "lastUpdate": "التحديث الأخير:",
-    "print": "مطبعة",
-    "downloadPDF": "تحميل قوات الدفاع الشعبي",
-    "navigation": "ملاحة",
-    "needHelp": "بحاجة الى مساعدة؟",
-    "helpText": "إذا كانت لديك أي أسئلة بخصوص الشروط والأحكام الخاصة بنا، ففريقنا تحت تصرفك.",
+    "title": "شروط الاستخدام العامة",
+    "version": "الإصدار",
+    "lastUpdate": "آخر تحديث:",
+    "print": "طباعة",
+    "downloadPDF": "تحميل PDF",
+    "navigation": "التنقل",
+    "needHelp": "هل تحتاج إلى مساعدة؟",
+    "helpText": "إذا كان لديك أسئلة حول شروطنا، فريقنا هنا لمساعدتك.",
     "contactUs": "اتصل بنا",
     "or": "أو",
     "privacyPolicy": "سياسة الخصوصية",
     "introduction": {
       "title": "المقدمة والقبول",
-      "p1": "الغرض من شروط الاستخدام العامة هذه (المشار إليها فيما يلي باسم \"CGU\") هو تحديد الشروط والأحكام التي بموجبها تتيح منصة NESTHUB خدمات الاتصال العقاري لمستخدميها في تونس.",
-      "p2": "من خلال الوصول إلى موقع NESTHUB أو استخدامه، فإنك تقر بأنك قد قرأت هذه الشروط وفهمتها ووافقت على الالتزام بها. إذا كنت لا توافق على هذه الشروط، فيجب عليك عدم استخدام خدماتنا.",
-      "warning": "تنطبق هذه الشروط والأحكام على جميع مستخدمي المنصة: المستأجرين والمالكين والزوار غير المتصلين."
+      "p1": "الغرض من شروط الاستخدام العامة هذا هو تحديد الشروط والأحكام التي توفر من خلالها منصة NESTHUB خدمات الربط العقاري لمستخدميها في تونس.",
+      "p2": "بالوصول إلى أو استخدام موقع NESTHUB، فإنك تعترف بأنك قد قرأت وفهمت وتوافق على الالتزام بهذه الشروط. إذا كنت لا توافق على هذه الشروط، فلا يجب عليك استخدام خدماتنا.",
+      "warning": "تنطبق هذه الشروط على جميع مستخدمي المنصة: المستأجرين والمالكين والزوار غير المسجلين."
     },
     "services": {
       "title": "وصف الخدمات",
-      "description": "NESTHUB هي منصة تكنولوجية تونسية لتسهيل تأجير العقارات بين الأفراد. تشمل خدماتنا، على سبيل المثال لا الحصر، ما يلي:",
-      "item1": "نشر إعلانات الإيجار بالصور ومقاطع الفيديو والأوصاف التفصيلية.",
-      "item2": "نظام مراسلة آمن مع خاصية كشف تسرب البيانات الشخصية.",
-      "item3": "أداة رقمية لإدارة الملفات والحجز والإيجار.",
-      "item4": "حلول دفع آمنة عبر Konnect، مع إدارة إيداعات الضمان.",
-      "item5": "نظام التحقق من الهوية عن طريق التعرف الضوئي على الحروف (CIN / جواز السفر).",
-      "item6": "درجة الموثوقية وشارات الثقة للمستخدمين الذين تم التحقق منهم.",
-      "item7": "أدوات الذكاء الاصطناعي للكشف عن الاحتيال والتوصية به."
+      "description": "NESTHUB هي منصة تكنولوجية تونسية تسهل تأجير العقارات بين الأفراد. تشمل خدماتنا على سبيل المثال لا الحصر:",
+      "item1": "نشر إعلانات التأجير مع الصور والفيديوهات والأوصاف التفصيلية.",
+      "item2": "نظام رسائل آمن مع كشف مضاد لتسرب البيانات الشخصية.",
+      "item3": "أداة لإدارة الحجوزات وملفات التأجير الرقمية.",
+      "item4": "حلول الدفع الآمن عبر Konnect، مع إدارة الضمان في الحساب المصرفي.",
+      "item5": "نظام التحقق من الهوية بواسطة OCR (بطاقة تحقيق / جواز سفر).",
+      "item6": "نظام درجة الموثوقية والشارات الموثوقة للمستخدمين المعتمدين.",
+      "item7": "أدوات الذكاء الاصطناعي للكشف عن الاحتيال والتوصيات."
     },
     "obligations": {
       "title": "التزامات المستخدم",
       "owners": {
-        "title": "أصحاب",
-        "item1": "تقديم معلومات دقيقة وصادقة عن العقار.",
-        "item2": "تملك حقوق الإيجار القانونية للممتلكات المنشورة.",
-        "item3": "احترام معايير الحشمة والتشريع التونسي.",
-        "item4": "عدم نشر إعلانات وهمية أو مضللة.",
-        "item5": "الرد على طلبات الحجز خلال فترة زمنية معقولة."
+        "title": "المالكون",
+        "item1": "توفير معلومات صحيحة وصادقة عن العقار.",
+        "item2": "امتلاك الحقوق القانونية لتأجير العقار المنشور.",
+        "item3": "الالتزام بمعايير اللياقة والتشريعات التونسية.",
+        "item4": "عدم نشر إعلانات وهمية أو خادعة.",
+        "item5": "الرد على طلبات الحجز في غضون إطار زمني معقول."
       },
       "tenants": {
-        "title": "المستأجرين",
-        "item1": "تقديم وثائق الهوية الأصلية.",
-        "item2": "استخدم المنصة بشكل عادل وأمين.",
-        "item3": "قم بإجراء جميع المدفوعات حصريًا من خلال NESTHUB.",
-        "item4": "احترام اللوائح الداخلية للعقار المستأجر.",
-        "item5": "الإبلاغ عن أي مشاكل من خلال القنوات الرسمية."
+        "title": "المستأجرون",
+        "item1": "توفير وثائق هوية أصلية.",
+        "item2": "استخدام المنصة بطريقة نزيهة وصادقة.",
+        "item3": "إجراء جميع الدفعات حصراً عبر NESTHUB.",
+        "item4": "الالتزام بالنظام الداخلي للعقار المؤجر.",
+        "item5": "الإبلاغ عن أي مشكلة عبر القنوات الرسمية."
       },
       "prohibited": {
         "title": "السلوكيات المحظورة",
-        "text": "يُمنع منعاً باتاً مشاركة تفاصيل الاتصال الشخصية (الأرقام، رسائل البريد الإلكتروني، رقم IBAN) في المراسلة أو التحايل على نظام الدفع أو نشر إعلانات كاذبة أو مضايقة المستخدمين الآخرين. وأي خرق قد يؤدي إلى تعليق الحساب أو حظره بشكل دائم."
+        "text": "يُحظر بشدة مشاركة بيانات شخصية (أرقام، رسائل بريد إلكترونية، IBAN) في الرسائل، وتجاوز نظام الدفع، ونشر إعلانات كاذبة أو التحرش بمستخدمين آخرين. قد يؤدي أي تخلف إلى إيقاف أو حظر نهائي للحساب."
       }
     },
     "paiements": {
       "title": "الشروط المالية",
-      "quote": "أمان معاملاتك هو أولويتنا. تتم معالجة جميع المدفوعات التي تتم على NESTHUB بواسطة Konnect، مزود الدفع المعتمد في تونس.",
+      "quote": "أمان معاملاتك هو أولويتنا. جميع المدفوعات على NESTHUB يتم معالجتها بواسطة Konnect، مزود خدمة دفع مرخص في تونس.",
       "commission": {
-        "title": "رسوم الخدمة",
-        "text": "تتقاضى NESTHUB عمولة بنسبة 20% على كل معاملة. يتم خصمها تلقائياً من المبلغ المدفوع للمالك وعرضها بوضوح قبل أي تأكيد."
+        "title": "عمولات الخدمة",
+        "text": "NESTHUB تحصل على عمولة 20% على كل معاملة. يتم خصمها تلق��ئياً من المبلغ المحول للمالك ويتم عرضها بوضوح قبل أي تأكيد."
       },
       "deposit": {
-        "title": "الكفالة (المتلقي)",
-        "text": "يتم جمع الوديعة عند الدفع ووضعها في الضمان. يتم إعادتها تلقائيًا في نهاية إقامتك دون نزاع، أو يتم التحكيم فيها بواسطة NESTHUB في حالة وجود تعارض مع المستندات الداعمة للصور."
+        "title": "الضمان (الحساب المصرفي)",
+        "text": "يتم جمع الضمان عند الدفع ويوضع في حساب مصرفي. يتم استرجاعه تلقائياً في نهاية الإقامة بدون نزاع، أو يتم التحكيم فيه بواسطة NESTHUB في حالة النزاع مع صور توضيحية."
       },
       "payout": {
-        "title": "المدفوعات لأصحابها",
-        "text": "يتم الدفع بعد تأكيد تسجيل الدخول، بحد أدنى 50 دينارا. يتوفر بيان تفصيلي في لوحة تحكم المالك."
+        "title": "التحويلات للمالكين",
+        "text": "يتم التحويل بعد تأكيد الدخول، بحد أدنى 50 دينار تونسي. يتوفر بيان مفصل في لوحة تحكم المالك."
       },
       "refund": {
-        "title": "المبالغ المستردة",
-        "text": "يتم احتساب المبالغ المستردة وفقًا لسياسة الإلغاء الخاصة بالمالك. مدة التسليم من 3 إلى 5 أيام عمل. قد تقوم NESTHUB بفرض استرداد الأموال في حالة وجود نزاع مثبت."
+        "title": "الاسترجاعات",
+        "text": "يتم حساب الاسترجاعات وفقاً لسياسة الإلغاء للمالك. المدة هي 3 إلى 5 أيام عمل. يمكن لـ NESTHUB فرض عملية استرجاع في حالة نزاع معين."
       }
     },
     "responsabilite": {
-      "title": "حدود المسؤولية",
-      "description": "يعمل NESTHUB كمضيف محتوى ووسيط تقني. لا يمكن تحميل المنصة المسؤولية عما يلي:",
-      "item1": "من محتوى الإعلانات التي ينشرها المستخدمون.",
-      "item2": "عدم تنفيذ أو سوء تنفيذ عقد الإيجار المبرم بين الطرفين.",
-      "item3": "الأضرار غير المباشرة الناتجة عن استخدام الخدمة.",
-      "item4": "الانقطاع المؤقت للخدمة للصيانة أو القوة القاهرة.",
-      "item5": "جودة البضاعة المستأجرة أو مطابقتها أو حالتها الفعلية."
+      "title": "تحديد المسؤولية",
+      "description": "NESTHUB تعمل كمضيف محتوى وسيط تقني. لا يمكن للمنصة أن تكون مسؤولة عن:",
+      "item1": "محتوى الإعلانات المنشورة من قبل المستخدمين.",
+      "item2": "عدم التنفيذ أو سوء التنفيذ للعقد المبرم بين الأطراف.",
+      "item3": "الأضرار غير المباشرة الناجمة عن استخدام الخدمة.",
+      "item4": "الانقطاعات المؤقتة للخدمة للصيانة أو القوة القاهرة.",
+      "item5": "جودة أو توافق أو الحالة الفعلية للعقارات المؤجرة."
     },
     "resiliation": {
       "title": "الإنهاء",
-      "description": "يمكن للمستخدم حذف حسابه في أي وقت من إعداداته. تحتفظ NESTHUB بالحق في تعليق أو إنهاء أي حساب في حالة:",
+      "description": "يمكن للمستخدم حذف حسابه في أي وقت من الإعدادات. NESTHUB تحتفظ بالحق في إيقاف أو إنهاء أي حساب في حالة:",
       "reason1": {
-        "title": "عدم الالتزام بالشروط والأحكام",
+        "title": "عدم الامتثال للشروط",
         "desc": "انتهاك قواعد الاستخدام."
       },
       "reason2": {
         "title": "الأنشطة الاحتيالية",
-        "desc": "هويات مزيفة، وعمليات احتيال، ومراجعات مزيفة."
+        "desc": "هويات كاذبة وعمليات احتيال وتقييمات مزيفة."
       },
       "reason3": {
         "title": "تجاوز النظام",
-        "desc": "المدفوعات أو مشاركة جهات الاتصال خارج NH."
+        "desc": "المدفوعات أو مشاركة البيانات خارج NH."
       },
-      "process": "يتبع الإنهاء عملية التصعيد التدريجي: تحذير ← تعليق مؤقت ← حظر دائم، باستثناء الاحتيال الخطير الذي يبرر اتخاذ إجراء فوري."
+      "process": "يتبع الإنهاء عملية التصعيد التدريجي: تحذير → إيقاف مؤقت → حظر نهائي، إلا في حالة احتيال شديد يبرر إجراء فوري."
     },
     "donnees": {
       "title": "البيانات الشخصية",
-      "description": "تلتزم NESTHUB بحماية بياناتك الشخصية. حقوقك تشمل:",
+      "description": "NESTHUB تلتزم بحماية بيانتك الشخصية. حقوقك تشمل:",
       "right1": {
-        "title": "وصول",
-        "desc": "عرض البيانات الخاصة بك"
+        "title": "الوصول",
+        "desc": "الاطلاع على بياناتك"
       },
       "right2": {
-        "title": "تصحيح",
-        "desc": "قم بتصحيح بياناتك"
+        "title": "التصحيح",
+        "desc": "تصحيح بيانات خاطئة"
       },
       "right3": {
         "title": "الحذف",
-        "desc": "احذف حسابك"
+        "desc": "حذف حسابك"
       },
       "right4": {
-        "title": "قابلية النقل",
-        "desc": "تصدير البيانات الخاصة بك"
+        "title": "النقل",
+        "desc": "تصدير بيانتك"
       },
-      "footer": "لممارسة حقوقك، استشر موقعنا"
+      "footer": "لممارسة حقوقك، راجع"
     }
   },
   "Privacy": {
     "title": "سياسة الخصوصية",
-    "lastUpdate": "التحديث الأخير:",
-    "description": "في NestHub، تعد حماية بياناتك الشخصية أولوية قصوى. توضح هذه السياسة بالتفصيل كيفية قيامنا بجمع معلوماتك واستخدامها وحمايتها، وفقًا للوائح المعمول بها.",
-    "print": "مطبعة",
-    "downloadPDF": "تحميل قوات الدفاع الشعبي",
-    "summary": "ملخص",
-    "needHelp": "بحاجة الى مساعدة؟",
-    "helpText": "أسئلة حول البيانات الخاصة بك؟ لدينا DPO تحت تصرفكم.",
-    "contactDPO": "اتصل بـ DPO",
+    "lastUpdate": "آخر تحديث:",
+    "description": "في NestHub، حماية بيانتك الشخصية هي أولويتنا القصوى. توضح هذه السياسة كيف نجمع ونستخدم ونحمي معلوماتك، وفقاً للوائح المعمول بها.",
+    "print": "طباعة",
+    "downloadPDF": "تحميل PDF",
+    "summary": "الملخص",
+    "needHelp": "هل تحتاج إلى مساعدة؟",
+    "helpText": "أسئلة حول بيانتك؟ مسؤول حماية البيانات لدينا تحت تصرفك.",
+    "contactDPO": "اتصل بمسؤول حماية البيانات",
     "sections": {
       "collecte": "جمع البيانات",
-      "utilisation": "يستخدم",
-      "cookies": "ملفات تعريف الارتباط",
-      "droits": "حقوقك (اللائحة العامة لحماية البيانات)",
-      "securite": "حماية",
+      "utilisation": "الاستخدام",
+      "cookies": "الكعكات",
+      "droits": "حقوقك (GDPR)",
+      "securite": "الأمان",
       "ia": "الذكاء الاصطناعي والأتمتة",
-      "contact": "اتصل بـ DPO"
+      "contact": "اتصل بمسؤول حماية البيانات"
     },
     "collecte": {
       "title": "جمع البيانات الشخصية",
-      "description": "نقوم بجمع المعلومات التي تقدمها لنا مباشرة عند إنشاء حسابك أو نشر إعلان أو طلب التأجير:",
+      "description": "نجمع المعلومات التي تقدمها لنا مباشرة عند إنشاء حسابك أو نشر إعلان أو طلب تأجير:",
       "items": {
         "identite": {
-          "label": "تعريف",
-          "desc": "الاسم الأخير، الاسم الأول، تاريخ الميلاد."
+          "label": "الهوية",
+          "desc": "الاسم والاسم الأول وتاريخ الميلاد."
         },
         "coordonnees": {
-          "label": "تفاصيل الاتصال",
-          "desc": "عنوان البريد الإلكتروني، رقم الهاتف، العنوان البريدي."
+          "label": "جهات الاتصال",
+          "desc": "عنوان البريد الإلكتروني ورقم الهاتف والعنوان البريدي."
         },
         "profil": {
-          "label": "حساب تعريفي",
-          "desc": "التصوير الفوتوغرافي والسيرة الذاتية ونوع المستأجر وتفضيلات البحث وتاريخ الإيجار."
+          "label": "الملف الشخصي",
+          "desc": "الصورة والسيرة الذاتية ونوع المستأجر وتفضيلات البحث والسجل."
         },
         "documents": {
           "label": "وثائق الهوية",
-          "desc": "تم تحميل CIN أو جواز السفر للتحقق من التعرف الضوئي على الحروف. تخزين مشفر."
+          "desc": "بطاقة تحقيق أو جواز سفر محمل للتحقق من OCR. تخزين مشفر."
         },
         "financieres": {
           "label": "البيانات المالية",
-          "desc": "سجل الدفع عبر Konnect (لا توجد بيانات مصرفية مخزنة)."
+          "desc": "السجل المالي عبر Konnect (لا يتم تخزين بيانات البنك)."
         },
         "comportementales": {
           "label": "البيانات السلوكية",
-          "desc": "سجل البحث، والإعلانات التي تم عرضها، والحجوزات التي تم إجراؤها، والمراجعات."
+          "desc": "سجل البحث والإعلانات المعروضة والحجوزات والتقييمات."
         },
         "messagerie": {
-          "label": "بيانات البريد الإلكتروني",
-          "desc": "تم تحليل التبادلات بواسطة الذكاء الاصطناعي المضاد للتسرب لمنع مشاركة البيانات."
+          "label": "بيانات الرسائل",
+          "desc": "الرسائل التي تم تحليلها بواسطة AI المضاد لتسرب البيانات لحظر المشاركة."
         }
       }
     },
     "utilisation": {
-      "title": "لماذا نستخدم بياناتك؟",
-      "description": "تخضع بياناتك للمعالجة الآلية للأغراض التالية:",
+      "title": "لماذا نستخدم بيانتك؟",
+      "description": "تخضع بيانتك لمعالجة مؤتمتة للأغراض التالية:",
       "items": {
         "1": {
-          "title": "اتصال",
-          "desc": "تسهيل التواصل بين المالكين والمستأجرين وإدارة الطلبات."
+          "title": "الربط",
+          "desc": "تسهيل الاتصال بين المالكين والمستأجرين وإدارة الطلبات."
         },
         "2": {
           "title": "التحقق من الهوية",
-          "desc": "قم بتحليل المستندات الخاصة بك عن طريق التعرف الضوئي على الحروف (OCR) لتعيين شارة \"تم التحقق منه\"."
+          "desc": "تحليل وثائقك بواسطة OCR لتعيين شارة 'معتمد'."
         },
         "3": {
-          "title": "نقاط الموثوقية",
-          "desc": "احسب درجة الموثوقية (0-100) لنظام موثوق به."
+          "title": "درجة الموثوقية",
+          "desc": "حساب درجة موثوقيتك (0-100) لنظام الثقة."
         },
         "4": {
-          "title": "الأمن ومكافحة الاحتيال",
-          "desc": "كشف السلوك الاحتيالي والحماية من عمليات الاحتيال."
+          "title": "الأمان والمكافحة ضد الاحتيال",
+          "desc": "كشف السلوكيات الاحتيالية والحماية ضد عمليات الاحتيال."
         },
         "5": {
           "title": "التخصيص",
-          "desc": "يوصي بالإعلانات المخصصة لتفضيلاتك."
+          "desc": "التوصية بالإعلانات المناسبة لتفضيلاتك."
         },
         "6": {
-          "title": "المدفوعات والودائع",
-          "desc": "معالجة المدفوعات من خلال Konnect وإدارة الضمان."
+          "title": "المدفوعات والضمان",
+          "desc": "معالجة الدفع عبر Konnect، إدارة الحساب المصرفي."
         },
         "7": {
-          "title": "إشعارات",
-          "desc": "إبلاغك بالأحداث المتعلقة بحجوزاتك."
+          "title": "الإخطارات",
+          "desc": "إخطارك بالأحداث المتعلقة بحجوزاتك."
         },
         "8": {
           "title": "الدعم والنزاعات",
-          "desc": "معالجة التذاكر الخاصة بك والتحكيم في النزاعات."
+          "desc": "معالجة التذاكر والتحكيم في النزاعات."
         }
       }
     },
     "cookies": {
       "title": "سياسة ملفات تعريف الارتباط",
-      "description": "يستخدم NestHub ملفات تعريف الارتباط لضمان حسن سير عمل الموقع، وقياس الجمهور وتقديم محتوى يتناسب مع عمليات البحث عن العقارات.",
+      "description": "تستخدم NestHub ملفات تعريف الارتباط لضمان الحسن الأداء في الموقع وقياس الجمهور واقتراح محتوى يناسب عمليات البحث العقاري.",
       "essentiels": {
         "name": "ملفات تعريف الارتباط الأساسية",
-        "desc": "ضروري للتنقل والمصادقة (كاتب) وأمن الجلسة.",
-        "badge": "إلزامي"
+        "desc": "ضرورية للتنقل والمصادقة (Clerk) وأمان الجلسة.",
+        "badge": "إجباري"
       },
       "analytiques": {
-        "name": "ملفات تعريف الارتباط التحليلية",
-        "desc": "لفهم كيفية استخدامك لموقعنا وتحسين خدماتنا.",
-        "badge": "خياري"
+        "name": "ملفات تعريف ارتباط التحليل",
+        "desc": "لفهم كيفية استخدام موقعنا وتحسين خدماتنا.",
+        "badge": "اختياري"
       },
       "personnalisation": {
-        "name": "ملفات تعريف الارتباط للتخصيص",
+        "name": "ملفات تعريف ارتباط التخصيص",
         "desc": "لتذكر تفضيلاتك وتخصيص التوصيات.",
-        "badge": "خياري"
+        "badge": "اختياري"
       }
     },
     "droits": {
-      "title": "حقوقك (اللائحة العامة لحماية البيانات)",
-      "description": "وفقًا للوائح حماية البيانات، لديك الحقوق التالية، والتي يمكن الوصول إليها جميعًا من مساحة NestHub الشخصية الخاصة بك:",
+      "title": "حقوقك (GDPR)",
+      "description": "وفقاً لوائح حماية البيانات، لديك الحقوق التالية، جميعها متاحة من مساحتك الشخصية NestHub:",
       "items": {
         "acces": {
-          "title": "وصول",
-          "desc": "عرض جميع بياناتك الشخصية من ملفك الشخصي."
+          "title": "الوصول",
+          "desc": "الاطلاع على جميع بيانتك الشخصية من ملفك الشخصي."
         },
         "rectification": {
-          "title": "تصحيح",
-          "desc": "قم بتغيير معلوماتك غير الصحيحة في إعداداتك."
+          "title": "التصحيح",
+          "desc": "تصحيح معلوماتك في الإعدادات."
         },
         "suppression": {
           "title": "الحذف",
-          "desc": "طلب حذف حسابك وبياناتك."
+          "desc": "طلب حذف حسابك وبيانتك."
         },
         "portabilite": {
-          "title": "قابلية النقل",
-          "desc": "قم بتصدير جميع بياناتك بتنسيق JSON/CSV."
+          "title": "النقل",
+          "desc": "تصدير جميع بياناتك بصيغة JSON/CSV."
         },
         "opposition": {
-          "title": "معارضة",
-          "desc": "كائن للمعالجة للتخصيص."
+          "title": "الاعتراض",
+          "desc": "الاعتراض على المعالجة للتخصيص."
         },
         "limitation": {
-          "title": "القيد",
-          "desc": "طلب تقييد المعالجة في حالات معينة."
+          "title": "التحديد",
+          "desc": "طلب تحديد المعالجة في حالات معينة."
         }
       }
     },
     "securite": {
-      "title": "أمان بياناتك",
-      "description": "ينفذ NestHub إجراءات فنية وتنظيمية صارمة لضمان أمان بياناتك:",
+      "title": "أمان بيانتك",
+      "description": "تطبق NestHub تدابير تقنية وتنظيمية صارمة لضمان أمان بيانتك:",
       "items": {
         "chiffrement": {
           "title": "تشفير SSL/TLS",
@@ -810,67 +822,67 @@
         },
         "auth": {
           "title": "المصادقة الآمنة",
-          "desc": "إدارة الجلسة عبر Clerk مع دعم 2FA."
+          "desc": "إدارة الجلسة عبر Clerk مع دعم المصادقة متعددة العوامل."
         },
         "documents": {
-          "title": "وثائق آمنة",
-          "desc": "وثائق الهوية المخزنة مشفرة."
+          "title": "المستندات الآمنة",
+          "desc": "وثائق الهوية مخزنة مشفرة."
         },
         "audits": {
-          "title": "عمليات التدقيق المنتظمة",
-          "desc": "الحفاظ على عمليات التدقيق الأمني ​​وسجلات وصول المسؤول."
+          "title": "التدقيقات المنتظمة",
+          "desc": "التدقيقات الأمنية وسجلات الوصول الإداري محتفظ بها."
         },
         "messagerie": {
           "title": "الرسائل المحمية",
-          "desc": "يكتشف الذكاء الاصطناعي البيانات الحساسة ويخفيها في الدردشة."
+          "desc": "الذكاء الاصطناعي يكتشف ويخفي البيانات الحساسة في الدردشة."
         },
         "paiements": {
-          "title": "المدفوعات الآمنة",
-          "desc": "لا توجد بيانات مصرفية مخزنة، تتم إدارة كل شيء بواسطة Konnect."
+          "title": "الدفع الآمن",
+          "desc": "لا يتم تخزين بيانات البنك، كل شيء يدار بواسطة Konnect."
         }
       }
     },
     "ia": {
       "title": "الذكاء الاصطناعي والأتمتة",
-      "warning": "يستخدم NestHub أنظمة الذكاء الاصطناعي التي تعالج بعض بياناتك بطريقة آلية.",
+      "warning": "تستخدم NestHub أنظمة الذكاء الاصطناعي التي تعالج بعض بيانتك بطريقة مؤتمتة.",
       "items": {
         "detection": {
           "title": "كشف تسرب البيانات",
-          "desc": "تحليل الرسائل في الوقت الحقيقي للكشف عن البيانات الحساسة وإخفائها.",
-          "badge": "إلزامي"
+          "desc": "التحليل في الوقت الفعلي للرسائل للكشف وإخفاء البيانات الحساسة.",
+          "badge": "إجباري"
         },
         "score": {
           "title": "درجة الموثوقية التلقائية",
-          "desc": "حساب درجات الموثوقية على أساس السلوك التلقائي.",
-          "badge": "آلي"
+          "desc": "الحساب التلقائي لدرجة الموثوقية بناءً على السلوك.",
+          "badge": "مؤتمت"
         },
         "fraude": {
           "title": "كشف الاحتيال",
-          "desc": "مسح الإعلانات للكشف عن السلوك المشبوه.",
-          "badge": "آلي"
+          "desc": "تحليل الإعلانات للكشف عن السلوكيات المريبة.",
+          "badge": "مؤتمت"
         },
         "recommandations": {
-          "title": "توصيات شخصية",
-          "desc": "استخدام بيانات التصفح للتوصية بالإعلانات.",
-          "badge": "خياري"
+          "title": "التوصيات المخصصة",
+          "desc": "استخدام بيانات التنقل للتوصية بالإعلانات.",
+          "badge": "اختياري"
         }
       }
     },
     "contact": {
-      "title": "هل تحتاج إلى مساعدة بشأن بياناتك؟",
-      "description": "مسؤول حماية البيانات (DPO) لدينا متاح للإجابة على جميع أسئلتك حول جمع بياناتك الشخصية أو استخدامها أو حذفها.",
-      "button": "اتصل بـ DPO",
+      "title": "هل تحتاج إلى مساعدة بخصوص بيانتك؟",
+      "description": "مسؤول حماية البيانات لدينا متاح للإجابة على جميع أسئلتك حول جمع واستخدام أو حذف بيانتك الشخصية.",
+      "button": "اتصل بمسؤول حماية البيانات",
       "helpCenter": "مركز المساعدة"
     }
   },
   "Inscription": {
-    "title": "تسجيل",
-    "step": "الخطوة {الخطوة} من 4",
+    "title": "التسجيل",
+    "step": "الخطوة {step} من 4",
     "Compte": "1.الحساب",
-    "Documents": "2.المستندات",
-    "verificationEmail": "تَحَقّق",
+    "Documents": "2.الوثائق",
+    "verificationEmail": "التحقق",
     "validation": "3.التحقق",
-    "chooseRole": "الرجاء اختيار الدور",
+    "chooseRole": "يرجى اختيار دور",
     "roleLandlord": "مالك",
     "roleTenant": "مستأجر",
     "username": "اسم المستخدم",
@@ -884,897 +896,1788 @@
     "strong": "قوي",
     "strength": "قوة كلمة المرور",
     "required": "جميع الحقول مطلوبة",
-    "invalidEmail": "عنوان البريد الإلكتروني غير صالح",
+    "invalidEmail": "عنوان بريد إلكتروني غير صحيح",
     "passwordMismatch": "كلمات المرور غير متطابقة",
-    "usernameLength": "يجب أن يتراوح اسم المستخدم بين 3 و20 حرفًا",
+    "usernameLength": "يجب أن يحتوي اسم المستخدم على 3 إلى 20 حرف",
     "passwordLength": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل",
-    "passwordStrength": "كلمة المرور ضعيفة للغاية. استخدم الحروف الكبيرة والأرقام والأحرف الخاصة",
+    "passwordStrength": "كلمة المرور ضعيفة جداً. استخدم أحرف كبيرة وأرقام وأحرف خاصة",
     "accountCreated": "تم إنشاء الحساب بنجاح! تم إرسال رمز التحقق إلى بريدك الإلكتروني.",
     "verificationCodeSent": "لقد أرسلنا رمز التحقق إلى {email}",
     "verificationCode": "رمز التحقق",
-    "verify": "يفحص",
+    "verify": "تحقق",
     "back": "الخطوة السابقة",
     "resendCode": "إعادة إرسال الرمز",
-    "codeResent": "تم إرسال رمز جديد إليك!",
-    "invalidCode": "رمز غير صالح",
+    "codeResent": "تم إرسال رمز جديد لك!",
+    "invalidCode": "رمز غير صحيح",
     "verificationFailed": "فشل التحقق",
-    "verificationSuccess": "تهانينا! لقد تم التحقق من حسابك بنجاح.",
-    "alreadyHaveAccount": "هل لديك حساب بالفعل؟",
+    "verificationSuccess": "تهانينا! تم التحقق من حسابك بنجاح.",
+    "alreadyHaveAccount": "لديك حساب بالفعل؟",
     "login": "تسجيل الدخول",
     "termsOfUse": "شروط الاستخدام",
     "privacyPolicy": "سياسة الخصوصية",
-    "help": "بحاجة الى مساعدة؟",
-    "security": "حماية",
-    "securityMessage": "تستخدم هذه المنصة تشفير AES-256 الشامل لضمان أمان بياناتك العقارية.",
-    "usernameReserved": "اسم المستخدم الخاص بك @{username} محجوز لمدة 30 دقيقة القادمة.",
-    "stepValidated": "تم التحقق من صحة الخطوة 1/4!",
-    "usernameInfo": "3-20 حرف ورقم وحرف فقط. سيكون هذا الاسم مرئيًا على المنصة.",
-    "passwordInfo": "استخدم أحرفًا خاصة",
-    "professionalEmail": "عنوان البريد الإلكتروني المهني",
+    "help": "هل تحتاج إلى مساعدة؟",
+    "security": "الأمان",
+    "securityMessage": "تستخدم هذه المنصة تشفير AES-256 من طرف إلى طرف لضمان سلامة بيانات العقارات.",
+    "usernameReserved": "اسم المستخدم الخاص بك @{username} مدرج للـ 30 دقيقة التالية.",
+    "stepValidated": "تم التحقق من الخطوة 1/4!",
+    "usernameInfo": "3-20 أحرف، أحرف وأرقام فقط. سيكون هذا الاسم مرئياً على المنصة.",
+    "passwordInfo": "استخدم أحرف خاصة",
+    "professionalEmail": "عنوان بريد إلكتروني احترافي",
     "publicIdentity": "الهوية العامة",
-    "step1Description": "الخطوة 1 من 4: قم بتكوين الوصول الآمن الخاص بك.",
-    "emailSent": "لقد أرسلنا رمزًا مكونًا من 6 أرقام إلى",
-    "enterCode": "أدخل الرمز المكون من 6 أرقام",
-    "didNotReceiveCode": "لم تتلق الرمز؟",
+    "step1Description": "الخطوة 1 من 4: قم بتكوين وصولك الآمن.",
+    "emailSent": "لقد أرسلنا رمز من 6 أرقام إلى",
+    "enterCode": "أدخل رمز من 6 أرقام",
+    "didNotReceiveCode": "لم تستقبل الرمز؟",
     "step1Title": "معلومات تسجيل الدخول",
     "step2Title": "الهوية الحقيقية",
     "step3Title": "التحقق من الهاتف",
     "step4Title": "وثائق الهوية",
     "identityTitle": "التحقق من الهوية",
     "identitySubtitle": "الخطوة 2 من 4: الهوية الحقيقية (خاصة)",
-    "privacyTitle": "السرية مضمونة",
-    "privacyDescription": "هويتك الحقيقية سرية ولن يتم مشاركتها علنًا.",
-    "personalInfoTitle": "معلومات شخصية",
+    "privacyTitle": "الخصوصية مضمونة",
+    "privacyDescription": "هويتك الحقيقية سرية ولن يتم مشاركتها علناً.",
+    "personalInfoTitle": "المعلومات الشخصية",
     "firstName": "الاسم الأول الحقيقي",
-    "firstNamePlaceholder": "مثل: محمد",
-    "lastName": "الاسم الحقيقي",
-    "lastNamePlaceholder": "مثل: بن حسين",
-    "phoneNumber": "رقم التليفون",
-    "phonePlaceholder": "27,929,630",
-    "whatsappWarning": "قبل المتابعة قم بتفعيل الواتساب:",
-    "activateWhatsapp": "تفعيل الواتس اب بنقرة واحدة",
-    "whatsappInstruction": "انقر على ← يفتح تطبيق WhatsApp ← انقر على إرسال ← العودة إلى هنا",
-    "address": "عنوان الإقامة",
-    "optional": "خياري",
+    "firstNamePlaceholder": "مثال: محمد",
+    "lastName": "الاسم الأخير الحقيقي",
+    "lastNamePlaceholder": "مثال: بن الحسين",
+    "phoneNumber": "رقم الهاتف",
+    "phonePlaceholder": "27 929 630",
+    "whatsappWarning": "قبل المتابعة، قم بتفعيل WhatsApp:",
+    "activateWhatsapp": "تفعيل WhatsApp بنقرة واحدة",
+    "whatsappInstruction": "انقر → يفتح WhatsApp → انقر أرسل → عد هنا",
+    "address": "عنوان السكن",
+    "optional": "اختياري",
     "addressPlaceholder": "أدخل عنوانك الكامل",
     "publicProfileTitle": "الملف الشخصي العام",
     "bio": "السيرة الذاتية العامة",
-    "bioPlaceholder": "قم بوصف تجربتك العقارية أو ما الذي تبحث عنه...",
-    "sending": "إرسال",
-    "requiredFieldsError": "يرجى إكمال كافة الحقول المطلوبة",
+    "bioPlaceholder": "صف خبرتك العقارية أو ما تبحث عنه...",
+    "sending": "جاري الإرسال",
+    "requiredFieldsError": "يرجى ملء جميع الحقول المطلوبة",
     "errors": {
-      "chooseRole": "الرجاء اختيار الدور (المالك أو المستأجر)",
-      "usernameRequired": "الرجاء إدخال اسم المستخدم",
-      "usernameInvalid": "يجب أن يتراوح اسم المستخدم بين 3 و20 حرفًا (أحرف وأرقام فقط)",
-      "emailRequired": "الرجاء إدخال عنوان بريد إلكتروني",
-      "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صالح",
-      "passwordRequired": "الرجاء إدخال كلمة المرور",
+      "chooseRole": "يرجى اختيار دور (مالك أو مستأجر)",
+      "usernameRequired": "يرجى إدخال اسم المستخدم",
+      "usernameInvalid": "يجب أن يحتوي اسم المستخدم على 3 إلى 20 حرف (أحرف وأرقام فقط)",
+      "emailRequired": "يرجى إدخال عنوان بريد إلكتروني",
+      "emailInvalid": "يرجى إدخال عنوان بريد إلكتروني صحيح",
+      "passwordRequired": "يرجى إدخال كلمة مرور",
       "passwordTooShort": "يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل",
-      "passwordWeak": "كلمة المرور ضعيفة للغاية. استخدم الحروف الكبيرة والأرقام والأحرف الخاصة",
-      "confirmPasswordRequired": "يرجى تأكيد كلمة المرور الخاصة بك",
+      "passwordWeak": "كلمة المرور ضعيفة جداً. استخدم أحرف كبيرة وأرقام وأحرف خاصة",
+      "confirmPasswordRequired": "يرجى تأكيد كلمة المرور",
       "passwordsDoNotMatch": "كلمات المرور غير متطابقة",
-      "codeRequired": "الرجاء إدخال الرمز المكون من 6 أرقام",
-      "codeInvalid": "رمز غير صالح",
+      "codeRequired": "يرجى إدخال رمز من 6 أرقام",
+      "codeInvalid": "رمز غير صحيح",
       "emailAlreadyExists": "هذا البريد الإلكتروني قيد الاستخدام بالفعل",
       "usernameAlreadyExists": "اسم المستخدم هذا مأخوذ بالفعل",
-      "phoneAlreadyExists": "رقم الهاتف هذا قيد الاستخدام بالفعل",
+      "phoneAlreadyExists": "رقم الهاتف هذا مستخدم بالفعل",
       "phoneTooShort": "يجب أن يحتوي الرقم على 8 أرقام على الأقل",
-      "phoneRequired": "الرجاء إدخال رقم هاتفك",
-      "userIdNotFound": "لم يتم العثور على معرف المستخدم",
-      "whatsappSendFailed": "فشل في إرسال رمز الواتس اب",
-      "invalidCodeLength": "مطلوب رمز مكون من 6 أرقام",
+      "phoneRequired": "يرجى إدخال رقم الهاتف",
+      "userIdNotFound": "معرّف المستخدم غير موجود",
+      "whatsappSendFailed": "فشل إرسال الرمز عبر WhatsApp",
+      "invalidCodeLength": "مطلوب رمز من 6 أرقام",
       "missingInfo": "معلومات مفقودة",
-      "clerkNotInitialized": "كاتب لم تتم تهيئة",
-      "signupIdMissing": "غير قادر على استرداد معرف التسجيل",
-      "userCreationFailed": "حدث خطأ أثناء إنشاء الحساب",
+      "clerkNotInitialized": "لم تتم تهيئة Clerk",
+      "signupIdMissing": "غير قادر على استرجاع معرّف التسجيل",
+      "userCreationFailed": "خطأ في إنشاء الحساب",
       "firstNameRequired": "الاسم الأول مطلوب",
-      "lastNameRequired": "الاسم مطلوب"
+      "lastNameRequired": "الاسم الأخير مطلوب"
     },
     "documentsStep": {
       "title": "التحقق من الهوية",
-      "subtitle": "الخطوة 4 من 4: تحميل مستنداتك الرسمية (التعرف الضوئي على الحروف تلقائيًا)",
+      "subtitle": "الخطوة 4 من 4: قم بتحميل وثائقك الرسمية (OCR تلقائي)",
       "identityDocument": "وثيقة الهوية",
-      "cinFront": "جبهة سين",
-      "cinBack": "سين فيرسو",
+      "cinFront": "بطاقة التحقيق الأمامية",
+      "cinBack": "بطاقة التحقيق الخلفية",
       "frontSide": "الجانب الأمامي",
       "backSide": "الجانب الخلفي",
-      "maxSize": "ماكس 5 ميجابايت",
-      "formats": "جبغ، PNG، بدف",
-      "photoAdded": "تمت إضافة الصورة",
-      "chooseFile": "اختر ملفًا",
-      "iaOcr": "الذكاء الاصطناعي والتعرف الضوئي على الحروف",
-      "ocrDescription": "سيقوم نظامنا بتحليل وثيقتك على الفور للتحقق من هويتك.",
+      "maxSize": "الحد الأقصى 5MB",
+      "formats": "JPG، PNG، PDF",
+      "photoAdded": "تم إضافة الصورة",
+      "chooseFile": "اختر ملف",
+      "iaOcr": "الذكاء الاصطناعي و OCR",
+      "ocrDescription": "سيحلل نظامنا وثيقتك فوراً للتحقق من هويتك.",
       "profilePhoto": "صورة الملف الشخصي",
-      "faceVisible": "الوجه واضح للعيان",
-      "security": "حماية",
-      "banking": "الخدمات المصرفية",
+      "faceVisible": "الوجه مرئي بوضوح",
+      "security": "الأمان",
+      "banking": "البنكية",
       "compliant": "متوافق",
-      "cloud": "سحاب",
-      "sovereign": "السيادية",
+      "cloud": "سحابة",
+      "sovereign": "سيادي",
       "previousStep": "الخطوة السابقة",
-      "finish": "حتى النهاية"
+      "finish": "إنهاء"
     },
     "ocrConfirm": {
       "title": "التحقق من البيانات",
-      "description": "قم بتأكيد المعلومات المستخرجة بواسطة التعرف الضوئي على الحروف (OCR).",
-      "infoBanner": "تم استخراج الحقول المميزة تلقائيًا. تأكد من أنها تطابق المستند الخاص بك.",
+      "description": "تأكيد المعلومات المستخرجة بواسطة OCR",
+      "infoBanner": "تم استخراج الحقول المحددة تلقائياً. تحقق من أنها تطابق وثيقتك.",
       "firstName": "الاسم الأول",
-      "lastName": "اسم",
+      "lastName": "الاسم الأخير",
       "birthDate": "تاريخ الميلاد",
-      "cinNumber": "رقم CIN",
-      "securityBanner": "يتم تشفير بياناتك وتخزينها وفقًا لمعايير القانون العام لحماية البيانات (GDPR).",
-      "modify": "للتعديل",
+      "cinNumber": "رقم بطاقة التحقيق",
+      "securityBanner": "تم تشفير بيانتك وتخزينها وفقاً لمعايير GDPR.",
+      "modify": "تعديل",
       "confirmIdentity": "تأكيد الهوية"
     },
     "welcomeModal": {
-      "title": "مرحبًا بك في نيستهب!",
-      "message": "لقد تم إنشاء حسابك بنجاح.",
+      "title": "مرحباً بك في NESTHUB!",
+      "message": "تم إنشاء حسابك بنجاح.",
       "submessage": "أكمل ملفك الشخصي لزيادة درجة ثقتك والوصول إلى جميع الميزات.",
       "emailVerified": "تم التحقق من البريد الإلكتروني",
-      "whatsappVerified": "تم التحقق من الواتس اب",
-      "cinPending": "CIN معلق",
+      "whatsappVerified": "تم التحقق من WhatsApp",
+      "cinPending": "بطاقة التحقيق معلقة",
       "completeProfile": "أكمل ملفي الشخصي",
-      "redirecting": "إعادة التوجيه..."
+      "redirecting": "جاري إعادة التوجيه..."
     },
-    "checking": "تَحَقّق...",
+
+    "checking": "جاري التحقق...",
     "whatsappStep": {
-      "title": "التحقق من الواتس اب",
-      "subtitle": "الخطوة 3 من 4: التحقق من صحة رقم هاتفك",
-      "codeSentTitle": "الكود مرسل عبر الواتس اب",
-      "codeSentMessage": "لقد أرسلنا رمزًا مكونًا من 6 أرقام إلى",
+      "title": "التحقق من WhatsApp",
+      "subtitle": "الخطوة 3 من 4: تحقق من رقم هاتفك",
+      "codeSentTitle": "تم إرسال الرمز عبر WhatsApp",
+      "codeSentMessage": "أرسلنا رمز من 6 أرقام إلى",
       "verificationCode": "رمز التحقق",
-      "checking": "تَحَقّق...",
-      "enterCodeInstruction": "أدخل الأرقام الستة ثم اضغط على Enter",
-      "back": "خلف",
-      "sending": "إرسال",
+      "checking": "جاري التحقق...",
+      "enterCodeInstruction": "أدخل الأرقام الستة ثم اضغط Enter",
+      "back": "عودة",
+      "sending": "جاري الإرسال",
       "resendCode": "إعادة إرسال الرمز"
     },
+
     "toasts": {
       "emailVerified": "تم التحقق من البريد الإلكتروني!",
-      "continueRegistration": "مواصلة التسجيل الخاص بك.",
+      "continueRegistration": "تابع تسجيلك.",
       "linkExpired": "انتهت صلاحية الرابط",
-      "linkExpiredDescription": "انتهت صلاحية رابط التحقق. يرجى البدء من جديد.",
-      "versoAdded": "تمت إضافة الجانب الخلفي!",
+      "linkExpiredDescription": "انتهت صلاحية رابط التحقق. يرجى المحاولة مرة أخرى.",
+      "versoAdded": "تم إضافة الخلف!",
       "versoProcessed": "تمت معالجة الجانب الخلفي.",
-      "ocrSuccess": "انتهى التعرف الضوئي على الحروف!",
+      "ocrSuccess": "اكتمل OCR!",
       "ocrSuccessDescription": "تم استخراج المعلومات بنجاح.",
-      "ocrError": "خطأ في التعرف الضوئي على الحروف",
-      "ocrErrorDescription": "غير قادر على استخراج المعلومات. املأ يدويًا."
+      "ocrError": "خطأ OCR",
+      "ocrErrorDescription": "فشل استخراج المعلومات. يرجى الملء يدوياً."
     },
     "whatsapp": {
-      "codeSent": "تم إرسال رمز التحقق على WhatsApp إلى الرقم ‎+216 {phone}"
+      "codeSent": "تم إرسال رمز التحقق عبر WhatsApp إلى +216 {phone}"
     },
+
     "alerts": {
       "verificationEmailSent": "تم إرسال رابط التحقق إلى {email}",
       "emailSent": "تم إرسال البريد الإلكتروني!",
       "codeSentTitle": "تم إرسال الرمز!",
-      "gotCode": "لقد تلقيت الرمز"
+      "gotCode": "لقد استقبلت الرمز"
     },
+
     "acceptTerms": {
-      "prefix": "من خلال الاستمرار أقبل",
+      "prefix": "بمتابعتي أوافق على",
       "terms": "شروط الاستخدام",
       "and": "و",
       "privacy": "سياسة الخصوصية",
       "suffix": ". يرجى قراءتها بعناية. *"
     }
   },
+
   "VerifyCatch": {
-    "title": "جارٍ التحقق",
-    "description": "الرجاء الانتظار بينما نقوم بالتحقق من حسابك..."
+    "title": "جاري التحقق",
+    "description": "يرجى الانتظار بينما نتحقق من حسابك..."
   },
+
   "AdminInvitations": {
-    "title": "إدارة الدعوة",
-    "description": "قم بدعوة مسؤولين جدد - روابط آمنة صالحة لمدة 48 ساعة",
-    "inviteAdmin": "قم بدعوة مسؤول",
-    "secureLink": "رابط آمن · تنتهي صلاحيته خلال 48 ساعة",
-    "newAdminEmail": "البريد الإلكتروني الجديد للمسؤول",
-    "responsibility": "مسؤولية",
-    "infoText": "سيتم إرسال رابط فريد عبر البريد الإلكتروني وستنتهي صلاحيته خلال",
-    "sending": "جارٍ الإرسال",
-    "generateInvitation": "قم بإنشاء الدعوة",
+    "title": "إدارة الدعوات",
+    "description": "ادعُ مسؤولين جدد — روابط آمنة صالحة لمدة 48 ساعة",
+    "inviteAdmin": "دعوة مسؤول",
+    "secureLink": "رابط آمن · ينتهي في 48 ساعة",
+    "newAdminEmail": "بريد المسؤول الجديد الإلكتروني",
+    "responsibility": "المسؤولية",
+    "infoText": "سيتم إرسال رابط فريد بالبريد الإلكتروني وسينتهي في",
+    "sending": "جاري الإرسال",
+    "generateInvitation": "إنشاء الدعوة",
     "activeLinks": "الروابط النشطة",
-    "expired": "منتهي الصلاحية",
-    "revoked": "تم إبطاله",
-    "email": "بريد إلكتروني",
-    "expiresIn": "تنتهي في",
-    "status": "حالة",
+    "expired": "منتهية الصلاحية",
+    "revoked": "ملغاة",
+    "email": "البريد الإلكتروني",
+    "expiresIn": "ينتهي في",
+    "status": "الحالة",
     "actions": "الإجراءات",
-    "accepted": "مقبول",
-    "active": "نشيط",
-    "copyLink": "نسخ الوصلة",
-    "copied": "منسوخ!",
-    "revoke": "إبطال",
-    "resend": "إعادة الإرسال",
-    "noInvitations": "لا توجد دعوات قيد التقدم",
-    "createInvitationHint": "استخدم النموذج الموجود على اليسار لإنشاء واحد",
-    "unauthorized": "الوصول غير المصرح به",
+    "accepted": "مقبولة",
+    "active": "نشطة",
+    "copyLink": "نسخ الرابط",
+    "copied": "تم النسخ!",
+    "revoke": "إلغاء",
+    "resend": "إعادة إرسال",
+    "noInvitations": "لا توجد دعوات قيد التشغيل",
+    "createInvitationHint": "استخدم النموذج على اليسار لإنشاء واحد",
+    "unauthorized": "وصول غير مصرح",
     "emailRequired": "البريد الإلكتروني مطلوب",
-    "emailInvalid": "بريد إلكتروني غير صالح",
-    "invitationSent": "تم إرسال الدعوة إلى {البريد الإلكتروني} ✓",
+    "emailInvalid": "بريد إلكتروني غير صحيح",
+    "invitationSent": "تم إرسال الدعوة إلى {email} ✓",
     "invitationRevoked": "تم إلغاء الدعوة",
-    "revokeError": "حدث خطأ أثناء الإلغاء",
-    "invitationResent": "تم إرجاع الدعوة إلى {email} ✓",
+    "revokeError": "خطأ في إلغاء الدعوة",
+    "invitationResent": "تم إعادة إرسال الدعوة إلى {email} ✓",
     "currentInvitations": "الدعوات الحالية",
-    "realTimeExpiry": "تتبع انتهاء الصلاحية في الوقت الحقيقي",
-    "expiryApplication": "تطبيق انتهاء الصلاحية لمدة 48 ساعة",
-    "securityText": "يقوم نظام دعوة الثقة المعدومة في NESTHUB بإنشاء رموز وصول عابرة. إذا لم يكمل المدعو التسجيل خلال فترة 48 ساعة، فسيتم إزالة الرمز المميز المشفر تلقائيًا من ذاكرة التخزين المؤقت للبوابة. وهذا يمنع إعادة استخدام الارتباط غير المصرح به منذ فترة طويلة.",
-    "autoPurge": "تطهير تلقائي",
+    "realTimeExpiry": "تتبع الانتهاء في الوقت الفعلي",
+    "expiryApplication": "تطبيق انتهاء الصلاحية 48h",
+    "securityText": "يقوم نظام الدعوات الموثوق بـ NESTHUB بإنشاء رموز وصول عابرة. إذا لم ينهي المدعوون التسجيل في غضون 48 ساعة، يتم مسح الرمز المشفر تلقائياً من ذاكرة التخزين المؤقت للبوابة. هذا يمنع إعادة استخدام الروابط غير المصرحة طويلة الأجل.",
+    "autoPurge": "الحذف التلقائي",
     "limitedAccess": "وصول محدود",
-    "policy": "سياسة"
+    "policy": "السياسة"
   },
+
   "AdminContent": {
     "title": "إدارة المحتوى الثابت",
-    "description": "تحرير وإدارة صفحاتك القانونية والإعلامية.",
-    "unauthorized": "الوصول غير المصرح به",
+    "description": "تعديل وإدارة صفحاتك القانونية والإعلامية.",
+    "unauthorized": "وصول غير مصرح",
     "adminRequired": "يجب أن تكون مسؤولاً.",
-    "allPages": "الجميع",
-    "published": "تم النشر",
-    "drafts": "المسودات",
+    "allPages": "الكل",
+    "published": "منشورة",
+    "drafts": "مسودات",
     "noPagesFound": "لم يتم العثور على صفحات",
     "pageTitlePlaceholder": "عنوان الصفحة…",
-    "editorPlaceholder": "أكتب المحتوى الخاص بك هنا...",
+    "editorPlaceholder": "اكتب محتواك هنا…",
     "restoring": "جاري الاستعادة…",
-    "history": "تاريخية",
+    "history": "السجل",
     "draft": "مسودة",
     "publish": "نشر",
-    "cancel": "يلغي",
-    "selectPage": "حدد صفحة",
-    "selectPageHint": "انقر على الصفحة الموجودة على اليسار لبدء التحرير",
-    "versionHistory": "تاريخ الإصدار",
+    "cancel": "إلغاء",
+    "selectPage": "اختر صفحة",
+    "selectPageHint": "انقر على صفحة على اليسار للبدء بالتحرير",
+    "versionHistory": "سجل الإصدارات",
     "versionHistoryDesc": "عرض واستعادة الإصدارات السابقة",
     "currentVersion": "الإصدار الحالي",
-    "versionRestoredBadge": "النسخة المستعادة",
+    "versionRestoredBadge": "تم استعادة الإصدار",
     "previousVersions": "الإصدارات السابقة ({count})",
-    "noPreviousVersions": "لا يوجد إصدار سابق",
-    "restored": "المستعادة",
-    "titleLabel": "عنوان",
-    "contentLabel": "محتوى",
-    "contentModified": "معدلة",
+    "noPreviousVersions": "لا توجد إصدارات سابقة",
+    "restored": "تم الاستعادة",
+    "titleLabel": "العنوان",
+    "contentLabel": "المحتوى",
+    "contentModified": "معدل",
     "restoreThisVersion": "استعادة هذا الإصدار",
-    "showLess": "انظر أقل",
-    "showAll": "مشاهدة الكل ({count} المزيد)",
+    "showLess": "عرض أقل",
+    "showAll": "عرض الكل ({count} من أكثر)",
     "deletePage": "حذف الصفحة",
-    "deleteConfirmation": "هذا الإجراء لا رجعة فيه.",
-    "delete": "يمسح",
+    "deleteConfirmation": "هذا الإجراء لا يمكن عكسه.",
+    "delete": "حذف",
     "pagePublished": "تم نشر الصفحة بنجاح ✓",
-    "draftSaved": "المسودة المحفوظة ✓",
-    "saveError": "حدث خطأ أثناء الحفظ",
+    "draftSaved": "تم حفظ المسودة ✓",
+    "saveError": "خطأ في الحفظ",
     "pageDeleted": "تم حذف الصفحة بنجاح",
-    "deleteError": "حدث خطأ أثناء الحذف",
-    "versionRestored": "تمت استعادة الإصدار {version} بنجاح ✓",
-    "restoreError": "خطأ أثناء الاستعادة"
+    "deleteError": "خطأ في الحذف",
+    "versionRestored": "تم استعادة الإصدار {version} بنجاح ✓",
+    "restoreError": "خطأ في الاستعادة"
   },
+
   "VerificationDetail": {
-    "alreadyValidated": "لقد تم بالفعل التحقق من صحة هذا الطلب",
-    "alreadyRejected": "لقد تم رفض هذا الطلب بالفعل",
-    "validated": "تم التحقق من صحتها",
+    "alreadyValidated": "تم بالفعل التحقق من هذا الطلب",
+    "alreadyRejected": "تم بالفعل رفض هذا الطلب",
+    "validated": "معتمد",
     "rejected": "مرفوض",
-    "backk": "خلف",
-    "verification": "رقم طلب التحقق:",
-    "pending": "في الانتظار",
-    "front": "أمام",
-    "back": "خلف",
+    "backk": "عودة",
+    "verification": "طلب التحقق رقم: ",
+    "pending": "معلق",
+    "front": "الأمامي",
+    "back": "الخلفي",
     "zoomOut": "تصغير",
     "zoomIn": "تكبير",
-    "rotateLeft": "انعطف لليسار",
-    "rotateRight": "انعطف يمينا",
-    "flip": "يعود",
+    "rotateLeft": "تدوير لليسار",
+    "rotateRight": "تدوير لليمين",
+    "flip": "قلب",
     "download": "تحميل",
-    "fullscreen": "شاشة كاملة",
+    "fullscreen": "ملء الشاشة",
     "mirror": "مرآة",
-    "clickToExpand": "انقر للتكبير",
-    "noImage": "لا توجد صور",
-    "notDetected": "لم يتم الكشف عنها",
+    "clickToExpand": "انقر للتوسيع",
+    "noImage": "لا توجد صورة",
+    "notDetected": "لم يتم الكشف",
     "owner": "مالك",
     "tenant": "مستأجر",
-    "verified": "تم التحقق منه",
-    "notVerified": "لم يتم التحقق منها",
+    "verified": "معتمد",
+    "notVerified": "غير معتمد",
     "extractedData": "البيانات المستخرجة",
     "firstName": "الاسم الأول",
-    "lastName": "اسم",
+    "lastName": "الاسم الأخير",
     "birthDate": "تاريخ الميلاد",
-    "gender": "جنس",
-    "cinNumber": "رقم CIN",
-    "email": "بريد إلكتروني",
-    "phone": "هاتف",
-    "ocrScore": "درجة التعرف الضوئي على الحروف",
+    "gender": "النوع",
+    "cinNumber": "رقم بطاقة التحقيق",
+    "email": "البريد الإلكتروني",
+    "phone": "الهاتف",
+    "ocrScore": "درجة OCR",
     "internalNote": "ملاحظة داخلية",
     "internalNotePlaceholder": "أضف ملاحظة داخلية (مرئية فقط للمسؤولين)...",
-    "validate": "للتحقق",
+    "validate": "تأكيد",
     "reject": "رفض",
     "rejectionReason": "سبب الرفض",
-    "required": "إلزامي",
-    "rejectionReasonPlaceholder": "توضيح سبب رفض هذا الطلب...",
+    "required": "مطلوب",
+    "rejectionReasonPlaceholder": "اشرح لماذا تم رفض هذا الطلب...",
     "confirmRejection": "تأكيد الرفض",
-    "unauthorized": "الوصول غير المصرح به",
+    "unauthorized": "وصول غير مصرح",
     "adminRequired": "هذه الصفحة مخصصة للمسؤولين.",
     "noData": "لم يتم العثور على بيانات",
     "reload": "إعادة تحميل",
-    "fullscreenImage": "صورة ملء الشاشة",
+    "fullscreenImage": "الصورة بملء الشاشة",
     "userDetails": "تفاصيل المستخدم",
-    "role": "دور",
-    "submittedAt": "تم تقديمه بتاريخ",
-    "status": "حالة",
-    "action": "فعل",
-    "processRequest": "لعلاج",
-    "refresh": "ينعش",
-    "searchPlaceholder": "البحث عن مستخدم...",
-    "justNow": "الآن",
-    "minutesAgo": "{count} قبل دقيقة",
-    "oneHourAgo": "منذ ساعة واحدة",
-    "hoursAgo": "{count} قبل ساعات",
-    "daysAgo": "منذ {count} أيام",
-    "validateId": "التحقق من صحة الهوية",
+    "role": "الدور",
+    "submittedAt": "تم التقديم في",
+    "status": "الحالة",
+    "action": "الإجراء",
+    "processRequest": "معالجة",
+    "refresh": "تحديث",
+    "searchPlaceholder": "ابحث عن مستخدم...",
+    "justNow": "للتو",
+    "minutesAgo": "قبل {count} دقيقة",
+    "oneHourAgo": "قبل ساعة واحدة",
+    "hoursAgo": "قبل {count} ساعة",
+    "daysAgo": "قبل {count} يوم",
+    "validateId": "تأكيد الهوية",
     "rejectId": "رفض الهوية",
-    "finalizeVerification": "الانتهاء من التحقق",
-    "reviewInstruction": "تحقق من المعلومات المذكورة أعلاه بعناية قبل اتخاذ القرار. يتم تسجيل الإجراءات للتدقيق.",
+    "finalizeVerification": "إنهاء التحقق",
+    "reviewInstruction": "تحقق بعناية من المعلومات أعلاه قبل اتخاذ قرار. يتم تسجيل الإجراءات للتدقيق.",
     "identityDetails": "تفاصيل الهوية",
-    "skipForNow": "تخطي الآن",
-    "cancel": "يلغي",
+    "skipForNow": "تخطي في الوقت الحالي",
+    "cancel": "إلغاء",
     "confirmDecision": "تأكيد القرار",
     "memberSince": "عضو منذ",
-    "propertiesListed": "الخصائص المدرجة",
-    "userId": "معرف المستخدم",
+    "propertiesListed": "عقارات مدرجة",
+    "userId": "معرّف المستخدم",
     "tier1Account": "حساب المستوى 1",
     "stats": {
-      "pending": "في الانتظار",
-      "processedToday": "تمت معالجتها اليوم",
+      "pending": "معلق",
+      "processedToday": "معالج اليوم",
       "documents": "وثائق",
-      "averageTime": "متوسط ​​الوقت",
+      "averageTime": "الوقت المتوسط",
       "minutes": "دقيقة"
     },
     "table": {
-      "user": "مستخدم",
-      "role": "دور",
-      "date": "تاريخ",
-      "status": "حالة",
-      "action": "فعل"
+      "user": "المستخدم",
+      "role": "الدور",
+      "date": "التاريخ",
+      "status": "الحالة",
+      "action": "الإجراء"
     },
     "empty": {
-      "title": "لا يوجد طلب التحقق",
-      "description": "تمت معالجة كافة الطلبات أو لا توجد طلبات حتى الآن.",
-      "backToDashboard": "العودة إلى لوحة القيادة",
-      "viewHistory": "عرض التاريخ"
+      "title": "لا توجد طلبات تحقق",
+      "description": "تم معالجة جميع الطلبات أو لا توجد تقديمات حتى الآن.",
+      "backToDashboard": "العودة إلى لوحة التحكم",
+      "viewHistory": "عرض السجل"
     }
   },
   "Verifications": {
-    "unauthorized": "الوصول غير المصرح به",
+    "unauthorized": "وصول غير مصرح",
     "adminRequired": "يجب أن تكون مسؤولاً.",
-    "title": "قائمة انتظار التحقق",
+    "title": "قائمة التحقق",
     "description": "إدارة طلبات التحقق من الهوية",
-    "searchPlaceholder": "البحث عن مستخدم...",
-    "refresh": "ينعش",
+    "searchPlaceholder": "ابحث عن مستخدم...",
+    "refresh": "تحديث",
     "processRequest": "معالجة الطلب",
-    "justNow": "الآن",
-    "minutesAgo": "{count} قبل دقيقة",
-    "oneHourAgo": "منذ ساعة واحدة",
-    "hoursAgo": "{count} قبل ساعات",
-    "daysAgo": "منذ {count} أيام",
+    "justNow": "للتو",
+    "minutesAgo": "قبل {count} دقيقة",
+    "oneHourAgo": "قبل ساعة",
+    "hoursAgo": "قبل {count} ساعة",
+    "daysAgo": "قبل {count} يوم",
     "stats": {
-      "pending": "في الانتظار",
-      "processedToday": "معاهدات AJD",
+      "pending": "معلق",
+      "processedToday": "معالج اليوم",
       "documents": "ملفات",
-      "averageTime": "متوسط ​​الوقت",
+      "averageTime": "الوقت المتوسط",
       "minutes": "دقيقة"
     },
     "table": {
-      "user": "مستخدم",
-      "role": "دور",
-      "date": "تاريخ",
-      "status": "حالة",
-      "action": "فعل"
+      "user": "المستخدم",
+      "role": "الدور",
+      "date": "التاريخ",
+      "status": "الحالة",
+      "action": "الإجراء"
     },
     "role": {
       "owner": "مالك",
       "tenant": "مستأجر"
     },
     "status": {
-      "pending": "في الانتظار"
+      "pending": "معلق"
     },
     "empty": {
-      "title": "جميع الشيكات كاملة!",
-      "description": "تهانينا، قائمة الانتظار الخاصة بك فارغة. سيتم إعلامك بمجرد قيام المالك الجديد بتقديم وثائقه.",
-      "backToDashboard": "العودة إلى لوحة القيادة",
-      "viewHistory": "عرض التاريخ"
+      "title": "اكتملت جميع عمليات التحقق!",
+      "description": "تهانينا، قائمة الانتظار الخاصة بك فارغة. سيتم إخطارك بمجرد تقديم مالك جديد لوثائقه.",
+      "backToDashboard": "العودة إلى لوحة التحكم",
+      "viewHistory": "عرض السجل"
     }
   },
+
   "SSOCallback": {
-    "connecting": "جاري الاتصال، الرجاء الانتظار...",
-    "pleaseWait": "التحقق من المعلومات الخاصة بك",
+    "connecting": "جاري الاتصال، يرجى الانتظار...",
+    "pleaseWait": "التحقق من معلوماتك",
     "redirecting": "جاري إعادة التوجيه..."
   },
+
   "ForgotPassword": {
-    "title": "نسيت كلمة المرور",
+    "title": "كلمة مرور منسية",
     "subtitle": "أدخل بريدك الإلكتروني لتلقي رابط إعادة التعيين",
-    "emailLabel": "بريد إلكتروني",
+    "emailLabel": "البريد الإلكتروني",
     "emailPlaceholder": "your@email.com",
     "sendResetLink": "إرسال الرابط",
     "sending": "جاري الإرسال...",
     "backToLogin": "العودة إلى تسجيل الدخول",
-    "securityBadge": "تشفير AES-256 • متوافق مع اللائحة العامة لحماية البيانات",
+    "securityBadge": "تشفير AES-256 • متوافق GDPR",
     "legal": "إشعارات قانونية",
-    "privacy": "السرية"
+    "privacy": "الخصوصية"
   },
   "ResetPassword": {
     "title": "إعادة تعيين كلمة المرور",
-    "subtitle": "قم بإنشاء كلمة مرور آمنة جديدة",
-    "subtitleWithEmail": "إنشاء كلمة مرور جديدة لـ {email}",
-    "successTitle": "تم تغيير كلمة المرور!",
-    "successMessage": "لقد تم إعادة تعيين كلمة المرور الخاصة بك بنجاح. سيتم إعادة توجيهك إلى صفحة تسجيل الدخول.",
+    "subtitle": "أنشئ كلمة مرور آمنة جديدة",
+    "subtitleWithEmail": "أنشئ كلمة مرور جديدة لـ {email}",
+    "successTitle": "تم تعديل كلمة المرور!",
+    "successMessage": "تمت إعادة تعيين كلمة المرور بنجاح. سيتم إعادة توجيهك إلى صفحة تسجيل الدخول.",
     "newPasswordLabel": "كلمة المرور الجديدة",
-    "newPasswordPlaceholder": "••••••••",
+    "newPasswordPlaceholder": "•••••••���",
     "confirmPasswordLabel": "تأكيد كلمة المرور",
     "confirmPasswordPlaceholder": "••••••••",
-    "resetPassword": "إعادة ضبط",
-    "resetting": "إعادة ضبط...",
+    "resetPassword": "إعادة تعيين",
+    "resetting": "جاري إعادة التعيين...",
     "backToLogin": "العودة إلى تسجيل الدخول",
     "passwordsDoNotMatch": "كلمات المرور غير متطابقة",
-    "securityBadge": "تشفير AES-256 • متوافق مع اللائحة العامة لحماية البيانات",
+    "securityBadge": "تشفير AES-256 • متوافق GDPR",
     "legal": "إشعارات قانونية",
-    "privacy": "السرية"
+    "privacy": "الخصوصية"
   },
   "VerificationsHistory": {
-    "title": "تاريخ التدقيق",
-    "subtitle": "عرض جميع طلبات التحقق التي تمت معالجتها بالفعل",
+    "title": "سجل التحقيقات",
+    "subtitle": "عرض جميع طلبات التحقق المعالجة",
     "backToPending": "العودة إلى الطلبات المعلقة",
-    "refresh": "ينعش",
-    "searchPlaceholder": "البحث بالاسم أو البريد الإلكتروني...",
+    "refresh": "تحديث",
+    "searchPlaceholder": "ابحث بالاسم أو البريد الإلكتروني...",
+
     "status": {
-      "validated": "تم التحقق من صحتها",
+      "validated": "معتمد",
       "rejected": "مرفوض",
-      "pending": "في الانتظار"
+      "pending": "معلق"
     },
+
     "filters": {
-      "all": "الجميع",
-      "validated": "تم التحقق من صحتها",
-      "rejected": "مرفوض"
+      "all": "الكل",
+      "validated": "معتمدة",
+      "rejected": "مرفوضة"
     },
+
     "stats": {
-      "total": "إجمالي الشيكات",
-      "totalDescription": "التاريخ الكامل",
+      "total": "إجمالي التحقيقات",
+      "totalDescription": "السجل الكامل",
       "approvalRate": "معدل الموافقة",
-      "rejected": "تم رفض الطلبات",
-      "rejectedDescription": "تتطلب الاهتمام"
+      "rejected": "الطلبات المرفوضة",
+      "rejectedDescription": "تتطلب انتباه"
     },
+
     "table": {
       "submittedAt": "تاريخ التقديم",
-      "user": "مستخدم",
-      "email": "بريد إلكتروني",
-      "status": "حالة",
+      "user": "المستخدم",
+      "email": "البريد الإلكتروني",
+      "status": "الحالة",
       "processedAt": "تاريخ المعالجة",
-      "processedBy": "تمت معالجتها بواسطة",
-      "notes": "السبب/ التعليق",
-      "action": "فعل",
-      "view": "يرى"
+      "processedBy": "تمت المعالجة بواسطة",
+      "notes": "السبب / التعليق",
+      "action": "الإجراء",
+      "view": "عرض"
     },
+
     "empty": {
-      "title": "لم تتم معالجة أي طلبات",
-      "description": "ستظهر هنا الطلبات التي تم التحقق منها أو المرفوضة"
+      "title": "لم تتم معالجة أي طلب",
+      "description": "ستظهر الطلبات المعتمدة أو المرفوضة هنا"
     },
+
     "pagination": {
       "showing": "عرض",
-      "of": "على",
-      "results": "نتائج"
+      "of": "من",
+      "results": "النتائج"
     }
   },
+
   "OwnerLayout": {
     "header": {
       "tenantSpace": "مساحة المستأجر",
-      "ownerSpace": "منطقة المالك",
-      "searchPlaceholder": "ابحث عن اعلان...",
-      "addListing": "يضيف",
+      "ownerSpace": "مساحة المالك",
+      "searchPlaceholder": "ابحث عن إعلان...",
+      "addListing": "إضافة",
       "owner": "مالك",
       "ownerBadge": "مالك"
     },
     "nav": {
-      "dashboard": "لوحة القيادة",
+      "dashboard": "لوحة التحكم",
       "listings": "إعلاناتي",
-      "calendar": "تقويم",
-      "reservations": "التحفظات",
-      "messages": "رسائل",
-      "analytics": "إحصائيات"
+      "calendar": "التقويم",
+      "reservations": "الحجوزات",
+      "messages": "الرسائل",
+      "analytics": "الإحصائيات",
+      "team": "الفريق"
     },
     "sidebar": {
       "ownerSuite": "مساحة المالك",
       "ownerRole": "مالك",
-      "verified": "تم التحقق منه",
-      "pro": "خطة احترافية",
-      "proDesc": "الوصول إلى الإحصائيات المتقدمة وتعزيز ظهورك.",
-      "upgrade": "اذهب برو",
-      "collapse": "يقلل",
-      "logout": "قطع الاتصال"
+      "verified": "معتمد",
+      "pro": "الخطة الاحترافية",
+      "proDesc": "الوصول إلى الإحصائيات المتقدمة وعزز ظهورك.",
+      "upgrade": "ترقية إلى الاحترافية",
+      "collapse": "تقليل",
+      "logout": "تسجيل الخروج"
     },
     "profile": {
       "myProfile": "ملفي الشخصي",
-      "settings": "إعدادات",
+      "settings": "الإعدادات",
       "logout": "تسجيل الخروج"
     },
     "notifications": {
-      "title": "إشعارات",
-      "empty": "لا الإخطارات"
+      "title": "التنبيهات",
+      "empty": "لا توجد تنبيهات"
     },
     "search": {
-      "cancel": "يلغي",
+      "cancel": "إلغاء",
       "noResults": "لا توجد نتائج"
     },
     "logout": {
-      "confirm": "قطع الاتصال",
-      "message": "هل أنت متأكد أنك تريد تسجيل الخروج؟",
-      "cancel": "يلغي"
+      "confirm": "تسجيل الخروج",
+      "message": "هل أنت متأكد من رغبتك في تسجيل الخروج؟",
+      "cancel": "إلغاء"
     }
   },
+
   "CreateListing": {
+    "breadcrumb": {
+      "myListings": "إعلاناتي",
+      "newListing": "إعلان جديد"
+    },
     "pageTitle": "إنشاء إعلان",
-    "stepOf": "الخطوة {الحالية} على {total}",
-    "saving": "نسخة احتياطية...",
+    "stepOf": "الخطوة {current} من {total}",
+    "saving": "جاري الحفظ...",
     "saveDraft": "حفظ المسودة",
-    "publishing": "منشور...",
+    "publishing": "جاري النشر...",
     "publish": "نشر الإعلان",
+    "confirmLeave": "لديك تعديلات غير محفوظة. هل أنت متأكد من رغبتك في مغادرة هذه الصفحة؟",
+    "required": "حقل مطلوب",
+
     "steps": {
       "typeLocation": "النوع والموقع",
-      "characteristics": "سمات",
-      "equipment": "معدات",
-      "photos": "صور",
+      "characteristics": "الخصائص",
+      "equipment": "الأجهزة",
+      "photos": "الصور",
       "pricing": "التسعير",
-      "preview": "معاينة"
+      "preview": "المعاينة"
     },
+
     "nav": {
-      "previous": "سابق",
-      "continue": "يكمل"
+      "previous": "السابق",
+      "continue": "متابعة"
     },
+
+    "units": {
+      "sqm": "م²",
+      "bedrooms": "غرف نوم",
+      "bathrooms": "حمامات",
+      "persons": "مسافرين"
+    },
+
+    "unit": {
+      "perNight": "دت / ليلة",
+      "perMonth": "دت / شهر",
+      "perNightShort": "/ ليلة",
+      "perMonthShort": "/ شهر"
+    },
+
+    "currency": {
+      "tnd": "دت"
+    },
+
     "propertyTypes": {
       "APARTMENT": "شقة",
       "VILLA": "فيلا",
       "STUDIO": "استوديو",
-      "DUPLEX": "دوبلكس",
-      "HOUSE": "بيت",
-      "ROOM": "غرفة نوم"
+      "DUPLEX": "منزل بطابقين",
+      "HOUSE": "منزل",
+      "ROOM": "غرفة"
     },
+
     "step1": {
-      "typeTitle": "ما نوع العقار الذي تقدمونه؟",
-      "titleSectionTitle": "قم بتسمية إعلانك",
+      "typeTitle": "ما نوع العقار الذي تقدمه؟",
+      "titleSectionTitle": "اعطِ عنواناً لإعلانك",
       "titleLabel": "عنوان الإعلان",
-      "titlePlaceholder": "مثال: فيلا رائعة مطلة على البحر في الحمامات",
-      "descriptionLabel": "وصف",
-      "descriptionPlaceholder": "قم بوصف مميزات مكان إقامتك، والأحياء القريبة، وما الذي يجعله فريدًا من نوعه...",
-      "locationTitle": "أين تقع الممتلكات الخاصة بك؟",
-      "governorate": "محافظة",
-      "delegation": "وفد",
+      "titlePlaceholder": "مثال: فيلا فاخرة بإطلالة بحر في الحمامات",
+      "descriptionLabel": "الوصف",
+      "descriptionPlaceholder": "صف مزايا منزلك والأحياء المحيطة وما يجعله فريداً...",
+      "locationTitle": "أين يقع عقارك؟",
+      "governorate": "الولاية",
+      "delegation": "المعتمدية",
       "street": "الحي / الشارع",
-      "delegationPlaceholder": "على سبيل المثال: المرسى",
-      "streetPlaceholder": "على سبيل المثال: شارع المرسى بلاج",
-      "choose": "يختار...",
-      "mapHint": "الموقع التقريبي على الخريطة",
-      "adjustMap": "يُعدِّل",
+      "delegationPlaceholder": "مثال: البحرة",
+      "streetPlaceholder": "مثال: شارع شاطئ البحرة",
+      "choose": "اختر...",
+      "mapHint": "موضع تقريبي على الخريطة",
+      "adjustMap": "ضبط الموضع",
       "exactLocation": "الموقع الدقيق",
-      "positionSelected": "الموقف المحدد",
-      "mapClickHint": "انقر على الخريطة لإظهار الموقع الدقيق لممتلكاتك"
+      "positionSelected": "تم اختيار الموضع",
+      "mapClickHint": "انقر على الخريطة للإشارة إلى الموقع الدقيق لممتلكاتك"
     },
+
     "step2": {
-      "title": "قم بوصف الممتلكات الخاصة بك",
-      "rooms": "الغرف",
-      "roomsDesc": "غرف ليلية خاصة",
+      "title": "صف عقارك",
+      "rooms": "غرف النوم",
+      "roomsDesc": "غرف نوم خاصة",
       "bathrooms": "الحمامات",
-      "bathroomsDesc": "غرف الاستحمام أو الحمامات",
-      "maxGuests": "الحد الأقصى لعدد المسافرين",
-      "maxGuestsDesc": "إجمالي القدرة على الاستقبال",
-      "surface": "مساحة المعيشة (م²)",
-      "floor": "رقم الطابق",
-      "floorPlaceholder": "0 لجمهورية الكونغو الديمقراطية",
+      "bathroomsDesc": "حمامات كاملة أو دورات مياه",
+      "maxGuests": "السعة الاستيعابية",
+      "maxGuestsDesc": "الحد الأقصى لعدد المسافرين",
+      "surface": "المساحة المأهولة",
+      "floor": "الطابق",
+      "floorPlaceholder": "0 للطابق الأرضي",
       "elevator": "مصعد",
-      "elevatorDesc": "هل المبنى به مصعد؟",
+      "elevatorDesc": "هل المبنى مزود بمصعد؟",
       "balcony": "شرفة",
-      "parking": "وقوف السيارات"
+      "parking": "مواقف خاصة"
     },
+
     "step3": {
-      "equipmentTitle": "ما هي المعدات التي تقدمها؟",
-      "servicesTitle": "الخدمات متضمنة",
+      "equipmentTitle": "الأجهزة المقدمة",
+      "servicesTitle": "الخدمات المضمنة",
       "rulesTitle": "قواعد المنزل",
-      "customRulesLabel": "القواعد المخصصة",
-      "customRulesPlaceholder": "أضف تعليماتك المحددة للمسافرين (بحد أقصى 500 حرف)..."
+      "customRulesLabel": "قواعد مخصصة",
+      "customRulesPlaceholder": "أضف تعليماتك المحددة للمسافرين (500 حرف كحد أقصى)..."
     },
+
     "equipment": {
-      "wifi": "واي فاي",
-      "ac": "تكييف",
-      "heating": "التدفئة",
-      "kitchen": "مطبخ مجهز",
-      "parking": "وقوف السيارات",
+      "wifi": "اتصال إنترنت Wi-Fi",
+      "ac": "مكيف الهواء",
+      "heating": "التدفئة المركزية",
+      "kitchen": "مطبخ كامل",
+      "parking": "موقف خاص",
       "pool": "حمام سباحة",
-      "gym": "نادي رياضي",
+      "gym": "صالة ألعاب",
       "washer": "غسالة",
-      "tv": "تلفزيون",
-      "balcony": "شرفة",
-      "dishwasher": "غسالة الأواني",
+      "tv": "تلفاز شاشة مسطحة",
+      "balcony": "شرفة أو فناء",
+      "dishwasher": "غسالة أطباق",
       "dryer": "مجفف",
       "elevator": "مصعد",
-      "airConditioning": "تكييف",
-      "workspace": "مساحة العمل"
+      "airConditioning": "مكيف عكسي",
+      "workspace": "مساحة عمل مخصصة"
     },
+
     "services": {
-      "cleaning": "خدمة تنظيف الغرف متضمنة",
-      "cleaningDesc": "التنظيف المهني المنتظم",
-      "linen": "بياضات منزلية",
-      "linenDesc": "يتم توفير الملاءات والمناشف",
-      "pets": "مسموح بالحيوانات الأليفة",
-      "petsDesc": "رفاقك موضع ترحيب",
-      "smoking": "يقبل المدخنين",
-      "smokingDesc": "في مناطق خارجية مخصصة",
-      "breakfast": "وجبة الإفطار متضمنة",
-      "breakfastDesc": "يتم تقديم وجبة الإفطار كل صباح",
-      "airportTransfer": "نقل المطار",
-      "airportTransferDesc": "خدمة نقل مكوكية متاحة عند الطلب"
+      "cleaning": "تنظيف مشمول",
+      "cleaningDesc": "خدمة تنظيف احترافية منتظمة",
+      "linen": "الملاءات المتوفرة",
+      "linenDesc": "ملاءات وفوط مشمولة",
+      "pets": "الحيوانات الأليفة مقبولة",
+      "petsDesc": "أصدقاؤك ذوو الأرجل الأربع مرحب بهم",
+      "smoking": "المدخنون مقبولون",
+      "smokingDesc": "توجد منطقة خارجية مخصصة",
+      "breakfast": "الإفطار مشمول",
+      "breakfastDesc": "الإفطار يُقدم كل صباح",
+      "airportTransfer": "نقل من المطار",
+      "airportTransferDesc": "النقل متاح عند الحجز"
     },
+
     "houseRules": {
-      "noParties": "لا الحفلات والمناسبات",
-      "noSmoke": "غير مدخن",
-      "noPets": "لا يتم قبول الحيوانات الأليفة",
-      "quietAfter22": "الهدوء مطلوب بعد الساعة 10 مساءً.",
-      "checkInAfter": "تسجيل الوصول بعد الساعة 2 ظهرًا",
-      "checkOutBefore": "تسجيل الخروج قبل الساعة 11 صباحا"
+      "noParties": "الحفلات والفعاليات غير مسموحة",
+      "noSmoke": "منزل خالي من التدخين",
+      "noPets": "الحيوانات الأليفة غير مقبولة",
+      "quietAfter22": "الهدوء مضمون بعد الساعة 10",
+      "checkInAfter": "الدخول من الساعة 2 مساءً",
+      "checkOutBefore": "المغادرة قبل الساعة 11 صباحاً"
     },
+
     "step4": {
-      "title": "أضف صورك",
-      "dropHere": "اسحب صورك هنا",
-      "dropHint": "قم بتحسين حجوزاتك باستخدام ما لا يقل عن 5 صور عالية الدقة (بحد أقصى 20)",
+      "title": "معرض الصور",
+      "dropHere": "أسقط صورك هنا",
+      "dropHint": "عرّف عقارك بـ 5 صور عالية الدقة على الأقل (20 كحد أقصى)",
       "or": "أو",
       "browseFiles": "تصفح ملفاتي",
-      "minPhotosWarning": "أضف {count} صورة (صور) أخرى للوصول إلى الحد الأدنى المطلوب",
-      "yourPhotos": "صورك",
-      "dragReorder": "اسحب لإعادة الترتيب",
+      "minPhotosWarning": "أضف {count} صورة إضافية للوصول إلى الحد الأدنى المطلوب",
+      "yourPhotos": "معرض الصور الخاص بك",
+      "dragReorder": "اسحب لإعادة ترتيب العرض",
       "mainPhoto": "الصورة الرئيسية",
-      "setMain": "تعيين كإعداد أساسي",
-      "delete": "يمسح",
-      "add": "يضيف",
-      "tipsTitle": "نصائح الصورة",
-      "tip1": "تفضل الضوء الطبيعي عن طريق فتح الستائر والمصاريع.",
-      "tip2": "قم بترتيب الجزء الداخلي للحصول على مظهر نظيف واحترافي.",
-      "tip3": "استخدم التنسيق الأفقي لإضفاء إحساس بالمساحة.",
-      "tip4": "أظهر كل غرفة مهمة: غرفة المعيشة، غرف النوم، المطبخ، الحمام.",
-      "uploading": "تحميل...",
-      "uploadError": "حدث خطأ أثناء التنزيل"
+      "setMain": "تعيين كصورة رئيسية",
+      "delete": "حذف",
+      "add": "إضافة صورة",
+      "tipsTitle": "نصائح للصور المؤثرة",
+      "tip1": "استمتع بالضوء الطبيعي بفتح الستائر والمصاريع",
+      "tip2": "رتب الداخل للحصول على مظهر نظيف واحترافي",
+      "tip3": "استخدم تنسيق المناظر الطبيعية لإضفاء الشعور بالفضاء",
+      "tip4": "اعرض كل غرفة مهمة: غرفة المعيشة والغرف والمطبخ والحمام",
+      "uploading": "جاري التحميل...",
+      "uploadError": "فشل التحميل، يرجى المحاولة مرة أخرى",
+      "clickStarToSetMain": "⭐ انقر على النجم لتعيين الصورة الرئيسية",
+      "setAsMain": "تعيين كصورة رئيسية",
+      "mainPhotoSet": "تم تعيين الصورة الرئيسية بنجاح"
     },
+
     "step5": {
-      "rentalTypeTitle": "نوع الإيجار",
-      "SHORT_TERM": "على المدى القصير",
-      "LONG_TERM": "على المدى الطويل",
-      "BOTH": "كلاهما",
-      "pricesTitle": "تحديد الأسعار الخاصة بك",
-      "pricePerNight": "سعر الليلة الواحدة",
-      "pricePerMonth": "السعر شهريا",
+      "rentalTypeTitle": "نوع التأجير",
+      "SHORT_TERM": "تأجير قصير الأجل",
+      "LONG_TERM": "تأجير طويل الأجل",
+      "BOTH": "كلا الخيارين",
+      "pricesTitle": "حدد أسعارك",
+      "pricePerNight": "السعر في الليلة",
+      "pricePerMonth": "السعر الشهري",
       "night": "ليلة",
       "month": "شهر",
-      "localAvg": "المتوسط ​​في منطقتك: {price} TND",
-      "feesTitle": "رسوم إضافية",
-      "deposit": "إيداع",
-      "depositDesc": "وديعة تأمين قابلة للاسترداد في نهاية الإقامة",
-      "depositAmount": "مبلغ الكفالة",
+      "localAvg": "السعر المتوسط في منطقتك: {price} دت",
+      "feesTitle": "الرسوم الإضافية",
+      "deposit": "ضمان الإيداع",
+      "depositDesc": "مبلغ قابل للاسترجاع في نهاية الإقامة",
+      "depositAmount": "مبلغ الضمان",
       "cleaningFee": "رسوم التنظيف",
-      "cleaningFeeDesc": "تتم المحاسبة مرة واحدة لكل إقامة",
-      "cleaningFeeAmount": "مقدار رسوم التنظيف",
-      "smartPricing": "التسعير الذكي",
+      "cleaningFeeDesc": "يتم فرضها مرة واحدة لكل حجز",
+      "cleaningFeeAmount": "مبلغ رسوم التنظيف",
+      "smartPricing": "التسعير الديناميكي",
       "seasonalTitle": "التسعير الموسمي",
-      "seasonalDesc": "عزز إيراداتك بنسبة 25% عن طريق تفعيل الأسعار الخاصة لعطلات نهاية الأسبوع وموسم الذروة.",
-      "weekend": "عطلة نهاية الأسبوع",
-      "summer": "الصيف (يونيو-أغسطس)",
-      "weekendMultiplier": "مضاعف عطلة نهاية الأسبوع",
-      "summerMultiplier": "مضاعف الصيف",
-      "estimatedRevenue": "الدخل المقدر",
-      "estimatedRevenueDesc": "اعتمادًا على إعداداتك، يمكنك إنشاء مبلغ يتراوح بين {min} TND و{max} TND شهريًا.",
-      "additionalFees": "رسوم إضافية",
-      "electricityFee": "تكاليف الكهرباء",
+      "seasonalDesc": "حسّن إيراداتك برسوم خاصة لنهاية الأسبوع والفترات الأخرى المزدحمة",
+      "weekend": "نهاية الأسبوع",
+      "summer": "الموسم الصيفي (يونيو إلى أغسطس)",
+      "weekendMultiplier": "معامل نهاية الأسبوع",
+      "summerMultiplier": "معامل الموسم الصيفي",
+      "estimatedRevenue": "الإيرادات المقدرة",
+      "estimatedRevenueDesc": "بناءً على معاملات الخاص بك، قد يكون دخلك الشهري بين {min} دت و {max} دت",
+      "additionalFees": "الرسوم الإضافية",
+      "electricityFee": "رسوم الكهرباء",
       "waterFee": "رسوم المياه",
       "serviceFee": "رسوم الخدمة"
     },
+
     "preview": {
       "noTitle": "عنوان الإعلان",
-      "rooms": "غرف",
-      "bathrooms": "حمام",
+      "rooms": "غرف نوم",
+      "bathrooms": "حمامات",
       "guests": "مسافرين",
-      "readyTitle": "إعلانك جاهز!",
-      "readyDesc": "تحقق من المعلومات أعلاه ثم قم بنشر إعلانك. وسوف تكون مرئية بعد التحقق من الصحة.",
-      "perNight": "في الليلة الواحدة",
-      "perMonth": "كل شهر",
-      "equipment": "معدات",
-      "services": "خدمات",
-      "rules": "قواعد",
-      "location": "موقع"
+      "readyTitle": "إعلانك جاهز للنشر",
+      "readyDesc": "تحقق بعناية من المعلومات أعلاه قبل نشر إعلانك. سيكون مرئياً على المنصة بعد التحقق من فريقنا.",
+      "perNight": "في الليلة",
+      "perMonth": "في الشهر",
+      "equipment": "الأجهزة المتاحة",
+      "services": "الخدمات المقدمة",
+      "rules": "قواعس المنزل",
+      "location": "الموقع"
     },
+
     "sidebar": {
       "tipTitle": "نصيحة الخبراء",
-      "tip1": "يجذب العنوان الجذاب عدداً أكبر من المسافرين بنسبة 40%.",
-      "tip2": "5 صور كحد أدنى تزيد فرصك في الحجز.",
-      "tip3": "السعر التنافسي يحسن ظهورك في النتائج.",
-      "tip4": "قم بتفصيل وسائل الراحة الخاصة بك جيدًا لجذب المزيد من المسافرين.",
-      "whyNesthub": "لماذا نيست هاب؟",
-      "benefit1": "مدفوعات آمنة مضمونة",
-      "benefit2": "دعم المالك 7 أيام في الأسبوع",
-      "benefit3": "صفر رسوم خفية",
-      "benefit4": "التأمين متضمن لكل حجز"
+      "tip1": "العنوان الجذاب يجذب 40٪ من المسافرين الإضافيين",
+      "tip2": "الحد الأدنى من 5 صور يزيد من فرصك في الحجز",
+      "tip3": "السعر التنافسي يحسن ظهورك في نتائج البحث",
+      "tip4": "وضح معدات الخاص بك لجذب عملاء أوسع",
+      "whyNesthub": "لماذا اختيار NestHub؟",
+      "benefit1": "مدفوعات آمنة ومضمونة",
+      "benefit2": "دعم المالك متاح 7 أيام في الأسبوع",
+      "benefit3": "لا رسوم مخفية ولا عمولات زائدة",
+      "benefit4": "تأمين المسؤولية المدنية مشمول لكل حجز"
     },
+
     "validation": {
-      "titleRequired": "العنوان مطلوب",
+      "titleRequired": "عنوان الإعلان مطلوب",
       "titleMin": "يجب أن يحتوي العنوان على 3 أحرف على الأقل",
-      "governorateRequired": "الحاكم مطلوب",
-      "delegationRequired": "التفويض مطلوب",
-      "photosMin": "أضف 5 صور على الأقل",
+      "descriptionRequired": "الوصف مطلوب",
+      "descriptionMin": "يجب أن يحتوي الوصف على 20 حرفاً على الأقل",
+      "governorateRequired": "يرجى اختيار ولاية",
+      "delegationRequired": "المعتمدية مطلوبة",
+      "streetRequired": "الشارع مطلوب",
+      "locationRequired": "الموقع على الخريطة مطلوب",
+      "roomsRequired": "غرفة نوم واحدة على الأقل مطلوبة",
+      "bathroomsRequired": "حمام واحد على الأقل مطلوب",
+      "maxGuestsRequired": "مسافر واحد على الأقل مطلوب",
+      "photosRequired": "صورة واحدة على الأقل مطلوبة",
+      "mainPhotoRequired": "يرجى تعيين صورة رئيسية",
+      "photosMin": "أضف 5 صور على الأقل لعرض عقارك بشكل جيد",
       "priceRequired": "السعر مطلوب",
-      "pricePositive": "يجب أن يكون السعر إيجابيا",
-      "descriptionMax": "لا يمكن أن يتجاوز الوصف 2000 حرف"
+      "pricePositive": "يجب أن يكون السعر أكبر من صفر",
+      "pricePerNightRequired": "سعر الليلة مطلوب",
+      "pricePerMonthRequired": "السعر الشهري مطلوب",
+      "descriptionMax": "الوصف لا يمكن أن يتجاوز 2000 حرف"
     },
+
     "success": {
-      "published": "لقد تم نشر إعلانك بنجاح!",
-      "draftSaved": "تم حفظ مسودتك",
-      "redirecting": "جاري إعادة التوجيه..."
+      "published": "تهانينا! تم نشر إعلانك بنجاح",
+      "draftSaved": "تم حفظ مسودتك تلقائياً",
+      "redirecting": "إعادة التوجيه إلى لوحة التحكم الخاصة بك..."
     },
+
     "error": {
-      "generic": "لقد حدث خطأ",
-      "uploadFailed": "فشل تحميل الصور",
-      "saveFailed": "فشل النسخ الاحتياطي",
-      "publishFailed": "فشل النشر"
+      "generic": "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً.",
+      "uploadFailed": "فشل تحميل الصور. تحقق من اتصالك وحاول مرة أخرى.",
+      "saveFailed": "فشل حفظ المسودة. يرجى المحاولة مرة أخرى.",
+      "publishFailed": "فشل نشر إعلانك. يرجى التحقق من جميع الحقول المطلوبة.",
+      "networkError": "مشكلة في الاتصال بالشبكة. تحقق من اتصالك بالإنترنت.",
+      "timeoutError": "انتهت صلاحية الطلب. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "OwnerListingDetail": {
+    "equipment": {
+      "wifi": "واي فاي",
+      "ac": "مكيف هواء",
+      "heating": "تدفئة",
+      "kitchen": "مطبخ مجهز",
+      "parking": "موقف",
+      "pool": "حمام سباحة",
+      "gym": "صالة رياضية",
+      "washer": "غسالة",
+      "tv": "تلفاز",
+      "balcony": "شرفة",
+      "dishwasher": "غسالة الأطباق",
+      "dryer": "مجفف",
+      "coffee": "آلة قهوة",
+      "smartlock": "قفل ذكي",
+      "speaker": "مكبر صوت",
+      "workplace": "مساحة عمل",
+      "elevator": "مصعد"
+    },
+    "units": {
+      "sqm": "م²"
+    },
+    "currency": {
+      "tnd": "دت"
+    },
+
+    "tooltips": {
+      "viewPublic": "عرض الإعلان على الموقع العام",
+      "edit": "تعديل الإعلان",
+      "hide": "إخفاء الإعلان",
+      "publish": "نشر الإعلان",
+      "delete": "حذف الإعلان"
+    },
+    "errors": {
+      "loadFailed": "فشل تحميل تفاصيل الإعلان",
+      "statusChangeFailed": "خطأ في تغيير الحالة",
+      "deleteFailed": "خطأ في الحذف"
+    },
+    "status": {
+      "active": "منشور",
+      "inactive": "مخفي",
+      "draft": "مسودة"
+    },
+    "bookingStatus": {
+      "confirmed": "مؤكد",
+      "pending": "معلق",
+      "paid": "مدفوع"
+    },
+    "stats": {
+      "views": "مشاهدات",
+      "bookings": "حجوزات",
+      "occupancy": "معدل الإشغال",
+      "revenue": "الإيرادات الإجمالية",
+      "revenueValue": "0.000 دت"
+    },
+    "quickStats": {
+      "views": "مشاهدات",
+      "bookings": "حجز",
+      "conversion": "تحويل",
+      "revenue": "إيرادات"
+    },
+    "sections": {
+      "description": "الوصف",
+      "noDescription": "لم يتم توفير أي وصف.",
+      "amenities": "المرافق",
+      "location": "الموقع",
+      "noLocation": "الموقع غير متاح",
+      "nextBookings": "الحجوزات القادمة",
+      "noBookings": "لا توجد حجوزات قادمة",
+      "availability": "التوفر",
+      "owner": "المالك",
+      "ownerDefault": "مالك",
+      "mainOwner": "المالك الرئيسي",
+      "team": "فريق الإدارة",
+      "teamDescription": "الأشخاص الذين لديهم وصول لإدارة هذا الإعلان."
+    },
+    "actions": {
+      "viewPublic": "عرض الإعلان العام",
+      "edit": "تعديل",
+      "showMore": "اقرأ المزيد",
+      "showLess": "عرض أقل",
+      "showAllAmenities": "عرض جميع {count} المرافق",
+      "viewAll": "عرض الكل",
+      "invite": "دعوة",
+      "hide": "إخفاء الإعلان",
+      "publish": "نشر الإعلان",
+      "delete": "حذف"
+    },
+    "specs": {
+      "rooms": "غرف نوم",
+      "bathrooms": "حمام",
+      "guests": "مسافرين"
+    },
+    "breadcrumb": {
+      "listings": "إعلاناتي"
+    },
+    "footer": {
+      "lastModified": "آخر تعديل"
+    },
+    "notFound": {
+      "title": "الإعلان غير موجود",
+      "description": "الإعلان الذي تبحث عنه غير موجود أو تم حذفه.",
+      "button": "العودة إلى الإعلانات",
+      "helpText": "يمكنك أيضاً",
+      "dashboardLink": "العودة إلى لوحة التحكم"
+    },
+    "gallery": {
+      "mainPhoto": "الرئيسية",
+      "morePhotos": "صور",
+      "previous": "السابقة",
+      "next": "التالية"
+    },
+    "location": {
+      "openInMaps": "فتح في الخرائط"
+    },
+    "calendar": {
+      "previousMonth": "الشهر السابق",
+      "nextMonth": "الشهر التالي",
+      "days": "ن,ث,ث,خ,ج,س,د"
+    },
+    "modals": {
+      "delete": {
+        "confirm": "هل أنت متأكد من رغبتك في حذف هذا الإعلان؟"
+      }
+    }
+  },
+
+  "ListingHistory": {
+    "user": {
+      "default": "مستخدم"
+    },
+    "actions": {
+      "export": "تصدير (PDF)",
+      "exporting": "جاري التصدير..."
+    },
+    "fieldLabels": {
+      "pricePerNight": "تعديل السعر في الليلة",
+      "pricePerMonth": "تعديل السعر الشهري",
+      "status": "تغيير الحالة",
+      "photos": "تحديث الصور",
+      "equipment": "تعديل الأجهزة",
+      "description": "تعديل الوصف",
+      "title": "تعديل العنوان",
+      "general": "تعديل عام"
+    },
+    "photo": {
+      "old": "صورة قديمة",
+      "new": "صورة جديدة"
+    },
+    "equipment": {
+      "added": "تم الإضافة",
+      "removed": "تم الإزالة",
+      "wifi": "واي فاي",
+      "ac": "مكيف",
+      "heating": "تدفئة",
+      "kitchen": "مطبخ مجهز",
+      "parking": "موقف",
+      "pool": "حمام سباحة",
+      "gym": "صالة رياضية",
+      "washer": "غسالة",
+      "tv": "تلفاز",
+      "balcony": "شرفة",
+      "dishwasher": "غسالة أطباق",
+      "dryer": "مجفف",
+      "coffee": "آلة قهوة",
+      "smartlock": "قفل ذكي",
+      "speaker": "مكبر صوت",
+      "workplace": "مساحة عمل",
+      "elevator": "مصعد"
+    },
+    "errors": {
+      "exportFailed": "خطأ في التصدير. يرجى المحاولة مرة أخرى.",
+      "loadFailed": "فشل تحميل السجل"
+    },
+    "notFound": {
+      "title": "الإعلان غير موجود",
+      "description": "الإعلان الذي تبحث عنه غير موجود أو تم حذفه.",
+      "button": "العودة إلى الإعلانات",
+      "helpText": "هل تحتاج إلى مساعدة؟",
+      "dashboardLink": "العودة إلى لوحة التحكم"
+    },
+    "page": {
+      "title": "سجل التعديلات",
+      "description": "اطلع على تطور إعلانك \"{title}\" واتبع تدخلات فريقك.",
+      "loading": "جاري تحميل السجل..."
+    },
+    "breadcrumb": {
+      "listings": "إعلاناتي",
+      "history": "السجل"
+    },
+    "filters": {
+      "": "الكل",
+      "period": "الفترة",
+      "type": "أنواع التعديلات",
+      "30derniersjours": "آخر 30 يوم",
+      "trimestre": "ربع سنة",
+      "année": "سنة",
+      "tout": "الكل",
+      "equipment_update": "الأجهزة",
+      "price_update": "الأسعار",
+      "status_change": "الحالة",
+      "photo_update": "الصور",
+      "update": "عام",
+      "7days": "آخر 7 أيام",
+      "90days": "آخر 90 يوم",
+      "alldates": "جميع التواريخ"
+    },
+    "timeline": {
+      "oldValue": "القيمة القديمة",
+      "newValue": "القيمة الجديدة",
+      "deleted": "تم الحذف",
+      "new": "جديد",
+      "unchanged": "بدون تغيير"
+    },
+    "fields": {
+      "pricePerNight": "السعر في الليلة",
+      "pricePerMonth": "السعر الشهري",
+      "status": "الحالة",
+      "photos": "صورة الغلاف",
+      "equipment": "الأجهزة",
+      "description": "الوصف",
+      "title": "العنوان"
+    },
+    "actionTypes": {
+      "PRICE_UPDATE": "السعر",
+      "STATUS_CHANGE": "الحالة",
+      "PHOTO_UPDATE": "الصور",
+      "EQUIPMENT_UPDATE": "الأجهزة",
+      "UPDATE": "تعديل",
+      "CREATE": "إنشاء"
+    },
+    "roles": {
+      "owner": "مالك",
+      "coOwner": "مالك مشارك",
+      "admin": "مسؤول"
+    },
+    "emptyState": {
+      "title": "لا توجد تعديلات",
+      "description": "لم يتم تسجيل أي تعديل لهذا الإعلان."
+    },
+    "status": {
+      "active": "منشور",
+      "inactive": "مخفي",
+      "draft": "مسودة",
+      "archived": "مؤرشف"
     }
   },
   "OwnerListings": {
-    "title": "إدارة المحافظ",
-    "description": "قم بإدارة عقاراتك وتتبع الأداء وحقق أقصى عائد على الاستثمار باستخدام أدواتنا الذكية.",
-    "addProperty": "أضف خاصية",
-    "tabs": {
-      "all": "الجميع",
-      "active": "تم النشر",
-      "inactive": "غير نشط",
-      "draft": "المسودات"
+    "currency": {
+      "tnd": "دت"
+    },
+    "page": {
+      "title": "إعلاناتي",
+      "description": "إدارة عقاراتك ومتابعة أدائها في الوقت الفعلي."
     },
     "stats": {
-      "totalRevenue": "إجمالي الإيرادات",
-      "activeListings": "إعلانات نشطة",
-      "totalViews": "إجمالي المشاهدات",
-      "occupancyRate": "معدل الإشغال",
-      "properties": "ملكيات",
-      "stablePortfolio": "محفظة مستقرة",
-      "views": "وجهات النظر",
-      "bookings": "التحفظات",
-      "price": "سعر",
-      "published": "تم النشر بتاريخ",
-      "notPublished": "غير منشورة"
+      "totalRevenue": "الإيرادات الإجمالية",
+      "activeListings": "الإعلانات النشطة",
+      "totalViews": "المشاهدات الإجمالية",
+      "occupancyRate": "معدل الإشغال"
+    },
+    "tabs": {
+      "all": "الكل",
+      "active": "منشورة",
+      "inactive": "مخفية",
+      "draft": "مسودات",
+      "archived": "مؤرشفة"
+    },
+    "filters": {
+      "titre": "تصفية متقدمة",
+      "governorate": "الولاية",
+      "allGovernorates": "جميع الولايات",
+      "priceRange": "نطاق الأسعار",
+      "minRooms": "الحد الأدنى لعدد الغرف",
+      "reset": "إعادة تعيين المرشحات",
+      "aiTitre": "نصيحة الذكاء الاصطناعي",
+      "aiTip": "استخدم المرشحات للعثور بسرعة على إعلاناتك الأكثر أداءً.",
+      "searchPlaceholder": "ابحث عن إعلان حسب العنوان أو الوصف...",
+      "dateFilter": "التصفية حسب التاريخ",
+      "allDates": "الكل",
+      "lastWeek": "7 أيام",
+      "lastMonth": "30 يوم",
+      "lastYear": "سنة واحدة"
+    },
+    "table": {
+      "views": "مشاهدات",
+      "bookings": "حجز",
+      "conversion": "تحويل",
+      "revenue": "إيرادات",
+      "price": "السعر",
+      "favorites": "المفضلات"
     },
     "status": {
-      "active": "تم النشر",
-      "inactive": "غير نشط",
+      "active": "منشورة",
+      "activeDesc": "مرئية لجميع المسافرين",
+      "inactive": "مخفية",
+      "inactiveDesc": "غير مرئية للمسافرين",
       "draft": "مسودة",
-      "archived": "أرشيف"
+      "draftDesc": "قيد الإنشاء وغير منشورة",
+      "archived": "مؤرشفة",
+      "archivedDesc": "محفوظة في الأرشيف، يمكن استعادتها"
     },
-    "badge": {
-      "verified": "تم التحقق منه"
-    },
-    "unit": {
-      "night": "ليلة",
-      "month": "شهر"
+    "performance": {
+      "spinner": "جاري تحميل إعلاناتك......",
+      "topPerformance": "الأداء العالي",
+      "toOptimize": "للتحسين"
     },
     "aiInsights": {
-      "title": "نصائح الذكاء الاصطناعي",
-      "draftTip": "إعلانك في المسودة. انشرها لبدء تلقي الحجوزات.",
-      "lowViewsTip": "قم بتحسين صورك وعنوانك لجذب المزيد من الزوار.",
-      "highDemandTip": "توقع طلب قوي! ارفع أسعارك قليلاً."
+      "draft": " مسودة - أكمل ونشر إعلانك",
+      "archived": " مؤرشفة - استعدها لإعادة التفعيل",
+      "inactive": " مخفية - انشرها لتصبح مرئية",
+      "lowViews": " المزيد من الصور = +20% مشاهدات",
+      "noBookings": " تحقق من السعر مقابل السوق",
+      "lowConversion": " تحويل منخفض - حسّن إعلانك",
+      "excellent": " أداء ممتازة! استمر هكذا",
+      "optimize": " حسّن إعلانك"
+    },
+    "recommendations": {
+      "lowConversion": " تحويل منخفض ({rate}%) - حسّن صورك أو اضبط السعر",
+      "excellentPerformance": " أداء ممتازة! {count} حجز هذا الشهر"
     },
     "actions": {
-      "view": "يرى",
-      "edit": "للتعديل",
-      "delete": "يمسح"
+      "edit": "تعديل الإعلان",
+      "viewPublic": "عرض على الموقع العام",
+      "history": "سجل التعديلات",
+      "qrCode": "إنشاء رمز QR",
+      "more": "المزيد من الإجراءات",
+      "hide": "إخفاء الإعلان",
+      "publish": "نشر الإعلان",
+      "archive": "أرشفة الإعلان",
+      "restore": "استعادة الإعلان",
+      "delete": "حذف نهائي",
+      "analytics": "تحليلات متقدمة",
+      "refresh": "تحديث البيانات",
+      "addListing": "إضافة إعلان",
+      "viewList": "عرض القائمة",
+      "viewGrid": "عرض الشبكة",
+      "exportCSV": "تصدير CSV"
     },
-    "empty": {
-      "title": "لا إعلانات",
-      "description": "لم تقم بإنشاء إعلان بعد. ابدأ بمشاركة ممتلكاتك الآن.",
-      "cta": "إنشاء إعلاني الأول"
+    "emptyState": {
+      "title": "لا توجد إعلانات",
+      "description": "ابدأ مغامرتك على {platform} بإنشاء إعلانك الأول. آلاف المسافرين ينتظرونك!",
+      "button": "إنشاء إعلاني الأول",
+      "helpLink": "هل تحتاج إلى مساعدة في إنشاء إعلانك؟"
     },
-    "searchPlaceholder": "ابحث عن عقار...",
-    "filter": "فلتر",
-    "deleteConfirm": "هل أنت متأكد أنك تريد إزالة هذا الإعلان؟ هذا الإجراء لا رجعة فيه.",
-    "pagination": {
-      "showing": "عرض {البدء} إلى {النهاية} على خصائص {total}."
+    "addNewCard": {
+      "title": "إضافة عقار آخر",
+      "description": "هل لديك عقار جديد تريد تقديمه؟ ابدأ بتوليد الإيرادات الآن.",
+      "button": "بدء الإعلان"
     },
-    "footer": {
-      "legal": "إشعارات قانونية",
-      "aiPolicy": "سياسة الذكاء الاصطناعي",
-      "aiStatus": "محرك الذكاء الاصطناعي: الأمثل"
-    }
-  },
-  "Users": {
-    "stats": {
-      "totalUsers": "إجمالي المستخدمين",
-      "newUsers30d": "جديد (30 يومًا)",
-      "pendingValidation": "في الانتظار",
-      "verifiedIdentity": "تم التحقق منه"
-    }
-  },
-  "ListingDetail": {
-    "backToListings": "العودة إلى الإعلانات",
-    "reviews": "يلاحظ",
-    "viewAllPhotos": "عرض جميع الصور ({count})",
-    "hostedBy": "الإقامة الكاملة: {الاسم}",
-    "guests": "مسافرين",
-    "bedrooms": "غرف",
-    "bathrooms": "الحمامات",
-    "elevator": "مصعد",
-    "elevatorDesc": "سهولة الوصول إلى جميع الطوابق",
-    "greatLocation": "موقع مثالي",
-    "greatLocationDesc": "100% من المسافرين قاموا بتقييم الموقع بـ 5 نجوم.",
-    "freeCancellation": "إلغاء مجاني",
-    "freeCancellationDesc": "إلغاء مجاني حتى 7 أيام قبل الوصول.",
-    "about": "حول هذا السكن",
-    "noDescription": "لا يوجد وصف متاح في هذا الوقت.",
-    "amenities": "معدات",
-    "showAllAmenities": "عرض جميع المعدات",
-    "availability": "التوفر",
-    "selectDates": "أضف تواريخ سفرك لمعرفة السعر الدقيق",
-    "checkIn": "الوصول",
-    "checkOut": "رحيل",
-    "guest": "مسافر",
-    "nights": "الليالي",
-    "night": "ليلة",
-    "cleaningFee": "رسوم التنظيف",
-    "serviceFee": "رسوم الخدمة",
-    "total": "المجموع",
-    "requestToBook": "طلب الحجز",
-    "noChargeYet": "لن يتم تحصيل أي مبلغ منك في هذا الوقت",
-    "reportListing": "الإبلاغ عن هذا الإعلان",
-    "reviewDate": "• مايو 2024",
-    "sampleReview": "إقامة لا تنسى! الفيلا أجمل مما في الصور. المضيف رائع ومليء بالتوصيات الرائعة للمطاعم المحلية.",
-    "showAllReviews": "عرض {count} من التعليقات",
-    "unit": {
-      "night": "ليلة",
-      "month": "شهر"
+    "units": {
+      "night": "/ليلة",
+      "month": "/شهر",
+      "tnd": "دت"
     },
-    "equipment": {
-      "wifi": "واي فاي",
-      "ac": "تكييف",
-      "heating": "التدفئة",
-      "kitchen": "مطبخ مجهز",
-      "parking": "مواقف مجانية للسيارات",
-      "pool": "حمام سباحة خاص",
-      "gym": "نادي رياضي",
-      "washer": "غسالة",
-      "tv": "تلفزيون",
-      "balcony": "شرفة",
-      "elevator": "مصعد",
-      "workspace": "مساحة العمل",
-      "dryer": "مجفف",
-      "dishwasher": "غسالة الأواني"
+    "deleteModal": {
+      "title": "حذف الإعلان",
+      "description": "هذا الإجراء لا يمكن عكسه. سيتم حذف جميع البيانات المتعلقة بهذا الإعلان نهائياً.",
+      "warning": "تحذير: لا يمكن إلغاء هذا الإجراء.",
+      "cancel": "إلغاء",
+      "confirmTextLabel": "لتأكيد الحذف اكتب ",
+      "confirm": "حذف",
+      "deleting": "جاري الحذف...",
+      "bookingsWarning": "هذا الإعلان يحتوي على حجوزات نشطة.",
+      "cancelBookingsOption": "إلغاء الحجوزات النشطة تلقائياً",
+      "continue": "متابعة"
     },
-    "notFound": {
-      "title": "لم يتم العثور على الإعلان",
-      "description": "الإعلان الذي تبحث عنه غير موجود أو تم حذفه.",
-      "back": "العودة إلى إعلاناتي"
+    "qrCodeModal": {
+      "title": "رمز QR - مشاركة الإعلان",
+      "download": "تحميل",
+      "share": "مشاركة",
+      "copyLink": "نسخ الرابط",
+      "copied": "تم النسخ!",
+      "scanHint": "امسح هذا الرمز للوصول مباشرة إلى إعلانك",
+      "customize": "تخصيص",
+      "close": "إغلاق"
+    },
+    "alerts": {
+      "statusChanged": "تم تغيير حالة الإعلان بنجاح",
+      "listingRestored": "تم استعادة الإعلان بنجاح",
+      "errorOccurred": "حدث خطأ. يرجى المحاولة لاحقاً",
+      "noResults": "لا توجد إعلانات تطابق معايير البحث",
+      "filtersApplied": "تم تطبيق المرشحات بنجاح",
+      "filtersReset": "تم إعادة تعيين جميع المرشحات",
+      "statusActivated": "تم نشر الإعلان بنجاح",
+      "statusDeactivated": "تم إخفاء الإعلان بنجاح",
+      "statusArchived": "تم أرشفة الإعلان بنجاح",
+      "statusChangeFailed": "خطأ في تغيير الحالة",
+      "dataRefreshed": "تم تحديث البيانات بنجاح",
+      "refreshFailed": "خطأ في التحديث",
+      "exportSuccess": "نجح تصدير CSV",
+      "exportFailed": "خطأ في تصدير CSV",
+      "listingDeleted": "تم حذف الإعلان بنجاح"
+    },
+    "sorting": {
+      "newest": "الأحدث",
+      "oldest": "الأقدم",
+      "mostViewed": "الأكثر مشاهدة",
+      "mostBooked": "الأكثر حجزاً",
+      "priceAsc": "السعر تصاعدي",
+      "priceDesc": "السعر تنازلي"
+    },
+    "confirmation": {
+      "deleteTitle": "تأكيد الحذف",
+      "deleteMessage": "هل أنت متأكد من رغبتك في حذف هذا الإعلان نهائياً؟ لا يمكن عكس هذا الإجراء.",
+      "archiveTitle": "تأكيد الأرشفة",
+      "archiveMessage": "سيتم نقل هذا الإعلان إلى الأرشيف. يمكنك استعادته لاحقاً إذا لزم الأمر.",
+      "publishTitle": "تأكيد النشر",
+      "publishMessage": "سيكون إعلانك مرئياً لجميع المسافرين على الفور. هل تريد المتابعة؟"
+    },
+    "placeholders": {
+      "search": "ابحث بالعنوان أو الوصف أو الموقع...",
+      "minPrice": "السعر الأدنى",
+      "maxPrice": "السعر الأقصى",
+      "rooms": "عدد الغرف"
+    },
+    "labels": {
+      "createdAt": "تاريخ الإنشاء",
+      "updatedAt": "آخر تعديل",
+      "views": "عدد المشاهدات",
+      "bookings": "عدد الحجوزات",
+      "revenue": "الإيرادات المولدة",
+      "rating": "التقييم المتوسط",
+      "reviews": "التقييمات"
+    },
+    "tooltips": {
+      "edit": "تعديل معلومات هذا الإعلان",
+      "viewPublic": "عرض الإعلان على الموقع العام في نافذة جديدة",
+      "history": "عرض السجل الكامل للتعديلات",
+      "qrCode": "إنشاء رمز QR لمشاركة هذا الإعلان بسهولة",
+      "analytics": "الوصول إلى إحصائيات الأداء التفصيلية",
+      "delete": "حذف هذا الإعلان نهائياً",
+      "refresh": "تحديث البيانات في الوقت الفعلي",
+      "viewGrid": "عرض الإعلانات في شكل شبكة",
+      "viewList": "عرض الإعلانات في شكل قائمة"
+    },
+    "errors": {
+      "loadFailed": "فشل تحميل إعلاناتك. يرجى التحقق من الاتصال.",
+      "updateFailed": "فشل تحديث الحالة. يرجى المحاولة مرة أخرى.",
+      "deleteFailed": "فشل حذف الإعلان. يرجى المحاولة مرة أخرى.",
+      "qrGenerationFailed": "فشل إنشاء رمز QR. يرجى المحاولة مرة أخرى."
+    },
+    "success": {
+      "statusUpdated": "تم تحديث حالة الإعلان بنجاح",
+      "listingCreated": "تم إنشاء إعلانك بنجاح",
+      "listingUpdated": "تم حفظ التعديلات بنجاح"
+    },
+    "buttons": {
+      "retry": "حاول مرة أخرى",
+      "cancel": "إلغاء",
+      "confirm": "تأكيد",
+      "save": "حفظ",
+      "close": "إغلاق"
+    },
+    "badges": {
+      "new": "جديد"
     }
   },
   "EditListing": {
-    "title": "عنوان الإعلان",
-    "autoSave": "النسخ الاحتياطي التلقائي نشط",
-    "saveDraft": "حفظ المسودة",
-    "step1": "الخطوة 1 من 4",
-    "step2": "الخطوة 2 من 4",
-    "step3": "الخطوة 3 من 4",
-    "step4": "الخطوة 4 من 4",
-    "detailsTitle": "تفاصيل العقار",
-    "photosTitle": "معرض الصور",
-    "pricingTitle": "التسعير",
-    "publishTitle": "النشر",
-    "detailsDesc": "قم بتحديث المعلومات الأساسية لملكيتك.",
-    "photosDesc": "إضافة أو تعديل الصور من الممتلكات الخاصة بك.",
-    "pricingDesc": "تحديد الأسعار والرسوم الإضافية.",
-    "publishDesc": "إدارة حالة نشر إعلانك.",
-    "propertyType": "نوع العقار",
-    "titlePlaceholder": "مثال: فيلا رائعة مطلة على البحر",
-    "description": "وصف",
-    "descriptionPlaceholder": "اوصف مميزات سكنك...",
-    "location": "موقع",
-    "currentAddress": "العنوان الحالي",
-    "modify": "للتعديل",
-    "back": "خلف",
-    "saveChanges": "حفظ التغييرات",
-    "preview": "معاينة",
-    "lastSaved": "تم آخر تعديل منذ {time}.",
-    "tabDetails": "تفاصيل",
-    "tabPhotos": "صور",
-    "tabPricing": "سعر",
-    "tabPublish": "النشر"
+    "loading": "جاري تحميل إعلانك...",
+    "notFound": "الإعلان غير موجود",
+    "confirmLeave": "لديك تعديلات غير محفوظة. هل أنت متأكد من رغبتك في مغادرة هذه الصفحة؟",
+
+    "breadcrumb": {
+      "myListings": "إعلاناتي"
+    },
+
+    "page": {
+      "title": "تعديل الإعلان",
+      "subtitle": "قم بصقل إعلانك لجذب المزيد من المسافرين"
+    },
+
+    "actions": {
+      "save": "حفظ",
+      "publish": "نشر",
+      "hide": "إخفاء",
+      "preview": "معاينة",
+      "back": "عودة",
+      "next": "التالي",
+      "previous": "السابق"
+    },
+
+    "sidebar": {
+      "details": "المعلومات",
+      "photos": "الصور",
+      "pricing": "التسعير",
+      "publish": "النشر"
+    },
+
+    "sectionHints": {
+      "details": "المعلومات الأساسية والموقع والأجهزة",
+      "photos": "إدارة صور إعلانك",
+      "pricing": "السعر والرسوم ونوع التأجير",
+      "publish": "التحكم في ظهور إعلانك"
+    },
+
+    "status": {
+      "active": "منشورة",
+      "draft": "مسودة",
+      "inactive": "مخفية"
+    },
+
+    "completion": {
+      "title": "الاكتمال",
+      "excellent": "ممتاز",
+      "good": "جيد",
+      "poor": "يحتاج تحسين",
+      "ready": "جاهز للنشر",
+      "remaining": "+{percent}% للتميز",
+      "items": {
+        "title": "العنوان (10+ أحرف)",
+        "description": "الوصف (100+ حرف)",
+        "photos": "صور (5+)",
+        "location": "موقع كامل",
+        "price": "السعر محدد",
+        "equipment": "أجهزة (3+)"
+      }
+    },
+
+    "expertTip": {
+      "title": "نصيحة خبير",
+      "message": "الإعلانات الكاملة تتلقى +50% حجزات وتحظى بأداء أفضل.",
+      "recommendation": "توصية الذكاء الاصطناعي"
+    },
+
+    "details": {
+      "titleAndDesc": "العنوان والوصف",
+      "titleAndDescHint": "كيف سيتم إدراك عقارك",
+      "configuration": "التكوين",
+      "configurationHint": "النوع والسعة الاستيعابية",
+      "equipment": "الأجهزة",
+      "equipmentHint": "حدد الأجهزة المتاحة"
+    },
+
+    "fields": {
+      "titlePlaceholder": "عنوان الإعلان",
+      "descriptionPlaceholder": "صف عقارك بالتفصيل...",
+      "rooms": "الغرف",
+      "bathrooms": "حمام",
+      "surface": "المساحة م²",
+      "elevator": "مصعد",
+      "guests": "مسافرين"
+    },
+
+    "propertyTypes": {
+      "APARTMENT": "شقة",
+      "VILLA": "فيلا",
+      "HOUSE": "منزل",
+      "STUDIO": "استوديو",
+      "DUPLEX": "منزل بطابقين"
+    },
+
+    "location": {
+      "title": "الموقع",
+      "hint": "العنوان الدقيق بعد الحجز",
+      "governorate": "الولاية",
+      "delegation": "المعتمدية",
+      "street": "الشارع / الحي",
+      "positionSet": "تم تعيين الموضع",
+      "positionMissing": "انقر على الخريطة لتعيين الموضع"
+    },
+
+    "equipment": {
+      "wifi": "واي فاي",
+      "ac": "مكيف",
+      "heating": "تدفئة",
+      "kitchen": "مطبخ",
+      "parking": "موقف",
+      "pool": "حمام سباحة",
+      "gym": "رياضة",
+      "washer": "غسالة",
+      "tv": "تلفاز",
+      "balcony": "شرفة",
+      "dishwasher": "غسالة أطباق",
+      "dryer": "مجفف",
+      "coffee": "آلة قهوة",
+      "smartlock": "قفل ذكي",
+      "speaker": "مكبر صوت",
+      "workplace": "مساحة عمل"
+    },
+
+    "photos": {
+      "clickToAdd": "انقر لإضافة صور",
+      "uploading": "جاري التحميل...",
+      "minWarning": "الحد الأدنى 5 صور موصى بها — تحتاج إلى {count}",
+      "main": "رئيسية",
+      "add": "إضافة",
+      "photos": "صور"
+    },
+
+    "rentalTypes": {
+      "shortTerm": "قصير الأجل",
+      "longTerm": "طويل الأجل",
+      "both": "كلاهما"
+    },
+
+    "pricing": {
+      "perNight": "السعر في الليلة",
+      "perMonth": "السعر الشهري",
+      "deposit": "الضمان",
+      "depositDesc": "قابل للاسترجاع",
+      "cleaningFee": "رسوم التنظيف",
+      "cleaningFeeDesc": "مرة واحدة فقط"
+    },
+
+    "units": {
+      "night": "/ليلة",
+      "month": "/شهر"
+    },
+
+    "publish": {
+      "published": "الإعلان منشور",
+      "publishedDesc": "مرئي في البحث",
+      "draft": "مسودة",
+      "hidden": "مخفية",
+      "hiddenDesc": "غير مرئية للمستأجرين",
+      "live": "مباشر",
+      "stats": {
+        "views": "مشاهدات",
+        "created": "تم الإنشاء",
+        "score": "النقاط"
+      }
+    },
+
+    "autoSave": {
+      "saved": "تم الحفظ"
+    },
+
+    "tooltips": {
+      "save": "حفظ التعديلات",
+      "title": "عنوان جذاب يجذب المزيد من المسافرين",
+      "description": "صف المزايا الفريدة لعقارك",
+      "rooms": "عدد غرف النوم الخاصة",
+      "bathrooms": "عدد الحمامات",
+      "surface": "المساحة المأهولة م²",
+      "pricePerNight": "السعر لليلة واحدة",
+      "pricePerMonth": "السعر لشهر واحد",
+      "addPhotos": "أضف صور عالية الجودة",
+      "setAsMain": "تعيين كصورة رئيسية",
+      "deletePhoto": "حذف هذه الصورة",
+      "addPhoto": "إضافة صورة"
+    },
+
+    "success": {
+      "saved": "تم حفظ التعديلات بنجاح"
+    }
+  },
+
+  "OwnerCalendar": {
+    "common": {
+      "guest": "مسافر",
+      "dates": "تاريخ(اريخ)",
+      "nights": "ليلة(ليالي)",
+      "night": "ليلة"
+    },
+    "sidebar": {
+      "myProperties": "عقاراتي",
+      "upcomingBookings": "الحجوزات القادمة",
+      "upgradeToPro": "ترقية إلى Pro",
+      "manageMoreProperties": "إدارة المزيد من العقارات"
+    },
+    "actions": {
+      "upgrade": "ترقية",
+      "confirm": "تأكيد",
+      "apply": "تطبيق",
+      "selectedDates": "تاريخ(اريخ) محدد(محددة)"
+    },
+    "page": {
+      "title": "التقويم",
+      "managementFor": "الإدارة لـ",
+      "selectProperty": "اختر عقار"
+    },
+    "legend": {
+      "booked": "محجوز",
+      "blocked": "محظور",
+      "specialPrice": "سعر خاص"
+    },
+    "bulkActions": {
+      "title": "إجراءات جماعية",
+      "block": "حظر",
+      "unblock": "فتح",
+      "specialPrice": "سعر خاص",
+      "reasonOptional": "السبب (اختياري)",
+      "selectDates": "اختر تواريخ",
+      "pricePlaceholder": "السعر"
+    },
+    "selection": {
+      "title": "التحديد"
+    },
+    "stats": {
+      "title": "الإحصائيات",
+      "occupancy": "الإشغال",
+      "revenue": "الإيرادات",
+      "bookedNights": "ليالي محجوزة",
+      "blockedDays": "أيام محظورة"
+    },
+    "aiTip": {
+      "title": "نصيحة الذكاء الاصطناعي",
+      "lowOccupancy": "معدل إشغال {occupancy}%. فكر في العروض الترويجية.",
+      "goodActivity": "نشاط جيد. حسّن أسعار نهاية الأسبوع.",
+      "excellent": "ممتاز! التقويم الخاص بك ممتلئ بشكل جيد."
+    },
+    "alerts": {
+      "dateBlocked": "تاريخ محظور",
+      "dateUnblocked": "تاريخ مفتوح",
+      "specialPriceApplied": "تم تطبيق سعر خاص",
+      "datesBlocked": "{count} تاريخ(اريخ) محظور(محظورة)",
+      "datesUnblocked": "{count} تاريخ(اريخ) مفتوح(مفتوحة)",
+      "priceApplied": "{price} دت تطبيق على {count} تاريخ(اريخ)",
+      "error": "خطأ",
+      "cannotBlock": "لا يمكن حظر التاريخ.",
+      "cannotUnblock": "لا يمكن فتح التاريخ.",
+      "cannotApplyPrice": "لا يمكن تطبيق السعر.",
+      "cannotBlockDates": "لا يمكن حظر التواريخ.",
+      "cannotUnblockDates": "لا يمكن فتح التواريخ.",
+      "cannotApplyPrices": "لا يمكن تطبيق الأسعار.",
+      "dataRefreshed": "تم تحديث البيانات بنجاح",
+      "refreshFailed": "خطأ في تحديث البيانات"
+    }
+  },
+
+  "Calendar": {
+    "booking": "حجز",
+    "blocked": "محظور",
+    "specialPrice": "سعر خاص",
+    "available": "متاح",
+    "past": "الماضي",
+    "select": "تحديد",
+    "unblock": "فتح",
+    "today": "اليوم",
+    "month": "شهر",
+    "week": "أسبوع",
+    "list": "قائمة",
+    "legendBooked": "محجوز",
+    "legendBlocked": "محظور",
+    "legendSpecialPrice": "سعر خاص",
+    "legendSelect": "التحديد",
+    "legendSelectedCount": "{count} محدد(ة)"
+  },
+  "TeamManagement": {
+    "loading": {
+      "message": "جاري تحميل فريقك..."
+    },
+    "hero": {
+      "badge": "إدارة الفريق",
+      "title": "إدارة متعاونيك",
+      "description": "ادعُ مضيفين مشاركين وأدرة الأذونات لعقاراتك.",
+      "button": "دعوة عضو"
+    },
+    "stats": {
+      "activeMembers": "الأعضاء النشطون",
+      "pendingInvitations": "الدعوات المعلقة",
+      "properties": "العقارات",
+      "performance": "الأداء",
+      "response": "الرد",
+      "tasks": "المهام"
+    },
+    "empty": {
+      "title": "لا يوجد أعضاء",
+      "description": "ابدأ بدعوة متعاونين لإدارة عقاراتك.",
+      "button": "دعوة"
+    },
+    "addMember": {
+      "title": "إضافة عضو",
+      "description": "ادعُ مضيف مشارك أو مدير"
+    },
+    "invitations": {
+      "title": "الدعوات",
+      "pending": "معلقة",
+      "empty": "لا توجد دعوات معلقة",
+      "progress": "التقدم",
+      "expiringSoon": "ستنتهي قريباً",
+      "pendingStatus": "معلقة",
+      "remind": "تذكير",
+      "cancel": "إلغاء",
+      "expired": "منتهية الصلاحية",
+      "hoursLeft": "{hours}س متبقية",
+      "daysLeft": "{days}ي متبقية"
+    },
+    "analytics": {
+      "title": "تحليلات الانخراط",
+      "activityRate": "معدل النشاط",
+      "pending": "معلق"
+    },
+    "security": {
+      "title": "بروتوكول الأمان",
+      "description": "تحقق من الأذونات شهرياً لضمان سلامة مساحة العمل.",
+      "button": "الوصول إلى لوحة التحكم"
+    },
+    "actions": {
+      "permissions": "الأذونات",
+      "remove": "إزالة",
+      "history": "السجل"
+    },
+    "permissions": {
+      "title": "الأذونات",
+      "canEdit": "تعديل الإعلان",
+      "canEditDesc": "يمكنه تعديل المعلومات",
+      "canManageBookings": "إدارة الحجوزات",
+      "canManageBookingsDesc": "يمكنه التأكيد أو الإلغاء",
+      "canViewRevenue": "مشاهدة الإيرادات",
+      "canViewRevenueDesc": "الاطلاع على الإحصائيات المالية",
+      "canManageTeam": "إدارة الفريق",
+      "canManageTeamDesc": "دعوة أو إزالة أعضاء",
+      "cancel": "إلغاء",
+      "save": "حفظ"
+    },
+    "card": {
+      "property": "العقار",
+      "none": "لا يوجد"
+    },
+    "roles": {
+      "manager": "مدير",
+      "coHost": "مضيف مشارك",
+      "observer": "مراقب"
+    },
+    "alerts": {
+      "invitationSent": "تم إرسال الدعوة بنجاح!",
+      "invitationCancelled": "تم إلغاء الدعوة بنجاح.",
+      "memberRemoved": "تم إزالة العضو بنجاح.",
+      "permissionsUpdated": "تم تحديث الأذونات بنجاح.",
+      "reminderSent": "تم إعادة إرسال الدعوة بنجاح.",
+      "error": "حدث خطأ. يرجى المحاولة مرة أخرى."
+    }
+  },
+  "Profile": {
+    "loading": {
+      "message": "جاري تحميل ملفك الشخصي..."
+    },
+    "page": {
+      "badge": "مساحة المالك",
+      "title": "ملفي الشخصي",
+      "description": "إدارة معلوماتك الشخصية ومستوى ثقتك."
+    },
+    "actions": {
+      "edit": "تعديل",
+      "cancel": "إلغاء",
+      "save": "حفظ",
+      "saving": "جاري الحفظ...",
+      "add": "إضافة"
+    },
+    "sections": {
+      "personalInfo": "معلومات شخصية",
+      "availability": "توفر الاتصال"
+    },
+    "avatar": {
+      "title": "صورة الملف الشخصي",
+      "description": "صورة واضحة تساعد المالكين والمستأجرين على الثقة. JPG أو PNG، الحد الأقصى 5 MB.",
+      "edit": "تعديل",
+      "delete": "حذف"
+    },
+    "fields": {
+      "firstName": "الاسم الأول",
+      "lastName": "الاسم الأخير",
+      "userType": "نوع المستخدم",
+      "notEditable": "غير قابل للتعديل",
+      "email": "البريد الإلكتروني",
+      "phone": "الهاتف",
+      "profession": "المهنة",
+      "bio": "السيرة الذاتية",
+      "bioPlaceholder": "حدثنا عنك وعن عقاراتك…",
+      "languages": "اللغات المتحدثة"
+    },
+    "availability": {
+      "description": "الفترات المفضلة للمكالمات والزيارات"
+    },
+    "trust": {
+      "title": "درجة الثقة",
+      "idVerified": "تم التحقق من الهوية",
+      "positiveReviews": "{count} تقييم إيجابي",
+      "memberSince": "عضو منذ {date}"
+    },
+    "verification": {
+      "title": "التحقق",
+      "status": "حالة OCR",
+      "verified": "معتمد",
+      "pending": "معلق",
+      "idType": "بطاقة تحقيق تونسية",
+      "description": "يقوي التحقق من الهوية الثقة ويتيح لك الإيجار بشكل أسرع.",
+      "update": "تحديث الوثائق",
+      "start": "بدء التحقق",
+      "verifiedDate": "تم التحقق في {date}"
+    }
+  },
+  "settings": {
+    "loading": "جاري تحميل الإعدادات…",
+    "page_title": "إعدادات الحساب",
+    "page_description": "إدارة الأمان وطرق الدفع والتفضيلات.",
+
+    "security_title": "الأمان والمصادقة",
+    "password_label": "كلمة المرور",
+    "password_description": "تغيير كلمة المرور",
+    "password_change": "تغيير",
+    "password_cancel": "إلغاء",
+    "password_current": "كلمة المرور الحالية",
+    "password_new": "كلمة المرور الجديدة",
+    "password_confirm": "تأكيد كلمة المرور",
+    "password_current_placeholder": "أدخل كلمة المرور الحالية",
+    "password_new_placeholder": "أنشئ كلمة مرور جديدة",
+    "password_confirm_placeholder": "أكد كلمة المرور الجديدة",
+    "password_mismatch": "كلمات المرور غير متطابقة",
+    "password_update": "تحديث",
+    "password_updated": "تم التحديث!",
+    "password_success": "تم تحديث كلمة المرور بنجاح!",
+    "password_error": "خطأ في تغيير كلمة المرور",
+
+    "security_tips_title": "نصائح الأمان",
+    "security_tips_chars": "8+ أحرف كحد أدنى",
+    "security_tips_case": "أحرف كبيرة وصغيرة",
+    "security_tips_symbols": "أرقام وأحرف خاصة",
+
+    "sessions_title": "الجلسات النشطة",
+    "sessions_count": "جلسات نشطة —",
+    "device_unknown": "جهاز غير معروف",
+    "current_badge": "الحالية",
+    "location_unknown": "موقع غير معروف",
+    "ip_unknown": "عنوان IP غير معروف",
+    "revoke_button": "إلغاء",
+    "session_revoked": "تم إلغاء الجلسة بنجاح",
+    "session_error": "خطأ في إلغاء الجلسة",
+
+    "payment_title": "طرق الدفع",
+    "payment_add": "إضافة",
+    "payment_visa": "فيزا",
+    "payment_expires": "ينتهي في",
+    "payment_primary": "الأساسية",
+    "payment_bank_transfer": "تحويل بنكي",
+    "payment_configure": "تكوين للدفع",
+    "payment_coming_soon": "ميزة قادمة",
+
+    "preferences_title": "التفضيلات",
+    "language_label": "اللغة",
+    "language_fr": "Français (FR)",
+    "language_en": "English (EN)",
+    "language_ar": "العربية (AR)",
+    "language_success": "تم تحديث اللغة بنجاح",
+    "language_error": "خطأ في تغيير اللغة",
+
+    "theme_label": "المظهر",
+    "theme_light": "فاتح",
+    "theme_dark": "داكن",
+    "theme_auto": "تلقائي",
+
+    "vacation_title": "وضع الإجازة",
+    "vacation_description": "عطّل الإخطارات واضبط الرد التلقائي لمسافريك.",
+    "vacation_enabled": "وضع الإجازة مفعل",
+    "vacation_disabled": "وضع الإجازة معطل",
+    "vacation_save_success": "تم حفظ رسالة الإجازة",
+    "vacation_save_error": "خطأ في حفظ الرسالة",
+    "vacation_error": "خطأ في تغيير وضع الإجازة",
+    "vacation_placeholder": "مرحباً! أنا غائب حتى الاثنين. تواصل مع الدعم في حالة الطوارئ.",
+
+    "privacy_title": "الخصوصية",
+    "privacy_description": "حمّل نسخة من بيانتك الشخصية بالصيغة التي تختارها.",
+    "privacy_csv": "CSV",
+    "privacy_json": "JSON",
+    "privacy_delete_account": "حذف حسابي",
+    "privacy_delete_warning": "يتم حذف البيانات نهائياً بعد 30 يوماً.",
+
+    "strength_weak": "ضعيف",
+    "strength_medium": "متوسط",
+    "strength_good": "جيد",
+    "strength_strong": "قوي"
+  },
+
+  "toast": {
+    "password_success": "تم تحديث كلمة المرور بنجاح!",
+    "password_error": "خطأ في تغيير كلمة المرور",
+    "language_success": "تم تحديث اللغة بنجاح",
+    "language_error": "خطأ في تغيير اللغة",
+    "vacation_enabled": "تم تفعيل وضع الإجازة",
+    "vacation_disabled": "تم تعطيل وضع الإجازة",
+    "vacation_error": "خطأ في تغيير وضع الإجازة",
+    "vacation_saved": "تم حفظ رسالة الإجازة",
+    "vacation_save_error": "خطأ في حفظ الرسالة",
+    "session_revoked": "تم إلغاء الجلسة بنجاح",
+    "session_error": "خطأ في إلغاء الجلسة",
+    "coming_soon": "ميزة قادمة"
   }
 }

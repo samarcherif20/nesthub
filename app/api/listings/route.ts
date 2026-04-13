@@ -1,52 +1,124 @@
-// app/api/listings/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
+// ✅ AJOUT - Importer les fonctions de permission (déjà dans ton fichier permissions.ts)
+import { getUserPermissions, checkListingAccess } from "@/lib/auth/permissions";
 
-// GET - Récupérer les annonces
+// Fonction de validation des données
+function validateListingData(data: any): string[] {
+  const errors: string[] = [];
+
+  if (!data.title?.trim()) errors.push("Le titre est requis");
+  if (data.title?.length < 5)
+    errors.push("Le titre doit contenir au moins 5 caractères");
+  if (!data.description?.trim()) errors.push("La description est requise");
+  if (data.description?.length < 20)
+    errors.push("La description doit contenir au moins 20 caractères");
+  if (!data.governorate) errors.push("Le gouvernorat est requis");
+  if (!data.delegation?.trim()) errors.push("La délégation est requise");
+  if (!data.street?.trim()) errors.push("La rue est requise");
+  if (!data.latitude || !data.longitude)
+    errors.push("La localisation est requise");
+  if (data.rooms < 1) errors.push("Au moins 1 chambre est requise");
+  if (data.bathrooms < 1) errors.push("Au moins 1 salle de bain est requise");
+  if (data.maxGuests < 1) errors.push("Au moins 1 voyageur est requis");
+  if (data.photos?.length === 0) errors.push("Au moins une photo est requise");
+
+  // Validation des prix selon le type de location
+  if (data.rentalType === "SHORT_TERM" || data.rentalType === "BOTH") {
+    if (!data.pricePerNight || data.pricePerNight <= 0) {
+      errors.push(
+        "Le prix par nuit est requis pour les locations courtes durées",
+      );
+    }
+  }
+
+  if (data.rentalType === "LONG_TERM" || data.rentalType === "BOTH") {
+    if (!data.pricePerMonth || data.pricePerMonth <= 0) {
+      errors.push(
+        "Le prix par mois est requis pour les locations longues durées",
+      );
+    }
+  }
+
+  return errors;
+}
+
+// Fonction pour filtrer les photos valides
+function filterValidPhotos(photos: any[]): any[] {
+  if (!photos || !Array.isArray(photos)) return [];
+  return photos.filter(
+    (photo) =>
+      photo?.url && !photo.url.startsWith("blob:") && photo.url.trim() !== "",
+  );
+}
+
+// app/api/listings/route.ts - Modifie la partie GET
 export async function GET(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
     const { searchParams } = new URL(request.url);
-    
-    const isMyListings = searchParams.get('my') === 'true';
-    const status = searchParams.get('status');
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
-    const search = searchParams.get('search') || '';
-    
-    const minPrice = searchParams.get('minPrice') ? parseFloat(searchParams.get('minPrice')!) : undefined;
-    const maxPrice = searchParams.get('maxPrice') ? parseFloat(searchParams.get('maxPrice')!) : undefined;
-    const minRooms = searchParams.get('minRooms') ? parseInt(searchParams.get('minRooms')!) : undefined;
-    const governorate = searchParams.get('governorate') || undefined;
-    
+
+    const isMyListings = searchParams.get("my") === "true";
+    const status = searchParams.get("status");
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const search = searchParams.get("search") || "";
+
+    const minPrice = searchParams.get("minPrice")
+      ? parseFloat(searchParams.get("minPrice")!)
+      : undefined;
+    const maxPrice = searchParams.get("maxPrice")
+      ? parseFloat(searchParams.get("maxPrice")!)
+      : undefined;
+    const minRooms = searchParams.get("minRooms")
+      ? parseInt(searchParams.get("minRooms")!)
+      : undefined;
+    const governorate = searchParams.get("governorate") || undefined;
+
     let where: any = {};
-    
+
     if (isMyListings && clerkId) {
-      const user = await prisma.user.findUnique({
-        where: { clerkId },
-        select: { id: true },
-      });
-      
-      if (user) {
-        where.ownerId = user.id;
-        if (status && status !== 'ALL') {
-          where.status = status;
-        }
-      } else {
-        return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+      const permissions = await getUserPermissions(clerkId);
+
+      if (!permissions) {
+        return NextResponse.json(
+          { error: "Utilisateur non trouvé" },
+          { status: 404 },
+        );
+      }
+
+      if (permissions.role === "OWNER") {
+        where.ownerId = permissions.userId;
+      } else if (permissions.role === "CO_HOST") {
+        const teamMemberships = await prisma.teamMember.findMany({
+          where: {
+            userId: permissions.userId,
+            isActive: true,
+          },
+          select: { listingId: true },
+        });
+        const listingIds = teamMemberships.map((tm) => tm.listingId);
+        where.id = { in: listingIds };
+      }
+
+      if (status && status !== "ALL") {
+        where.status = status;
       }
     } else {
-      where.status = 'ACTIVE';
+      where.status = "ACTIVE";
     }
-    
+
     if (governorate) where.governorate = governorate;
     if (minRooms) where.rooms = { gte: minRooms };
-    
-    if ((minPrice !== undefined || maxPrice !== undefined) && (minPrice !== undefined || maxPrice !== undefined)) {
+
+    if (
+      (minPrice !== undefined || maxPrice !== undefined) &&
+      (minPrice !== undefined || maxPrice !== undefined)
+    ) {
       const min = minPrice !== undefined ? minPrice : 0;
       const max = maxPrice !== undefined ? maxPrice : 999999;
-      
+
       where.AND = [
         {
           OR: [
@@ -62,11 +134,11 @@ export async function GET(request: NextRequest) {
         },
       ];
     }
-    
+
     if (search) {
       const searchOr = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
       ];
       if (where.AND) {
         where.AND.push({ OR: searchOr });
@@ -74,9 +146,9 @@ export async function GET(request: NextRequest) {
         where.OR = searchOr;
       }
     }
-    
+
     const skip = (page - 1) * pageSize;
-    
+
     const [listings, totalCount] = await Promise.all([
       prisma.listing.findMany({
         where,
@@ -85,29 +157,42 @@ export async function GET(request: NextRequest) {
             where: { isMain: true },
             take: 1,
           },
+          owner: {
+            // ✅ AJOUTE CETTE PARTIE
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePictureUrl: true,
+            },
+          },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: pageSize,
       }),
       prisma.listing.count({ where }),
     ]);
-    
+
     const priceStats = await prisma.listing.aggregate({
-      where: isMyListings && clerkId ? { ownerId: where.ownerId } : { status: 'ACTIVE' },
+      where:
+        isMyListings && clerkId
+          ? { ownerId: where.ownerId }
+          : { status: "ACTIVE" },
       _min: { pricePerNight: true, pricePerMonth: true },
       _max: { pricePerNight: true, pricePerMonth: true },
     });
-    
+
     const minPriceGlobal = Math.min(
       priceStats._min.pricePerNight || 0,
-      priceStats._min.pricePerMonth || 0
+      priceStats._min.pricePerMonth || 0,
     );
     const maxPriceGlobal = Math.max(
       priceStats._max.pricePerNight || 10000,
-      priceStats._max.pricePerMonth || 10000
+      priceStats._max.pricePerMonth || 10000,
     );
-    
+
     return NextResponse.json({
       listings,
       pagination: {
@@ -121,64 +206,173 @@ export async function GET(request: NextRequest) {
         max: maxPriceGlobal,
       },
     });
-    
   } catch (error) {
-    console.error('[GET /api/listings] Erreur:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error("[GET /api/listings] Erreur:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
 // POST - Créer une annonce
 export async function POST(request: NextRequest) {
   try {
+    console.log("🔵 POST /api/listings - Début");
+
     const { userId: clerkId } = getAuth(request);
-    
+
     if (!clerkId) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-    
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true, role: true },
-    });
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
-    }
-    
-    if (user.role !== 'PROPERTY_OWNER' && user.role !== 'BOTH') {
+      console.log("❌ Non authentifié");
       return NextResponse.json(
-        { error: 'Vous devez être propriétaire pour créer une annonce' },
-        { status: 403 }
+        { error: "Non authentifié", details: "Veuillez vous connecter" },
+        { status: 401 },
       );
     }
-    
+
+    console.log(`✅ Utilisateur authentifié: ${clerkId}`);
+
+    // ✅ AMÉLIORATION - Utiliser getUserPermissions
+    const permissions = await getUserPermissions(clerkId);
+
+    if (!permissions) {
+      console.log("❌ Utilisateur non trouvé");
+      return NextResponse.json(
+        {
+          error: "Utilisateur non trouvé",
+          details: "Compte utilisateur introuvable",
+        },
+        { status: 404 },
+      );
+    }
+
+    console.log(
+      `✅ Utilisateur trouvé: ${permissions.userId}, role: ${permissions.role}`,
+    );
+
+    // ✅ Vérification - Seuls les OWNER peuvent créer des annonces
+    if (permissions.role !== "OWNER") {
+      console.log(`❌ Permission refusée: role=${permissions.role}`);
+      return NextResponse.json(
+        {
+          error: "Permission refusée",
+          details: "Vous devez être propriétaire pour créer une annonce",
+        },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
-    const slug = `${body.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`;
-    
+    console.log("📦 Données reçues:", {
+      ...body,
+      photos: `${body.photos?.length} photos`,
+    });
+
+    // Validation des données
+    const validationErrors = validateListingData(body);
+    if (validationErrors.length > 0) {
+      console.log("❌ Validation échouée:", validationErrors);
+      return NextResponse.json(
+        { error: "Données invalides", details: validationErrors.join(", ") },
+        { status: 400 },
+      );
+    }
+
+    // Génération du slug
+    const slug = `${body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`;
+
+    // Création de l'annonce
     const listing = await prisma.listing.create({
       data: {
-        ...body,
+        title: body.title,
+        type: body.type,
+        governorate: body.governorate,
+        delegation: body.delegation,
+        street: body.street,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        description: body.description,
+        rooms: body.rooms,
+        bathrooms: body.bathrooms,
+        maxGuests: body.maxGuests,
+        surfaceArea: body.surfaceArea,
+        floorNumber: body.floorNumber,
+        hasElevator: body.hasElevator,
+        equipment: body.equipment || {},
+        houseRules: body.houseRules || {},
+        customRules: body.customRules || "",
+        rentalType: body.rentalType,
+        pricePerNight: body.pricePerNight,
+        pricePerMonth: body.pricePerMonth,
+        securityDeposit: body.securityDeposit,
+        cleaningFee: body.cleaningFee || 0,
+        weekendPriceMultiplier: body.weekendPriceMultiplier || 1.15,
+        extraFees: body.extraFees ? JSON.stringify(body.extraFees) : "[]",
+        seasonalRules: body.seasonalRules
+          ? JSON.stringify(body.seasonalRules)
+          : "[]",
+        services: body.services ? JSON.stringify(body.services) : "{}",
         slug,
-        ownerId: user.id,
-        status: 'DRAFT',
+        ownerId: permissions.userId,
+        status: body.status || "DRAFT",
+        publishedAt: body.status === "ACTIVE" ? new Date() : null,
       },
     });
-    
+
+    console.log(`✅ Annonce créée avec ID: ${listing.id}`);
+
+    // AJOUT DES PHOTOS
+    const validPhotos = filterValidPhotos(body.photos);
+    if (validPhotos.length > 0) {
+      await prisma.listingMedia.createMany({
+        data: validPhotos.map((photo: any, index: number) => ({
+          listingId: listing.id,
+          url: photo.url,
+          thumbnailUrl: photo.thumbnailUrl || photo.url,
+          isMain: photo.isMain || index === 0,
+          position: index,
+          type: "IMAGE",
+        })),
+      });
+      console.log(`✅ ${validPhotos.length} photos ajoutées à listingMedia`);
+    }
+
+    // HISTORIQUE
     await prisma.listingHistory.create({
       data: {
         listingId: listing.id,
-        actionType: 'CREATE',
-        newValue: listing,
-        changedBy: user.id,
+        actionType: "CREATE",
+        fieldName: "listing",
+        oldValue: null,
+        newValue: JSON.stringify({ title: body.title, type: body.type }),
+        changedBy: permissions.userId,
       },
     });
-    
-    return NextResponse.json(listing, { status: 201 });
-    
-  } catch (error) {
-    console.error('[POST /api/listings] Erreur:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: true,
+        id: listing.id,
+        slug: listing.slug,
+        message: "Annonce créée avec succès",
+        listing,
+      },
+      { status: 201 },
+    );
+  } catch (error: any) {
+    console.error("[POST /api/listings] Erreur détaillée:", error);
+
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { error: "Conflit", details: "Une annonce similaire existe déjà" },
+        { status: 409 },
+      );
+    }
+
+    return NextResponse.json(
+      {
+        error: "Erreur serveur",
+        details: error.message || "Une erreur est survenue lors de la création",
+      },
+      { status: 500 },
+    );
   }
 }
 
@@ -187,124 +381,181 @@ export async function PUT(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    
+    const id = searchParams.get("id");
+
     if (!clerkId || !id) {
-      return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Paramètres manquants" },
+        { status: 400 },
+      );
     }
-    
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+
+    // ✅ AJOUT - Vérifier l'accès avec checkListingAccess
+    const accessCheck = await checkListingAccess(clerkId, id, "edit");
+    if (!accessCheck.allowed) {
+      return NextResponse.json({ error: accessCheck.error }, { status: 403 });
     }
-    
+
     const body = await request.json();
-    
+
     const existingListing = await prisma.listing.findFirst({
-      where: { id, ownerId: user.id },
+      where: { id },
     });
-    
+
     if (!existingListing) {
-      return NextResponse.json({ error: 'Annonce non trouvée' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Annonce non trouvée" },
+        { status: 404 },
+      );
     }
-    
-    const changes: any = {};
-    for (const key of Object.keys(body)) {
-      if (existingListing[key as keyof typeof existingListing] !== body[key]) {
-        changes[key] = {
-          old: existingListing[key as keyof typeof existingListing],
-          new: body[key],
-        };
-      }
-    }
-    
+
+    // Mise à jour de l'annonce
     const listing = await prisma.listing.update({
       where: { id },
-      data: body,
+      data: {
+        title: body.title,
+        type: body.type,
+        governorate: body.governorate,
+        delegation: body.delegation,
+        street: body.street,
+        latitude: body.latitude,
+        longitude: body.longitude,
+        description: body.description,
+        rooms: body.rooms,
+        bathrooms: body.bathrooms,
+        maxGuests: body.maxGuests,
+        surfaceArea: body.surfaceArea,
+        floorNumber: body.floorNumber,
+        hasElevator: body.hasElevator,
+        equipment: body.equipment || {},
+        houseRules: body.houseRules || {},
+        customRules: body.customRules || "",
+        rentalType: body.rentalType,
+        pricePerNight: body.pricePerNight,
+        pricePerMonth: body.pricePerMonth,
+        securityDeposit: body.securityDeposit,
+        cleaningFee: body.cleaningFee || 0,
+        weekendPriceMultiplier: body.weekendPriceMultiplier || 1.15,
+        extraFees: body.extraFees ? JSON.stringify(body.extraFees) : "[]",
+        seasonalRules: body.seasonalRules
+          ? JSON.stringify(body.seasonalRules)
+          : "[]",
+        services: body.services ? JSON.stringify(body.services) : "{}",
+        status: body.status,
+        updatedAt: new Date(),
+      },
     });
-    
-    if (Object.keys(changes).length > 0) {
-      await prisma.listingHistory.create({
-        data: {
-          listingId: id,
-          actionType: 'UPDATE',
-          oldValue: changes,
-          newValue: listing,
-          changedBy: user.id,
-        },
-      });
+
+    // Mise à jour des photos
+    if (body.photos && body.photos.length > 0) {
+      const validPhotos = filterValidPhotos(body.photos);
+
+      if (validPhotos.length > 0) {
+        await prisma.listingMedia.deleteMany({
+          where: { listingId: id },
+        });
+
+        await prisma.listingMedia.createMany({
+          data: validPhotos.map((photo: any, index: number) => ({
+            listingId: id,
+            url: photo.url,
+            thumbnailUrl: photo.thumbnailUrl || photo.url,
+            isMain: photo.isMain || index === 0,
+            position: index,
+            type: "IMAGE",
+          })),
+        });
+        console.log(`✅ ${validPhotos.length} photos mises à jour`);
+      }
     }
-    
-    return NextResponse.json(listing);
-    
+
+    // HISTORIQUE
+    await prisma.listingHistory.create({
+      data: {
+        listingId: id,
+        actionType: "UPDATE",
+        fieldName: "listing",
+        oldValue: JSON.stringify({ title: existingListing.title }),
+        newValue: JSON.stringify({ title: body.title }),
+        changedBy: accessCheck.userPermissions?.userId || "",
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      id: listing.id,
+      slug: listing.slug,
+      listing,
+    });
   } catch (error) {
-    console.error('[PUT /api/listings] Erreur:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error("[PUT /api/listings] Erreur:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-// PATCH - Changer le statut (CORRIGÉ - accepte l'ID du path ou query)
+// PATCH - Changer le statut
 export async function PATCH(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
     const url = new URL(request.url);
-    
-    // Récupère l'ID soit du path, soit du query param
-    const pathParts = url.pathname.split('/');
+
+    const pathParts = url.pathname.split("/");
     const idFromPath = pathParts[pathParts.length - 1];
-    const idFromQuery = url.searchParams.get('id');
-    const id = (idFromPath !== 'listings' && idFromPath !== 'my') ? idFromPath : idFromQuery;
-    
+    const idFromQuery = url.searchParams.get("id");
+    const id =
+      idFromPath !== "listings" && idFromPath !== "my"
+        ? idFromPath
+        : idFromQuery;
+
     console.log(`🔧 PATCH - id: ${id}`);
-    
+
     if (!clerkId || !id) {
-      return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Paramètres manquants" },
+        { status: 400 },
+      );
     }
-    
+
+    // ✅ AJOUT - Vérifier l'accès avec checkListingAccess
+    const accessCheck = await checkListingAccess(clerkId, id, "edit");
+    if (!accessCheck.allowed) {
+      return NextResponse.json({ error: accessCheck.error }, { status: 403 });
+    }
+
     const body = await request.json();
     const { status } = body;
-    
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
-    }
-    
+
     const existingListing = await prisma.listing.findFirst({
-      where: { id, ownerId: user.id },
+      where: { id },
     });
-    
+
     if (!existingListing) {
-      return NextResponse.json({ error: 'Annonce non trouvée' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Annonce non trouvée" },
+        { status: 404 },
+      );
     }
-    
+
     const listing = await prisma.listing.update({
       where: { id },
       data: { status },
     });
-    
+
     await prisma.listingHistory.create({
       data: {
         listingId: id,
-        actionType: 'STATUS_CHANGE',
-        oldValue: { status: existingListing.status },
-        newValue: { status },
-        changedBy: user.id,
+        actionType: "STATUS_CHANGE",
+        fieldName: "status",
+        oldValue: existingListing.status,
+        newValue: status,
+        changedBy: accessCheck.userPermissions?.userId || "",
       },
     });
-    
+
     return NextResponse.json(listing);
-    
   } catch (error) {
-    console.error('[PATCH /api/listings] Erreur:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error("[PATCH /api/listings] Erreur:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
@@ -313,44 +564,49 @@ export async function DELETE(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    const permanent = searchParams.get('permanent') === 'true';
-    const cancelBookings = searchParams.get('cancelBookings') === 'true';
-    
+    const id = searchParams.get("id");
+    const permanent = searchParams.get("permanent") === "true";
+    const cancelBookings = searchParams.get("cancelBookings") === "true";
+
     if (!clerkId || !id) {
-      return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Paramètres manquants" },
+        { status: 400 },
+      );
     }
-    
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
-    });
-    
-    if (!user) {
-      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+
+    // ✅ AJOUT - Vérifier l'accès avec checkListingAccess
+    const accessCheck = await checkListingAccess(clerkId, id, "edit");
+    if (!accessCheck.allowed) {
+      return NextResponse.json({ error: accessCheck.error }, { status: 403 });
     }
-    
+
     if (permanent) {
-      await prisma.listing.delete({ where: { id, ownerId: user.id } });
-      return NextResponse.json({ message: 'Annonce supprimée définitivement' });
+      await prisma.listing.delete({ where: { id } });
+      return NextResponse.json({ message: "Annonce supprimée définitivement" });
     } else {
       const listing = await prisma.listing.update({
-        where: { id, ownerId: user.id },
-        data: { status: 'ARCHIVED', archivedAt: new Date() },
+        where: { id },
+        data: { status: "ARCHIVED", archivedAt: new Date() },
       });
-      
+
       if (cancelBookings) {
         await prisma.booking.updateMany({
-          where: { listingId: id, status: { in: ['PENDING', 'ACCEPTED', 'CONFIRMED'] } },
-          data: { status: 'CANCELLED', cancellationReason: 'Annonce supprimée par le propriétaire' },
+          where: {
+            listingId: id,
+            status: { in: ["PENDING", "ACCEPTED", "CONFIRMED"] },
+          },
+          data: {
+            status: "CANCELLED",
+            cancellationReason: "Annonce supprimée par le propriétaire",
+          },
         });
       }
-      
-      return NextResponse.json({ message: 'Annonce archivée', listing });
+
+      return NextResponse.json({ message: "Annonce archivée", listing });
     }
-    
   } catch (error) {
-    console.error('[DELETE /api/listings] Erreur:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error("[DELETE /api/listings] Erreur:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

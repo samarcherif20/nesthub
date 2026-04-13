@@ -7,10 +7,10 @@ const MESSAGES_DIR = path.join(__dirname, "..", "messages");
 
 const TARGETS = [
   { code: "ar", file: "ar.json", name: "Arabe" },
-  { code: "en", file: "en.json", name: "Anglais" },
+ /* { code: "en", file: "en.json", name: "Anglais" },
   { code: "es", file: "es.json", name: "Espagnol" },
   { code: "de", file: "de.json", name: "Allemand" },
-  { code: "it", file: "it.json", name: "Italien" },
+  { code: "it", file: "it.json", name: "Italien" },*/
 ];
 
 async function translateObject(obj, targetLang) {

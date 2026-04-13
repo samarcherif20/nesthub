@@ -82,6 +82,26 @@ export default function LoginPage() {
   useEffect(() => {
     setIdentifierType(ValidationPatterns.detectIdentifierType(identifier));
   }, [identifier]);
+  // ✅ Pré-remplir l'email après invitation
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const emailParam = searchParams.get("email");
+    const redirectParam = searchParams.get("redirect");
+    const savedEmail = sessionStorage.getItem("invitation_email");
+
+    // Pré-remplir l'email
+    const email = emailParam || savedEmail;
+    if (email) {
+      setIdentifier(email);
+      sessionStorage.removeItem("invitation_email");
+      showAlertMessage("info", t("completeLogin"));
+    }
+
+    // Stocker la redirection pour après login
+    if (redirectParam) {
+      localStorage.setItem("redirectAfterLogin", redirectParam);
+    }
+  }, []);
 
   // Fonction pour afficher une alerte flottante (succès et infos)
   const showAlertMessage = (

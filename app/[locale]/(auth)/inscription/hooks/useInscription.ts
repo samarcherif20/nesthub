@@ -619,108 +619,132 @@ export function useInscription() {
   const handleBlur = (field: keyof typeof touched) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  console.log(" 1 - handleSubmit démarré");
 
-    console.log(" 1 - handleSubmit démarré");
+  setTouched({
+    username: true,
+    email: true,
+    password: true,
+    confirmPassword: true,
+  });
 
-    setTouched({
-      username: true,
-      email: true,
-      password: true,
-      confirmPassword: true,
+  console.log(" 2 - Validation du formulaire");
+  const isValid = await validateForm();
+  if (!isValid) {
+    console.log("Formulaire invalide, arrêt");
+    return;
+  }
+
+  console.log(" 3 - Formulaire valide");
+  setFormError("");
+  setIsLoading(true);
+
+  try {
+    console.log(" 4 - Vérification signUp");
+    if (!signUp) {
+      console.log(" 4b - signUp est undefined !");
+      throw new Error("Clerk non initialisé");
+    }
+
+    console.log(" 5 - Création Clerk avec:", { email, username });
+    const signUpAttempt = await signUp.create({
+      emailAddress: email,
+      password: password,
+      username: username,
     });
 
-    console.log(" 2 - Validation du formulaire");
-    const isValid = await validateForm();
-    if (!isValid) {
-      console.log("Formulaire invalide, arrêt");
-      return;
+    console.log(" signUpAttempt complet:", {
+      id: signUpAttempt.id,
+      createdUserId: signUpAttempt.createdUserId,
+      status: signUpAttempt.status,
+    });
+
+    const temporaryClerkId = signUpAttempt.id;
+    if (!temporaryClerkId) {
+      throw new Error(
+        "Impossible de récupérer l'ID de la tentative d'inscription",
+      );
     }
 
-    console.log(" 3 - Formulaire valide");
-    setFormError("");
-    setIsLoading(true);
+    const userIdToUse = temporaryClerkId;
+    const currentLocale = getCurrentLocale();
 
-    try {
-      console.log(" 4 - Vérification signUp");
-      if (!signUp) {
-        console.log(" 4b - signUp est undefined !");
-        throw new Error("Clerk non initialisé");
+    // ✅ Déclarer et uploader la photo ici
+    let profilePictureUrl = null;
+    if (profilePhoto) {
+      try {
+        const formData = new FormData();
+        formData.append("file", profilePhoto);
+        formData.append("userId", userIdToUse);
+        formData.append("type", "profile");
+        
+        const uploadRes = await fetch("/api/users/upload-photo", {
+          method: "POST",
+          body: formData,
+        });
+        
+        if (uploadRes.ok) {
+          const uploadData = await uploadRes.json();
+          profilePictureUrl = uploadData.url;
+          console.log("✅ Photo uploadée:", profilePictureUrl);
+        }
+      } catch (err) {
+        console.error("Erreur upload photo:", err);
       }
-
-      console.log(" 5 - Création Clerk avec:", { email, username });
-      const signUpAttempt = await signUp.create({
-        emailAddress: email,
-        password: password,
-        username: username,
-      });
-
-      console.log(" signUpAttempt complet:", {
-        id: signUpAttempt.id,
-        createdUserId: signUpAttempt.createdUserId,
-        status: signUpAttempt.status,
-      });
-
-      const temporaryClerkId = signUpAttempt.id;
-      if (!temporaryClerkId) {
-        throw new Error(
-          "Impossible de récupérer l'ID de la tentative d'inscription",
-        );
-      }
-
-      const userIdToUse = temporaryClerkId;
-      const currentLocale = getCurrentLocale();
-
-      const response = await fetch("/api/users/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: userIdToUse,
-          email,
-          username,
-          role,
-          preferredLocale: currentLocale,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erreur création");
-      }
-
-      setCurrentUserId(userIdToUse);
-      localStorage.setItem("currentUserId", userIdToUse);
-      localStorage.setItem("pendingEmail", email);
-      localStorage.setItem("pendingUsername", username);
-      localStorage.setItem("pendingPassword", password);
-      localStorage.setItem("pendingRole", role ?? "");
-      localStorage.setItem("preferred-language", currentLocale);
-
-      const verifyUrl = `${window.location.origin}/${currentLocale}/inscription/verify-catch`;
-      console.log("📧 Verification URL:", verifyUrl);
-
-      await signUp.prepareEmailAddressVerification({
-        strategy: "email_link",
-        redirectUrl: verifyUrl,
-      });
-
-      setAlertMessage(`Un lien de vérification a été envoyé à ${email}`);
-      setShowSuccessAlert(true);
-    } catch (error: any) {
-      console.error(" ERREUR DÉTAILLÉE:", error);
-      console.error(" Message:", error?.message);
-      console.error(" Errors:", error?.errors);
-
-      const errorMessage =
-        error?.errors?.[0]?.message || error?.message || t("required");
-      setFormError(errorMessage);
-    } finally {
-      setIsLoading(false);
     }
-  };
+
+    const response = await fetch("/api/users/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: userIdToUse,
+        email,
+        username,
+        role,
+        preferredLocale: currentLocale,
+        profilePictureUrl, // ✅ Maintenant défini
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Erreur création");
+    }
+
+    setCurrentUserId(userIdToUse);
+    localStorage.setItem("currentUserId", userIdToUse);
+    localStorage.setItem("pendingEmail", email);
+    localStorage.setItem("pendingUsername", username);
+    localStorage.setItem("pendingPassword", password);
+    localStorage.setItem("pendingRole", role ?? "");
+    localStorage.setItem("preferred-language", currentLocale);
+
+    const verifyUrl = `${window.location.origin}/${currentLocale}/inscription/verify-catch`;
+    console.log("📧 Verification URL:", verifyUrl);
+
+    await signUp.prepareEmailAddressVerification({
+      strategy: "email_link",
+      redirectUrl: verifyUrl,
+    });
+
+    setAlertMessage(`Un lien de vérification a été envoyé à ${email}`);
+    setShowSuccessAlert(true);
+  } catch (error: any) {
+    console.error(" ERREUR DÉTAILLÉE:", error);
+    console.error(" Message:", error?.message);
+    console.error(" Errors:", error?.errors);
+
+    const errorMessage =
+      error?.errors?.[0]?.message || error?.message || t("required");
+    setFormError(errorMessage);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleConfirmIdentity = async () => {
     // 1. Upload CIN + Vision OCR

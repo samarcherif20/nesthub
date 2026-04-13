@@ -207,9 +207,6 @@ export default function ResetPasswordPage() {
             transition={{ duration: 0.4, delay: 0.3 }}
             className="mb-8 text-center"
           >
-            <div className="inline-flex items-center justify-center w-16 h-16 mb-4 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-2xl shadow-inner">
-              <KeyRound className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
-            </div>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white mb-2">
               {t("title")}
             </h1>
@@ -338,9 +335,9 @@ export default function ResetPasswordPage() {
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                 >
                   {showConfirmPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
                     <Eye size={18} />
+                  ) : (
+                    <EyeOff size={18} />
                   )}
                 </button>
               </div>

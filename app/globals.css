@@ -549,3 +549,29 @@
 .dark .leaflet-tile {
   filter: brightness(0.9) contrast(1.1);
 }
+
+/* Styles pour le calendrier FullCalendar */
+.fc-event-blocked {
+  background-color: #94a3b8 !important;
+  border-color: #64748b !important;
+  text-decoration: line-through;
+}
+
+.fc-event-special_price {
+  background-color: #fbbf24 !important;
+  border-color: #f59e0b !important;
+  color: #78350f !important;
+  font-weight: bold;
+}
+
+.dark .fc-event-blocked {
+  background-color: #334155 !important;
+  border-color: #475569 !important;
+  color: #94a3b8 !important;
+}
+
+.dark .fc-event-special_price {
+  background-color: #78350f !important;
+  border-color: #fbbf24 !important;
+  color: #fef3c7 !important;
+}

@@ -26,9 +26,14 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
   const messages = await getMessages();
 
   return (
-    <ClerkProvider >
-      <html 
-        lang={locale} 
+    <ClerkProvider
+      signInUrl="/login"
+      signUpUrl="/register"
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
+    >
+      <html
+        lang={locale}
         dir={locale === "ar" ? "rtl" : "ltr"}
         suppressHydrationWarning
       >

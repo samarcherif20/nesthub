@@ -1,9 +1,10 @@
 // app/[locale]/(dashboard)/owner/listings/[id]/edit/page.tsx
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import * as React from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
 import { Toggle } from "@/components/ui/Toggle";
 import { useEditListing } from "./hooks/useEditListing";
@@ -59,6 +60,26 @@ import {
   Zap,
   Award,
 } from "lucide-react";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import router from "next/router";
+
+// Tooltip component simple sans UI change
+function Tooltip({
+  children,
+  text,
+}: {
+  children: React.ReactNode;
+  text: string;
+}) {
+  return (
+    <span className="group relative inline-block w-full">
+      {children}
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+        {text}
+      </span>
+    </span>
+  );
+}
 
 const getDisplayUrl = (url: string) => {
   if (!url) return null;
@@ -217,8 +238,11 @@ export default function EditListingPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale, id } = React.use(params);
+  const t = useTranslations("EditListing");
   const fileRef = useRef<HTMLInputElement>(null);
   const [active, setActive] = useState("details");
+  const [hasChanges, setHasChanges] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const {
     listing,
@@ -240,24 +264,42 @@ export default function EditListingPage({
     return calculateCompletionScore(listing, listing.photos?.length || 0);
   }, [listing]);
 
+  // Détecter les modifications non sauvegardées
+  useEffect(() => {
+    if (listing) {
+      setHasChanges(true);
+    }
+  }, [listing]);
+
+  // Confirmation avant de quitter la page
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasChanges) {
+        e.preventDefault();
+        e.returnValue = t("confirmLeave");
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasChanges, t]);
+
+  // Sauvegarde avec gestion du message de succès
+  const handleSave = async (updates?: any, showToast?: boolean) => {
+    const result = await save(updates, showToast);
+    if (result) {
+      setHasChanges(false);
+      setSuccessMessage(t("success.saved"));
+      setTimeout(() => setSuccessMessage(null), 3000);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 flex items-center justify-center animate-pulse shadow-lg">
-            <Edit size={20} className="text-white" />
-          </div>
-          <div className="flex gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-bounce"
-                style={{ animationDelay: `${i * 0.12}s` }}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-slate-500 mt-2 animate-pulse">
-            Chargement de votre annonce...
+      <div className="h-full flex items-center justify-center bg-white dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingSpinner />
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {t("loading")}
           </p>
         </div>
       </div>
@@ -272,13 +314,13 @@ export default function EditListingPage({
             <Home size={24} className="text-slate-400 dark:text-slate-500" />
           </div>
           <p className="text-slate-600 dark:text-slate-400 font-medium mb-3">
-            Annonce introuvable
+            {t("notFound")}
           </p>
           <Link
             href={`/${locale}/dashboard/owner/listings`}
             className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-lg text-sm font-semibold hover:shadow-md transition-all"
           >
-            <ChevronLeft size={14} /> Retour
+            <ChevronLeft size={14} /> {t("actions.back")}
           </Link>
         </div>
       </div>
@@ -288,14 +330,24 @@ export default function EditListingPage({
   return (
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-950">
       {/* Alert en haut à droite */}
-      {alert && (
+      {(alert || successMessage) && (
         <div className="fixed top-20 right-6 z-50 max-w-md">
-          <Alert
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-            autoClose={5000}
-          />
+          {alert && (
+            <Alert
+              type={alert.type}
+              message={alert.message}
+              onClose={() => setAlert(null)}
+              autoClose={5000}
+            />
+          )}
+          {successMessage && (
+            <Alert
+              type="success"
+              message={successMessage}
+              onClose={() => setSuccessMessage(null)}
+              autoClose={3000}
+            />
+          )}
         </div>
       )}
 
@@ -307,7 +359,7 @@ export default function EditListingPage({
               href={`/${locale}/dashboard/owner/listings`}
               className="hover:text-indigo-600 transition-colors"
             >
-              Mes Annonces
+              {t("breadcrumb.myListings")}
             </Link>
             <ChevronRight size={12} />
             <span className="text-slate-600 dark:text-slate-400">
@@ -317,10 +369,10 @@ export default function EditListingPage({
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <h1 className="text-2xl lg:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                Modifier l'annonce
+                {t("page.title")}
               </h1>
               <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-                Affinez votre annonce pour attirer plus de voyageurs
+                {t("page.subtitle")}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -343,32 +395,34 @@ export default function EditListingPage({
                   }`}
                 />
                 {listing.status === "ACTIVE"
-                  ? "Publiée"
+                  ? t("status.active")
                   : listing.status === "DRAFT"
-                    ? "Brouillon"
-                    : "Masquée"}
+                    ? t("status.draft")
+                    : t("status.inactive")}
               </div>
               {lastSaved && (
                 <span className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">
-                  Sauvegardé{" "}
+                  {t("autoSave.saved")}{" "}
                   {lastSaved.toLocaleTimeString("fr-FR", {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
                 </span>
               )}
-              <button
-                onClick={() => save()}
-                disabled={saving}
-                className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md disabled:opacity-50"
-              >
-                {saving ? (
-                  <Loader2 size={14} className="animate-spin" />
-                ) : (
-                  <Save size={14} />
-                )}
-                Sauvegarder
-              </button>
+              <Tooltip text={t("tooltips.save")}>
+                <button
+                  onClick={() => handleSave(undefined, true)}
+                  disabled={saving}
+                  className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md disabled:opacity-50"
+                >
+                  {saving ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Save size={14} />
+                  )}
+                  {t("actions.save")}
+                </button>
+              </Tooltip>
             </div>
           </div>
         </div>
@@ -415,7 +469,7 @@ export default function EditListingPage({
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-md hover:shadow-lg transition-all duration-300 p-4">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Complétude
+                    {t("completion.title")}
                   </p>
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-violet-600 flex items-center justify-center shadow-sm">
                     <Award size={14} className="text-white" />
@@ -426,15 +480,17 @@ export default function EditListingPage({
                   <div>
                     <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
                       {completionScore >= 80
-                        ? "Excellent"
+                        ? t("completion.excellent")
                         : completionScore >= 50
-                          ? "Correcte"
-                          : "À améliorer"}
+                          ? t("completion.good")
+                          : t("completion.poor")}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       {completionScore < 80 &&
-                        `+${80 - completionScore}% pour exceller`}
-                      {completionScore >= 80 && "Prêt à être publié"}
+                        t("completion.remaining", {
+                          percent: 80 - completionScore,
+                        })}
+                      {completionScore >= 80 && t("completion.ready")}
                     </p>
                   </div>
                 </div>
@@ -461,20 +517,16 @@ export default function EditListingPage({
                       <Sparkles size={14} className="text-white" />
                     </div>
                     <p className="text-xs font-bold uppercase tracking-wider text-white/90">
-                      Conseil d'Expert
+                      {t("expertTip.title")}
                     </p>
                   </div>
                   <p className="text-sm text-white leading-relaxed font-medium">
-                    Les annonces complètes reçoivent{" "}
-                    <strong className="font-black text-white underline decoration-2">
-                      +50% de réservations
-                    </strong>{" "}
-                    et bénéficient d'une meilleure visibilité.
+                    {t("expertTip.message")}
                   </p>
                   <div className="mt-3 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse"></div>
                     <p className="text-[10px] text-white/70 font-medium uppercase tracking-wider">
-                      Recommandation IA
+                      {t("expertTip.recommendation")}
                     </p>
                   </div>
                 </div>
@@ -498,14 +550,10 @@ export default function EditListingPage({
                         {SECTIONS.find((s) => s.id === active)!.label}
                       </h2>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {active === "details" &&
-                          "Informations de base, localisation et équipements"}
-                        {active === "photos" &&
-                          "Gérez les photos de votre annonce"}
-                        {active === "pricing" &&
-                          "Prix, frais et type de location"}
-                        {active === "publish" &&
-                          "Contrôlez la visibilité de votre annonce"}
+                        {active === "details" && t("sectionHints.details")}
+                        {active === "photos" && t("sectionHints.photos")}
+                        {active === "pricing" && t("sectionHints.pricing")}
+                        {active === "publish" && t("sectionHints.publish")}
                       </p>
                     </div>
                   </div>
@@ -520,29 +568,35 @@ export default function EditListingPage({
                       <div className="grid grid-cols-12 gap-6">
                         <div className="col-span-12 lg:col-span-3">
                           <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                            Titre et Description
+                            {t("details.titleAndDesc")}
                           </label>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Comment votre bien sera perçu
+                            {t("details.titleAndDescHint")}
                           </p>
                         </div>
                         <div className="col-span-12 lg:col-span-9 space-y-4">
-                          <input
-                            type="text"
-                            value={listing.title}
-                            onChange={(e) => setField("title", e.target.value)}
-                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            placeholder="Titre de l'annonce"
-                          />
-                          <textarea
-                            value={listing.description || ""}
-                            onChange={(e) =>
-                              setField("description", e.target.value)
-                            }
-                            rows={4}
-                            className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
-                            placeholder="Décrivez votre bien en détail..."
-                          />
+                          <Tooltip text={t("tooltips.title")}>
+                            <input
+                              type="text"
+                              value={listing.title}
+                              onChange={(e) =>
+                                setField("title", e.target.value)
+                              }
+                              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                              placeholder={t("fields.titlePlaceholder")}
+                            />
+                          </Tooltip>
+                          <Tooltip text={t("tooltips.description")}>
+                            <textarea
+                              value={listing.description || ""}
+                              onChange={(e) =>
+                                setField("description", e.target.value)
+                              }
+                              rows={4}
+                              className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                              placeholder={t("fields.descriptionPlaceholder")}
+                            />
+                          </Tooltip>
                         </div>
                       </div>
 
@@ -552,10 +606,10 @@ export default function EditListingPage({
                       <div className="grid grid-cols-12 gap-6">
                         <div className="col-span-12 lg:col-span-3">
                           <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                            Configuration
+                            {t("details.configuration")}
                           </label>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Type et capacité d'accueil
+                            {t("details.configurationHint")}
                           </p>
                         </div>
                         <div className="col-span-12 lg:col-span-9 space-y-4">
@@ -567,7 +621,7 @@ export default function EditListingPage({
                             >
                               {propertyTypes.map((pt) => (
                                 <option key={pt.value} value={pt.value}>
-                                  {pt.label}
+                                  {t(`propertyTypes.${pt.value}`)}
                                 </option>
                               ))}
                             </select>
@@ -589,59 +643,72 @@ export default function EditListingPage({
                                 min={1}
                               />
                               <span className="text-slate-400 dark:text-slate-500 text-sm ml-2">
-                                voyageurs
+                                {t("fields.guests")}
                               </span>
                             </div>
                           </div>
                           <div className="grid grid-cols-3 gap-3">
-                            {[
-                              {
-                                label: "Chambres",
-                                icon: Bed,
-                                field: "rooms",
-                                min: 1,
-                              },
-                              {
-                                label: "Sdb",
-                                icon: Bath,
-                                field: "bathrooms",
-                                min: 1,
-                              },
-                              {
-                                label: "Surface m²",
-                                icon: Ruler,
-                                field: "surfaceArea",
-                                optional: true,
-                              },
-                            ].map(
-                              ({ label, icon: Icon, field, min, optional }) => (
-                                <div
-                                  key={field}
-                                  className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg"
-                                >
-                                  <Icon
-                                    size={16}
-                                    className="text-slate-400 dark:text-slate-500"
-                                  />
-                                  <input
-                                    type="number"
-                                    min={min}
-                                    value={(listing as any)[field] ?? ""}
-                                    onChange={(e) =>
-                                      setField(
-                                        field as any,
-                                        e.target.value
-                                          ? parseInt(e.target.value)
-                                          : optional
-                                            ? null
-                                            : min,
-                                      )
-                                    }
-                                    className="w-full bg-transparent focus:outline-none"
-                                  />
-                                </div>
-                              ),
-                            )}
+                            <Tooltip text={t("tooltips.rooms")}>
+                              <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                <Bed
+                                  size={16}
+                                  className="text-slate-400 dark:text-slate-500"
+                                />
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={listing.rooms}
+                                  onChange={(e) =>
+                                    setField(
+                                      "rooms",
+                                      parseInt(e.target.value) || 1,
+                                    )
+                                  }
+                                  className="w-full bg-transparent focus:outline-none"
+                                />
+                              </div>
+                            </Tooltip>
+                            <Tooltip text={t("tooltips.bathrooms")}>
+                              <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                <Bath
+                                  size={16}
+                                  className="text-slate-400 dark:text-slate-500"
+                                />
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={listing.bathrooms}
+                                  onChange={(e) =>
+                                    setField(
+                                      "bathrooms",
+                                      parseInt(e.target.value) || 1,
+                                    )
+                                  }
+                                  className="w-full bg-transparent focus:outline-none"
+                                />
+                              </div>
+                            </Tooltip>
+                            <Tooltip text={t("tooltips.surface")}>
+                              <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                                <Ruler
+                                  size={16}
+                                  className="text-slate-400 dark:text-slate-500"
+                                />
+                                <input
+                                  type="number"
+                                  value={listing.surfaceArea ?? ""}
+                                  onChange={(e) =>
+                                    setField(
+                                      "surfaceArea",
+                                      e.target.value
+                                        ? parseInt(e.target.value)
+                                        : null,
+                                    )
+                                  }
+                                  className="w-full bg-transparent focus:outline-none"
+                                />
+                              </div>
+                            </Tooltip>
                           </div>
                           <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
                             <div className="flex items-center gap-2">
@@ -650,7 +717,7 @@ export default function EditListingPage({
                                 className="text-slate-400 dark:text-slate-500"
                               />
                               <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                Ascenseur
+                                {t("fields.elevator")}
                               </span>
                             </div>
                             <Toggle
@@ -667,10 +734,10 @@ export default function EditListingPage({
                       <div className="grid grid-cols-12 gap-6">
                         <div className="col-span-12 lg:col-span-3">
                           <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                            Localisation
+                            {t("location.title")}
                           </label>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Adresse exacte après réservation
+                            {t("location.hint")}
                           </p>
                         </div>
                         <div className="col-span-12 lg:col-span-9 space-y-4">
@@ -682,7 +749,9 @@ export default function EditListingPage({
                               }
                               className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
                             >
-                              <option value="">Gouvernorat</option>
+                              <option value="">
+                                {t("location.governorate")}
+                              </option>
                               {governorates.map((g) => (
                                 <option key={g} value={g}>
                                   {g}
@@ -695,7 +764,7 @@ export default function EditListingPage({
                               onChange={(e) =>
                                 setField("delegation", e.target.value)
                               }
-                              placeholder="Délégation"
+                              placeholder={t("location.delegation")}
                               className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
                             />
                             <input
@@ -704,7 +773,7 @@ export default function EditListingPage({
                               onChange={(e) =>
                                 setField("street", e.target.value)
                               }
-                              placeholder="Rue / Quartier"
+                              placeholder={t("location.street")}
                               className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
                             />
                           </div>
@@ -726,7 +795,7 @@ export default function EditListingPage({
                                 className="text-emerald-600 dark:text-emerald-400"
                               />
                               <span className="text-xs text-emerald-700 dark:text-emerald-400 font-medium">
-                                Position définie
+                                {t("location.positionSet")}
                               </span>
                             </div>
                           ) : (
@@ -736,7 +805,7 @@ export default function EditListingPage({
                                 className="text-amber-600 dark:text-amber-400"
                               />
                               <span className="text-xs text-amber-700 dark:text-amber-400">
-                                Cliquez sur la carte pour définir la position
+                                {t("location.positionMissing")}
                               </span>
                             </div>
                           )}
@@ -749,10 +818,10 @@ export default function EditListingPage({
                       <div className="grid grid-cols-12 gap-6">
                         <div className="col-span-12 lg:col-span-3">
                           <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                            Équipements
+                            {t("details.equipment")}
                           </label>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                            Sélectionnez les équipements
+                            {t("details.equipmentHint")}
                           </p>
                         </div>
                         <div className="col-span-12 lg:col-span-9">
@@ -787,7 +856,7 @@ export default function EditListingPage({
                                       }
                                     />
                                     <span className="text-[10px] font-medium">
-                                      {label}
+                                      {t(`equipment.${eqId}`)}
                                     </span>
                                   </button>
                                 );
@@ -811,31 +880,33 @@ export default function EditListingPage({
                         onChange={(e) => handleFileChange(e.target.files)}
                       />
 
-                      <div
-                        onClick={() => fileRef.current?.click()}
-                        className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg hover:border-indigo-400 transition-all cursor-pointer"
-                      >
-                        <div className="flex flex-col items-center justify-center py-10 gap-2">
-                          {uploadingPhotos ? (
-                            <Loader2
-                              size={28}
-                              className="text-indigo-500 animate-spin"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 flex items-center justify-center">
-                              <Camera size={20} className="text-white" />
-                            </div>
-                          )}
-                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                            {uploadingPhotos
-                              ? "Téléchargement..."
-                              : "Cliquez pour ajouter des photos"}
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {listing.photos.length}/20 photos
-                          </p>
+                      <Tooltip text={t("tooltips.addPhotos")}>
+                        <div
+                          onClick={() => fileRef.current?.click()}
+                          className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg hover:border-indigo-400 transition-all cursor-pointer"
+                        >
+                          <div className="flex flex-col items-center justify-center py-10 gap-2">
+                            {uploadingPhotos ? (
+                              <Loader2
+                                size={28}
+                                className="text-indigo-500 animate-spin"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 flex items-center justify-center">
+                                <Camera size={20} className="text-white" />
+                              </div>
+                            )}
+                            <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                              {uploadingPhotos
+                                ? t("photos.uploading")
+                                : t("photos.clickToAdd")}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              {listing.photos.length}/20 {t("photos.photos")}
+                            </p>
+                          </div>
                         </div>
-                      </div>
+                      </Tooltip>
 
                       {listing.photos.length < 5 && (
                         <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
@@ -844,8 +915,9 @@ export default function EditListingPage({
                             className="text-amber-600 dark:text-amber-400"
                           />
                           <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                            Minimum 5 photos recommandées — il en manque{" "}
-                            {5 - listing.photos.length}
+                            {t("photos.minWarning", {
+                              count: 5 - listing.photos.length,
+                            })}
                           </span>
                         </div>
                       )}
@@ -869,39 +941,45 @@ export default function EditListingPage({
                               {photo.isMain && (
                                 <div className="absolute top-1 left-1">
                                   <span className="bg-gradient-to-r from-indigo-500 to-violet-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                    Main
+                                    {t("photos.main")}
                                   </span>
                                 </div>
                               )}
                               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all" />
                               <div className="absolute top-1 right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-all">
                                 {!photo.isMain && (
-                                  <button
-                                    onClick={() => setMainPhoto(photo.id)}
-                                    className="w-6 h-6 rounded-md bg-white/90 text-amber-500 flex items-center justify-center"
-                                  >
-                                    <Star size={10} />
-                                  </button>
+                                  <Tooltip text={t("tooltips.setAsMain")}>
+                                    <button
+                                      onClick={() => setMainPhoto(photo.id)}
+                                      className="w-6 h-6 rounded-md bg-white/90 text-amber-500 flex items-center justify-center"
+                                    >
+                                      <Star size={10} />
+                                    </button>
+                                  </Tooltip>
                                 )}
-                                <button
-                                  onClick={() => removePhoto(photo.id)}
-                                  className="w-6 h-6 rounded-md bg-white/90 text-rose-500 flex items-center justify-center"
-                                >
-                                  <Trash2 size={10} />
-                                </button>
+                                <Tooltip text={t("tooltips.deletePhoto")}>
+                                  <button
+                                    onClick={() => removePhoto(photo.id)}
+                                    className="w-6 h-6 rounded-md bg-white/90 text-rose-500 flex items-center justify-center"
+                                  >
+                                    <Trash2 size={10} />
+                                  </button>
+                                </Tooltip>
                               </div>
                             </div>
                           ))}
                           {listing.photos.length < 20 && (
-                            <button
-                              onClick={() => fileRef.current?.click()}
-                              className="aspect-square rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-indigo-400 hover:text-indigo-600 transition-all"
-                            >
-                              <Plus size={20} />
-                              <span className="text-[10px] font-bold">
-                                Ajouter
-                              </span>
-                            </button>
+                            <Tooltip text={t("tooltips.addPhoto")}>
+                              <button
+                                onClick={() => fileRef.current?.click()}
+                                className="aspect-square rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-indigo-400 hover:text-indigo-600 transition-all"
+                              >
+                                <Plus size={20} />
+                                <span className="text-[10px] font-bold">
+                                  {t("photos.add")}
+                                </span>
+                              </button>
+                            </Tooltip>
                           )}
                         </div>
                       )}
@@ -913,9 +991,9 @@ export default function EditListingPage({
                     <div className="space-y-6">
                       <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-full w-fit">
                         {[
-                          { v: "SHORT_TERM", l: "Court terme" },
-                          { v: "LONG_TERM", l: "Long terme" },
-                          { v: "BOTH", l: "Les deux" },
+                          { v: "SHORT_TERM", l: "shortTerm" },
+                          { v: "LONG_TERM", l: "longTerm" },
+                          { v: "BOTH", l: "both" },
                         ].map(({ v, l }) => (
                           <button
                             key={v}
@@ -926,34 +1004,18 @@ export default function EditListingPage({
                                 : "text-slate-500 dark:text-slate-400"
                             }`}
                           >
-                            {l}
+                            {t(`rentalTypes.${l}`)}
                           </button>
                         ))}
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
-                        {[
-                          {
-                            field: "pricePerNight",
-                            label: "Prix par nuit",
-                            unit: "/nuit",
-                            icon: Sun,
-                          },
-                          {
-                            field: "pricePerMonth",
-                            label: "Prix par mois",
-                            unit: "/mois",
-                            icon: Calendar,
-                          },
-                        ].map(({ field, label, unit, icon: Icon }) => (
-                          <div
-                            key={field}
-                            className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700"
-                          >
+                        <Tooltip text={t("tooltips.pricePerNight")}>
+                          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                             <div className="flex items-center gap-2 mb-2">
-                              <Icon size={14} className="text-indigo-500" />
+                              <Sun size={14} className="text-indigo-500" />
                               <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                {label}
+                                {t("pricing.perNight")}
                               </label>
                             </div>
                             <div className="flex items-baseline gap-1">
@@ -962,10 +1024,10 @@ export default function EditListingPage({
                               </span>
                               <input
                                 type="number"
-                                value={(listing as any)[field] ?? ""}
+                                value={listing.pricePerNight ?? ""}
                                 onChange={(e) =>
                                   setField(
-                                    field as any,
+                                    "pricePerNight",
                                     e.target.value
                                       ? parseFloat(e.target.value)
                                       : null,
@@ -976,25 +1038,57 @@ export default function EditListingPage({
                               />
                             </div>
                             <p className="text-xs text-slate-400 mt-2">
-                              {unit}
+                              {t("units.night")}
                             </p>
                           </div>
-                        ))}
+                        </Tooltip>
+                        <Tooltip text={t("tooltips.pricePerMonth")}>
+                          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Calendar size={14} className="text-indigo-500" />
+                              <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                                {t("pricing.perMonth")}
+                              </label>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-sm font-semibold text-slate-400">
+                                TND
+                              </span>
+                              <input
+                                type="number"
+                                value={listing.pricePerMonth ?? ""}
+                                onChange={(e) =>
+                                  setField(
+                                    "pricePerMonth",
+                                    e.target.value
+                                      ? parseFloat(e.target.value)
+                                      : null,
+                                  )
+                                }
+                                placeholder="0"
+                                className="flex-1 text-2xl font-bold bg-transparent focus:outline-none"
+                              />
+                            </div>
+                            <p className="text-xs text-slate-400 mt-2">
+                              {t("units.month")}
+                            </p>
+                          </div>
+                        </Tooltip>
                       </div>
 
                       <div className="space-y-3">
                         {[
                           {
                             field: "securityDeposit",
-                            label: "Caution",
-                            desc: "Remboursable",
+                            label: "deposit",
+                            desc: "depositDesc",
                             icon: Shield,
                             def: 500,
                           },
                           {
                             field: "cleaningFee",
-                            label: "Frais ménage",
-                            desc: "Une seule fois",
+                            label: "cleaningFee",
+                            desc: "cleaningFeeDesc",
                             icon: Sparkles,
                             def: 50,
                           },
@@ -1007,10 +1101,10 @@ export default function EditListingPage({
                               <Icon size={14} className="text-indigo-500" />
                               <div>
                                 <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                  {label}
+                                  {t(`pricing.${label}`)}
                                 </p>
                                 <p className="text-xs text-slate-400 dark:text-slate-500">
-                                  {desc}
+                                  {t(`pricing.${desc}`)}
                                 </p>
                               </div>
                             </div>
@@ -1081,41 +1175,41 @@ export default function EditListingPage({
                           <div className="flex-1">
                             <p className="font-semibold text-slate-800 dark:text-white">
                               {listing.status === "ACTIVE"
-                                ? "Annonce publiée"
+                                ? t("publish.published")
                                 : listing.status === "DRAFT"
-                                  ? "Brouillon"
-                                  : "Masquée"}
+                                  ? t("publish.draft")
+                                  : t("publish.hidden")}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
                               {listing.status === "ACTIVE"
-                                ? "Visible dans les recherches"
-                                : "Non visible par les locataires"}
+                                ? t("publish.publishedDesc")
+                                : t("publish.hiddenDesc")}
                             </p>
                           </div>
                           {listing.status === "ACTIVE" && (
                             <span className="flex items-center gap-1 px-2 py-1 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 rounded-full text-[10px] font-bold">
                               <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />{" "}
-                              En direct
+                              {t("publish.live")}
                             </span>
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2 mt-4">
                           {listing.status !== "ACTIVE" && (
                             <button
-                              onClick={() => save({ status: "ACTIVE" })}
+                              onClick={() => handleSave({ status: "ACTIVE" })}
                               className="px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-xs font-semibold"
                             >
                               <Rocket size={12} className="inline mr-1" />{" "}
-                              Publier
+                              {t("actions.publish")}
                             </button>
                           )}
                           {listing.status === "ACTIVE" && (
                             <button
-                              onClick={() => save({ status: "INACTIVE" })}
+                              onClick={() => handleSave({ status: "INACTIVE" })}
                               className="px-4 py-1.5 bg-gradient-to-r from-amber-500 to-orange-600 text-white rounded-lg text-xs font-semibold"
                             >
                               <EyeOff size={12} className="inline mr-1" />{" "}
-                              Masquer
+                              {t("actions.hide")}
                             </button>
                           )}
                           <Link
@@ -1123,7 +1217,8 @@ export default function EditListingPage({
                             target="_blank"
                             className="px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-lg text-xs font-semibold"
                           >
-                            <Eye size={12} className="inline mr-1" /> Aperçu
+                            <Eye size={12} className="inline mr-1" />{" "}
+                            {t("actions.preview")}
                           </Link>
                         </div>
                       </div>
@@ -1132,12 +1227,12 @@ export default function EditListingPage({
                         {[
                           {
                             icon: Eye,
-                            label: "Vues",
+                            label: "views",
                             value: listing.viewCount.toLocaleString("fr-FR"),
                           },
                           {
                             icon: Calendar,
-                            label: "Créé",
+                            label: "created",
                             value: new Date(
                               listing.createdAt,
                             ).toLocaleDateString("fr-FR", {
@@ -1147,7 +1242,7 @@ export default function EditListingPage({
                           },
                           {
                             icon: Award,
-                            label: "Score",
+                            label: "score",
                             value: `${completionScore}%`,
                           },
                         ].map(({ icon: Icon, label, value }) => (
@@ -1160,7 +1255,7 @@ export default function EditListingPage({
                               className="text-indigo-500 mx-auto mb-1"
                             />
                             <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
-                              {label}
+                              {t(`publish.stats.${label}`)}
                             </p>
                             <p className="text-sm font-bold text-slate-700 dark:text-white">
                               {value}
@@ -1172,7 +1267,7 @@ export default function EditListingPage({
                       <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
                         <div className="flex items-center justify-between mb-3">
                           <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                            Complétude
+                            {t("completion.title")}
                           </h3>
                           <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
                             {completionScore}%
@@ -1181,43 +1276,37 @@ export default function EditListingPage({
                         <div className="space-y-2">
                           {[
                             {
-                              label: "Titre",
+                              key: "title",
                               done:
                                 !!listing.title && listing.title.length >= 10,
                             },
                             {
-                              label: "Description",
+                              key: "description",
                               done: !!(
                                 listing.description &&
                                 listing.description.length >= 100
                               ),
                             },
+                            { key: "photos", done: listing.photos.length >= 5 },
                             {
-                              label: "Photos (5+)",
-                              done: listing.photos.length >= 5,
-                            },
-                            {
-                              label: "Localisation",
+                              key: "location",
                               done: !!(listing.governorate && listing.latitude),
                             },
                             {
-                              label: "Prix",
+                              key: "price",
                               done: !!(
                                 listing.pricePerNight || listing.pricePerMonth
                               ),
                             },
                             {
-                              label: "Équipements",
+                              key: "equipment",
                               done:
                                 Object.values(listing.equipment || {}).filter(
                                   Boolean,
                                 ).length >= 3,
                             },
-                          ].map(({ label, done }) => (
-                            <div
-                              key={label}
-                              className="flex items-center gap-2"
-                            >
+                          ].map(({ key, done }) => (
+                            <div key={key} className="flex items-center gap-2">
                               <CheckCircle
                                 size={12}
                                 className={
@@ -1227,7 +1316,7 @@ export default function EditListingPage({
                                 }
                               />
                               <span className="text-xs text-slate-600 dark:text-slate-400 flex-1">
-                                {label}
+                                {t(`completion.items.${key}`)}
                               </span>
                               <span
                                 className={`text-[10px] font-medium ${done ? "text-emerald-600 dark:text-emerald-400" : "text-slate-400"}`}
@@ -1243,12 +1332,17 @@ export default function EditListingPage({
 
                   {/* Bottom Navigation */}
                   <div className="flex items-center justify-between pt-6 mt-6 border-t border-slate-200 dark:border-slate-700">
-                    <Link
-                      href={`/${locale}/dashboard/owner/listings`}
+                    <button
+                      onClick={async () => {
+                        await handleSave(undefined, true);
+                        setTimeout(() => {
+                          router.push(`/${locale}/dashboard/owner/listings`);
+                        }, 3000);
+                      }}
                       className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-400 hover:text-indigo-600 transition-colors"
                     >
-                      <ChevronLeft size={14} /> Retour
-                    </Link>
+                      <ChevronLeft size={14} /> {t("actions.back")}
+                    </button>
                     <div className="flex items-center gap-2">
                       {active !== "details" && (
                         <button
@@ -1261,7 +1355,7 @@ export default function EditListingPage({
                           }
                           className="px-4 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                         >
-                          Précédent
+                          {t("actions.previous")}
                         </button>
                       )}
                       {active !== "publish" ? (
@@ -1275,24 +1369,27 @@ export default function EditListingPage({
                           }
                           className="px-5 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all"
                         >
-                          Suivant <ChevronRight size={14} className="inline" />
+                          {t("actions.next")}{" "}
+                          <ChevronRight size={14} className="inline" />
                         </button>
                       ) : (
-                        <button
-                          onClick={() => save()}
-                          disabled={saving}
-                          className="px-5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all disabled:opacity-50"
-                        >
-                          {saving ? (
-                            <Loader2
-                              size={12}
-                              className="animate-spin inline mr-1"
-                            />
-                          ) : (
-                            <Save size={12} className="inline mr-1" />
-                          )}
-                          Sauvegarder
-                        </button>
+                        <Tooltip text={t("tooltips.save")}>
+                          <button
+                            onClick={() => handleSave(undefined, true)}
+                            disabled={saving}
+                            className="px-5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all disabled:opacity-50"
+                          >
+                            {saving ? (
+                              <Loader2
+                                size={12}
+                                className="animate-spin inline mr-1"
+                              />
+                            ) : (
+                              <Save size={12} className="inline mr-1" />
+                            )}
+                            {t("actions.save")}
+                          </button>
+                        </Tooltip>
                       )}
                     </div>
                   </div>
@@ -1308,18 +1405,20 @@ export default function EditListingPage({
         <div className="fixed bottom-6 right-6 flex items-center gap-2 bg-white dark:bg-slate-800 py-2 pl-3 pr-2 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 z-50">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
-            Sauvegardé{" "}
+            {t("autoSave.saved")}{" "}
             {lastSaved.toLocaleTimeString("fr-FR", {
               hour: "2-digit",
               minute: "2-digit",
             })}
           </span>
-          <button
-            onClick={() => save()}
-            className="w-6 h-6 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-full flex items-center justify-center hover:shadow active:scale-90 transition-all"
-          >
-            <Save size={11} />
-          </button>
+          <Tooltip text={t("tooltips.save")}>
+            <button
+              onClick={() => handleSave(undefined, true)}
+              className="w-6 h-6 bg-gradient-to-r from-indigo-500 to-violet-600 text-white rounded-full flex items-center justify-center hover:shadow active:scale-90 transition-all"
+            >
+              <Save size={11} />
+            </button>
+          </Tooltip>
         </div>
       )}
     </div>

@@ -1,845 +1,1104 @@
-// app/[locale]/(dashboard)/owner/listings/[id]/page.tsx
+// app/[locale]/dashboard/owner/listings/[id]/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
 import * as React from "react";
-import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
-import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
-import Image from "next/image";
-
-// Composant Map
-import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
-
-// Icônes React
+import { createPortal } from "react-dom";
+import { useTranslations } from "next-intl";
 import {
-  Home,
-  Building2,
-  Hotel,
-  Layers,
+  ChevronRight,
+  MapPin,
+  Eye,
+  CalendarDays,
+  TrendingUp,
   Bed,
   Bath,
   Users,
-  Wifi,
-  Waves,
-  Car,
-  Utensils,
-  Wind,
-  Tv,
-  Star,
-  MapPin,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Share2,
-  Heart,
-  Eye,
-  Edit,
+  Square,
+  CheckCircle2,
+  User,
+  UserPlus,
   Trash2,
-  Loader2,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Shield,
-  Verified,
-  TrendingUp,
-  ArrowLeft,
+  EyeOff,
   X,
-  Grid3x3,
-  ZoomIn,
-  ChevronDown,
-  ChevronUp,
+  ChevronLeft,
+  ArrowLeft,
+  Home,
+  Calendar,
+  Activity,
+  CalendarCheck,
+  RotateCcw,
+  Plus,
+  Minus,
   Navigation,
+  DollarSign,
+  CreditCard,
+  Clock,
+  Wifi,
+  Wind,
+  Flame,
+  Utensils,
+  Car,
+  Waves,
+  Dumbbell,
+  Tv,
+  Trees,
+  WashingMachine,
+  Fan,
+  Shield,
+  Sparkles,
   Coffee,
-  ShoppingBag,
-  Bus,
+  Smartphone,
+  Music,
+  BookOpen,
+  Lock,
+  ArrowUp,
 } from "lucide-react";
-import { MdCheckBoxOutlineBlank } from "react-icons/md";
-import { FaSquare } from "react-icons/fa";
-import { BsBoundingBox } from "react-icons/bs";
 
-interface Listing {
-  id: string;
-  title: string;
-  type: string;
-  description: string;
-  governorate: string;
-  delegation: string;
-  street: string;
-  latitude: number | null;
-  longitude: number | null;
-  rooms: number;
-  bathrooms: number;
-  maxGuests: number;
-  surfaceArea: number | null;
-  floorNumber: number | null;
-  hasElevator: boolean;
-  equipment: Record<string, boolean>;
-  services: Record<string, boolean>;
-  houseRules: Record<string, boolean>;
-  customRules: string;
-  photos: Array<{
-    id: string;
-    url: string;
-    thumbnailUrl: string;
-    isMain: boolean;
-    position: number;
-  }>;
-  rentalType: string;
-  pricePerNight: number | null;
-  pricePerMonth: number | null;
-  securityDeposit: number | null;
-  cleaningFee: number | null;
-  status: string;
-  viewCount: number;
-  bookingCount: number;
-  favoriteCount: number;
-  createdAt: string;
-  updatedAt: string;
-  owner: {
-    id: string;
-    firstName: string | null;
-    lastName: string | null;
-    username: string | null;
-    profilePictureUrl: string | null;
-    isIdentityVerified: boolean;
-    createdAt: string;
-    stats?: {
-      averageRating: number | null;
-      totalReviews: number;
-    } | null;
-  };
+import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
+import DeleteListingModal from "@/components/ui/modals/DeleteListingModal";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { TbHomeEdit, TbHomeOff, TbHomeShare, TbMapShare } from "react-icons/tb";
+import { PiCalendarSlashDuotone } from "react-icons/pi";
+import { LiaMapMarkedAltSolid } from "react-icons/lia";
+import { useListingDetail } from "./hooks/useListingDetail";
+
+// Tooltip component
+function Tooltip({
+  children,
+  text,
+}: {
+  children: React.ReactNode;
+  text: string;
+}) {
+  return (
+    <span className="group relative inline-block">
+      {children}
+      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
+        {text}
+      </span>
+    </span>
+  );
 }
 
-// Fonction pip pour les images Vercel Blob
-const pip = (url: string) =>
-  `/api/listings/image?url=${encodeURIComponent(url)}`;
+// Skeleton pour les KPIs
+function KPISkeleton() {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {[1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-700 animate-pulse"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700" />
+            <div className="flex-1">
+              <div className="h-3 w-16 bg-slate-200 dark:bg-slate-700 rounded mb-2" />
+              <div className="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
-// Icônes des équipements
-const getEquipmentIcon = (key: string) => {
-  const icons: Record<string, any> = {
-    wifi: Wifi,
-    ac: Wind,
-    heating: Wind,
-    kitchen: Utensils,
-    parking: Car,
-    pool: Waves,
-    tv: Tv,
-    washer: Wifi,
-    dryer: Wifi,
-    gym: Wifi,
-  };
-  return icons[key] || CheckCircle;
+// Skeleton pour le contenu principal
+function ContentSkeleton() {
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="lg:col-span-2 space-y-6">
+        {/* Gallery skeleton */}
+        <div className="grid grid-cols-3 gap-3 h-90">
+          <div className="col-span-2 row-span-2 rounded-2xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
+          <div className="rounded-2xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
+          <div className="rounded-2xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
+        </div>
+        {/* Description skeleton */}
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
+          <div className="h-6 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
+          <div className="space-y-2">
+            <div className="h-4 w-full bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+            <div className="h-4 w-11/12 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+            <div className="h-4 w-10/12 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+      <div className="space-y-5">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700">
+          <div className="h-5 w-28 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
+          <div className="space-y-3">
+            <div className="h-12 w-full bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+            <div className="h-12 w-full bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Map des icônes pour les équipements
+const EQUIPMENT_ICONS: Record<string, any> = {
+  wifi: Wifi,
+  ac: Wind,
+  heating: Flame,
+  kitchen: Utensils,
+  parking: Car,
+  pool: Waves,
+  gym: Dumbbell,
+  washer: WashingMachine,
+  tv: Tv,
+  balcony: Trees,
+  dishwasher: Utensils,
+  dryer: Fan,
+  coffee: Coffee,
+  smartlock: Lock,
+  speaker: Music,
+  workplace: BookOpen,
+  elevator: ArrowUp,
+  airConditioning: Wind,
 };
 
-// Noms lisibles des équipements
-const getEquipmentLabel = (key: string, t: any) => {
-  const labels: Record<string, string> = {
-    wifi: "Wi-Fi haut débit",
-    ac: "Climatisation",
-    heating: "Chauffage",
-    kitchen: "Cuisine équipée",
-    parking: "Parking gratuit",
-    pool: "Piscine",
-    tv: "Smart TV",
-    washer: "Lave-linge",
-    dryer: "Sèche-linge",
-    gym: "Salle de sport",
-  };
-  return labels[key] || key;
-};
+// Shadow styles
+const card3d =
+  "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_20px_-4px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.3),0_8px_20px_-4px_rgba(0,0,0,0.4)]";
 
-export default function ListingDetailPage({
+// Quick Stats Card Component
+function QuickStatsCard({ listing, t }: { listing: any; t: any }) {
+  const conversionRate =
+    listing.viewCount > 0
+      ? ((listing.bookingCount / listing.viewCount) * 100).toFixed(1)
+      : "0";
+
+  const revenue = listing.pricePerNight
+    ? listing.pricePerNight * (listing.bookingCount || 0)
+    : listing.pricePerMonth
+      ? listing.pricePerMonth * (listing.bookingCount || 0)
+      : 0;
+
+  return (
+    <div className="grid grid-cols-4 gap-2 pt-4 mt-4 border-t border-slate-100 dark:border-slate-700">
+      <div className="text-center">
+        <div className="flex justify-center mb-2">
+          <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+            <Eye className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          </div>
+        </div>
+        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">
+          {t("quickStats.views")}
+        </p>
+        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+          {listing.viewCount?.toLocaleString() || 0}
+        </p>
+      </div>
+      <div className="text-center">
+        <div className="flex justify-center mb-2">
+          <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <CalendarDays className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+          </div>
+        </div>
+        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">
+          {t("quickStats.bookings")}
+        </p>
+        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+          {listing.bookingCount || 0}
+        </p>
+      </div>
+      <div className="text-center">
+        <div className="flex justify-center mb-2">
+          <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+          </div>
+        </div>
+        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">
+          {t("quickStats.conversion")}
+        </p>
+        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+          {conversionRate}%
+        </p>
+      </div>
+      <div className="text-center">
+        <div className="flex justify-center mb-2">
+          <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+            <DollarSign className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+          </div>
+        </div>
+        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">
+          {t("quickStats.revenue")}
+        </p>
+        <p className="text-sm font-bold text-amber-600 dark:text-amber-400">
+          {revenue.toLocaleString()} {t("currency.tnd")}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// Status Badge Component
+function StatusBadge({ status, t }: { status: string; t: any }) {
+  const config = {
+    ACTIVE: {
+      bg: "bg-emerald-100 dark:bg-emerald-500/20",
+      text: "text-emerald-700 dark:text-emerald-400",
+      icon: CheckCircle2,
+    },
+    INACTIVE: {
+      bg: "bg-amber-100 dark:bg-amber-500/20",
+      text: "text-amber-700 dark:text-amber-400",
+      icon: EyeOff,
+    },
+    DRAFT: {
+      bg: "bg-slate-100 dark:bg-slate-700",
+      text: "text-slate-600 dark:text-slate-400",
+      icon: EyeOff,
+    },
+  };
+  const cfg = config[status as keyof typeof config] || config.DRAFT;
+  const Icon = cfg.icon;
+  return (
+    <span
+      className={`px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text} text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit mt-3.5`}
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {t(`status.${status.toLowerCase()}`)}
+    </span>
+  );
+}
+
+// Booking Status Badge Component
+function BookingStatusBadge({ status, t }: { status: string; t: any }) {
+  const config = {
+    CONFIRMED: {
+      bg: "bg-blue-50 dark:bg-blue-900/30",
+      text: "text-blue-600 dark:text-blue-400",
+      icon: CheckCircle2,
+    },
+    PENDING: {
+      bg: "bg-amber-50 dark:bg-amber-900/30",
+      text: "text-amber-600 dark:text-amber-400",
+      icon: Clock,
+    },
+    PAID: {
+      bg: "bg-emerald-50 dark:bg-emerald-900/30",
+      text: "text-emerald-600 dark:text-emerald-400",
+      icon: CreditCard,
+    },
+  };
+  const cfg = config[status as keyof typeof config] || config.PENDING;
+  const Icon = cfg.icon;
+  return (
+    <span
+      className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase ${cfg.bg} ${cfg.text} flex items-center gap-1`}
+    >
+      <Icon className="w-3 h-3" />
+      {t(`bookingStatus.${status.toLowerCase()}`)}
+    </span>
+  );
+}
+
+// Equipment Item Component avec icône
+function EquipmentItem({ eqKey, t }: { eqKey: string; t: any }) {
+  const Icon = EQUIPMENT_ICONS[eqKey] || CheckCircle2;
+  const label = t(
+    `equipment.${eqKey}`,
+    eqKey.replace(/([A-Z])/g, " $1").trim(),
+  );
+
+  return (
+    <div className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center shrink-0">
+        <Icon className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+      </div>
+      <span className="text-sm text-slate-700 dark:text-slate-300">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+export default function OwnerListingDetailPage({
   params,
 }: {
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale, id } = React.use(params);
-  const router = useRouter();
-  const { user } = useUser();
-  const t = useTranslations("ListingDetail");
+  const t = useTranslations("OwnerListingDetail");
+  const slideshowRef = React.useRef<NodeJS.Timeout | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const [listing, setListing] = useState<Listing | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [showAllPhotos, setShowAllPhotos] = useState(false);
-  const [showGalleryModal, setShowGalleryModal] = useState(false);
-  const [galleryStartIndex, setGalleryStartIndex] = useState(0);
-  const [checkInDate, setCheckInDate] = useState("");
-  const [checkOutDate, setCheckOutDate] = useState("");
-  const [guests, setGuests] = useState(1);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [showFullDescription, setShowFullDescription] = useState(false);
-  const [showAllAmenities, setShowAllAmenities] = useState(false);
-// Dans app/[locale]/(dashboard)/owner/listings/[id]/page.tsx
-// Remplacez l'effet existant par :
+  const {
+    listing,
+    loading,
+    showGalleryModal,
+    setShowGalleryModal,
+    galleryStartIndex,
+    showFullDescription,
+    setShowFullDescription,
+    showAllAmenities,
+    setShowAllAmenities,
+    bookings,
+    currentMonth,
+    showDeleteModal,
+    setShowDeleteModal,
+    isDeleting,
+    zoomLevel,
+    setZoomLevel,
+    isSlideshow,
+    handleEdit,
+    handleDeleteClick,
+    handleConfirmDelete,
+    handleToggleStatus,
+    nextPhoto,
+    prevPhoto,
+    toggleSlideshow,
+    changeMonth,
+    openInExternalMap,
+    allEquipment,
+    mainEquipment,
+    previewPhotos,
+    remainingPhotosCount,
+    getCalendarDays,
+  } = useListingDetail(id, locale, setError);
 
+  const pip = (url: string) =>
+    `/api/listings/image?url=${encodeURIComponent(url)}`;
 
-  useEffect(() => {
-    fetchListing();
-    // Simuler la vérification des favoris
-    if (user) {
-      checkIfFavorite();
-    }
-  }, [id, user]);
-
-  const fetchListing = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/listings/${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setListing(data);
-      } else {
-        console.error("Error fetching listing");
-      }
-    } catch (error) {
-      console.error("Error fetching listing:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkIfFavorite = async () => {
-    try {
-      const res = await fetch(`/api/favorites/check?listingId=${id}`);
-      if (res.ok) {
-        const data = await res.json();
-        setIsFavorite(data.isFavorite);
-      }
-    } catch (error) {
-      console.error("Error checking favorite:", error);
-    }
-  };
-
-  const handleFavorite = async () => {
-    if (!user) {
-      router.push(`/${locale}/login`);
-      return;
-    }
-    try {
-      const res = await fetch("/api/favorites", {
-        method: isFavorite ? "DELETE" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ listingId: id }),
-      });
-      if (res.ok) {
-        setIsFavorite(!isFavorite);
-      }
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-    }
-  };
-
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: listing?.title,
-          text: "Découvrez cette superbe annonce !",
-          url: window.location.href,
-        });
-      } catch (error) {
-        console.error("Error sharing:", error);
-      }
-    } else {
-      // Fallback: copier l'URL
-      navigator.clipboard.writeText(window.location.href);
-      alert("Lien copié dans le presse-papier !");
-    }
-  };
-
-  const calculateTotalPrice = () => {
-    if (!listing?.pricePerNight || !checkInDate || !checkOutDate) return null;
-    const checkIn = new Date(checkInDate);
-    const checkOut = new Date(checkOutDate);
-    const nights = Math.ceil(
-      (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (nights <= 0) return null;
-    const subtotal = listing.pricePerNight * nights;
-    const cleaningFee = listing.cleaningFee || 0;
-    const serviceFee = Math.round(subtotal * 0.1);
-    return {
-      nights,
-      subtotal,
-      cleaningFee,
-      serviceFee,
-      total: subtotal + cleaningFee + serviceFee,
-    };
-  };
-
-  const priceDetails = calculateTotalPrice();
-  const pricePerUnit = listing?.pricePerNight || listing?.pricePerMonth;
-  const priceUnit = listing?.pricePerNight ? "nuit" : "mois";
-  const averageRating = listing?.owner?.stats?.averageRating || 0;
-  const totalReviews = listing?.owner?.stats?.totalReviews || 0;
-
-  // Calcul du Trust Score (simulé basé sur les données)
-  const trustScore = Math.min(
-    85 +
-      (listing?.owner?.isIdentityVerified ? 10 : 0) +
-      (listing?.bookingCount ? Math.min(listing.bookingCount, 5) : 0),
-    98
-  );
-
-  // Vérifications de sécurité
-  const safetyChecks = [
-    { label: "Identité vérifiée", active: listing?.owner?.isIdentityVerified || false, icon: Verified },
-    { label: "5+ réservations", active: (listing?.bookingCount || 0) >= 5, icon: Calendar },
-    { label: "Dépôt de garantie", active: (listing?.securityDeposit || 0) > 0, icon: Shield },
-    { label: "Réponse rapide", active: true, icon: Clock },
-  ];
-
-  // Équipements principaux (affichage limité)
-  const mainEquipment = Object.entries(listing?.equipment || {})
-    .filter(([, value]) => value === true)
-    .slice(0, 6);
-
-  const allEquipment = Object.entries(listing?.equipment || {})
-    .filter(([, value]) => value === true);
-
+  // Afficher le skeleton pendant le chargement
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
-        <Loader2 size={48} className="animate-spin text-primary" />
+      <div className="min-h-screen bg-white dark:bg-slate-950">
+        <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Breadcrumb skeleton */}
+          <div className="mb-6 flex items-center gap-2">
+            <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+            <ChevronRight className="w-4 h-4 text-slate-400" />
+            <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+          </div>
+          {/* Header skeleton */}
+          <div className="mb-8">
+            <div className="h-10 w-64 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-3" />
+            <div className="h-5 w-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
+          </div>
+          {/* KPIs skeleton */}
+          <KPISkeleton />
+          {/* Content skeleton */}
+          <ContentSkeleton />
+        </main>
       </div>
     );
   }
 
   if (!listing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
-        <div className="text-center">
-          <Home size={64} className="mx-auto text-slate-400 mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-            Annonce non trouvée
+      <div className="fixed inset-0 bg-white dark:bg-slate-950 flex items-center justify-center p-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="relative mb-5">
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-purple-500/20 rounded-2xl blur-2xl animate-pulse"></div>
+            <div className="relative w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950/50 dark:to-purple-950/50 mx-auto flex items-center justify-center shadow-lg">
+              <TbHomeOff className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
+            </div>
+          </div>
+          <h2 className="text-xl md:text-2xl font-headline font-bold bg-gradient-to-r from-sky-400 to-purple-600 dark:from-sky-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+            {t("notFound.title")}
           </h2>
-          <p className="text-slate-500 dark:text-slate-400 mb-6">
-            L'annonce que vous recherchez n'existe pas ou a été supprimée.
+          <p className="text-slate-500 dark:text-slate-400 mb-5 text-sm leading-relaxed max-w-sm mx-auto">
+            {t("notFound.description")}
           </p>
           <Link
             href={`/${locale}/dashboard/owner/listings`}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl font-semibold hover:opacity-90"
+            className="group relative inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-sky-400 to-purple-600 hover:from-sky-500 hover:to-purple-700 text-white rounded-lg font-semibold text-sm transition-all duration-300 shadow-md hover:shadow-lg hover:scale-105 active:scale-95 overflow-hidden"
           >
-            <ArrowLeft size={18} />
-            Retour aux annonces
+            <span className="absolute inset-0 w-0 bg-white/20 transition-all duration-300 ease-out group-hover:w-full"></span>
+            <ArrowLeft className="w-4 h-4 relative z-10 transition-transform duration-300 group-hover:-translate-x-1" />
+            <span className="relative z-10">{t("notFound.button")}</span>
           </Link>
+          <p className="mt-5 text-xs text-slate-400 dark:text-slate-500">
+            {t("notFound.helpText")}{" "}
+            <Link
+              href={`/${locale}/dashboard/owner`}
+              className="text-purple-600 dark:text-indigo-400 hover:underline"
+            >
+              {t("notFound.dashboardLink")}
+            </Link>
+          </p>
         </div>
       </div>
     );
   }
 
-  const mainPhoto = listing.photos.find((p) => p.isMain) || listing.photos[0];
-  const previewPhotos = listing.photos.slice(0, 5);
-
   return (
-    <div className="min-h-screen bg-background-light dark:bg-background-dark">
-     
-
-      <main className="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumbs */}
-        <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500 font-medium mb-6">
-          <Link href={`/${locale}`} className="hover:text-primary">Accueil</Link>
-          <ChevronRight size={14} />
-          <Link href={`/${locale}/dashboard/owner/listings`} className="hover:text-primary">Mes annonces</Link>
-          <ChevronRight size={14} />
-          <span className="text-slate-900 dark:text-slate-200">{listing.title}</span>
-        </div>
-
-        {/* Title & Meta */}
-        <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">
+    <div className="min-h-screen bg-white dark:bg-slate-950 font-body text-on-surface dark:text-slate-200 antialiased">
+      <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Breadcrumb */}
+        <nav className="mb-6 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+          <Link
+            href={`/${locale}/dashboard/owner/listings`}
+            className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1.5"
+          >
+            {t("breadcrumb.listings")}
+          </Link>
+          <ChevronRight className="w-4 h-4 opacity-50" />
+          <span className="text-slate-900 dark:text-white font-bold truncate max-w-[300px]">
             {listing.title}
-          </h1>
-          <div className="flex flex-wrap items-center gap-4 text-slate-600 dark:text-slate-400">
-            <div className="flex items-center gap-1">
-              <MapPin size={18} className="text-primary" />
+          </span>
+        </nav>
+
+        {/* Error Message */}
+        {error && (
+          <div className="mb-6 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-4">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <p className="text-sm text-rose-600 dark:text-rose-400">
+                {error}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
+        <header className="mb-8 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+          <div className="flex-1 space-y-1">
+            <div className="flex items-start gap-3 flex-wrap">
+              <h1 className="text-3xl lg:text-4xl font-headline font-extrabold text-slate-900 dark:text-white leading-tight">
+                {listing.title}
+              </h1>
+              <StatusBadge status={listing.status} t={t} />
+            </div>
+            <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+              <Navigation className="w-4 h-4 text-gray-500" />
               <span className="text-sm font-medium">
                 {listing.governorate}
                 {listing.delegation ? `, ${listing.delegation}` : ""}
                 {listing.street ? `, ${listing.street}` : ""}
               </span>
             </div>
-            <div className="flex items-center gap-1">
-              <Star size={18} className="fill-yellow-400 text-yellow-400" />
-              <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                {averageRating.toFixed(1)}
-              </span>
-              <span className="text-sm">({totalReviews} avis)</span>
-            </div>
-            {listing.owner?.isIdentityVerified && (
-              <div className="flex items-center gap-1">
-                <Verified size={18} className="text-emerald-500" />
-                <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider text-[11px]">
-                  Identité vérifiée
+          </div>
+
+          {/* Action Buttons avec Tooltips */}
+          <div className="flex items-center gap-3">
+            <Tooltip text={t("actions.viewPublic")}>
+              <Link
+                href={`/${locale}/listings/${listing.id}`}
+                target="_blank"
+                className={`px-5 py-2.5 rounded-xl border-2 border-indigo-500 dark:border-indigo-500 text-indigo-600 dark:text-indigo-400 font-semibold text-sm hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-all duration-200 flex items-center gap-2 ${card3d}`}
+              >
+                <TbHomeShare className="w-4 h-4" />
+                <span className="hidden sm:inline">
+                  {t("actions.viewPublic")}
                 </span>
-              </div>
-            )}
+              </Link>
+            </Tooltip>
+            <Tooltip text={t("actions.edit")}>
+              <button
+                onClick={handleEdit}
+                className={`px-5 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-700 hover:to-purple-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all duration-200 flex items-center gap-2 active:scale-95 ${card3d}`}
+              >
+                <TbHomeEdit className="w-4 h-4" />
+                <span className="hidden sm:inline">{t("actions.edit")}</span>
+              </button>
+            </Tooltip>
           </div>
-        </div>
+        </header>
 
-        {/* Gallery Grid - Style inspiration */}
-        <div className="grid grid-cols-1 md:grid-cols-4 grid-rows-2 gap-3 h-[400px] md:h-[500px] mb-12 rounded-2xl overflow-hidden group">
-          {/* Large Image */}
-          <div className="md:col-span-2 md:row-span-2 relative overflow-hidden cursor-pointer"
-               onClick={() => { setGalleryStartIndex(0); setShowGalleryModal(true); }}>
-            <img
-              src={pip(previewPhotos[0]?.url)}
-              alt={listing.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            {listing.photos.length > 5 && (
-              <div className="absolute bottom-6 left-6">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setShowAllPhotos(true); }}
-                  className="bg-white/90 backdrop-blur-sm text-slate-900 px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 shadow-xl hover:bg-white transition-all"
-                >
-                  <Grid3x3 size={18} />
-                  Voir toutes les photos ({listing.photos.length})
-                </button>
+        {/* KPIs Cards */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div
+            className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-indigo-100 dark:border-indigo-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/40 dark:to-indigo-900/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
+                <Eye className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
               </div>
-            )}
+              <div>
+                <p className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+                  {t("stats.views")}
+                </p>
+                <p className="text-xl lg:text-2xl font-headline font-bold text-indigo-600 dark:text-indigo-400">
+                  {listing.viewCount.toLocaleString()}
+                </p>
+              </div>
+            </div>
           </div>
 
-          {/* Small Previews */}
-          {previewPhotos.slice(1, 5).map((photo, idx) => (
-            <div
-              key={photo.id}
-              className="hidden md:block relative overflow-hidden cursor-pointer"
-              onClick={() => { setGalleryStartIndex(idx + 1); setShowGalleryModal(true); }}
-            >
-              <img
-                src={pip(photo.url)}
-                alt={`${listing.title} - ${idx + 2}`}
-                className="w-full h-full object-cover hover:opacity-90 transition-opacity"
-              />
-              {idx === 3 && listing.photos.length > 5 && (
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-colors">
-                  <span className="text-white font-bold text-lg">
-                    +{listing.photos.length - 5} photos
+          <div
+            className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-rose-100 dark:border-rose-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-100 to-rose-50 dark:from-rose-900/40 dark:to-rose-900/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
+                <CalendarCheck className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+              </div>
+              <div>
+                <p className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+                  {t("stats.bookings")}
+                </p>
+                <p className="text-xl lg:text-2xl font-headline font-bold text-rose-600 dark:text-rose-400">
+                  {listing.bookingCount}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-teal-100 dark:border-teal-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-100 to-teal-50 dark:from-teal-900/40 dark:to-teal-900/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
+                <Activity className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+              </div>
+              <div>
+                <p className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+                  {t("stats.occupancy")}
+                </p>
+                <p className="text-xl lg:text-2xl font-headline font-bold text-teal-600 dark:text-teal-400">
+                  0%
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-100 to-emerald-50 dark:from-emerald-900/40 dark:to-emerald-900/20 flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shrink-0">
+                <TrendingUp className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-slate-500 dark:text-slate-400 text-[11px] font-semibold uppercase tracking-wider">
+                  {t("stats.revenue")}
+                </p>
+                <p className="text-xl lg:text-2xl font-headline font-bold text-emerald-600 dark:text-emerald-400">
+                  {t("stats.revenueValue")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Gallery */}
+            <div className="grid grid-cols-3 gap-3 h-90">
+              <div
+                className="col-span-2 row-span-2 rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
+                onClick={() => setShowGalleryModal(true)}
+              >
+                {previewPhotos[0] && (
+                  <img
+                    src={pip(previewPhotos[0].url)}
+                    alt={listing.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                )}
+                <div className="absolute bottom-3 left-3">
+                  <span className="text-white text-xs font-bold bg-indigo-700/60 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                    {t("gallery.mainPhoto")}
                   </span>
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Main Content Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Left Column - Details */}
-          <div className="lg:col-span-2 space-y-10">
-            {/* Quick Stats */}
-            <div className="flex flex-wrap gap-8 py-6 border-y border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                  <Bed size={20} className="text-slate-700 dark:text-slate-300" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Chambres</p>
-                  <p className="text-lg font-bold">{listing.rooms} {listing.rooms === 1 ? "chambre" : "chambres"}</p>
-                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                  <Bath size={20} className="text-slate-700 dark:text-slate-300" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Salles de bain</p>
-                  <p className="text-lg font-bold">{listing.bathrooms} {listing.bathrooms === 1 ? "sdb" : "sdb"}</p>
-                </div>
+              <div
+                className="rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
+                onClick={() => setShowGalleryModal(true)}
+              >
+                {previewPhotos[1] && (
+                  <img
+                    src={pip(previewPhotos[1].url)}
+                    alt={`${listing.title} - 2`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                )}
               </div>
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                  <Users size={20} className="text-slate-700 dark:text-slate-300" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Voyageurs max</p>
-                  <p className="text-lg font-bold">{listing.maxGuests} personnes</p>
-                </div>
-              </div>
-              {listing.surfaceArea && (
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                    <BsBoundingBox   className="material-symbols-outlined text-xl"/>
+              <div
+                className="rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
+                onClick={() => setShowGalleryModal(true)}
+              >
+                {previewPhotos[2] && (
+                  <img
+                    src={pip(previewPhotos[2].url)}
+                    alt={`${listing.title} - 3`}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                )}
+                {remainingPhotosCount > 0 && (
+                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-md">
+                    <span className="text-white font-bold text-lg">
+                      +{remainingPhotosCount} {t("gallery.morePhotos")}
+                    </span>
                   </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Surface</p>
-                    <p className="text-lg font-bold">{listing.surfaceArea} m²</p>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             {/* Description */}
-            <section>
-              <h3 className="text-2xl font-bold mb-4">À propos de ce bien</h3>
-              <p className={`text-slate-600 dark:text-slate-400 leading-relaxed ${!showFullDescription ? "line-clamp-4" : ""}`}>
-                {listing.description || "Aucune description fournie."}
+            <section
+              className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
+            >
+              <h2 className="text-lg font-headline font-bold text-slate-900 dark:text-white mb-3">
+                {t("sections.description")}
+              </h2>
+              <p
+                className={`text-slate-600 dark:text-slate-400 text-sm leading-relaxed ${!showFullDescription ? "line-clamp-4" : ""}`}
+              >
+                {listing.description || t("sections.noDescription")}
               </p>
               {listing.description && listing.description.length > 300 && (
                 <button
                   onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="text-primary font-bold flex items-center gap-1 mt-2 hover:underline"
+                  className="mt-3 text-indigo-600 dark:text-indigo-400 text-sm font-bold hover:underline"
                 >
-                  {showFullDescription ? "Voir moins" : "Lire la suite"}
-                  {showFullDescription ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  {showFullDescription
+                    ? t("actions.showLess")
+                    : t("actions.showMore")}
                 </button>
               )}
+
+              <div className="flex flex-wrap gap-2.5 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
+                  <Bed className="w-4 h-4" /> {listing.rooms} {t("specs.rooms")}
+                </div>
+                <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
+                  <Bath className="w-4 h-4" /> {listing.bathrooms}{" "}
+                  {t("specs.bathrooms")}
+                </div>
+                <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
+                  <Users className="w-4 h-4" /> {listing.maxGuests}{" "}
+                  {t("specs.guests")}
+                </div>
+                {listing.surfaceArea && (
+                  <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
+                    <Square className="w-4 h-4" /> {listing.surfaceArea}{" "}
+                    {t("units.sqm")}
+                  </div>
+                )}
+              </div>
             </section>
 
-            {/* Amenities */}
-            <section>
-              <h3 className="text-2xl font-bold mb-6">Équipements et services</h3>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                {(showAllAmenities ? allEquipment : mainEquipment).map(([key, value]) => {
-                  const Icon = getEquipmentIcon(key);
-                  return (
-                    <div key={key} className="flex items-center gap-3 group">
-                      <Icon size={18} className="text-slate-500 group-hover:text-primary transition-colors" />
-                      <span className="font-medium text-sm">{getEquipmentLabel(key, t)}</span>
-                    </div>
-                  );
-                })}
+            {/* Amenities - Version avec icônes */}
+            <section
+              className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
+            >
+              <h2 className="text-lg font-headline font-bold text-slate-900 dark:text-white mb-4">
+                {t("sections.amenities")}
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                {(showAllAmenities ? allEquipment : mainEquipment).map(
+                  ([key]) => (
+                    <EquipmentItem key={key} eqKey={key} t={t} />
+                  ),
+                )}
               </div>
               {allEquipment.length > 6 && (
                 <button
                   onClick={() => setShowAllAmenities(!showAllAmenities)}
-                  className="mt-6 px-6 py-3 border-2 border-slate-300 dark:border-slate-600 font-bold rounded-xl hover:bg-slate-900 hover:text-white dark:hover:bg-white dark:hover:text-slate-900 transition-all"
+                  className="mt-4 text-indigo-600 dark:text-indigo-400 text-sm font-bold hover:underline"
                 >
-                  {showAllAmenities ? "Voir moins" : `Voir tous les ${allEquipment.length} équipements`}
+                  {showAllAmenities
+                    ? t("actions.showLess")
+                    : t("actions.showAllAmenities", {
+                        count: allEquipment.length,
+                      })}
                 </button>
               )}
             </section>
 
-            {/* Trust & Safety Section */}
-            <section className="bg-primary/5 dark:bg-primary/10 rounded-2xl p-8 border border-primary/20">
-              <div className="flex flex-col md:flex-row gap-8 items-start md:items-center">
-                <div className="relative flex-shrink-0">
-                  <svg className="w-32 h-32 transform -rotate-90">
-                    <circle
-                      cx="64"
-                      cy="64"
-                      fill="transparent"
-                      r="58"
-                      stroke="currentColor"
-                      strokeWidth="8"
-                      className="text-primary/10"
-                    />
-                    <circle
-                      cx="64"
-                      cy="64"
-                      fill="transparent"
-                      r="58"
-                      stroke="currentColor"
-                      strokeDasharray="364.4"
-                      strokeDashoffset={364.4 - (364.4 * trustScore) / 100}
-                      strokeLinecap="round"
-                      strokeWidth="8"
-                      className="text-primary"
-                    />
-                  </svg>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center">
-                    <span className="text-3xl font-black text-primary leading-none">{trustScore}</span>
-                    <span className="text-[10px] font-bold text-primary/70 uppercase tracking-tighter">Trust Score</span>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-2xl font-black">Confiance &amp; Sécurité</h3>
-                    <Shield size={20} className="text-primary" />
-                  </div>
-                  <p className="text-slate-600 dark:text-slate-400 mb-4 text-sm leading-relaxed">
-                    Notre algorithme IA a analysé plus de 250 points de données pour ce propriétaire.
-                    Identité vérifiée, taux de remboursement des dépôts à 100%, et temps de réponse constant.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {safetyChecks.map((check, idx) => {
-                      const Icon = check.icon;
-                      return (
-                        <span
-                          key={idx}
-                          className={`px-3 py-1.5 border rounded-full text-xs font-bold flex items-center gap-1.5 ${
-                            check.active
-                              ? "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-green-600"
-                              : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400"
-                          }`}
-                        >
-                          {check.active && <CheckCircle size={14} className="text-green-500" />}
-                          {check.label}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            {/* Location Map */}
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-2xl font-bold">Localisation et quartier</h3>
-                {listing.latitude && listing.longitude && (
-                  <a
-                    href={`https://www.google.com/maps?q=${listing.latitude},${listing.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary font-bold flex items-center gap-1 hover:underline text-sm"
-                  >
-                    Ouvrir dans Maps <Navigation size={14} />
-                  </a>
-                )}
-              </div>
-              <div className="h-[400px] w-full rounded-2xl overflow-hidden shadow-inner border border-slate-200 dark:border-slate-700">
+            {/* Location */}
+            <section className="space-y-3">
+              <h2 className="text-lg font-headline font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <LiaMapMarkedAltSolid className="w-5 h-5 text-black dark:text-gray-400" />
+                {t("sections.location")}
+              </h2>
+              <div
+                className={`h-64 rounded-2xl overflow-hidden relative bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-800 dark:to-slate-900 ${card3d}`}
+              >
                 {listing.latitude && listing.longitude ? (
-                  <MapPickerWrapper
-                    latitude={listing.latitude}
-                    longitude={listing.longitude}
-                    onLocationChange={() => {}}
-                    readOnly
-                  />
+                  <>
+                    <MapPickerWrapper
+                      latitude={listing.latitude}
+                      longitude={listing.longitude}
+                      onLocationChange={() => {}}
+                      readOnly={true}
+                    />
+                    <Tooltip text={t("location.openInMaps")}>
+                      <button
+                        onClick={openInExternalMap}
+                        className="absolute top-3 right-3 z-10 bg-white dark:bg-slate-800 rounded-lg p-2 shadow-lg hover:shadow-xl transition-all flex items-center gap-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                      >
+                        <span className="hidden sm:inline">
+                          {t("location.openInMaps")}
+                        </span>
+                        <TbMapShare className="w-4.5 h-4.5" />
+                      </button>
+                    </Tooltip>
+                  </>
                 ) : (
-                  <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <p className="text-slate-500">Position non disponible</p>
+                  <div className="w-full h-full flex flex-col items-center justify-center">
+                    <div className="w-12 h-12 rounded-2xl bg-white/20 dark:bg-slate-700/20 flex items-center justify-center mb-3">
+                      <MapPin className="w-6 h-6 text-slate-500 dark:text-slate-400" />
+                    </div>
+                    <p className="text-slate-600 dark:text-slate-400 font-medium">
+                      {t("sections.noLocation")}
+                    </p>
                   </div>
                 )}
-              </div>
-
-              {/* Points d'intérêt à proximité (simulés) */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-                <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center gap-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Bus size={20} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm">Transport en commun</p>
-                    <p className="text-xs text-slate-500 font-medium">À 5 min à pied</p>
-                  </div>
-                </div>
-                <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center gap-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <ShoppingBag size={20} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm">Supermarché</p>
-                    <p className="text-xs text-slate-500 font-medium">À 8 min à pied</p>
-                  </div>
-                </div>
-                <div className="p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 flex items-center gap-4">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Coffee size={20} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm">Café à proximité</p>
-                    <p className="text-xs text-slate-500 font-medium">À 2 min à pied</p>
-                  </div>
-                </div>
               </div>
             </section>
           </div>
 
-          {/* Right Column - Sticky Booking Widget */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-28 space-y-6">
-              {/* Booking Card */}
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none">
-                <div className="flex justify-between items-end mb-6">
-                  <div>
-                    <span className="text-2xl font-black">{pricePerUnit} TND</span>
-                    <span className="text-slate-500 font-medium"> / {priceUnit}</span>
-                  </div>
-                  {averageRating > 4.5 && (
-                    <div className="text-right">
-                      <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-1 rounded-full">Très bien noté</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4 mb-6">
-                  <div className="grid grid-cols-2 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
-                    <div className="p-3 border-r border-slate-200 dark:border-slate-700">
-                      <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Arrivée</label>
-                      <input
-                        type="date"
-                        value={checkInDate}
-                        onChange={(e) => setCheckInDate(e.target.value)}
-                        className="bg-transparent border-none p-0 text-sm font-bold w-full focus:ring-0"
-                      />
-                    </div>
-                    <div className="p-3">
-                      <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Départ</label>
-                      <input
-                        type="date"
-                        value={checkOutDate}
-                        onChange={(e) => setCheckOutDate(e.target.value)}
-                        className="bg-transparent border-none p-0 text-sm font-bold w-full focus:ring-0"
-                      />
-                    </div>
-                  </div>
-                  <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-3">
-                    <label className="block text-[10px] font-black uppercase text-slate-500 mb-1">Voyageurs</label>
-                    <select
-                      value={guests}
-                      onChange={(e) => setGuests(parseInt(e.target.value))}
-                      className="bg-transparent border-none p-0 text-sm font-bold w-full focus:ring-0"
+          {/* Right Column */}
+          <div className="lg:col-span-1 space-y-5">
+            {/* Next Bookings */}
+            <section
+              className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-base font-headline font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                  {t("sections.nextBookings")}
+                </h2>
+                <Link
+                  href={`/${locale}/dashboard/owner/listings/${id}/bookings`}
+                  className="text-purple-700 dark:text-purple-400 text-xs font-bold hover:underline"
+                >
+                  {t("actions.viewAll")}
+                </Link>
+              </div>
+              <div className="space-y-2">
+                {bookings.length > 0 ? (
+                  bookings.slice(0, 3).map((booking) => (
+                    <div
+                      key={booking.id}
+                      className="flex items-center gap-2.5 p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                     >
-                      {Array.from({ length: listing.maxGuests }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n} {n === 1 ? "voyageur" : "voyageurs"}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {priceDetails && (
-                  <div className="space-y-3 mb-6">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500 underline">
-                        {pricePerUnit} TND × {priceDetails.nights} {priceDetails.nights === 1 ? "nuit" : "nuits"}
-                      </span>
-                      <span className="font-bold">{priceDetails.subtotal} TND</span>
-                    </div>
-                    {priceDetails.cleaningFee > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-500 underline">Frais de ménage</span>
-                        <span className="font-bold">{priceDetails.cleaningFee} TND</span>
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center shrink-0">
+                        <User className="w-4.5 h-4.5 text-indigo-600 dark:text-indigo-400" />
                       </div>
-                    )}
-                    <div className="flex justify-between text-sm">
-                      <span className="text-slate-500 underline">Frais de service</span>
-                      <span className="font-bold">{priceDetails.serviceFee} TND</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                          {booking.tenantName}
+                        </p>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          {new Date(booking.checkIn).toLocaleDateString(
+                            "fr-FR",
+                          )}{" "}
+                          −{" "}
+                          {new Date(booking.checkOut).toLocaleDateString(
+                            "fr-FR",
+                          )}
+                        </p>
+                      </div>
+                      <BookingStatusBadge status={booking.status} t={t} />
                     </div>
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between">
-                      <span className="font-black text-lg">Total</span>
-                      <span className="font-black text-lg">{priceDetails.total} TND</span>
+                  ))
+                ) : (
+                  <div className="text-center py-6">
+                    <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 mx-auto mb-2 flex items-center justify-center">
+                      <PiCalendarSlashDuotone className="w-5 h-5 text-slate-400" />
                     </div>
+                    <p className="text-slate-500 dark:text-slate-400 text-xs font-medium">
+                      {t("sections.noBookings")}
+                    </p>
                   </div>
                 )}
-
-                <button
-                  disabled={!checkInDate || !checkOutDate}
-                  className="w-full bg-primary text-white font-black py-4 rounded-xl hover:bg-primary/90 transition-all transform active:scale-95 mb-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {checkInDate && checkOutDate ? "Contacter le propriétaire" : "Sélectionnez des dates"}
-                </button>
-                <p className="text-center text-xs text-slate-400 font-medium">Vous ne serez pas débité maintenant</p>
               </div>
+            </section>
 
-              {/* Owner Card */}
-              <div className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 flex items-center gap-4 border border-slate-100 dark:border-slate-800">
-                <div className="relative">
-                  <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
-                    {listing.owner?.profilePictureUrl ? (
-                      <img
-                        src={pip(listing.owner.profilePictureUrl)}
-                        alt={listing.owner?.firstName || ""}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center text-white text-xl font-bold">
-                        {(listing.owner?.firstName?.[0] || listing.owner?.username?.[0] || "U").toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  {listing.owner?.isIdentityVerified && (
-                    <div className="absolute -bottom-1 -right-1 bg-emerald-500 border-2 border-white dark:border-slate-800 w-5 h-5 rounded-full flex items-center justify-center">
-                      <CheckCircle size={12} className="text-white" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Proposé par</p>
-                  <p className="font-bold text-lg">
-                    {listing.owner?.firstName || listing.owner?.username || "Propriétaire"}
-                  </p>
-                  <Link
-                    href={`/${locale}/profile/${listing.owner?.id}`}
-                    className="text-primary text-sm font-bold hover:underline"
+            {/* Calendar */}
+            <section
+              className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-base font-headline font-bold text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                  {t("sections.availability")}
+                </h2>
+                <div className="flex gap-0.5">
+                  <button
+                    onClick={() => changeMonth(-1)}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   >
-                    Voir le profil
-                  </Link>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => changeMonth(1)}
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
-            </div>
+              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-3 uppercase tracking-wider">
+                {currentMonth.toLocaleString("fr-FR", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+              <div className="grid grid-cols-7 gap-0.5">
+                {t("calendar.days")
+                  .split(",")
+                  .map((day, idx) => (
+                    <div
+                      key={idx}
+                      className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase py-1.5 text-center"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                {getCalendarDays().map((day, idx) => (
+                  <div
+                    key={idx}
+                    className={`aspect-square flex items-center justify-center text-xs font-semibold rounded-md transition-all ${
+                      day === null
+                        ? "text-slate-300 dark:text-slate-700"
+                        : day === 12 || day === 13 || day === 14
+                          ? "bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 text-indigo-700 dark:text-indigo-400"
+                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-400 cursor-default"
+                    }`}
+                  >
+                    {day}
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         </div>
 
-        {/* Reviews Section */}
-        {totalReviews > 0 && (
-          <section className="mt-20 py-12 border-t border-slate-200 dark:border-slate-800">
-            <div className="flex items-center gap-2 mb-8">
-              <Star size={28} className="fill-yellow-400 text-yellow-400" />
-              <h3 className="text-2xl font-bold">
-                {averageRating.toFixed(1)} • {totalReviews} avis
-              </h3>
+        {/* Team Section */}
+        <section className="mt-8 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+            <div>
+              <h2 className="text-lg font-headline font-bold text-slate-900 dark:text-white">
+                {t("sections.team")}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {t("sections.teamDescription")}
+              </p>
             </div>
-            <button className="border border-slate-300 dark:border-slate-700 px-8 py-3 rounded-xl font-bold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
-              Voir tous les avis
-            </button>
-          </section>
-        )}
+            <Tooltip text={t("actions.invite")}>
+              <Link
+                href={`/${locale}/dashboard/owner/team?listingId=${listing.id}&openInvite=true`}
+                className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-bold text-xs bg-white dark:bg-slate-900 px-3.5 py-2 rounded-xl shadow-sm hover:shadow-md transition-all"
+              >
+                <UserPlus className="w-4 h-4" />
+                {t("actions.invite")}
+              </Link>
+            </Tooltip>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <div
+              className={`bg-white dark:bg-slate-900 p-3 rounded-xl flex items-center gap-2.5 border border-slate-200 dark:border-slate-700 ${card3d}`}
+            >
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 flex items-center justify-center">
+                {listing.owner?.profilePictureUrl ? (
+                  <img
+                    src={pip(listing.owner.profilePictureUrl)}
+                    alt={listing.owner?.firstName || ""}
+                    className="w-full h-full rounded-lg object-cover"
+                  />
+                ) : (
+                  <User className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                )}
+              </div>
+              <div>
+                <p className="font-bold text-xs text-slate-900 dark:text-white">
+                  {listing.owner?.firstName ||
+                    listing.owner?.username ||
+                    t("sections.ownerDefault")}
+                </p>
+                <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
+                  {t("sections.mainOwner")}
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer Actions avec Tooltips */}
+        <footer className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="text-center sm:text-left">
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              {t("footer.lastModified")}{" "}
+              <span className="font-bold text-slate-700 dark:text-slate-300">
+                {new Date(listing.updatedAt).toLocaleDateString("fr-FR", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <Tooltip
+              text={
+                listing.status === "ACTIVE"
+                  ? t("actions.hide")
+                  : t("actions.publish")
+              }
+            >
+              <button
+                onClick={handleToggleStatus}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition-colors uppercase tracking-wider"
+              >
+                {listing.status === "ACTIVE" ? (
+                  <>
+                    <EyeOff className="w-4 h-4" /> {t("actions.hide")}
+                  </>
+                ) : (
+                  <>
+                    <Eye className="w-4 h-4" /> {t("actions.publish")}
+                  </>
+                )}
+              </button>
+            </Tooltip>
+            <Tooltip text={t("actions.delete")}>
+              <button
+                onClick={handleDeleteClick}
+                className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-colors uppercase tracking-wider"
+              >
+                <Trash2 className="w-4 h-4" />
+                {t("actions.delete")}
+              </button>
+            </Tooltip>
+          </div>
+        </footer>
       </main>
 
-      {/* Gallery Modal - Pour agrandir et naviguer */}
-      {showGalleryModal && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col">
-          <div className="flex justify-between items-center p-4">
-            <button
-              onClick={() => setShowGalleryModal(false)}
-              className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
-            >
-              <X size={24} />
-            </button>
-            <span className="text-white font-medium">
+      {/* Gallery Modal */}
+      {showGalleryModal && listing && (
+        <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex flex-col">
+          <div className="flex justify-between items-center p-4 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setShowGalleryModal(false);
+                  setZoomLevel(1);
+                  if (slideshowRef.current) {
+                    clearInterval(slideshowRef.current);
+                  }
+                }}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <Tooltip text={t("gallery.slideshow")}>
+                <button
+                  onClick={toggleSlideshow}
+                  className={`p-2 rounded-full transition-colors ${isSlideshow ? "bg-indigo-500 text-white" : "bg-white/10 hover:bg-white/20 text-white"}`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </button>
+              </Tooltip>
+            </div>
+            <span className="text-white text-sm font-bold">
               {galleryStartIndex + 1} / {listing.photos.length}
             </span>
-            <div className="w-10" />
+            <div className="w-16" />
           </div>
-          <div className="flex-1 flex items-center justify-center p-8">
-            <img
-              src={pip(listing.photos[galleryStartIndex]?.url)}
-              alt={listing.title}
-              className="max-w-full max-h-full object-contain"
-            />
-          </div>
-          <div className="flex justify-center gap-4 p-4">
-            <button
-              onClick={() => setGalleryStartIndex((prev) => Math.max(0, prev - 1))}
-              disabled={galleryStartIndex === 0}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white disabled:opacity-50 transition-colors"
+
+          <div className="flex-1 flex items-center justify-center p-6 relative overflow-hidden">
+            <div
+              className="relative transition-transform duration-300 ease-out"
+              style={{ transform: `scale(${zoomLevel})` }}
             >
-              <ChevronLeft size={24} />
+              <img
+                src={pip(listing.photos[galleryStartIndex]?.url)}
+                alt={listing.title}
+                className="max-w-full max-h-full object-contain rounded-xl"
+              />
+            </div>
+
+            <button
+              onClick={prevPhoto}
+              className="absolute left-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-110"
+            >
+              <ChevronLeft className="w-6 h-6" />
             </button>
             <button
-              onClick={() =>
-                setGalleryStartIndex((prev) =>
-                  Math.min(listing.photos.length - 1, prev + 1)
-                )
-              }
-              disabled={galleryStartIndex === listing.photos.length - 1}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 text-white disabled:opacity-50 transition-colors"
+              onClick={nextPhoto}
+              className="absolute right-4 top-1/2 -translate-y-1/2 p-3 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all hover:scale-110"
             >
-              <ChevronRight size={24} />
+              <ChevronRight className="w-6 h-6" />
             </button>
+
+            <div className="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-3 py-2">
+              <button
+                onClick={() =>
+                  setZoomLevel((prev) => Math.max(prev - 0.25, 0.5))
+                }
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="text-white text-xs font-mono min-w-[50px] text-center">
+                {Math.round(zoomLevel * 100)}%
+              </span>
+              <button
+                onClick={() => setZoomLevel((prev) => Math.min(prev + 0.25, 3))}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setZoomLevel(1)}
+                className="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          {/* Miniatures */}
-          <div className="flex justify-center gap-2 p-4 overflow-x-auto">
+
+          <div className="flex justify-center gap-1.5 p-4 overflow-x-auto bg-black/50">
             {listing.photos.map((photo, idx) => (
               <button
                 key={photo.id}
-                onClick={() => setGalleryStartIndex(idx)}
-                className={`w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
-                  idx === galleryStartIndex ? "border-primary" : "border-transparent opacity-60"
-                }`}
+                onClick={() => {
+                  setGalleryStartIndex(idx);
+                  setZoomLevel(1);
+                }}
+                className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all shrink-0 ${idx === galleryStartIndex ? "border-indigo-500 ring-2 ring-indigo-500/50" : "border-transparent opacity-50 hover:opacity-75"}`}
               >
-                <img src={pip(photo.url)} alt="" className="w-full h-full object-cover" />
+                <img
+                  src={pip(photo.url)}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
               </button>
             ))}
           </div>
         </div>
       )}
+
+      {/* Delete Modal */}
+      {showDeleteModal &&
+        createPortal(
+          <DeleteListingModal
+            isOpen={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+            onConfirm={handleConfirmDelete}
+            isLoading={isDeleting}
+            listingTitle={listing.title}
+          />,
+          document.body,
+        )}
     </div>
   );
 }

@@ -1,56 +1,24 @@
-// app/api/listings/[id]/history/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { withAuth } from "@/lib/api/withAuth";
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  try {
-    const { userId: clerkId } = getAuth(request);
+export const GET = withAuth(
+  async (
+    request: NextRequest,
+    { params }: { params: Promise<{ id: string }> },
+  ) => {
+    const user = (request as any).user;
     const { id } = await params;
     const { searchParams } = new URL(request.url);
-    const actionType = searchParams.get('actionType');
-    const days = parseInt(searchParams.get('days') || '30');
-    
-    if (!clerkId) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true, role: true },
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
-    }
-
-    // Vérifier l'accès
-    const listing = await prisma.listing.findFirst({
-      where: {
-        id,
-        OR: [
-          { ownerId: user.id },
-          { teamMembers: { some: { userId: user.id, isActive: true } } }
-        ]
-      },
-    });
-
-    if (!listing) {
-      return NextResponse.json({ error: 'Annonce non trouvée ou non autorisée' }, { status: 404 });
-    }
+    const actionType = searchParams.get("actionType");
+    const days = parseInt(searchParams.get("days") || "30");
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const where: any = {
-      listingId: id,
-      createdAt: { gte: startDate },
-    };
-
-    // ✅ Filtrer par type d'action
-    if (actionType && actionType !== 'ALL' && actionType !== '') {
+    const where: any = { listingId: id, createdAt: { gte: startDate } };
+    if (actionType && actionType !== "ALL" && actionType !== "")
       where.actionType = actionType;
-    }
 
     const history = await prisma.listingHistory.findMany({
       where,
@@ -65,11 +33,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
 
-    // Formater les données
-    const formattedHistory = history.map(entry => ({
+    const formattedHistory = history.map((entry) => ({
       id: entry.id,
       actionType: entry.actionType,
       fieldName: entry.fieldName,
@@ -89,8 +56,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       history: formattedHistory,
       total: history.length,
     });
-  } catch (error) {
-    console.error('[GET /api/listings/:id/history] Erreur:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
-  }
-}
+  },
+  {
+    requireListingAccess: true,
+    requiredPermission: "view",
+    // ✅ getListingId supprimé
+  },
+);

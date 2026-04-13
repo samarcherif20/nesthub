@@ -17,15 +17,51 @@ export interface HistoryEntry {
   };
 }
 
-export const ACTION_CONFIG: Record<string, { label: string; icon: any; color: string; bg: string; dotColor: string }> = {
-  PRICE_UPDATE: { label: "Tarification", icon: "Tag", color: "text-purple-700", bg: "bg-purple-100", dotColor: "bg-purple-500" },
-  STATUS_CHANGE: { label: "Statut", icon: "CheckCircle", color: "text-amber-700", bg: "bg-amber-100", dotColor: "bg-amber-500" },
-  PHOTO_UPDATE: { label: "Médias", icon: "Image", color: "text-orange-700", bg: "bg-orange-100", dotColor: "bg-orange-500" },
-  EQUIPMENT_UPDATE: { label: "Équipements", icon: "Wrench", color: "text-emerald-700", bg: "bg-emerald-100", dotColor: "bg-emerald-500" },
-  UPDATE: { label: "Modification", icon: "FileText", color: "text-blue-700", bg: "bg-blue-100", dotColor: "bg-blue-500" },
+export const ACTION_CONFIG: Record<
+  string,
+  { label: string; icon: any; color: string; bg: string; dotColor: string }
+> = {
+  PRICE_UPDATE: {
+    label: "Tarification",
+    icon: "Tag",
+    color: "text-purple-700",
+    bg: "bg-purple-100",
+    dotColor: "bg-purple-500",
+  },
+  STATUS_CHANGE: {
+    label: "Statut",
+    icon: "CheckCircle",
+    color: "text-amber-700",
+    bg: "bg-amber-100",
+    dotColor: "bg-amber-500",
+  },
+  PHOTO_UPDATE: {
+    label: "Médias",
+    icon: "Image",
+    color: "text-orange-700",
+    bg: "bg-orange-100",
+    dotColor: "bg-orange-500",
+  },
+  EQUIPMENT_UPDATE: {
+    label: "Équipements",
+    icon: "Wrench",
+    color: "text-emerald-700",
+    bg: "bg-emerald-100",
+    dotColor: "bg-emerald-500",
+  },
+  UPDATE: {
+    label: "Modification",
+    icon: "FileText",
+    color: "text-blue-700",
+    bg: "bg-blue-100",
+    dotColor: "bg-blue-500",
+  },
 };
 
-export const STATUS_LABELS: Record<string, { label: string; icon: any; color: string }> = {
+export const STATUS_LABELS: Record<
+  string,
+  { label: string; icon: any; color: string }
+> = {
   ACTIVE: { label: "Publiée", icon: "CheckCircle", color: "text-emerald-600" },
   INACTIVE: { label: "Masquée", icon: "EyeOff", color: "text-amber-600" },
   DRAFT: { label: "Brouillon", icon: "AlertCircle", color: "text-slate-500" },
@@ -33,31 +69,113 @@ export const STATUS_LABELS: Record<string, { label: string; icon: any; color: st
 };
 
 export const FIELD_LABELS: Record<string, string> = {
-  title: "Titre", description: "Description", pricePerNight: "Prix par nuit",
-  pricePerMonth: "Prix par mois", status: "Statut", equipment: "Équipements",
-  photos: "Photos", rooms: "Chambres", bathrooms: "Salles de bain",
-  maxGuests: "Capacité max", surfaceArea: "Surface", governorate: "Gouvernorat",
-  delegation: "Délégation", street: "Rue", hasElevator: "Ascenseur",
-  rentalType: "Type de location", securityDeposit: "Caution", cleaningFee: "Frais ménage",
+  title: "Titre",
+  description: "Description",
+  pricePerNight: "Prix par nuit",
+  pricePerMonth: "Prix par mois",
+  status: "Statut",
+  equipment: "Équipements",
+  photos: "Photos",
+  rooms: "Chambres",
+  bathrooms: "Salles de bain",
+  maxGuests: "Capacité max",
+  surfaceArea: "Surface",
+  hasElevator: "Ascenseur",
+  rentalType: "Type de location",
+  securityDeposit: "Caution",
+  cleaningFee: "Frais de ménage",
+  governorate: "Gouvernorat",
+  delegation: "Délégation",
+  street: "Rue",
 };
+
+function parseJsonValue(value: any): any {
+  if (!value) return value;
+  if (typeof value === "object") return value;
+  if (typeof value === "string") {
+    if (
+      (value.startsWith("{") && value.endsWith("}")) ||
+      (value.startsWith("[") && value.endsWith("]"))
+    ) {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    }
+  }
+  return value;
+}
 
 export function formatValue(value: any, fieldName?: string): string {
   if (value === null || value === undefined) return "—";
-  if (fieldName === "status") return STATUS_LABELS[value]?.label || value;
-  if (fieldName === "hasElevator") return value ? "Oui" : "Non";
-  if (fieldName === "rentalType") {
-    const map: Record<string, string> = { SHORT_TERM: "Court terme", LONG_TERM: "Long terme", BOTH: "Les deux" };
-    return map[value] || value;
-  }
-  if (typeof value === "object") {
-    if (fieldName === "equipment") {
-      const active = Object.entries(value).filter(([, v]) => v).map(([k]) => k);
-      return active.length ? active.map(k => FIELD_LABELS[k] || k).join(", ") : "Aucun";
+
+  const parsed = parseJsonValue(value);
+
+  if (fieldName === "status") {
+    if (typeof parsed === "object" && parsed.status) {
+      return STATUS_LABELS[parsed.status]?.label || parsed.status;
     }
-    return JSON.stringify(value);
+    if (typeof parsed === "string") {
+      return STATUS_LABELS[parsed]?.label || parsed;
+    }
   }
-  if (typeof value === "number") return `${value.toLocaleString("fr-FR")} TND`;
-  return String(value);
+
+  if (fieldName === "equipment" && typeof parsed === "object") {
+    const equipmentMap: Record<string, string> = {
+      wifi: "Wi-Fi",
+      ac: "Climatisation",
+      heating: "Chauffage",
+      kitchen: "Cuisine équipée",
+      parking: "Parking",
+      pool: "Piscine",
+      gym: "Salle de sport",
+      washer: "Lave-linge",
+      tv: "Télévision",
+      balcony: "Balcon",
+      dishwasher: "Lave-vaisselle",
+      dryer: "Sèche-linge",
+    };
+    const active = Object.entries(parsed)
+      .filter(([, v]) => v === true)
+      .map(([k]) => equipmentMap[k] || k);
+    return active.length ? active.join(", ") : "Aucun équipement";
+  }
+
+  if (fieldName === "hasElevator") {
+    const boolValue = typeof parsed === "object" ? parsed.hasElevator : parsed;
+    return boolValue === true || boolValue === "true" ? "Oui" : "Non";
+  }
+
+  if (fieldName === "rentalType") {
+    const valueStr = typeof parsed === "object" ? parsed.rentalType : parsed;
+    const map: Record<string, string> = {
+      SHORT_TERM: "Court terme",
+      LONG_TERM: "Long terme",
+      BOTH: "Les deux",
+    };
+    return map[valueStr] || valueStr;
+  }
+
+  if (
+    fieldName === "pricePerNight" ||
+    fieldName === "pricePerMonth" ||
+    fieldName === "securityDeposit" ||
+    fieldName === "cleaningFee"
+  ) {
+    const num = typeof parsed === "number" ? parsed : parseFloat(parsed);
+    if (!isNaN(num)) return `${num.toLocaleString("fr-FR")} TND`;
+  }
+
+  if (typeof parsed === "number") return parsed.toLocaleString("fr-FR");
+  if (typeof parsed === "string") return parsed;
+  if (typeof parsed === "object") {
+    if (parsed.status) return STATUS_LABELS[parsed.status]?.label || parsed.status;
+    if (parsed.title) return parsed.title;
+    return JSON.stringify(parsed);
+  }
+
+  return String(parsed);
 }
 
 export function getDateGroup(date: string): string {
@@ -67,17 +185,23 @@ export function getDateGroup(date: string): string {
   yesterday.setDate(yesterday.getDate() - 1);
   if (d.toDateString() === today.toDateString()) return "Aujourd'hui";
   if (d.toDateString() === yesterday.toDateString()) return "Hier";
-  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "long", year: "numeric" });
+  return d.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 }
 
 export function getTimeKey(date: string): string {
-  return new Date(date).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  return new Date(date).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 export function pip(url: string) {
-  if (!url || url === 'null' || url === 'undefined') return null;
-  if (url.includes('photos') || url.includes('photo')) return null;
-  if (!url.startsWith('http://') && !url.startsWith('https://')) return null;
+  if (!url || url === "null" || url === "undefined") return null;
+  if (!url.startsWith("http://") && !url.startsWith("https://")) return null;
   return `/api/listings/image?url=${encodeURIComponent(url)}`;
 }
 
@@ -92,8 +216,8 @@ export function useListingHistory(listingId: string) {
 
   useEffect(() => {
     fetch(`/api/listings/${listingId}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => data && setListingTitle(data.title))
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setListingTitle(data.title))
       .catch(() => {});
   }, [listingId]);
 
@@ -123,14 +247,20 @@ export function useListingHistory(listingId: string) {
   }, [fetchHistory]);
 
   const totalPages = Math.ceil(history.length / itemsPerPage);
-  const paginatedHistory = history.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const paginatedHistory = history.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
 
-  const groupedHistory = paginatedHistory.reduce((acc, entry) => {
-    const dateKey = getDateGroup(entry.createdAt);
-    if (!acc[dateKey]) acc[dateKey] = [];
-    acc[dateKey].push(entry);
-    return acc;
-  }, {} as Record<string, HistoryEntry[]>);
+  const groupedHistory = paginatedHistory.reduce(
+    (acc, entry) => {
+      const dateKey = getDateGroup(entry.createdAt);
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(entry);
+      return acc;
+    },
+    {} as Record<string, HistoryEntry[]>,
+  );
 
   const filterOptions = [
     { value: "", label: "Toutes", dotColor: "bg-slate-400" },

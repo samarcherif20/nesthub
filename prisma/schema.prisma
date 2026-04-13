@@ -12,6 +12,8 @@ enum UserRole {
   PROPERTY_OWNER
   TENANT
   BOTH
+  CO_HOST  // ✅ AJOUTER CETTE LIGNE
+
 }
 
 enum AccountStatus {
@@ -47,6 +49,8 @@ model User {
   spokenLanguages      String[]              @default([])
   preferredLocale      String                @default("fr")
   role                 UserRole              @default(TENANT)
+  profession     String?   // Profession de l'utilisateur
+  availability   Json?     // Disponibilités de contact (stocké en JSON)
   status               AccountStatus         @default(PENDING_VALIDATION)
   isEmailVerified      Boolean               @default(false)
   isPhoneVerified      Boolean               @default(false)
@@ -61,6 +65,10 @@ model User {
   suspendedUntil       DateTime?
   failedLoginAttempts  Int                   @default(0)
   escalationLevel      Int?
+  vacationMode       Boolean   @default(false)
+  vacationMessage    String?
+  twoFactorEnabled   Boolean   @default(false)
+  twoFactorRecoveryCodes String?
   writtenNotes         AdminNote[]           @relation("AuthorUser")
   adminNotes           AdminNote[]           @relation("TargetUser")
   auditLogs            AuditLog[]
@@ -77,7 +85,7 @@ model User {
   verificationActions  VerificationAction[]  @relation("AdminVerificationActions")
   otpCodes             OtpCode[]
   identityVerification IdentityVerification?
-
+   
   // ============================================
   // RELATIONS SPRINT 2
   // ============================================
@@ -563,6 +571,13 @@ model Listing {
   services    Json?
   houseRules  Json?
   customRules String?
+ 
+   
+  // ✅ NOUVEAUX CHAMPS À AJOUTER
+  cleaningFee           Float?        @default(0)        // Frais de ménage
+  weekendPriceMultiplier Float?       @default(1.15)     // Multiplicateur weekend
+  extraFees             Json?        @default("[]")      // Frais supplémentaires (stockés en JSON)
+  seasonalRules         Json?        @default("[]")      // Règles saisonnières (stockées en JSON)
 
   // Statistiques
   viewCount      Int    @default(0)

@@ -1,9 +1,10 @@
 // components/ui/modals/QRCodeModal.tsx
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Modal from '../Modal';
-import { Download, Copy, Check, Share2, Printer, Sparkles } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
+import Modal from "../Modal";
+import { Download, Copy, Check, Share2, Printer, Sparkles } from "lucide-react";
 
 interface QRCodeModalProps {
   isOpen: boolean;
@@ -12,11 +13,17 @@ interface QRCodeModalProps {
   listingTitle: string;
 }
 
-export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }: QRCodeModalProps) {
+export default function QRCodeModal({
+  isOpen,
+  onClose,
+  listingId,
+  listingTitle,
+}: QRCodeModalProps) {
+  const t = useTranslations("OwnerListings.qrCodeModal");
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState("");
   const [withGradient, setWithGradient] = useState(true);
   const [withLogo, setWithLogo] = useState(true);
 
@@ -30,9 +37,9 @@ export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }
     setLoading(true);
     try {
       const baseUrl = window.location.origin;
-      const locale = window.location.pathname.split('/')[1];
+      const locale = window.location.pathname.split("/")[1];
       const res = await fetch(
-        `/api/listings/${listingId}/qrcode?baseUrl=${baseUrl}&locale=${locale}&gradient=${withGradient}&logo=${withLogo}`
+        `/api/listings/${listingId}/qrcode?baseUrl=${baseUrl}&locale=${locale}&gradient=${withGradient}&logo=${withLogo}`,
       );
       if (res.ok) {
         const data = await res.json();
@@ -40,7 +47,7 @@ export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }
         setUrl(data.url);
       }
     } catch (error) {
-      console.error('Error generating QR code:', error);
+      console.error("Error generating QR code:", error);
     } finally {
       setLoading(false);
     }
@@ -48,7 +55,7 @@ export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }
 
   const downloadQRCode = () => {
     if (!qrCode) return;
-    const link = document.createElement('a');
+    const link = document.createElement("a");
     link.download = `qr-${listingId}-nesthub.png`;
     link.href = qrCode;
     link.click();
@@ -69,7 +76,7 @@ export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }
           url: url,
         });
       } catch (error) {
-        console.error('Error sharing:', error);
+        console.error("Error sharing:", error);
       }
     } else {
       copyUrl();
@@ -77,7 +84,7 @@ export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }
   };
 
   const printQRCode = () => {
-    const printWindow = window.open('', '_blank');
+    const printWindow = window.open("", "_blank");
     if (printWindow && qrCode) {
       printWindow.document.write(`
         <html>
@@ -119,7 +126,7 @@ export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }
             <div class="container">
               <h2>${listingTitle}</h2>
               <img src="${qrCode}" alt="QR Code" />
-              <div class="footer">NestHub - ${new Date().toLocaleDateString('fr-FR')}</div>
+              <div class="footer">NestHub - ${new Date().toLocaleDateString("fr-FR")}</div>
             </div>
           </body>
         </html>
@@ -130,16 +137,17 @@ export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="QR Code - Partager l'annonce" className="max-w-md">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t("title")}
+      className="max-w-md"
+    >
       <div className="flex flex-col items-center p-6 space-y-5">
-        {/* Titre avec dégradé */}
-        <h3 className="text-lg font-bold text-center ">
+        <h3 className="text-lg font-bold text-center text-slate-900 dark:text-white">
           {listingTitle}
         </h3>
-        
-        
-        
-        {/* QR Code avec effet de brillance */}
+
         <div className="relative">
           <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 rounded-2xl blur-lg opacity-30 transition-opacity" />
           <div className="relative bg-white rounded-2xl p-3 shadow-xl">
@@ -148,51 +156,52 @@ export default function QRCodeModal({ isOpen, onClose, listingId, listingTitle }
                 <div className="w-6 h-6 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : qrCode ? (
-              <img 
-                src={qrCode} 
-                alt="QR Code" 
-                className="w-48 h-48 rounded-xl transition-transform duration-300 hover:scale-105" 
+              <img
+                src={qrCode}
+                alt="QR Code"
+                className="w-48 h-48 rounded-xl transition-transform duration-300 hover:scale-105"
               />
             ) : null}
           </div>
         </div>
+
+        <div className="flex flex-wrap gap-2 justify-center">
+          <button
+            onClick={downloadQRCode}
+            disabled={!qrCode}
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+          >
+            <Download size={16} /> {t("download")}
+          </button>
+
+          <button
+            onClick={shareQRCode}
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all shadow-sm"
+          >
+            <Share2 size={16} /> {t("share")}
+          </button>
+
+          
+          <button
+            onClick={copyUrl}
+            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all shadow-sm"
+          >
+            {copied ? (
+              <Check
+                size={16}
+                className="text-emerald-600 dark:text-emerald-400"
+              />
+            ) : (
+              <Copy size={16} />
+            )}
+            {copied ? t("copied") : t("copyLink")}
+          </button>
+        </div>
+
         
-       {/* Actions buttons - Version sobre et responsive */}
-<div className="flex flex-wrap gap-2 justify-center">
-  <button
-    onClick={downloadQRCode}
-    disabled={!qrCode}
-    className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-  >
-    <Download size={16} /> Télécharger
-  </button>
-  
-  <button
-    onClick={shareQRCode}
-    className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all shadow-sm"
-  >
-    <Share2 size={16} /> Partager
-  </button>
-  
-  
-  
-  <button
-    onClick={copyUrl}
-    className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 active:scale-95 transition-all shadow-sm"
-  >
-    {copied ? <Check size={16} className="text-emerald-600 dark:text-emerald-400" /> : <Copy size={16} />}
-    {copied ? 'Copié !' : 'Copier le lien'}
-  </button>
-</div>
-        
-        
-        
-        {/* Footer avec logo NestHub */}
         <div className="flex items-center gap-2 pt-2">
           <div className="w-5 h-5 rounded-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 animate-pulse" />
-          <p className="text-xs text-slate-400 text-center">
-            Scannez ce code QR pour accéder directement à votre annonce
-          </p>
+          <p className="text-xs text-slate-400 text-center">{t("scanHint")}</p>
         </div>
       </div>
     </Modal>

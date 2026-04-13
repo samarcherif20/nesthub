@@ -28,6 +28,8 @@ import { MdOutlineBookOnline } from "react-icons/md";
 import { MdOutlineChatBubble } from "react-icons/md";
 import { MdOutlineAnalytics } from "react-icons/md";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { PiMicrosoftTeamsLogo } from "react-icons/pi";
+import OnboardingGuard from "@/components/ui/owner/OnboardingGuard";
 
 // Fonction pip pour les images Vercel Blob (avatar)
 const pipAvatar = (url: string) =>
@@ -62,7 +64,6 @@ export default function OwnerLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  
   const locale = pathname?.split("/")[1] || "fr";
 
   const t = useTranslations("OwnerLayout");
@@ -85,6 +86,11 @@ export default function OwnerLayout({
   const [isSearching, setIsSearching] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [userRole, setUserRole] = useState<"OWNER" | "CO_HOST" | "BOTH">(
+    "OWNER",
+  );
+  const [listingsCount, setListingsCount] = useState(0);
+  const [hasListings, setHasListings] = useState<boolean | null>(null);
 
   // Refs pour les dropdowns
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -96,56 +102,103 @@ export default function OwnerLayout({
     return avatarColors[randomIndex];
   }, []);
 
-  // Marquer le composant comme monté
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Récupérer les données utilisateur
+  // Vérifier si l'utilisateur a des annonces
+  useEffect(() => {
+    if (!mounted || !clerkUser) return;
+
+    const checkListings = async () => {
+      try {
+        const token = await clerkUser?.getToken?.({
+          template: "my-app-template",
+        });
+        const response = await fetch(
+          "/api/listings/my?status=ALL&page=1&pageSize=1",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const total = data.pagination?.totalCount || 0;
+          setHasListings(total > 0);
+        } else {
+          setHasListings(false);
+        }
+      } catch (error) {
+        console.error("Error checking listings:", error);
+        setHasListings(false);
+      }
+    };
+
+    checkListings();
+  }, [clerkUser, mounted]);
+
+  // Récupérer les données utilisateur et permissions
   useEffect(() => {
     if (!mounted || !clerkUser) {
       setLoading(false);
       return;
     }
-    fetch("/api/users/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data) {
+
+    const fetchUserData = async () => {
+      try {
+        const [userRes, permissionsRes] = await Promise.all([
+          fetch("/api/users/me"),
+          fetch("/api/owner/my-permissions"),
+        ]);
+
+        if (userRes.ok) {
+          const data = await userRes.json();
           setAppUser(data.user || data);
         }
-      })
-      .catch(console.error)
-      .finally(() => setLoading(false));
+
+        if (permissionsRes.ok) {
+          const permissionsData = await permissionsRes.json();
+          setUserRole(permissionsData.role);
+          setListingsCount(permissionsData.listingsCount || 0);
+          console.log(
+            "🔍 Rôle utilisateur:",
+            permissionsData.role,
+            "Listings:",
+            permissionsData.listingsCount,
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
   }, [clerkUser, mounted]);
 
-  // Vérifier que l'utilisateur est propriétaire ou BOTH
+  // Vérifier l'authentification
   useEffect(() => {
     if (!mounted) return;
     if (isLoaded && !isSignedIn) {
       router.push(`/${locale}/login`);
     }
-    if (isLoaded && isSignedIn && appUser) {
-      const role = appUser.role;
-      if (role !== "PROPERTY_OWNER" && role !== "BOTH") {
-        router.push(`/${locale}/renter/search`);
-      }
-    }
-  }, [isLoaded, isSignedIn, appUser, router, locale, mounted]);
+  }, [isLoaded, isSignedIn, router, locale, mounted]);
 
-  // Fermer les dropdowns quand on clique en dehors
+  // Fermer les dropdowns
   useEffect(() => {
     if (!mounted) return;
-
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-
       if (
         profileDropdownRef.current &&
         !profileDropdownRef.current.contains(target)
       ) {
         setIsProfileDropdownOpen(false);
       }
-
       if (
         notificationsDropdownRef.current &&
         !notificationsDropdownRef.current.contains(target)
@@ -153,17 +206,14 @@ export default function OwnerLayout({
         setIsNotificationsDropdownOpen(false);
       }
     };
-
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [mounted]);
 
-  // Reset avatar error when component remounts
   useEffect(() => {
     setAvatarError(false);
   }, [appUser?.profilePictureUrl, clerkUser?.imageUrl]);
 
-  // Fonction de recherche
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (query.length < 2) {
@@ -194,7 +244,7 @@ export default function OwnerLayout({
     router.push(`/${locale}/login`);
   };
 
-  // Navigation items
+  // Navigation items - EXCLURE la page de création d'annonce du guard
   const navItems = [
     {
       name: t("nav.dashboard"),
@@ -221,43 +271,63 @@ export default function OwnerLayout({
       href: `/${locale}/dashboard/owner/messages`,
       icon: MdOutlineChatBubble,
     },
+    
     {
-      name: t("nav.analytics"),
-      href: `/${locale}/dashboard/owner/analytics`,
-      icon: MdOutlineAnalytics,
-    },
-    {name: t("nav.team"),
+      name: t("nav.team"),
       href: `/${locale}/dashboard/owner/team`,
-      icon: LuLayoutDashboard,}
+      icon: PiMicrosoftTeamsLogo,
+    },
   ];
 
+  // Pages qui ne nécessitent PAS d'avoir des annonces (ex: création d'annonce)
+  const publicOwnerPages = [
+    `/${locale}/dashboard/owner/listings/create`,
+    `/${locale}/dashboard/owner/listings/new`,
+  ];
+
+  const requiresListings = !publicOwnerPages.some((page) =>
+    pathname?.startsWith(page),
+  );
+
   const isActive = (href: string) => {
-    if (href === `/${locale}/dashboard/owner`) {
-      return pathname === href;
-    }
+    if (href === `/${locale}/dashboard/owner`) return pathname === href;
     return pathname?.startsWith(href);
   };
 
-  // Fonction pour obtenir l'URL de l'avatar (priorité: Blob > Clerk > fallback)
   const getAvatarUrl = () => {
-    if (appUser?.profilePictureUrl && !avatarError) {
+    if (appUser?.profilePictureUrl && !avatarError)
       return pipAvatar(appUser.profilePictureUrl);
-    }
-    if (clerkUser?.imageUrl && !avatarError) {
-      return clerkUser.imageUrl;
-    }
+    if (clerkUser?.imageUrl && !avatarError) return clerkUser.imageUrl;
     return null;
   };
 
-  // Affichage du username
   const displayUsername =
     appUser?.username ||
     clerkUser?.username ||
     clerkUser?.firstName ||
-    "Propriétaire";
+    "Utilisateur";
   const initial = displayUsername.charAt(0).toUpperCase();
   const isVerified = appUser?.isIdentityVerified === true;
-  
+
+  // Labels selon le rôle
+  const getRoleLabel = () => {
+    if (userRole === "BOTH") return "Propriétaire + Co-hôte";
+    if (userRole === "CO_HOST") return "Co-hôte";
+    return "Propriétaire";
+  };
+
+  const getSidebarSubtitle = () => {
+    if (userRole === "BOTH") return "Espace mixte";
+    if (userRole === "CO_HOST") return "Espace Co-hôte";
+    return t("sidebar.ownerSuite");
+  };
+
+  const getHeaderRoleLabel = () => {
+    if (userRole === "BOTH") return "Propriétaire + Co-hôte";
+    if (userRole === "CO_HOST") return "Co-hôte";
+    return t("header.owner");
+  };
+
   // Loader
   if (!mounted || !isLoaded || loading) {
     return (
@@ -267,17 +337,14 @@ export default function OwnerLayout({
     );
   }
 
-  if (
-    !isSignedIn ||
-    (appUser && appUser.role !== "PROPERTY_OWNER" && appUser.role !== "BOTH")
-  ) {
+  if (!isSignedIn) {
     return null;
   }
 
   const sidebarW = sidebarCollapsed ? "w-20" : "w-64";
-  const mainML = sidebarCollapsed ? "ml-20" : "ml-64";
 
-  return (
+  // Contenu principal avec ou sans guard
+  const mainContent = (
     <div className="flex h-screen bg-light dark:bg-slate-950 overflow-hidden">
       {/* Overlay mobile */}
       {isSidebarOpen && (
@@ -290,36 +357,34 @@ export default function OwnerLayout({
       {/* Sidebar */}
       <aside
         className={`
-          fixed lg:static top-0 left-0 z-50 h-full
-          ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-          lg:translate-x-0 transition-transform duration-300 ease-in-out
-          ${sidebarW} 
-          bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 
-          flex flex-col shadow-xl lg:shadow-none
-        `}
+        fixed lg:static top-0 left-0 z-50 h-full
+        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"} 
+        lg:translate-x-0 transition-transform duration-300 ease-in-out
+        ${sidebarW} bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 
+        flex flex-col shadow-xl lg:shadow-none
+      `}
       >
-         {/* Logo */}
+        {/* Logo */}
         <div className="h-16 flex items-center px-4 border-b border-slate-200 dark:border-slate-800 gap-8">
           <div className="relative w-8 h-8 shrink-0">
-                      <Image
-                        src="/logo/logo.png"
-                        alt="NestHub Logo"
-                        fill
-                        className="object-contain scale-[5.75] translate-y-2.75 ml-2.5"
-                      />
+            <Image
+              src="/logo/logo.png"
+              alt="NestHub Logo"
+              fill
+              className="object-contain scale-[5.75] translate-y-2.75 ml-2.5"
+            />
           </div>
           {!sidebarCollapsed && (
             <div className="flex flex-col">
-              <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent ">
+              <h1 className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 N E S T H U B
               </h1>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 -mt-0.5">
-                {t("sidebar.ownerSuite")}
+                {getSidebarSubtitle()}
               </p>
             </div>
           )}
         </div>
-
 
         {/* Toggle sidebar button */}
         <button
@@ -368,12 +433,11 @@ export default function OwnerLayout({
                 {displayUsername}
               </p>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider mt-0.5">
-                {t("sidebar.ownerRole")}
+                {getRoleLabel()}
               </p>
               {isVerified && (
                 <span className="inline-flex items-center gap-1 mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full">
-                  <GoShieldLock size={10} />
-                  {t("sidebar.verified")}
+                  <GoShieldLock size={10} /> {t("sidebar.verified")}
                 </span>
               )}
             </div>
@@ -436,7 +500,6 @@ export default function OwnerLayout({
       <div className="flex-1 flex flex-col overflow-hidden w-full">
         {/* Header */}
         <header className="h-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-30">
-          {/* Menu burger mobile */}
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
@@ -484,7 +547,6 @@ export default function OwnerLayout({
                   <div className="max-h-[400px] overflow-y-auto">
                     {isSearching ? (
                       <div className="p-8 text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto"></div>
                       </div>
                     ) : searchResults.length > 0 ? (
                       searchResults.map((result, index) => (
@@ -517,7 +579,6 @@ export default function OwnerLayout({
               )}
             </div>
 
-            {/* Search mobile button */}
             <button
               className="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
               onClick={() => setIsMobileSearchOpen(true)}
@@ -574,7 +635,7 @@ export default function OwnerLayout({
                     {displayUsername}
                   </p>
                   <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                    {t("header.owner")}
+                    {getHeaderRoleLabel()}
                   </p>
                 </div>
                 <FaChevronDown
@@ -594,7 +655,6 @@ export default function OwnerLayout({
                             src={getAvatarUrl()!}
                             alt="Avatar"
                             className="w-full h-full object-cover"
-                            onError={() => setAvatarError(true)}
                           />
                         ) : (
                           <span className="font-medium text-lg">{initial}</span>
@@ -606,7 +666,7 @@ export default function OwnerLayout({
                         </p>
                         <div className="flex items-center gap-1 mt-0.5">
                           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-full font-medium">
-                            {t("header.ownerBadge")}
+                            {getRoleLabel()}
                           </span>
                         </div>
                       </div>
@@ -623,19 +683,19 @@ export default function OwnerLayout({
 
                   <div className="py-1">
                     <Link
-                      href={`/${locale}/owner/profile`}
+                      href={`/${locale}/dashboard/owner/profile`}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                       onClick={() => setIsProfileDropdownOpen(false)}
                     >
-                      <IoPersonOutline size={16} />
+                      <IoPersonOutline size={16} />{" "}
                       <span>{t("profile.myProfile")}</span>
                     </Link>
                     <Link
-                      href={`/${locale}/owner/settings`}
+                      href={`/${locale}/dashboard/owner/settings`}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                       onClick={() => setIsProfileDropdownOpen(false)}
                     >
-                      <IoSettingsOutline size={16} />
+                      <IoSettingsOutline size={16} />{" "}
                       <span>{t("profile.settings")}</span>
                     </Link>
                   </div>
@@ -648,7 +708,7 @@ export default function OwnerLayout({
                       }}
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-sm font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
-                      <RiLogoutCircleLine size={16} />
+                      <RiLogoutCircleLine size={16} />{" "}
                       <span>{t("profile.logout")}</span>
                     </button>
                   </div>
@@ -658,8 +718,14 @@ export default function OwnerLayout({
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
+        {/* Main content - WITH OnboardingGuard for pages that require listings */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {requiresListings ? (
+            <OnboardingGuard locale={locale}>{children}</OnboardingGuard>
+          ) : (
+            children
+          )}
+        </main>
       </div>
 
       {/* Logout modal */}
@@ -722,7 +788,7 @@ export default function OwnerLayout({
             <div className="mt-2 max-h-[calc(100vh-120px)] overflow-y-auto">
               {isSearching ? (
                 <div className="p-8 text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto" />
                 </div>
               ) : searchResults.length > 0 ? (
                 searchResults.map((result, index) => (
@@ -754,4 +820,6 @@ export default function OwnerLayout({
       )}
     </div>
   );
+
+  return mainContent;
 }

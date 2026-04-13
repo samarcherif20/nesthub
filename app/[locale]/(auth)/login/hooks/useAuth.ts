@@ -253,7 +253,13 @@ export function useAuth() {
         if (setActive) {
           await setActive({ session: result.createdSessionId });
           await new Promise((resolve) => setTimeout(resolve, 100));
-
+          const storedRedirect = localStorage.getItem("redirectAfterLogin");
+          if (storedRedirect) {
+            localStorage.removeItem("redirectAfterLogin");
+            console.log("🔄 Redirection stockée trouvée:", storedRedirect);
+            router.push(storedRedirect);
+            return;
+          }
           //  FIX 2: Role-based redirect with proper locale and path
           const getRedirectUrl = async (): Promise<string> => {
             try {
@@ -289,7 +295,7 @@ export function useAuth() {
             } else if (roleCheck.dbRole === "PROPERTY_OWNER") {
               return `/${locale}/dashboard/owner`;
             } else {
-              return `/${locale}/dashboard/renter`;
+              return `/${locale}/search`;
             }
           };
 

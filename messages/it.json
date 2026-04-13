@@ -1,238 +1,249 @@
 {
   "metadata": {
-    "title": "NESTHUB - Noleggio intelligente in Tunisia",
-    "description": "Piattaforma sicura per l'affitto immobiliare"
+    "title": "NESTHUB - Affitto intelligente in Tunisia",
+    "description": "Piattaforma di locazione immobiliare sicura"
   },
   "navigation": {
-    "home": "Benvenuto",
-    "login": "Connessione",
-    "register": "Registrazione",
-    "dashboard": "Pannello di controllo",
+    "home": "Home",
+    "login": "Accesso",
+    "register": "Registrati",
+    "dashboard": "Dashboard",
     "profile": "Il mio profilo",
     "admin": "Amministrazione",
-    "logout": "Disconnetti"
+    "logout": "Esci"
   },
+
   "AcceptInvite": {
-    "loading": "Controllo del tuo invito...",
-    "invalidLink": "Collegamento non valido",
-    "noToken": "Nessun token di invito fornito.",
-    "backToHome": "Ritorno a casa",
+    "loading": "Verifica dell'invito in corso...",
+    "invalidLink": "Link di invito non valido",
+    "noToken": "Nessun token di invito trovato",
+    "backToHome": "Torna alla home",
     "alreadyUsed": "Invito già utilizzato",
-    "expired": "Collegamento scaduto",
-    "alreadyUsedMessage": "Questo invito è già stato accettato. Accedi normalmente.",
-    "expiredMessage": "I link di invito sono validi per 48 ore. Questo è scaduto.",
-    "invalidMessage": "Questo collegamento di invito non è valido o non è stato trovato.",
-    "newLink": "Nuovo collegamento",
-    "login": "Login",
-    "needHelp": "Hai bisogno di aiuto? Contatta il tuo amministratore.",
-    "successMessage": "Invito accettato con successo! Reindirizzamento...",
-    "successExisting": "Aggiunti i diritti di amministratore",
-    "successNew": "Conto creato",
-    "welcomeExisting": "Congratulazioni! 🎉",
-    "welcomeNew": "Benvenuto nella squadra! 🎉",
-    "successExistingMessage": "Il tuo account {email} ora ha i diritti di amministratore.",
-    "successNewMessage": "Il tuo account amministratore {email} è pronto.",
-    "redirecting": "Reindirizzamento alla dashboard...",
-    "accessAdmin": "Accedi al pannello di amministrazione",
-    "invitationReceived": "Invito ricevuto",
+    "alreadyUsedMessage": "Questo invito è già stato accettato da qualcun altro.",
+    "expired": "Invito scaduto",
+    "expiredMessage": "Questo link di invito è scaduto. Richiedi un nuovo link.",
+    "invalidMessage": "Questo link di invito non è valido.",
+    "newLink": "Richiedi un nuovo link",
+    "login": "Accedi",
+    "needHelp": "Hai bisogno di aiuto? Contatta l'assistenza",
+    "successMessage": "Invito accettato con successo!",
+    "successNew": "Nuovo account",
+    "successExisting": "Diritti aggiunti",
+    "welcomeAdmin": "Benvenuto nel team di amministrazione",
+    "welcomeCohost": "Benvenuto nel team di gestione",
+    "successNewMessage": "Il tuo account è stato creato con successo con l'email {email}",
+    "successExistingMessage": "Il tuo accesso è stato attivato sull'account associato a {email}",
+    "redirecting": "Reindirizzamento al tuo spazio",
+    "accessAdmin": "Accedi alla dashboard admin",
+    "accessOwner": "Accedi al mio spazio",
     "existingAccountDetected": "Account esistente rilevato",
-    "existingAccountMessage": "Hai già un account. Accetta l'invito per ottenere i diritti di amministratore.",
-    "invitedBy": "Invito da",
-    "acceptAndGetRights": "Accetta e ottieni i diritti di amministratore",
+    "emailLabel": "Email",
+    "existingAccountMessage": "Hai già un account. Clicca qui sotto per aggiungere i diritti di amministratore.",
+    "existingAccountMessageCohost": "Hai già un account. Clicca qui sotto per aggiungere i diritti di co-gestore.",
+    "invitedBy": "Invitato da",
+    "propertyConcerned": "Proprietà interessata",
+    "acceptAndGetRights": "Accetta e ottieni i diritti",
+    "acceptAndGetAccess": "Accetta e ottieni l'accesso",
     "loginFirst": "Accedi prima",
-    "youHaveBeenInvited": "Sei stato invitato!",
-    "joinAsAdmin": "Unisciti alla nostra piattaforma {appName} come amministratore.",
-    "emailLabel": "E-mail",
     "firstName": "Nome",
-    "lastName": "Nome",
-    "username": "Nome utente",
-    "password": "Password",
+    "firstNamePlaceholder": "es: Marco",
     "firstNameRequired": "Il nome è obbligatorio",
     "firstNameMinLength": "Il nome deve contenere almeno 2 caratteri",
-    "lastNameRequired": "Il nome è obbligatorio",
-    "lastNameMinLength": "Il nome deve contenere almeno 2 caratteri",
+    "lastName": "Cognome",
+    "lastNamePlaceholder": "es: Rossi",
+    "lastNameRequired": "Il cognome è obbligatorio",
+    "lastNameMinLength": "Il cognome deve contenere almeno 2 caratteri",
+    "username": "Nome utente",
+    "usernamePlaceholder": "es: marco_rossi",
     "usernameRequired": "Il nome utente è obbligatorio",
-    "usernameInvalid": "Il nome utente deve contenere 3-20 caratteri (lettere, numeri, _)",
-    "passwordRequired": "È richiesta la password",
-    "passwordMinLength": "La password deve contenere almeno 8 caratteri",
-    "passwordUppercase": "La password deve contenere almeno una lettera maiuscola",
-    "passwordLowercase": "La password deve contenere almeno una lettera minuscola",
-    "passwordNumber": "La password deve contenere almeno una cifra",
-    "firstNamePlaceholder": "nome",
-    "lastNamePlaceholder": "nome",
-    "usernamePlaceholder": "nome utente",
+    "usernameInvalid": "Solo lettere, numeri e trattini bassi",
+    "password": "Password",
     "passwordPlaceholder": "Minimo 8 caratteri",
-    "acceptTermsPrefix": "Accetto il",
-    "acceptTermsAnd": "e il",
-    "termsOfUse": "condizioni d'uso",
-    "privacyPolicy": "politica sulla riservatezza",
+    "passwordRequired": "La password è obbligatoria",
+    "passwordMinLength": "Minimo 8 caratteri",
+    "passwordUppercase": "Almeno una lettera maiuscola",
+    "passwordLowercase": "Almeno una lettera minuscola",
+    "passwordNumber": "Almeno un numero",
+    "acceptTermsPrefix": "Accetto i",
+    "termsOfUse": "Termini di utilizzo",
+    "acceptTermsAnd": "e la",
+    "privacyPolicy": "Politica sulla privacy",
     "creating": "Creazione in corso...",
     "acceptInvitation": "Accetta l'invito",
     "e2eEncryption": "Crittografia E2E",
     "secureAccess": "Accesso sicuro",
     "alreadyHaveAccount": "Hai già un account?",
-    "signIn": "Login",
+    "signIn": "Accedi",
+    "invitationReceived": "Invito ricevuto",
+    "youHaveBeenInvited": "Sei stato invitato",
+    "joinAsAdmin": "Unisciti al team di amministrazione di {appName}",
+    "joinAsCohost": "Unisciti al team di gestione di questa proprietà",
     "roleAssigned": "Ruolo assegnato",
     "adminRole": "Amministratore NESTHUB",
-    "invitationFrom": "Invito da:",
+    "cohostRole": "Co-gestore",
+    "invitationFrom": "Invito da",
     "autoVerification": "Verifica automatica",
-    "autoVerificationDesc": "In qualità di amministratore, il tuo account verrà verificato immediatamente.",
-    "expiryTime": "48 ore",
-    "expiryLabel": "Il collegamento scade",
+    "autoVerificationDesc": "La tua identità viene verificata automaticamente tramite il link di invito sicuro.",
+    "expiryTime": "Durata di validità",
+    "expiryLabel": "7 giorni",
+    "limitedAccess": "Accesso limitato",
     "fullAccess": "Accesso completo",
-    "fullAccessLabel": "Pannello amministratore"
+    "cohostAccessLabel": "Solo gestione della proprietà",
+    "fullAccessLabel": "Back-office NESTHUB"
   },
+
   "Login": {
+    "completeLogin": "Accesso in corso...",
     "newCodeSent": "Un nuovo codice è stato inviato!",
-    "successLogin": "Connessione riuscita! Reindirizzamento in corso...",
+    "successLogin": "Accesso riuscito! Reindirizzamento in corso...",
     "redirectGoogle": "Reindirizzamento a Google...",
     "redirectApple": "Reindirizzamento ad Apple...",
     "redirectFacebook": "Reindirizzamento a Facebook...",
     "errorGoogle": "Errore durante l'accesso con Google",
     "errorApple": "Errore durante l'accesso con Apple",
-    "errorFacebook": "Errore di connessione con Facebook",
+    "errorFacebook": "Errore durante l'accesso con Facebook",
     "optional": "(Opzionale)",
-    "welcome": "Benvenuto !",
-    "subtitle": "Effettua il login per accedere al tuo spazio protetto.",
-    "signUpTitle": "Creare un account",
+    "welcome": "Benvenuto!",
+    "subtitle": "Accedi per accedere al tuo spazio sicuro.",
+    "signUpTitle": "Crea un account",
     "signUpSubtitle": "Registrati per iniziare il tuo viaggio",
-    "heroTitle": "Il collegamento intelligente per un nido stretto...",
-    "heroSubtitle": "Una piattaforma completa e intelligente dedicata alla gestione degli affitti e degli immobili, con fiducia e trasparenza.",
-    "joinStats": "Unisciti a oltre 3.000 proprietari e inquilini",
+    "heroTitle": "Il collegamento intelligente per un nido sicuro...",
+    "heroSubtitle": "Una piattaforma completa e intelligente dedicata all'affitto e alla gestione di immobili, con fiducia e trasparenza.",
+    "joinStats": "Unisciti a +3.000 proprietari e inquilini",
     "renter": "Inquilino",
     "owner": "Proprietario",
-    "email": "Indirizzo e-mail",
+    "email": "Indirizzo email",
     "emailPlaceholder": "nome@azienda.com",
     "password": "Password",
     "forgotPassword": "Password dimenticata?",
-    "login": "Login",
-    "signUp": "Registro",
+    "login": "Accedi",
+    "signUp": "Registrati",
     "processing": "Elaborazione in corso...",
     "orContinueWith": "Oppure continua con",
-    "termsPrefix": "Registrandoti o effettuando il login accetti i ns",
+    "termsPrefix": "Registrandoti o accedendo, accetti i nostri",
     "termsOfUse": "Termini di utilizzo",
-    "and": "e il nostro",
-    "privacyPolicy": "politica sulla riservatezza",
+    "and": "e la nostra",
+    "privacyPolicy": "Politica sulla privacy",
     "termsSuffix": ".",
-    "signIn": "Login",
+    "signIn": "Accedi",
     "alreadyHaveAccount": "Hai già un account?",
     "dontHaveAccount": "Non hai ancora un account?",
-    "accessInfo": "Il tuo accesso viene rilevato automaticamente in base alle tue credenziali. I profili amministratore non necessitano di selezione manuale.",
+    "accessInfo": "Il tuo accesso viene rilevato automaticamente in base alle tue credenziali. I profili amministratori non necessitano di selezione manuale.",
     "profileType": "Tipo di profilo",
-    "rememberMe": "Rimani connesso",
-    "legal": "Avvisi legali",
-    "privacy": "Riservatezza",
-    "emailRequired": "L'e-mail è obbligatoria",
-    "emailInvalid": "Si prega di inserire un indirizzo email valido",
-    "passwordRequired": "È richiesta la password",
+    "rememberMe": "Ricordami",
+    "legal": "Note legali",
+    "privacy": "Privacy",
+    "emailRequired": "L'email è obbligatoria",
+    "emailInvalid": "Inserisci un indirizzo email valido",
+    "passwordRequired": "La password è obbligatoria",
     "userNotFound": "Nessun account trovato con questo indirizzo email",
-    "incorrectPassword": "Password errata. Per favore riprova!",
-    "error": "Si è verificato un errore. Per favore riprova",
+    "incorrectPassword": "Password errata. Riprova!",
+    "error": "Si è verificato un errore. Riprova",
     "usernameRequired": "Il nome utente è obbligatorio",
-    "usernameInvalid": "Formato nome utente non valido!",
+    "usernameInvalid": "Formato del nome utente non valido!",
     "emailNotFound": "Nessun account trovato con questa email",
     "usernameNotFound": "Nessun account trovato con questo nome utente",
-    "emailOrUsername": "E-mail o nome utente",
+    "emailOrUsername": "Email o nome utente",
     "emailOrUsernamePlaceholder": "contatto@esempio.com",
-    "identifierRequired": "E-mail o nome utente obbligatori",
-    "identifierInvalid": "Formato non valido. Inserisci un'e-mail o un nome utente validi!",
-    "userNotFoundInDB": "Account trovato ma non sincronizzato. Si prega di contattare l'assistenza!",
-    "wrongRoleRenter": "Questo account è un proprietario. Seleziona \"Proprietario\"!",
-    "wrongRoleOwner": "Questo account è un inquilino. Seleziona \"Inquilino\"!",
+    "identifierRequired": "Email o nome utente obbligatorio",
+    "identifierInvalid": "Formato non valido. Inserisci un'email o un nome utente valido!",
+    "userNotFoundInDB": "Account trovato ma non sincronizzato. Contatta l'assistenza!",
+    "wrongRoleRenter": "Questo account è un proprietario. Seleziona 'Proprietario'!",
+    "wrongRoleOwner": "Questo account è un inquilino. Seleziona 'Inquilino'!",
     "tooManyAttempts": "Troppi tentativi. Riprova più tardi!",
-    "emailAlreadyExists": "Questa email è già in uso",
+    "emailAlreadyExists": "Questa email è già utilizzata",
     "passwordTooShort": "La password è troppo corta (minimo 8 caratteri)",
-    "passwordCompromised": "Questa password è stata compromessa. Per favore scegline un altro",
-    "verificationFailed": "Verifica non riuscita",
-    "sessionExists": "Esiste già una sessione",
+    "passwordCompromised": "Questa password è stata compromessa. Scegline un'altra",
+    "verificationFailed": "Verifica fallita",
+    "sessionExists": "Una sessione esiste già",
     "profileTypeRequired": "Seleziona un tipo di profilo",
     "incorrectCode": "Codice di verifica errato.",
-    "accountLocked": "Il tuo account è temporaneamente bloccato. Per favore riprova più tardi.",
-    "accountSuspended": "Il tuo account è stato sospeso. Si prega di contattare l'assistenza.",
+    "accountLocked": "Il tuo account è temporaneamente bloccato. Riprova più tardi.",
+    "accountSuspended": "Il tuo account è stato sospeso. Contatta l'assistenza.",
     "verificationCode": "Codice di verifica a 6 cifre",
     "verificationCodeSent": "Un codice di verifica è stato inviato al tuo indirizzo email.",
-    "verify": "Controllo",
+    "verify": "Verifica",
     "resendCode": "Invia nuovamente il codice",
-    "backToLogin": "Torna al login",
+    "backToLogin": "Torna all'accesso",
     "codeRequired": "Inserisci il codice a 6 cifre",
-    "codeInvalid": "Codice non valido. Inserisci un codice di 6 cifre.",
-    "codeExpired": "Questo codice è scaduto. Si prega di richiederne uno nuovo.",
+    "codeInvalid": "Codice non valido. Inserisci un codice a 6 cifre.",
+    "codeExpired": "Questo codice è scaduto. Richiedine uno nuovo.",
     "secureAccess": "Proteggi il tuo accesso",
-    "enterCodeSentTo": "Inserisci il codice di 6 cifre inviato a",
-    "trustDevice": "Affidati a questo dispositivo per 30 giorni",
-    "trustDeviceTooltip": "Abilitando questa opzione, non dovrai più inserire un codice di verifica su questo browser per i prossimi 30 giorni.",
+    "enterCodeSentTo": "Inserisci il codice a 6 cifre inviato a",
+    "trustDevice": "Considera questo dispositivo affidabile per 30 giorni",
+    "trustDeviceTooltip": "Attivando questa opzione, non dovrai più inserire il codice di verifica su questo browser per i prossimi 30 giorni.",
     "verifying": "Verifica...",
     "limitedTimeCode": "Codice a tempo limitato",
     "codeExpiresIn": "Questo codice scade tra",
     "didNotReceiveCode": "Non hai ricevuto il codice?",
-    "resend": "Invia nuovamente",
+    "resend": "Invia di nuovo",
     "sending": "Invio...",
-    "codeResent": "Ti è stato inviato un nuovo codice!",
+    "codeResent": "Un nuovo codice ti è stato inviato!",
     "requestNewCode": "Richiedi un nuovo codice",
-    "close": "Vicino",
+    "close": "Chiudi",
     "securityBadge": "Crittografia AES-256 • Conforme al GDPR",
     "2faAlt": "Verifica a due fattori",
     "back": "Indietro"
   },
   "admin": {
-    "dashboard": "Pannello di controllo",
+    "dashboard": "Dashboard",
     "users": "Utenti",
     "properties": "Proprietà",
     "transactions": "Transazioni",
     "verifications": "Verifiche",
-    "reports": "Rapporti",
+    "reports": "Segnalazioni",
     "disputes": "Controversie",
-    "staticPages": "Pagine statiche",
+    "staticPages": "Pagine Statiche",
     "settings": "Impostazioni",
     "adminPanel": "Pannello di amministrazione",
     "administrator": "Amministratore",
-    "logout": "Disconnetti",
-    "searchPlaceholder": "Per ricercare...",
+    "logout": "Esci",
+    "searchPlaceholder": "Cerca...",
     "searching": "Ricerca...",
     "results": "risultati",
     "noResults": "Nessun risultato trovato",
     "notifications": "Notifiche",
-    "new": "notizia)",
+    "new": "nuova/e",
     "viewAll": "Vedi tutte le notifiche",
-    "myProfile": "Il mio profilo",
+    "myProfile": "Il Mio Profilo",
     "security": "Sicurezza",
-    "confirmLogout": "Conferma disconnessione",
-    "logoutMessage": "Sei sicuro di voler uscire?",
-    "cancel": "Cancellare",
-    "invitationDesAdmins": "Invito amministrativo",
+    "confirmLogout": "Conferma uscita",
+    "logoutMessage": "Sei sicuro di volerti disconnettere?",
+    "cancel": "Annulla",
+    "invitationDesAdmins": "Invito degli amministratori",
     "usersManagement": {
       "unauthorized": "Accesso non autorizzato",
       "stats": {
         "totalUsers": "Utenti totali",
         "newUsers30d": "Nuovi utenti (30 giorni)",
-        "pendingValidation": "In attesa di convalida",
+        "pendingValidation": "In attesa di validazione",
         "verifiedIdentity": "Identità verificata"
       },
       "page": {
-        "title": "Gestione utenti",
+        "title": "Gestione Utenti",
         "description": "Gestisci tutti gli utenti della piattaforma"
       },
       "actions": {
-        "export": "Esporta dati",
-        "reset": "Reimposta i filtri",
+        "export": "Esporta Dati",
+        "reset": "Reimposta filtri",
         "advancedFilters": "Filtri avanzati",
-        "view": "Visualizza profilo",
-        "suspend": "Sospendere",
-        "ban": "Divieto",
-        "activate": "Abilitare",
+        "view": "Vedi profilo",
+        "suspend": "Sospendi",
+        "ban": "Bandisci",
+        "activate": "Attiva",
         "warn": "Avvertimento",
-        "reactivate": "Riattivare",
-        "unlock": "Sbloccare",
-        "lock": "Per bloccare",
+        "reactivate": "Riattiva",
+        "unlock": "Sblocca",
+        "lock": "Blocca",
         "escalate": "Escalation",
-        "history": "Storico",
-        "addNote": "Aggiungi una nota"
+        "history": "Cronologia",
+        "addNote": "Aggiungi nota"
       },
       "filters": {
         "searchPlaceholder": "Cerca per nome, email, telefono...",
         "role": {
           "all": "Tutti i ruoli",
-          "admin": "Ammin",
+          "admin": "Admin",
           "property_owner": "Proprietario",
           "tenant": "Inquilino"
         },
@@ -241,24 +252,25 @@
           "active": "Attivo",
           "pending": "In attesa",
           "suspended": "Sospeso",
-          "banned": "Vietato",
+          "banned": "Bannato",
           "rejected": "Respinto",
-          "security_locked": "Bloccato (sicurezza)",
-          "manually_blocked": "Bloccato (manuale)",
-          "inactive": "Inattivo"
+          "security_locked": "Bloccati (sicurezza)",
+          "manually_blocked": "Bloccati (manuale)",
+          "inactive": "Inattivi"
         },
+
         "advanced": {
           "title": "Filtri avanzati",
           "dateRange": "Periodo di registrazione",
-          "minReliability": "Punteggio minimo di affidabilità",
-          "maxFraud": "Punteggio massimo di frode",
-          "minReliabilityPlaceholder": "≥50",
+          "minReliability": "Punteggio affidabilità minimo",
+          "maxFraud": "Punteggio frode massimo",
+          "minReliabilityPlaceholder": "≥ 50",
           "maxFraudPlaceholder": "≤ 30"
         }
       },
       "verification": {
         "label": "Verifica",
-        "all": "Tutto",
+        "all": "Tutte",
         "verified": "Verificato",
         "pending": "In attesa",
         "rejected": "Respinto"
@@ -279,23 +291,23 @@
         }
       },
       "totalUsers": "Utenti totali",
-      "newUsers30d": "Nuovo (30 giorni)",
-      "activeUsers": "Attività",
+      "newUsers30d": "Nuovi (30g)",
+      "activeUsers": "Attivi",
       "pendingUsers": "In attesa",
-      "suspendedUsers": "Sospeso",
-      "bannedUsers": "Vietato",
-      "verifiedIdentity": "Verificato",
-      "pendingApprovals": "In attesa di verifica",
+      "suspendedUsers": "Sospesi",
+      "bannedUsers": "Bannati",
+      "verifiedIdentity": "Verificati",
+      "pendingApprovals": "In attesa verifica",
       "averageReliability": "Affidabilità media",
-      "pendingValidation": "In attesa di convalida",
+      "pendingValidation": "In attesa di validazione",
       "export": {
         "csv": {
           "title": "CSV",
-          "description": "Per Excel/analisi"
+          "description": "Per Excel / analisi"
         },
         "pdf": {
           "title": "PDF",
-          "description": "Per la stampa"
+          "description": "Per stampa"
         }
       },
       "badges": {
@@ -307,7 +319,7 @@
         "fraud": "Frode"
       },
       "alerts": {
-        "sessionExpired": "Sessione scaduta: accedi nuovamente",
+        "sessionExpired": "Sessione scaduta - effettua di nuovo l'accesso",
         "unauthorized": "Accesso non autorizzato",
         "loadingError": "Errore di caricamento",
         "exportError": "Errore durante l'esportazione",
@@ -321,12 +333,12 @@
         "title": "Riattiva l'account",
         "description": "Vuoi ripristinare l'accesso completo per questo utente?",
         "confirm": "Riattiva l'account",
-        "cancel": "Cancellare",
-        "processing": "Trattamento...",
+        "cancel": "Annulla",
+        "processing": "Elaborazione...",
         "currentStatus": "Questo account è attualmente {status}",
         "status": {
           "suspended": "sospeso",
-          "banned": "vietato",
+          "banned": "bannato",
           "locked": "bloccato",
           "inactive": "inattivo",
           "rejected": "respinto",
@@ -334,42 +346,42 @@
         }
       },
       "warningModal": {
-        "title": "Invia un avviso",
-        "description": "Questa azione verrà salvata nella cronologia",
-        "reason": "Modello",
-        "reliability": "Fiab.",
-        "specifyReason": "Specificare il motivo",
-        "optionalMessage": "Messaggio (facoltativo)",
+        "title": "Invia un avvertimento",
+        "description": "Questa azione verrà registrata nella cronologia",
+        "reason": "Motivo",
+        "reliability": "Affidab.",
+        "specifyReason": "Specifica il motivo",
+        "optionalMessage": "Messaggio (opzionale)",
         "explainReason": "Spiega il motivo...",
-        "additionalDetails": "Ulteriori dettagli...",
-        "infoMessage": "L'utente riceverà un avviso visibile nella propria dashboard.",
-        "emailSent": "E-mail inviata.",
-        "previousWarnings": "Già {count} avviso/i.",
-        "cancel": "Cancellare",
-        "send": "Inviare",
-        "notifyByEmail": "Avvisare l'utente tramite e-mail",
-        "emailNotificationMessage": "Verrà inviata un'email a {email} per informarlo di questo avviso.",
+        "additionalDetails": "Dettagli aggiuntivi...",
+        "infoMessage": "L'utente riceverà un avvertimento visibile nella sua dashboard.",
+        "emailSent": "Email inviata.",
+        "previousWarnings": "Già {count} avvertimento(i).",
+        "cancel": "Annulla",
+        "send": "Invia",
+        "notifyByEmail": "Notifica l'utente via email",
+        "emailNotificationMessage": "Un'email verrà inviata a {email} per notificare questo avvertimento.",
         "processing": "Invio...",
-        "error": "Errore nell'invio dell'avviso",
+        "error": "Errore nell'invio dell'avvertimento",
         "reasons": {
           "inappropriateBehavior": {
             "label": "Comportamento inappropriato",
-            "description": "Linguaggio o atteggiamento inappropriati"
+            "description": "Linguaggio o atteggiamento inappropriato"
           },
           "spam": {
             "label": "Spam",
             "description": "Messaggi pubblicitari non richiesti"
           },
           "falseInformation": {
-            "label": "Notizie false",
-            "description": "Informazioni sul profilo fuorvianti"
+            "label": "False informazioni",
+            "description": "Informazioni false sul profilo"
           },
           "paymentIssues": {
             "label": "Problemi di pagamento",
-            "description": "Pagamenti ritardati o rifiutati"
+            "description": "Pagamenti in ritardo o respinti"
           },
           "multipleAccounts": {
-            "label": "Conti multipli",
+            "label": "Account multipli",
             "description": "Creazione di più account"
           },
           "other": {
@@ -382,98 +394,98 @@
         "title": "Aggiungi una nota interna",
         "description": "Visibile solo agli amministratori",
         "noteContent": "Contenuto della nota",
-        "placeholder": "Scrivi qui la tua nota...",
+        "placeholder": "Scrivi la tua nota qui...",
         "addNote": "Aggiungi nota",
         "adding": "Aggiunta...",
-        "cancel": "Cancellare",
-        "enterLinkUrl": "Inserisci l'URL del collegamento:",
+        "cancel": "Annulla",
+        "enterLinkUrl": "Inserisci l'URL del link:",
         "error": "Errore durante l'aggiunta della nota"
       },
       "banModal": {
-        "title": "Escludere permanentemente l'utente",
+        "title": "Bandisci definitivamente l'utente",
         "description": "Questa azione è irreversibile",
-        "reason": "Motivo del divieto",
+        "reason": "Motivo del bando",
         "selectReason": "Seleziona un motivo...",
         "evidence": "Prove e dettagli",
-        "evidencePlaceholder": "Dettagliare le ragioni e allegare collegamenti alle prove, se necessario...",
-        "notify": "Avvisare l'utente tramite e-mail",
-        "emailNotificationMessage": "Verrà inviata un'email a {email} per informarli di questo divieto.",
-        "confirmLabel": "Tipo",
-        "cancel": "Cancellare",
-        "confirm": "Conferma il divieto",
-        "processing": "Trattamento..."
+        "evidencePlaceholder": "Dettaglia i motivi e allega i link alle prove se necessario...",
+        "notify": "Notifica l'utente via email",
+        "emailNotificationMessage": "Un'email verrà inviata a {email} per notificare questo bando.",
+        "confirmLabel": "Digita",
+        "cancel": "Annulla",
+        "confirm": "Conferma il bando",
+        "processing": "Elaborazione..."
       },
       "escalateModal": {
-        "title": "Escalation graduale",
-        "description": "Sistema sanzionatorio graduale",
+        "title": "Escalation progressiva",
+        "description": "Sistema di sanzioni graduali",
         "currentLevel": "Livello attuale",
-        "applySanction": "Seleziona il passaggio successivo",
+        "applySanction": "Seleziona il prossimo passo",
         "reason": "Motivo dell'escalation",
-        "reasonPlaceholder": "Descrivere le ragioni che giustificano tale sanzione...",
+        "reasonPlaceholder": "Descrivi i motivi che giustificano questa sanzione...",
         "warning": "Avvertimento",
         "suspension": "Sospensione",
-        "ban": "Esilio",
+        "ban": "Bando",
         "alreadyApplied": "Già applicato all'utente",
-        "locked": "Bloccato: passaggio successivo obbligatorio",
-        "historyNote": "Questo motivo verrà registrato nella cronologia della moderazione.",
-        "apply": "Applicare l'escalation",
-        "notify": "Avvisare l'utente tramite e-mail",
-        "emailNotificationMessage": "Verrà inviata un'e-mail a {email} per informarlo di questa sanzione.",
-        "cancel": "Cancellare",
-        "processing": "Trattamento..."
+        "locked": "Bloccato - Passaggio successivo richiesto",
+        "historyNote": "Questo motivo verrà registrato nella cronologia di moderazione.",
+        "apply": "Applica l'escalation",
+        "notify": "Notifica l'utente via email",
+        "emailNotificationMessage": "Un'email verrà inviata a {email} per notificare questa sanzione.",
+        "cancel": "Annulla",
+        "processing": "Elaborazione..."
       },
       "suspendModal": {
-        "title": "Sospendere temporaneamente l'utente",
-        "description": "L'utente non potrà effettuare il login per la durata prescelta",
+        "title": "Sospendi temporaneamente l'utente",
+        "description": "L'utente non potrà accedere per la durata scelta",
         "duration": "Durata della sospensione",
         "day": "1 giorno",
         "days": "{count} giorni",
         "reason": "Motivo della sospensione",
         "selectReason": "Seleziona un motivo",
-        "details": "Modello dettagliato",
-        "detailsPlaceholder": "Spiegate brevemente il motivo di questo provvedimento...",
+        "details": "Motivo dettagliato",
+        "detailsPlaceholder": "Spiega brevemente il motivo di questa misura...",
         "emailNotification": "notifica inviata",
-        "notificationInfo": "Verrà inviata una email all'utente per informarlo della sospensione.",
-        "enterLinkUrl": "Inserisci l'URL del collegamento",
-        "cancel": "Cancellare",
+        "notificationInfo": "Un'email verrà inviata all'utente per informarlo della sospensione.",
+        "enterLinkUrl": "Inserisci l'URL del link",
+        "cancel": "Annulla",
         "confirm": "Conferma la sospensione",
-        "processing": "Trattamento...",
+        "processing": "Elaborazione...",
         "reasons": {
           "spam": "Spam o abuso",
           "tos": "Violazione dei termini di utilizzo",
           "safety": "Sicurezza dell'account",
           "other": "Altro motivo"
         },
-        "emailNotificationTitle": "Notifica e-mail",
-        "emailNotificationMessage": "Verrà inviata un'email a {email} per informarlo di questa sospensione.",
-        "notify": "Avvisare l'utente tramite e-mail"
+        "emailNotificationTitle": "Notifica via email",
+        "emailNotificationMessage": "Un'email verrà inviata a {email} per notificare questa sospensione.",
+        "notify": "Notifica l'utente via email"
       },
       "lockUnlockModal": {
-        "lockTitle": "Blocca conto",
+        "lockTitle": "Blocca l'account",
         "unlockTitle": "Sblocca l'account",
         "lockDescription": "Blocca manualmente l'accesso a questo account.",
-        "unlockDescription": "Questo account è stato bloccato dopo diversi tentativi di accesso non riusciti.",
+        "unlockDescription": "Questo account è stato bloccato dopo diversi tentativi di accesso falliti.",
         "reason": "Motivo del blocco",
         "reasonPlaceholder": "Perché bloccare questo account?...",
-        "notifyLock": "Avvisa l'utente del blocco",
+        "notifyLock": "Notifica all'utente il blocco",
         "notifyUnlock": "Notifica all'utente lo sblocco",
-        "emailNotificationMessage": "Verrà inviata un'e-mail a {email} per notificare l'accaduto.",
+        "emailNotificationMessage": "Un'email verrà inviata a {email} per notificarlo.",
         "failedAttempts": "Tentativi falliti",
-        "lock": "Per bloccare",
-        "unlock": "Sbloccare",
-        "cancel": "Cancellare",
-        "processing": "Trattamento...",
-        "enterLinkUrl": "Inserisci l'URL del collegamento:"
+        "lock": "Blocca",
+        "unlock": "Sblocca",
+        "cancel": "Annulla",
+        "processing": "Elaborazione...",
+        "enterLinkUrl": "Inserisci l'URL del link:"
       },
       "actionsHistoryModal": {
-        "title": "Storia delle azioni",
+        "title": "Cronologia delle azioni",
         "subtitle": "Amministrazione NESTHUB",
-        "close": "Vicino",
+        "close": "Chiudi",
         "admin": {
-          "default": "Ammin"
+          "default": "Admin"
         },
         "search": {
-          "placeholder": "Cerca un amministratore, un utente o un pattern..."
+          "placeholder": "Cerca un admin, un utente o un motivo..."
         },
         "filters": {
           "label": "Filtra per",
@@ -482,8 +494,8 @@
         "actionTypes": {
           "suspension": "Sospensione",
           "suspensionUndone": "Sospensione annullata",
-          "ban": "Esilio",
-          "banUndone": "Divieto annullato",
+          "ban": "Bando",
+          "banUndone": "Bando annullato",
           "activation": "Riattivazione",
           "unlock": "Sblocco",
           "lock": "Blocco",
@@ -492,14 +504,14 @@
           "escalation": "Escalation",
           "escalationUndone": "Escalation annullata",
           "note": "Nota interna",
-          "rejectVerification": "Rifiuto della verifica",
-          "validateVerification": "Verifica di validazione",
+          "rejectVerification": "Rifiuto verifica",
+          "validateVerification": "Convalida verifica",
           "undone": "Azione annullata"
         },
         "status": {
           "active": "Attivo",
           "suspended": "Sospeso",
-          "banned": "Vietato",
+          "banned": "Bannato",
           "pending": "In attesa",
           "locked": "Bloccato",
           "inactive": "Inattivo",
@@ -509,11 +521,11 @@
           "target": "Utente"
         },
         "action": {
-          "reason": "Modello"
+          "reason": "Motivo"
         },
         "undo": {
-          "button": "Cancellare",
-          "processing": "Cancellazione...",
+          "button": "Annulla",
+          "processing": "Annullamento...",
           "title": "Annulla questa azione"
         },
         "results": {
@@ -521,7 +533,7 @@
           "empty": "Nessuna azione trovata"
         },
         "errors": {
-          "tokenNotAvailable": "Gettone non disponibile",
+          "tokenNotAvailable": "Token non disponibile",
           "apiError": "Errore API:",
           "loadFailed": "Impossibile caricare la cronologia delle azioni",
           "retry": "Riprova"
@@ -530,14 +542,14 @@
     }
   },
   "common": {
-    "yes": "SÌ",
-    "no": "NO",
+    "yes": "Sì",
+    "no": "No",
     "save": "Salva",
-    "cancel": "Cancellare",
-    "delete": "ELIMINARE",
-    "edit": "Per modificare",
-    "close": "Vicino",
-    "confirm": "Confermare",
+    "cancel": "Annulla",
+    "delete": "Elimina",
+    "edit": "Modifica",
+    "close": "Chiudi",
+    "confirm": "Conferma",
     "back": "Indietro"
   },
   "Terms": {
@@ -548,261 +560,261 @@
     "downloadPDF": "Scarica PDF",
     "navigation": "Navigazione",
     "needHelp": "Hai bisogno di aiuto?",
-    "helpText": "Se hai domande riguardanti i nostri Termini e Condizioni, il nostro team è a tua disposizione.",
+    "helpText": "Se hai domande riguardo ai nostri Termini di Utilizzo, il nostro team è a tua disposizione.",
     "contactUs": "Contattaci",
-    "or": "O",
-    "privacyPolicy": "politica sulla riservatezza",
+    "or": "o",
+    "privacyPolicy": "Politica sulla Privacy",
     "introduction": {
       "title": "Introduzione e accettazione",
-      "p1": "Lo scopo delle presenti Condizioni Generali d’Uso (di seguito “CGU”) è quello di definire i termini e le condizioni alle quali la piattaforma NESTHUB mette a disposizione dei propri utenti i servizi di connessione immobiliare in Tunisia.",
-      "p2": "Accedendo o utilizzando il sito web NESTHUB, riconosci di aver letto, compreso e accettato di essere vincolato da questi termini. Se non accetti questi termini, non devi utilizzare i nostri servizi.",
-      "warning": "Questi T&C si applicano a tutti gli utenti della piattaforma: inquilini, proprietari e visitatori non connessi."
+      "p1": "Le presenti Condizioni Generali d'Uso (di seguito 'Termini') hanno lo scopo di definire le modalità e le condizioni in cui la piattaforma NESTHUB mette a disposizione dei propri utenti i servizi di intermediazione immobiliare in Tunisia.",
+      "p2": "Accedendo o utilizzando il sito web NESTHUB, dichiari di aver letto, compreso e accettato di essere vincolato da questi termini. Se non accetti queste condizioni, non devi utilizzare i nostri servizi.",
+      "warning": "Questi Termini si applicano a tutti gli utenti della piattaforma: inquilini, proprietari e visitatori non registrati."
     },
     "services": {
       "title": "Descrizione dei servizi",
-      "description": "NESTHUB è una piattaforma tecnologica tunisina che facilita l'affitto di immobili tra privati. I nostri servizi includono, ma non sono limitati a:",
-      "item1": "La pubblicazione di annunci di affitto con foto, video e descrizioni dettagliate.",
-      "item2": "Un sistema di messaggistica sicuro con rilevamento anti-fuga di dati personali.",
-      "item3": "Uno strumento digitale per la gestione dei file di prenotazione e noleggio.",
-      "item4": "Soluzioni di pagamento sicure tramite Konnect, con gestione dei depositi in garanzia.",
-      "item5": "Un sistema di verifica dell'identità tramite OCR (CIN/Passaporto).",
-      "item6": "Un punteggio di affidabilità e badge di fiducia per gli utenti verificati.",
-      "item7": "Strumenti di intelligenza artificiale per il rilevamento e la raccomandazione delle frodi."
+      "description": "NESTHUB è una piattaforma tecnologica tunisina che facilita l'affitto di beni immobiliari tra privati. I nostri servizi includono, a titolo esemplificativo e non esaustivo:",
+      "item1": "Pubblicazione di annunci di affitto con foto, video e descrizioni dettagliate.",
+      "item2": "Sistema di messaggistica sicura con rilevamento anti-fuga di dati personali.",
+      "item3": "Strumento di gestione delle prenotazioni e delle pratiche di affitto digitali.",
+      "item4": "Soluzioni di pagamento sicuro tramite Konnect, con gestione della cauzione in sequestro.",
+      "item5": "Sistema di verifica dell'identità tramite OCR (CIN / Passaporto).",
+      "item6": "Punteggio di affidabilità e badge di fiducia per gli utenti verificati.",
+      "item7": "Strumenti di intelligenza artificiale per il rilevamento delle frodi e la raccomandazione."
     },
     "obligations": {
       "title": "Obblighi dell'utente",
       "owners": {
         "title": "Proprietari",
-        "item1": "Fornire informazioni accurate e veritiere sulla proprietà.",
-        "item2": "Possiede legalmente i diritti di noleggio sulla proprietà pubblicata.",
-        "item3": "Rispettare gli standard di decenza e la legislazione tunisina.",
-        "item4": "Non pubblicare annunci pubblicitari fittizi o fuorvianti.",
-        "item5": "Rispondere alle richieste di prenotazione entro un tempo ragionevole."
+        "item1": "Fornire informazioni accurate e veritiere sul bene.",
+        "item2": "Detenere legalmente i diritti di locazione sul bene pubblicato.",
+        "item3": "Rispettare le norme di decenza e la legislazione tunisina.",
+        "item4": "Non pubblicare annunci fittizi o fuorvianti.",
+        "item5": "Rispondere alle richieste di prenotazione entro un termine ragionevole."
       },
       "tenants": {
         "title": "Inquilini",
-        "item1": "Fornire documenti di identità autentici.",
-        "item2": "Utilizza la piattaforma in modo equo e onesto.",
-        "item3": "Effettua tutti i pagamenti esclusivamente tramite NESTHUB.",
-        "item4": "Rispettare il regolamento interno dell'immobile locato.",
-        "item5": "Segnala eventuali problemi attraverso i canali ufficiali."
+        "item1": "Fornire documenti d'identità autentici.",
+        "item2": "Utilizzare la piattaforma in modo leale e onesto.",
+        "item3": "Effettuare tutti i pagamenti esclusivamente tramite NESTHUB.",
+        "item4": "Rispettare il regolamento interno del bene locato.",
+        "item5": "Segnalare qualsiasi problema tramite i canali ufficiali."
       },
       "prohibited": {
         "title": "Comportamenti vietati",
-        "text": "È severamente vietato condividere dati personali di contatto (numeri, email, IBAN) nella messaggistica, aggirare il sistema di pagamento, pubblicare annunci falsi o molestare altri utenti. Qualsiasi violazione può comportare la sospensione o il ban permanente dell'account."
+        "text": "È severamente vietato condividere dati personali (numeri di telefono, email, IBAN) nella messaggistica, eludere il sistema di pagamento, pubblicare falsi annunci o molestare altri utenti. Qualsiasi violazione può comportare la sospensione o il bando definitivo dell'account."
       }
     },
     "paiements": {
-      "title": "Condizioni finanziarie",
-      "quote": "La sicurezza delle tue transazioni è la nostra priorità. Tutti i pagamenti effettuati su NESTHUB vengono elaborati da Konnect, un fornitore di pagamenti approvato in Tunisia.",
+      "title": "Condizioni Finanziarie",
+      "quote": "La sicurezza delle tue transazioni è la nostra priorità. Tutti i pagamenti effettuati su NESTHUB sono gestiti da Konnect, fornitore di pagamento autorizzato in Tunisia.",
       "commission": {
         "title": "Commissioni di servizio",
-        "text": "NESTHUB addebita una commissione del 20% su ogni transazione. Viene automaticamente detratto dall'importo pagato al proprietario e chiaramente visualizzato prima di ogni conferma."
+        "text": "NESTHUB applica una commissione del 20% su ogni transazione. Viene detratta automaticamente dall'importo versato al proprietario e chiaramente visualizzata prima di ogni conferma."
       },
       "deposit": {
-        "title": "Cauzione (ricevente)",
-        "text": "Il deposito viene riscosso al momento del pagamento e posto in garanzia. Viene restituito automaticamente alla fine del soggiorno senza contestazione o arbitrato da NESTHUB in caso di conflitto con i documenti giustificativi fotografici."
+        "title": "Cauzione (Sequestro)",
+        "text": "La cauzione viene raccolta al momento del pagamento e messa in sequestro. Viene restituita automaticamente alla fine del soggiorno senza controversie, o arbitrata da NESTHUB in caso di conflitto con prove fotografiche."
       },
       "payout": {
-        "title": "Pagamenti ai proprietari",
-        "text": "I pagamenti vengono effettuati dopo la conferma del check-in, con una soglia minima di 50 DT. Una dichiarazione dettagliata è disponibile nella dashboard del proprietario."
+        "title": "Bonifici ai proprietari",
+        "text": "I bonifici vengono effettuati dopo la conferma del check-in, con un importo minimo di 50 DT. Un estratto conto dettagliato è disponibile nella dashboard del proprietario."
       },
       "refund": {
         "title": "Rimborsi",
-        "text": "I rimborsi vengono calcolati in base alla politica di cancellazione del proprietario. I tempi di consegna vanno dai 3 ai 5 giorni lavorativi. NESTHUB può imporre un rimborso in caso di controversia comprovata."
+        "text": "I rimborsi sono calcolati secondo la politica di cancellazione del proprietario. Il termine è di 3-5 giorni lavorativi. NESTHUB può forzare un rimborso in caso di controversia accertata."
       }
     },
     "responsabilite": {
-      "title": "Limitazione di responsabilità",
-      "description": "NESTHUB funge da host di contenuti e intermediario tecnico. La piattaforma non può essere ritenuta responsabile per:",
-      "item1": "Dal contenuto degli annunci pubblicitari pubblicati dagli utenti.",
-      "item2": "Mancata o cattiva esecuzione del contratto di locazione concluso tra le parti.",
-      "item3": "Danni indiretti derivanti dall'utilizzo del servizio.",
-      "item4": "Interruzioni temporanee del servizio per manutenzione o cause di forza maggiore.",
-      "item5": "La qualità, la conformità o lo stato effettivo dei beni noleggiati."
+      "title": "Limitazione di Responsabilità",
+      "description": "NESTHUB agisce come host di contenuti e intermediario tecnico. La piattaforma non può essere ritenuta responsabile:",
+      "item1": "Del contenuto degli annunci pubblicati dagli utenti.",
+      "item2": "Dell'inesecuzione o della cattiva esecuzione del contratto di locazione stipulato tra le parti.",
+      "item3": "Dei danni indiretti derivanti dall'uso del servizio.",
+      "item4": "Delle interruzioni temporanee del servizio per manutenzione o forza maggiore.",
+      "item5": "Della qualità, conformità o stato reale dei beni messi in locazione."
     },
     "resiliation": {
-      "title": "Terminazione",
-      "description": "L'utente può eliminare il proprio account in qualsiasi momento dalle proprie impostazioni. NESTHUB si riserva il diritto di sospendere o chiudere qualsiasi account in caso di:",
+      "title": "Risoluzione",
+      "description": "L'utente può eliminare il suo account in qualsiasi momento dalle sue impostazioni. NESTHUB si riserva il diritto di sospendere o risolvere qualsiasi account in caso di:",
       "reason1": {
-        "title": "Inosservanza dei Termini e Condizioni",
-        "desc": "Violazione delle regole d'uso."
+        "title": "Mancato rispetto dei Termini",
+        "desc": "Violazione delle regole di utilizzo."
       },
       "reason2": {
         "title": "Attività fraudolente",
-        "desc": "Identità false, truffe, recensioni false."
+        "desc": "False identità, truffe, false recensioni."
       },
       "reason3": {
-        "title": "Bypass del sistema",
-        "desc": "Pagamenti o condivisione di contatti al di fuori di NH."
+        "title": "Elusione del sistema",
+        "desc": "Pagamenti o condivisione di contatti fuori da NH."
       },
-      "process": "La risoluzione segue il processo di progressiva escalation: avvertimento → sospensione temporanea → ban permanente, salvo frode grave che giustifichi un'azione immediata."
+      "process": "La risoluzione segue il processo di escalation progressiva: avvertimento → sospensione temporanea → bando definitivo, salvo frode grave che giustifichi un'azione immediata."
     },
     "donnees": {
       "title": "Dati personali",
       "description": "NESTHUB si impegna a proteggere i tuoi dati personali. I tuoi diritti includono:",
       "right1": {
         "title": "Accesso",
-        "desc": "Visualizza i tuoi dati"
+        "desc": "Consultare i tuoi dati"
       },
       "right2": {
-        "title": "Correzione",
-        "desc": "Correggi i tuoi dati"
+        "title": "Rettifica",
+        "desc": "Correggere i tuoi dati"
       },
       "right3": {
         "title": "Cancellazione",
-        "desc": "Elimina il tuo account"
+        "desc": "Eliminare il tuo account"
       },
       "right4": {
         "title": "Portabilità",
-        "desc": "Esporta i tuoi dati"
+        "desc": "Esportare i tuoi dati"
       },
-      "footer": "Per esercitare i tuoi diritti consulta la ns"
+      "footer": "Per esercitare i tuoi diritti, consulta la nostra"
     }
   },
   "Privacy": {
-    "title": "politica sulla riservatezza",
+    "title": "Politica sulla Privacy",
     "lastUpdate": "Ultimo aggiornamento:",
-    "description": "In NestHub, la protezione dei tuoi dati personali è una priorità assoluta. Questa politica descrive in dettaglio come raccogliamo, utilizziamo e proteggiamo le tue informazioni, in conformità con le normative applicabili.",
+    "description": "Da NestHub, la protezione dei tuoi dati personali è una priorità assoluta. Questa politica descrive in dettaglio come raccogliamo, utilizziamo e proteggiamo le tue informazioni, in conformità con le normative vigenti.",
     "print": "Stampa",
     "downloadPDF": "Scarica PDF",
-    "summary": "Riepilogo",
+    "summary": "Sommario",
     "needHelp": "Hai bisogno di aiuto?",
     "helpText": "Domande sui tuoi dati? Il nostro DPO è a tua disposizione.",
     "contactDPO": "Contatta il DPO",
     "sections": {
-      "collecte": "Raccolta dati",
+      "collecte": "Raccolta dei dati",
       "utilisation": "Utilizzo",
-      "cookies": "Biscotti",
+      "cookies": "Cookie",
       "droits": "I tuoi diritti (GDPR)",
       "securite": "Sicurezza",
-      "ia": "IA e automazione",
-      "contact": "Contatta il responsabile della protezione dei dati"
+      "ia": "IA & Automazione",
+      "contact": "Contatta DPO"
     },
     "collecte": {
       "title": "Raccolta dei dati personali",
-      "description": "Raccogliamo le informazioni che ci fornisci direttamente quando crei il tuo account, pubblichi un annuncio o richiedi un noleggio:",
+      "description": "Raccogliamo le informazioni che ci fornisci direttamente durante la creazione del tuo account, la pubblicazione di un annuncio o una richiesta di affitto:",
       "items": {
         "identite": {
-          "label": "Identificare",
-          "desc": "Cognome, nome, data di nascita."
+          "label": "Identità",
+          "desc": "Nome, cognome, data di nascita."
         },
         "coordonnees": {
-          "label": "Dettagli di contatto",
-          "desc": "Indirizzo e-mail, numero di telefono, indirizzo postale."
+          "label": "Coordinate",
+          "desc": "Indirizzo email, numero di telefono, indirizzo postale."
         },
         "profil": {
           "label": "Profilo",
-          "desc": "Fotografia, biografia, tipo di inquilino, preferenze di ricerca, cronologia degli affitti."
+          "desc": "Foto, biografia, tipo di inquilino, preferenze di ricerca, cronologia delle locazioni."
         },
         "documents": {
           "label": "Documenti d'identità",
-          "desc": "CIN o Passaporto caricato per la verifica OCR. Archiviazione crittografata."
+          "desc": "CIN o Passaporto caricati per la verifica OCR. Archiviazione crittografata."
         },
         "financieres": {
           "label": "Dati finanziari",
-          "desc": "Cronologia dei pagamenti tramite Konnect (nessun dato bancario memorizzato)."
+          "desc": "Cronologia dei pagamenti tramite Konnect (nessun dato bancario archiviato)."
         },
         "comportementales": {
           "label": "Dati comportamentali",
           "desc": "Cronologia delle ricerche, annunci visualizzati, prenotazioni effettuate, recensioni."
         },
         "messagerie": {
-          "label": "Dati e-mail",
-          "desc": "Scambi analizzati dall'intelligenza artificiale anti-leak per bloccare la condivisione dei dati."
+          "label": "Dati di messaggistica",
+          "desc": "Scambi analizzati da IA anti-fuga per bloccare la condivisione di dati."
         }
       }
     },
     "utilisation": {
       "title": "Perché utilizziamo i tuoi dati?",
-      "description": "I tuoi dati sono soggetti a trattamento automatizzato per le seguenti finalità:",
+      "description": "I tuoi dati vengono sottoposti a trattamento automatizzato per le seguenti finalità:",
       "items": {
         "1": {
-          "title": "Connessione",
+          "title": "Intermediazione",
           "desc": "Facilitare la connessione tra proprietari e inquilini, gestire le richieste."
         },
         "2": {
-          "title": "Verifica dell'identità",
-          "desc": "Analizza i tuoi documenti tramite OCR per assegnare il badge “Verificato”."
+          "title": "Verifica d'identità",
+          "desc": "Analizzare i tuoi documenti tramite OCR per assegnare il badge 'Verificato'."
         },
         "3": {
           "title": "Punteggio di affidabilità",
-          "desc": "Calcola il tuo punteggio di affidabilità (0-100) per un sistema affidabile."
+          "desc": "Calcolare il tuo punteggio di affidabilità (0-100) per un sistema di fiducia."
         },
         "4": {
-          "title": "Sicurezza e antifrode",
-          "desc": "Rileva comportamenti fraudolenti e proteggiti dalle truffe."
+          "title": "Sicurezza & Antifrode",
+          "desc": "Rilevare comportamenti fraudolenti e proteggere dalle truffe."
         },
         "5": {
           "title": "Personalizzazione",
-          "desc": "Consiglia annunci personalizzati in base alle tue preferenze."
+          "desc": "Raccomandare annunci adatti alle tue preferenze."
         },
         "6": {
-          "title": "Pagamenti e depositi",
-          "desc": "Elabora i pagamenti tramite Konnect, gestisci l'impegno."
+          "title": "Pagamenti & Cauzione",
+          "desc": "Gestire i pagamenti tramite Konnect, gestire il sequestro."
         },
         "7": {
           "title": "Notifiche",
           "desc": "Informarti sugli eventi legati alle tue prenotazioni."
         },
         "8": {
-          "title": "Supporto e controversie",
-          "desc": "Elabora i tuoi ticket e arbitra le controversie."
+          "title": "Supporto & Controversie",
+          "desc": "Gestire i tuoi ticket e arbitrare le controversie."
         }
       }
     },
     "cookies": {
-      "title": "Politica sui cookie",
-      "description": "NestHub utilizza i cookie per garantire il corretto funzionamento del sito, misurare il pubblico e offrirti contenuti adatti alle tue ricerche immobiliari.",
+      "title": "Politica relativa ai cookie",
+      "description": "NestHub utilizza i cookie per garantire il corretto funzionamento del sito, misurare l'audience e proporti contenuti adatti alle tue ricerche immobiliari.",
       "essentiels": {
-        "name": "Cookie essenziali",
-        "desc": "Necessario per la navigazione, l'autenticazione (Clerk) e la sicurezza della sessione.",
+        "name": "Cookie Essenziali",
+        "desc": "Necessari per la navigazione, autenticazione (Clerk) e sicurezza della sessione.",
         "badge": "OBBLIGATORIO"
       },
       "analytiques": {
-        "name": "Cookie analitici",
+        "name": "Cookie Analitici",
         "desc": "Per capire come utilizzi il nostro sito e migliorare i nostri servizi.",
         "badge": "OPZIONALE"
       },
       "personnalisation": {
-        "name": "Cookie di personalizzazione",
-        "desc": "Per ricordare le tue preferenze e personalizzare i consigli.",
+        "name": "Cookie di Personalizzazione",
+        "desc": "Per memorizzare le tue preferenze e personalizzare i consigli.",
         "badge": "OPZIONALE"
       }
     },
     "droits": {
       "title": "I tuoi diritti (GDPR)",
-      "description": "In conformità con le normative sulla protezione dei dati, hai i seguenti diritti, tutti accessibili dal tuo spazio NestHub personale:",
+      "description": "In conformità con le normative sulla protezione dei dati, hai i seguenti diritti, tutti accessibili dal tuo spazio personale NestHub:",
       "items": {
         "acces": {
           "title": "Accesso",
-          "desc": "Visualizza tutti i tuoi dati personali dal tuo profilo."
+          "desc": "Consultare tutti i tuoi dati personali dal tuo profilo."
         },
         "rectification": {
-          "title": "Correzione",
-          "desc": "Modifica le informazioni errate nelle impostazioni."
+          "title": "Rettifica",
+          "desc": "Modificare le tue informazioni errate nelle tue impostazioni."
         },
         "suppression": {
           "title": "Cancellazione",
-          "desc": "Richiedi la cancellazione del tuo account e dei tuoi dati."
+          "desc": "Richiedere la cancellazione del tuo account e dei tuoi dati."
         },
         "portabilite": {
           "title": "Portabilità",
-          "desc": "Esporta tutti i tuoi dati in formato JSON/CSV."
+          "desc": "Esportare tutti i tuoi dati in formato JSON/CSV."
         },
         "opposition": {
           "title": "Opposizione",
-          "desc": "Opporsi al trattamento per la personalizzazione."
+          "desc": "Opporti al trattamento per la personalizzazione."
         },
         "limitation": {
           "title": "Limitazione",
-          "desc": "Richiedere la limitazione del trattamento in determinati casi."
+          "desc": "Richiedere la limitazione del trattamento in alcuni casi."
         }
       }
     },
     "securite": {
       "title": "Sicurezza dei tuoi dati",
-      "description": "NestHub implementa rigorose misure tecniche e organizzative per garantire la sicurezza dei tuoi dati:",
+      "description": "NestHub implementa misure tecniche e organizzative rigorose per garantire la sicurezza dei tuoi dati:",
       "items": {
         "chiffrement": {
           "title": "Crittografia SSL/TLS",
@@ -810,33 +822,33 @@
         },
         "auth": {
           "title": "Autenticazione sicura",
-          "desc": "Gestione della sessione tramite Clerk con supporto 2FA."
+          "desc": "Gestione delle sessioni tramite Clerk con supporto 2FA."
         },
         "documents": {
           "title": "Documenti sicuri",
-          "desc": "Documenti di identità archiviati crittografati."
+          "desc": "Documenti d'identità archiviati crittografati."
         },
         "audits": {
           "title": "Audit regolari",
-          "desc": "Mantenuti controlli di sicurezza e registri di accesso amministrativo."
+          "desc": "Audit di sicurezza e log di accesso admin mantenuti."
         },
         "messagerie": {
           "title": "Messaggistica protetta",
-          "desc": "L'intelligenza artificiale rileva e nasconde i dati sensibili nella chat."
+          "desc": "IA rileva e maschera i dati sensibili nella chat."
         },
         "paiements": {
           "title": "Pagamenti sicuri",
-          "desc": "Nessun dato bancario memorizzato, tutto è gestito da Konnect."
+          "desc": "Nessun dato bancario archiviato, tutto è gestito da Konnect."
         }
       }
     },
     "ia": {
-      "title": "IA e automazione",
-      "warning": "NestHub utilizza sistemi di intelligenza artificiale che elaborano alcuni dei tuoi dati in maniera automatizzata.",
+      "title": "IA & Automazione",
+      "warning": "NestHub utilizza sistemi di intelligenza artificiale che elaborano alcuni dei tuoi dati in modo automatizzato.",
       "items": {
         "detection": {
-          "title": "Rilevamento della perdita di dati",
-          "desc": "Analisi in tempo reale dei messaggi per rilevare e nascondere dati sensibili.",
+          "title": "Rilevamento della fuga di dati",
+          "desc": "Analisi in tempo reale dei messaggi per rilevare e mascherare i dati sensibili.",
           "badge": "Obbligatorio"
         },
         "score": {
@@ -846,324 +858,332 @@
         },
         "fraude": {
           "title": "Rilevamento delle frodi",
-          "desc": "Scansione degli annunci per rilevare comportamenti sospetti.",
+          "desc": "Analisi degli annunci per rilevare comportamenti sospetti.",
           "badge": "Automatizzato"
         },
         "recommandations": {
           "title": "Raccomandazioni personalizzate",
-          "desc": "Utilizzo dei dati di navigazione per consigliare annunci.",
+          "desc": "Utilizzo dei dati di navigazione per raccomandare annunci.",
           "badge": "Opzionale"
         }
       }
     },
     "contact": {
-      "title": "Hai bisogno di aiuto con i tuoi dati?",
-      "description": "Il nostro responsabile della protezione dei dati (DPO) è disponibile per rispondere a tutte le tue domande sulla raccolta, l'utilizzo o la cancellazione dei tuoi dati personali.",
+      "title": "Hai bisogno di aiuto riguardo ai tuoi dati?",
+      "description": "Il nostro Responsabile della Protezione dei Dati (DPO) è a tua disposizione per rispondere a tutte le tue domande sulla raccolta, l'uso o la cancellazione dei tuoi dati personali.",
       "button": "Contatta il DPO",
       "helpCenter": "Centro assistenza"
     }
   },
   "Inscription": {
     "title": "Registrazione",
-    "step": "Passaggio {passaggio} di 4",
-    "Compte": "1.Conto",
+    "step": "Passo {step} di 4",
+    "Compte": "1.Account",
     "Documents": "2.Documenti",
     "verificationEmail": "Verifica",
-    "validation": "3.Convalida",
+    "validation": "3.Validazione",
     "chooseRole": "Scegli un ruolo",
     "roleLandlord": "Proprietario",
     "roleTenant": "Inquilino",
     "username": "Nome utente",
-    "email": "Indirizzo e-mail",
+    "email": "Indirizzo email",
     "password": "Password",
-    "confirmPassword": "Conferma password",
-    "continue": "prossimo passo",
+    "confirmPassword": "Conferma la password",
+    "continue": "Passo successivo",
     "weak": "Debole",
-    "medium": "MEDIA",
-    "good": "Bene",
+    "medium": "Medio",
+    "good": "Buono",
     "strong": "Forte",
     "strength": "Forza della password",
     "required": "Tutti i campi sono obbligatori",
-    "invalidEmail": "Indirizzo e-mail non valido",
+    "invalidEmail": "Indirizzo email non valido",
     "passwordMismatch": "Le password non corrispondono",
-    "usernameLength": "Il nome utente deve contenere da 3 a 20 caratteri",
+    "usernameLength": "Il nome utente deve contenere tra 3 e 20 caratteri",
     "passwordLength": "La password deve contenere almeno 8 caratteri",
-    "passwordStrength": "La password è troppo debole. Utilizza lettere maiuscole, numeri e caratteri speciali",
+    "passwordStrength": "La password è troppo debole. Usa maiuscole, numeri e caratteri speciali",
     "accountCreated": "Account creato con successo! Un codice di verifica è stato inviato alla tua email.",
     "verificationCodeSent": "Abbiamo inviato un codice di verifica a {email}",
     "verificationCode": "Codice di verifica",
-    "verify": "Controllo",
-    "back": "passaggio precedente",
+    "verify": "Verifica",
+    "back": "Passo precedente",
     "resendCode": "Invia nuovamente il codice",
-    "codeResent": "Ti è stato inviato un nuovo codice!",
+    "codeResent": "Un nuovo codice ti è stato inviato!",
     "invalidCode": "Codice non valido",
-    "verificationFailed": "Verifica non riuscita",
+    "verificationFailed": "Verifica fallita",
     "verificationSuccess": "Congratulazioni! Il tuo account è stato verificato con successo.",
     "alreadyHaveAccount": "Hai già un account?",
-    "login": "Login",
+    "login": "Accedi",
     "termsOfUse": "Termini di utilizzo",
-    "privacyPolicy": "politica sulla riservatezza",
+    "privacyPolicy": "Politica sulla privacy",
     "help": "Hai bisogno di aiuto?",
     "security": "Sicurezza",
-    "securityMessage": "Questa piattaforma utilizza la crittografia AES-256 end-to-end per garantire la sicurezza dei tuoi dati immobiliari.",
-    "usernameReserved": "Il tuo nome utente @{username} è riservato per i prossimi 30 minuti.",
-    "stepValidated": "Passaggio 1/4 convalidato!",
+    "securityMessage": "Questa piattaforma utilizza una crittografia end-to-end AES-256 per garantire la sicurezza dei tuoi dati immobiliari.",
+    "usernameReserved": "Il tuo username @{username} è riservato per i prossimi 30 minuti.",
+    "stepValidated": "Passo 1/4 validato!",
     "usernameInfo": "3-20 caratteri, solo lettere e numeri. Questo nome sarà visibile sulla piattaforma.",
-    "passwordInfo": "Utilizza caratteri speciali",
-    "professionalEmail": "Indirizzo e-mail professionale",
-    "publicIdentity": "Identità pubblica",
-    "step1Description": "Passaggio 1 di 4: configura il tuo accesso sicuro.",
-    "emailSent": "Abbiamo inviato un codice di 6 cifre a",
-    "enterCode": "Inserisci il codice di 6 cifre",
+    "passwordInfo": "Usa caratteri speciali",
+    "professionalEmail": "Indirizzo email professionale",
+    "publicIdentity": "Identità Pubblica",
+    "step1Description": "Passo 1 di 4: Configura i tuoi accessi sicuri.",
+    "emailSent": "Abbiamo inviato un codice a 6 cifre a",
+    "enterCode": "Inserisci il codice a 6 cifre",
     "didNotReceiveCode": "Non hai ricevuto il codice?",
-    "step1Title": "Informazioni di accesso",
+    "step1Title": "Informazioni di connessione",
     "step2Title": "Identità reale",
-    "step3Title": "Verifica telefonica",
+    "step3Title": "Verifica Telefono",
     "step4Title": "Documenti d'identità",
     "identityTitle": "Verifica dell'identità",
-    "identitySubtitle": "Passaggio 2 di 4: Identità reale (privata)",
+    "identitySubtitle": "Passo 2 di 4: Identità reale (Privata)",
     "privacyTitle": "Riservatezza garantita",
-    "privacyDescription": "La tua vera identità è riservata e non sarà condivisa pubblicamente.",
-    "personalInfoTitle": "Informazioni personali",
-    "firstName": "Vero nome",
-    "firstNamePlaceholder": "es: Mohamed",
-    "lastName": "Vero nome",
-    "lastNamePlaceholder": "es: Ben Hssin",
+    "privacyDescription": "La tua identità reale è riservata e non sarà condivisa pubblicamente.",
+    "personalInfoTitle": "Informazioni Personali",
+    "firstName": "Nome reale",
+    "firstNamePlaceholder": "es: Marco",
+    "lastName": "Cognome reale",
+    "lastNamePlaceholder": "es: Rossi",
     "phoneNumber": "Numero di telefono",
-    "phonePlaceholder": "27.929.630",
+    "phonePlaceholder": "12 345 6789",
     "whatsappWarning": "Prima di continuare, attiva WhatsApp:",
-    "activateWhatsapp": "Attiva WhatsApp in 1 clic",
-    "whatsappInstruction": "Fai clic su → Si apre WhatsApp → fai clic su Invia → torna qui",
+    "activateWhatsapp": "Attiva WhatsApp in 1 click",
+    "whatsappInstruction": "Clicca → WhatsApp si apre → clicca Invia → torna qui",
     "address": "Indirizzo di residenza",
     "optional": "Opzionale",
     "addressPlaceholder": "Inserisci il tuo indirizzo completo",
-    "publicProfileTitle": "Profilo pubblico",
-    "bio": "Biografia pubblica",
+    "publicProfileTitle": "Profilo Pubblico",
+    "bio": "Bio pubblica",
     "bioPlaceholder": "Descrivi la tua esperienza immobiliare o cosa stai cercando...",
     "sending": "Invio",
-    "requiredFieldsError": "Si prega di completare tutti i campi obbligatori",
+    "requiredFieldsError": "Compila tutti i campi obbligatori",
     "errors": {
-      "chooseRole": "Scegli un ruolo (proprietario o inquilino)",
+      "chooseRole": "Scegli un ruolo (Proprietario o Inquilino)",
       "usernameRequired": "Inserisci un nome utente",
-      "usernameInvalid": "Il nome utente deve contenere da 3 a 20 caratteri (solo lettere e numeri)",
+      "usernameInvalid": "Il nome utente deve contenere tra 3 e 20 caratteri (solo lettere e numeri)",
       "emailRequired": "Inserisci un indirizzo email",
-      "emailInvalid": "Si prega di inserire un indirizzo email valido",
+      "emailInvalid": "Inserisci un indirizzo email valido",
       "passwordRequired": "Inserisci una password",
       "passwordTooShort": "La password deve contenere almeno 8 caratteri",
-      "passwordWeak": "La password è troppo debole. Utilizza lettere maiuscole, numeri e caratteri speciali",
-      "confirmPasswordRequired": "Per favore conferma la tua password",
+      "passwordWeak": "La password è troppo debole. Usa maiuscole, numeri e caratteri speciali",
+      "confirmPasswordRequired": "Conferma la tua password",
       "passwordsDoNotMatch": "Le password non corrispondono",
       "codeRequired": "Inserisci il codice a 6 cifre",
       "codeInvalid": "Codice non valido",
-      "emailAlreadyExists": "Questa email è già in uso",
-      "usernameAlreadyExists": "Questo nome utente è già utilizzato",
-      "phoneAlreadyExists": "Questo numero di telefono è già in uso",
+      "emailAlreadyExists": "Questa email è già utilizzata",
+      "usernameAlreadyExists": "Questo nome utente è già preso",
+      "phoneAlreadyExists": "Questo numero di telefono è già utilizzato",
       "phoneTooShort": "Il numero deve contenere almeno 8 cifre",
       "phoneRequired": "Inserisci il tuo numero di telefono",
       "userIdNotFound": "ID utente non trovato",
-      "whatsappSendFailed": "Impossibile inviare il codice WhatsApp",
-      "invalidCodeLength": "È richiesto un codice di 6 cifre",
+      "whatsappSendFailed": "Invio del codice WhatsApp fallito",
+      "invalidCodeLength": "Codice a 6 cifre richiesto",
       "missingInfo": "Informazioni mancanti",
-      "clerkNotInitialized": "Impiegato non inizializzato",
+      "clerkNotInitialized": "Clerk non inizializzato",
       "signupIdMissing": "Impossibile recuperare l'ID di registrazione",
       "userCreationFailed": "Errore durante la creazione dell'account",
       "firstNameRequired": "Il nome è obbligatorio",
-      "lastNameRequired": "Il nome è obbligatorio"
+      "lastNameRequired": "Il cognome è obbligatorio"
     },
     "documentsStep": {
-      "title": "Verifica dell'identità",
-      "subtitle": "Passaggio 4 di 4: carica i tuoi documenti ufficiali (OCR automatico)",
+      "title": "Verifica d'identità",
+      "subtitle": "Passo 4 di 4: Carica i tuoi documenti ufficiali (OCR automatico)",
       "identityDocument": "Documento d'identità",
-      "cinFront": "Fronte CIN",
-      "cinBack": "CIN Verso",
+      "cinFront": "CIN Fronte",
+      "cinBack": "CIN Retro",
       "frontSide": "Lato anteriore",
       "backSide": "Lato posteriore",
-      "maxSize": "Massimo 5 MB",
+      "maxSize": "Max 5MB",
       "formats": "JPG, PNG, PDF",
       "photoAdded": "Foto aggiunta",
       "chooseFile": "Scegli un file",
-      "iaOcr": "IA e OCR",
-      "ocrDescription": "Il nostro sistema analizzerà immediatamente il tuo documento per verificare la tua identità.",
-      "profilePhoto": "Immagine del profilo",
-      "faceVisible": "Volto chiaramente visibile",
+      "iaOcr": "IA & OCR",
+      "ocrDescription": "Il nostro sistema analizzerà istantaneamente il tuo documento per verificare la tua identità.",
+      "profilePhoto": "Foto del profilo",
+      "faceVisible": "Viso chiaramente visibile",
       "security": "Sicurezza",
       "banking": "Bancario",
-      "compliant": "Compiacente",
-      "cloud": "Nuvola",
+      "compliant": "Conforme",
+      "cloud": "Cloud",
       "sovereign": "Sovrano",
-      "previousStep": "Passaggio precedente",
-      "finish": "Per finire"
+      "previousStep": "Passo precedente",
+      "finish": "Termina"
     },
     "ocrConfirm": {
       "title": "Verifica dei dati",
-      "description": "Confermare le informazioni estratte dall'OCR",
-      "infoBanner": "I campi evidenziati sono stati estratti automaticamente. Controlla che corrispondano al tuo documento.",
+      "description": "Conferma le informazioni estratte dall'OCR",
+      "infoBanner": "I campi evidenziati sono stati estratti automaticamente. Verifica che corrispondano al tuo documento.",
       "firstName": "Nome",
-      "lastName": "Nome",
+      "lastName": "Cognome",
       "birthDate": "Data di nascita",
-      "cinNumber": "numero CIN",
+      "cinNumber": "Numero CIN",
       "securityBanner": "I tuoi dati sono crittografati e archiviati secondo gli standard GDPR.",
-      "modify": "Per modificare",
+      "modify": "Modifica",
       "confirmIdentity": "Conferma l'identità"
     },
     "welcomeModal": {
-      "title": "Benvenuto in NESTHUB!",
+      "title": "Benvenuto su NESTHUB!",
       "message": "Il tuo account è stato creato con successo.",
       "submessage": "Completa il tuo profilo per aumentare il tuo punteggio di fiducia e accedere a tutte le funzionalità.",
-      "emailVerified": "E-mail verificata",
+      "emailVerified": "Email verificata",
       "whatsappVerified": "WhatsApp verificato",
       "cinPending": "CIN in attesa",
       "completeProfile": "Completa il mio profilo",
       "redirecting": "Reindirizzamento..."
     },
+
     "checking": "Verifica...",
     "whatsappStep": {
-      "title": "Verifica di WhatsApp",
-      "subtitle": "Passaggio 3 di 4: convalida il tuo numero di telefono",
-      "codeSentTitle": "Codice inviato da WhatsApp",
-      "codeSentMessage": "Abbiamo inviato un codice di 6 cifre a",
+      "title": "Verifica WhatsApp",
+      "subtitle": "Passo 3 di 4: Valida il tuo numero di telefono",
+      "codeSentTitle": "Codice inviato tramite WhatsApp",
+      "codeSentMessage": "Abbiamo inviato un codice a 6 cifre al",
       "verificationCode": "Codice di verifica",
       "checking": "Verifica...",
-      "enterCodeInstruction": "Immettere le 6 cifre, quindi premere Invio",
+      "enterCodeInstruction": "Inserisci le 6 cifre e premi Invio",
       "back": "Indietro",
       "sending": "Invio",
       "resendCode": "Invia nuovamente il codice"
     },
+
     "toasts": {
-      "emailVerified": "E-mail verificata!",
+      "emailVerified": "Email verificata!",
       "continueRegistration": "Continua la tua registrazione.",
-      "linkExpired": "Collegamento scaduto",
-      "linkExpiredDescription": "Il collegamento di verifica è scaduto. Per favore, ricomincia da capo.",
-      "versoAdded": "Aggiunto il lato posteriore!",
-      "versoProcessed": "Il lato posteriore è stato trattato.",
-      "ocrSuccess": "OCR terminato!",
+      "linkExpired": "Link scaduto",
+      "linkExpiredDescription": "Il link di verifica è scaduto. Ricomincia da capo.",
+      "versoAdded": "Retro aggiunto!",
+      "versoProcessed": "Il lato posteriore è stato elaborato.",
+      "ocrSuccess": "OCR completato!",
       "ocrSuccessDescription": "Le informazioni sono state estratte con successo.",
-      "ocrError": "Errore dell'OCR",
-      "ocrErrorDescription": "Impossibile estrarre informazioni. Compila manualmente."
+      "ocrError": "Errore OCR",
+      "ocrErrorDescription": "Impossibile estrarre le informazioni. Compila manualmente."
     },
     "whatsapp": {
-      "codeSent": "Un codice di verifica è stato inviato su WhatsApp al numero +216 {phone}"
+      "codeSent": "Un codice di verifica è stato inviato su WhatsApp al +216 {phone}"
     },
+
     "alerts": {
       "verificationEmailSent": "Un link di verifica è stato inviato a {email}",
-      "emailSent": "E-mail inviata!",
+      "emailSent": "Email inviata! ",
       "codeSentTitle": "Codice inviato!",
       "gotCode": "Ho ricevuto il codice"
     },
+
     "acceptTerms": {
-      "prefix": "Continuando accetto l'",
-      "terms": "condizioni d'uso",
-      "and": "e il",
-      "privacy": "politica sulla riservatezza",
-      "suffix": ". Si prega di leggerli attentamente. *"
+      "prefix": "Continuando accetto i",
+      "terms": "termini di utilizzo",
+      "and": "e la",
+      "privacy": "politica sulla privacy",
+      "suffix": ". Ti preghiamo di leggerli attentamente. *"
     }
   },
+
   "VerifyCatch": {
     "title": "Verifica in corso",
     "description": "Ti preghiamo di attendere mentre verifichiamo il tuo account..."
   },
+
   "AdminInvitations": {
     "title": "Gestione degli inviti",
-    "description": "Invita nuovi amministratori: collegamenti sicuri validi per 48 ore",
+    "description": "Invita nuovi amministratori — link sicuri validi 48h",
     "inviteAdmin": "Invita un amministratore",
-    "secureLink": "Collegamento sicuro · scade tra 48 ore",
-    "newAdminEmail": "Nuova email di amministratore",
+    "secureLink": "Link sicuro · scade tra 48h",
+    "newAdminEmail": "Email del nuovo admin",
     "responsibility": "Responsabilità",
-    "infoText": "Un collegamento univoco verrà inviato via e-mail e scadrà entro",
+    "infoText": "Un link unico verrà inviato via email e scadrà tra",
     "sending": "Invio in corso",
     "generateInvitation": "Genera l'invito",
-    "activeLinks": "Collegamenti attivi",
-    "expired": "Scaduto",
-    "revoked": "Revocato",
-    "email": "E-mail",
+    "activeLinks": "Link attivi",
+    "expired": "Scadute",
+    "revoked": "Revocate",
+    "email": "Email",
     "expiresIn": "Scade tra",
     "status": "Stato",
     "actions": "Azioni",
-    "accepted": "Accettato",
-    "active": "Attivo",
-    "copyLink": "Copia collegamento",
+    "accepted": "Accettata",
+    "active": "Attiva",
+    "copyLink": "Copia link",
     "copied": "Copiato!",
-    "revoke": "Revocare",
-    "resend": "Invia nuovamente",
+    "revoke": "Revoca",
+    "resend": "Invia di nuovo",
     "noInvitations": "Nessun invito in corso",
-    "createInvitationHint": "Utilizza il modulo a sinistra per crearne uno",
+    "createInvitationHint": "Usa il modulo a sinistra per crearne uno",
     "unauthorized": "Accesso non autorizzato",
-    "emailRequired": "L'e-mail è obbligatoria",
-    "emailInvalid": "E-mail non valida",
+    "emailRequired": "L'email è obbligatoria",
+    "emailInvalid": "Email non valida",
     "invitationSent": "Invito inviato a {email} ✓",
     "invitationRevoked": "Invito revocato",
     "revokeError": "Errore durante la revoca",
-    "invitationResent": "Invito restituito a {email} ✓",
-    "currentInvitations": "Inviti attuali",
+    "invitationResent": "Invito reinviato a {email} ✓",
+    "currentInvitations": "Inviti in corso",
     "realTimeExpiry": "Monitoraggio della scadenza in tempo reale",
     "expiryApplication": "Applicazione della scadenza 48h",
-    "securityText": "Il sistema di invito zero-trust di NESTHUB genera token di accesso transitori. Se un invitato non completa la registrazione entro la finestra di 48 ore, il token crittografato viene automaticamente eliminato dalla cache del gateway. Ciò impedisce il riutilizzo non autorizzato del collegamento a lungo termine.",
-    "autoPurge": "Spurgo automatico",
+    "securityText": "Il sistema di invito zero-trust di NESTHUB genera token di accesso transitori. Se l'invitato non completa la registrazione entro 48 ore, il token crittografato viene automaticamente rimosso dalla cache del gateway. Ciò impedisce il riutilizzo non autorizzato di link a lungo termine.",
+    "autoPurge": "Pulizia auto",
     "limitedAccess": "Accesso limitato",
     "policy": "Politica"
   },
+
   "AdminContent": {
-    "title": "Gestione dei contenuti statici",
-    "description": "Modifica e gestisci le tue pagine legali e informative.",
+    "title": "Gestione del contenuto statico",
+    "description": "Modificare e gestire le tue pagine legali e informative.",
     "unauthorized": "Accesso non autorizzato",
-    "adminRequired": "Devi essere un amministratore.",
-    "allPages": "Tutto",
-    "published": "Pubblicato",
+    "adminRequired": "Devi essere amministratore.",
+    "allPages": "Tutte",
+    "published": "Pubblicate",
     "drafts": "Bozze",
     "noPagesFound": "Nessuna pagina trovata",
     "pageTitlePlaceholder": "Titolo della pagina…",
-    "editorPlaceholder": "Scrivi il tuo contenuto qui...",
-    "restoring": "Restauro in corso…",
-    "history": "Storico",
+    "editorPlaceholder": "Scrivi il tuo contenuto qui…",
+    "restoring": "Ripristino in corso…",
+    "history": "Cronologia",
     "draft": "Bozza",
-    "publish": "Pubblicare",
-    "cancel": "Cancellare",
+    "publish": "Pubblica",
+    "cancel": "Annulla",
     "selectPage": "Seleziona una pagina",
-    "selectPageHint": "Fare clic su una pagina a sinistra per iniziare la modifica",
+    "selectPageHint": "Clicca su una pagina a sinistra per iniziare la modifica",
     "versionHistory": "Cronologia delle versioni",
-    "versionHistoryDesc": "Visualizza e ripristina le versioni precedenti",
+    "versionHistoryDesc": "Consulta e ripristina le versioni precedenti",
     "currentVersion": "Versione attuale",
-    "versionRestoredBadge": "Versione restaurata",
+    "versionRestoredBadge": "Versione ripristinata",
     "previousVersions": "Versioni precedenti ({count})",
     "noPreviousVersions": "Nessuna versione precedente",
-    "restored": "Restaurato",
+    "restored": "Ripristinata",
     "titleLabel": "Titolo",
     "contentLabel": "Contenuto",
     "contentModified": "modificato",
     "restoreThisVersion": "Ripristina questa versione",
-    "showLess": "Vedi di meno",
-    "showAll": "Vedi tutto ({count} altro)",
-    "deletePage": "Elimina pagina",
+    "showLess": "Vedi meno",
+    "showAll": "Vedi tutto ({count} di più)",
+    "deletePage": "Elimina la pagina",
     "deleteConfirmation": "Questa azione è irreversibile.",
-    "delete": "ELIMINARE",
+    "delete": "Elimina",
     "pagePublished": "Pagina pubblicata con successo ✓",
     "draftSaved": "Bozza salvata ✓",
     "saveError": "Errore durante il salvataggio",
     "pageDeleted": "Pagina eliminata con successo",
     "deleteError": "Errore durante l'eliminazione",
-    "versionRestored": "La versione {versione} è stata ripristinata correttamente ✓",
+    "versionRestored": "Versione {version} ripristinata con successo ✓",
     "restoreError": "Errore durante il ripristino"
   },
+
   "VerificationDetail": {
-    "alreadyValidated": "Questa richiesta è già stata convalidata",
+    "alreadyValidated": "Questa richiesta è già stata validata",
     "alreadyRejected": "Questa richiesta è già stata respinta",
-    "validated": "Convalidato",
-    "rejected": "Respinto",
+    "validated": "Validata",
+    "rejected": "Respinta",
     "backk": "Indietro",
-    "verification": "Richiesta di verifica n.:",
+    "verification": "Richiesta di verifica n° : ",
     "pending": "In attesa",
     "front": "Fronte",
-    "back": "Indietro",
-    "zoomOut": "Rimpicciolisci",
-    "zoomIn": "Zoom",
-    "rotateLeft": "Girare a sinistra",
-    "rotateRight": "Girare a destra",
-    "flip": "Ritorno",
-    "download": "Scaricamento",
-    "fullscreen": "A schermo intero",
+    "back": "Retro",
+    "zoomOut": "Riduci",
+    "zoomIn": "Ingrandisci",
+    "rotateLeft": "Ruota a sinistra",
+    "rotateRight": "Ruota a destra",
+    "flip": "Capovolgi",
+    "download": "Scarica",
+    "fullscreen": "Schermo intero",
     "mirror": "Specchio",
     "clickToExpand": "Clicca per ingrandire",
-    "noImage": "Nessuna foto",
+    "noImage": "Nessuna immagine",
     "notDetected": "Non rilevato",
     "owner": "Proprietario",
     "tenant": "Inquilino",
@@ -1171,54 +1191,54 @@
     "notVerified": "Non verificato",
     "extractedData": "Dati estratti",
     "firstName": "Nome",
-    "lastName": "Nome",
+    "lastName": "Cognome",
     "birthDate": "Data di nascita",
     "gender": "Genere",
-    "cinNumber": "numero CIN",
-    "email": "E-mail",
+    "cinNumber": "Numero CIN",
+    "email": "Email",
     "phone": "Telefono",
     "ocrScore": "Punteggio OCR",
     "internalNote": "Nota interna",
-    "internalNotePlaceholder": "Aggiungi una nota interna (visibile solo agli amministratori)...",
-    "validate": "DA CONVALIDARE",
-    "reject": "CONGEDARE",
+    "internalNotePlaceholder": "Aggiungi una nota interna (visibile solo agli admin)...",
+    "validate": "CONVALIDA",
+    "reject": "RIFIUTA",
     "rejectionReason": "Motivo del rifiuto",
     "required": "Obbligatorio",
-    "rejectionReasonPlaceholder": "Spiegare perché questa richiesta è stata respinta...",
+    "rejectionReasonPlaceholder": "Spiega perché questa richiesta è stata respinta...",
     "confirmRejection": "Conferma il rifiuto",
     "unauthorized": "Accesso non autorizzato",
     "adminRequired": "Questa pagina è riservata agli amministratori.",
     "noData": "Nessun dato trovato",
-    "reload": "Ricaricare",
+    "reload": "Ricarica",
     "fullscreenImage": "Immagine a schermo intero",
     "userDetails": "Dettagli dell'utente",
     "role": "Ruolo",
-    "submittedAt": "Inserito il",
+    "submittedAt": "Inviato il",
     "status": "Stato",
     "action": "Azione",
-    "processRequest": "Trattare",
+    "processRequest": "Elabora",
     "refresh": "Aggiorna",
     "searchPlaceholder": "Cerca un utente...",
-    "justNow": "Proprio adesso",
-    "minutesAgo": "{count} minuti fa",
+    "justNow": "Proprio ora",
+    "minutesAgo": "{count} min fa",
     "oneHourAgo": "1 ora fa",
     "hoursAgo": "{count} ore fa",
     "daysAgo": "{count} giorni fa",
-    "validateId": "CONVALIDA ID",
-    "rejectId": "RIFIUTARE ID",
-    "finalizeVerification": "Finalizzare la verifica",
-    "reviewInstruction": "Controlla attentamente le informazioni di cui sopra prima di prendere una decisione. Le azioni vengono registrate per il controllo.",
-    "identityDetails": "Dettagli di identità",
+    "validateId": "CONVALIDA L'ID",
+    "rejectId": "RIFIUTA L'ID",
+    "finalizeVerification": "Finalizza la verifica",
+    "reviewInstruction": "Verifica attentamente le informazioni sopra prima di prendere una decisione. Le azioni vengono registrate per l'audit.",
+    "identityDetails": "Dettagli identità",
     "skipForNow": "Salta per ora",
-    "cancel": "Cancellare",
+    "cancel": "Annulla",
     "confirmDecision": "Conferma la decisione",
-    "memberSince": "Membro da allora",
+    "memberSince": "Membro dal",
     "propertiesListed": "proprietà elencate",
     "userId": "ID UTENTE",
-    "tier1Account": "CONTO DI LIVELLO 1",
+    "tier1Account": "ACCOUNT TIER 1",
     "stats": {
       "pending": "In attesa",
-      "processedToday": "Elaborato oggi",
+      "processedToday": "Elaborati oggi",
       "documents": "documenti",
       "averageTime": "Tempo medio",
       "minutes": "min"
@@ -1233,27 +1253,27 @@
     "empty": {
       "title": "Nessuna richiesta di verifica",
       "description": "Tutte le richieste sono state elaborate o non ci sono ancora invii.",
-      "backToDashboard": "Ritorna alla dashboard",
-      "viewHistory": "Visualizza la cronologia"
+      "backToDashboard": "Torna alla dashboard",
+      "viewHistory": "Vedi la cronologia"
     }
   },
   "Verifications": {
     "unauthorized": "Accesso non autorizzato",
-    "adminRequired": "Devi essere un amministratore.",
+    "adminRequired": "Devi essere amministratore.",
     "title": "Coda di verifica",
-    "description": "Gestire le richieste di convalida dell'identità",
+    "description": "Gestisci le richieste di validazione dell'identità",
     "searchPlaceholder": "Cerca un utente...",
     "refresh": "Aggiorna",
     "processRequest": "Elabora la richiesta",
-    "justNow": "Proprio adesso",
-    "minutesAgo": "{count} minuti fa",
+    "justNow": "Proprio ora",
+    "minutesAgo": "{count} min fa",
     "oneHourAgo": "1 ora fa",
     "hoursAgo": "{count} ore fa",
     "daysAgo": "{count} giorni fa",
     "stats": {
       "pending": "In attesa",
-      "processedToday": "Trattati AJD",
-      "documents": "file",
+      "processedToday": "Elaborati oggi",
+      "documents": "pratiche",
       "averageTime": "Tempo medio",
       "minutes": "min"
     },
@@ -1272,117 +1292,127 @@
       "pending": "In attesa"
     },
     "empty": {
-      "title": "Tutti i controlli sono completi!",
-      "description": "Congratulazioni, la tua coda è vuota. Riceverai una notifica non appena un nuovo proprietario invierà i propri documenti.",
-      "backToDashboard": "Ritorna alla dashboard",
-      "viewHistory": "Visualizza la cronologia"
+      "title": "Tutte le verifiche sono terminate!",
+      "description": "Congratulazioni, la tua coda è vuota. Riceverai una notifica non appena un nuovo proprietario invierà i suoi documenti.",
+      "backToDashboard": "Torna alla dashboard",
+      "viewHistory": "Vedi la cronologia"
     }
   },
+
   "SSOCallback": {
-    "connecting": "Connessione in corso, attendere...",
+    "connecting": "Accesso in corso, attendere prego...",
     "pleaseWait": "Verifica delle tue informazioni",
     "redirecting": "Reindirizzamento in corso..."
   },
+
   "ForgotPassword": {
     "title": "Password dimenticata",
-    "subtitle": "Inserisci la tua email per ricevere un collegamento per il ripristino",
-    "emailLabel": "E-mail",
-    "emailPlaceholder": "tuo@email.com",
-    "sendResetLink": "Invia collegamento",
+    "subtitle": "Inserisci la tua email per ricevere il link di reimpostazione",
+    "emailLabel": "Email",
+    "emailPlaceholder": "tua@email.com",
+    "sendResetLink": "Invia link",
     "sending": "Invio in corso...",
-    "backToLogin": "Torna al login",
+    "backToLogin": "Torna all'accesso",
     "securityBadge": "Crittografia AES-256 • Conforme al GDPR",
-    "legal": "Avvisi legali",
-    "privacy": "Riservatezza"
+    "legal": "Note legali",
+    "privacy": "Privacy"
   },
   "ResetPassword": {
-    "title": "Reimposta password",
+    "title": "Reimposta la password",
     "subtitle": "Crea una nuova password sicura",
     "subtitleWithEmail": "Crea una nuova password per {email}",
-    "successTitle": "Password cambiata!",
+    "successTitle": "Password modificata!",
     "successMessage": "La tua password è stata reimpostata con successo. Verrai reindirizzato alla pagina di accesso.",
-    "newPasswordLabel": "Nuova parola d'ordine",
+    "newPasswordLabel": "Nuova password",
     "newPasswordPlaceholder": "••••••••",
-    "confirmPasswordLabel": "Conferma password",
+    "confirmPasswordLabel": "Conferma la password",
     "confirmPasswordPlaceholder": "••••••••",
-    "resetPassword": "Reset",
-    "resetting": "Reset...",
-    "backToLogin": "Torna al login",
+    "resetPassword": "Reimposta",
+    "resetting": "Reimpostazione...",
+    "backToLogin": "Torna all'accesso",
     "passwordsDoNotMatch": "Le password non corrispondono",
     "securityBadge": "Crittografia AES-256 • Conforme al GDPR",
-    "legal": "Avvisi legali",
-    "privacy": "Riservatezza"
+    "legal": "Note legali",
+    "privacy": "Privacy"
   },
   "VerificationsHistory": {
     "title": "Cronologia delle verifiche",
-    "subtitle": "Visualizza tutte le richieste di verifica già elaborate",
-    "backToPending": "Torniamo alle richieste pendenti",
+    "subtitle": "Consulta tutte le richieste di verifica già elaborate",
+    "backToPending": "Torna alle richieste in attesa",
     "refresh": "Aggiorna",
     "searchPlaceholder": "Cerca per nome o email...",
+
     "status": {
-      "validated": "Convalidato",
-      "rejected": "Respinto",
+      "validated": "Validata",
+      "rejected": "Respinta",
       "pending": "In attesa"
     },
+
     "filters": {
-      "all": "Tutto",
-      "validated": "Convalidato",
-      "rejected": "Respinto"
+      "all": "Tutte",
+      "validated": "Validate",
+      "rejected": "Respinte"
     },
+
     "stats": {
-      "total": "Controlli totali",
-      "totalDescription": "Storia completa",
+      "total": "Totale verifiche",
+      "totalDescription": "Cronologia completa",
       "approvalRate": "Tasso di approvazione",
       "rejected": "Richieste respinte",
-      "rejectedDescription": "Richiedono attenzione"
+      "rejectedDescription": "Necessitano attenzione"
     },
+
     "table": {
       "submittedAt": "Data di invio",
       "user": "Utente",
-      "email": "E-mail",
+      "email": "Email",
       "status": "Stato",
       "processedAt": "Data di elaborazione",
       "processedBy": "Elaborato da",
-      "notes": "Motivo/Commento",
+      "notes": "Motivo / Commento",
       "action": "Azione",
-      "view": "Vedere"
+      "view": "Vedi"
     },
+
     "empty": {
       "title": "Nessuna richiesta elaborata",
-      "description": "Le richieste convalidate o rifiutate appariranno qui"
+      "description": "Le richieste validate o respinte appariranno qui"
     },
+
     "pagination": {
-      "showing": "Visualizzazione di",
-      "of": "SU",
+      "showing": "Visualizzazione da",
+      "of": "su",
       "results": "risultati"
     }
   },
+
   "OwnerLayout": {
     "header": {
-      "tenantSpace": "Spazio inquilino",
-      "ownerSpace": "Area Proprietario",
+      "tenantSpace": "Spazio Inquilino",
+      "ownerSpace": "Spazio Proprietario",
       "searchPlaceholder": "Cerca un annuncio...",
-      "addListing": "Aggiungere",
+      "addListing": "Aggiungi",
       "owner": "Proprietario",
       "ownerBadge": "PROPRIETARIO"
     },
     "nav": {
-      "dashboard": "Pannello di controllo",
+      "dashboard": "Dashboard",
       "listings": "I miei annunci",
       "calendar": "Calendario",
       "reservations": "Prenotazioni",
       "messages": "Messaggi",
-      "analytics": "Statistiche"
+      "analytics": "Statistiche",
+      "team": "Team"
     },
     "sidebar": {
-      "ownerSuite": "Spazio del proprietario",
+      "ownerSuite": "Spazio proprietario",
       "ownerRole": "Proprietario",
       "verified": "Verificato",
-      "pro": "Piano professionale",
+      "pro": "Piano Pro",
       "proDesc": "Accedi a statistiche avanzate e aumenta la tua visibilità.",
-      "upgrade": "Diventa professionista",
-      "collapse": "Ridurre",
-      "logout": "Disconnetti"
+      "upgrade": "Passa a Pro",
+      "collapse": "Riduci",
+      "logout": "Esci"
     },
     "profile": {
       "myProfile": "Il mio profilo",
@@ -1394,87 +1424,285 @@
       "empty": "Nessuna notifica"
     },
     "search": {
-      "cancel": "Cancellare",
+      "cancel": "Annulla",
       "noResults": "Nessun risultato"
     },
     "logout": {
-      "confirm": "Disconnetti",
-      "message": "Sei sicuro di voler uscire?",
-      "cancel": "Cancellare"
+      "confirm": "Uscita",
+      "message": "Sei sicuro di volerti disconnettere?",
+      "cancel": "Annulla"
     }
   },
+
   "CreateListing": {
+    "breadcrumb": {
+      "myListings": "I MIEI ANNUNCI",
+      "newListing": "NUOVO ANNUNCIO"
+    },
     "pageTitle": "Crea un annuncio",
-    "stepOf": "{current} passo su {total}",
-    "saving": "Backup...",
+    "stepOf": "Passo {current} di {total}",
+    "saving": "Salvataggio in corso...",
     "saveDraft": "Salva bozza",
-    "publishing": "Pubblicazione...",
+    "publishing": "Pubblicazione in corso...",
     "publish": "Pubblica l'annuncio",
+    "confirmLeave": "Hai delle modifiche non salvate. Sei sicuro di voler lasciare questa pagina?",
+    "required": "Campo obbligatorio",
+
     "steps": {
-      "typeLocation": "Tipo e posizione",
+      "typeLocation": "Tipo & Luogo",
       "characteristics": "Caratteristiche",
-      "equipment": "Attrezzatura",
+      "equipment": "Attrezzature",
       "photos": "Foto",
       "pricing": "Prezzi",
       "preview": "Anteprima"
     },
+
     "nav": {
       "previous": "Precedente",
-      "continue": "Continuare"
+      "continue": "Continua"
     },
+
+    "units": {
+      "sqm": "m²",
+      "bedrooms": "camere",
+      "bathrooms": "bagni",
+      "persons": "viaggiatori"
+    },
+
+    "unit": {
+      "perNight": "TND / notte",
+      "perMonth": "TND / mese",
+      "perNightShort": "/ notte",
+      "perMonthShort": "/ mese"
+    },
+
+    "currency": {
+      "tnd": "TND"
+    },
+
     "propertyTypes": {
       "APARTMENT": "Appartamento",
       "VILLA": "Villa",
       "STUDIO": "Studio",
       "DUPLEX": "Duplex",
       "HOUSE": "Casa",
-      "ROOM": "Camera da letto"
+      "ROOM": "Camera"
     },
+
     "step1": {
-      "typeTitle": "Che tipo di immobile offri?",
+      "typeTitle": "Che tipo di proprietà offri?",
       "titleSectionTitle": "Dai un nome al tuo annuncio",
       "titleLabel": "Titolo dell'annuncio",
-      "titlePlaceholder": "Es: Magnifica villa con vista mare ad Hammamet",
+      "titlePlaceholder": "Esempio: Splendida villa con vista mare a Hammamet",
       "descriptionLabel": "Descrizione",
-      "descriptionPlaceholder": "Descrivi i vantaggi del tuo alloggio, i quartieri vicini, cosa lo rende unico...",
+      "descriptionPlaceholder": "Descrivi i punti di forza della tua casa, i quartieri circostanti, ciò che la rende unica...",
       "locationTitle": "Dove si trova la tua proprietà?",
       "governorate": "Governatorato",
       "delegation": "Delegazione",
-      "street": "Quartiere / Strada",
+      "street": "Quartiere / Via",
       "delegationPlaceholder": "Esempio: La Marsa",
-      "streetPlaceholder": "Esempio: Rue de la Marsa Plage",
-      "choose": "Scegliere...",
+      "streetPlaceholder": "Esempio: Via della Spiaggia di La Marsa",
+      "choose": "Seleziona...",
       "mapHint": "Posizione approssimativa sulla mappa",
-      "adjustMap": "Regolare",
+      "adjustMap": "Regola la posizione",
       "exactLocation": "Posizione esatta",
       "positionSelected": "Posizione selezionata",
-      "mapClickHint": "Clicca sulla mappa per mostrare la posizione esatta del tuo immobile"
+      "mapClickHint": "Clicca sulla mappa per indicare la posizione precisa della tua proprietà"
     },
+
     "step2": {
       "title": "Descrivi la tua proprietà",
       "rooms": "Camere",
-      "roomsDesc": "Camere notturne private",
+      "roomsDesc": "Stanze notte private",
       "bathrooms": "Bagni",
-      "bathroomsDesc": "Bagni o docce",
-      "maxGuests": "Numero massimo di viaggiatori",
-      "maxGuestsDesc": "Capacità di ricezione totale",
-      "surface": "Spazio abitabile (m²)",
-      "floor": "Numero del piano",
-      "floorPlaceholder": "0 per la Repubblica Democratica del Congo",
+      "bathroomsDesc": "Docce o bagni completi",
+      "maxGuests": "Capacità di accoglienza",
+      "maxGuestsDesc": "Numero massimo di viaggiatori",
+      "surface": "Superficie abitabile",
+      "floor": "Piano",
+      "floorPlaceholder": "0 per piano terra",
       "elevator": "Ascensore",
       "elevatorDesc": "L'edificio è dotato di ascensore?",
       "balcony": "Balcone",
-      "parking": "Parcheggio"
+      "parking": "Parcheggio privato"
     },
+
     "step3": {
-      "equipmentTitle": "Che attrezzatura offrite?",
+      "equipmentTitle": "Attrezzature offerte",
       "servicesTitle": "Servizi inclusi",
       "rulesTitle": "Regole della casa",
       "customRulesLabel": "Regole personalizzate",
-      "customRulesPlaceholder": "Aggiungi le tue istruzioni specifiche per i viaggiatori (max 500 caratteri)..."
+      "customRulesPlaceholder": "Aggiungi le tue istruzioni specifiche per i viaggiatori (massimo 500 caratteri)..."
     },
+
     "equipment": {
-      "wifi": "Wifi",
+      "wifi": "Connessione Wi-Fi",
+      "ac": "Aria condizionata",
+      "heating": "Riscaldamento centralizzato",
+      "kitchen": "Cucina completamente attrezzata",
+      "parking": "Parcheggio privato",
+      "pool": "Piscina",
+      "gym": "Spazio fitness",
+      "washer": "Lavatrice",
+      "tv": "Televisore a schermo piatto",
+      "balcony": "Balcone o terrazza",
+      "dishwasher": "Lavastoviglie",
+      "dryer": "Asciugatrice",
+      "elevator": "Ascensore",
+      "airConditioning": "Aria condizionata reversibile",
+      "workspace": "Spazio di lavoro dedicato"
+    },
+
+    "services": {
+      "cleaning": "Pulizia inclusa",
+      "cleaningDesc": "Pulizia professionale regolare",
+      "linen": "Biancheria fornita",
+      "linenDesc": "Lenzuola e asciugamani inclusi",
+      "pets": "Animali ammessi",
+      "petsDesc": "I tuoi amici a quattro zampe sono i benvenuti",
+      "smoking": "Fumatori ammessi",
+      "smokingDesc": "Uno spazio esterno dedicato è disponibile",
+      "breakfast": "Colazione inclusa",
+      "breakfastDesc": "Colazione servita ogni mattina",
+      "airportTransfer": "Trasferimento aeroportuale",
+      "airportTransferDesc": "Navetta disponibile su prenotazione"
+    },
+
+    "houseRules": {
+      "noParties": "Eventi e feste non autorizzati",
+      "noSmoke": "Alloggio non fumatori",
+      "noPets": "Animali non ammessi",
+      "quietAfter22": "Tranquillità assicurata dopo le 22:00",
+      "checkInAfter": "Arrivo a partire dalle 14:00",
+      "checkOutBefore": "Partenza entro le 11:00"
+    },
+
+    "step4": {
+      "title": "Galleria fotografica",
+      "dropHere": "Trascina le tue foto qui",
+      "dropHint": "Valorizza la tua proprietà con almeno 5 foto ad alta definizione (massimo 20)",
+      "or": "o",
+      "browseFiles": "Sfoglia i miei file",
+      "minPhotosWarning": "Aggiungi {count} foto aggiuntiva/e per raggiungere il minimo richiesto",
+      "yourPhotos": "La tua galleria",
+      "dragReorder": "Trascina per riordinare la visualizzazione",
+      "mainPhoto": "Foto principale",
+      "setMain": "Imposta come foto principale",
+      "delete": "Elimina",
+      "add": "Aggiungi una foto",
+      "tipsTitle": "Consigli per foto accattivanti",
+      "tip1": "Prediligi la luce naturale aprendo tende e tapparelle",
+      "tip2": "Riordina l'interno per un aspetto pulito e professionale",
+      "tip3": "Usa il formato orizzontale per dare una sensazione di spazio",
+      "tip4": "Mostra ogni stanza importante: soggiorno, camere, cucina, bagno",
+      "uploading": "Caricamento in corso...",
+      "uploadError": "Il caricamento delle foto è fallito, riprova",
+      "clickStarToSetMain": "⭐ Clicca sulla stella per impostare la foto principale",
+      "setAsMain": "Imposta come foto principale",
+      "mainPhotoSet": "Foto principale impostata con successo"
+    },
+
+    "step5": {
+      "rentalTypeTitle": "Tipo di affitto",
+      "SHORT_TERM": "Affitto breve termine",
+      "LONG_TERM": "Affitto lungo termine",
+      "BOTH": "Entrambe le formule",
+      "pricesTitle": "Imposta i tuoi prezzi",
+      "pricePerNight": "Tariffa per notte",
+      "pricePerMonth": "Tariffa mensile",
+      "night": "notte",
+      "month": "mese",
+      "localAvg": "Prezzo medio nella tua zona: {price} TND",
+      "feesTitle": "Costi aggiuntivi",
+      "deposit": "Deposito cauzionale",
+      "depositDesc": "Importo rimborsabile a fine soggiorno",
+      "depositAmount": "Importo della cauzione",
+      "cleaningFee": "Spese di pulizia",
+      "cleaningFeeDesc": "Addebitate una volta per prenotazione",
+      "cleaningFeeAmount": "Importo delle spese di pulizia",
+      "smartPricing": "Prezzi dinamici",
+      "seasonalTitle": "Prezzi stagionali",
+      "seasonalDesc": "Ottimizza i tuoi guadagni con tariffe speciali per i weekend e i periodi di alta affluenza",
+      "weekend": "Weekend",
+      "summer": "Stagione estiva (Giugno ad Agosto)",
+      "weekendMultiplier": "Coefficiente weekend",
+      "summerMultiplier": "Coefficiente stagione estiva",
+      "estimatedRevenue": "Guadagno stimato",
+      "estimatedRevenueDesc": "Secondo i tuoi parametri, il tuo guadagno mensile potrebbe essere compreso tra {min} TND e {max} TND",
+      "additionalFees": "Costi addizionali",
+      "electricityFee": "Spese elettricità",
+      "waterFee": "Spese acqua",
+      "serviceFee": "Spese di servizio"
+    },
+
+    "preview": {
+      "noTitle": "Titolo dell'annuncio",
+      "rooms": "camere",
+      "bathrooms": "bagni",
+      "guests": "viaggiatori",
+      "readyTitle": "Il tuo annuncio è pronto per essere pubblicato",
+      "readyDesc": "Verifica attentamente le informazioni sopra prima di pubblicare il tuo annuncio. Sarà visibile sulla piattaforma dopo la validazione del nostro team.",
+      "perNight": "a notte",
+      "perMonth": "al mese",
+      "equipment": "Attrezzature disponibili",
+      "services": "Servizi offerti",
+      "rules": "Regolamento interno",
+      "location": "Posizione"
+    },
+
+    "sidebar": {
+      "tipTitle": "Consiglio dell'esperto",
+      "tip1": "Un titolo accattivante attira il 40% di viaggiatori in più",
+      "tip2": "Un minimo di 5 foto moltiplica le tue possibilità di prenotazione",
+      "tip3": "Una tariffazione competitiva migliora la tua visibilità nei risultati di ricerca",
+      "tip4": "Dettaglia precisamente le tue attrezzature per attirare una clientela più ampia",
+      "whyNesthub": "Perché scegliere NestHub?",
+      "benefit1": "Pagamenti sicuri e garantiti",
+      "benefit2": "Supporto proprietario disponibile 7 giorni su 7",
+      "benefit3": "Nessun costo nascosto o commissione eccessiva",
+      "benefit4": "Assicurazione di responsabilità civile inclusa per ogni prenotazione"
+    },
+
+    "validation": {
+      "titleRequired": "Il titolo dell'annuncio è obbligatorio",
+      "titleMin": "Il titolo deve contenere almeno 3 caratteri",
+      "descriptionRequired": "La descrizione è obbligatoria",
+      "descriptionMin": "La descrizione deve contenere almeno 20 caratteri",
+      "governorateRequired": "Seleziona un governatorato",
+      "delegationRequired": "La delegazione è obbligatoria",
+      "streetRequired": "La via è obbligatoria",
+      "locationRequired": "La posizione sulla mappa è obbligatoria",
+      "roomsRequired": "Almeno 1 camera è obbligatoria",
+      "bathroomsRequired": "Almeno 1 bagno è obbligatorio",
+      "maxGuestsRequired": "Almeno 1 viaggiatore è obbligatorio",
+      "photosRequired": "Almeno una foto è obbligatoria",
+      "mainPhotoRequired": "Imposta una foto principale",
+      "photosMin": "Aggiungi almeno 5 foto per valorizzare la tua proprietà",
+      "priceRequired": "La tariffa è obbligatoria",
+      "pricePositive": "La tariffa deve essere superiore a zero",
+      "pricePerNightRequired": "Il prezzo per notte è obbligatorio",
+      "pricePerMonthRequired": "Il prezzo per mese è obbligatorio",
+      "descriptionMax": "La descrizione non può superare i 2000 caratteri"
+    },
+
+    "success": {
+      "published": "Congratulazioni! Il tuo annuncio è stato pubblicato con successo",
+      "draftSaved": "La tua bozza è stata salvata automaticamente",
+      "redirecting": "Reindirizzamento in corso verso la tua dashboard..."
+    },
+
+    "error": {
+      "generic": "Si è verificato un errore imprevisto. Riprova più tardi.",
+      "uploadFailed": "Il caricamento delle foto è fallito. Verifica la tua connessione e riprova.",
+      "saveFailed": "Il salvataggio della bozza è fallito. Riprova.",
+      "publishFailed": "La pubblicazione del tuo annuncio è fallita. Verifica tutti i campi obbligatori.",
+      "networkError": "Problema di connessione di rete. Verifica la tua connessione internet.",
+      "timeoutError": "La richiesta è scaduta. Riprova."
+    }
+  },
+  "OwnerListingDetail": {
+    "equipment": {
+      "wifi": "WiFi",
       "ac": "Aria condizionata",
       "heating": "Riscaldamento",
       "kitchen": "Cucina attrezzata",
@@ -1482,299 +1710,974 @@
       "pool": "Piscina",
       "gym": "Palestra",
       "washer": "Lavatrice",
-      "tv": "Televisione",
+      "tv": "Televisore",
       "balcony": "Balcone",
       "dishwasher": "Lavastoviglie",
       "dryer": "Asciugatrice",
-      "elevator": "Ascensore",
-      "airConditioning": "Aria condizionata",
-      "workspace": "Spazio di lavoro"
+      "coffee": "Macchina da caffè",
+      "smartlock": "Serratura connessa",
+      "speaker": "Cassa Bluetooth",
+      "workplace": "Spazio di lavoro",
+      "elevator": "Ascensore"
     },
-    "services": {
-      "cleaning": "Pulizie incluse",
-      "cleaningDesc": "Pulizia professionale regolare",
-      "linen": "Biancheria per la casa",
-      "linenDesc": "Lenzuola e asciugamani forniti",
-      "pets": "Animali ammessi",
-      "petsDesc": "I tuoi compagni sono i benvenuti",
-      "smoking": "Si accettano fumatori",
-      "smokingDesc": "In aree esterne dedicate",
-      "breakfast": "Colazione inclusa",
-      "breakfastDesc": "La colazione viene servita ogni mattina",
-      "airportTransfer": "Trasferimento aeroportuale",
-      "airportTransferDesc": "Navetta disponibile su richiesta"
+    "units": {
+      "sqm": "m²"
     },
-    "houseRules": {
-      "noParties": "Nessuna festa o evento",
-      "noSmoke": "Non fumatore",
-      "noPets": "Animali non ammessi",
-      "quietAfter22": "Si richiede silenzio dopo le 22:00.",
-      "checkInAfter": "Check-in dopo le 14:00",
-      "checkOutBefore": "Check-out entro le 11:00"
+    "currency": {
+      "tnd": "TND"
     },
-    "step4": {
-      "title": "Aggiungi le tue foto",
-      "dropHere": "Trascina qui le tue foto",
-      "dropHint": "Ottimizza le tue prenotazioni con almeno 5 foto in alta definizione (max. 20)",
-      "or": "O",
-      "browseFiles": "Sfoglia i miei file",
-      "minPhotosWarning": "Aggiungi altre {count} foto per raggiungere il minimo richiesto",
-      "yourPhotos": "Le tue foto",
-      "dragReorder": "Scorri per riordinare",
-      "mainPhoto": "Foto principale",
-      "setMain": "Imposta come primario",
-      "delete": "ELIMINARE",
-      "add": "Aggiungere",
-      "tipsTitle": "Consigli fotografici",
-      "tip1": "Favorire la luce naturale aprendo tende e persiane.",
-      "tip2": "Metti in ordine gli interni per un aspetto pulito e professionale.",
-      "tip3": "Usa il formato orizzontale per dare una sensazione di spazio.",
-      "tip4": "Mostra ogni stanza importante: soggiorno, camere da letto, cucina, bagno.",
-      "uploading": "Scaricamento...",
-      "uploadError": "Errore durante il download"
+
+    "tooltips": {
+      "viewPublic": "Vedi l'annuncio sul sito pubblico",
+      "edit": "Modifica l'annuncio",
+      "hide": "Nascondi l'annuncio",
+      "publish": "Pubblica l'annuncio",
+      "delete": "Elimina l'annuncio"
     },
-    "step5": {
-      "rentalTypeTitle": "Tipo di noleggio",
-      "SHORT_TERM": "A breve termine",
-      "LONG_TERM": "A lungo termine",
-      "BOTH": "Entrambi",
-      "pricesTitle": "Imposta i tuoi prezzi",
-      "pricePerNight": "Prezzo per notte",
-      "pricePerMonth": "Prezzo al mese",
-      "night": "notte",
-      "month": "mese",
-      "localAvg": "Media nella tua zona: {price} TND",
-      "feesTitle": "Costi aggiuntivi",
-      "deposit": "Depositare",
-      "depositDesc": "Deposito cauzionale rimborsabile a fine soggiorno",
-      "depositAmount": "Importo della cauzione",
-      "cleaningFee": "Spese di pulizia",
-      "cleaningFeeDesc": "Fatturato una volta per soggiorno",
-      "cleaningFeeAmount": "Importo delle spese di pulizia",
-      "smartPricing": "Prezzi intelligenti",
-      "seasonalTitle": "Prezzi stagionali",
-      "seasonalDesc": "Aumenta i tuoi ricavi del 25% attivando tariffe speciali per i weekend e l'alta stagione.",
-      "weekend": "Fine settimana",
-      "summer": "Estate (giugno-agosto)",
-      "weekendMultiplier": "Moltiplicatore del fine settimana",
-      "summerMultiplier": "Moltiplicatore estivo",
-      "estimatedRevenue": "Reddito stimato",
-      "estimatedRevenueDesc": "A seconda delle tue impostazioni, potresti generare tra {min} TND e {max} TND al mese.",
-      "additionalFees": "Costi aggiuntivi",
-      "electricityFee": "Costi dell'elettricità",
-      "waterFee": "Spese idriche",
-      "serviceFee": "Commissioni di servizio"
-    },
-    "preview": {
-      "noTitle": "Titolo dell'annuncio",
-      "rooms": "stanze",
-      "bathrooms": "bagno",
-      "guests": "viaggiatori",
-      "readyTitle": "Il tuo annuncio è pronto!",
-      "readyDesc": "Controlla le informazioni sopra quindi pubblica il tuo annuncio. Sarà visibile dopo la convalida.",
-      "perNight": "a notte",
-      "perMonth": "al mese",
-      "equipment": "Attrezzatura",
-      "services": "Servizi",
-      "rules": "Regole",
-      "location": "Posizione"
-    },
-    "sidebar": {
-      "tipTitle": "Consulenza di esperti",
-      "tip1": "Un titolo accattivante attira il 40% in più di viaggiatori.",
-      "tip2": "Minimo 5 foto aumentano le tue possibilità di prenotazione.",
-      "tip3": "Un prezzo competitivo migliora la tua visibilità nei risultati.",
-      "tip4": "Dettaglia bene i tuoi servizi per attirare più viaggiatori.",
-      "whyNesthub": "Perché NestHub?",
-      "benefit1": "Pagamenti sicuri garantiti",
-      "benefit2": "Supporto al proprietario 7 giorni su 7",
-      "benefit3": "Zero costi nascosti",
-      "benefit4": "Assicurazione inclusa per ogni prenotazione"
-    },
-    "validation": {
-      "titleRequired": "Il titolo è obbligatorio",
-      "titleMin": "Il titolo deve contenere almeno 3 caratteri",
-      "governorateRequired": "È necessario il governatorato",
-      "delegationRequired": "È necessaria la delega",
-      "photosMin": "Aggiungi almeno 5 foto",
-      "priceRequired": "Il prezzo è richiesto",
-      "pricePositive": "Il prezzo deve essere positivo",
-      "descriptionMax": "La descrizione non può superare i 2000 caratteri"
-    },
-    "success": {
-      "published": "Il tuo annuncio è stato pubblicato con successo!",
-      "draftSaved": "La tua bozza è stata salvata",
-      "redirecting": "Reindirizzamento in corso..."
-    },
-    "error": {
-      "generic": "Si è verificato un errore",
-      "uploadFailed": "Impossibile caricare le foto",
-      "saveFailed": "Backup non riuscito",
-      "publishFailed": "Impossibile pubblicare"
-    }
-  },
-  "OwnerListings": {
-    "title": "Gestione del portafoglio",
-    "description": "Gestisci le tue proprietà, monitora le prestazioni e massimizza il ROI con i nostri strumenti intelligenti.",
-    "addProperty": "Aggiungi una proprietà",
-    "tabs": {
-      "all": "Tutto",
-      "active": "Pubblicato",
-      "inactive": "Inattivo",
-      "draft": "Bozze"
-    },
-    "stats": {
-      "totalRevenue": "Entrate totali",
-      "activeListings": "Annunci attivi",
-      "totalViews": "Visualizzazioni totali",
-      "occupancyRate": "Tasso di occupazione",
-      "properties": "proprietà",
-      "stablePortfolio": "Portafoglio stabile",
-      "views": "Viste",
-      "bookings": "Prenotazioni",
-      "price": "Prezzo",
-      "published": "Pubblicato il",
-      "notPublished": "Inedito"
+    "errors": {
+      "loadFailed": "Impossibile caricare i dettagli dell'annuncio",
+      "statusChangeFailed": "Errore durante il cambio di stato",
+      "deleteFailed": "Errore durante l'eliminazione"
     },
     "status": {
-      "active": "Pubblicato",
-      "inactive": "Inattivo",
-      "draft": "Bozza",
-      "archived": "Archivio"
+      "active": "Pubblicata",
+      "inactive": "Nascosta",
+      "draft": "Bozza"
     },
-    "badge": {
-      "verified": "Verificato"
+    "bookingStatus": {
+      "confirmed": "Confermato",
+      "pending": "In attesa",
+      "paid": "Pagato"
     },
-    "unit": {
-      "night": "notte",
-      "month": "mese"
+    "stats": {
+      "views": "Visite",
+      "bookings": "Prenotazioni",
+      "occupancy": "Tasso di occupazione",
+      "revenue": "Guadagno totale",
+      "revenueValue": "0.000 TND"
     },
-    "aiInsights": {
-      "title": "Suggerimenti sull'intelligenza artificiale",
-      "draftTip": "Il tuo annuncio è in bozza. Pubblicalo per iniziare a ricevere prenotazioni.",
-      "lowViewsTip": "Ottimizza le tue foto e il titolo per attirare più visitatori.",
-      "highDemandTip": "Si prevede una forte domanda! Aumenta leggermente i prezzi."
+    "quickStats": {
+      "views": "Visite",
+      "bookings": "Pren.",
+      "conversion": "Conv.",
+      "revenue": "Guadagno"
+    },
+    "sections": {
+      "description": "Descrizione",
+      "noDescription": "Nessuna descrizione fornita.",
+      "amenities": "Attrezzature",
+      "location": "Posizione",
+      "noLocation": "Posizione non disponibile",
+      "nextBookings": "Prossime prenotazioni",
+      "noBookings": "Nessuna prenotazione imminente",
+      "availability": "Disponibilità",
+      "owner": "Proprietario",
+      "ownerDefault": "Proprietario",
+      "mainOwner": "Proprietario principale",
+      "team": "Team di gestione",
+      "teamDescription": "Persone con accesso alla gestione di questo annuncio."
     },
     "actions": {
-      "view": "Vedere",
-      "edit": "Per modificare",
-      "delete": "ELIMINARE"
+      "viewPublic": "Vedi annuncio pubblico",
+      "edit": "Modifica",
+      "showMore": "Leggi tutto",
+      "showLess": "Vedi meno",
+      "showAllAmenities": "Vedi tutte le {count} attrezzature",
+      "viewAll": "Vedi tutto",
+      "invite": "Invita",
+      "hide": "Nascondi l'annuncio",
+      "publish": "Pubblica l'annuncio",
+      "delete": "Elimina"
     },
-    "empty": {
-      "title": "Nessuna pubblicità",
-      "description": "Non hai ancora creato un annuncio. Inizia subito a condividere la tua proprietà.",
-      "cta": "Crea il mio primo annuncio"
+    "specs": {
+      "rooms": "camere",
+      "bathrooms": "bagni",
+      "guests": "viaggiatori"
     },
-    "searchPlaceholder": "Cerca un immobile...",
-    "filter": "Filtro",
-    "deleteConfirm": "Sei sicuro di voler rimuovere questo annuncio? Questa azione è irreversibile.",
-    "pagination": {
-      "showing": "Visualizzazione da {start} a {end} su {total} proprietà"
+    "breadcrumb": {
+      "listings": "I miei Annunci"
     },
     "footer": {
-      "legal": "Avvisi legali",
-      "aiPolicy": "Politica sull’intelligenza artificiale",
-      "aiStatus": "Motore AI: ottimizzato"
-    }
-  },
-  "Users": {
-    "stats": {
-      "totalUsers": "Utenti totali",
-      "newUsers30d": "Nuovo (30 giorni)",
-      "pendingValidation": "In attesa",
-      "verifiedIdentity": "Verificato"
-    }
-  },
-  "ListingDetail": {
-    "backToListings": "Torniamo agli annunci",
-    "reviews": "avviso",
-    "viewAllPhotos": "Mostra tutte le foto ({count})",
-    "hostedBy": "Intero alloggio: {name}",
-    "guests": "viaggiatori",
-    "bedrooms": "stanze",
-    "bathrooms": "bagni",
-    "elevator": "Ascensore",
-    "elevatorDesc": "Facile accesso a tutti i piani",
-    "greatLocation": "Posizione ideale",
-    "greatLocationDesc": "Il 100% dei viaggiatori ha valutato la località con 5 stelle.",
-    "freeCancellation": "Cancellazione gratuita",
-    "freeCancellationDesc": "Cancellazione gratuita fino a 7 giorni prima dell'arrivo.",
-    "about": "Informazioni su questo alloggio",
-    "noDescription": "Nessuna descrizione disponibile in questo momento.",
-    "amenities": "Attrezzatura",
-    "showAllAmenities": "Mostra tutta l'attrezzatura",
-    "availability": "Disponibilità",
-    "selectDates": "Aggiungi le date del tuo viaggio per vedere il prezzo esatto",
-    "checkIn": "Arrivo",
-    "checkOut": "Partenza",
-    "guest": "viaggiatore",
-    "nights": "notti",
-    "night": "notte",
-    "cleaningFee": "Spese di pulizia",
-    "serviceFee": "Commissioni di servizio",
-    "total": "Totale",
-    "requestToBook": "Richiedi di prenotare",
-    "noChargeYet": "Nessun importo ti verrà addebitato in questo momento",
-    "reportListing": "Segnala questo annuncio",
-    "reviewDate": "• Maggio 2024",
-    "sampleReview": "Soggiorno indimenticabile! La villa è ancora più bella che nelle foto. Il padrone di casa è eccezionale, pieno di ottimi consigli sui ristoranti locali.",
-    "showAllReviews": "Mostra {count} recensioni",
-    "unit": {
-      "night": "notte",
-      "month": "mese"
-    },
-    "equipment": {
-      "wifi": "Wifi",
-      "ac": "Aria condizionata",
-      "heating": "Riscaldamento",
-      "kitchen": "Cucina attrezzata",
-      "parking": "Parcheggio gratuito",
-      "pool": "Piscina privata",
-      "gym": "Palestra",
-      "washer": "Lavatrice",
-      "tv": "Televisione",
-      "balcony": "Balcone",
-      "elevator": "Ascensore",
-      "workspace": "Spazio di lavoro",
-      "dryer": "Asciugatrice",
-      "dishwasher": "Lavastoviglie"
+      "lastModified": "Ultima modifica"
     },
     "notFound": {
       "title": "Annuncio non trovato",
-      "description": "L'annuncio che stai cercando non esiste o è stato cancellato.",
-      "back": "Torniamo ai miei annunci"
+      "description": "L'annuncio che stai cercando non esiste o è stato eliminato.",
+      "button": "Torna agli annunci",
+      "helpText": "Puoi anche",
+      "dashboardLink": "tornare alla dashboard"
+    },
+    "gallery": {
+      "mainPhoto": "Principale",
+      "morePhotos": "foto",
+      "previous": "Precedente",
+      "next": "Successiva"
+    },
+    "location": {
+      "openInMaps": "Apri in Maps"
+    },
+    "calendar": {
+      "previousMonth": "Mese precedente",
+      "nextMonth": "Mese successivo",
+      "days": "L,M,M,G,V,S,D"
+    },
+    "modals": {
+      "delete": {
+        "confirm": "Sei sicuro di voler eliminare questo annuncio?"
+      }
+    }
+  },
+
+  "ListingHistory": {
+    "user": {
+      "default": "Utente"
+    },
+    "actions": {
+      "export": "Esporta (PDF)",
+      "exporting": "Esportazione in corso..."
+    },
+    "fieldLabels": {
+      "pricePerNight": "Modifica del prezzo per notte",
+      "pricePerMonth": "Modifica del prezzo per mese",
+      "status": "Cambio di stato",
+      "photos": "Aggiornamento foto",
+      "equipment": "Modifica delle attrezzature",
+      "description": "Modifica della descrizione",
+      "title": "Modifica del titolo",
+      "general": "Modifica generale"
+    },
+    "photo": {
+      "old": "Vecchia foto",
+      "new": "Nuova foto"
+    },
+    "equipment": {
+      "added": "Aggiunto",
+      "removed": "Rimosso",
+      "wifi": "WiFi",
+      "ac": "Aria condizionata",
+      "heating": "Riscaldamento",
+      "kitchen": "Cucina attrezzata",
+      "parking": "Parcheggio",
+      "pool": "Piscina",
+      "gym": "Palestra",
+      "washer": "Lavatrice",
+      "tv": "Televisore",
+      "balcony": "Balcone",
+      "dishwasher": "Lavastoviglie",
+      "dryer": "Asciugatrice",
+      "coffee": "Macchina da caffè",
+      "smartlock": "Serratura connessa",
+      "speaker": "Cassa",
+      "workplace": "Spazio lavoro",
+      "elevator": "Ascensore"
+    },
+    "errors": {
+      "exportFailed": "Errore durante l'esportazione. Riprova.",
+      "loadFailed": "Impossibile caricare la cronologia"
+    },
+    "notFound": {
+      "title": "Annuncio non trovato",
+      "description": "L'annuncio che stai cercando non esiste o è stato eliminato.",
+      "button": "Torna agli annunci",
+      "helpText": "Hai bisogno di aiuto?",
+      "dashboardLink": "Torna alla dashboard"
+    },
+    "page": {
+      "title": "Cronologia delle modifiche",
+      "description": "Consulta l'evoluzione del tuo annuncio {title} e monitora le modifiche del tuo team.",
+      "loading": "Caricamento della cronologia..."
+    },
+    "breadcrumb": {
+      "listings": "I MIEI ANNUNCI",
+      "history": "CRONOLOGIA"
+    },
+    "filters": {
+      "": "Tutti",
+      "period": "Periodo",
+      "type": "Tipi di modifiche",
+      "30derniersjours": "Ultimi 30 giorni",
+      "trimestre": "Trimestre",
+      "année": "Anno",
+      "tout": "Tutto",
+      "equipment_update": "Attrezzature",
+      "price_update": "Prezzi",
+      "status_change": "Stato",
+      "photo_update": "Foto",
+      "update": "Generale",
+      "7days": "Ultimi 7 giorni",
+      "90days": "Ultimi 90 giorni",
+      "alldates": "Tutte le date"
+    },
+    "timeline": {
+      "oldValue": "Vecchio valore",
+      "newValue": "Nuovo valore",
+      "deleted": "ELIMINATO",
+      "new": "NUOVO",
+      "unchanged": "Invariato"
+    },
+    "fields": {
+      "pricePerNight": "Tariffa per notte",
+      "pricePerMonth": "Prezzo mensile",
+      "status": "Stato",
+      "photos": "Foto di copertina",
+      "equipment": "Attrezzature",
+      "description": "Descrizione",
+      "title": "Titolo"
+    },
+    "actionTypes": {
+      "PRICE_UPDATE": "Prezzo",
+      "STATUS_CHANGE": "Stato",
+      "PHOTO_UPDATE": "Foto",
+      "EQUIPMENT_UPDATE": "Attrezzature",
+      "UPDATE": "Modifica",
+      "CREATE": "Creazione"
+    },
+    "roles": {
+      "owner": "Proprietario",
+      "coOwner": "Co-proprietario",
+      "admin": "Amministratore"
+    },
+    "emptyState": {
+      "title": "Nessuna modifica",
+      "description": "Nessuna modifica è stata registrata per questo annuncio."
+    },
+    "status": {
+      "active": "Pubblicata",
+      "inactive": "Nascosta",
+      "draft": "Bozza",
+      "archived": "Archiviata"
+    }
+  },
+  "OwnerListings": {
+    "currency": {
+      "tnd": "TND"
+    },
+    "page": {
+      "title": "I miei Annunci",
+      "description": "Gestisci le tue proprietà e monitora le loro prestazioni in tempo reale."
+    },
+    "stats": {
+      "totalRevenue": "Guadagno totale",
+      "activeListings": "Annunci attivi",
+      "totalViews": "Visite totali",
+      "occupancyRate": "Tasso di occupazione"
+    },
+    "tabs": {
+      "all": "Tutte",
+      "active": "Pubblicate",
+      "inactive": "Nascoste",
+      "draft": "Bozze",
+      "archived": "Archiviate"
+    },
+    "filters": {
+      "titre": "Filtro avanzato",
+      "governorate": "Governatorato",
+      "allGovernorates": "Tutti i governatorati",
+      "priceRange": "Fascia di prezzo",
+      "minRooms": "Numero minimo di camere",
+      "reset": "Reimposta i filtri",
+      "aiTitre": "Consiglio IA",
+      "aiTip": "Usa i filtri per trovare rapidamente i tuoi annunci più performanti.",
+      "searchPlaceholder": "Cerca un annuncio per titolo o descrizione...",
+      "dateFilter": "Filtra per data",
+      "allDates": "Tutte",
+      "lastWeek": "7 giorni",
+      "lastMonth": "30 giorni",
+      "lastYear": "1 anno"
+    },
+    "table": {
+      "views": "Visite",
+      "bookings": "Pren.",
+      "conversion": "Conv.",
+      "revenue": "Guadagno",
+      "price": "Prezzo",
+      "favorites": "Preferiti"
+    },
+    "status": {
+      "active": "Pubblicata",
+      "activeDesc": "Visibile a tutti i viaggiatori",
+      "inactive": "Nascosta",
+      "inactiveDesc": "Non visibile ai viaggiatori",
+      "draft": "Bozza",
+      "draftDesc": "In fase di creazione, non pubblicata",
+      "archived": "Archiviata",
+      "archivedDesc": "Conservata negli archivi, può essere ripristinata"
+    },
+    "performance": {
+      "spinner": "caricamento dei tuoi annunci......",
+      "topPerformance": "Top Performance",
+      "toOptimize": "Da ottimizzare"
+    },
+    "aiInsights": {
+      "draft": " Bozza - Completa e pubblica il tuo annuncio",
+      "archived": " Archiviata - Ripristina per riattivare",
+      "inactive": " Nascosta - Pubblica per essere visibile",
+      "lowViews": " Più foto = +20% di visite",
+      "noBookings": " Verifica il tuo prezzo rispetto al mercato",
+      "lowConversion": " Bassa conversione - Migliora il tuo annuncio",
+      "excellent": " Ottima performance! Continua così",
+      "optimize": " Ottimizza il tuo annuncio"
+    },
+    "recommendations": {
+      "lowConversion": " Bassa conversione ({rate}%) - Migliora le tue foto o aggiusta il prezzo",
+      "excellentPerformance": " Ottima performance! {count} prenotazioni questo mese"
+    },
+    "actions": {
+      "edit": "Modifica l'annuncio",
+      "viewPublic": "Vedi sul sito pubblico",
+      "history": "Cronologia delle modifiche",
+      "qrCode": "Genera un QR Code",
+      "more": "Più azioni",
+      "hide": "Nascondi l'annuncio",
+      "publish": "Pubblica l'annuncio",
+      "archive": "Archivia l'annuncio",
+      "restore": "Ripristina l'annuncio",
+      "delete": "Elimina definitivamente",
+      "analytics": "Analytics avanzate",
+      "refresh": "Aggiorna i dati",
+      "addListing": "Aggiungi un annuncio",
+      "viewList": "Vista a elenco",
+      "viewGrid": "Vista a griglia",
+      "exportCSV": "Esporta in CSV"
+    },
+    "emptyState": {
+      "title": "Nessun annuncio",
+      "description": "Inizia la tua avventura su {platform} creando il tuo primo annuncio. Migliaia di viaggiatori ti aspettano!",
+      "button": "Crea il mio primo annuncio",
+      "helpLink": "Hai bisogno di aiuto per creare il tuo annuncio?"
+    },
+    "addNewCard": {
+      "title": "Aggiungi un'altra proprietà",
+      "description": "Hai un nuovo bene da offrire? Inizia a generare guadagni ora.",
+      "button": "Avvia l'annuncio"
+    },
+    "units": {
+      "night": "/notte",
+      "month": "/mese",
+      "tnd": "TND"
+    },
+    "deleteModal": {
+      "title": "Elimina l'annuncio",
+      "description": "Questa azione è irreversibile. Tutti i dati relativi a questo annuncio verranno eliminati definitivamente.",
+      "warning": "Attenzione: Questa azione non può essere annullata.",
+      "cancel": "Annulla",
+      "confirmTextLabel": "Per confermare l'eliminazione digita ",
+      "confirm": "Elimina",
+      "deleting": "Eliminazione...",
+      "bookingsWarning": "Questo annuncio ha prenotazioni attive.",
+      "cancelBookingsOption": "Annulla automaticamente le prenotazioni in corso",
+      "continue": "Continua"
+    },
+    "qrCodeModal": {
+      "title": "QR Code - Condividi l'annuncio",
+      "download": "Scarica",
+      "share": "Condividi",
+      "copyLink": "Copia link",
+      "copied": "Copiato!",
+      "scanHint": "Scannerizza questo codice QR per accedere direttamente al tuo annuncio",
+      "customize": "Personalizza",
+      "close": "Chiudi"
+    },
+    "alerts": {
+      "statusChanged": "Lo stato dell'annuncio è stato modificato con successo",
+      "listingRestored": "L'annuncio è stato ripristinato con successo",
+      "errorOccurred": "Si è verificato un errore. Riprova più tardi",
+      "noResults": "Nessun annuncio corrisponde ai tuoi criteri di ricerca",
+      "filtersApplied": "Filtri applicati con successo",
+      "filtersReset": "Tutti i filtri sono stati reimpostati",
+      "statusActivated": "Annuncio pubblicato con successo",
+      "statusDeactivated": "Annuncio nascosto con successo",
+      "statusArchived": "Annuncio archiviato con successo",
+      "statusChangeFailed": "Errore durante il cambio di stato",
+      "dataRefreshed": "Dati aggiornati con successo",
+      "refreshFailed": "Errore durante l'aggiornamento",
+      "exportSuccess": "Esportazione CSV riuscita",
+      "exportFailed": "Errore durante l'esportazione CSV",
+      "listingDeleted": "Annuncio eliminato con successo"
+    },
+    "sorting": {
+      "newest": "Più recenti",
+      "oldest": "Più vecchi",
+      "mostViewed": "Più visualizzati",
+      "mostBooked": "Più prenotati",
+      "priceAsc": "Prezzo crescente",
+      "priceDesc": "Prezzo decrescente"
+    },
+    "confirmation": {
+      "deleteTitle": "Conferma di eliminazione",
+      "deleteMessage": "Sei certo di voler eliminare definitivamente questo annuncio? Questa azione non può essere annullata.",
+      "archiveTitle": "Conferma di archiviazione",
+      "archiveMessage": "Questo annuncio verrà spostato negli archivi. Potrai ripristinarlo in seguito se necessario.",
+      "publishTitle": "Conferma di pubblicazione",
+      "publishMessage": "Il tuo annuncio sarà immediatamente visibile a tutti i viaggiatori. Vuoi continuare?"
+    },
+    "placeholders": {
+      "search": "Cerca per titolo, descrizione o posizione...",
+      "minPrice": "Prezzo minimo",
+      "maxPrice": "Prezzo massimo",
+      "rooms": "Numero di camere"
+    },
+    "labels": {
+      "createdAt": "Data di creazione",
+      "updatedAt": "Ultima modifica",
+      "views": "Numero di visite",
+      "bookings": "Numero di prenotazioni",
+      "revenue": "Guadagno generato",
+      "rating": "Voto medio",
+      "reviews": "Recensioni"
+    },
+    "tooltips": {
+      "edit": "Modifica le informazioni di questo annuncio",
+      "viewPublic": "Consulta l'annuncio sul sito pubblico in una nuova scheda",
+      "history": "Vedi la cronologia completa delle modifiche",
+      "qrCode": "Genera un codice QR per condividere facilmente questo annuncio",
+      "analytics": "Accedi alle statistiche dettagliate delle prestazioni",
+      "delete": "Elimina definitivamente questo annuncio",
+      "refresh": "Aggiorna i dati in tempo reale",
+      "viewGrid": "Visualizza gli annunci come griglia",
+      "viewList": "Visualizza gli annunci come elenco"
+    },
+    "errors": {
+      "loadFailed": "Impossibile caricare i tuoi annunci. Verifica la tua connessione.",
+      "updateFailed": "L'aggiornamento dello stato è fallito. Riprova.",
+      "deleteFailed": "L'eliminazione dell'annuncio è fallita. Riprova.",
+      "qrGenerationFailed": "Impossibile generare il codice QR. Riprova."
+    },
+    "success": {
+      "statusUpdated": "Lo stato dell'annuncio è stato aggiornato con successo",
+      "listingCreated": "Il tuo annuncio è stato creato con successo",
+      "listingUpdated": "Le modifiche sono state salvate con successo"
+    },
+    "buttons": {
+      "retry": "Riprova",
+      "cancel": "Annulla",
+      "confirm": "Conferma",
+      "save": "Salva",
+      "close": "Chiudi"
+    },
+    "badges": {
+      "new": "Nuovo"
     }
   },
   "EditListing": {
-    "title": "Titolo dell'annuncio",
-    "autoSave": "Backup automatico attivo",
-    "saveDraft": "Salva bozza",
-    "step1": "Passaggio 1 di 4",
-    "step2": "Passaggio 2 di 4",
-    "step3": "Passaggio 3 di 4",
-    "step4": "Passaggio 4 di 4",
-    "detailsTitle": "Dettagli della proprietà",
-    "photosTitle": "Galleria fotografica",
-    "pricingTitle": "Prezzi",
-    "publishTitle": "Pubblicazione",
-    "detailsDesc": "Aggiorna le informazioni di base della tua struttura.",
-    "photosDesc": "Aggiungi o modifica le foto della tua proprietà.",
-    "pricingDesc": "Imposta tariffe e costi aggiuntivi.",
-    "publishDesc": "Gestisci lo stato di pubblicazione del tuo annuncio.",
-    "propertyType": "Tipo di proprietà",
-    "titlePlaceholder": "Es: Magnifica villa con vista mare",
-    "description": "Descrizione",
-    "descriptionPlaceholder": "Descrivi i vantaggi del tuo alloggio...",
-    "location": "Posizione",
-    "currentAddress": "Indirizzo attuale",
-    "modify": "Per modificare",
-    "back": "Indietro",
-    "saveChanges": "Salva modifiche",
-    "preview": "Anteprima",
-    "lastSaved": "Ultima modifica {time} fa",
-    "tabDetails": "Dettagli",
-    "tabPhotos": "Foto",
-    "tabPricing": "Prezzo",
-    "tabPublish": "Pubblicazione"
+    "loading": "Caricamento del tuo annuncio...",
+    "notFound": "Annuncio non trovato",
+    "confirmLeave": "Hai delle modifiche non salvate. Sei sicuro di voler lasciare questa pagina?",
+
+    "breadcrumb": {
+      "myListings": "I miei Annunci"
+    },
+
+    "page": {
+      "title": "Modifica l'annuncio",
+      "subtitle": "Affina il tuo annuncio per attirare più viaggiatori"
+    },
+
+    "actions": {
+      "save": "Salva",
+      "publish": "Pubblica",
+      "hide": "Nascondi",
+      "preview": "Anteprima",
+      "back": "Indietro",
+      "next": "Avanti",
+      "previous": "Precedente"
+    },
+
+    "sidebar": {
+      "details": "Informazioni",
+      "photos": "Foto",
+      "pricing": "Prezzi",
+      "publish": "Pubblicazione"
+    },
+
+    "sectionHints": {
+      "details": "Informazioni di base, posizione e attrezzature",
+      "photos": "Gestisci le foto del tuo annuncio",
+      "pricing": "Prezzo, costi e tipo di affitto",
+      "publish": "Controlla la visibilità del tuo annuncio"
+    },
+
+    "status": {
+      "active": "Pubblicata",
+      "draft": "Bozza",
+      "inactive": "Nascosta"
+    },
+
+    "completion": {
+      "title": "Completezza",
+      "excellent": "Eccellente",
+      "good": "Buona",
+      "poor": "Da migliorare",
+      "ready": "Pronto per essere pubblicato",
+      "remaining": "+{percent}% per eccellere",
+      "items": {
+        "title": "Titolo (10+ caratteri)",
+        "description": "Descrizione (100+ caratteri)",
+        "photos": "Foto (5+)",
+        "location": "Posizione completa",
+        "price": "Prezzo definito",
+        "equipment": "Attrezzature (3+)"
+      }
+    },
+
+    "expertTip": {
+      "title": "Consiglio dell'Esperto",
+      "message": "Gli annunci completi ricevono +50% di prenotazioni e godono di una migliore visibilità.",
+      "recommendation": "Raccomandazione IA"
+    },
+
+    "details": {
+      "titleAndDesc": "Titolo e Descrizione",
+      "titleAndDescHint": "Come verrà percepita la tua proprietà",
+      "configuration": "Configurazione",
+      "configurationHint": "Tipo e capacità di accoglienza",
+      "equipment": "Attrezzature",
+      "equipmentHint": "Seleziona le attrezzature disponibili"
+    },
+
+    "fields": {
+      "titlePlaceholder": "Titolo dell'annuncio",
+      "descriptionPlaceholder": "Descrivi la tua proprietà in dettaglio...",
+      "rooms": "Camere",
+      "bathrooms": "Bagni",
+      "surface": "Superficie m²",
+      "elevator": "Ascensore",
+      "guests": "viaggiatori"
+    },
+
+    "propertyTypes": {
+      "APARTMENT": "Appartamento",
+      "VILLA": "Villa",
+      "HOUSE": "Casa",
+      "STUDIO": "Studio",
+      "DUPLEX": "Duplex"
+    },
+
+    "location": {
+      "title": "Posizione",
+      "hint": "Indirizzo esatto dopo la prenotazione",
+      "governorate": "Governatorato",
+      "delegation": "Delegazione",
+      "street": "Via / Quartiere",
+      "positionSet": "Posizione definita",
+      "positionMissing": "Clicca sulla mappa per definire la posizione"
+    },
+
+    "equipment": {
+      "wifi": "WiFi",
+      "ac": "Aria condizionata",
+      "heating": "Riscaldamento",
+      "kitchen": "Cucina",
+      "parking": "Parcheggio",
+      "pool": "Piscina",
+      "gym": "Palestra",
+      "washer": "Lavatrice",
+      "tv": "TV",
+      "balcony": "Balcone",
+      "dishwasher": "Lavastoviglie",
+      "dryer": "Asciugatrice",
+      "coffee": "Macchina da caffè",
+      "smartlock": "Serratura connessa",
+      "speaker": "Cassa",
+      "workplace": "Spazio lavoro"
+    },
+
+    "photos": {
+      "clickToAdd": "Clicca per aggiungere foto",
+      "uploading": "Caricamento...",
+      "minWarning": "Minimo 5 foto consigliate — ne mancano {count}",
+      "main": "Principale",
+      "add": "Aggiungi",
+      "photos": "foto"
+    },
+
+    "rentalTypes": {
+      "shortTerm": "Breve termine",
+      "longTerm": "Lungo termine",
+      "both": "Entrambi"
+    },
+
+    "pricing": {
+      "perNight": "Prezzo per notte",
+      "perMonth": "Prezzo per mese",
+      "deposit": "Cauzione",
+      "depositDesc": "Rimborsabile",
+      "cleaningFee": "Spese pulizia",
+      "cleaningFeeDesc": "Una sola volta"
+    },
+
+    "units": {
+      "night": "/notte",
+      "month": "/mese"
+    },
+
+    "publish": {
+      "published": "Annuncio pubblicato",
+      "publishedDesc": "Visibile nelle ricerche",
+      "draft": "Bozza",
+      "hidden": "Nascosto",
+      "hiddenDesc": "Non visibile agli inquilini",
+      "live": "In diretta",
+      "stats": {
+        "views": "Visite",
+        "created": "Creato",
+        "score": "Punteggio"
+      }
+    },
+
+    "autoSave": {
+      "saved": "Salvato"
+    },
+
+    "tooltips": {
+      "save": "Salva le modifiche",
+      "title": "Un titolo accattivante attira più viaggiatori",
+      "description": "Descrivi i punti di forza unici della tua proprietà",
+      "rooms": "Numero di camere private",
+      "bathrooms": "Numero di bagni",
+      "surface": "Superficie abitabile in m²",
+      "pricePerNight": "Tariffa per una notte",
+      "pricePerMonth": "Tariffa per un mese",
+      "addPhotos": "Aggiungi foto di qualità",
+      "setAsMain": "Imposta come foto principale",
+      "deletePhoto": "Elimina questa foto",
+      "addPhoto": "Aggiungi una foto"
+    },
+
+    "success": {
+      "saved": "Le modifiche sono state salvate con successo"
+    }
+  },
+
+  "OwnerCalendar": {
+    "common": {
+      "guest": "Viaggiatore",
+      "dates": "data/e",
+      "nights": "notte/i",
+      "night": "notte"
+    },
+    "sidebar": {
+      "myProperties": "Le mie Proprietà",
+      "upcomingBookings": "Prossime prenotazioni",
+      "upgradeToPro": "Passa a Pro",
+      "manageMoreProperties": "Gestisci più proprietà"
+    },
+    "actions": {
+      "upgrade": "Aggiorna",
+      "confirm": "Conferma",
+      "apply": "Applica",
+      "selectedDates": "data/e selezionata/e"
+    },
+    "page": {
+      "title": "Calendario",
+      "managementFor": "Gestione per",
+      "selectProperty": "Seleziona una proprietà"
+    },
+    "legend": {
+      "booked": "Prenotato",
+      "blocked": "Bloccato",
+      "specialPrice": "Prezzo speciale"
+    },
+    "bulkActions": {
+      "title": "Azioni di gruppo",
+      "block": "Blocca",
+      "unblock": "Sblocca",
+      "specialPrice": "Prezzo speciale",
+      "reasonOptional": "Motivo (opzionale)",
+      "selectDates": "Seleziona date",
+      "pricePlaceholder": "Prezzo"
+    },
+    "selection": {
+      "title": "Selezione"
+    },
+    "stats": {
+      "title": "Statistiche",
+      "occupancy": "Occupazione",
+      "revenue": "Guadagni",
+      "bookedNights": "Notti pren.",
+      "blockedDays": "Giorni blocc."
+    },
+    "aiTip": {
+      "title": "Consiglio IA",
+      "lowOccupancy": "Tasso di occupazione al {occupancy}%. Pensa alle promozioni.",
+      "goodActivity": "Buona attività. Ottimizza le tariffe del weekend.",
+      "excellent": "Eccellente! Il tuo calendario è ben riempito."
+    },
+    "alerts": {
+      "dateBlocked": "Data bloccata",
+      "dateUnblocked": "Data sbloccata",
+      "specialPriceApplied": "Prezzo speciale applicato",
+      "datesBlocked": "{count} data/e bloccata/e",
+      "datesUnblocked": "{count} data/e sbloccata/e",
+      "priceApplied": "{price} TND applicato su {count} data/e",
+      "error": "Errore",
+      "cannotBlock": "Impossibile bloccare la data.",
+      "cannotUnblock": "Impossibile sbloccare la data.",
+      "cannotApplyPrice": "Impossibile applicare il prezzo.",
+      "cannotBlockDates": "Impossibile bloccare le date.",
+      "cannotUnblockDates": "Impossibile sbloccare le date.",
+      "cannotApplyPrices": "Impossibile applicare i prezzi.",
+      "dataRefreshed": "Dati aggiornati con successo",
+      "refreshFailed": "Errore durante l'aggiornamento dei dati"
+    }
+  },
+
+  "Calendar": {
+    "booking": "Prenotazione",
+    "blocked": "Bloccato",
+    "specialPrice": "Prezzo speciale",
+    "available": "Disponibile",
+    "past": "Passato",
+    "select": "Seleziona",
+    "unblock": "Sblocca",
+    "today": "Oggi",
+    "month": "Mese",
+    "week": "Settimana",
+    "list": "Elenco",
+    "legendBooked": "Prenotato",
+    "legendBlocked": "Bloccato",
+    "legendSpecialPrice": "Prezzo speciale",
+    "legendSelect": "Selezione",
+    "legendSelectedCount": "{count} selezionata/e"
+  },
+  "TeamManagement": {
+    "loading": {
+      "message": "Caricamento del tuo team..."
+    },
+    "hero": {
+      "badge": "Gestione del team",
+      "title": "Gestisci i tuoi collaboratori",
+      "description": "Invita co-host e gestisci i permessi per le tue proprietà.",
+      "button": "Invita un membro"
+    },
+    "stats": {
+      "activeMembers": "Membri attivi",
+      "pendingInvitations": "Inviti in attesa",
+      "properties": "Proprietà",
+      "performance": "Prestazione",
+      "response": "Risposta",
+      "tasks": "Compiti"
+    },
+    "empty": {
+      "title": "Nessun membro",
+      "description": "Inizia invitando collaboratori per gestire le tue proprietà.",
+      "button": "Invita"
+    },
+    "addMember": {
+      "title": "Aggiungi un membro",
+      "description": "Invita un co-host o un gestore"
+    },
+    "invitations": {
+      "title": "Inviti",
+      "pending": "in attesa",
+      "empty": "Nessun invito in attesa",
+      "progress": "Avanzamento",
+      "expiringSoon": "Scade presto",
+      "pendingStatus": "In attesa",
+      "remind": "Ricorda",
+      "cancel": "Annulla",
+      "expired": "Scaduto",
+      "hoursLeft": "{hours}h rimanenti",
+      "daysLeft": "{days}g rimanenti"
+    },
+    "analytics": {
+      "title": "Analitica dell'impegno",
+      "activityRate": "Tasso di attività",
+      "pending": "In attesa"
+    },
+    "security": {
+      "title": "Protocollo di sicurezza",
+      "description": "Verifica i permessi mensilmente per garantire l'integrità del tuo spazio di lavoro.",
+      "button": "Accedi alla dashboard"
+    },
+    "actions": {
+      "permissions": "Permessi",
+      "remove": "Rimuovi",
+      "history": "Cronologia"
+    },
+    "permissions": {
+      "title": "Permessi",
+      "canEdit": "Modifica l'annuncio",
+      "canEditDesc": "Può modificare le informazioni",
+      "canManageBookings": "Gestisci le prenotazioni",
+      "canManageBookingsDesc": "Può confermare o annullare",
+      "canViewRevenue": "Vedi i guadagni",
+      "canViewRevenueDesc": "Consultare le statistiche finanziarie",
+      "canManageTeam": "Gestisci il team",
+      "canManageTeamDesc": "Invita o rimuovi membri",
+      "cancel": "Annulla",
+      "save": "Salva"
+    },
+    "card": {
+      "property": "Proprietà",
+      "none": "Nessuna"
+    },
+    "roles": {
+      "manager": "Gestore",
+      "coHost": "Co-host",
+      "observer": "Osservatore"
+    },
+    "alerts": {
+      "invitationSent": "Invito inviato con successo!",
+      "invitationCancelled": "Invito annullato con successo.",
+      "memberRemoved": "Il membro è stato rimosso con successo.",
+      "permissionsUpdated": "Permessi aggiornati con successo.",
+      "reminderSent": "L'invito è stato reinviato con successo.",
+      "error": "Si è verificato un errore. Riprova."
+    }
+  },
+  "Profile": {
+    "loading": {
+      "message": "Caricamento del tuo profilo..."
+    },
+    "page": {
+      "badge": "Spazio proprietario",
+      "title": "Il mio Profilo",
+      "description": "Gestisci le tue informazioni personali e il tuo livello di fiducia."
+    },
+    "actions": {
+      "edit": "Modifica",
+      "cancel": "Annulla",
+      "save": "Salva",
+      "saving": "Salvataggio...",
+      "add": "Aggiungi"
+    },
+    "sections": {
+      "personalInfo": "Informazioni personali",
+      "availability": "Disponibilità di contatto"
+    },
+    "avatar": {
+      "title": "Foto del profilo",
+      "description": "Una foto chiara aiuta i proprietari e gli inquilini a fidarsi di te. JPG o PNG, max 5 MB.",
+      "edit": "Modifica",
+      "delete": "Elimina"
+    },
+    "fields": {
+      "firstName": "Nome",
+      "lastName": "Cognome",
+      "userType": "Tipo di utente",
+      "notEditable": "Non modificabile",
+      "email": "Email",
+      "phone": "Telefono",
+      "profession": "Professione",
+      "bio": "Biografia",
+      "bioPlaceholder": "Parlaci di te, delle tue proprietà…",
+      "languages": "Lingue parlate"
+    },
+    "availability": {
+      "description": "Fasce orarie preferite per chiamate e visite"
+    },
+    "trust": {
+      "title": "Punteggio di fiducia",
+      "idVerified": "Documento d'identità verificato",
+      "positiveReviews": "{count} recensioni positive",
+      "memberSince": "Membro dal {date}"
+    },
+    "verification": {
+      "title": "Verifica",
+      "status": "Stato OCR",
+      "verified": "Validato",
+      "pending": "In attesa",
+      "idType": "CIN Tunisina",
+      "description": "La verifica dell'identità rafforza la fiducia e ti permette di affittare più rapidamente.",
+      "update": "Aggiorna i documenti",
+      "start": "Inizia la verifica",
+      "verifiedDate": "Verificato il {date}"
+    }
+  },
+  "settings": {
+    "loading": "Caricamento delle impostazioni…",
+    "page_title": "Impostazioni dell'account",
+    "page_description": "Gestisci la tua sicurezza, i metodi di pagamento e le preferenze.",
+
+    "security_title": "Sicurezza & Autenticazione",
+    "password_label": "Password",
+    "password_description": "Modifica la tua password",
+    "password_change": "Modifica",
+    "password_cancel": "Annulla",
+    "password_current": "Password attuale",
+    "password_new": "Nuova password",
+    "password_confirm": "Conferma la password",
+    "password_current_placeholder": "Inserisci la tua password attuale",
+    "password_new_placeholder": "Crea una nuova password",
+    "password_confirm_placeholder": "Conferma la tua nuova password",
+    "password_mismatch": "Le password non corrispondono",
+    "password_update": "Aggiorna",
+    "password_updated": "Aggiornata!",
+    "password_success": "Password aggiornata con successo!",
+    "password_error": "Errore durante il cambio della password",
+
+    "security_tips_title": "Consigli di sicurezza",
+    "security_tips_chars": "8+ caratteri min.",
+    "security_tips_case": "Maiuscole & minuscole",
+    "security_tips_symbols": "Numeri & simboli",
+
+    "sessions_title": "Sessioni attive",
+    "sessions_count": "Sessioni attive —",
+    "device_unknown": "Dispositivo sconosciuto",
+    "current_badge": "Attuale",
+    "location_unknown": "Posizione sconosciuta",
+    "ip_unknown": "IP sconosciuto",
+    "revoke_button": "Revoca",
+    "session_revoked": "Sessione revocata con successo",
+    "session_error": "Errore durante la revoca della sessione",
+
+    "payment_title": "Metodi di pagamento",
+    "payment_add": "Aggiungi",
+    "payment_visa": "VISA",
+    "payment_expires": "Scade",
+    "payment_primary": "Principale",
+    "payment_bank_transfer": "Bonifico bancario",
+    "payment_configure": "Configura per i pagamenti",
+    "payment_coming_soon": "Funzionalità in arrivo",
+
+    "preferences_title": "Preferenze",
+    "language_label": "Lingua",
+    "language_fr": "Francese (FR)",
+    "language_en": "Inglese (EN)",
+    "language_ar": "Arabo (AR)",
+    "language_success": "Lingua aggiornata con successo",
+    "language_error": "Errore durante il cambio della lingua",
+
+    "theme_label": "Tema",
+    "theme_light": "Chiaro",
+    "theme_dark": "Scuro",
+    "theme_auto": "Auto",
+
+    "vacation_title": "Modalità vacanza",
+    "vacation_description": "Disattiva le notifiche e imposta una risposta automatica per i tuoi viaggiatori.",
+    "vacation_enabled": "Modalità vacanza attivata",
+    "vacation_disabled": "Modalità vacanza disattivata",
+    "vacation_save_success": "Messaggio di vacanza salvato",
+    "vacation_save_error": "Errore durante il salvataggio del messaggio",
+    "vacation_error": "Errore durante il cambio della modalità vacanza",
+    "vacation_placeholder": "Ciao! Sono assente fino a lunedì. Contatta l'assistenza per qualsiasi emergenza.",
+
+    "privacy_title": "Privacy",
+    "privacy_description": "Scarica una copia dei tuoi dati personali nel formato che preferisci.",
+    "privacy_csv": "CSV",
+    "privacy_json": "JSON",
+    "privacy_delete_account": "Elimina il mio account",
+    "privacy_delete_warning": "I dati vengono eliminati definitivamente dopo 30 giorni.",
+
+    "strength_weak": "Debole",
+    "strength_medium": "Medio",
+    "strength_good": "Buono",
+    "strength_strong": "Forte"
+  },
+
+  "toast": {
+    "password_success": "Password aggiornata con successo!",
+    "password_error": "Errore durante il cambio della password",
+    "language_success": "Lingua aggiornata con successo",
+    "language_error": "Errore durante il cambio della lingua",
+    "vacation_enabled": "Modalità vacanza attivata",
+    "vacation_disabled": "Modalità vacanza disattivata",
+    "vacation_error": "Errore durante il cambio della modalità vacanza",
+    "vacation_saved": "Messaggio di vacanza salvato",
+    "vacation_save_error": "Errore durante il salvataggio del messaggio",
+    "session_revoked": "Sessione revocata con successo",
+    "session_error": "Errore durante la revoca della sessione",
+    "coming_soon": "Funzionalità in arrivo"
   }
 }

@@ -1,10 +1,14 @@
+// app/api/listings/availability/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { withAuth } from "@/lib/api/withAuth";
 
+// GET - Public (pas de withAuth)
 export async function GET(request: NextRequest) {
   try {
-    const { userId: clerkId } = getAuth(request);
+    console.log("🔵 [GET /api/listings/availability] Début de la requête");
+
     const { searchParams } = new URL(request.url);
     const listingId = searchParams.get("listingId");
     const year = parseInt(
@@ -14,161 +18,170 @@ export async function GET(request: NextRequest) {
       searchParams.get("month") || (new Date().getMonth() + 1).toString(),
     );
 
-    if (!clerkId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
+    console.log(
+      `📊 Paramètres: listingId=${listingId}, year=${year}, month=${month}`,
+    );
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true, role: true },
-    });
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "Utilisateur non trouvé" },
-        { status: 404 },
-      );
-    }
-
-    if (listingId) {
-      const listing = await prisma.listing.findUnique({
-        where: { id: listingId },
-        select: { ownerId: true },
-      });
-
-      if (!listing || (listing.ownerId !== user.id && user.role !== "ADMIN")) {
-        return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-      }
+    if (!listingId) {
+      console.log("❌ Aucun listingId fourni");
+      return NextResponse.json({ error: "listingId requis" }, { status: 400 });
     }
 
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
     endDate.setHours(23, 59, 59, 999);
 
-    // Récupérer les dates bloquées
-    const blockedDates = await prisma.blockedDate.findMany({
-      where: {
-        listingId: listingId || undefined,
-        OR: [
-          { startDate: { gte: startDate, lte: endDate } },
-          { endDate: { gte: startDate, lte: endDate } },
-          {
-            AND: [
-              { startDate: { lte: startDate } },
-              { endDate: { gte: endDate } },
-            ],
-          },
-        ],
-      },
-    });
+    console.log(
+      `📅 Période: ${startDate.toISOString()} -> ${endDate.toISOString()}`,
+    );
 
-    // Récupérer les réservations
-    const bookings = await prisma.booking.findMany({
-      where: {
-        listingId: listingId || undefined,
-        status: { notIn: ["CANCELLED", "REJECTED", "EXPIRED"] },
-        OR: [
-          { checkIn: { gte: startDate, lte: endDate } },
-          { checkOut: { gte: startDate, lte: endDate } },
-          {
-            AND: [
-              { checkIn: { lte: startDate } },
-              { checkOut: { gte: endDate } },
-            ],
-          },
-        ],
-      },
-      include: {
-        tenant: {
-          select: {
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
+    const [blockedDates, bookings, pricingRules] = await Promise.all([
+      prisma.blockedDate.findMany({
+        where: {
+          listingId: listingId,
+          OR: [
+            { startDate: { gte: startDate, lte: endDate } },
+            { endDate: { gte: startDate, lte: endDate } },
+          ],
         },
-      },
-    });
+      }),
+      prisma.booking.findMany({
+        where: {
+          listingId: listingId,
+          status: { notIn: ["CANCELLED", "REJECTED", "EXPIRED"] },
+          OR: [
+            { checkIn: { gte: startDate, lte: endDate } },
+            { checkOut: { gte: startDate, lte: endDate } },
+          ],
+        },
+        include: {
+          tenant: { select: { firstName: true, lastName: true, email: true } },
+        },
+      }),
+      prisma.pricingRule.findMany({
+        where: {
+          listingId: listingId,
+          isActive: true,
+          OR: [
+            { startDate: { gte: startDate, lte: endDate } },
+            { endDate: { gte: startDate, lte: endDate } },
+          ],
+        },
+      }),
+    ]);
 
-    // Récupérer les règles de prix
-    const pricingRules = await prisma.pricingRule.findMany({
-      where: {
-        listingId: listingId || undefined,
-        isActive: true,
-        OR: [
-          { startDate: { gte: startDate, lte: endDate } },
-          { endDate: { gte: startDate, lte: endDate } },
-          {
-            AND: [
-              { startDate: { lte: startDate } },
-              { endDate: { gte: endDate } },
-            ],
-          },
-        ],
-      },
-    });
+    console.log(`📊 Résultats:`);
+    console.log(`   - blockedDates: ${blockedDates.length}`);
+    console.log(`   - bookings: ${bookings.length}`);
+    console.log(`   - pricingRules: ${pricingRules.length}`);
 
-    return NextResponse.json({
+    // Log détaillé des blockedDates
+    if (blockedDates.length > 0) {
+      console.log("📅 blockedDates détaillés:");
+      blockedDates.forEach((bd, i) => {
+        console.log(
+          `   ${i + 1}. id=${bd.id}, startDate=${bd.startDate}, endDate=${bd.endDate}, reason=${bd.reason}`,
+        );
+      });
+    } else {
+      console.log("⚠️ Aucune date bloquée trouvée");
+    }
+
+    // Log détaillé des pricingRules
+    if (pricingRules.length > 0) {
+      console.log("💰 pricingRules détaillés:");
+      pricingRules.forEach((pr, i) => {
+        console.log(
+          `   ${i + 1}. id=${pr.id}, startDate=${pr.startDate}, endDate=${pr.endDate}, fixedPrice=${pr.fixedPrice}`,
+        );
+      });
+    } else {
+      console.log("⚠️ Aucune règle de prix trouvée");
+    }
+
+    // Log détaillé des bookings
+    if (bookings.length > 0) {
+      console.log("🏠 bookings détaillés:");
+      bookings.forEach((b, i) => {
+        console.log(
+          `   ${i + 1}. id=${b.id}, checkIn=${b.checkIn}, checkOut=${b.checkOut}, status=${b.status}`,
+        );
+      });
+    } else {
+      console.log("⚠️ Aucune réservation trouvée");
+    }
+
+    const response = {
       blockedDates,
       bookings,
       pricingRules,
-    });
+    };
+
+    console.log("✅ Réponse envoyée avec succès");
+    return NextResponse.json(response);
   } catch (error) {
-    console.error("[GET /api/listings/availability] Erreur:", error);
+    console.error("❌ [GET /api/listings/availability] Erreur:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-export async function POST(request: NextRequest) {
-  try {
-    const { userId: clerkId } = getAuth(request);
+// POST - Modifications (réservé aux propriétaires)
+export const POST = withAuth(
+  async (request: NextRequest) => {
+    console.log("🔵 [POST /api/listings/availability] Début de la requête");
+
+    const user = (request as any).user;
+    console.log(`👤 Utilisateur: ${user.id}, role: ${user.role}`);
+
     const body = await request.json();
+    console.log("📦 Body reçu:", JSON.stringify(body, null, 2));
+
     const { listingId, action, dates, reason, customPrice, minStay } = body;
 
-    if (!clerkId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
+    console.log(`📊 Action: ${action}, listingId: ${listingId}`);
+    console.log(`📅 Dates: ${dates?.join(", ")}`);
+    if (reason) console.log(`💬 Raison: ${reason}`);
+    if (customPrice) console.log(`💰 Prix spécial: ${customPrice}`);
 
-    const user = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
+    const listing = await prisma.listing.findFirst({
+      where: { id: listingId, ownerId: user.id },
     });
 
-    if (!user) {
+    if (!listing) {
+      console.log(
+        `❌ Annonce non trouvée ou non autorisée: listingId=${listingId}, ownerId=${user.id}`,
+      );
       return NextResponse.json(
-        { error: "Utilisateur non trouvé" },
+        { error: "Annonce non trouvée ou non autorisée" },
         { status: 404 },
       );
     }
 
-    const listing = await prisma.listing.findUnique({
-      where: { id: listingId },
-      select: { ownerId: true },
-    });
+    console.log(`✅ Annonce trouvée: ${listing.title} (${listing.id})`);
 
-    if (!listing || listing.ownerId !== user.id) {
-      return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
-    }
-
-    // ACTION: BLOQUER
     if (action === "block") {
+      console.log(`🔒 Blocage de ${dates.length} date(s)`);
+      let blockedCount = 0;
+
       for (const dateStr of dates) {
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
+        console.log(
+          `   Traitement de la date: ${dateStr} -> ${date.toISOString()}`,
+        );
 
         const existing = await prisma.blockedDate.findFirst({
-          where: {
-            listingId,
-            startDate: date,
-            endDate: date,
-          },
+          where: { listingId, startDate: date, endDate: date },
         });
 
         if (existing) {
+          console.log(`   ⚠️ Date déjà bloquée, mise à jour de la raison`);
           await prisma.blockedDate.update({
             where: { id: existing.id },
             data: { reason: reason || existing.reason },
           });
         } else {
+          console.log(`   ✅ Création d'un nouveau blocage`);
           await prisma.blockedDate.create({
             data: {
               listingId,
@@ -178,62 +191,77 @@ export async function POST(request: NextRequest) {
               blockedById: user.id,
             },
           });
+          blockedCount++;
         }
       }
+
+      console.log(`✅ ${blockedCount} nouvelles dates bloquées`);
       return NextResponse.json({
         success: true,
         message: `${dates.length} date(s) bloquée(s)`,
+        blockedCount,
       });
     }
 
-    // ACTION: DÉBLOQUER
     if (action === "unblock") {
+      console.log(`🔓 Déblocage de ${dates.length} date(s)`);
+      let unblockedCount = 0;
+
       for (const dateStr of dates) {
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
+        console.log(`   Suppression du blocage pour: ${dateStr}`);
 
-        await prisma.blockedDate.deleteMany({
-          where: {
-            listingId,
-            startDate: date,
-            endDate: date,
-          },
+        const result = await prisma.blockedDate.deleteMany({
+          where: { listingId, startDate: date, endDate: date },
         });
+
+        if (result.count > 0) {
+          unblockedCount++;
+          console.log(`   ✅ Blocage supprimé`);
+        } else {
+          console.log(`   ⚠️ Aucun blocage trouvé pour cette date`);
+        }
       }
+
+      console.log(`✅ ${unblockedCount} dates débloquées`);
       return NextResponse.json({
         success: true,
         message: `${dates.length} date(s) débloquée(s)`,
+        unblockedCount,
       });
     }
 
-    // ACTION: PRIX SPÉCIAL
     if (action === "setPrice") {
       const price = parseFloat(customPrice);
+      console.log(
+        `💰 Application d'un prix spécial: ${price} TND pour ${dates.length} date(s)`,
+      );
+
       if (isNaN(price) || price <= 0) {
+        console.log(`❌ Prix invalide: ${customPrice}`);
         return NextResponse.json({ error: "Prix invalide" }, { status: 400 });
       }
+
+      let priceCount = 0;
 
       for (const dateStr of dates) {
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
+        console.log(`   Traitement de la date: ${dateStr}`);
 
         const existing = await prisma.pricingRule.findFirst({
-          where: {
-            listingId,
-            startDate: date,
-            endDate: date,
-          },
+          where: { listingId, startDate: date, endDate: date },
         });
 
         if (existing) {
+          console.log(`   ⚠️ Règle existante, mise à jour du prix`);
           await prisma.pricingRule.update({
             where: { id: existing.id },
-            data: {
-              fixedPrice: price,
-              isActive: true,
-            },
+            data: { fixedPrice: price, isActive: true },
           });
         } else {
+          console.log(`   ✅ Création d'une nouvelle règle de prix`);
           await prisma.pricingRule.create({
             data: {
               listingId,
@@ -245,55 +273,20 @@ export async function POST(request: NextRequest) {
               priority: 10,
             },
           });
+          priceCount++;
         }
       }
+
+      console.log(`✅ ${priceCount} nouvelles règles de prix créées`);
       return NextResponse.json({
         success: true,
         message: `Prix appliqué à ${dates.length} date(s)`,
+        priceCount,
       });
     }
 
-    // ACTION: DURÉE MINIMUM
-    if (action === "setMinStay") {
-      for (const dateStr of dates) {
-        const date = new Date(dateStr);
-        date.setHours(0, 0, 0, 0);
-
-        const existing = await prisma.pricingRule.findFirst({
-          where: {
-            listingId,
-            startDate: date,
-            endDate: date,
-          },
-        });
-
-        if (existing) {
-          await prisma.pricingRule.update({
-            where: { id: existing.id },
-            data: { minStay },
-          });
-        } else {
-          await prisma.pricingRule.create({
-            data: {
-              listingId,
-              name: `Durée minimum ${dateStr}`,
-              minStay,
-              startDate: date,
-              endDate: date,
-              isActive: true,
-            },
-          });
-        }
-      }
-      return NextResponse.json({
-        success: true,
-        message: `Durée minimum mise à jour`,
-      });
-    }
-
+    console.log(`❌ Action non reconnue: ${action}`);
     return NextResponse.json({ error: "Action non reconnue" }, { status: 400 });
-  } catch (error) {
-    console.error("[POST /api/listings/availability] Erreur:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
-  }
-}
+  },
+  { requiredRole: "OWNER" },
+);

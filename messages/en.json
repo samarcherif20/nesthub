@@ -1,177 +1,188 @@
 {
   "metadata": {
-    "title": "NESTHUB - Smart rental in Tunisia",
+    "title": "NESTHUB - Smart Rental in Tunisia",
     "description": "Secure real estate rental platform"
   },
   "navigation": {
-    "home": "Welcome",
-    "login": "Connection",
-    "register": "Registration",
+    "home": "Home",
+    "login": "Login",
+    "register": "Sign Up",
     "dashboard": "Dashboard",
-    "profile": "My profile",
+    "profile": "My Profile",
     "admin": "Administration",
-    "logout": "Disconnect"
+    "logout": "Logout"
   },
+
   "AcceptInvite": {
-    "loading": "Checking your invitation...",
-    "invalidLink": "Invalid link",
-    "noToken": "No invitation token provided.",
+    "loading": "Verifying invitation...",
+    "invalidLink": "Invalid invitation link",
+    "noToken": "No invitation token found",
     "backToHome": "Back to home",
     "alreadyUsed": "Invitation already used",
-    "expired": "Link expired",
-    "alreadyUsedMessage": "This invitation has already been accepted. Log in normally.",
-    "expiredMessage": "Invitation links are valid for 48 hours. This one has expired.",
-    "invalidMessage": "This invitation link is invalid or not found.",
-    "newLink": "New link",
-    "login": "Log in",
-    "needHelp": "Need help? Contact your administrator.",
-    "successMessage": "Invitation successfully accepted! Redirection...",
-    "successExisting": "Admin rights added",
-    "successNew": "Account created",
-    "welcomeExisting": "Congratulations ! 🎉",
-    "welcomeNew": "Welcome to the team! 🎉",
-    "successExistingMessage": "Your {email} account now has administrator rights.",
-    "successNewMessage": "Your {email} administrator account is ready.",
-    "redirecting": "Redirect to dashboard...",
-    "accessAdmin": "Access the admin panel",
-    "invitationReceived": "Invitation received",
+    "alreadyUsedMessage": "This invitation has already been accepted by someone else.",
+    "expired": "Invitation expired",
+    "expiredMessage": "This invitation link has expired. Please request a new link.",
+    "invalidMessage": "This invitation link is not valid.",
+    "newLink": "Request new link",
+    "login": "Login",
+    "needHelp": "Need help? Contact support",
+    "successMessage": "Invitation accepted successfully!",
+    "successNew": "New account",
+    "successExisting": "Rights added",
+    "welcomeAdmin": "Welcome to the admin team",
+    "welcomeCohost": "Welcome to the management team",
+    "successNewMessage": "Your account has been created successfully with email {email}",
+    "successExistingMessage": "Your access has been activated on the account associated with {email}",
+    "redirecting": "Redirecting to your space",
+    "accessAdmin": "Access admin dashboard",
+    "accessOwner": "Access my space",
     "existingAccountDetected": "Existing account detected",
-    "existingAccountMessage": "You already have an account. Accept the invitation to gain administrator rights.",
-    "invitedBy": "Invitation from",
-    "acceptAndGetRights": "Accept and obtain admin rights",
-    "loginFirst": "Log in first",
-    "youHaveBeenInvited": "You have been invited!",
-    "joinAsAdmin": "Join our {appName} platform as an administrator.",
-    "emailLabel": "E-mail",
+    "emailLabel": "Email",
+    "existingAccountMessage": "You already have an account. Click below to add administrator rights.",
+    "existingAccountMessageCohost": "You already have an account. Click below to add co-host rights.",
+    "invitedBy": "Invited by",
+    "propertyConcerned": "Property concerned",
+    "acceptAndGetRights": "Accept and get rights",
+    "acceptAndGetAccess": "Accept and get access",
+    "loginFirst": "Please login first",
     "firstName": "First name",
-    "lastName": "Name",
-    "username": "User name",
-    "password": "Password",
+    "firstNamePlaceholder": "e.g: Anis",
     "firstNameRequired": "First name is required",
-    "firstNameMinLength": "The first name must contain at least 2 characters",
-    "lastNameRequired": "Name is required",
-    "lastNameMinLength": "The name must contain at least 2 characters",
+    "firstNameMinLength": "First name must be at least 2 characters",
+    "lastName": "Last name",
+    "lastNamePlaceholder": "e.g: Trabelsi",
+    "lastNameRequired": "Last name is required",
+    "lastNameMinLength": "Last name must be at least 2 characters",
+    "username": "Username",
+    "usernamePlaceholder": "e.g: anis_trabelsi",
     "usernameRequired": "Username is required",
-    "usernameInvalid": "Username must contain 3-20 characters (letters, numbers, _)",
-    "passwordRequired": "Password is required",
-    "passwordMinLength": "Password must contain at least 8 characters",
-    "passwordUppercase": "Password must contain at least one capital letter",
-    "passwordLowercase": "The password must contain at least one lowercase",
-    "passwordNumber": "Password must contain at least one digit",
-    "firstNamePlaceholder": "first name",
-    "lastNamePlaceholder": "name",
-    "usernamePlaceholder": "username",
+    "usernameInvalid": "Letters, numbers and underscores only",
+    "password": "Password",
     "passwordPlaceholder": "Minimum 8 characters",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Minimum 8 characters",
+    "passwordUppercase": "At least one uppercase letter",
+    "passwordLowercase": "At least one lowercase letter",
+    "passwordNumber": "At least one number",
     "acceptTermsPrefix": "I accept the",
+    "termsOfUse": "Terms of Use",
     "acceptTermsAnd": "and the",
-    "termsOfUse": "conditions of use",
     "privacyPolicy": "Privacy Policy",
-    "creating": "Creation in progress...",
-    "acceptInvitation": "Accept the invitation",
-    "e2eEncryption": "E2E encryption",
+    "creating": "Creating...",
+    "acceptInvitation": "Accept invitation",
+    "e2eEncryption": "E2E Encryption",
     "secureAccess": "Secure access",
     "alreadyHaveAccount": "Already have an account?",
-    "signIn": "Log in",
-    "roleAssigned": "Assigned role",
+    "signIn": "Sign in",
+    "invitationReceived": "Invitation received",
+    "youHaveBeenInvited": "You have been invited",
+    "joinAsAdmin": "Join the {appName} admin team",
+    "joinAsCohost": "Join the management team for this property",
+    "roleAssigned": "Role assigned",
     "adminRole": "NESTHUB Administrator",
-    "invitationFrom": "Invitation from:",
-    "autoVerification": "Automatic verification",
-    "autoVerificationDesc": "As an administrator, your account will be verified immediately.",
-    "expiryTime": "48 hours",
-    "expiryLabel": "Link expires",
+    "cohostRole": "Co-host",
+    "invitationFrom": "Invitation from",
+    "autoVerification": "Auto verification",
+    "autoVerificationDesc": "Your identity is automatically verified via the secure invitation link.",
+    "expiryTime": "Validity period",
+    "expiryLabel": "7 days",
+    "limitedAccess": "Limited access",
     "fullAccess": "Full access",
-    "fullAccessLabel": "Administrator panel"
+    "cohostAccessLabel": "Property management only",
+    "fullAccessLabel": "NESTHUB back-office"
   },
+
   "Login": {
-    "newCodeSent": "A new code has been sent!",
-    "successLogin": "Connection successful! Redirection in progress...",
-    "redirectGoogle": "Redirect to Google...",
-    "redirectApple": "Redirect to Apple...",
-    "redirectFacebook": "Redirect to Facebook...",
-    "errorGoogle": "Error signing in with Google",
-    "errorApple": "Error signing in with Apple",
-    "errorFacebook": "Error connecting with Facebook",
+    "completeLogin": "Completing login...",
+    "newCodeSent": "New code sent!",
+    "successLogin": "Login successful! Redirecting...",
+    "redirectGoogle": "Redirecting to Google...",
+    "redirectApple": "Redirecting to Apple...",
+    "redirectFacebook": "Redirecting to Facebook...",
+    "errorGoogle": "Error logging in with Google",
+    "errorApple": "Error logging in with Apple",
+    "errorFacebook": "Error logging in with Facebook",
     "optional": "(Optional)",
-    "welcome": "Welcome !",
-    "subtitle": "Log in to access your secure space.",
-    "signUpTitle": "Create an account",
-    "signUpSubtitle": "Register to start your journey",
-    "heroTitle": "The clever link for a tight nest...",
-    "heroSubtitle": "A complete and intelligent platform dedicated to rental and property management, with trust and transparency.",
-    "joinStats": "Join +3,000 owners and tenants",
+    "welcome": "Welcome!",
+    "subtitle": "Login to access your secure space.",
+    "signUpTitle": "Create account",
+    "signUpSubtitle": "Sign up to begin your journey",
+    "heroTitle": "The smart link for a serene home...",
+    "heroSubtitle": "A complete and intelligent platform dedicated to property rental and management, with confidence and transparency.",
+    "joinStats": "Join 3,000+ property owners and tenants",
     "renter": "Tenant",
     "owner": "Owner",
-    "email": "E-mail address",
+    "email": "Email address",
     "emailPlaceholder": "name@company.com",
     "password": "Password",
-    "forgotPassword": "Forgotten password?",
-    "login": "Log in",
-    "signUp": "Register",
-    "processing": "Processing in progress...",
+    "forgotPassword": "Forgot password?",
+    "login": "Login",
+    "signUp": "Sign up",
+    "processing": "Processing...",
     "orContinueWith": "Or continue with",
-    "termsPrefix": "By registering or logging in, you agree to our",
+    "termsPrefix": "By signing up or logging in, you accept our",
     "termsOfUse": "Terms of Use",
     "and": "and our",
     "privacyPolicy": "Privacy Policy",
     "termsSuffix": ".",
-    "signIn": "Log in",
+    "signIn": "Sign in",
     "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "No account yet?",
-    "accessInfo": "Your access is automatically detected based on your credentials. Administrator profiles do not need manual selection.",
+    "dontHaveAccount": "Don't have an account yet?",
+    "accessInfo": "Your access is automatically detected based on your credentials. Admin profiles don't need manual selection.",
     "profileType": "Profile type",
-    "rememberMe": "Stay connected",
+    "rememberMe": "Stay logged in",
     "legal": "Legal notices",
-    "privacy": "Confidentiality",
+    "privacy": "Privacy",
     "emailRequired": "Email is required",
     "emailInvalid": "Please enter a valid email address",
     "passwordRequired": "Password is required",
-    "userNotFound": "No accounts found with this email address",
+    "userNotFound": "No account found with this email address",
     "incorrectPassword": "Incorrect password. Please try again!",
-    "error": "An error has occurred. Please try again",
+    "error": "An error occurred. Please try again",
     "usernameRequired": "Username is required",
     "usernameInvalid": "Invalid username format!",
     "emailNotFound": "No account found with this email",
-    "usernameNotFound": "No accounts found with this username",
+    "usernameNotFound": "No account found with this username",
     "emailOrUsername": "Email or username",
     "emailOrUsernamePlaceholder": "contact@example.com",
-    "identifierRequired": "Email or username required",
+    "identifierRequired": "Email or username is required",
     "identifierInvalid": "Invalid format. Please enter a valid email or username!",
-    "userNotFoundInDB": "Account found but not synchronized. Please contact support!",
+    "userNotFoundInDB": "Account found but not synced. Please contact support!",
     "wrongRoleRenter": "This account is an owner. Please select 'Owner'!",
     "wrongRoleOwner": "This account is a tenant. Please select 'Tenant'!",
     "tooManyAttempts": "Too many attempts. Try again later!",
     "emailAlreadyExists": "This email is already in use",
-    "passwordTooShort": "The password is too short (minimum 8 characters)",
+    "passwordTooShort": "Password is too short (minimum 8 characters)",
     "passwordCompromised": "This password has been compromised. Please choose another",
     "verificationFailed": "Verification failed",
     "sessionExists": "A session already exists",
     "profileTypeRequired": "Please select a profile type",
-    "incorrectCode": "Incorrect verification code.",
+    "incorrectCode": "Verification code is incorrect.",
     "accountLocked": "Your account is temporarily locked. Please try again later.",
     "accountSuspended": "Your account has been suspended. Please contact support.",
     "verificationCode": "6-digit verification code",
     "verificationCodeSent": "A verification code has been sent to your email address.",
-    "verify": "Check",
+    "verify": "Verify",
     "resendCode": "Resend code",
-    "backToLogin": "Return to login",
+    "backToLogin": "Back to login",
     "codeRequired": "Please enter the 6-digit code",
     "codeInvalid": "Invalid code. Please enter a 6-digit code.",
     "codeExpired": "This code has expired. Please request a new one.",
     "secureAccess": "Secure your access",
     "enterCodeSentTo": "Enter the 6-digit code sent to",
     "trustDevice": "Trust this device for 30 days",
-    "trustDeviceTooltip": "By enabling this option, you will no longer have to enter a verification code on this browser for the next 30 days.",
-    "verifying": "Verification...",
-    "limitedTimeCode": "Limited time code",
+    "trustDeviceTooltip": "By enabling this option, you won't have to enter a verification code on this browser for the next 30 days.",
+    "verifying": "Verifying...",
+    "limitedTimeCode": "Time-limited code",
     "codeExpiresIn": "This code expires in",
     "didNotReceiveCode": "Didn't receive the code?",
     "resend": "Resend",
     "sending": "Sending...",
     "codeResent": "A new code has been sent to you!",
-    "requestNewCode": "Request a new code",
+    "requestNewCode": "Request new code",
     "close": "Close",
     "securityBadge": "AES-256 encryption • GDPR compliant",
-    "2faAlt": "Two-factor verification",
+    "2faAlt": "Two-factor authentication",
     "back": "Back"
   },
   "admin": {
@@ -184,28 +195,28 @@
     "disputes": "Disputes",
     "staticPages": "Static Pages",
     "settings": "Settings",
-    "adminPanel": "Admin Panel",
+    "adminPanel": "Admin panel",
     "administrator": "Administrator",
-    "logout": "Disconnect",
-    "searchPlaceholder": "To research...",
-    "searching": "Research...",
+    "logout": "Logout",
+    "searchPlaceholder": "Search...",
+    "searching": "Searching...",
     "results": "results",
     "noResults": "No results found",
     "notifications": "Notifications",
-    "new": "news)",
-    "viewAll": "See all notifications",
+    "new": "new",
+    "viewAll": "View all notifications",
     "myProfile": "My Profile",
     "security": "Security",
-    "confirmLogout": "Disconnect confirmation",
-    "logoutMessage": "Are you sure you want to log out?",
+    "confirmLogout": "Logout confirmation",
+    "logoutMessage": "Are you sure you want to logout?",
     "cancel": "Cancel",
-    "invitationDesAdmins": "Admin Invitation",
+    "invitationDesAdmins": "Admin invitations",
     "usersManagement": {
-      "unauthorized": "Unauthorized access",
+      "unauthorized": "Access not authorized",
       "stats": {
         "totalUsers": "Total users",
         "newUsers30d": "New users (30 days)",
-        "pendingValidation": "Waiting for validation",
+        "pendingValidation": "Pending validation",
         "verifiedIdentity": "Verified identity"
       },
       "page": {
@@ -219,40 +230,41 @@
         "view": "View profile",
         "suspend": "Suspend",
         "ban": "Ban",
-        "activate": "Enable",
+        "activate": "Activate",
         "warn": "Warning",
         "reactivate": "Reactivate",
-        "unlock": "Unblock",
-        "lock": "To block",
-        "escalate": "Escalation",
-        "history": "Historical",
-        "addNote": "Add a note"
+        "unlock": "Unlock",
+        "lock": "Lock",
+        "escalate": "Escalate",
+        "history": "History",
+        "addNote": "Add note"
       },
       "filters": {
         "searchPlaceholder": "Search by name, email, phone...",
         "role": {
           "all": "All roles",
           "admin": "Admin",
-          "property_owner": "Owner",
+          "property_owner": "Property owner",
           "tenant": "Tenant"
         },
         "status": {
           "all": "All statuses",
           "active": "Active",
-          "pending": "On hold",
+          "pending": "Pending",
           "suspended": "Suspended",
           "banned": "Banned",
           "rejected": "Rejected",
-          "security_locked": "Blocked (security)",
-          "manually_blocked": "Blocked (manual)",
+          "security_locked": "Locked (security)",
+          "manually_blocked": "Locked (manual)",
           "inactive": "Inactive"
         },
+
         "advanced": {
           "title": "Advanced filters",
           "dateRange": "Registration period",
           "minReliability": "Minimum reliability score",
           "maxFraud": "Maximum fraud score",
-          "minReliabilityPlaceholder": "≥50",
+          "minReliabilityPlaceholder": "≥ 50",
           "maxFraudPlaceholder": "≤ 30"
         }
       },
@@ -260,7 +272,7 @@
         "label": "Verification",
         "all": "All",
         "verified": "Verified",
-        "pending": "On hold",
+        "pending": "Pending",
         "rejected": "Rejected"
       },
       "table": {
@@ -279,15 +291,15 @@
         }
       },
       "totalUsers": "Total users",
-      "newUsers30d": "New (30 days)",
-      "activeUsers": "Assets",
-      "pendingUsers": "On hold",
-      "suspendedUsers": "Hanging",
+      "newUsers30d": "New (30d)",
+      "activeUsers": "Active",
+      "pendingUsers": "Pending",
+      "suspendedUsers": "Suspended",
       "bannedUsers": "Banned",
       "verifiedIdentity": "Verified",
-      "pendingApprovals": "Waiting for verification",
+      "pendingApprovals": "Pending verification",
       "averageReliability": "Average reliability",
-      "pendingValidation": "Waiting for validation",
+      "pendingValidation": "Pending validation",
       "export": {
         "csv": {
           "title": "CSV",
@@ -300,17 +312,17 @@
       },
       "badges": {
         "verified": "Verified",
-        "pending": "On hold",
+        "pending": "Pending",
         "rejected": "Rejected",
-        "unverified": "Not verified",
+        "unverified": "Unverified",
         "reliability": "Reliability",
         "fraud": "Fraud"
       },
       "alerts": {
-        "sessionExpired": "Session expired - please log in again",
-        "unauthorized": "Unauthorized access",
+        "sessionExpired": "Session expired - please login again",
+        "unauthorized": "Access not authorized",
         "loadingError": "Loading error",
-        "exportError": "Error during export",
+        "exportError": "Export error",
         "exportSuccess": "Export successful"
       },
       "messages": {
@@ -322,22 +334,22 @@
         "description": "Do you want to restore full access for this user?",
         "confirm": "Reactivate account",
         "cancel": "Cancel",
-        "processing": "Treatment...",
+        "processing": "Processing...",
         "currentStatus": "This account is currently {status}",
         "status": {
           "suspended": "suspended",
           "banned": "banned",
-          "locked": "blocked",
+          "locked": "locked",
           "inactive": "inactive",
           "rejected": "rejected",
           "unknown": "unknown"
         }
       },
       "warningModal": {
-        "title": "Send a warning",
-        "description": "This action will be saved in history",
-        "reason": "Pattern",
-        "reliability": "Fiab.",
+        "title": "Send warning",
+        "description": "This action will be recorded in the history",
+        "reason": "Reason",
+        "reliability": "Reliability",
         "specifyReason": "Specify the reason",
         "optionalMessage": "Message (optional)",
         "explainReason": "Explain the reason...",
@@ -347,7 +359,7 @@
         "previousWarnings": "Already {count} warning(s).",
         "cancel": "Cancel",
         "send": "Send",
-        "notifyByEmail": "Notify the user by email",
+        "notifyByEmail": "Notify user by email",
         "emailNotificationMessage": "An email will be sent to {email} to notify them of this warning.",
         "processing": "Sending...",
         "error": "Error sending warning",
@@ -361,12 +373,12 @@
             "description": "Unsolicited advertising messages"
           },
           "falseInformation": {
-            "label": "Fake news",
-            "description": "Misleading profile information"
+            "label": "False information",
+            "description": "Misleading information on profile"
           },
           "paymentIssues": {
             "label": "Payment issues",
-            "description": "Late or refused payments"
+            "description": "Late or declined payments"
           },
           "multipleAccounts": {
             "label": "Multiple accounts",
@@ -379,101 +391,101 @@
         }
       },
       "addNoteModal": {
-        "title": "Add an internal note",
-        "description": "Visible only to administrators",
-        "noteContent": "Content of the note",
+        "title": "Add internal note",
+        "description": "Visible only by administrators",
+        "noteContent": "Note content",
         "placeholder": "Write your note here...",
         "addNote": "Add note",
-        "adding": "Addition...",
+        "adding": "Adding...",
         "cancel": "Cancel",
         "enterLinkUrl": "Enter the link URL:",
         "error": "Error adding note"
       },
       "banModal": {
-        "title": "Permanently ban the user",
+        "title": "Permanently ban user",
         "description": "This action is irreversible",
         "reason": "Reason for ban",
         "selectReason": "Select a reason...",
         "evidence": "Evidence and details",
-        "evidencePlaceholder": "Detail the reasons and attach links to the evidence if necessary...",
-        "notify": "Notify the user by email",
+        "evidencePlaceholder": "Detail the reasons and attach links to evidence if necessary...",
+        "notify": "Notify user by email",
         "emailNotificationMessage": "An email will be sent to {email} to notify them of this ban.",
         "confirmLabel": "Type",
         "cancel": "Cancel",
         "confirm": "Confirm ban",
-        "processing": "Treatment..."
+        "processing": "Processing..."
       },
       "escalateModal": {
-        "title": "Gradual escalation",
-        "description": "Gradual sanction system",
+        "title": "Progressive escalation",
+        "description": "System of graduated sanctions",
         "currentLevel": "Current level",
         "applySanction": "Select next step",
         "reason": "Reason for escalation",
         "reasonPlaceholder": "Describe the reasons justifying this sanction...",
         "warning": "Warning",
         "suspension": "Suspension",
-        "ban": "Banishment",
+        "ban": "Ban",
         "alreadyApplied": "Already applied to user",
-        "locked": "Locked - Next Step Required",
+        "locked": "Locked - Next step required",
         "historyNote": "This reason will be recorded in the moderation history.",
         "apply": "Apply escalation",
-        "notify": "Notify the user by email",
+        "notify": "Notify user by email",
         "emailNotificationMessage": "An email will be sent to {email} to notify them of this sanction.",
         "cancel": "Cancel",
-        "processing": "Treatment..."
+        "processing": "Processing..."
       },
       "suspendModal": {
-        "title": "Temporarily suspend the user",
-        "description": "The user will not be able to log in for the chosen duration",
-        "duration": "Length of suspension",
+        "title": "Temporarily suspend user",
+        "description": "User will not be able to login for the chosen duration",
+        "duration": "Suspension duration",
         "day": "1 day",
         "days": "{count} days",
         "reason": "Reason for suspension",
         "selectReason": "Select a reason",
-        "details": "Detailed pattern",
+        "details": "Detailed reason",
         "detailsPlaceholder": "Briefly explain the reason for this measure...",
         "emailNotification": "notification sent",
         "notificationInfo": "An email will be sent to the user to inform them of the suspension.",
         "enterLinkUrl": "Enter the link URL",
         "cancel": "Cancel",
         "confirm": "Confirm suspension",
-        "processing": "Treatment...",
+        "processing": "Processing...",
         "reasons": {
           "spam": "Spam or abuse",
-          "tos": "Violation of the terms of use",
-          "safety": "Account security",
+          "tos": "Terms of service violation",
+          "safety": "Account safety",
           "other": "Other reason"
         },
         "emailNotificationTitle": "Email notification",
         "emailNotificationMessage": "An email will be sent to {email} to notify them of this suspension.",
-        "notify": "Notify the user by email"
+        "notify": "Notify user by email"
       },
       "lockUnlockModal": {
-        "lockTitle": "Block account",
-        "unlockTitle": "Unblock account",
-        "lockDescription": "Manually block access to this account.",
-        "unlockDescription": "This account was blocked after several failed login attempts.",
-        "reason": "Reason for blocking",
-        "reasonPlaceholder": "Why block this account?...",
-        "notifyLock": "Notify user of blocking",
-        "notifyUnlock": "Notify user of unblocking",
-        "emailNotificationMessage": "An email will be sent to {email} to notify this.",
+        "lockTitle": "Lock account",
+        "unlockTitle": "Unlock account",
+        "lockDescription": "Manually lock access to this account.",
+        "unlockDescription": "This account was locked after multiple failed login attempts.",
+        "reason": "Reason for lock",
+        "reasonPlaceholder": "Why lock this account?...",
+        "notifyLock": "Notify user of lock",
+        "notifyUnlock": "Notify user of unlock",
+        "emailNotificationMessage": "An email will be sent to {email} to notify them.",
         "failedAttempts": "Failed attempts",
-        "lock": "To block",
-        "unlock": "Unblock",
+        "lock": "Lock",
+        "unlock": "Unlock",
         "cancel": "Cancel",
-        "processing": "Treatment...",
+        "processing": "Processing...",
         "enterLinkUrl": "Enter the link URL:"
       },
       "actionsHistoryModal": {
-        "title": "Stock History",
+        "title": "Action history",
         "subtitle": "NESTHUB Administration",
         "close": "Close",
         "admin": {
           "default": "Admin"
         },
         "search": {
-          "placeholder": "Search for an admin, user or pattern..."
+          "placeholder": "Search for admin, user or reason..."
         },
         "filters": {
           "label": "Filter by",
@@ -481,27 +493,27 @@
         },
         "actionTypes": {
           "suspension": "Suspension",
-          "suspensionUndone": "Suspension canceled",
-          "ban": "Banishment",
-          "banUndone": "Ban canceled",
+          "suspensionUndone": "Suspension undone",
+          "ban": "Ban",
+          "banUndone": "Ban undone",
           "activation": "Reactivation",
-          "unlock": "Unblocking",
-          "lock": "Blocking",
-          "lockUndone": "Block canceled",
+          "unlock": "Unlock",
+          "lock": "Lock",
+          "lockUndone": "Lock undone",
           "warning": "Warning",
           "escalation": "Escalation",
-          "escalationUndone": "Escalation canceled",
+          "escalationUndone": "Escalation undone",
           "note": "Internal note",
-          "rejectVerification": "Verification rejection",
-          "validateVerification": "Validation verification",
-          "undone": "Action canceled"
+          "rejectVerification": "Reject verification",
+          "validateVerification": "Validate verification",
+          "undone": "Action undone"
         },
         "status": {
           "active": "Active",
           "suspended": "Suspended",
           "banned": "Banned",
-          "pending": "On hold",
-          "locked": "Blocked",
+          "pending": "Pending",
+          "locked": "Locked",
           "inactive": "Inactive",
           "rejected": "Rejected"
         },
@@ -509,22 +521,22 @@
           "target": "User"
         },
         "action": {
-          "reason": "Pattern"
+          "reason": "Reason"
         },
         "undo": {
-          "button": "Cancel",
-          "processing": "Cancelation...",
-          "title": "Cancel this action"
+          "button": "Undo",
+          "processing": "Undoing...",
+          "title": "Undo this action"
         },
         "results": {
-          "showing": "Showing {start} to {end} on {total} results",
+          "showing": "Showing {start} to {end} of {total} results",
           "empty": "No actions found"
         },
         "errors": {
           "tokenNotAvailable": "Token not available",
-          "apiError": "API error:",
-          "loadFailed": "Unable to load action history",
-          "retry": "Try again"
+          "apiError": "API Error:",
+          "loadFailed": "Failed to load action history",
+          "retry": "Retry"
         }
       }
     }
@@ -534,109 +546,109 @@
     "no": "No",
     "save": "Save",
     "cancel": "Cancel",
-    "delete": "DELETE",
-    "edit": "To modify",
+    "delete": "Delete",
+    "edit": "Edit",
     "close": "Close",
     "confirm": "Confirm",
     "back": "Back"
   },
   "Terms": {
-    "title": "General Conditions of Use",
+    "title": "Terms and Conditions",
     "version": "Version",
-    "lastUpdate": "Last update:",
+    "lastUpdate": "Last updated:",
     "print": "Print",
     "downloadPDF": "Download PDF",
     "navigation": "Navigation",
     "needHelp": "Need help?",
-    "helpText": "If you have any questions regarding our T&Cs, our team is at your disposal.",
+    "helpText": "If you have questions about our terms, our team is here to help.",
     "contactUs": "Contact us",
-    "or": "Or",
+    "or": "or",
     "privacyPolicy": "Privacy Policy",
     "introduction": {
       "title": "Introduction and acceptance",
-      "p1": "The purpose of these General Conditions of Use (hereinafter referred to as “CGU”) is to define the terms and conditions under which the NESTHUB platform makes real estate connection services available to its users in Tunisia.",
-      "p2": "By accessing or using the NESTHUB website, you acknowledge that you have read, understood and agree to be bound by these terms. If you do not agree to these terms, you must not use our services.",
-      "warning": "These T&Cs apply to all users of the platform: tenants, owners and unconnected visitors."
+      "p1": "These Terms and Conditions define the terms under which the NESTHUB platform provides property rental services to its users in Tunisia.",
+      "p2": "By accessing or using the NESTHUB website, you acknowledge that you have read, understood, and agree to be bound by these terms. If you do not accept these terms, you must not use our services.",
+      "warning": "These terms apply to all platform users: tenants, owners and unregistered visitors."
     },
     "services": {
-      "title": "Description of services",
-      "description": "NESTHUB is a Tunisian technological platform facilitating the rental of real estate between individuals. Our services include, but are not limited to:",
-      "item1": "The publication of rental advertisements with photos, videos and detailed descriptions.",
-      "item2": "A secure messaging system with anti-leak detection of personal data.",
-      "item3": "A digital reservation and rental file management tool.",
+      "title": "Service description",
+      "description": "NESTHUB is a Tunisian technology platform facilitating property rental between individuals. Our services include, but are not limited to:",
+      "item1": "Publication of rental listings with photos, videos and detailed descriptions.",
+      "item2": "A secure messaging system with anti-data leak detection.",
+      "item3": "A tool for managing reservations and digital rental files.",
       "item4": "Secure payment solutions via Konnect, with escrow deposit management.",
-      "item5": "An identity verification system by OCR (CIN / Passport).",
-      "item6": "A reliability score and trust badges for verified users.",
-      "item7": "Artificial intelligence tools for fraud detection and recommendation."
+      "item5": "Identity verification system via OCR (ID card / Passport).",
+      "item6": "Reliability score system and trust badges for verified users.",
+      "item7": "AI tools for fraud detection and recommendation."
     },
     "obligations": {
-      "title": "User Obligations",
+      "title": "User obligations",
       "owners": {
         "title": "Owners",
         "item1": "Provide accurate and truthful information about the property.",
-        "item2": "Legally own rental rights to the published property.",
-        "item3": "Respect standards of decency and Tunisian legislation.",
+        "item2": "Legally own rental rights to the listed property.",
+        "item3": "Comply with decency standards and Tunisian legislation.",
         "item4": "Do not publish fictitious or misleading advertisements.",
-        "item5": "Respond to reservation requests within a reasonable time."
+        "item5": "Respond to reservation requests within a reasonable timeframe."
       },
       "tenants": {
         "title": "Tenants",
         "item1": "Provide authentic identity documents.",
         "item2": "Use the platform fairly and honestly.",
-        "item3": "Make all payments exclusively through NESTHUB.",
-        "item4": "Respect the internal regulations of the rented property.",
+        "item3": "Make all payments exclusively via NESTHUB.",
+        "item4": "Comply with the house rules of the rented property.",
         "item5": "Report any issues through official channels."
       },
       "prohibited": {
         "title": "Prohibited behaviors",
-        "text": "It is strictly prohibited to share personal contact details (numbers, emails, IBAN) in messaging, circumvent the payment system, publish false advertisements or harass other users. Any breach may result in suspension or permanent ban of the account."
+        "text": "It is strictly forbidden to share personal data (numbers, emails, IBAN) in messaging, bypass the payment system, post false advertisements or harass other users. Any violation may result in account suspension or permanent ban."
       }
     },
     "paiements": {
-      "title": "Financial Conditions",
-      "quote": "The security of your transactions is our priority. All payments made on NESTHUB are processed by Konnect, an approved payment provider in Tunisia.",
+      "title": "Financial Terms",
+      "quote": "The security of your transactions is our priority. All payments on NESTHUB are processed by Konnect, a licensed payment service provider in Tunisia.",
       "commission": {
-        "title": "Service fees",
+        "title": "Service commissions",
         "text": "NESTHUB charges a 20% commission on each transaction. It is automatically deducted from the amount paid to the owner and clearly displayed before any confirmation."
       },
       "deposit": {
-        "title": "Bail (Receiver)",
-        "text": "The deposit is collected upon payment and placed in escrow. It is automatically returned at the end of your stay without dispute, or arbitrated by NESTHUB in the event of a conflict with photo supporting documents."
+        "title": "Security deposit (Escrow)",
+        "text": "The deposit is collected at payment and placed in escrow. It is automatically refunded at the end of the stay without dispute, or arbitrated by NESTHUB in case of conflict with photo evidence."
       },
       "payout": {
-        "title": "Payments to owners",
-        "text": "Payments are made after confirmation of check-in, with a minimum threshold of 50 DT. A detailed statement is available in the owner dashboard."
+        "title": "Payouts to owners",
+        "text": "Payouts are made after check-in confirmation, with a minimum threshold of 50 DT. A detailed statement is available in the owner dashboard."
       },
       "refund": {
         "title": "Refunds",
-        "text": "Refunds are calculated according to the owner's cancellation policy. The delivery time is 3 to 5 working days. NESTHUB may force a refund in the event of a proven dispute."
+        "text": "Refunds are calculated according to the owner's cancellation policy. The timeframe is 3 to 5 business days. NESTHUB may force a refund in case of proven dispute."
       }
     },
     "responsabilite": {
       "title": "Limitation of Liability",
       "description": "NESTHUB acts as a content host and technical intermediary. The platform cannot be held responsible for:",
-      "item1": "From the content of advertisements published by users.",
-      "item2": "Non-execution or poor execution of the lease concluded between the parties.",
+      "item1": "The content of advertisements published by users.",
+      "item2": "Non-performance or poor performance of the lease agreement between the parties.",
       "item3": "Indirect damages resulting from the use of the service.",
-      "item4": "Temporary interruptions of the service for maintenance or force majeure.",
-      "item5": "The quality, conformity or actual condition of the goods rented."
+      "item4": "Temporary service interruptions for maintenance or force majeure.",
+      "item5": "The quality, compliance or actual condition of rented properties."
     },
     "resiliation": {
       "title": "Termination",
-      "description": "The user can delete their account at any time from their settings. NESTHUB reserves the right to suspend or terminate any account in the event of:",
+      "description": "The user may delete their account at any time from settings. NESTHUB reserves the right to suspend or terminate any account in case of:",
       "reason1": {
-        "title": "Non-compliance with the T&Cs",
-        "desc": "Violation of the rules of use."
+        "title": "Non-compliance with terms",
+        "desc": "Violation of usage rules."
       },
       "reason2": {
         "title": "Fraudulent activities",
-        "desc": "Fake identities, scams, fake reviews."
+        "desc": "False identities, scams, fake reviews."
       },
       "reason3": {
         "title": "System bypass",
-        "desc": "Payments or contact sharing outside NH."
+        "desc": "Payments or data sharing outside NH."
       },
-      "process": "Termination follows the progressive escalation process: warning → temporary suspension → permanent ban, except serious fraud justifying immediate action."
+      "process": "Termination follows the progressive escalation process: warning → temporary suspension → permanent ban, except for serious fraud justifying immediate action."
     },
     "donnees": {
       "title": "Personal data",
@@ -662,17 +674,17 @@
   },
   "Privacy": {
     "title": "Privacy Policy",
-    "lastUpdate": "Last update:",
-    "description": "At NestHub, protecting your personal data is a top priority. This policy details how we collect, use and protect your information, in accordance with applicable regulations.",
+    "lastUpdate": "Last updated:",
+    "description": "At NestHub, protecting your personal data is our highest priority. This policy explains how we collect, use, and protect your information, in accordance with applicable regulations.",
     "print": "Print",
     "downloadPDF": "Download PDF",
     "summary": "Summary",
     "needHelp": "Need help?",
-    "helpText": "Questions about your data? Our DPO is at your disposal.",
-    "contactDPO": "Contact the DPO",
+    "helpText": "Questions about your data? Our Data Protection Officer is at your disposal.",
+    "contactDPO": "Contact DPO",
     "sections": {
       "collecte": "Data collection",
-      "utilisation": "Use",
+      "utilisation": "Usage",
       "cookies": "Cookies",
       "droits": "Your rights (GDPR)",
       "securite": "Security",
@@ -681,98 +693,98 @@
     },
     "collecte": {
       "title": "Collection of personal data",
-      "description": "We collect the information that you provide to us directly when creating your account, publishing an ad or requesting a rental:",
+      "description": "We collect information you provide directly when creating your account, publishing an advertisement or requesting a rental:",
       "items": {
         "identite": {
-          "label": "Identify",
-          "desc": "Last name, first name, date of birth."
+          "label": "Identity",
+          "desc": "Name, first name, date of birth."
         },
         "coordonnees": {
-          "label": "Contact details",
-          "desc": "Email address, telephone number, postal address."
+          "label": "Contact information",
+          "desc": "Email address, phone number, mailing address."
         },
         "profil": {
           "label": "Profile",
-          "desc": "Photography, bio, tenant type, search preferences, rental history."
+          "desc": "Photo, bio, tenant type, search preferences, rental history."
         },
         "documents": {
           "label": "Identity documents",
-          "desc": "CIN or Passport uploaded for OCR verification. Encrypted storage."
+          "desc": "Uploaded ID cards or passports for OCR verification. Encrypted storage."
         },
         "financieres": {
           "label": "Financial data",
-          "desc": "Payment history via Konnect (no banking data stored)."
+          "desc": "Payment history via Konnect (no bank data stored)."
         },
         "comportementales": {
           "label": "Behavioral data",
-          "desc": "Search history, ads viewed, reservations made, reviews."
+          "desc": "Search history, viewed ads, reservations, ratings."
         },
         "messagerie": {
-          "label": "Email data",
-          "desc": "Exchanges analyzed by anti-leak AI to block data sharing."
+          "label": "Message data",
+          "desc": "Exchanges analyzed by anti-leak AI to block sharing."
         }
       }
     },
     "utilisation": {
       "title": "Why do we use your data?",
-      "description": "Your data is subject to automated processing for the following purposes:",
+      "description": "Your data undergoes automated processing for the following purposes:",
       "items": {
         "1": {
           "title": "Connection",
-          "desc": "Facilitate the connection between owners and tenants, manage requests."
+          "desc": "Facilitating the connection between owners and tenants, managing requests."
         },
         "2": {
           "title": "Identity verification",
-          "desc": "Analyze your documents by OCR to assign the “Verified” badge."
+          "desc": "Analyzing your documents via OCR to assign the 'Verified' badge."
         },
         "3": {
           "title": "Reliability score",
-          "desc": "Calculate your reliability score (0-100) for a trusted system."
+          "desc": "Calculating your reliability score (0-100) for a trust system."
         },
         "4": {
           "title": "Security & Anti-fraud",
-          "desc": "Detect fraudulent behavior and protect against scams."
+          "desc": "Detecting fraudulent behaviors and protecting against scams."
         },
         "5": {
           "title": "Personalization",
-          "desc": "Recommend ads tailored to your preferences."
+          "desc": "Recommending listings suited to your preferences."
         },
         "6": {
-          "title": "Payments & Deposit",
-          "desc": "Process payments through Konnect, manage escrow."
+          "title": "Payments & Deposits",
+          "desc": "Processing payments via Konnect, managing escrow."
         },
         "7": {
           "title": "Notifications",
-          "desc": "Inform you of events related to your reservations."
+          "desc": "Informing you about events related to your reservations."
         },
         "8": {
           "title": "Support & Disputes",
-          "desc": "Process your tickets and arbitrate disputes."
+          "desc": "Processing tickets and arbitrating disputes."
         }
       }
     },
     "cookies": {
-      "title": "Cookie Policy",
-      "description": "NestHub uses cookies to ensure the proper functioning of the site, measure the audience and offer you content adapted to your real estate searches.",
+      "title": "Cookie policy",
+      "description": "NestHub uses cookies to ensure proper website operation, measure audience and provide content suited to your property searches.",
       "essentiels": {
-        "name": "Essential Cookies",
+        "name": "Essential cookies",
         "desc": "Necessary for navigation, authentication (Clerk) and session security.",
         "badge": "MANDATORY"
       },
       "analytiques": {
-        "name": "Analytical Cookies",
+        "name": "Analytics cookies",
         "desc": "To understand how you use our site and improve our services.",
         "badge": "OPTIONAL"
       },
       "personnalisation": {
-        "name": "Personalization Cookies",
-        "desc": "To remember your preferences and personalize recommendations.",
+        "name": "Personalization cookies",
+        "desc": "To remember your preferences and customize recommendations.",
         "badge": "OPTIONAL"
       }
     },
     "droits": {
       "title": "Your rights (GDPR)",
-      "description": "In accordance with data protection regulations, you have the following rights, all accessible from your personal NestHub space:",
+      "description": "In accordance with data protection regulations, you have the following rights, all accessible from your NestHub personal space:",
       "items": {
         "acces": {
           "title": "Access",
@@ -780,7 +792,7 @@
         },
         "rectification": {
           "title": "Correction",
-          "desc": "Change your incorrect information in your settings."
+          "desc": "Edit your information in your settings."
         },
         "suppression": {
           "title": "Deletion",
@@ -788,21 +800,21 @@
         },
         "portabilite": {
           "title": "Portability",
-          "desc": "Export all of your data in JSON/CSV format."
+          "desc": "Export all your data in JSON/CSV format."
         },
         "opposition": {
-          "title": "Opposition",
+          "title": "Objection",
           "desc": "Object to processing for personalization."
         },
         "limitation": {
           "title": "Limitation",
-          "desc": "Request restriction of processing in certain cases."
+          "desc": "Request limitation of processing in certain cases."
         }
       }
     },
     "securite": {
       "title": "Security of your data",
-      "description": "NestHub implements rigorous technical and organizational measures to guarantee the security of your data:",
+      "description": "NestHub implements rigorous technical and organizational measures to ensure the security of your data:",
       "items": {
         "chiffrement": {
           "title": "SSL/TLS encryption",
@@ -810,7 +822,7 @@
         },
         "auth": {
           "title": "Secure authentication",
-          "desc": "Session management via Clerk with 2FA support."
+          "desc": "Session management via Clerk with MFA support."
         },
         "documents": {
           "title": "Secure documents",
@@ -821,65 +833,65 @@
           "desc": "Security audits and admin access logs maintained."
         },
         "messagerie": {
-          "title": "Protected Messaging",
-          "desc": "AI detects and hides sensitive data in chat."
+          "title": "Protected messaging",
+          "desc": "AI detects and masks sensitive data in chat."
         },
         "paiements": {
           "title": "Secure payments",
-          "desc": "No banking data stored, everything is managed by Konnect."
+          "desc": "No bank data stored, everything managed by Konnect."
         }
       }
     },
     "ia": {
       "title": "AI & Automation",
-      "warning": "NestHub uses artificial intelligence systems that process some of your data in an automated manner.",
+      "warning": "NestHub uses AI systems that process some of your data in an automated manner.",
       "items": {
         "detection": {
           "title": "Data leak detection",
-          "desc": "Real-time analysis of messages to detect and hide sensitive data.",
+          "desc": "Real-time analysis of messages to detect and mask sensitive data.",
           "badge": "Mandatory"
         },
         "score": {
           "title": "Automatic reliability score",
-          "desc": "Automatic behavior-based reliability score calculation.",
+          "desc": "Automatic calculation of reliability score based on behavior.",
           "badge": "Automated"
         },
         "fraude": {
           "title": "Fraud detection",
-          "desc": "Scanning ads to detect suspicious behavior.",
+          "desc": "Analysis of ads to detect suspicious behaviors.",
           "badge": "Automated"
         },
         "recommandations": {
           "title": "Personalized recommendations",
-          "desc": "Using browsing data to recommend ads.",
+          "desc": "Use of browsing data to recommend ads.",
           "badge": "Optional"
         }
       }
     },
     "contact": {
       "title": "Need help with your data?",
-      "description": "Our Data Protection Officer (DPO) is available to answer all your questions about the collection, use or deletion of your personal data.",
-      "button": "Contact the DPO",
-      "helpCenter": "Help Center"
+      "description": "Our Data Protection Officer is available to answer all your questions about the collection, use or deletion of your personal data.",
+      "button": "Contact DPO",
+      "helpCenter": "Help center"
     }
   },
   "Inscription": {
-    "title": "Registration",
+    "title": "Sign up",
     "step": "Step {step} of 4",
     "Compte": "1.Account",
     "Documents": "2.Documents",
     "verificationEmail": "Verification",
-    "validation": "3.Validation",
+    "validation": "3.Confirmation",
     "chooseRole": "Please choose a role",
     "roleLandlord": "Owner",
     "roleTenant": "Tenant",
-    "username": "User name",
-    "email": "E-mail address",
+    "username": "Username",
+    "email": "Email address",
     "password": "Password",
     "confirmPassword": "Confirm password",
-    "continue": "next step",
+    "continue": "Next step",
     "weak": "Weak",
-    "medium": "AVERAGE",
+    "medium": "Medium",
     "good": "Good",
     "strong": "Strong",
     "strength": "Password strength",
@@ -887,61 +899,61 @@
     "invalidEmail": "Invalid email address",
     "passwordMismatch": "Passwords do not match",
     "usernameLength": "Username must be between 3 and 20 characters",
-    "passwordLength": "Password must contain at least 8 characters",
-    "passwordStrength": "The password is too weak. Use capital letters, numbers and special characters",
+    "passwordLength": "Password must be at least 8 characters",
+    "passwordStrength": "Password is too weak. Use uppercase, numbers and special characters",
     "accountCreated": "Account created successfully! A verification code has been sent to your email.",
-    "verificationCodeSent": "We have sent a verification code to {email}",
+    "verificationCodeSent": "We sent a verification code to {email}",
     "verificationCode": "Verification code",
-    "verify": "Check",
-    "back": "previous step",
+    "verify": "Verify",
+    "back": "Previous step",
     "resendCode": "Resend code",
     "codeResent": "A new code has been sent to you!",
     "invalidCode": "Invalid code",
     "verificationFailed": "Verification failed",
-    "verificationSuccess": "Congratulations ! Your account has been successfully verified.",
+    "verificationSuccess": "Congratulations! Your account has been verified successfully.",
     "alreadyHaveAccount": "Already have an account?",
-    "login": "Log in",
+    "login": "Login",
     "termsOfUse": "Terms of Use",
     "privacyPolicy": "Privacy Policy",
     "help": "Need help?",
     "security": "Security",
-    "securityMessage": "This platform uses end-to-end AES-256 encryption to ensure the security of your real estate data.",
+    "securityMessage": "This platform uses end-to-end AES-256 encryption to ensure the security of your property data.",
     "usernameReserved": "Your username @{username} is reserved for the next 30 minutes.",
     "stepValidated": "Step 1/4 validated!",
     "usernameInfo": "3-20 characters, letters and numbers only. This name will be visible on the platform.",
     "passwordInfo": "Use special characters",
     "professionalEmail": "Professional email address",
-    "publicIdentity": "Public Identity",
-    "step1Description": "Step 1 of 4: Configure your secure access.",
-    "emailSent": "We have sent a 6-digit code to",
+    "publicIdentity": "Public identity",
+    "step1Description": "Step 1 of 4: Set up your secure access.",
+    "emailSent": "We sent a 6-digit code to",
     "enterCode": "Enter the 6-digit code",
     "didNotReceiveCode": "Didn't receive the code?",
     "step1Title": "Login information",
     "step2Title": "Real identity",
-    "step3Title": "Phone Verification",
+    "step3Title": "Phone verification",
     "step4Title": "Identity documents",
-    "identityTitle": "Identity Verification",
-    "identitySubtitle": "Step 2 of 4: Real Identity (Private)",
-    "privacyTitle": "Confidentiality guaranteed",
+    "identityTitle": "Identity verification",
+    "identitySubtitle": "Step 2 of 4: Real identity (Private)",
+    "privacyTitle": "Privacy guaranteed",
     "privacyDescription": "Your real identity is confidential and will not be shared publicly.",
-    "personalInfoTitle": "Personal Information",
+    "personalInfoTitle": "Personal information",
     "firstName": "Real first name",
-    "firstNamePlaceholder": "ex: Mohamed",
-    "lastName": "Real name",
-    "lastNamePlaceholder": "ex: Ben hssin",
+    "firstNamePlaceholder": "e.g: Mohamed",
+    "lastName": "Real last name",
+    "lastNamePlaceholder": "e.g: Ben Hassan",
     "phoneNumber": "Phone number",
-    "phonePlaceholder": "27,929,630",
-    "whatsappWarning": "Before continuing, activate WhatsApp:",
+    "phonePlaceholder": "27 929 630",
+    "whatsappWarning": "Before continuing, enable WhatsApp:",
     "activateWhatsapp": "Activate WhatsApp in 1 click",
     "whatsappInstruction": "Click → WhatsApp opens → click Send → come back here",
-    "address": "Residence address",
+    "address": "Residential address",
     "optional": "Optional",
     "addressPlaceholder": "Enter your full address",
-    "publicProfileTitle": "Public Profile",
-    "bio": "Public bio",
-    "bioPlaceholder": "Describe your real estate experience or what you are looking for...",
+    "publicProfileTitle": "Public profile",
+    "bio": "Public biography",
+    "bioPlaceholder": "Describe your real estate experience or what you're looking for...",
     "sending": "Sending",
-    "requiredFieldsError": "Please complete all required fields",
+    "requiredFieldsError": "Please fill in all required fields",
     "errors": {
       "chooseRole": "Please choose a role (Owner or Tenant)",
       "usernameRequired": "Please enter a username",
@@ -949,8 +961,8 @@
       "emailRequired": "Please enter an email address",
       "emailInvalid": "Please enter a valid email address",
       "passwordRequired": "Please enter a password",
-      "passwordTooShort": "Password must contain at least 8 characters",
-      "passwordWeak": "The password is too weak. Use capital letters, numbers and special characters",
+      "passwordTooShort": "Password must be at least 8 characters",
+      "passwordWeak": "Password is too weak. Use uppercase, numbers and special characters",
       "confirmPasswordRequired": "Please confirm your password",
       "passwordsDoNotMatch": "Passwords do not match",
       "codeRequired": "Please enter the 6-digit code",
@@ -958,33 +970,33 @@
       "emailAlreadyExists": "This email is already in use",
       "usernameAlreadyExists": "This username is already taken",
       "phoneAlreadyExists": "This phone number is already in use",
-      "phoneTooShort": "The number must contain at least 8 digits",
+      "phoneTooShort": "Number must be at least 8 digits",
       "phoneRequired": "Please enter your phone number",
       "userIdNotFound": "User ID not found",
-      "whatsappSendFailed": "Failed to send WhatsApp code",
+      "whatsappSendFailed": "Failed to send code via WhatsApp",
       "invalidCodeLength": "6-digit code required",
       "missingInfo": "Missing information",
       "clerkNotInitialized": "Clerk not initialized",
-      "signupIdMissing": "Unable to retrieve registration ID",
+      "signupIdMissing": "Unable to retrieve signup ID",
       "userCreationFailed": "Error creating account",
       "firstNameRequired": "First name is required",
-      "lastNameRequired": "Name is required"
+      "lastNameRequired": "Last name is required"
     },
     "documentsStep": {
       "title": "Identity verification",
       "subtitle": "Step 4 of 4: Upload your official documents (automatic OCR)",
       "identityDocument": "Identity document",
-      "cinFront": "CIN Front",
-      "cinBack": "CIN Verso",
+      "cinFront": "ID front",
+      "cinBack": "ID back",
       "frontSide": "Front side",
       "backSide": "Back side",
       "maxSize": "Max 5MB",
       "formats": "JPG, PNG, PDF",
       "photoAdded": "Photo added",
-      "chooseFile": "Choose a file",
+      "chooseFile": "Choose file",
       "iaOcr": "AI & OCR",
       "ocrDescription": "Our system will instantly analyze your document to verify your identity.",
-      "profilePhoto": "Profile picture",
+      "profilePhoto": "Profile photo",
       "faceVisible": "Face clearly visible",
       "security": "Security",
       "banking": "Banking",
@@ -992,90 +1004,96 @@
       "cloud": "Cloud",
       "sovereign": "Sovereign",
       "previousStep": "Previous step",
-      "finish": "To end"
+      "finish": "Finish"
     },
     "ocrConfirm": {
       "title": "Data verification",
       "description": "Confirm the information extracted by OCR",
-      "infoBanner": "The highlighted fields have been automatically extracted. Check that they match your document.",
+      "infoBanner": "Highlighted fields were extracted automatically. Verify they match your document.",
       "firstName": "First name",
-      "lastName": "Name",
+      "lastName": "Last name",
       "birthDate": "Date of birth",
-      "cinNumber": "CIN number",
+      "cinNumber": "ID number",
       "securityBanner": "Your data is encrypted and stored according to GDPR standards.",
-      "modify": "To modify",
+      "modify": "Modify",
       "confirmIdentity": "Confirm identity"
     },
     "welcomeModal": {
       "title": "Welcome to NESTHUB!",
-      "message": "Your account has been successfully created.",
+      "message": "Your account has been created successfully.",
       "submessage": "Complete your profile to increase your trust score and access all features.",
       "emailVerified": "Email verified",
       "whatsappVerified": "WhatsApp verified",
-      "cinPending": "CIN pending",
+      "cinPending": "ID pending",
       "completeProfile": "Complete my profile",
-      "redirecting": "Redirection..."
+      "redirecting": "Redirecting..."
     },
-    "checking": "Verification...",
+
+    "checking": "Checking...",
     "whatsappStep": {
-      "title": "WhatsApp Verification",
-      "subtitle": "Step 3 of 4: Validate your phone number",
-      "codeSentTitle": "Code sent by WhatsApp",
-      "codeSentMessage": "We have sent a 6-digit code to",
+      "title": "WhatsApp verification",
+      "subtitle": "Step 3 of 4: Verify your phone number",
+      "codeSentTitle": "Code sent via WhatsApp",
+      "codeSentMessage": "We sent a 6-digit code to",
       "verificationCode": "Verification code",
-      "checking": "Verification...",
+      "checking": "Checking...",
       "enterCodeInstruction": "Enter the 6 digits then press Enter",
       "back": "Back",
       "sending": "Sending",
       "resendCode": "Resend code"
     },
+
     "toasts": {
       "emailVerified": "Email verified!",
       "continueRegistration": "Continue your registration.",
       "linkExpired": "Link expired",
-      "linkExpiredDescription": "The verification link has expired. Please start again.",
-      "versoAdded": "Back side added!",
-      "versoProcessed": "The back side has been treated.",
-      "ocrSuccess": "OCR finished!",
-      "ocrSuccessDescription": "The information was successfully extracted.",
+      "linkExpiredDescription": "The verification link has expired. Please try again.",
+      "versoAdded": "Back added!",
+      "versoProcessed": "Back side processed.",
+      "ocrSuccess": "OCR completed!",
+      "ocrSuccessDescription": "Information was extracted successfully.",
       "ocrError": "OCR error",
-      "ocrErrorDescription": "Unable to extract information. Fill in manually."
+      "ocrErrorDescription": "Failed to extract information. Please fill manually."
     },
     "whatsapp": {
-      "codeSent": "A verification code has been sent on WhatsApp to +216 {phone}"
+      "codeSent": "A verification code has been sent via WhatsApp to +216 {phone}"
     },
+
     "alerts": {
       "verificationEmailSent": "A verification link has been sent to {email}",
       "emailSent": "Email sent!",
       "codeSentTitle": "Code sent!",
       "gotCode": "I received the code"
     },
+
     "acceptTerms": {
-      "prefix": "By continuing I accept the",
-      "terms": "conditions of use",
+      "prefix": "By continuing I agree to the",
+      "terms": "Terms of Use",
       "and": "and the",
       "privacy": "Privacy Policy",
       "suffix": ". Please read them carefully. *"
     }
   },
+
   "VerifyCatch": {
     "title": "Verification in progress",
     "description": "Please wait while we verify your account..."
   },
+
   "AdminInvitations": {
     "title": "Invitation management",
-    "description": "Invite new administrators — secure links valid for 48 hours",
-    "inviteAdmin": "Invite an administrator",
-    "secureLink": "Secure link · expires in 48 hours",
+    "description": "Invite new administrators — secure links valid for 48h",
+    "inviteAdmin": "Invite administrator",
+    "secureLink": "Secure link · expires in 48h",
     "newAdminEmail": "New admin email",
     "responsibility": "Responsibility",
-    "infoText": "A unique link will be sent by email and will expire within",
-    "sending": "Sending in progress",
-    "generateInvitation": "Generate the invitation",
+    "infoText": "A unique link will be sent by email and expire in",
+    "sending": "Sending",
+    "generateInvitation": "Generate invitation",
     "activeLinks": "Active links",
     "expired": "Expired",
     "revoked": "Revoked",
-    "email": "E-mail",
+    "email": "Email",
     "expiresIn": "Expires in",
     "status": "Status",
     "actions": "Actions",
@@ -1085,27 +1103,28 @@
     "copied": "Copied!",
     "revoke": "Revoke",
     "resend": "Resend",
-    "noInvitations": "No invitations in progress",
+    "noInvitations": "No active invitations",
     "createInvitationHint": "Use the form on the left to create one",
-    "unauthorized": "Unauthorized access",
+    "unauthorized": "Access not authorized",
     "emailRequired": "Email is required",
     "emailInvalid": "Invalid email",
     "invitationSent": "Invitation sent to {email} ✓",
     "invitationRevoked": "Invitation revoked",
-    "revokeError": "Error during revocation",
-    "invitationResent": "Invitation returned to {email} ✓",
+    "revokeError": "Error revoking invitation",
+    "invitationResent": "Invitation resent to {email} ✓",
     "currentInvitations": "Current invitations",
-    "realTimeExpiry": "Real-time expiration tracking",
-    "expiryApplication": "Application of 48h expiration",
+    "realTimeExpiry": "Real-time expiry tracking",
+    "expiryApplication": "Application of 48h expiry",
     "securityText": "NESTHUB's zero-trust invitation system generates transient access tokens. If an invitee does not complete registration within the 48-hour window, the encrypted token is automatically purged from the gateway cache. This prevents long-standing unauthorized link reuse.",
     "autoPurge": "Auto purge",
     "limitedAccess": "Limited access",
     "policy": "Policy"
   },
+
   "AdminContent": {
-    "title": "Static Content Management",
+    "title": "Static content management",
     "description": "Edit and manage your legal and informational pages.",
-    "unauthorized": "Unauthorized access",
+    "unauthorized": "Access not authorized",
     "adminRequired": "You must be an administrator.",
     "allPages": "All",
     "published": "Published",
@@ -1113,8 +1132,8 @@
     "noPagesFound": "No pages found",
     "pageTitlePlaceholder": "Page title…",
     "editorPlaceholder": "Write your content here…",
-    "restoring": "Restoration in progress…",
-    "history": "Historical",
+    "restoring": "Restoring…",
+    "history": "History",
     "draft": "Draft",
     "publish": "Publish",
     "cancel": "Cancel",
@@ -1123,47 +1142,48 @@
     "versionHistory": "Version history",
     "versionHistoryDesc": "View and restore previous versions",
     "currentVersion": "Current version",
-    "versionRestoredBadge": "Restored version",
+    "versionRestoredBadge": "Version restored",
     "previousVersions": "Previous versions ({count})",
-    "noPreviousVersions": "No previous version",
+    "noPreviousVersions": "No previous versions",
     "restored": "Restored",
     "titleLabel": "Title",
     "contentLabel": "Content",
-    "contentModified": "amended",
+    "contentModified": "modified",
     "restoreThisVersion": "Restore this version",
-    "showLess": "See less",
-    "showAll": "See all ({count} more)",
+    "showLess": "Show less",
+    "showAll": "Show all ({count} more)",
     "deletePage": "Delete page",
     "deleteConfirmation": "This action is irreversible.",
-    "delete": "DELETE",
+    "delete": "Delete",
     "pagePublished": "Page published successfully ✓",
-    "draftSaved": "Saved draft ✓",
+    "draftSaved": "Draft saved ✓",
     "saveError": "Error saving",
     "pageDeleted": "Page deleted successfully",
-    "deleteError": "Error while deleting",
-    "versionRestored": "Version {version} successfully restored ✓",
-    "restoreError": "Error during restore"
+    "deleteError": "Error deleting",
+    "versionRestored": "Version {version} restored successfully ✓",
+    "restoreError": "Error restoring"
   },
+
   "VerificationDetail": {
     "alreadyValidated": "This request has already been validated",
     "alreadyRejected": "This request has already been rejected",
     "validated": "Validated",
     "rejected": "Rejected",
     "backk": "Back",
-    "verification": "Verification request no.:",
-    "pending": "On hold",
+    "verification": "Verification request no.: ",
+    "pending": "Pending",
     "front": "Front",
     "back": "Back",
     "zoomOut": "Zoom out",
-    "zoomIn": "Zoom",
-    "rotateLeft": "Turn left",
-    "rotateRight": "Turn right",
-    "flip": "Return",
+    "zoomIn": "Zoom in",
+    "rotateLeft": "Rotate left",
+    "rotateRight": "Rotate right",
+    "flip": "Flip",
     "download": "Download",
-    "fullscreen": "Full screen",
+    "fullscreen": "Fullscreen",
     "mirror": "Mirror",
-    "clickToExpand": "Click to enlarge",
-    "noImage": "No pictures",
+    "clickToExpand": "Click to expand",
+    "noImage": "No image",
     "notDetected": "Not detected",
     "owner": "Owner",
     "tenant": "Tenant",
@@ -1171,53 +1191,53 @@
     "notVerified": "Not verified",
     "extractedData": "Extracted data",
     "firstName": "First name",
-    "lastName": "Name",
+    "lastName": "Last name",
     "birthDate": "Date of birth",
     "gender": "Gender",
-    "cinNumber": "CIN number",
-    "email": "E-mail",
+    "cinNumber": "ID number",
+    "email": "Email",
     "phone": "Phone",
     "ocrScore": "OCR score",
     "internalNote": "Internal note",
-    "internalNotePlaceholder": "Add an internal note (visible only to admins)...",
-    "validate": "TO VALIDATE",
-    "reject": "DISMISS",
+    "internalNotePlaceholder": "Add internal note (visible only to admins)...",
+    "validate": "VALIDATE",
+    "reject": "REJECT",
     "rejectionReason": "Reason for rejection",
-    "required": "Mandatory",
+    "required": "Required",
     "rejectionReasonPlaceholder": "Explain why this request is rejected...",
     "confirmRejection": "Confirm rejection",
-    "unauthorized": "Unauthorized access",
-    "adminRequired": "This page is reserved for administrators.",
+    "unauthorized": "Access not authorized",
+    "adminRequired": "This page is for administrators only.",
     "noData": "No data found",
     "reload": "Reload",
-    "fullscreenImage": "Full screen image",
+    "fullscreenImage": "Fullscreen image",
     "userDetails": "User details",
     "role": "Role",
-    "submittedAt": "Submitted on",
+    "submittedAt": "Submitted at",
     "status": "Status",
     "action": "Action",
-    "processRequest": "To treat",
+    "processRequest": "Process",
     "refresh": "Refresh",
-    "searchPlaceholder": "Search for a user...",
-    "justNow": "Right now",
-    "minutesAgo": "{count} min ago",
+    "searchPlaceholder": "Search a user...",
+    "justNow": "Just now",
+    "minutesAgo": "{count} minutes ago",
     "oneHourAgo": "1 hour ago",
     "hoursAgo": "{count} hours ago",
     "daysAgo": "{count} days ago",
     "validateId": "VALIDATE ID",
     "rejectId": "REJECT ID",
     "finalizeVerification": "Finalize verification",
-    "reviewInstruction": "Check the above information carefully before making a decision. Actions are recorded for auditing.",
+    "reviewInstruction": "Carefully review the information above before making a decision. Actions are recorded for audit.",
     "identityDetails": "Identity details",
     "skipForNow": "Skip for now",
     "cancel": "Cancel",
-    "confirmDecision": "Confirm the decision",
+    "confirmDecision": "Confirm decision",
     "memberSince": "Member since",
-    "propertiesListed": "listed properties",
+    "propertiesListed": "properties listed",
     "userId": "USER ID",
     "tier1Account": "TIER 1 ACCOUNT",
     "stats": {
-      "pending": "On hold",
+      "pending": "Pending",
       "processedToday": "Processed today",
       "documents": "documents",
       "averageTime": "Average time",
@@ -1231,29 +1251,29 @@
       "action": "Action"
     },
     "empty": {
-      "title": "No verification request",
+      "title": "No verification requests",
       "description": "All requests have been processed or there are no submissions yet.",
-      "backToDashboard": "Return to dashboard",
+      "backToDashboard": "Back to dashboard",
       "viewHistory": "View history"
     }
   },
   "Verifications": {
-    "unauthorized": "Unauthorized access",
+    "unauthorized": "Access not authorized",
     "adminRequired": "You must be an administrator.",
     "title": "Verification queue",
-    "description": "Manage identity validation requests",
-    "searchPlaceholder": "Search for a user...",
+    "description": "Manage identity verification requests",
+    "searchPlaceholder": "Search a user...",
     "refresh": "Refresh",
-    "processRequest": "Process the request",
-    "justNow": "Right now",
+    "processRequest": "Process request",
+    "justNow": "Just now",
     "minutesAgo": "{count} min ago",
     "oneHourAgo": "1 hour ago",
     "hoursAgo": "{count} hours ago",
     "daysAgo": "{count} days ago",
     "stats": {
-      "pending": "On hold",
-      "processedToday": "AJD treaties",
-      "documents": "files",
+      "pending": "Pending",
+      "processedToday": "Processed today",
+      "documents": "documents",
       "averageTime": "Average time",
       "minutes": "min"
     },
@@ -1269,125 +1289,135 @@
       "tenant": "TENANT"
     },
     "status": {
-      "pending": "On hold"
+      "pending": "Pending"
     },
     "empty": {
-      "title": "All checks are complete!",
-      "description": "Congratulations, your queue is empty. You will be notified as soon as a new owner submits their documents.",
-      "backToDashboard": "Return to dashboard",
+      "title": "All verifications completed!",
+      "description": "Congratulations, your queue is empty. You will be notified when a new owner submits their documents.",
+      "backToDashboard": "Back to dashboard",
       "viewHistory": "View history"
     }
   },
+
   "SSOCallback": {
-    "connecting": "Connection in progress, please wait...",
+    "connecting": "Connecting, please wait...",
     "pleaseWait": "Verifying your information",
-    "redirecting": "Redirection in progress..."
+    "redirecting": "Redirecting..."
   },
+
   "ForgotPassword": {
-    "title": "Forgotten password",
+    "title": "Forgot password",
     "subtitle": "Enter your email to receive a reset link",
-    "emailLabel": "E-mail",
+    "emailLabel": "Email",
     "emailPlaceholder": "your@email.com",
     "sendResetLink": "Send link",
-    "sending": "Sending in progress...",
-    "backToLogin": "Return to login",
+    "sending": "Sending...",
+    "backToLogin": "Back to login",
     "securityBadge": "AES-256 encryption • GDPR compliant",
     "legal": "Legal notices",
-    "privacy": "Confidentiality"
+    "privacy": "Privacy"
   },
   "ResetPassword": {
-    "title": "Reset Password",
+    "title": "Reset password",
     "subtitle": "Create a new secure password",
     "subtitleWithEmail": "Create a new password for {email}",
     "successTitle": "Password changed!",
-    "successMessage": "Your password has been successfully reset. You will be redirected to the login page.",
-    "newPasswordLabel": "New Password",
+    "successMessage": "Your password has been reset successfully. You will be redirected to the login page.",
+    "newPasswordLabel": "New password",
     "newPasswordPlaceholder": "••••••••",
     "confirmPasswordLabel": "Confirm password",
     "confirmPasswordPlaceholder": "••••••••",
     "resetPassword": "Reset",
-    "resetting": "Reset...",
-    "backToLogin": "Return to login",
+    "resetting": "Resetting...",
+    "backToLogin": "Back to login",
     "passwordsDoNotMatch": "Passwords do not match",
     "securityBadge": "AES-256 encryption • GDPR compliant",
     "legal": "Legal notices",
-    "privacy": "Confidentiality"
+    "privacy": "Privacy"
   },
   "VerificationsHistory": {
-    "title": "Audit history",
-    "subtitle": "View all verification requests already processed",
+    "title": "Verification history",
+    "subtitle": "View all processed verification requests",
     "backToPending": "Back to pending requests",
     "refresh": "Refresh",
     "searchPlaceholder": "Search by name or email...",
+
     "status": {
       "validated": "Validated",
       "rejected": "Rejected",
-      "pending": "On hold"
+      "pending": "Pending"
     },
+
     "filters": {
       "all": "All",
       "validated": "Validated",
       "rejected": "Rejected"
     },
+
     "stats": {
-      "total": "Total checks",
+      "total": "Total verifications",
       "totalDescription": "Complete history",
       "approvalRate": "Approval rate",
-      "rejected": "Requests rejected",
-      "rejectedDescription": "Require attention"
+      "rejected": "Rejected requests",
+      "rejectedDescription": "Need attention"
     },
+
     "table": {
-      "submittedAt": "Submission date",
+      "submittedAt": "Submitted on",
       "user": "User",
-      "email": "E-mail",
+      "email": "Email",
       "status": "Status",
-      "processedAt": "Processing date",
+      "processedAt": "Processed on",
       "processedBy": "Processed by",
       "notes": "Reason / Comment",
       "action": "Action",
-      "view": "See"
+      "view": "View"
     },
+
     "empty": {
-      "title": "No requests processed",
+      "title": "No processed requests",
       "description": "Validated or rejected requests will appear here"
     },
+
     "pagination": {
-      "showing": "Display of",
-      "of": "on",
+      "showing": "Showing",
+      "of": "of",
       "results": "results"
     }
   },
+
   "OwnerLayout": {
     "header": {
-      "tenantSpace": "Tenant Space",
-      "ownerSpace": "Owner Area",
-      "searchPlaceholder": "Search for an ad...",
+      "tenantSpace": "Tenant space",
+      "ownerSpace": "Owner space",
+      "searchPlaceholder": "Search a listing...",
       "addListing": "Add",
       "owner": "Owner",
       "ownerBadge": "OWNER"
     },
     "nav": {
       "dashboard": "Dashboard",
-      "listings": "My ads",
+      "listings": "My listings",
       "calendar": "Calendar",
       "reservations": "Reservations",
       "messages": "Messages",
-      "analytics": "Statistics"
+      "analytics": "Analytics",
+      "team": "Team"
     },
     "sidebar": {
       "ownerSuite": "Owner space",
       "ownerRole": "Owner",
       "verified": "Verified",
       "pro": "Pro plan",
-      "proDesc": "Access advanced statistics and boost your visibility.",
-      "upgrade": "Go Pro",
-      "collapse": "Reduce",
-      "logout": "Disconnect"
+      "proDesc": "Access advanced analytics and boost your visibility.",
+      "upgrade": "Upgrade to Pro",
+      "collapse": "Collapse",
+      "logout": "Logout"
     },
     "profile": {
       "myProfile": "My profile",
       "settings": "Settings",
-      "logout": "Log out"
+      "logout": "Logout"
     },
     "notifications": {
       "title": "Notifications",
@@ -1398,383 +1428,1256 @@
       "noResults": "No results"
     },
     "logout": {
-      "confirm": "Disconnect",
-      "message": "Are you sure you want to log out?",
+      "confirm": "Logout",
+      "message": "Are you sure you want to logout?",
       "cancel": "Cancel"
     }
   },
+
   "CreateListing": {
-    "pageTitle": "Create an ad",
-    "stepOf": "{current} step on {total}",
-    "saving": "Backup...",
+    "breadcrumb": {
+      "myListings": "MY LISTINGS",
+      "newListing": "NEW LISTING"
+    },
+    "pageTitle": "Create a listing",
+    "stepOf": "Step {current} of {total}",
+    "saving": "Saving...",
     "saveDraft": "Save draft",
-    "publishing": "Publication...",
-    "publish": "Publish the ad",
+    "publishing": "Publishing...",
+    "publish": "Publish listing",
+    "confirmLeave": "You have unsaved changes. Are you sure you want to leave this page?",
+    "required": "Required field",
+
     "steps": {
       "typeLocation": "Type & Location",
-      "characteristics": "Features",
+      "characteristics": "Characteristics",
       "equipment": "Equipment",
       "photos": "Photos",
       "pricing": "Pricing",
       "preview": "Preview"
     },
+
     "nav": {
       "previous": "Previous",
       "continue": "Continue"
     },
+
+    "units": {
+      "sqm": "m²",
+      "bedrooms": "bedrooms",
+      "bathrooms": "bathrooms",
+      "persons": "guests"
+    },
+
+    "unit": {
+      "perNight": "TND / night",
+      "perMonth": "TND / month",
+      "perNightShort": "/ night",
+      "perMonthShort": "/ month"
+    },
+
+    "currency": {
+      "tnd": "TND"
+    },
+
     "propertyTypes": {
       "APARTMENT": "Apartment",
       "VILLA": "Villa",
       "STUDIO": "Studio",
       "DUPLEX": "Duplex",
-      "HOUSE": "Home",
-      "ROOM": "Bedroom"
+      "HOUSE": "House",
+      "ROOM": "Room"
     },
+
     "step1": {
-      "typeTitle": "What type of property do you offer?",
-      "titleSectionTitle": "Give your ad a name",
-      "titleLabel": "Ad title",
-      "titlePlaceholder": "Ex: Magnificent villa with sea view in Hammamet",
+      "typeTitle": "What type of property are you offering?",
+      "titleSectionTitle": "Give your listing a name",
+      "titleLabel": "Listing title",
+      "titlePlaceholder": "e.g: Magnificent villa with sea view in Hammamet",
       "descriptionLabel": "Description",
-      "descriptionPlaceholder": "Describe the advantages of your accommodation, the nearby neighborhoods, what makes it unique...",
+      "descriptionPlaceholder": "Describe the strengths of your property, surrounding neighborhoods, what makes it unique...",
       "locationTitle": "Where is your property located?",
       "governorate": "Governorate",
       "delegation": "Delegation",
       "street": "Neighborhood / Street",
-      "delegationPlaceholder": "Ex: La Marsa",
-      "streetPlaceholder": "Ex: Rue de la Marsa Plage",
-      "choose": "Choose...",
+      "delegationPlaceholder": "e.g: La Marsa",
+      "streetPlaceholder": "e.g: Rue de la Marsa Plage",
+      "choose": "Select...",
       "mapHint": "Approximate position on the map",
-      "adjustMap": "Adjust",
+      "adjustMap": "Adjust position",
       "exactLocation": "Exact location",
-      "positionSelected": "Selected position",
-      "mapClickHint": "Click on the map to show the exact location of your property"
+      "positionSelected": "Position selected",
+      "mapClickHint": "Click on the map to indicate the exact location of your property"
     },
+
     "step2": {
       "title": "Describe your property",
-      "rooms": "Rooms",
-      "roomsDesc": "Private night rooms",
+      "rooms": "Bedrooms",
+      "roomsDesc": "Private bedrooms",
       "bathrooms": "Bathrooms",
-      "bathroomsDesc": "Shower rooms or bathrooms",
-      "maxGuests": "Maximum number of travelers",
-      "maxGuestsDesc": "Total reception capacity",
-      "surface": "Living space (m²)",
-      "floor": "Floor number",
-      "floorPlaceholder": "0 for DRC",
+      "bathroomsDesc": "Complete bathrooms or restrooms",
+      "maxGuests": "Capacity",
+      "maxGuestsDesc": "Maximum number of guests",
+      "surface": "Living area",
+      "floor": "Floor",
+      "floorPlaceholder": "0 for ground floor",
       "elevator": "Elevator",
       "elevatorDesc": "Does the building have an elevator?",
       "balcony": "Balcony",
-      "parking": "Parking"
+      "parking": "Private parking"
     },
+
     "step3": {
-      "equipmentTitle": "What equipment do you offer?",
+      "equipmentTitle": "Equipment provided",
       "servicesTitle": "Services included",
-      "rulesTitle": "House Rules",
-      "customRulesLabel": "Custom Rules",
-      "customRulesPlaceholder": "Add your specific instructions for travelers (max 500 characters)..."
+      "rulesTitle": "House rules",
+      "customRulesLabel": "Custom rules",
+      "customRulesPlaceholder": "Add your specific instructions for guests (500 characters maximum)..."
     },
+
     "equipment": {
-      "wifi": "Wi-Fi",
+      "wifi": "WiFi connection",
       "ac": "Air conditioning",
-      "heating": "Heating",
-      "kitchen": "Equipped kitchen",
-      "parking": "Parking",
-      "pool": "Pool",
-      "gym": "Gym",
+      "heating": "Central heating",
+      "kitchen": "Fully equipped kitchen",
+      "parking": "Private parking",
+      "pool": "Swimming pool",
+      "gym": "Fitness space",
       "washer": "Washing machine",
-      "tv": "Television",
-      "balcony": "Balcony",
+      "tv": "Flat screen TV",
+      "balcony": "Balcony or terrace",
       "dishwasher": "Dishwasher",
       "dryer": "Dryer",
       "elevator": "Elevator",
-      "airConditioning": "Air conditioning",
-      "workspace": "Workspace"
+      "airConditioning": "Reversible air conditioning",
+      "workspace": "Dedicated workspace"
     },
+
     "services": {
-      "cleaning": "Housekeeping included",
+      "cleaning": "Cleaning included",
       "cleaningDesc": "Regular professional cleaning",
-      "linen": "Household linens",
-      "linenDesc": "Sheets and towels provided",
-      "pets": "Pets allowed",
-      "petsDesc": "Your companions are welcome",
+      "linen": "Bedding provided",
+      "linenDesc": "Sheets and towels included",
+      "pets": "Pets accepted",
+      "petsDesc": "Your four-legged companions are welcome",
       "smoking": "Smokers accepted",
-      "smokingDesc": "In dedicated outdoor areas",
+      "smokingDesc": "A dedicated outdoor space is available",
       "breakfast": "Breakfast included",
       "breakfastDesc": "Breakfast served every morning",
       "airportTransfer": "Airport transfer",
       "airportTransferDesc": "Shuttle available on request"
     },
+
     "houseRules": {
-      "noParties": "No parties or events",
-      "noSmoke": "Non-smoker",
+      "noParties": "Events and parties not allowed",
+      "noSmoke": "Smoke-free property",
       "noPets": "Pets not accepted",
-      "quietAfter22": "Quiet required after 10 p.m.",
-      "checkInAfter": "Check-in after 2 p.m.",
-      "checkOutBefore": "Check out before 11am"
+      "quietAfter22": "Quiet guaranteed after 10pm",
+      "checkInAfter": "Check-in from 2pm",
+      "checkOutBefore": "Check-out before 11am"
     },
+
     "step4": {
-      "title": "Add your photos",
-      "dropHere": "Drag your photos here",
-      "dropHint": "Optimize your reservations with at least 5 high definition photos (max. 20)",
-      "or": "Or",
+      "title": "Photo gallery",
+      "dropHere": "Drop your photos here",
+      "dropHint": "Showcase your property with at least 5 high-definition photos (20 maximum)",
+      "or": "or",
       "browseFiles": "Browse my files",
-      "minPhotosWarning": "Add another {count} photo(s) to reach the minimum required",
-      "yourPhotos": "Your photos",
-      "dragReorder": "Swipe to reorder",
+      "minPhotosWarning": "Add {count} more photo(s) to reach the minimum required",
+      "yourPhotos": "Your gallery",
+      "dragReorder": "Drag to reorder the display",
       "mainPhoto": "Main photo",
-      "setMain": "Set as primary",
-      "delete": "DELETE",
-      "add": "Add",
-      "tipsTitle": "Photo tips",
-      "tip1": "Favor natural light by opening curtains and shutters.",
-      "tip2": "Tidy up the interior for a clean, professional look.",
-      "tip3": "Use landscape format to give a feeling of space.",
-      "tip4": "Show each important room: living room, bedrooms, kitchen, bathroom.",
-      "uploading": "Download...",
-      "uploadError": "Error while downloading"
+      "setMain": "Set as main photo",
+      "delete": "Delete",
+      "add": "Add a photo",
+      "tipsTitle": "Tips for striking photos",
+      "tip1": "Enjoy natural light by opening curtains and shutters",
+      "tip2": "Tidy up for a neat and professional appearance",
+      "tip3": "Use landscape format to give a sense of space",
+      "tip4": "Show every important room: living room, bedrooms, kitchen, bathroom",
+      "uploading": "Uploading...",
+      "uploadError": "Upload failed, please try again",
+      "clickStarToSetMain": "⭐ Click the star to set the main photo",
+      "setAsMain": "Set as main photo",
+      "mainPhotoSet": "Main photo set successfully"
     },
+
     "step5": {
-      "rentalTypeTitle": "Type of rental",
-      "SHORT_TERM": "Short term",
-      "LONG_TERM": "Long term",
-      "BOTH": "Both",
+      "rentalTypeTitle": "Rental type",
+      "SHORT_TERM": "Short-term rental",
+      "LONG_TERM": "Long-term rental",
+      "BOTH": "Both options",
       "pricesTitle": "Set your prices",
       "pricePerNight": "Price per night",
-      "pricePerMonth": "Price per month",
+      "pricePerMonth": "Monthly price",
       "night": "night",
       "month": "month",
-      "localAvg": "Average in your area: {price} TND",
+      "localAvg": "Average price in your area: {price} TND",
       "feesTitle": "Additional fees",
-      "deposit": "Deposit",
-      "depositDesc": "Refundable security deposit at end of stay",
-      "depositAmount": "Bail amount",
+      "deposit": "Security deposit",
+      "depositDesc": "Refundable at end of stay",
+      "depositAmount": "Deposit amount",
       "cleaningFee": "Cleaning fees",
-      "cleaningFeeDesc": "Billed once per stay",
-      "cleaningFeeAmount": "Amount of cleaning fees",
-      "smartPricing": "Smart pricing",
+      "cleaningFeeDesc": "Charged once per reservation",
+      "cleaningFeeAmount": "Cleaning fee amount",
+      "smartPricing": "Dynamic pricing",
       "seasonalTitle": "Seasonal pricing",
-      "seasonalDesc": "Boost your revenue by 25% by activating special rates for weekends and high season.",
+      "seasonalDesc": "Optimize your revenue with special rates for weekends and peak periods",
       "weekend": "Weekend",
-      "summer": "Summer (June-August)",
+      "summer": "Summer season (June to August)",
       "weekendMultiplier": "Weekend multiplier",
       "summerMultiplier": "Summer multiplier",
-      "estimatedRevenue": "Estimated income",
-      "estimatedRevenueDesc": "Depending on your settings, you could generate between {min} TND and {max} TND per month.",
+      "estimatedRevenue": "Estimated revenue",
+      "estimatedRevenueDesc": "Based on your settings, your monthly income could be between {min} TND and {max} TND",
       "additionalFees": "Additional fees",
-      "electricityFee": "Electricity costs",
-      "waterFee": "Water charges",
+      "electricityFee": "Electricity fees",
+      "waterFee": "Water fees",
       "serviceFee": "Service fees"
     },
+
     "preview": {
-      "noTitle": "Ad title",
-      "rooms": "rooms",
-      "bathrooms": "bathroom",
-      "guests": "travelers",
-      "readyTitle": "Your ad is ready!",
-      "readyDesc": "Check the information above then publish your ad. It will be visible after validation.",
+      "noTitle": "Listing title",
+      "rooms": "bedrooms",
+      "bathrooms": "bathrooms",
+      "guests": "guests",
+      "readyTitle": "Your listing is ready to publish",
+      "readyDesc": "Carefully check the information above before publishing your listing. It will be visible on the platform after verification by our team.",
       "perNight": "per night",
       "perMonth": "per month",
-      "equipment": "Equipment",
-      "services": "Services",
-      "rules": "Rules",
+      "equipment": "Available equipment",
+      "services": "Services provided",
+      "rules": "House rules",
       "location": "Location"
     },
+
     "sidebar": {
       "tipTitle": "Expert advice",
-      "tip1": "A catchy title attracts 40% more travelers.",
-      "tip2": "5 photos minimum increase your chances of booking.",
-      "tip3": "A competitive price improves your visibility in the results.",
-      "tip4": "Detail your amenities well to attract more travelers.",
-      "whyNesthub": "Why NestHub?",
-      "benefit1": "Guaranteed secure payments",
-      "benefit2": "Owner support 7 days a week",
-      "benefit3": "Zero hidden fees",
-      "benefit4": "Insurance included for each reservation"
+      "tip1": "A catchy title attracts 40% more guests",
+      "tip2": "A minimum of 5 photos multiplies your booking chances",
+      "tip3": "Competitive pricing improves your visibility in search results",
+      "tip4": "Detail your equipment clearly to attract a wider clientele",
+      "whyNesthub": "Why choose NestHub?",
+      "benefit1": "Safe and guaranteed payments",
+      "benefit2": "Owner support available 7 days a week",
+      "benefit3": "No hidden fees or excessive commissions",
+      "benefit4": "Liability insurance included for each reservation"
     },
+
     "validation": {
-      "titleRequired": "Title is required",
-      "titleMin": "The title must contain at least 3 characters",
-      "governorateRequired": "Governorship is required",
+      "titleRequired": "Listing title is required",
+      "titleMin": "Title must contain at least 3 characters",
+      "descriptionRequired": "Description is required",
+      "descriptionMin": "Description must contain at least 20 characters",
+      "governorateRequired": "Please select a governorate",
       "delegationRequired": "Delegation is required",
-      "photosMin": "Add at least 5 photos",
+      "streetRequired": "Street is required",
+      "locationRequired": "Map location is required",
+      "roomsRequired": "At least 1 bedroom is required",
+      "bathroomsRequired": "At least 1 bathroom is required",
+      "maxGuestsRequired": "At least 1 guest is required",
+      "photosRequired": "At least one photo is required",
+      "mainPhotoRequired": "Please set a main photo",
+      "photosMin": "Add at least 5 photos to showcase your property",
       "priceRequired": "Price is required",
-      "pricePositive": "The price must be positive",
-      "descriptionMax": "The description cannot exceed 2000 characters"
+      "pricePositive": "Price must be greater than zero",
+      "pricePerNightRequired": "Price per night is required",
+      "pricePerMonthRequired": "Monthly price is required",
+      "descriptionMax": "Description cannot exceed 2000 characters"
     },
+
     "success": {
-      "published": "Your ad has been successfully published!",
-      "draftSaved": "Your draft has been saved",
-      "redirecting": "Redirection in progress..."
+      "published": "Congratulations! Your listing has been published successfully",
+      "draftSaved": "Your draft has been saved automatically",
+      "redirecting": "Redirecting to your dashboard..."
     },
+
     "error": {
-      "generic": "An error has occurred",
-      "uploadFailed": "Failed to upload photos",
-      "saveFailed": "Backup failed",
-      "publishFailed": "Failed to publish"
+      "generic": "An unexpected error occurred. Please try again later.",
+      "uploadFailed": "Photo upload failed. Check your connection and try again.",
+      "saveFailed": "Draft save failed. Please try again.",
+      "publishFailed": "Publishing your listing failed. Please check all required fields.",
+      "networkError": "Network connection issue. Check your internet connection.",
+      "timeoutError": "Request timed out. Please try again."
     }
   },
-  "OwnerListings": {
-    "title": "Portfolio Management",
-    "description": "Manage your properties, track performance and maximize your ROI with our smart tools.",
-    "addProperty": "Add a property",
-    "tabs": {
-      "all": "All",
-      "active": "Published",
-      "inactive": "Inactive",
-      "draft": "Drafts"
-    },
-    "stats": {
-      "totalRevenue": "Total revenue",
-      "activeListings": "Active ads",
-      "totalViews": "Total Views",
-      "occupancyRate": "Occupancy rate",
-      "properties": "properties",
-      "stablePortfolio": "Stable portfolio",
-      "views": "Views",
-      "bookings": "Reservations",
-      "price": "Price",
-      "published": "Published on",
-      "notPublished": "Unpublished"
-    },
-    "status": {
-      "active": "Published",
-      "inactive": "Inactive",
-      "draft": "Draft",
-      "archived": "Archive"
-    },
-    "badge": {
-      "verified": "Verified"
-    },
-    "unit": {
-      "night": "night",
-      "month": "month"
-    },
-    "aiInsights": {
-      "title": "AI Tips",
-      "draftTip": "Your ad is in draft. Publish it to start receiving bookings.",
-      "lowViewsTip": "Optimize your photos and title to attract more visitors.",
-      "highDemandTip": "Strong demand expected! Raise your prices slightly."
-    },
-    "actions": {
-      "view": "See",
-      "edit": "To modify",
-      "delete": "DELETE"
-    },
-    "empty": {
-      "title": "No ads",
-      "description": "You have not yet created an ad. Start sharing your property now.",
-      "cta": "Create my first ad"
-    },
-    "searchPlaceholder": "Search for a property...",
-    "filter": "Filter",
-    "deleteConfirm": "Are you sure you want to remove this ad? This action is irreversible.",
-    "pagination": {
-      "showing": "Showing {start} to {end} on {total} properties"
-    },
-    "footer": {
-      "legal": "Legal notices",
-      "aiPolicy": "AI policy",
-      "aiStatus": "AI Engine: Optimized"
-    }
-  },
-  "Users": {
-    "stats": {
-      "totalUsers": "Total users",
-      "newUsers30d": "New (30 days)",
-      "pendingValidation": "On hold",
-      "verifiedIdentity": "Verified"
-    }
-  },
-  "ListingDetail": {
-    "backToListings": "Back to announcements",
-    "reviews": "notice",
-    "viewAllPhotos": "Show all photos ({count})",
-    "hostedBy": "Entire accommodation: {name}",
-    "guests": "travelers",
-    "bedrooms": "rooms",
-    "bathrooms": "bathrooms",
-    "elevator": "Elevator",
-    "elevatorDesc": "Easy access to all floors",
-    "greatLocation": "Ideal location",
-    "greatLocationDesc": "100% of travelers rated the location 5 stars.",
-    "freeCancellation": "Free cancellation",
-    "freeCancellationDesc": "Free cancellation up to 7 days before arrival.",
-    "about": "About this accommodation",
-    "noDescription": "No description available at this time.",
-    "amenities": "Equipment",
-    "showAllAmenities": "Show all equipment",
-    "availability": "Availability",
-    "selectDates": "Add your travel dates to see the exact price",
-    "checkIn": "Arrival",
-    "checkOut": "Departure",
-    "guest": "traveler",
-    "nights": "nights",
-    "night": "night",
-    "cleaningFee": "Cleaning fees",
-    "serviceFee": "Service fees",
-    "total": "Total",
-    "requestToBook": "Request to book",
-    "noChargeYet": "No amount will be charged to you at this time",
-    "reportListing": "Report this ad",
-    "reviewDate": "• May 2024",
-    "sampleReview": "Unforgettable stay! The villa is even more beautiful than in the photos. The host is great, full of great recommendations for local restaurants.",
-    "showAllReviews": "Show {count} reviews",
-    "unit": {
-      "night": "night",
-      "month": "month"
-    },
+  "OwnerListingDetail": {
     "equipment": {
-      "wifi": "Wi-Fi",
+      "wifi": "WiFi",
       "ac": "Air conditioning",
       "heating": "Heating",
       "kitchen": "Equipped kitchen",
-      "parking": "Free parking",
-      "pool": "Private swimming pool",
-      "gym": "Gym",
+      "parking": "Parking",
+      "pool": "Swimming pool",
+      "gym": "Sports",
       "washer": "Washing machine",
       "tv": "Television",
       "balcony": "Balcony",
-      "elevator": "Elevator",
-      "workspace": "Workspace",
+      "dishwasher": "Dishwasher",
       "dryer": "Dryer",
-      "dishwasher": "Dishwasher"
+      "coffee": "Coffee maker",
+      "smartlock": "Smart lock",
+      "speaker": "Bluetooth speaker",
+      "workplace": "Workspace",
+      "elevator": "Elevator"
+    },
+    "units": {
+      "sqm": "m²"
+    },
+    "currency": {
+      "tnd": "TND"
+    },
+
+    "tooltips": {
+      "viewPublic": "View listing on public website",
+      "edit": "Edit listing",
+      "hide": "Hide listing",
+      "publish": "Publish listing",
+      "delete": "Delete listing"
+    },
+    "errors": {
+      "loadFailed": "Failed to load listing details",
+      "statusChangeFailed": "Error changing status",
+      "deleteFailed": "Error deleting"
+    },
+    "status": {
+      "active": "Published",
+      "inactive": "Hidden",
+      "draft": "Draft"
+    },
+    "bookingStatus": {
+      "confirmed": "Confirmed",
+      "pending": "Pending",
+      "paid": "Paid"
+    },
+    "stats": {
+      "views": "Views",
+      "bookings": "Bookings",
+      "occupancy": "Occupancy rate",
+      "revenue": "Total revenue",
+      "revenueValue": "0.000 TND"
+    },
+    "quickStats": {
+      "views": "Views",
+      "bookings": "Res.",
+      "conversion": "Conv.",
+      "revenue": "Revenue"
+    },
+    "sections": {
+      "description": "Description",
+      "noDescription": "No description provided.",
+      "amenities": "Amenities",
+      "location": "Location",
+      "noLocation": "Location not available",
+      "nextBookings": "Upcoming bookings",
+      "noBookings": "No upcoming bookings",
+      "availability": "Availability",
+      "owner": "Owner",
+      "ownerDefault": "Owner",
+      "mainOwner": "Main owner",
+      "team": "Management team",
+      "teamDescription": "People who have access to manage this listing."
+    },
+    "actions": {
+      "viewPublic": "View public listing",
+      "edit": "Edit",
+      "showMore": "Read more",
+      "showLess": "Show less",
+      "showAllAmenities": "View all {count} amenities",
+      "viewAll": "View all",
+      "invite": "Invite",
+      "hide": "Hide listing",
+      "publish": "Publish listing",
+      "delete": "Delete"
+    },
+    "specs": {
+      "rooms": "bedrooms",
+      "bathrooms": "bathrooms",
+      "guests": "guests"
+    },
+    "breadcrumb": {
+      "listings": "My listings"
+    },
+    "footer": {
+      "lastModified": "Last modified"
     },
     "notFound": {
-      "title": "Ad not found",
-      "description": "The ad you are looking for does not exist or has been deleted.",
-      "back": "Back to my ads"
+      "title": "Listing not found",
+      "description": "The listing you are looking for does not exist or has been deleted.",
+      "button": "Back to listings",
+      "helpText": "You can also",
+      "dashboardLink": "go back to dashboard"
+    },
+    "gallery": {
+      "mainPhoto": "Main",
+      "morePhotos": "photos",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "location": {
+      "openInMaps": "Open in Maps"
+    },
+    "calendar": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month",
+      "days": "M,T,W,T,F,S,S"
+    },
+    "modals": {
+      "delete": {
+        "confirm": "Are you sure you want to delete this listing?"
+      }
+    }
+  },
+
+  "ListingHistory": {
+    "user": {
+      "default": "User"
+    },
+    "actions": {
+      "export": "Export (PDF)",
+      "exporting": "Exporting..."
+    },
+    "fieldLabels": {
+      "pricePerNight": "Price per night modification",
+      "pricePerMonth": "Monthly price modification",
+      "status": "Status change",
+      "photos": "Photo update",
+      "equipment": "Equipment modification",
+      "description": "Description modification",
+      "title": "Title modification",
+      "general": "General modification"
+    },
+    "photo": {
+      "old": "Old photo",
+      "new": "New photo"
+    },
+    "equipment": {
+      "added": "Added",
+      "removed": "Removed",
+      "wifi": "WiFi",
+      "ac": "Air conditioning",
+      "heating": "Heating",
+      "kitchen": "Equipped kitchen",
+      "parking": "Parking",
+      "pool": "Swimming pool",
+      "gym": "Sports",
+      "washer": "Washing machine",
+      "tv": "Television",
+      "balcony": "Balcony",
+      "dishwasher": "Dishwasher",
+      "dryer": "Dryer",
+      "coffee": "Coffee maker",
+      "smartlock": "Smart lock",
+      "speaker": "Speaker",
+      "workplace": "Workspace",
+      "elevator": "Elevator"
+    },
+    "errors": {
+      "exportFailed": "Export failed. Please try again.",
+      "loadFailed": "Failed to load history"
+    },
+    "notFound": {
+      "title": "Listing not found",
+      "description": "The listing you are looking for does not exist or has been deleted.",
+      "button": "Back to listings",
+      "helpText": "Need help?",
+      "dashboardLink": "Back to dashboard"
+    },
+    "page": {
+      "title": "Modification history",
+      "description": "View the evolution of your \"{title}\" listing and track your team's interventions.",
+      "loading": "Loading history..."
+    },
+    "breadcrumb": {
+      "listings": "MY LISTINGS",
+      "history": "HISTORY"
+    },
+    "filters": {
+      "": "All",
+      "period": "Period",
+      "type": "Types of modifications",
+      "30derniersjours": "Last 30 days",
+      "trimestre": "Quarter",
+      "année": "Year",
+      "tout": "All",
+      "equipment_update": "Equipment",
+      "price_update": "Prices",
+      "status_change": "Status",
+      "photo_update": "Photos",
+      "update": "General",
+      "7days": "Last 7 days",
+      "90days": "Last 90 days",
+      "alldates": "All dates"
+    },
+    "timeline": {
+      "oldValue": "Old value",
+      "newValue": "New value",
+      "deleted": "DELETED",
+      "new": "NEW",
+      "unchanged": "Unchanged"
+    },
+    "fields": {
+      "pricePerNight": "Night price",
+      "pricePerMonth": "Monthly price",
+      "status": "Status",
+      "photos": "Cover photo",
+      "equipment": "Equipment",
+      "description": "Description",
+      "title": "Title"
+    },
+    "actionTypes": {
+      "PRICE_UPDATE": "Price",
+      "STATUS_CHANGE": "Status",
+      "PHOTO_UPDATE": "Photos",
+      "EQUIPMENT_UPDATE": "Equipment",
+      "UPDATE": "Modification",
+      "CREATE": "Creation"
+    },
+    "roles": {
+      "owner": "Owner",
+      "coOwner": "Co-owner",
+      "admin": "Administrator"
+    },
+    "emptyState": {
+      "title": "No modifications",
+      "description": "No modifications have been recorded for this listing."
+    },
+    "status": {
+      "active": "Published",
+      "inactive": "Hidden",
+      "draft": "Draft",
+      "archived": "Archived"
+    }
+  },
+  "OwnerListings": {
+    "currency": {
+      "tnd": "TND"
+    },
+    "page": {
+      "title": "My listings",
+      "description": "Manage your properties and track their performance in real time."
+    },
+    "stats": {
+      "totalRevenue": "Total revenue",
+      "activeListings": "Active listings",
+      "totalViews": "Total views",
+      "occupancyRate": "Occupancy rate"
+    },
+    "tabs": {
+      "all": "All",
+      "active": "Published",
+      "inactive": "Hidden",
+      "draft": "Drafts",
+      "archived": "Archived"
+    },
+    "filters": {
+      "titre": "Advanced filter",
+      "governorate": "Governorate",
+      "allGovernorates": "All governorates",
+      "priceRange": "Price range",
+      "minRooms": "Minimum number of bedrooms",
+      "reset": "Reset filters",
+      "aiTitre": "AI advice",
+      "aiTip": "Use filters to quickly find your top-performing listings.",
+      "searchPlaceholder": "Search a listing by title or description...",
+      "dateFilter": "Filter by date",
+      "allDates": "All",
+      "lastWeek": "7 days",
+      "lastMonth": "30 days",
+      "lastYear": "1 year"
+    },
+    "table": {
+      "views": "Views",
+      "bookings": "Res.",
+      "conversion": "Conv.",
+      "revenue": "Revenue",
+      "price": "Price",
+      "favorites": "Favorites"
+    },
+    "status": {
+      "active": "Published",
+      "activeDesc": "Visible to all guests",
+      "inactive": "Hidden",
+      "inactiveDesc": "Not visible to guests",
+      "draft": "Draft",
+      "draftDesc": "In creation, not published",
+      "archived": "Archived",
+      "archivedDesc": "Stored in archive, can be restored"
+    },
+    "performance": {
+      "spinner": "Loading your listings......",
+      "topPerformance": "Top Performance",
+      "toOptimize": "To optimize"
+    },
+    "aiInsights": {
+      "draft": " Draft - Complete and publish your listing",
+      "archived": " Archived - Restore to reactivate",
+      "inactive": " Hidden - Publish to become visible",
+      "lowViews": " More photos = +20% views",
+      "noBookings": " Check your price against the market",
+      "lowConversion": " Low conversion ({rate}%) - Improve your listing",
+      "excellent": " Excellent performance! Keep it up",
+      "optimize": " Optimize your listing"
+    },
+    "recommendations": {
+      "lowConversion": " Low conversion ({rate}%) - Improve your photos or adjust the price",
+      "excellentPerformance": " Excellent performance! {count} bookings this month"
+    },
+    "actions": {
+      "edit": "Edit listing",
+      "viewPublic": "View on public website",
+      "history": "Modification history",
+      "qrCode": "Generate QR code",
+      "more": "More actions",
+      "hide": "Hide listing",
+      "publish": "Publish listing",
+      "archive": "Archive listing",
+      "restore": "Restore listing",
+      "delete": "Delete permanently",
+      "analytics": "Advanced analytics",
+      "refresh": "Refresh data",
+      "addListing": "Add a listing",
+      "viewList": "List view",
+      "viewGrid": "Grid view",
+      "exportCSV": "Export CSV"
+    },
+    "emptyState": {
+      "title": "No listings",
+      "description": "Start your journey on {platform} by creating your first listing. Thousands of guests are waiting for you!",
+      "button": "Create my first listing",
+      "helpLink": "Need help creating your listing?"
+    },
+    "addNewCard": {
+      "title": "Add another property",
+      "description": "Have a new property to offer? Start generating revenue now.",
+      "button": "Start listing"
+    },
+    "units": {
+      "night": "/night",
+      "month": "/month",
+      "tnd": "TND"
+    },
+    "deleteModal": {
+      "title": "Delete listing",
+      "description": "This action is irreversible. All data related to this listing will be permanently deleted.",
+      "warning": "Warning: This action cannot be undone.",
+      "cancel": "Cancel",
+      "confirmTextLabel": "To confirm deletion type ",
+      "confirm": "Delete",
+      "deleting": "Deleting...",
+      "bookingsWarning": "This listing has active bookings.",
+      "cancelBookingsOption": "Automatically cancel active bookings",
+      "continue": "Continue"
+    },
+    "qrCodeModal": {
+      "title": "QR Code - Share listing",
+      "download": "Download",
+      "share": "Share",
+      "copyLink": "Copy link",
+      "copied": "Copied!",
+      "scanHint": "Scan this code to access your listing directly",
+      "customize": "Customize",
+      "close": "Close"
+    },
+    "alerts": {
+      "statusChanged": "Listing status changed successfully",
+      "listingRestored": "Listing restored successfully",
+      "errorOccurred": "An error occurred. Please try again later",
+      "noResults": "No listings match your search criteria",
+      "filtersApplied": "Filters applied successfully",
+      "filtersReset": "All filters have been reset",
+      "statusActivated": "Listing published successfully",
+      "statusDeactivated": "Listing hidden successfully",
+      "statusArchived": "Listing archived successfully",
+      "statusChangeFailed": "Error changing status",
+      "dataRefreshed": "Data refreshed successfully",
+      "refreshFailed": "Error refreshing data",
+      "exportSuccess": "CSV export successful",
+      "exportFailed": "Error exporting CSV",
+      "listingDeleted": "Listing deleted successfully"
+    },
+    "sorting": {
+      "newest": "Newest",
+      "oldest": "Oldest",
+      "mostViewed": "Most viewed",
+      "mostBooked": "Most booked",
+      "priceAsc": "Price ascending",
+      "priceDesc": "Price descending"
+    },
+    "confirmation": {
+      "deleteTitle": "Delete confirmation",
+      "deleteMessage": "Are you sure you want to permanently delete this listing? This action cannot be reversed.",
+      "archiveTitle": "Archive confirmation",
+      "archiveMessage": "This listing will be moved to archive. You can restore it later if needed.",
+      "publishTitle": "Publish confirmation",
+      "publishMessage": "Your listing will be immediately visible to all guests. Do you want to continue?"
+    },
+    "placeholders": {
+      "search": "Search by title, description or location...",
+      "minPrice": "Minimum price",
+      "maxPrice": "Maximum price",
+      "rooms": "Number of rooms"
+    },
+    "labels": {
+      "createdAt": "Creation date",
+      "updatedAt": "Last modification",
+      "views": "Number of views",
+      "bookings": "Number of bookings",
+      "revenue": "Generated revenue",
+      "rating": "Average rating",
+      "reviews": "Reviews"
+    },
+    "tooltips": {
+      "edit": "Edit information for this listing",
+      "viewPublic": "View listing on public website in new tab",
+      "history": "View full modification history",
+      "qrCode": "Generate QR code to easily share this listing",
+      "analytics": "Access detailed performance statistics",
+      "delete": "Permanently delete this listing",
+      "refresh": "Refresh data in real time",
+      "viewGrid": "Display listings in grid format",
+      "viewList": "Display listings in list format"
+    },
+    "errors": {
+      "loadFailed": "Failed to load your listings. Please check your connection.",
+      "updateFailed": "Failed to update status. Please try again.",
+      "deleteFailed": "Failed to delete listing. Please try again.",
+      "qrGenerationFailed": "Failed to generate QR code. Please try again."
+    },
+    "success": {
+      "statusUpdated": "Listing status updated successfully",
+      "listingCreated": "Your listing has been created successfully",
+      "listingUpdated": "Changes have been saved successfully"
+    },
+    "buttons": {
+      "retry": "Retry",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "save": "Save",
+      "close": "Close"
+    },
+    "badges": {
+      "new": "New"
     }
   },
   "EditListing": {
-    "title": "Ad title",
-    "autoSave": "Auto backup active",
-    "saveDraft": "Save draft",
-    "step1": "Step 1 of 4",
-    "step2": "Step 2 of 4",
-    "step3": "Step 3 of 4",
-    "step4": "Step 4 of 4",
-    "detailsTitle": "Property Details",
-    "photosTitle": "Photo gallery",
-    "pricingTitle": "Pricing",
-    "publishTitle": "Publication",
-    "detailsDesc": "Update your property's basic information.",
-    "photosDesc": "Add or modify photos of your property.",
-    "pricingDesc": "Set rates and additional charges.",
-    "publishDesc": "Manage the publishing status of your ad.",
-    "propertyType": "Property Type",
-    "titlePlaceholder": "Ex: Magnificent villa with sea view",
-    "description": "Description",
-    "descriptionPlaceholder": "Describe the advantages of your accommodation...",
-    "location": "Location",
-    "currentAddress": "Current address",
-    "modify": "To modify",
-    "back": "Back",
-    "saveChanges": "Save changes",
-    "preview": "Preview",
-    "lastSaved": "Last edited {time} ago",
-    "tabDetails": "Details",
-    "tabPhotos": "Photos",
-    "tabPricing": "Price",
-    "tabPublish": "Publication"
+    "loading": "Loading your listing...",
+    "notFound": "Listing not found",
+    "confirmLeave": "You have unsaved changes. Are you sure you want to leave this page?",
+
+    "breadcrumb": {
+      "myListings": "My listings"
+    },
+
+    "page": {
+      "title": "Edit listing",
+      "subtitle": "Refine your listing to attract more guests"
+    },
+
+    "actions": {
+      "save": "Save",
+      "publish": "Publish",
+      "hide": "Hide",
+      "preview": "Preview",
+      "back": "Back",
+      "next": "Next",
+      "previous": "Previous"
+    },
+
+    "sidebar": {
+      "details": "Details",
+      "photos": "Photos",
+      "pricing": "Pricing",
+      "publish": "Publication"
+    },
+
+    "sectionHints": {
+      "details": "Basic information, location and equipment",
+      "photos": "Manage your listing photos",
+      "pricing": "Price, fees and rental type",
+      "publish": "Control your listing visibility"
+    },
+
+    "status": {
+      "active": "Published",
+      "draft": "Draft",
+      "inactive": "Hidden"
+    },
+
+    "completion": {
+      "title": "Completeness",
+      "excellent": "Excellent",
+      "good": "Good",
+      "poor": "Needs improvement",
+      "ready": "Ready to publish",
+      "remaining": "+{percent}% to excel",
+      "items": {
+        "title": "Title (10+ characters)",
+        "description": "Description (100+ characters)",
+        "photos": "Photos (5+)",
+        "location": "Complete location",
+        "price": "Price set",
+        "equipment": "Equipment (3+)"
+      }
+    },
+
+    "expertTip": {
+      "title": "Expert tip",
+      "message": "Complete listings receive +50% bookings and better visibility.",
+      "recommendation": "AI recommendation"
+    },
+
+    "details": {
+      "titleAndDesc": "Title and description",
+      "titleAndDescHint": "How your property will be perceived",
+      "configuration": "Configuration",
+      "configurationHint": "Type and capacity",
+      "equipment": "Equipment",
+      "equipmentHint": "Select available equipment"
+    },
+
+    "fields": {
+      "titlePlaceholder": "Listing title",
+      "descriptionPlaceholder": "Describe your property in detail...",
+      "rooms": "Rooms",
+      "bathrooms": "Bath",
+      "surface": "Area m²",
+      "elevator": "Elevator",
+      "guests": "guests"
+    },
+
+    "propertyTypes": {
+      "APARTMENT": "Apartment",
+      "VILLA": "Villa",
+      "HOUSE": "House",
+      "STUDIO": "Studio",
+      "DUPLEX": "Duplex"
+    },
+
+    "location": {
+      "title": "Location",
+      "hint": "Exact address after booking",
+      "governorate": "Governorate",
+      "delegation": "Delegation",
+      "street": "Street / Neighborhood",
+      "positionSet": "Position set",
+      "positionMissing": "Click on the map to set the position"
+    },
+
+    "equipment": {
+      "wifi": "WiFi",
+      "ac": "Air conditioning",
+      "heating": "Heating",
+      "kitchen": "Kitchen",
+      "parking": "Parking",
+      "pool": "Pool",
+      "gym": "Sports",
+      "washer": "Washing machine",
+      "tv": "TV",
+      "balcony": "Balcony",
+      "dishwasher": "Dishwasher",
+      "dryer": "Dryer",
+      "coffee": "Coffee maker",
+      "smartlock": "Smart lock",
+      "speaker": "Speaker",
+      "workplace": "Workspace"
+    },
+
+    "photos": {
+      "clickToAdd": "Click to add photos",
+      "uploading": "Uploading...",
+      "minWarning": "Minimum 5 photos recommended — {count} missing",
+      "main": "Main",
+      "add": "Add",
+      "photos": "photos"
+    },
+
+    "rentalTypes": {
+      "shortTerm": "Short-term",
+      "longTerm": "Long-term",
+      "both": "Both"
+    },
+
+    "pricing": {
+      "perNight": "Price per night",
+      "perMonth": "Price per month",
+      "deposit": "Deposit",
+      "depositDesc": "Refundable",
+      "cleaningFee": "Cleaning fee",
+      "cleaningFeeDesc": "Once only"
+    },
+
+    "units": {
+      "night": "/night",
+      "month": "/month"
+    },
+
+    "publish": {
+      "published": "Listing published",
+      "publishedDesc": "Visible in search",
+      "draft": "Draft",
+      "hidden": "Hidden",
+      "hiddenDesc": "Not visible to guests",
+      "live": "Live",
+      "stats": {
+        "views": "Views",
+        "created": "Created",
+        "score": "Score"
+      }
+    },
+
+    "autoSave": {
+      "saved": "Saved"
+    },
+
+    "tooltips": {
+      "save": "Save changes",
+      "title": "A catchy title attracts more guests",
+      "description": "Describe the unique benefits of your property",
+      "rooms": "Number of private bedrooms",
+      "bathrooms": "Number of bathrooms",
+      "surface": "Living area in m²",
+      "pricePerNight": "Price per night",
+      "pricePerMonth": "Price per month",
+      "addPhotos": "Add high-quality photos",
+      "setAsMain": "Set as main photo",
+      "deletePhoto": "Delete this photo",
+      "addPhoto": "Add a photo"
+    },
+
+    "success": {
+      "saved": "Changes saved successfully"
+    }
+  },
+
+  "OwnerCalendar": {
+    "common": {
+      "guest": "Guest",
+      "dates": "date(s)",
+      "nights": "night(s)",
+      "night": "night"
+    },
+    "sidebar": {
+      "myProperties": "My properties",
+      "upcomingBookings": "Upcoming bookings",
+      "upgradeToPro": "Upgrade to Pro",
+      "manageMoreProperties": "Manage more properties"
+    },
+    "actions": {
+      "upgrade": "Upgrade",
+      "confirm": "Confirm",
+      "apply": "Apply",
+      "selectedDates": "date(s) selected"
+    },
+    "page": {
+      "title": "Calendar",
+      "managementFor": "Management for",
+      "selectProperty": "Select a property"
+    },
+    "legend": {
+      "booked": "Booked",
+      "blocked": "Blocked",
+      "specialPrice": "Special price"
+    },
+    "bulkActions": {
+      "title": "Bulk actions",
+      "block": "Block",
+      "unblock": "Unblock",
+      "specialPrice": "Special price",
+      "reasonOptional": "Reason (optional)",
+      "selectDates": "Select dates",
+      "pricePlaceholder": "Price"
+    },
+    "selection": {
+      "title": "Selection"
+    },
+    "stats": {
+      "title": "Statistics",
+      "occupancy": "Occupancy",
+      "revenue": "Revenue",
+      "bookedNights": "Booked nights",
+      "blockedDays": "Blocked days"
+    },
+    "aiTip": {
+      "title": "AI tip",
+      "lowOccupancy": "Occupancy at {occupancy}%. Think about promotions.",
+      "goodActivity": "Good activity. Optimize your weekend rates.",
+      "excellent": "Excellent! Your calendar is well-filled."
+    },
+    "alerts": {
+      "dateBlocked": "Date blocked",
+      "dateUnblocked": "Date unblocked",
+      "specialPriceApplied": "Special price applied",
+      "datesBlocked": "{count} date(s) blocked",
+      "datesUnblocked": "{count} date(s) unblocked",
+      "priceApplied": "{price} TND applied on {count} date(s)",
+      "error": "Error",
+      "cannotBlock": "Cannot block date.",
+      "cannotUnblock": "Cannot unblock date.",
+      "cannotApplyPrice": "Cannot apply price.",
+      "cannotBlockDates": "Cannot block dates.",
+      "cannotUnblockDates": "Cannot unblock dates.",
+      "cannotApplyPrices": "Cannot apply prices.",
+      "dataRefreshed": "Data refreshed successfully",
+      "refreshFailed": "Error refreshing data"
+    }
+  },
+
+  "Calendar": {
+    "booking": "Booking",
+    "blocked": "Blocked",
+    "specialPrice": "Special price",
+    "available": "Available",
+    "past": "Past",
+    "select": "Select",
+    "unblock": "Unblock",
+    "today": "Today",
+    "month": "Month",
+    "week": "Week",
+    "list": "List",
+    "legendBooked": "Booked",
+    "legendBlocked": "Blocked",
+    "legendSpecialPrice": "Special price",
+    "legendSelect": "Selection",
+    "legendSelectedCount": "{count} selected"
+  },
+  "TeamManagement": {
+    "loading": {
+      "message": "Loading your team..."
+    },
+    "hero": {
+      "badge": "Team management",
+      "title": "Manage your collaborators",
+      "description": "Invite co-hosts and manage permissions for your properties.",
+      "button": "Invite member"
+    },
+    "stats": {
+      "activeMembers": "Active members",
+      "pendingInvitations": "Pending invitations",
+      "properties": "Properties",
+      "performance": "Performance",
+      "response": "Response",
+      "tasks": "Tasks"
+    },
+    "empty": {
+      "title": "No members",
+      "description": "Start by inviting collaborators to manage your properties.",
+      "button": "Invite"
+    },
+    "addMember": {
+      "title": "Add member",
+      "description": "Invite a co-host or manager"
+    },
+    "invitations": {
+      "title": "Invitations",
+      "pending": "pending",
+      "empty": "No pending invitations",
+      "progress": "Progress",
+      "expiringSoon": "Expiring soon",
+      "pendingStatus": "Pending",
+      "remind": "Remind",
+      "cancel": "Cancel",
+      "expired": "Expired",
+      "hoursLeft": "{hours}h left",
+      "daysLeft": "{days}d left"
+    },
+    "analytics": {
+      "title": "Engagement analytics",
+      "activityRate": "Activity rate",
+      "pending": "Pending"
+    },
+    "security": {
+      "title": "Security protocol",
+      "description": "Check permissions monthly to ensure workspace integrity.",
+      "button": "Access dashboard"
+    },
+    "actions": {
+      "permissions": "Permissions",
+      "remove": "Remove",
+      "history": "History"
+    },
+    "permissions": {
+      "title": "Permissions",
+      "canEdit": "Edit listing",
+      "canEditDesc": "Can edit information",
+      "canManageBookings": "Manage bookings",
+      "canManageBookingsDesc": "Can confirm or cancel",
+      "canViewRevenue": "View revenue",
+      "canViewRevenueDesc": "Consult financial statistics",
+      "canManageTeam": "Manage team",
+      "canManageTeamDesc": "Invite or remove members",
+      "cancel": "Cancel",
+      "save": "Save"
+    },
+    "card": {
+      "property": "Property",
+      "none": "None"
+    },
+    "roles": {
+      "manager": "Manager",
+      "coHost": "Co-host",
+      "observer": "Observer"
+    },
+    "alerts": {
+      "invitationSent": "Invitation sent successfully!",
+      "invitationCancelled": "Invitation cancelled successfully.",
+      "memberRemoved": "Member removed successfully.",
+      "permissionsUpdated": "Permissions updated successfully.",
+      "reminderSent": "Invitation resent successfully.",
+      "error": "An error occurred. Please try again."
+    }
+  },
+  "Profile": {
+    "loading": {
+      "message": "Loading your profile..."
+    },
+    "page": {
+      "badge": "Owner space",
+      "title": "My profile",
+      "description": "Manage your personal information and your trust level."
+    },
+    "actions": {
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "add": "Add"
+    },
+    "sections": {
+      "personalInfo": "Personal information",
+      "availability": "Contact availability"
+    },
+    "avatar": {
+      "title": "Profile photo",
+      "description": "A clear photo helps owners and tenants trust you. JPG or PNG, max 5 MB.",
+      "edit": "Edit",
+      "delete": "Delete"
+    },
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "userType": "User type",
+      "notEditable": "Not editable",
+      "email": "Email",
+      "phone": "Phone",
+      "profession": "Profession",
+      "bio": "Biography",
+      "bioPlaceholder": "Tell us about you and your properties…",
+      "languages": "Spoken languages"
+    },
+    "availability": {
+      "description": "Preferred time slots for calls and visits"
+    },
+    "trust": {
+      "title": "Trust score",
+      "idVerified": "ID verified",
+      "positiveReviews": "{count} positive reviews",
+      "memberSince": "Member since {date}"
+    },
+    "verification": {
+      "title": "Verification",
+      "status": "OCR status",
+      "verified": "Verified",
+      "pending": "Pending",
+      "idType": "Tunisian ID card",
+      "description": "Identity verification strengthens trust and enables faster rentals.",
+      "update": "Update documents",
+      "start": "Start verification",
+      "verifiedDate": "Verified on {date}"
+    }
+  },
+  "settings": {
+    "loading": "Loading settings…",
+    "page_title": "Account settings",
+    "page_description": "Manage your security, payment methods and preferences.",
+
+    "security_title": "Security & Authentication",
+    "password_label": "Password",
+    "password_description": "Change your password",
+    "password_change": "Change",
+    "password_cancel": "Cancel",
+    "password_current": "Current password",
+    "password_new": "New password",
+    "password_confirm": "Confirm password",
+    "password_current_placeholder": "Enter your current password",
+    "password_new_placeholder": "Create a new password",
+    "password_confirm_placeholder": "Confirm your new password",
+    "password_mismatch": "Passwords do not match",
+    "password_update": "Update",
+    "password_updated": "Updated!",
+    "password_success": "Password updated successfully!",
+    "password_error": "Error changing password",
+
+    "security_tips_title": "Security tips",
+    "security_tips_chars": "8+ characters minimum",
+    "security_tips_case": "Upper & lowercase",
+    "security_tips_symbols": "Numbers & symbols",
+
+    "sessions_title": "Active sessions",
+    "sessions_count": "Active sessions —",
+    "device_unknown": "Unknown device",
+    "current_badge": "Current",
+    "location_unknown": "Unknown location",
+    "ip_unknown": "Unknown IP",
+    "revoke_button": "Revoke",
+    "session_revoked": "Session revoked successfully",
+    "session_error": "Error revoking session",
+
+    "payment_title": "Payment methods",
+    "payment_add": "Add",
+    "payment_visa": "Visa",
+    "payment_expires": "Expires",
+    "payment_primary": "Primary",
+    "payment_bank_transfer": "Bank transfer",
+    "payment_configure": "Configure for payments",
+    "payment_coming_soon": "Coming soon",
+
+    "preferences_title": "Preferences",
+    "language_label": "Language",
+    "language_fr": "Français (FR)",
+    "language_en": "English (EN)",
+    "language_ar": "العربية (AR)",
+    "language_success": "Language updated successfully",
+    "language_error": "Error changing language",
+
+    "theme_label": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_auto": "Auto",
+
+    "vacation_title": "Vacation mode",
+    "vacation_description": "Disable notifications and set an auto-reply for your guests.",
+    "vacation_enabled": "Vacation mode enabled",
+    "vacation_disabled": "Vacation mode disabled",
+    "vacation_save_success": "Vacation message saved",
+    "vacation_save_error": "Error saving message",
+    "vacation_error": "Error changing vacation mode",
+    "vacation_placeholder": "Hello! I'm away until Monday. Contact support for emergencies.",
+
+    "privacy_title": "Privacy",
+    "privacy_description": "Download a copy of your personal data in your choice of format.",
+    "privacy_csv": "CSV",
+    "privacy_json": "JSON",
+    "privacy_delete_account": "Delete my account",
+    "privacy_delete_warning": "Data is permanently deleted after 30 days.",
+
+    "strength_weak": "Weak",
+    "strength_medium": "Medium",
+    "strength_good": "Good",
+    "strength_strong": "Strong"
+  },
+
+  "toast": {
+    "password_success": "Password updated successfully!",
+    "password_error": "Error changing password",
+    "language_success": "Language updated successfully",
+    "language_error": "Error changing language",
+    "vacation_enabled": "Vacation mode enabled",
+    "vacation_disabled": "Vacation mode disabled",
+    "vacation_error": "Error changing vacation mode",
+    "vacation_saved": "Vacation message saved",
+    "vacation_save_error": "Error saving message",
+    "session_revoked": "Session revoked successfully",
+    "session_error": "Error revoking session",
+    "coming_soon": "Coming soon"
   }
 }

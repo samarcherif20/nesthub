@@ -6,7 +6,14 @@ export async function POST(req: Request) {
     const body = await req.json();
     console.log("📦 Données reçues:", body);
 
-    const { userId, email, username, role, preferredLocale } = body;
+    const {
+      userId,
+      email,
+      username,
+      role,
+      preferredLocale,
+      profilePictureUrl,
+    } = body;
 
     // Vérifier si l'email existe déjà
     const existingEmail = await prisma.user.findUnique({
@@ -21,7 +28,7 @@ export async function POST(req: Request) {
 
     // Vérifier si le username existe déjà
     const existingUsername = await prisma.user.findUnique({
-      where: { username }, // ← Maintenant ça marchera !
+      where: { username },
     });
     if (existingUsername) {
       return NextResponse.json(
@@ -39,7 +46,7 @@ export async function POST(req: Request) {
       username,
       role: userRole,
       preferredLocale: preferredLocale || "fr",
-      updatedAt: new Date(),
+      profilePictureUrl: profilePictureUrl || null,
     });
 
     // Créer l'utilisateur
@@ -47,12 +54,14 @@ export async function POST(req: Request) {
       data: {
         clerkId: userId,
         email: email,
-        username: username, // ← MAINTENANT LE CHAMP EXISTE !
+        username: username,
         firstName: null,
         lastName: null,
         phoneNumber: null,
+        status: "PENDING_VALIDATION", // ← AJOUTE CETTE LIGNE
         role: userRole,
-        preferredLocale: preferredLocale || "fr", // ← ADD THIS LINE
+        preferredLocale: preferredLocale || "fr",
+        profilePictureUrl: profilePictureUrl || null, // ✅ AJOUTER CETTE LIGNE
         updatedAt: new Date(),
       },
     });

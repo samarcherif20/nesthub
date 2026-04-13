@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
 
     // Construire le lien
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const inviteLink = `${baseUrl}/fr/accept-invite?token=${token}`;
+const inviteLink = `${baseUrl}/fr/accept-invite?token=${token}&type=admin`;
     console.log("🔗 Lien d'invitation:", inviteLink);
 
     // Envoyer l'email

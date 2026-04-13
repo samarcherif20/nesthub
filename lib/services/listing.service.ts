@@ -1,86 +1,184 @@
-// lib/services/listing.service.ts - CORRECTION COMPLÈTE POUR LES IMAGES
+// lib/services/listing.service.ts - VERSION COMPLÈTE CORRIGÉE
 
-import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
-import { CreateListingInput, UpdateListingInput } from '@/lib/validations/listing';
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
+import {
+  CreateListingInput,
+  UpdateListingInput,
+} from "@/lib/validations/listing";
+
+// ✅ FONCTION POUR FORMATER LES VALEURS EN TEXTE LISIBLE POUR L'HISTORIQUE
+function formatValueForHistory(value: any, fieldName: string): string {
+  if (value === null || value === undefined) return "";
+  
+  // Pour le statut
+  if (fieldName === "status") {
+    const statusMap: Record<string, string> = {
+      "ACTIVE": "Publiée",
+      "INACTIVE": "Masquée",
+      "DRAFT": "Brouillon",
+      "ARCHIVED": "Archivée"
+    };
+    return statusMap[value] || value;
+  }
+  
+  // Pour le type de location
+  if (fieldName === "rentalType") {
+    const rentalMap: Record<string, string> = {
+      "SHORT_TERM": "Court terme",
+      "LONG_TERM": "Long terme",
+      "BOTH": "Les deux"
+    };
+    return rentalMap[value] || value;
+  }
+  
+  // Pour l'ascenseur
+  if (fieldName === "hasElevator") {
+    return value ? "Oui" : "Non";
+  }
+  
+  // Pour les prix
+  if (fieldName === "pricePerNight" || fieldName === "pricePerMonth" || 
+      fieldName === "securityDeposit" || fieldName === "cleaningFee") {
+    return value ? `${value} TND` : "0 TND";
+  }
+  
+  // Pour les équipements - transformer en texte lisible
+  if (fieldName === "equipment" && typeof value === "object") {
+    const equipmentMap: Record<string, string> = {
+      "wifi": "Wi-Fi",
+      "ac": "Climatisation",
+      "heating": "Chauffage",
+      "kitchen": "Cuisine équipée",
+      "parking": "Parking",
+      "pool": "Piscine",
+      "gym": "Salle de sport",
+      "washer": "Lave-linge",
+      "tv": "Télévision",
+      "balcony": "Balcon",
+      "dishwasher": "Lave-vaisselle",
+      "dryer": "Sèche-linge"
+    };
+    
+    const activeEquipment = Object.entries(value)
+      .filter(([, v]) => v === true)
+      .map(([k]) => equipmentMap[k] || k);
+    
+    return activeEquipment.length > 0 ? activeEquipment.join(", ") : "Aucun équipement";
+  }
+  
+  // Pour les nombres
+  if (typeof value === "number") {
+    return value.toString();
+  }
+  
+  // Pour les strings simples
+  if (typeof value === "string") {
+    return value;
+  }
+  
+  // Pour les objets (fallback)
+  if (typeof value === "object") {
+    return JSON.stringify(value);
+  }
+  
+  return String(value);
+}
 
 export class ListingService {
-  
-  static async generateUniqueSlug(title: string, excludeId?: string): Promise<string> {
+  static async generateUniqueSlug(
+    title: string,
+    excludeId?: string,
+  ): Promise<string> {
     const baseSlug = title
       .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-    
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
     let slug = baseSlug;
     let counter = 1;
-    
-    while (await prisma.listing.findFirst({
-      where: { slug, id: { not: excludeId } }
-    })) {
+
+    while (
+      await prisma.listing.findFirst({
+        where: { slug, id: { not: excludeId } },
+      })
+    ) {
       slug = `${baseSlug}-${counter++}`;
     }
-    
+
     return slug;
   }
 
   static async createListing(ownerId: string, data: CreateListingInput) {
     const slug = await this.generateUniqueSlug(data.title);
-    
+
     const photosToCreate = (data.photos || [])
-      .filter(photo => photo.url && !photo.url.startsWith('blob:'))
+      .filter(
+        (photo) =>
+          photo?.url &&
+          !photo.url.startsWith("blob:") &&
+          photo.url.trim() !== "",
+      )
       .map((photo, index) => ({
         url: photo.url,
         thumbnailUrl: photo.thumbnailUrl || photo.url,
-        type: 'IMAGE' as const,
+        type: "IMAGE" as const,
         position: index,
         isMain: photo.isMain || index === 0,
       }));
-    
+
     const listing = await prisma.listing.create({
       data: {
         title: data.title,
         slug,
-        description: data.description || '',
+        description: data.description || "",
         type: data.type,
-        status: data.status,
+        status: data.status || "DRAFT",
         governorate: data.governorate,
         delegation: data.delegation,
-        street: data.street || '',
-        neighborhood: data.neighborhood || '',
+        street: data.street || "",
+        neighborhood: data.neighborhood || "",
         postalCode: data.postalCode || null,
         latitude: data.latitude || null,
         longitude: data.longitude || null,
-        rooms: data.rooms,
-        bathrooms: data.bathrooms,
+        rooms: data.rooms || 1,
+        bathrooms: data.bathrooms || 1,
         maxGuests: data.maxGuests || 2,
         surfaceArea: data.surfaceArea || null,
         floorNumber: data.floorNumber || null,
-        hasElevator: data.hasElevator,
-        rentalType: data.rentalType,
+        hasElevator: data.hasElevator || false,
+        rentalType: data.rentalType || "SHORT_TERM",
         pricePerNight: data.pricePerNight || null,
         pricePerMonth: data.pricePerMonth || null,
         securityDeposit: data.securityDeposit || null,
+        cleaningFee: data.cleaningFee || 0,
+        weekendPriceMultiplier: data.weekendPriceMultiplier || 1.15,
+        extraFees: data.extraFees ? JSON.stringify(data.extraFees) : "[]",
+        seasonalRules: data.seasonalRules
+          ? JSON.stringify(data.seasonalRules)
+          : "[]",
+        services: data.services ? JSON.stringify(data.services) : "{}",
         equipment: data.equipment || {},
-        services: data.services || {},
         houseRules: data.houseRules || {},
-        customRules: data.customRules || '',
+        customRules: data.customRules || "",
         ownerId,
-        publishedAt: data.status === 'ACTIVE' ? new Date() : null,
-        photos: { create: photosToCreate },
+        publishedAt: data.status === "ACTIVE" ? new Date() : null,
+        photos:
+          photosToCreate.length > 0 ? { create: photosToCreate } : undefined,
       },
       include: { photos: true },
     });
 
+    // ✅ Historique de création avec format lisible
     await prisma.listingHistory.create({
       data: {
         listingId: listing.id,
-        actionType: 'CREATE',
-        fieldName: 'listing',
+        actionType: "CREATE",
+        fieldName: "listing",
         oldValue: null,
-        newValue: { title: data.title, type: data.type },
+        newValue: `Création de l'annonce "${data.title}"`,
         changedBy: ownerId,
       },
     });
@@ -103,45 +201,59 @@ export class ListingService {
             stats: { select: { averageRating: true, totalReviews: true } },
           },
         },
-        photos: { orderBy: { position: 'asc' } },
+        photos: { orderBy: { position: "asc" } },
         availability: {
           where: { date: { gte: new Date() } },
           take: 90,
-          orderBy: { date: 'asc' },
+          orderBy: { date: "asc" },
         },
       },
     });
 
     if (!listing) return null;
 
+    const parsedListing = {
+      ...listing,
+      extraFees: listing.extraFees
+        ? JSON.parse(listing.extraFees as string)
+        : [],
+      seasonalRules: listing.seasonalRules
+        ? JSON.parse(listing.seasonalRules as string)
+        : [],
+      services: listing.services ? JSON.parse(listing.services as string) : {},
+    };
+
     if (incrementViews) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
       await prisma.$transaction([
-        prisma.listing.update({ where: { id }, data: { viewCount: { increment: 1 } } }),
+        prisma.listing.update({
+          where: { id },
+          data: { viewCount: { increment: 1 } },
+        }),
         prisma.listingStats.upsert({
-          where: { listingId_date: { listingId: id, date: new Date(new Date().setHours(0, 0, 0, 0)) } },
+          where: { listingId_date: { listingId: id, date: today } },
           update: { views: { increment: 1 } },
-          create: { listingId: id, date: new Date(new Date().setHours(0, 0, 0, 0)), views: 1 },
+          create: { listingId: id, date: today, views: 1 },
         }),
       ]);
     }
 
-    return listing;
+    return parsedListing;
   }
 
-  /**
-   * ✅ CORRIGÉ : Gestion correcte des photos dans l'historique
-   */
   static async updateListing(
-    id: string, 
-    ownerId: string, 
-    data: UpdateListingInput, 
-    newPhotos?: any[]
+    id: string,
+    ownerId: string,
+    data: UpdateListingInput,
+    newPhotos?: any[],
   ) {
     // Récupérer l'annonce existante
     const existing = await prisma.listing.findUnique({
       where: { id },
-      select: { 
-        ownerId: true, 
+      select: {
+        ownerId: true,
         title: true,
         description: true,
         type: true,
@@ -158,14 +270,15 @@ export class ListingService {
         pricePerNight: true,
         pricePerMonth: true,
         securityDeposit: true,
+        cleaningFee: true,
+        weekendPriceMultiplier: true,
         equipment: true,
       },
     });
 
-    if (!existing) throw new Error('Annonce non trouvée');
-    if (existing.ownerId !== ownerId) throw new Error('Non autorisé');
+    if (!existing) throw new Error("Annonce non trouvée");
+    if (existing.ownerId !== ownerId) throw new Error("Non autorisé");
 
-    // Récupérer les photos existantes pour comparer
     const existingPhotos = await prisma.listingMedia.findMany({
       where: { listingId: id },
       select: { url: true, isMain: true, position: true },
@@ -184,231 +297,180 @@ export class ListingService {
 
     const changes: any[] = [];
 
-    // Vérifier chaque champ
-    if (data.title !== undefined && data.title !== existing.title) {
-      changes.push({
-        fieldName: 'title',
-        oldValue: existing.title,
-        newValue: data.title,
-      });
-      updateData.title = data.title;
-    }
-    
-    if (data.description !== undefined && data.description !== existing.description) {
-      changes.push({
-        fieldName: 'description',
-        oldValue: existing.description,
-        newValue: data.description,
-      });
-      updateData.description = data.description;
-    }
-    
-    if (data.type !== undefined && data.type !== existing.type) {
-      changes.push({
-        fieldName: 'type',
-        oldValue: existing.type,
-        newValue: data.type,
-      });
-      updateData.type = data.type;
-    }
-    
-    if (data.status !== undefined && data.status !== existing.status) {
-      changes.push({
-        fieldName: 'status',
-        oldValue: existing.status,
-        newValue: data.status,
-      });
-      updateData.status = data.status;
-      if (data.status === 'ACTIVE') updateData.publishedAt = new Date();
-    }
-    
-    if (data.governorate !== undefined && data.governorate !== existing.governorate) {
-      changes.push({
-        fieldName: 'governorate',
-        oldValue: existing.governorate,
-        newValue: data.governorate,
-      });
-      updateData.governorate = data.governorate;
-    }
-    
-    if (data.delegation !== undefined && data.delegation !== existing.delegation) {
-      changes.push({
-        fieldName: 'delegation',
-        oldValue: existing.delegation,
-        newValue: data.delegation,
-      });
-      updateData.delegation = data.delegation;
-    }
-    
-    if (data.street !== undefined && data.street !== existing.street) {
-      changes.push({
-        fieldName: 'street',
-        oldValue: existing.street,
-        newValue: data.street,
-      });
-      updateData.street = data.street;
-    }
-    
-    if (data.rooms !== undefined && data.rooms !== existing.rooms) {
-      changes.push({
-        fieldName: 'rooms',
-        oldValue: existing.rooms,
-        newValue: data.rooms,
-      });
-      updateData.rooms = data.rooms;
-    }
-    
-    if (data.bathrooms !== undefined && data.bathrooms !== existing.bathrooms) {
-      changes.push({
-        fieldName: 'bathrooms',
-        oldValue: existing.bathrooms,
-        newValue: data.bathrooms,
-      });
-      updateData.bathrooms = data.bathrooms;
-    }
-    
-    if (data.maxGuests !== undefined && data.maxGuests !== existing.maxGuests) {
-      changes.push({
-        fieldName: 'maxGuests',
-        oldValue: existing.maxGuests,
-        newValue: data.maxGuests,
-      });
-      updateData.maxGuests = data.maxGuests;
-    }
-    
-    if (data.surfaceArea !== undefined && data.surfaceArea !== existing.surfaceArea) {
-      changes.push({
-        fieldName: 'surfaceArea',
-        oldValue: existing.surfaceArea,
-        newValue: data.surfaceArea,
-      });
-      updateData.surfaceArea = data.surfaceArea;
-    }
-    
-    if (data.hasElevator !== undefined && data.hasElevator !== existing.hasElevator) {
-      changes.push({
-        fieldName: 'hasElevator',
-        oldValue: existing.hasElevator,
-        newValue: data.hasElevator,
-      });
-      updateData.hasElevator = data.hasElevator;
-    }
-    
-    if (data.rentalType !== undefined && data.rentalType !== existing.rentalType) {
-      changes.push({
-        fieldName: 'rentalType',
-        oldValue: existing.rentalType,
-        newValue: data.rentalType,
-      });
-      updateData.rentalType = data.rentalType;
-    }
-    
-    if (data.pricePerNight !== undefined && data.pricePerNight !== existing.pricePerNight) {
-      changes.push({
-        fieldName: 'pricePerNight',
-        oldValue: existing.pricePerNight,
-        newValue: data.pricePerNight,
-      });
-      updateData.pricePerNight = data.pricePerNight;
-    }
-    
-    if (data.pricePerMonth !== undefined && data.pricePerMonth !== existing.pricePerMonth) {
-      changes.push({
-        fieldName: 'pricePerMonth',
-        oldValue: existing.pricePerMonth,
-        newValue: data.pricePerMonth,
-      });
-      updateData.pricePerMonth = data.pricePerMonth;
-    }
-    
-    if (data.securityDeposit !== undefined && data.securityDeposit !== existing.securityDeposit) {
-      changes.push({
-        fieldName: 'securityDeposit',
-        oldValue: existing.securityDeposit,
-        newValue: data.securityDeposit,
-      });
-      updateData.securityDeposit = data.securityDeposit;
-    }
-    
+    // ✅ FONCTION addChange AVEC FORMATAGE POUR L'HISTORIQUE
+    const addChange = (fieldName: string, oldValue: any, newValue: any) => {
+      if (
+        newValue !== undefined &&
+        JSON.stringify(oldValue) !== JSON.stringify(newValue)
+      ) {
+        // Formater les valeurs pour l'historique (texte lisible)
+        const formattedOldValue = formatValueForHistory(oldValue, fieldName);
+        const formattedNewValue = formatValueForHistory(newValue, fieldName);
+        
+        changes.push({ 
+          fieldName, 
+          oldValue: formattedOldValue, 
+          newValue: formattedNewValue 
+        });
+        updateData[fieldName] = newValue;
+        return true;
+      }
+      return false;
+    };
+
+    // Comparer tous les champs
+    addChange("title", existing.title, data.title);
+    addChange("description", existing.description, data.description);
+    addChange("type", existing.type, data.type);
+    addChange("governorate", existing.governorate, data.governorate);
+    addChange("delegation", existing.delegation, data.delegation);
+    addChange("street", existing.street, data.street);
+    addChange("rooms", existing.rooms, data.rooms);
+    addChange("bathrooms", existing.bathrooms, data.bathrooms);
+    addChange("maxGuests", existing.maxGuests, data.maxGuests);
+    addChange("surfaceArea", existing.surfaceArea, data.surfaceArea);
+    addChange("hasElevator", existing.hasElevator, data.hasElevator);
+    addChange("rentalType", existing.rentalType, data.rentalType);
+    addChange("pricePerNight", existing.pricePerNight, data.pricePerNight);
+    addChange("pricePerMonth", existing.pricePerMonth, data.pricePerMonth);
+    addChange("securityDeposit", existing.securityDeposit, data.securityDeposit);
+    addChange("cleaningFee", existing.cleaningFee, data.cleaningFee);
+    addChange("weekendPriceMultiplier", existing.weekendPriceMultiplier, data.weekendPriceMultiplier);
+
+    // Gérer les JSON
     if (data.equipment !== undefined) {
-      const oldEquipment = existing.equipment as Record<string, boolean> || {};
+      const oldEquipment = (existing.equipment as Record<string, boolean>) || {};
       const newEquipment = data.equipment as Record<string, boolean>;
-      const hasEquipmentChanges = JSON.stringify(oldEquipment) !== JSON.stringify(newEquipment);
-      
-      if (hasEquipmentChanges) {
+      if (JSON.stringify(oldEquipment) !== JSON.stringify(newEquipment)) {
+        const formattedOld = formatValueForHistory(oldEquipment, "equipment");
+        const formattedNew = formatValueForHistory(newEquipment, "equipment");
         changes.push({
-          fieldName: 'equipment',
-          oldValue: oldEquipment,
-          newValue: newEquipment,
+          fieldName: "equipment",
+          oldValue: formattedOld,
+          newValue: formattedNew,
         });
         updateData.equipment = newEquipment as Prisma.JsonValue;
       }
     }
 
-    // Mettre à jour l'annonce
-    const updatedListing = await prisma.listing.update({
-      where: { id },
-      data: updateData,
-    });
+    if (data.extraFees !== undefined) {
+      const newExtraFees = JSON.stringify(data.extraFees);
+      const oldExtraFees = (existing.extraFees as string) || "[]";
+      if (oldExtraFees !== newExtraFees) {
+        changes.push({
+          fieldName: "extraFees",
+          oldValue: oldExtraFees,
+          newValue: newExtraFees,
+        });
+        updateData.extraFees = newExtraFees;
+      }
+    }
 
-    // ✅ Enregistrer les changements dans l'historique
+    if (data.seasonalRules !== undefined) {
+      const newSeasonalRules = JSON.stringify(data.seasonalRules);
+      const oldSeasonalRules = (existing.seasonalRules as string) || "[]";
+      if (oldSeasonalRules !== newSeasonalRules) {
+        changes.push({
+          fieldName: "seasonalRules",
+          oldValue: oldSeasonalRules,
+          newValue: newSeasonalRules,
+        });
+        updateData.seasonalRules = newSeasonalRules;
+      }
+    }
+
+    if (data.services !== undefined) {
+      const newServices = JSON.stringify(data.services);
+      const oldServices = (existing.services as string) || "{}";
+      if (oldServices !== newServices) {
+        changes.push({
+          fieldName: "services",
+          oldValue: oldServices,
+          newValue: newServices,
+        });
+        updateData.services = newServices;
+      }
+    }
+
+    // Gérer le status
+    if (data.status !== undefined && data.status !== existing.status) {
+      addChange("status", existing.status, data.status);
+      updateData.status = data.status;
+      if (data.status === "ACTIVE") updateData.publishedAt = new Date();
+    }
+
+    // Mettre à jour l'annonce
+    if (Object.keys(updateData).length > 1) {
+      await prisma.listing.update({
+        where: { id },
+        data: updateData,
+      });
+    }
+
+    // ✅ Enregistrer les changements dans l'historique (avec valeurs formatées en texte)
     for (const change of changes) {
+      let actionType = "UPDATE";
+      if (change.fieldName === "status") actionType = "STATUS_CHANGE";
+      else if (change.fieldName === "pricePerNight" || change.fieldName === "pricePerMonth")
+        actionType = "PRICE_UPDATE";
+      else if (change.fieldName === "equipment") actionType = "EQUIPMENT_UPDATE";
+      else if (change.fieldName === "photos") actionType = "PHOTO_UPDATE";
+
       await prisma.listingHistory.create({
         data: {
           listingId: id,
-          actionType: change.fieldName === 'status' ? 'STATUS_CHANGE' : 
-                      change.fieldName === 'pricePerNight' || change.fieldName === 'pricePerMonth' ? 'PRICE_UPDATE' :
-                      change.fieldName === 'equipment' ? 'EQUIPMENT_UPDATE' : 'UPDATE',
+          actionType,
           fieldName: change.fieldName,
-          oldValue: change.oldValue,
-          newValue: change.newValue,
+          oldValue: change.oldValue,  // ✅ Déjà formaté en texte lisible
+          newValue: change.newValue,  // ✅ Déjà formaté en texte lisible
           changedBy: ownerId,
         },
       });
     }
 
-    // ✅ Gérer les photos - Version CORRIGÉE
-    if (newPhotos !== undefined) {
-      // Vérifier si les photos ont réellement changé
-      const newPhotoUrls = newPhotos.map(p => p.url).sort();
-      const oldPhotoUrls = existingPhotos.map(p => p.url).sort();
-      const hasPhotoChanges = JSON.stringify(newPhotoUrls) !== JSON.stringify(oldPhotoUrls);
-      
+    // Gérer les photos
+    if (newPhotos !== undefined && newPhotos.length > 0) {
+      const newPhotoUrls = newPhotos
+        .map((p) => p.url)
+        .filter((url) => url && !url.startsWith("blob:"))
+        .sort();
+      const oldPhotoUrls = existingPhotos.map((p) => p.url).sort();
+      const hasPhotoChanges =
+        JSON.stringify(newPhotoUrls) !== JSON.stringify(oldPhotoUrls);
+
       if (hasPhotoChanges) {
-        // Supprimer les anciennes photos
         await prisma.listingMedia.deleteMany({
           where: { listingId: id },
         });
-        
-        // Ajouter les nouvelles photos
+
         const photosToCreate = newPhotos
-          .filter(photo => photo.url && !photo.url.startsWith('blob:'))
+          .filter(
+            (photo) =>
+              photo?.url &&
+              !photo.url.startsWith("blob:") &&
+              photo.url.trim() !== "",
+          )
           .map((photo, index) => ({
             listingId: id,
             url: photo.url,
             thumbnailUrl: photo.thumbnailUrl || photo.url,
-            type: 'IMAGE' as const,
+            type: "IMAGE" as const,
             position: index,
             isMain: photo.isMain || index === 0,
           }));
-        
+
         if (photosToCreate.length > 0) {
           await prisma.listingMedia.createMany({
             data: photosToCreate,
           });
-          
-          // ✅ Enregistrer l'historique des photos avec les URLs des premières photos
-          const firstOldPhotoUrl = oldPhotoUrls[0] || null;
-          const firstNewPhotoUrl = newPhotoUrls[0] || null;
-          
+
           await prisma.listingHistory.create({
             data: {
               listingId: id,
-              actionType: 'PHOTO_UPDATE',
-              fieldName: 'photos',
-              // ✅ Stocker les URLs des photos pour l'affichage
-              oldValue: firstOldPhotoUrl,
-              newValue: firstNewPhotoUrl,
+              actionType: "PHOTO_UPDATE",
+              fieldName: "photos",
+              oldValue: oldPhotoUrls[0] || null,
+              newValue: newPhotoUrls[0] || null,
               changedBy: ownerId,
             },
           });
@@ -416,11 +478,25 @@ export class ListingService {
       }
     }
 
-    // Retourner l'annonce avec les photos
-    return prisma.listing.findUnique({
+    const updatedListing = await prisma.listing.findUnique({
       where: { id },
-      include: { photos: { orderBy: { position: 'asc' } } },
+      include: { photos: { orderBy: { position: "asc" } } },
     });
+
+    if (!updatedListing) return null;
+
+    return {
+      ...updatedListing,
+      extraFees: updatedListing.extraFees
+        ? JSON.parse(updatedListing.extraFees as string)
+        : [],
+      seasonalRules: updatedListing.seasonalRules
+        ? JSON.parse(updatedListing.seasonalRules as string)
+        : [],
+      services: updatedListing.services
+        ? JSON.parse(updatedListing.services as string)
+        : {},
+    };
   }
 
   static async archiveListing(id: string, ownerId: string) {
@@ -429,22 +505,22 @@ export class ListingService {
       select: { ownerId: true, status: true },
     });
 
-    if (!existing) throw new Error('Annonce non trouvée');
-    if (existing.ownerId !== ownerId) throw new Error('Non autorisé');
-    if (existing.status === 'ARCHIVED') throw new Error('Annonce déjà archivée');
+    if (!existing) throw new Error("Annonce non trouvée");
+    if (existing.ownerId !== ownerId) throw new Error("Non autorisé");
+    if (existing.status === "ARCHIVED") throw new Error("Annonce déjà archivée");
 
     const listing = await prisma.listing.update({
       where: { id },
-      data: { status: 'ARCHIVED', isArchived: true, archivedAt: new Date() },
+      data: { status: "ARCHIVED", isArchived: true, archivedAt: new Date() },
     });
 
     await prisma.listingHistory.create({
       data: {
         listingId: id,
-        actionType: 'STATUS_CHANGE',
-        fieldName: 'status',
-        oldValue: existing.status,
-        newValue: 'ARCHIVED',
+        actionType: "STATUS_CHANGE",
+        fieldName: "status",
+        oldValue: formatValueForHistory(existing.status, "status"),
+        newValue: "Archivée",
         changedBy: ownerId,
       },
     });
@@ -458,22 +534,22 @@ export class ListingService {
       select: { ownerId: true, status: true },
     });
 
-    if (!existing) throw new Error('Annonce non trouvée');
-    if (existing.ownerId !== ownerId) throw new Error('Non autorisé');
-    if (existing.status !== 'ARCHIVED') throw new Error('Cette annonce n\'est pas archivée');
+    if (!existing) throw new Error("Annonce non trouvée");
+    if (existing.ownerId !== ownerId) throw new Error("Non autorisé");
+    if (existing.status !== "ARCHIVED") throw new Error("Cette annonce n'est pas archivée");
 
     const listing = await prisma.listing.update({
       where: { id },
-      data: { status: 'INACTIVE', isArchived: false, archivedAt: null },
+      data: { status: "INACTIVE", isArchived: false, archivedAt: null },
     });
 
     await prisma.listingHistory.create({
       data: {
         listingId: id,
-        actionType: 'STATUS_CHANGE',
-        fieldName: 'status',
-        oldValue: 'ARCHIVED',
-        newValue: 'INACTIVE',
+        actionType: "STATUS_CHANGE",
+        fieldName: "status",
+        oldValue: "Archivée",
+        newValue: "Masquée",
         changedBy: ownerId,
       },
     });
@@ -484,50 +560,57 @@ export class ListingService {
   static async deleteListing(id: string, ownerId: string) {
     const existing = await prisma.listing.findUnique({
       where: { id },
-      include: { bookings: { where: { status: { in: ['PENDING', 'CONFIRMED'] } } } },
+      include: {
+        bookings: {
+          where: { status: { in: ["PENDING", "CONFIRMED", "PAID"] } },
+        },
+      },
     });
 
-    if (!existing) throw new Error('Annonce non trouvée');
-    if (existing.ownerId !== ownerId) throw new Error('Non autorisé');
-    
+    if (!existing) throw new Error("Annonce non trouvée");
+    if (existing.ownerId !== ownerId) throw new Error("Non autorisé");
+
     if (existing.bookings.length > 0) {
-      throw new Error('Impossible de supprimer: des réservations sont en cours');
+      throw new Error("Impossible de supprimer: des réservations sont en cours");
     }
 
     return prisma.listing.delete({ where: { id } });
   }
 
-  static async getMyListings(ownerId: string, filters: {
-    status?: string;
-    page?: number;
-    pageSize?: number;
-    search?: string;
-  }) {
+  static async getMyListings(
+    ownerId: string,
+    filters: {
+      status?: string;
+      page?: number;
+      pageSize?: number;
+      search?: string;
+    },
+  ) {
     const { status, page = 1, pageSize = 10, search } = filters;
-    
+
     const where: Prisma.ListingWhereInput = { ownerId };
-    
-    if (status && status !== 'ALL') {
+
+    if (status && status !== "ALL") {
       where.status = status as any;
     }
-    
+
     if (search) {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
       ];
     }
 
     const skip = (page - 1) * pageSize;
-    
+
     const [listings, totalCount] = await Promise.all([
       prisma.listing.findMany({
         where,
         include: {
-          photos: { orderBy: { position: 'asc' } },
-          stats: { orderBy: { date: 'desc' }, take: 1 },
+          photos: { orderBy: { position: "asc" } },
+          stats: { orderBy: { date: "desc" }, take: 1 },
         },
-        orderBy: { updatedAt: 'desc' },
+        orderBy: { updatedAt: "desc" },
         skip,
         take: pageSize,
       }),
@@ -535,11 +618,20 @@ export class ListingService {
     ]);
 
     return {
-      listings: listings.map(listing => ({
+      listings: listings.map((listing) => ({
         ...listing,
+        extraFees: listing.extraFees
+          ? JSON.parse(listing.extraFees as string)
+          : [],
+        seasonalRules: listing.seasonalRules
+          ? JSON.parse(listing.seasonalRules as string)
+          : [],
+        services: listing.services
+          ? JSON.parse(listing.services as string)
+          : {},
         recentViews: listing.stats[0]?.views || 0,
         recentBookings: listing.stats[0]?.bookings || 0,
-        mainPhoto: listing.photos.find(p => p.isMain) || listing.photos[0],
+        mainPhoto: listing.photos.find((p) => p.isMain) || listing.photos[0],
       })),
       pagination: {
         page,
