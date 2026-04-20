@@ -1,157 +1,260 @@
-// app/fr/favorites/hooks/useFavorites.ts
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from "react";
 
 export interface FavoriteListing {
-  id: string
-  title: string
-  location: string
-  price: number
-  rating: number
-  reviewCount: number
-  image: string
-  type: string
-  badges: string[]
-  isVerified: boolean
-  bedrooms: number
-  bathrooms: number
+  id: string;
+  title: string;
+  location: string;
+  price: number;
+  rating: number;
+  reviewCount: number;
+  image: string;
+  type: string;
+  badges: string[];
+  isVerified: boolean;
+  bedrooms: number;
+  bathrooms: number;
 }
 
-// Données mockées des favoris
-const MOCK_FAVORITES: FavoriteListing[] = [
-  {
-    id: '1',
-    title: 'Palais des Jasmins',
-    location: 'Sidi Bou Saïd, Tunis',
-    price: 1200000,
-    rating: 4.9,
-    reviewCount: 24,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAW1OdAsZiopGkxNAWGtwSqnpKReXX1KlQw6MdRgzsohilAVFD6lyraPoi0tx6CCCuW3mYom-_-lzf7AA5iEDswMqanR8krjd17lm6v6OPf5Q2eNocxOAA9tBNBmDL6vYyy3dWFA24ufQlBWmKRm_xK9Y8ySUNMQ44qvViHFLEFA6AP6gDGiLGcNWQIo1il8AHC7x7mGaIPjXolOgekEKCshw8gCpbrjjuv0tVIHXxeAYAX7RM7p67ciKoZ2eiRGhcdQQEd7WNgl-11',
-    type: 'Villa',
-    badges: ['Luxe'],
-    isVerified: true,
-    bedrooms: 5,
-    bathrooms: 4
-  },
-  {
-    id: '2',
-    title: "L'Oasis Bleue",
-    location: 'Hammamet Sud',
-    price: 850000,
-    rating: 4.7,
-    reviewCount: 12,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD4vkIBFXKOc_63Qb8t_wsKlf_ZZblpslDdopszWsPXs3QV9QF9W59Zt099XRhFH1wz96YXkt2DgFZbRjRF-xeaSUHUZfB4MQG4ldAF-p50bOyHOp4r_-7tQvuxS0Qa8vFPj2TNePBioAbNG7eKaZGNecEWoT21J5cNwUAeDSsg6WHSmZFcxSGoBFKGQp3G0WrZR_ix_GMOEzWKt4G4ZdbTqNdATW5uH2pt1EjenrgJZBA4_LeeR-_CYMNcteymBBS12iJ2dbnQ9ywB',
-    type: 'Villa',
-    badges: [],
-    isVerified: false,
-    bedrooms: 4,
-    bathrooms: 3
-  },
-  {
-    id: '3',
-    title: 'Résidence Azure',
-    location: 'Gammarth Supérieur',
-    price: 2100000,
-    rating: 5.0,
-    reviewCount: 8,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBReS63oe72TqaEkK8ZtqaXROC-P8zpSt6icVA8uES_FM_pWI7XFrK9jVYQY5Ue80k4uamAkbKGUKGffHHCdCcnKNmhHHGlZvk1mClEIb99LRxwzjMCIB6YkWMbXaFa7capXvY55NNS1F8E2_zZJpdgEXODThsL4tmmZaGCrD6BFacGHe7qeJ22SvX8IMcT_o9_3NQtZfSr8J9ZTDiDdmJ8PvPpCSsE2SWboPwtlX9d-OTGxiko1qZ9BQP4DtXKlMjW4tn8CxBb881L',
-    type: 'Villa',
-    badges: ['Luxe'],
-    isVerified: true,
-    bedrooms: 6,
-    bathrooms: 5
-  }
-]
+export interface CategoryCount {
+  id: string;
+  name: string;
+  count: number;
+}
 
-// Listes de favoris
-export const favoriteLists = [
-  { id: 'all', name: 'Tous', count: 3 },
-  { id: 'villas', name: 'Villas de rêve', count: 2 },
-  { id: 'appartements', name: 'Appartements Tunis', count: 1 }
-]
+// Transforme l'URL brute en URL utilisable
+const getImageUrl = (url: string | null | undefined): string => {
+  if (!url) {
+    return "https://placehold.co/600x400/e2e8f0/1e90ff?text=NestHub";
+  }
+  if (url.startsWith("/api/listings/image")) {
+    return url;
+  }
+  if (url.includes("vercel-storage.com")) {
+    return `/api/listings/image?url=${encodeURIComponent(url)}`;
+  }
+  if (url.startsWith("http")) {
+    return url;
+  }
+  return "https://placehold.co/600x400/e2e8f0/1e90ff?text=NestHub";
+};
+
+// Fonction pour normaliser les types
+const normalizeType = (type: string): string => {
+  if (!type) return "appartement";
+
+  const typeLower = type.toLowerCase();
+
+  if (typeLower === "villa" || typeLower === "villas") return "villa";
+  if (
+    typeLower === "appartement" ||
+    typeLower === "appartements" ||
+    typeLower === "apartment" ||
+    typeLower === "apartments"
+  )
+    return "appartement";
+  if (
+    typeLower === "maison" ||
+    typeLower === "maisons" ||
+    typeLower === "house" ||
+    typeLower === "houses"
+  )
+    return "maison";
+  if (typeLower === "studio" || typeLower === "studios") return "studio";
+  if (typeLower === "duplex" || typeLower === "duplexes") return "duplex";
+
+  return "appartement";
+};
 
 export function useFavorites() {
-  const [favorites, setFavorites] = useState<FavoriteListing[]>([])
-  const [selectedList, setSelectedList] = useState('all')
-  const [selectedForCompare, setSelectedForCompare] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
+  const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
+  const [selectedList, setSelectedList] = useState("all");
+  const [selectedForCompare, setSelectedForCompare] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Charger les favoris depuis localStorage
-  useEffect(() => {
-    const loadFavorites = () => {
-      const savedFavorites = localStorage.getItem('favorites')
-      if (savedFavorites) {
-        const favoriteIds = JSON.parse(savedFavorites)
-        const userFavorites = MOCK_FAVORITES.filter(fav => 
-          favoriteIds.includes(fav.id)
-        )
-        setFavorites(userFavorites)
-      } else {
-        setFavorites([])
+  // Calculer les compteurs dynamiquement à partir des favoris
+  const getCategoryCounts = useCallback((): CategoryCount[] => {
+    return [
+      { id: "all", name: "Tous", count: favorites.length },
+      {
+        id: "villa",
+        name: "Villas",
+        count: favorites.filter((f) => f.type === "villa").length,
+      },
+      {
+        id: "appartement",
+        name: "Appartements",
+        count: favorites.filter((f) => f.type === "appartement").length,
+      },
+      {
+        id: "maison",
+        name: "Maisons",
+        count: favorites.filter((f) => f.type === "maison").length,
+      },
+      {
+        id: "studio",
+        name: "Studios",
+        count: favorites.filter((f) => f.type === "studio").length,
+      },
+      {
+        id: "duplex",
+        name: "Duplex",
+        count: favorites.filter((f) => f.type === "duplex").length,
+      },
+    ];
+  }, [favorites]);
+
+  const loadFavorites = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const savedFavorites = localStorage.getItem("favorites");
+
+      if (!savedFavorites) {
+        setFavorites([]);
+        setLoading(false);
+        return;
       }
-      setLoading(false)
-    }
-    
-    loadFavorites()
-  }, [])
 
-  // Filtrer par liste sélectionnée
-  const filteredFavorites = favorites.filter(fav => {
-    if (selectedList === 'all') return true
-    if (selectedList === 'villas') return fav.type === 'Villa'
-    if (selectedList === 'appartements') return fav.type === 'Appartement'
-    return true
-  })
+      const favoriteIds = JSON.parse(savedFavorites);
+
+      if (favoriteIds.length === 0) {
+        setFavorites([]);
+        setLoading(false);
+        return;
+      }
+
+      const listingsPromises = favoriteIds.map(async (id: string) => {
+        const response = await fetch(`/api/listings/${id}`);
+        if (response.ok) {
+          return await response.json();
+        }
+        return null;
+      });
+
+      const listingsData = await Promise.all(listingsPromises);
+      const validListings = listingsData.filter((l) => l !== null);
+
+      const userFavorites = validListings.map((listing: any) => {
+        let photoUrl: string | null = null;
+
+        if (listing.photos && listing.photos.length > 0) {
+          photoUrl = listing.photos[0].url;
+        } else if (listing.images && listing.images.length > 0) {
+          photoUrl = listing.images[0];
+        } else if (listing.image) {
+          photoUrl = listing.image;
+        }
+
+        let rawType =
+          listing.type ||
+          listing.category ||
+          listing.propertyType ||
+          "appartement";
+        const normalizedType = normalizeType(rawType);
+
+        return {
+          id: listing.id,
+          title: listing.title || "Sans titre",
+          location:
+            `${listing.governorate || listing.city || ""}, ${listing.delegation || listing.area || ""}`
+              .replace(/^, /, "")
+              .replace(/, $/, "") || "Emplacement non spécifié",
+          price: listing.pricePerNight || listing.price || 0,
+          rating: listing.rating || 4.5,
+          reviewCount: listing.reviewCount || 0,
+          image: getImageUrl(photoUrl),
+          type: normalizedType,
+          badges: listing.owner?.isIdentityVerified ? ["Vérifié"] : [],
+          isVerified: listing.owner?.isIdentityVerified || false,
+          bedrooms: listing.bedrooms || listing.rooms || 1,
+          bathrooms: listing.bathrooms || 1,
+        };
+      });
+
+      setFavorites(userFavorites);
+    } catch (err) {
+      console.error("Erreur chargement favoris:", err);
+      setError(err instanceof Error ? err.message : "Erreur inconnue");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  useEffect(() => {
+    const handleFavoritesUpdate = () => loadFavorites();
+    window.addEventListener("favorites-updated", handleFavoritesUpdate);
+    return () =>
+      window.removeEventListener("favorites-updated", handleFavoritesUpdate);
+  }, [loadFavorites]);
+
+  useEffect(() => {
+    const savedCompare = localStorage.getItem("compare_listings");
+    if (savedCompare) {
+      setSelectedForCompare(JSON.parse(savedCompare));
+    }
+  }, []);
+
+  const filteredFavorites = favorites.filter((fav) => {
+    if (selectedList === "all") return true;
+    return fav.type === selectedList;
+  });
 
   const removeFavorite = (listingId: string) => {
-    // Mettre à jour l'état
-    setFavorites(prev => prev.filter(fav => fav.id !== listingId))
-    
-    // Mettre à jour localStorage
-    const saved = localStorage.getItem('favorites')
+    const saved = localStorage.getItem("favorites");
     if (saved) {
-      const favoritesIds = JSON.parse(saved).filter((id: string) => id !== listingId)
-      localStorage.setItem('favorites', JSON.stringify(favoritesIds))
+      const updated = JSON.parse(saved).filter(
+        (id: string) => id !== listingId,
+      );
+      localStorage.setItem("favorites", JSON.stringify(updated));
+      window.dispatchEvent(new Event("favorites-updated"));
     }
-    
-    // Retirer de la comparaison si présent
-    setSelectedForCompare(prev => prev.filter(id => id !== listingId))
-  }
+    setSelectedForCompare((prev) => prev.filter((id) => id !== listingId));
+  };
+
+  const clearAllFavorites = () => {
+    localStorage.setItem("favorites", JSON.stringify([]));
+    localStorage.removeItem("compare_listings");
+    setSelectedForCompare([]);
+    window.dispatchEvent(new Event("favorites-updated"));
+  };
 
   const toggleCompare = (listingId: string) => {
-    setSelectedForCompare(prev => 
-      prev.includes(listingId)
-        ? prev.filter(id => id !== listingId)
-        : [...prev, listingId]
-    )
-  }
+    setSelectedForCompare((prev) => {
+      const next = prev.includes(listingId)
+        ? prev.filter((id) => id !== listingId)
+        : [...prev, listingId];
+      localStorage.setItem("compare_listings", JSON.stringify(next));
+      return next;
+    });
+  };
 
   const clearCompare = () => {
-    setSelectedForCompare([])
-  }
+    setSelectedForCompare([]);
+    localStorage.removeItem("compare_listings");
+  };
 
   return {
-    // Données
     favorites: filteredFavorites,
     allFavorites: favorites,
     selectedForCompare,
     selectedList,
     loading,
-    
-    // Setters
+    error,
     setSelectedList,
-    
-    // Actions
     removeFavorite,
     toggleCompare,
     clearCompare,
-    
-    // Constantes
-    favoriteLists,
-    
-    // Infos
+    clearAllFavorites,
+    categoryCounts: getCategoryCounts(),
     totalCount: favorites.length,
-    compareCount: selectedForCompare.length
-  }
+    compareCount: selectedForCompare.length,
+  };
 }

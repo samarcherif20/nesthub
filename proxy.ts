@@ -139,7 +139,9 @@ export default clerkMiddleware(async (auth, req) => {
       "/api/get-redirect-url",
       "/api/auth/reset-password", //
       "/api/cohost/invitations/accept", // ✅ AJOUTE CETTE LIGNE
-      "/api/admin/invitations/accept", // ✅ AJOUTE CETTE LIGNE ✅ AJOUTER CETTE LIGNE
+      "/api/admin/invitations/accept",
+      "/api/notifications",        // ✅ AJOUTE CETTE LIGNE
+      "/api/notifications/test",   // ✅ AJOUTE CETTE LIGNE
     ];
 
     const isPublicApiRoute = publicApiRoutes.some((route) =>
@@ -186,6 +188,7 @@ export default clerkMiddleware(async (auth, req) => {
 
     const publicPaths = [
       "/",
+      "/test",
       "/login",
       "/inscription/verify",
       "/inscription/verify-catch",
@@ -218,6 +221,7 @@ export default clerkMiddleware(async (auth, req) => {
   } else {
     const publicPaths = [
       "/",
+      "/test",
       "/login",
       "/accept-invite",
       "/inscription/verify",
@@ -322,6 +326,7 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   const publicPaths = [
     "/",
+    "/test",
     "/login",
     "/accept-invite",
     "/inscription/verify",

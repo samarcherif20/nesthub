@@ -1,4 +1,3 @@
-// hooks/useSettings.ts
 import { useState, useEffect, useCallback } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
@@ -16,6 +15,7 @@ export function useSettings() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   // État du profil
   const [profile, setProfile] = useState({
@@ -23,7 +23,7 @@ export function useSettings() {
     lastName: "",
     email: "",
     profilePictureUrl: null as string | null,
-    preferredLocale: currentLocale, // Initialize with current URL locale
+    preferredLocale: currentLocale,
   });
 
   // État de sécurité
@@ -48,6 +48,7 @@ export function useSettings() {
     strength: 1,
     isSubmitting: false,
     success: false,
+    open: false,
   });
 
   // Calcul de la force du mot de passe
@@ -75,11 +76,11 @@ export function useSettings() {
 
   const getStrengthLabel = () => {
     const strength = passwordForm.strength;
-    if (strength === 1) return { text: "Faible", color: "text-red-500" };
-    if (strength === 2) return { text: "Moyen", color: "text-orange-500" };
-    if (strength === 3) return { text: "Bon", color: "text-yellow-500" };
-    if (strength >= 4) return { text: "Fort", color: "text-green-500" };
-    return { text: "Faible", color: "text-red-500" };
+    if (strength === 1) return { text: "Faible", color: "#ef4444" };
+    if (strength === 2) return { text: "Moyen", color: "#f97316" };
+    if (strength === 3) return { text: "Bon", color: "#eab308" };
+    if (strength >= 4) return { text: "Fort", color: "#22c55e" };
+    return { text: "Faible", color: "#ef4444" };
   };
 
   // Charger les données utilisateur
@@ -105,7 +106,7 @@ export function useSettings() {
               user.email || clerkUser.emailAddresses[0]?.emailAddress || "",
             profilePictureUrl:
               user.profilePictureUrl || clerkUser.imageUrl || null,
-            preferredLocale: user.preferredLocale || currentLocale, // Use DB value or current URL locale
+            preferredLocale: user.preferredLocale || currentLocale,
           });
           setVacation({
             enabled: user.vacationMode || false,
@@ -134,7 +135,6 @@ export function useSettings() {
 
   // Mettre à jour la langue avec next-intl
   const updateLanguage = async (locale: string) => {
-    // Don't do anything if it's the same locale
     if (locale === currentLocale) return;
 
     setProfile((prev) => ({ ...prev, preferredLocale: locale }));
@@ -142,7 +142,6 @@ export function useSettings() {
     try {
       const token = await getToken({ template: "my-app-template" });
 
-      // Save to database
       await fetch("/api/users/update", {
         method: "POST",
         headers: {
@@ -155,29 +154,23 @@ export function useSettings() {
         }),
       });
 
-      // Set cookie for next-intl
       document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;
 
-      // Remove the current locale from pathname and replace with new one
       const pathWithoutLocale = pathname.replace(`/${currentLocale}`, "");
       const newPath = pathWithoutLocale || "/";
       const fullNewPath = `/${locale}${newPath === "/" ? "" : newPath}`;
 
-      // Redirect to the new locale URL
       router.push(fullNewPath);
-
       toast.success("Langue mise à jour");
     } catch (error) {
       console.error("Erreur mise à jour langue:", error);
       toast.error("Erreur lors de la mise à jour");
-      // Revert profile locale on error
       setProfile((prev) => ({ ...prev, preferredLocale: currentLocale }));
     }
   };
 
   // Changer le mot de passe
-  const changePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const changePassword = async () => {
     if (!isPasswordValid) return;
 
     setPasswordForm((prev) => ({ ...prev, isSubmitting: true }));
@@ -209,6 +202,7 @@ export function useSettings() {
             strength: 1,
             isSubmitting: false,
             success: false,
+            open: false,
           });
         }, 3000);
       } else {
@@ -297,6 +291,52 @@ export function useSettings() {
       toast.error("Erreur lors de la révocation");
     }
   };
+  // Fonction d'exportation des données
+  const exportUserData = async (format: "csv" | "json") => {
+    setIsExporting(true);
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const response = await fetch(`/api/users/export?format=${format}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Erreur lors de l'exportation");
+      }
+
+      // Récupérer le blob
+      const blob = await response.blob();
+
+      // Créer un lien de téléchargement
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+
+      // Extraire le nom du fichier depuis le header Content-Disposition
+      const contentDisposition = response.headers.get("Content-Disposition");
+      let filename = `nesthub_export_${format === "csv" ? "csv" : "json"}`;
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      toast.success(
+        `Données exportées avec succès au format ${format.toUpperCase()}`,
+      );
+    } catch (error: any) {
+      console.error("Erreur exportation:", error);
+      toast.error(error.message || "Erreur lors de l'exportation");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return {
     loading,
@@ -317,5 +357,7 @@ export function useSettings() {
     passwordsMatch,
     isPasswordValid,
     getStrengthLabel,
+    exportUserData, // <-- AJOUTEZ CETTE LIGNE
+    isExporting,
   };
 }

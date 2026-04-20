@@ -1,4 +1,3 @@
-// app/fr/listings/hooks/useListing.ts
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -34,75 +33,33 @@ export interface ListingDetail {
     responseTime: string
     totalReviews: number
   }
+
+  // ⭐ disponibilité journalière
   availability: {
     date: string
     isAvailable: boolean
   }[]
+
+  // ⭐ périodes bloquées
+  blockedDates: {
+    startDate: string
+    endDate: string
+  }[]
 }
 
-// Données mockées pour une annonce
-const MOCK_LISTING: ListingDetail = {
-  id: '1',
-  title: 'Villa Dar Carthage - Luxe et Sérénité',
-  description: `Magnifique villa contemporaine située à La Marsa, offrant une vue imprenable sur la mer Méditerranée. 
-  
-Cette propriété d'exception dispose de 5 chambres spacieuses, chacune avec salle de bain privative, une grande piscine à débordement, un jardin paysager de 1000m² et un accès direct à la plage.
-
-La villa est entièrement équipée avec les dernières technologies : domotique, climatisation réversible, chauffage au sol, et système de sécurité haut de gamme.
-
-Idéalement située à 10 minutes de Tunis et de l'aéroport international, ce bien rare allie luxe, confort et tranquillité.`,
-  location: 'La Marsa, Tunis',
-  governorate: 'Tunis',
-  delegation: 'La Marsa',
-  price: 1250,
-  pricePerNight: 1250,
-  rating: 4.9,
-  reviewCount: 24,
-  images: [
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuAW1OdAsZiopGkxNAWGtwSqnpKReXX1KlQw6MdRgzsohilAVFD6lyraPoi0tx6CCCuW3mYom-_-lzf7AA5iEDswMqanR8krjd17lm6v6OPf5Q2eNocxOAA9tBNBmDL6vYyy3dWFA24ufQlBWmKRm_xK9Y8ySUNMQ44qvViHFLEFA6AP6gDGiLGcNWQIo1il8AHC7x7mGaIPjXolOgekEKCshw8gCpbrjjuv0tVIHXxeAYAX7RM7p67ciKoZ2eiRGhcdQQEd7WNgl-11',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuD4vkIBFXKOc_63Qb8t_wsKlf_ZZblpslDdopszWsPXs3QV9QF9W59Zt099XRhFH1wz96YXkt2DgFZbRjRF-xeaSUHUZfB4MQG4ldAF-p50bOyHOp4r_-7tQvuxS0Qa8vFPj2TNePBioAbNG7eKaZGNecEWoT21J5cNwUAeDSsg6WHSmZFcxSGoBFKGQp3G0WrZR_ix_GMOEzWKt4G4ZdbTqNdATW5uH2pt1EjenrgJZBA4_LeeR-_CYMNcteymBBS12iJ2dbnQ9ywB',
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBReS63oe72TqaEkK8ZtqaXROC-P8zpSt6icVA8uES_FM_pWI7XFrK9jVYQY5Ue80k4uamAkbKGUKGffHHCdCcnKNmhHHGlZvk1mClEIb99LRxwzjMCIB6YkWMbXaFa7capXvY55NNS1F8E2_zZJpdgEXODThsL4tmmZaGCrD6BFacGHe7qeJ22SvX8IMcT_o9_3NQtZfSr8J9ZTDiDdmJ8PvPpCSsE2SWboPwtlX9d-OTGxiko1qZ9BQP4DtXKlMjW4tn8CxBb881L',
-    'https://picsum.photos/id/104/800/600',
-    'https://picsum.photos/id/106/800/600',
-  ],
-  type: 'Villa',
-  badges: ['Luxe', 'Vue mer'],
-  isVerified: true,
-  bedrooms: 5,
-  bathrooms: 4,
-  maxGuests: 10,
-  surfaceArea: 350,
-  amenities: ['WiFi', 'Piscine', 'Parking', 'Climatisation', 'Cuisine équipée', 'Jardin', 'Terrasse', 'Balcon', 'Lave-linge', 'Télévision', 'Chauffage', 'Eau chaude'],
-  houseRules: [
-    'Non-fumeurs',
-    'Pas de fête ou événement',
-    'Pas d\'animaux',
-    'Respecter le voisinage',
-    'Rendre les clés à 11h',
-  ],
-  owner: {
-    id: 'owner1',
-    name: 'Ahmed Ben Salah',
-    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-    isVerified: true,
-    memberSince: '2019',
-    responseRate: 98,
-    responseTime: 'moins d\'une heure',
-    totalReviews: 127,
-  },
-  availability: Array.from({ length: 90 }, (_, i) => {
-    const date = new Date()
-    date.setDate(date.getDate() + i)
-    return {
-      date: date.toISOString().split('T')[0],
-      isAvailable: Math.random() > 0.3,
-    }
-  }),
+// Fonction pour les URLs d'images avec fallback
+const getImageUrl = (photoUrl: string | null | undefined): string | null => {
+  if (!photoUrl) return null
+  if (photoUrl.includes('vercel-storage.com')) {
+    return `/api/listings/image?url=${encodeURIComponent(photoUrl)}`
+  }
+  return photoUrl
 }
 
 export function useListing(id: string) {
   const [listing, setListing] = useState<ListingDetail | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [selectedImage, setSelectedImage] = useState(0)
   const [showAllPhotos, setShowAllPhotos] = useState(false)
   const [checkIn, setCheckIn] = useState('')
@@ -110,30 +67,133 @@ export function useListing(id: string) {
   const [guests, setGuests] = useState(1)
 
   useEffect(() => {
-    // Simuler un chargement API
-    const loadListing = () => {
+    const fetchListing = async () => {
+      if (!id) return
+      
       setLoading(true)
-      setTimeout(() => {
-        setListing(MOCK_LISTING)
+      setError(null)
+      
+      try {
+        const response = await fetch(`/api/listings/${id}`)
+        
+        if (!response.ok) {
+          throw new Error('Annonce non trouvée')
+        }
+        
+        const data = await response.json()
+        console.log('📦 Données reçues de l\'API:', data)
+        
+        // 📸 Récupérer les URLs des photos
+        const photoUrls = (data.photos || [])
+          .map((p: any) => p.url)
+          .filter((url: string) => url && url.trim() !== '')
+        
+        const images = photoUrls
+          .map((url: string) => getImageUrl(url))
+          .filter((url: string | null): url is string => url !== null)
+        
+        console.log('🖼️ Images trouvées:', images.length)
+        
+        // 🏠 Transformer les équipements
+        let amenitiesArray: string[] = []
+        if (data.equipment) {
+          if (typeof data.equipment === 'object') {
+            amenitiesArray = Object.keys(data.equipment)
+              .filter(key => data.equipment[key] === true)
+          } else if (Array.isArray(data.equipment)) {
+            amenitiesArray = data.equipment
+          }
+        }
+        
+        // 🏷️ Badges dynamiques
+        const badges: string[] = []
+        if (data.owner?.isIdentityVerified) badges.push('Vérifié')
+        if (data.type === 'VILLA') badges.push('Luxe')
+        
+        // 👤 Nom du propriétaire
+        const ownerName = data.owner?.username 
+          || `${data.owner?.firstName || ''} ${data.owner?.lastName || ''}`.trim() 
+          || 'Propriétaire'
+        
+        const formattedListing: ListingDetail = {
+          id: data.id,
+          title: data.title || 'Sans titre',
+          description: data.description || 'Aucune description disponible.',
+          location: `${data.governorate || ''}, ${data.delegation || ''}`
+            .replace(/^, /, '')
+            .replace(/, $/, '') || 'Emplacement non spécifié',
+          governorate: data.governorate || '',
+          delegation: data.delegation || '',
+          price: data.pricePerNight || 0,
+          pricePerNight: data.pricePerNight || 0,
+          rating: 4.5,
+          reviewCount: 0,
+          images: images,
+          type: data.type?.toLowerCase() || 'appartement',
+          badges: badges,
+          isVerified: data.owner?.isIdentityVerified || false,
+          bedrooms: data.rooms || 1,
+          bathrooms: data.bathrooms || 1,
+          maxGuests: data.maxGuests || 2,
+          surfaceArea: data.surfaceArea || 0,
+          amenities: amenitiesArray,
+          houseRules: [
+            'Arrivée : 15:00 - 20:00',
+            'Départ avant 11:00',
+            'Logement non-fumeur',
+            'Pas de fête ou événement'
+          ],
+          owner: {
+            id: data.owner?.id || '',
+            name: ownerName,
+            avatar: data.owner?.profilePictureUrl || '',
+            isVerified: data.owner?.isIdentityVerified || false,
+            memberSince: data.owner?.createdAt
+              ? new Date(data.owner.createdAt).getFullYear().toString()
+              : '2024',
+            responseRate: 98,
+            responseTime: "moins d'une heure",
+            totalReviews: 0
+          },
+
+          // ⭐ DONNÉES CALENDRIER DEPUIS L’API
+          availability: data.availability || [],
+          blockedDates: data.blockedDates || []
+        }
+        
+        console.log('✅ Listing formaté:', formattedListing)
+        setListing(formattedListing)
+
+      } catch (err) {
+        console.error('Erreur chargement annonce:', err)
+        setError(err instanceof Error ? err.message : 'Erreur de chargement')
+      } finally {
         setLoading(false)
-      }, 500)
+      }
     }
-    loadListing()
+    
+    fetchListing()
   }, [id])
 
   const calculateTotalPrice = () => {
     if (!checkIn || !checkOut || !listing) return 0
-    const nights = Math.ceil((new Date(checkOut).getTime() - new Date(checkIn).getTime()) / (1000 * 60 * 60 * 24))
+    const nights = Math.ceil(
+      (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
+      (1000 * 60 * 60 * 24)
+    )
     return nights * listing.pricePerNight
   }
 
   const getAvailableDates = () => {
-    return listing?.availability.filter(a => a.isAvailable).map(a => a.date) || []
+    return listing?.availability
+      .filter(a => a.isAvailable)
+      .map(a => a.date) || []
   }
 
   return {
     listing,
     loading,
+    error,
     selectedImage,
     setSelectedImage,
     showAllPhotos,

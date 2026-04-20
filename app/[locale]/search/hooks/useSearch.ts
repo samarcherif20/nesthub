@@ -1,281 +1,377 @@
-// app/fr/search/hooks/useSearch.ts
-'use client'
+"use client";
 
-import { useState, useMemo } from 'react'
+import { useState, useEffect, useCallback } from "react";
 
-// Types
 export interface Listing {
-  id: string
-  title: string
-  location: string
-  price: number
-  rating: number
-  reviewCount: number
-  image: string
-  type: string
-  badges: string[]
-  isVerified: boolean
-  bedrooms: number
-  bathrooms: number
-  maxGuests: number
-  amenities: string[]
+  id: string;
+  title: string;
+  location: string;
+  price: number;
+  rating: number;
+  reviewCount: number;
+  image: string;
+  type: string;
+  badges: string[];
+  isVerified: boolean;
+  bedrooms: number;
+  bathrooms: number;
+  maxGuests: number;
+  amenities: string[];
+  pricePerNight?: number;
+  pricePerMonth?: number;
 }
 
-// Données mockées (à remplacer par API plus tard)
-const MOCK_LISTINGS: Listing[] = [
-  {
-    id: '1',
-    title: 'Villa Dar Carthage',
-    location: 'La Marsa, Tunis',
-    price: 1250,
-    rating: 4.9,
-    reviewCount: 24,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAfuoFpvqayhB8CCjTp3eZUR4wT9YwVYR0WlsxLBgdMq8IRDT409e-ZkEJxqqYu8GM3A3kpYngob5mYQPltMexoVSIJtoJJH35MO-nC0n0dF2KZQziDl6br0cnHhkM9Tkb2Uq8n1QNI8QhF2HA-OcbI7yHCdLWImA7kUklrt_5laU2oJWiu8hDDNGuqpg7OqCeHK8pGfzW1LVS0_xWMuGEXJoL6_bTFCSNb3ZpiZewUnudwEPDKlu51t4Q0xVt3yp9IPusCHlrA-SW_',
-    type: 'Villa',
-    badges: ['Luxe'],
-    isVerified: true,
-    bedrooms: 4,
-    bathrooms: 3,
-    maxGuests: 8,
-    amenities: ['WiFi', 'Piscine', 'Parking', 'Climatisation']
-  },
-  {
-    id: '2',
-    title: 'Penthouse Azur',
-    location: 'Gammarth, Tunis',
-    price: 890,
-    rating: 4.8,
-    reviewCount: 12,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBKGDipaDP7XFxGSXqYuzwVTFR_IEmz9bVizwMdU1gk0_kNAT21rqb_RnSlqRAjC1rHNCGP-INVciWpq1wQiIuTyd2NcM55W3hkIqSpcoOpoKJSBddxRDa9YCmcH5Suzc8pRWK-v3AIYnobkK1j_87NWSnCxSoDNpy9ereIv_t-lVb-5zrKduGySDpPiPrQF_ENF07yfgjl61i8JvznmPsFI1cH0JU9z1uVY7cwjvnV8o_fVdEJDXvl9ajyj5-7pHdUiojLP6QOszDP',
-    type: 'Appartement',
-    badges: ['Vérifié'],
-    isVerified: true,
-    bedrooms: 3,
-    bathrooms: 2,
-    maxGuests: 6,
-    amenities: ['WiFi', 'Piscine', 'Parking', 'Climatisation', 'Balcon']
-  },
-  {
-    id: '3',
-    title: 'Riad El Hana',
-    location: 'Hammamet, Nabeul',
-    price: 650,
-    rating: 4.9,
-    reviewCount: 8,
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA_CePMz52LGvGZj-0qKmtwkIboWQ9s-tMjKU-fYuQXksBAxulm7ir8xbHeGtT6sK8jueDoHNEttwb0gJH3AUZNqUvP-Ez6LYGsO117KTwq1M3mwhPHlIJeqTyK9TBNGcV1aKLeBmbQOvdkpugMVm6Telc51qqGPrInMhLh3XJ_slM_5xY574na5SP86897jQuPVfD1csZnChv7eXFKhLofDmvl_OwZTuXuzNB5IgsE1bYxkznuUWsQe4bE3T1Rf5Q7obG0CnrG3KET',
-    type: 'Maison',
-    badges: ['Authentique'],
-    isVerified: false,
-    bedrooms: 3,
-    bathrooms: 2,
-    maxGuests: 6,
-    amenities: ['WiFi', 'Jardin', 'Climatisation']
-  },
-  {
-    id: '4',
-    title: 'Appartement Vue Mer',
-    location: 'La Goulette, Tunis',
-    price: 450,
-    rating: 4.7,
-    reviewCount: 34,
-    image: 'https://picsum.photos/id/103/400/300',
-    type: 'Appartement',
-    badges: ['Nouveau'],
-    isVerified: true,
-    bedrooms: 2,
-    bathrooms: 1,
-    maxGuests: 4,
-    amenities: ['WiFi', 'Climatisation', 'Balcon']
-  },
-  {
-    id: '5',
-    title: 'Villa Méditerranée',
-    location: 'Sidi Bou Saïd, Tunis',
-    price: 2100,
-    rating: 5.0,
-    reviewCount: 45,
-    image: 'https://picsum.photos/id/104/400/300',
-    type: 'Villa',
-    badges: ['Luxe', 'Vue mer'],
-    isVerified: true,
-    bedrooms: 5,
-    bathrooms: 4,
-    maxGuests: 10,
-    amenities: ['WiFi', 'Piscine', 'Parking', 'Climatisation', 'Jardin', 'Terrasse']
-  },
-  {
-    id: '6',
-    title: 'Studio Moderne',
-    location: 'Centre Urbain Nord, Tunis',
-    price: 180,
-    rating: 4.5,
-    reviewCount: 18,
-    image: 'https://picsum.photos/id/106/400/300',
-    type: 'Studio',
-    badges: ['Économique'],
-    isVerified: false,
-    bedrooms: 1,
-    bathrooms: 1,
-    maxGuests: 2,
-    amenities: ['WiFi', 'Climatisation']
-  }
-]
-
-// Catégories disponibles
 export const categories = [
-  { id: 'all', name: 'Tous', icon: 'FaHome' },
-  { id: 'Villa', name: 'Villas', icon: 'MdOutlineVilla' },
-  { id: 'Appartement', name: 'Appartements', icon: 'TbApartment' },
-  { id: 'Maison', name: 'Maisons', icon: 'FaHome' },
-  { id: 'Studio', name: 'Studios', icon: 'FaCity' },
-]
+  { id: "all", name: "Tous", icon: "FaHome", type: null },
+  { id: "Villa", name: "Villas", icon: "MdOutlineVilla", type: "VILLA" },
+  {
+    id: "Appartement",
+    name: "Appartements",
+    icon: "TbBuildingCommunity",
+    type: "APARTMENT",
+  },
+  { id: "Maison", name: "Maisons", icon: "FaHome", type: "HOUSE" },
+  { id: "Studio", name: "Studios", icon: "FaCity", type: "STUDIO" },
+  { id: "Duplex", name: "Duplex", icon: "GiModernCity", type: "DUPLEX" },
+];
 
-// Équipements disponibles
 export const allAmenities = [
-  'WiFi', 
-  'Climatisation', 
-  'Parking', 
-  'Piscine', 
-  'Cuisine équipée', 
-  'Jardin', 
-  'Terrasse', 
-  'Balcon'
-]
+  "WiFi",
+  "Climatisation",
+  "Chauffage",
+  "Cuisine équipée",
+  "Parking",
+  "Piscine",
+  "Salle de sport",
+  "Lave-linge",
+  "Télévision",
+  "Balcon",
+  "Lave-vaisselle",
+  "Sèche-linge",
+];
+
+// Mapping des équipements vers les clés API
+const equipmentMap: Record<string, string> = {
+  WiFi: "wifi",
+  Climatisation: "airConditioning",
+  Chauffage: "heating",
+  "Cuisine équipée": "kitchen",
+  Parking: "parking",
+  Piscine: "swimmingPool",
+  "Salle de sport": "gym",
+  "Lave-linge": "washingMachine",
+  Télévision: "tv",
+  Balcon: "balcony",
+  "Lave-vaisselle": "dishwasher",
+  "Sèche-linge": "dryer",
+};
+
+// ✅ FONCTION PIP POUR LES IMAGES
+const pip = (url: string) =>
+  `/api/listings/image?url=${encodeURIComponent(url)}`;
 
 export function useSearch() {
-  // États d'affichage
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
-  
-  // États des filtres
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000])
-  const [selectedCategory, setSelectedCategory] = useState('all')
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([])
-  const [sortBy, setSortBy] = useState('relevance')
-  
-  // États de recherche
-  const [searchDestination, setSearchDestination] = useState('')
-  const [searchDates, setSearchDates] = useState({ checkIn: '', checkOut: '' })
-  const [searchGuests, setSearchGuests] = useState(1)
-  
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 6
-  
-  // Favoris (localStorage)
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const [listings, setListings] = useState<Listing[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState("relevance");
+
+  const [searchDestination, setSearchDestination] = useState("");
+  const [searchDates, setSearchDates] = useState({ checkIn: "", checkOut: "" });
+  const [searchGuests, setSearchGuests] = useState(1);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [isMounted, setIsMounted] = useState(false);
+
   const [favorites, setFavorites] = useState<string[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('favorites')
-      return saved ? JSON.parse(saved) : []
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("favorites");
+      return saved ? JSON.parse(saved) : [];
     }
-    return []
-  })
+    return [];
+  });
 
-  // Logique de filtrage
-  const filteredListings = useMemo(() => {
-    let results = [...MOCK_LISTINGS]
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-    // Filtre par destination
-    if (searchDestination) {
-      results = results.filter(l => 
-        l.location.toLowerCase().includes(searchDestination.toLowerCase())
-      )
-    }
+  // ✅ FONCTION POUR NETTOYER LES URLs PROXIFIÉES
+  const cleanImageUrl = useCallback(
+    (photoUrl: string | null | undefined): string | null => {
+      if (!photoUrl) return null;
 
-    // Filtre par catégorie
-    if (selectedCategory !== 'all') {
-      results = results.filter(l => l.type === selectedCategory)
-    }
+      // Si c'est déjà une URL proxifiée, extraire l'URL réelle
+      if (photoUrl.startsWith("/api/listings/image")) {
+        try {
+          const urlParams = new URLSearchParams(photoUrl.split("?")[1]);
+          const realUrl = urlParams.get("url");
+          if (realUrl) {
+            return decodeURIComponent(realUrl);
+          }
+        } catch (e) {
+          console.error("Erreur nettoyage URL:", e);
+        }
+      }
+      return photoUrl;
+    },
+    [],
+  );
 
-    // Filtre par prix
-    results = results.filter(l => l.price >= priceRange[0] && l.price <= priceRange[1])
+  // ✅ FONCTION getImageUrl CORRIGÉE
+  const getImageUrl = useCallback(
+    (photoUrl: string | null | undefined) => {
+      if (!photoUrl) return "/images/placeholder.jpg";
 
-    // Filtre par équipements
-    if (selectedAmenities.length > 0) {
-      results = results.filter(l => 
-        selectedAmenities.every(amenity => l.amenities.includes(amenity))
-      )
-    }
+      // Nettoyer l'URL au cas où elle serait déjà proxifiée
+      const cleanUrl = cleanImageUrl(photoUrl);
+      if (!cleanUrl) return "/images/placeholder.jpg";
 
-    // Tri
-    switch (sortBy) {
-      case 'price_asc':
-        results.sort((a, b) => a.price - b.price)
-        break
-      case 'price_desc':
-        results.sort((a, b) => b.price - a.price)
-        break
-      case 'rating':
-        results.sort((a, b) => b.rating - a.rating)
-        break
-      default:
-        // Pertinence (ordre original)
-        break
-    }
+      // Appliquer pip UNIQUEMENT aux URLs Vercel (comme dans la partie propriétaire)
+      if (cleanUrl.includes("vercel-storage.com")) {
+        return pip(cleanUrl);
+      }
 
-    return results
-  }, [searchDestination, selectedCategory, priceRange, selectedAmenities, sortBy])
+      return cleanUrl;
+    },
+    [cleanImageUrl],
+  );
 
-  // Pagination
-  const totalPages = Math.ceil(filteredListings.length / itemsPerPage)
-  const paginatedListings = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage
-    return filteredListings.slice(start, start + itemsPerPage)
-  }, [filteredListings, currentPage])
+  // Fonction de recherche corrigée
+  const fetchListings = useCallback(
+    async (params: {
+      page: number;
+      category: string;
+      amenities: string[];
+      price: [number, number];
+      destination: string;
+      guests: number;
+      sort: string;
+    }) => {
+      setLoading(true);
+      try {
+        const urlParams = new URLSearchParams();
+        urlParams.set("page", params.page.toString());
+        urlParams.set("pageSize", itemsPerPage.toString());
 
-  // Actions
-  const resetFilters = () => {
-    setPriceRange([0, 5000])
-    setSelectedAmenities([])
-    setSelectedCategory('all')
-    setSortBy('relevance')
-    setSearchDestination('')
-    setSearchDates({ checkIn: '', checkOut: '' })
-    setSearchGuests(1)
-    setCurrentPage(1)
-  }
+        // Destination (gouvernorat)
+        if (params.destination.trim() !== "") {
+          urlParams.set("governorate", params.destination);
+        }
 
-  const toggleAmenity = (amenity: string) => {
-    setSelectedAmenities(prev =>
-      prev.includes(amenity) 
-        ? prev.filter(a => a !== amenity) 
-        : [...prev, amenity]
-    )
-    setCurrentPage(1)
-  }
+        // Catégorie
+        const selectedCat = categories.find((c) => c.id === params.category);
+        if (selectedCat && selectedCat.type && selectedCat.id !== "all") {
+          urlParams.set("type", selectedCat.type);
+        }
 
-  const toggleFavorite = (listingId: string, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    
-    setFavorites(prev => {
-      const newFavorites = prev.includes(listingId)
-        ? prev.filter(id => id !== listingId)
-        : [...prev, listingId]
-      
-      localStorage.setItem('favorites', JSON.stringify(newFavorites))
-      return newFavorites
-    })
-  }
+        // Prix
+        if (params.price[1] < 5000) {
+          urlParams.set("maxPrice", params.price[1].toString());
+        }
+        if (params.price[0] > 0) {
+          urlParams.set("minPrice", params.price[0].toString());
+        }
 
-  const handleSearch = () => {
-    setCurrentPage(1)
-    console.log('Recherche:', { searchDestination, searchDates, searchGuests })
-  }
+        // Nombre de voyageurs
+        if (params.guests > 1) {
+          urlParams.set("guests", params.guests.toString());
+        }
 
-  const goToPage = (page: number) => {
-    setCurrentPage(page)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+        // Tri
+        if (params.sort !== "relevance") {
+          urlParams.set("sortBy", params.sort);
+        }
 
-  // Retourner tout ce dont l'UI a besoin
+        // Équipements
+        if (params.amenities.length > 0) {
+          const equipmentKeys = params.amenities.map(
+            (a) => equipmentMap[a] || a.toLowerCase(),
+          );
+          urlParams.set("equipment", equipmentKeys.join(","));
+        }
+
+        const response = await fetch(`/api/listings?${urlParams.toString()}`);
+        const data = await response.json();
+
+        if (response.ok && data.listings) {
+          const formattedListings = data.listings.map((item: any) => {
+            // 🔥 Récupérer l'URL de la première photo et la nettoyer
+            let rawPhotoUrl = item.photos?.[0]?.url;
+
+            // Nettoyer l'URL si elle est déjà proxifiée
+            let cleanPhotoUrl = rawPhotoUrl;
+            if (
+              cleanPhotoUrl &&
+              cleanPhotoUrl.startsWith("/api/listings/image")
+            ) {
+              try {
+                const urlParams = new URLSearchParams(
+                  cleanPhotoUrl.split("?")[1],
+                );
+                const realUrl = urlParams.get("url");
+                if (realUrl) {
+                  cleanPhotoUrl = decodeURIComponent(realUrl);
+                }
+              } catch (e) {
+                console.error("Erreur parsing URL:", e);
+              }
+            }
+
+            return {
+              id: item.id,
+              title: item.title,
+              location: `${item.governorate || ""}, ${item.delegation || ""}`
+                .replace(/^, /, "")
+                .replace(/, $/, ""),
+              price: item.pricePerNight || item.pricePerMonth || 0,
+              pricePerNight: item.pricePerNight,
+              pricePerMonth: item.pricePerMonth,
+              rating: item.rating || 4.5,
+              reviewCount: item.reviewCount || 0,
+              // 🔥 Appliquer getImageUrl sur la photo nettoyée
+              image: getImageUrl(cleanPhotoUrl),
+              type: item.type?.toLowerCase() || "appartement",
+              badges: item.isVerified ? ["Vérifié"] : [],
+              isVerified: item.isVerified || false,
+              bedrooms: item.rooms || 1,
+              bathrooms: item.bathrooms || 1,
+              maxGuests: item.maxGuests || 2,
+              amenities: item.equipment || [],
+            };
+          });
+
+          setListings(formattedListings);
+          setTotalCount(data.pagination.totalCount);
+          setTotalPages(data.pagination.totalPages);
+        } else {
+          setListings([]);
+          setTotalCount(0);
+          setTotalPages(1);
+        }
+      } catch (error) {
+        console.error("Erreur chargement:", error);
+        setListings([]);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [getImageUrl],
+  );
+
+  // Effet déclenché à chaque changement de filtre
+  useEffect(() => {
+    fetchListings({
+      page: currentPage,
+      category: selectedCategory,
+      amenities: selectedAmenities,
+      price: priceRange,
+      destination: searchDestination,
+      guests: searchGuests,
+      sort: sortBy,
+    });
+  }, [
+    currentPage,
+    selectedCategory,
+    selectedAmenities,
+    priceRange,
+    searchDestination,
+    searchGuests,
+    sortBy,
+    fetchListings,
+  ]);
+
+  const selectCategory = useCallback((categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setCurrentPage(1);
+  }, []);
+
+  const toggleAmenity = useCallback((amenity: string) => {
+    setSelectedAmenities((prev) =>
+      prev.includes(amenity)
+        ? prev.filter((a) => a !== amenity)
+        : [...prev, amenity],
+    );
+    setCurrentPage(1);
+  }, []);
+
+  const handleSearch = useCallback(() => {
+    setCurrentPage(1);
+    fetchListings({
+      page: 1,
+      category: selectedCategory,
+      amenities: selectedAmenities,
+      price: priceRange,
+      destination: searchDestination,
+      guests: searchGuests,
+      sort: sortBy,
+    });
+  }, [
+    selectedCategory,
+    selectedAmenities,
+    priceRange,
+    searchDestination,
+    searchGuests,
+    sortBy,
+    fetchListings,
+  ]);
+
+  const resetFilters = useCallback(() => {
+    setSelectedCategory("all");
+    setSelectedAmenities([]);
+    setPriceRange([0, 5000]);
+    setSortBy("relevance");
+    setSearchDestination("");
+    setSearchDates({ checkIn: "", checkOut: "" });
+    setSearchGuests(1);
+    setCurrentPage(1);
+    fetchListings({
+      page: 1,
+      category: "all",
+      amenities: [],
+      price: [0, 5000],
+      destination: "",
+      guests: 1,
+      sort: "relevance",
+    });
+  }, [fetchListings]);
+
+  const toggleFavorite = useCallback(
+    (listingId: string, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      setFavorites((prev) => {
+        const newFavorites = prev.includes(listingId)
+          ? prev.filter((id) => id !== listingId)
+          : [...prev, listingId];
+
+        localStorage.setItem("favorites", JSON.stringify(newFavorites));
+        window.dispatchEvent(new Event("favorites-updated"));
+        return newFavorites;
+      });
+    },
+    [],
+  );
+
+  const goToPage = useCallback((page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   return {
-    // Données
-    listings: paginatedListings,
-    allListings: filteredListings,
+    listings,
     favorites,
-    
-    // États
+    loading,
     viewMode,
     priceRange,
     selectedCategory,
@@ -287,31 +383,25 @@ export function useSearch() {
     searchDestination,
     searchDates,
     searchGuests,
-    
-    // Setters
+    isMounted,
+    totalCount,
+    startIndex: (currentPage - 1) * itemsPerPage + 1,
+    endIndex: Math.min(currentPage * itemsPerPage, totalCount),
     setViewMode,
     setPriceRange,
     setSelectedCategory,
+    selectCategory,
     setSortBy,
     setIsFilterOpen,
     setSearchDestination,
     setSearchDates,
     setSearchGuests,
-    
-    // Actions
     resetFilters,
     toggleAmenity,
     toggleFavorite,
     handleSearch,
     goToPage,
-    
-    // Constantes
     categories,
     allAmenities,
-    
-    // Infos
-    totalCount: filteredListings.length,
-    startIndex: (currentPage - 1) * itemsPerPage + 1,
-    endIndex: Math.min(currentPage * itemsPerPage, filteredListings.length)
-  }
+  };
 }

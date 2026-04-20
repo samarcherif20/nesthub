@@ -1,4 +1,3 @@
-// app/[locale]/(dashboard)/owner/layout.tsx
 "use client";
 
 import { useUser, useClerk } from "@clerk/nextjs";
@@ -11,7 +10,6 @@ import { useTranslations } from "next-intl";
 
 // Icônes
 import { LuLayoutDashboard } from "react-icons/lu";
-import { IoMdNotificationsOutline } from "react-icons/io";
 import { IoPersonOutline } from "react-icons/io5";
 import { GoShieldLock } from "react-icons/go";
 import { IoSettingsOutline } from "react-icons/io5";
@@ -26,10 +24,11 @@ import { MdOutlineHomeWork } from "react-icons/md";
 import { MdOutlineCalendarMonth } from "react-icons/md";
 import { MdOutlineBookOnline } from "react-icons/md";
 import { MdOutlineChatBubble } from "react-icons/md";
-import { MdOutlineAnalytics } from "react-icons/md";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { PiMicrosoftTeamsLogo } from "react-icons/pi";
 import OnboardingGuard from "@/components/ui/owner/OnboardingGuard";
+import { FloatingChat } from "@/components/ui/chat/FloatingChat";
+import NotificationBell from "@/components/ui/notifications/NotificationBell";
 
 // Fonction pip pour les images Vercel Blob (avatar)
 const pipAvatar = (url: string) =>
@@ -75,8 +74,6 @@ export default function OwnerLayout({
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const [isNotificationsDropdownOpen, setIsNotificationsDropdownOpen] =
-    useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [appUser, setAppUser] = useState<AppUser | null>(null);
@@ -89,12 +86,10 @@ export default function OwnerLayout({
   const [userRole, setUserRole] = useState<"OWNER" | "CO_HOST" | "BOTH">(
     "OWNER",
   );
-  const [listingsCount, setListingsCount] = useState(0);
   const [hasListings, setHasListings] = useState<boolean | null>(null);
 
   // Refs pour les dropdowns
   const profileDropdownRef = useRef<HTMLDivElement>(null);
-  const notificationsDropdownRef = useRef<HTMLDivElement>(null);
 
   // Couleur aléatoire pour l'avatar
   const avatarColor = React.useMemo(() => {
@@ -162,13 +157,6 @@ export default function OwnerLayout({
         if (permissionsRes.ok) {
           const permissionsData = await permissionsRes.json();
           setUserRole(permissionsData.role);
-          setListingsCount(permissionsData.listingsCount || 0);
-          console.log(
-            "🔍 Rôle utilisateur:",
-            permissionsData.role,
-            "Listings:",
-            permissionsData.listingsCount,
-          );
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -198,12 +186,6 @@ export default function OwnerLayout({
         !profileDropdownRef.current.contains(target)
       ) {
         setIsProfileDropdownOpen(false);
-      }
-      if (
-        notificationsDropdownRef.current &&
-        !notificationsDropdownRef.current.contains(target)
-      ) {
-        setIsNotificationsDropdownOpen(false);
       }
     };
     document.addEventListener("click", handleClickOutside);
@@ -244,7 +226,7 @@ export default function OwnerLayout({
     router.push(`/${locale}/login`);
   };
 
-  // Navigation items - EXCLURE la page de création d'annonce du guard
+  // Navigation items
   const navItems = [
     {
       name: t("nav.dashboard"),
@@ -271,7 +253,6 @@ export default function OwnerLayout({
       href: `/${locale}/dashboard/owner/messages`,
       icon: MdOutlineChatBubble,
     },
-    
     {
       name: t("nav.team"),
       href: `/${locale}/dashboard/owner/team`,
@@ -279,7 +260,7 @@ export default function OwnerLayout({
     },
   ];
 
-  // Pages qui ne nécessitent PAS d'avoir des annonces (ex: création d'annonce)
+  // Pages qui ne nécessitent PAS d'avoir des annonces
   const publicOwnerPages = [
     `/${locale}/dashboard/owner/listings/create`,
     `/${locale}/dashboard/owner/listings/new`,
@@ -309,7 +290,6 @@ export default function OwnerLayout({
   const initial = displayUsername.charAt(0).toUpperCase();
   const isVerified = appUser?.isIdentityVerified === true;
 
-  // Labels selon le rôle
   const getRoleLabel = () => {
     if (userRole === "BOTH") return "Propriétaire + Co-hôte";
     if (userRole === "CO_HOST") return "Co-hôte";
@@ -343,8 +323,7 @@ export default function OwnerLayout({
 
   const sidebarW = sidebarCollapsed ? "w-20" : "w-64";
 
-  // Contenu principal avec ou sans guard
-  const mainContent = (
+  return (
     <div className="flex h-screen bg-light dark:bg-slate-950 overflow-hidden">
       {/* Overlay mobile */}
       {isSidebarOpen && (
@@ -545,10 +524,7 @@ export default function OwnerLayout({
                     </p>
                   </div>
                   <div className="max-h-[400px] overflow-y-auto">
-                    {isSearching ? (
-                      <div className="p-8 text-center">
-                      </div>
-                    ) : searchResults.length > 0 ? (
+                    {searchResults.length > 0 ? (
                       searchResults.map((result, index) => (
                         <div
                           key={index}
@@ -586,29 +562,8 @@ export default function OwnerLayout({
               <IoSearch size={20} />
             </button>
 
-            {/* Notifications dropdown */}
-            <div className="relative" ref={notificationsDropdownRef}>
-              <button
-                onClick={() =>
-                  setIsNotificationsDropdownOpen(!isNotificationsDropdownOpen)
-                }
-                className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
-              >
-                <IoMdNotificationsOutline size={20} />
-              </button>
-              {isNotificationsDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-[380px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
-                  <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-                    <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                      {t("notifications.title")}
-                    </h3>
-                  </div>
-                  <div className="max-h-[400px] overflow-y-auto p-4 text-center text-slate-500">
-                    {t("notifications.empty")}
-                  </div>
-                </div>
-              )}
-            </div>
+            {/* ✅ NotificationBell - composant réutilisable */}
+            <NotificationBell />
 
             {/* Profile dropdown */}
             <div className="relative profile-dropdown" ref={profileDropdownRef}>
@@ -718,7 +673,7 @@ export default function OwnerLayout({
           </div>
         </header>
 
-        {/* Main content - WITH OnboardingGuard for pages that require listings */}
+        {/* Main content */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           {requiresListings ? (
             <OnboardingGuard locale={locale}>{children}</OnboardingGuard>
@@ -818,8 +773,7 @@ export default function OwnerLayout({
           )}
         </div>
       )}
+      <FloatingChat />
     </div>
   );
-
-  return mainContent;
 }

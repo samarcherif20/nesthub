@@ -49,8 +49,8 @@ model User {
   spokenLanguages      String[]              @default([])
   preferredLocale      String                @default("fr")
   role                 UserRole              @default(TENANT)
-  profession     String?   // Profession de l'utilisateur
-  availability   Json?     // Disponibilités de contact (stocké en JSON)
+  profession           String?
+  availability         Json?
   status               AccountStatus         @default(PENDING_VALIDATION)
   isEmailVerified      Boolean               @default(false)
   isPhoneVerified      Boolean               @default(false)
@@ -65,10 +65,12 @@ model User {
   suspendedUntil       DateTime?
   failedLoginAttempts  Int                   @default(0)
   escalationLevel      Int?
-  vacationMode       Boolean   @default(false)
-  vacationMessage    String?
-  twoFactorEnabled   Boolean   @default(false)
+  vacationMode         Boolean               @default(false)
+  vacationMessage      String?
+  twoFactorEnabled     Boolean               @default(false)
   twoFactorRecoveryCodes String?
+  
+  // Relations Admin
   writtenNotes         AdminNote[]           @relation("AuthorUser")
   adminNotes           AdminNote[]           @relation("TargetUser")
   auditLogs            AuditLog[]
@@ -101,9 +103,13 @@ model User {
   tenantCoTenants CoTenant[] @relation("TenantCoTenants")
   coTenantInvites CoTenant[] @relation("CoTenantUsers")
 
-  // Messages
-  sentMessages     BookingMessage[] @relation("SentMessages")
-  receivedMessages BookingMessage[] @relation("ReceivedMessages")
+  // Messages pour les réservations (BookingMessage)
+  sentBookingMessages     BookingMessage[] @relation("SentMessages")
+  receivedBookingMessages BookingMessage[] @relation("ReceivedMessages")
+
+  // Messages pour le chat (Message)
+  sentChatMessages     Message[] @relation("SentMessages")
+  receivedChatMessages Message[] @relation("ReceivedMessages")
 
   // Favoris
   favorites     Favorite[]
@@ -133,9 +139,27 @@ model User {
   searchHistory      SearchHistory[]
   mapViews           MapView[]
   listingComparisons ListingComparison[]
-  listingHistories   ListingHistory[] // Pour ListingHistory (modifications faites par l'utilisateur)
-  sentInvitations    CoOwnerInvitation[] @relation("CoOwnerInvitationsSent") // Pour CoOwnerInvitation (invitations envoyées)
-  teamMemberships    TeamMember[] // Pour TeamMember (membres d'équipe)
+  listingHistories   ListingHistory[]
+  sentInvitations    CoOwnerInvitation[] @relation("CoOwnerInvitationsSent")
+  teamMemberships    TeamMember[]
+
+  // Conversations (chat)
+  conversationsAsOwner Conversation[] @relation("OwnerConversations")
+  conversationsAsTenant Conversation[] @relation("TenantConversations")
+  
+ // SPRINT 3 - NOUVELLES RELATIONS
+  infoRequestsAsTenant InfoRequest[] @relation("InfoRequestTenant")
+  infoRequestsAsOwner  InfoRequest[] @relation("InfoRequestOwner")
+  offersAsTenant       Offer[]       @relation("OfferTenant")
+  offersAsOwner        Offer[]       @relation("OfferOwner")
+
+   // Pour les blocages (Block)
+  blocksCreated  Block[] @relation("blocks")
+  blocksReceived Block[] @relation("blockedBy")
+  
+  // Pour les signalements (Report)
+  reportsCreated Report[] @relation("reports")
+  reportReceived Report[] @relation("reported")
 
   @@index([email])
   @@index([status])
@@ -517,6 +541,26 @@ enum NotificationType {
   SEARCH_ALERT
   FAVORITE_PRICE_CHANGE
   SYSTEM_ALERT
+   // 🔄 NOUVEAUX TYPES POUR SPRINT 3
+  INFO_REQUEST_RECEIVED    // Proprio reçoit demande
+  INFO_REQUEST_ACCEPTED    // Locataire : proprio a accepté
+  INFO_REQUEST_REJECTED    // Locataire : proprio a refusé
+  INFO_REQUEST_EXPIRED     // Les deux : demande expirée
+  
+  OFFER_CREATED            // Proprio : offre reçue
+  OFFER_ACCEPTED           // Locataire : offre acceptée, paiement
+  OFFER_REJECTED           // Locataire : offre refusée
+  OFFER_COUNTERED          // Locataire : contre-offre reçue
+  OFFER_EXPIRED            // Les deux : offre expirée
+  
+  CONTRACT_SIGNATURE_REQUIRED  // Proprio doit signer
+  CONTRACT_SIGNED              // Les deux : contrat signé
+  
+  REVEALED_INFO_AVAILABLE      // Locataire : infos réelles dispo
+  
+  DEPOSIT_AUTHORIZED           // Locataire : garantie pré-autorisée
+  DEPOSIT_RELEASED             // Locataire : garantie libérée
+
 }
 
 enum NotificationChannel {
@@ -608,13 +652,16 @@ model Listing {
   historyEntries     ListingHistory[] // Pour ListingHistory
   teamMembers        TeamMember[] // Pour TeamMember
   coOwnerInvitations CoOwnerInvitation[] // Pour CoOwnerInvitation
-
+  conversations Conversation[]
+  // SPRINT 3 - RELATIONS
+  infoRequests InfoRequest[]
+  offers       Offer[]
   // Timestamps
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   archivedAt  DateTime?
-
+ 
   @@index([ownerId])
   @@index([status])
   @@index([type])
@@ -776,7 +823,19 @@ model Booking {
   expiresAt          DateTime?
   confirmedAt        DateTime?
   cancelledAt        DateTime?
+  // SPRINT 3 - RELATIONS
 
+  infoRequestId  String?       @unique
+  infoRequest    InfoRequest?  @relation("BookingInfoRequest", fields: [infoRequestId], references: [id])
+  offerId        String?       @unique
+  offer          Offer?        @relation("BookingOffer", fields: [offerId], references: [id])
+  contractId     String?
+  revealedInfo   RevealedInfo?
+  contract   Contract?  @relation("BookingContract")
+  actualCheckIn  DateTime?
+  actualCheckOut DateTime?
+  depositReleasedAt DateTime?
+ 
   // Relations
   payments      Payment[]
   messages      BookingMessage[]
@@ -793,6 +852,9 @@ model Booking {
   @@index([checkIn])
   @@index([checkOut])
   @@index([reference])
+   
+  @@index([infoRequestId])
+  @@index([offerId])
   @@map("bookings")
 }
 
@@ -940,6 +1002,7 @@ model Notification {
   sentAt      DateTime?
   deliveredAt DateTime?
   createdAt   DateTime              @default(now())
+  
 
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   booking   Booking?     @relation(fields: [bookingId], references: [id])
@@ -1223,4 +1286,270 @@ model TeamMember {
   @@index([listingId])
   @@index([userId])
   @@map("team_members")
+}
+
+model Conversation {
+  id          String    @id @default(cuid())
+  listingId   String
+  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  ownerId     String
+  owner       User      @relation("OwnerConversations", fields: [ownerId], references: [id])
+  tenantId    String
+  tenant      User      @relation("TenantConversations", fields: [tenantId], references: [id])
+  infoRequestId  String?   @unique  // Lien vers la demande d'info
+  infoRequest    InfoRequest? @relation(fields: [infoRequestId], references: [id])
+  
+  status         ChatStatus @default(OPEN)
+  lastMessage    String?   @db.Text
+  lastMessageAt  DateTime  @default(now())
+  
+  // Compteurs
+  unreadCountTenant Int    @default(0)
+  unreadCountOwner  Int    @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  isBlocked Boolean @default(false)
+
+  messages Message[]
+  reports Report[]
+
+  @@unique([listingId, ownerId, tenantId])
+  @@index([ownerId])
+  @@index([tenantId])
+  @@index([status])
+  @@map("conversations")
+}
+
+model Message {
+  id             String    @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User      @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId     String
+  receiver       User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content        String    @db.Text
+  isRead         Boolean   @default(false)
+  readAt         DateTime?
+  isBlocked      Boolean   @default(false)
+  blockedReason  String?
+  createdAt      DateTime  @default(now())
+  isSystem     Boolean   @default(false)  // Message automatique du système
+  type           String   @default("text") // text, voice
+  voiceUrl       String?
+  duration       Int?     // durée en secondes pour les messages vocaux
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([createdAt])
+  @@index([conversationId, createdAt])  // Pour le chargement paginé des messages
+  @@index([receiverId, isRead])         // Pour compter les messages non lus
+
+  @@map("messages")
+
+}
+model Block {
+  id         String   @id @default(cuid())
+  blockerId  String
+  blockedId  String
+  createdAt  DateTime @default(now())
+  
+  blocker User @relation("blocks", fields: [blockerId], references: [id])
+  blocked User @relation("blockedBy", fields: [blockedId], references: [id])
+  
+  @@unique([blockerId, blockedId])
+}
+
+model Report {
+  id             String   @id @default(cuid())
+  conversationId String
+  reporterId     String
+  reportedUserId String
+  reason         String
+  status         String   @default("PENDING")
+  createdAt      DateTime @default(now())
+  
+  conversation Conversation @relation(fields: [conversationId], references: [id])
+  reporter     User         @relation("reports", fields: [reporterId], references: [id])
+  reportedUser User         @relation("reported", fields: [reportedUserId], references: [id])
+}
+// ============================================
+// ENUMS SPRINT 3
+// ============================================
+
+enum InfoRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELLED
+}
+
+enum OfferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COUNTERED
+  EXPIRED
+  CANCELLED
+}
+
+enum ChatStatus {
+  OPEN
+  EXPIRED
+  CLOSED_BY_TENANT
+  CLOSED_BY_OWNER
+}
+
+enum ContractStatus {
+  PENDING
+  SIGNED_BY_TENANT
+  SIGNED_BY_OWNER
+  COMPLETED
+  EXPIRED
+}
+
+enum SecurityDepositStatus {
+  AUTHORIZED
+  CHARGED
+  RELEASED
+  DISPUTED
+}
+
+// ============================================
+// MODELS SPRINT 3
+// ============================================
+
+model InfoRequest {
+  id             String            @id @default(cuid())
+  reference      String            @unique
+  
+  listingId      String
+  listing        Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenantId       String
+  tenant         User              @relation("InfoRequestTenant", fields: [tenantId], references: [id])
+  ownerId        String
+  owner          User              @relation("InfoRequestOwner", fields: [ownerId], references: [id])
+  
+  checkIn        DateTime
+  checkOut       DateTime
+  guests         Int               @default(1)
+  message        String?           @db.Text
+  hasPets        Boolean           @default(false)
+  needsBabyBed   Boolean           @default(false)
+  lateCheckin    Boolean           @default(false)
+  
+  status         InfoRequestStatus @default(PENDING)
+  expiresAt      DateTime
+  respondedAt    DateTime?
+  
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  
+  conversation   Conversation?
+  offer          Offer?
+  booking        Booking?   @relation("BookingInfoRequest")
+  @@index([listingId])
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("info_requests")
+}
+
+model Offer {
+  id             String        @id @default(cuid())
+  reference      String        @unique
+  
+  infoRequestId  String        @unique
+  infoRequest    InfoRequest   @relation(fields: [infoRequestId], references: [id])
+  listingId      String
+  listing        Listing       @relation(fields: [listingId], references: [id])
+  tenantId       String
+  tenant         User          @relation("OfferTenant", fields: [tenantId], references: [id])
+  ownerId        String
+  owner          User          @relation("OfferOwner", fields: [ownerId], references: [id])
+  
+  checkIn        DateTime
+  checkOut       DateTime
+  guests         Int
+  nights         Int
+  pricePerNight  Float
+  cleaningFee    Float
+  serviceFee     Float
+  totalPrice     Float
+  
+  status         OfferStatus   @default(PENDING)
+  
+  counterCount   Int           @default(0)
+  parentOfferId  String?
+  parentOffer    Offer?        @relation("CounterOffers", fields: [parentOfferId], references: [id])
+  childOffers    Offer[]       @relation("CounterOffers")
+  
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  rejectedAt     DateTime?
+  
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  
+  booking        Booking?   @relation("BookingOffer")  
+  @@index([listingId])
+  @@index([tenantId])
+  @@index([ownerId])
+  @@index([status])
+  @@index([expiresAt])
+  @@map("offers")
+}
+
+model Contract {
+  id                String         @id @default(cuid())
+  reference         String         @unique
+  
+  bookingId         String         @unique
+  booking           Booking        @relation("BookingContract", fields: [bookingId], references: [id])
+  
+  pdfUrl            String
+  content           Json?
+  
+  status            ContractStatus @default(PENDING)
+  tenantSignedAt    DateTime?
+  ownerSignedAt     DateTime?
+  
+  securityDeposit   Float?
+  depositStatus     SecurityDepositStatus @default(AUTHORIZED)
+  depositAuthorizedAt DateTime?
+  depositChargedAt  DateTime?
+  depositReleasedAt DateTime?
+  
+  expiresAt         DateTime
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  
+  @@index([bookingId])
+  @@index([status])
+  @@map("contracts")
+}
+
+model RevealedInfo {
+  id             String    @id @default(cuid())
+  bookingId      String    @unique
+  booking        Booking   @relation(fields: [bookingId], references: [id])
+  
+  exactAddress        String    @db.Text
+  accessCode          String?
+  checkinInstructions String?   @db.Text
+  ownerPhone          String?
+  emergencyPhone      String?
+  
+  revealedAt     DateTime  @default(now())
+  expiresAt      DateTime
+  
+  viewedByTenant Boolean   @default(false)
+  viewedByOwner  Boolean   @default(false)
+  tenantViewedAt DateTime?
+  ownerViewedAt  DateTime?
+  
+  @@map("revealed_infos")
 }

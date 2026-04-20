@@ -575,3 +575,11 @@
   border-color: #fbbf24 !important;
   color: #fef3c7 !important;
 }
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

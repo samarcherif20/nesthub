@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-// ✅ AJOUT - Importer les fonctions de permission (déjà dans ton fichier permissions.ts)
+// ✅ AJOUT - Importer les fonctions de permission
 import { getUserPermissions, checkListingAccess } from "@/lib/auth/permissions";
 
 // Fonction de validation des données
@@ -53,7 +53,7 @@ function filterValidPhotos(photos: any[]): any[] {
   );
 }
 
-// app/api/listings/route.ts - Modifie la partie GET
+// GET - Récupérer les annonces
 export async function GET(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
@@ -64,6 +64,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const search = searchParams.get("search") || "";
+
+    // 🔥 RÉCUPÉRER LE TYPE (CORRECTION)
+    const type = searchParams.get("type");
 
     const minPrice = searchParams.get("minPrice")
       ? parseFloat(searchParams.get("minPrice")!)
@@ -107,6 +110,11 @@ export async function GET(request: NextRequest) {
       }
     } else {
       where.status = "ACTIVE";
+    }
+
+    // 🔥 AJOUTER LE FILTRE PAR TYPE (CORRECTION)
+    if (type) {
+      where.type = type;
     }
 
     if (governorate) where.governorate = governorate;
@@ -158,7 +166,6 @@ export async function GET(request: NextRequest) {
             take: 1,
           },
           owner: {
-            // ✅ AJOUTE CETTE PARTIE
             select: {
               id: true,
               firstName: true,
@@ -229,7 +236,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Utilisateur authentifié: ${clerkId}`);
 
-    // ✅ AMÉLIORATION - Utiliser getUserPermissions
     const permissions = await getUserPermissions(clerkId);
 
     if (!permissions) {
@@ -247,7 +253,6 @@ export async function POST(request: NextRequest) {
       `✅ Utilisateur trouvé: ${permissions.userId}, role: ${permissions.role}`,
     );
 
-    // ✅ Vérification - Seuls les OWNER peuvent créer des annonces
     if (permissions.role !== "OWNER") {
       console.log(`❌ Permission refusée: role=${permissions.role}`);
       return NextResponse.json(
@@ -265,7 +270,6 @@ export async function POST(request: NextRequest) {
       photos: `${body.photos?.length} photos`,
     });
 
-    // Validation des données
     const validationErrors = validateListingData(body);
     if (validationErrors.length > 0) {
       console.log("❌ Validation échouée:", validationErrors);
@@ -275,10 +279,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Génération du slug
     const slug = `${body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`;
 
-    // Création de l'annonce
     const listing = await prisma.listing.create({
       data: {
         title: body.title,
@@ -318,7 +320,6 @@ export async function POST(request: NextRequest) {
 
     console.log(`✅ Annonce créée avec ID: ${listing.id}`);
 
-    // AJOUT DES PHOTOS
     const validPhotos = filterValidPhotos(body.photos);
     if (validPhotos.length > 0) {
       await prisma.listingMedia.createMany({
@@ -334,7 +335,6 @@ export async function POST(request: NextRequest) {
       console.log(`✅ ${validPhotos.length} photos ajoutées à listingMedia`);
     }
 
-    // HISTORIQUE
     await prisma.listingHistory.create({
       data: {
         listingId: listing.id,
@@ -390,7 +390,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // ✅ AJOUT - Vérifier l'accès avec checkListingAccess
     const accessCheck = await checkListingAccess(clerkId, id, "edit");
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: 403 });
@@ -409,7 +408,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Mise à jour de l'annonce
     const listing = await prisma.listing.update({
       where: { id },
       data: {
@@ -446,7 +444,6 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    // Mise à jour des photos
     if (body.photos && body.photos.length > 0) {
       const validPhotos = filterValidPhotos(body.photos);
 
@@ -469,7 +466,6 @@ export async function PUT(request: NextRequest) {
       }
     }
 
-    // HISTORIQUE
     await prisma.listingHistory.create({
       data: {
         listingId: id,
@@ -516,7 +512,6 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // ✅ AJOUT - Vérifier l'accès avec checkListingAccess
     const accessCheck = await checkListingAccess(clerkId, id, "edit");
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: 403 });
@@ -575,7 +570,6 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // ✅ AJOUT - Vérifier l'accès avec checkListingAccess
     const accessCheck = await checkListingAccess(clerkId, id, "edit");
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: 403 });

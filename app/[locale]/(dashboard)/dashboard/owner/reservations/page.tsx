@@ -135,7 +135,7 @@ export default function ReservationsPage() {
             {filteredReservations.map((reservation) => (
               <Link
                 key={reservation.id}
-                href={`/reservations/${reservation.id}`}
+                href={`reservations/${reservation.id}`}
                 className="group bg-white rounded-2xl overflow-hidden shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(24,28,34,0.07)] transition-all hover:-translate-y-1"
               >
                 <div className="flex flex-col md:flex-row h-full">
