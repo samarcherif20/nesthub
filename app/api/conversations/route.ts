@@ -36,10 +36,9 @@ export async function GET(req: NextRequest) {
             pricePerNight: true,
             cleaningFee: true,
             maxGuests: true,
-            rooms: true,           // ✅ rooms (pas bedrooms)
-            governorate: true,     // ✅ pour construire la location
-            delegation: true,      // ✅ pour construire la location
-            // rating n'existe pas dans Listing, on va utiliser une valeur par défaut
+            rooms: true,
+            governorate: true,
+            delegation: true,
             photos: {
               take: 1,
               where: { isMain: true },
@@ -83,7 +82,7 @@ export async function GET(req: NextRequest) {
       orderBy: { updatedAt: "desc" },
     });
 
-    // Ajouter le compteur de messages non lus et formater les données
+    // ✅ Récupérer les offres pour chaque conversation séparément
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conv) => {
         const unreadCount = await prisma.message.count({
@@ -96,6 +95,19 @@ export async function GET(req: NextRequest) {
 
         const otherUser = conv.ownerId === user.id ? conv.tenant : conv.owner;
         const lastMessage = conv.messages[0];
+
+        // ✅ Récupérer l'offre en attente pour cette conversation (via infoRequest)
+        let activeOffer = null;
+        if (conv.infoRequestId) {
+          const offer = await prisma.offer.findFirst({
+            where: {
+              infoRequestId: conv.infoRequestId,
+              //status: "PENDING",
+            },
+            orderBy: { createdAt: "desc" },
+          });
+          activeOffer = offer;
+        }
 
         // Construire le nom complet
         const otherUserName =
@@ -116,9 +128,9 @@ export async function GET(req: NextRequest) {
             pricePerNight: conv.listing.pricePerNight,
             cleaningFee: conv.listing.cleaningFee,
             maxGuests: conv.listing.maxGuests,
-            bedrooms: conv.listing.rooms,  // ✅ on map rooms → bedrooms pour le frontend
+            bedrooms: conv.listing.rooms,
             location: location,
-            rating: 4.5,  // ✅ valeur par défaut (à remplacer par une vraie moyenne plus tard)
+            rating: 4.5,
             image: conv.listing.photos[0]?.url,
           },
           otherUser: {
@@ -135,6 +147,14 @@ export async function GET(req: NextRequest) {
             guests: conv.infoRequest.guests,
             status: conv.infoRequest.status,
             expiresAt: conv.infoRequest.expiresAt?.toISOString(),
+          } : null,
+          // ✅ AJOUT : Inclure l'offre dans la réponse
+          offer: activeOffer ? {
+            id: activeOffer.id,
+            status: activeOffer.status,
+            totalPrice: activeOffer.totalPrice,
+            createdAt: activeOffer.createdAt.toISOString(),
+            expiresAt: activeOffer.expiresAt?.toISOString(),
           } : null,
           lastMessage: lastMessage?.content || null,
           lastMessageAt: conv.lastMessageAt,

@@ -1553,3 +1553,19 @@ model RevealedInfo {
   
   @@map("revealed_infos")
 }
+model PendingBooking {
+  id         String   @id @default(cuid())
+  offerId    String   @unique
+  listingId  String
+  checkIn    DateTime
+  checkOut   DateTime
+  dates      Json     // Stocker les dates bloquées
+  expiresAt  DateTime
+  isReleased Boolean  @default(false)
+  releasedAt DateTime?
+  createdAt  DateTime @default(now())
+
+  @@index([expiresAt])
+  @@index([isReleased])
+  @@map("pending_bookings")
+}

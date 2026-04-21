@@ -12,7 +12,6 @@ export async function POST(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // ✅ CORRECTION: await params
     const { id: offerId } = await params;
 
     const user = await prisma.user.findUnique({
@@ -65,7 +64,83 @@ export async function POST(
       );
     }
 
-    // Mettre à jour l'offre
+    // ✅ 1. Bloquer les dates dans le calendrier (pendant 24h)
+    const startDate = new Date(offer.checkIn);
+    const endDate = new Date(offer.checkOut);
+    const datesToBlock: Date[] = [];
+
+    // Générer toutes les dates entre checkIn et checkOut
+    for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
+      datesToBlock.push(new Date(d));
+    }
+
+    // Calculer la date d'expiration (dans 24h)
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    // Bloquer chaque date dans BlockedDate
+    for (const date of datesToBlock) {
+      await prisma.blockedDate.upsert({
+        where: {
+          listingId_startDate_endDate: {
+            listingId: offer.listingId,
+            startDate: date,
+            endDate: date,
+          },
+        },
+        update: {
+          reason: `Réservation en attente de paiement - Expire le ${expiresAt.toLocaleString()}`,
+        },
+        create: {
+          listingId: offer.listingId,
+          startDate: date,
+          endDate: date,
+          reason: `Réservation en attente de paiement - Expire le ${expiresAt.toLocaleString()}`,
+          blockedById: user.id,
+        },
+      });
+    }
+
+    // Bloquer dans AvailabilityCalendar
+    for (const date of datesToBlock) {
+      await prisma.availabilityCalendar.upsert({
+        where: {
+          listingId_date: {
+            listingId: offer.listingId,
+            date: date,
+          },
+        },
+        update: {
+          isAvailable: false,
+          blockedReason: `En attente de paiement - Expire dans 24h`,
+        },
+        create: {
+          listingId: offer.listingId,
+          date: date,
+          isAvailable: false,
+          blockedReason: `En attente de paiement - Expire dans 24h`,
+        },
+      });
+    }
+
+    // ✅ 2. Enregistrer le pending booking pour libération automatique
+    await prisma.pendingBooking.upsert({
+      where: { offerId: offer.id },
+      update: {
+        expiresAt: expiresAt,
+        dates: datesToBlock.map((d) => d.toISOString()),
+      },
+      create: {
+        offerId: offer.id,
+        listingId: offer.listingId,
+        checkIn: offer.checkIn,
+        checkOut: offer.checkOut,
+        dates: datesToBlock.map((d) => d.toISOString()),
+        expiresAt: expiresAt,
+      },
+    });
+
+    // ✅ 3. Mettre à jour l'offre
     const updatedOffer = await prisma.offer.update({
       where: { id: offerId },
       data: {
@@ -74,7 +149,7 @@ export async function POST(
       },
     });
 
-    // Créer un message système dans le chat
+    // ✅ 4. Créer un message système dans le chat
     const conversation = offer.infoRequest?.conversation;
     if (conversation) {
       await prisma.message.create({
@@ -82,7 +157,7 @@ export async function POST(
           conversationId: conversation.id,
           senderId: offer.ownerId,
           receiverId: offer.tenantId,
-          content: `✅ **Offre acceptée !**\n\nLe propriétaire a accepté votre offre.\n\n💰 Montant: ${offer.totalPrice.toLocaleString("fr-FR")} TND\n⏰ Vous avez 24h pour finaliser le paiement.`,
+          content: `✅ **Offre acceptée !**\n\nLe propriétaire a accepté votre offre.\n\n📅 Dates: ${offer.checkIn.toLocaleDateString()} → ${offer.checkOut.toLocaleDateString()}\n💰 Montant: ${offer.totalPrice.toLocaleString("fr-FR")} TND\n⏰ **Vous avez jusqu'au ${expiresAt.toLocaleString()} pour finaliser le paiement.**\n\nPassé ce délai, les dates seront automatiquement libérées.`,
           isRead: false,
           isSystem: true,
         },
@@ -91,22 +166,23 @@ export async function POST(
       await prisma.conversation.update({
         where: { id: conversation.id },
         data: {
-          lastMessage: `Offre acceptée - ${offer.totalPrice} TND à payer`,
+          lastMessage: `✅ Offre acceptée - ${offer.totalPrice.toLocaleString("fr-FR")} TND à payer avant ${expiresAt.toLocaleString()}`,
           lastMessageAt: new Date(),
         },
       });
     }
 
-    // Notification au locataire
+    // ✅ 5. Notification au locataire
     await prisma.notification.create({
       data: {
         userId: offer.tenantId,
         type: "OFFER_ACCEPTED",
-        title: "Offre acceptée !",
-        content: `Le propriétaire a accepté votre offre pour "${offer.listing.title}". Vous avez 24h pour payer.`,
+        title: "🎉 Offre acceptée !",
+        content: `Le propriétaire a accepté votre offre pour "${offer.listing.title}". Vous avez jusqu'au ${expiresAt.toLocaleString()} pour payer.`,
         data: {
           offerId: offer.id,
           listingId: offer.listingId,
+          expiresAt: expiresAt.toISOString(),
         },
         channels: ["IN_APP", "EMAIL"],
       },
@@ -115,7 +191,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       offer: updatedOffer,
-      message: "Offre acceptée, le locataire peut maintenant payer",
+      expiresAt: expiresAt,
+      blockedDates: datesToBlock.length,
+      message:
+        "Offre acceptée, dates bloquées pour 24h. Le locataire peut maintenant payer.",
     });
   } catch (error) {
     console.error("Erreur acceptation offre:", error);

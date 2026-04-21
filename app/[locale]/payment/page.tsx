@@ -1,4 +1,4 @@
-// app/fr/payment/page.tsx
+// app/fr/payment/page.tsx - Version corrigée
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -24,17 +24,13 @@ import {
   IoChevronForwardOutline,
 } from "react-icons/io5";
 
-// ─── pip helpers ───────────────────────────────────────────────────────────────
 const pipListing = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
 
-// ─── Design tokens ─────────────────────────────────────────────────────────────
 const GRAD = "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600";
 const GRAD_TEXT =
   "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent";
 const BTN_GRAD = `${GRAD} text-white font-extrabold shadow-lg shadow-indigo-200/60 dark:shadow-indigo-900/30 hover:opacity-90 active:scale-[.98] transition-all`;
-
-// ─── Types ─────────────────────────────────────────────────────────────────────
 
 interface BookingData {
   id: string;
@@ -58,8 +54,6 @@ interface BookingData {
   };
   reference?: string;
 }
-
-// ─── Helpers ───────────────────────────────────────────────────────────────────
 
 function fmtDate(d: string) {
   if (!d) return "";
@@ -92,7 +86,6 @@ function formatExpiry(val: string) {
   return clean;
 }
 
-// ─── Toast ─────────────────────────────────────────────────────────────────────
 function Toast({
   message,
   type,
@@ -135,7 +128,6 @@ function Toast({
   );
 }
 
-// ─── Payment method card ───────────────────────────────────────────────────────
 function PaymentMethodCard({
   value,
   selected,
@@ -189,7 +181,6 @@ function PaymentMethodCard({
   );
 }
 
-// ─── Input field ───────────────────────────────────────────────────────────────
 function Field({
   label,
   children,
@@ -210,15 +201,12 @@ function Field({
 const inputCls =
   "w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl py-3.5 px-4 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400/40 dark:focus:ring-indigo-600/40 focus:border-indigo-400 dark:focus:border-indigo-600 transition-colors";
 
-// ─── Main page ─────────────────────────────────────────────────────────────────
-
 export default function PaymentPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // Get booking data from URL params or fetch from API
-  const bookingId = searchParams.get("bookingId");
   const offerId = searchParams.get("offerId");
+  const conversationId = searchParams.get("conversationId");
 
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -232,7 +220,6 @@ export default function PaymentPage() {
   } | null>(null);
   const [imgErr, setImgErr] = useState(false);
 
-  // Form state
   const [form, setForm] = useState({
     cardHolder: "",
     cardNumber: "",
@@ -244,120 +231,63 @@ export default function PaymentPage() {
   const showToast = useCallback(
     (message: string, type: "success" | "error" | "info" = "info") =>
       setToast({ message, type }),
-    []
+    [],
   );
 
-  // Fetch booking/offer data
+  // Fetch offer data
   useEffect(() => {
-    const fetchBooking = async () => {
+    const fetchOffer = async () => {
+      if (!offerId) {
+        setIsLoading(false);
+        return;
+      }
+
       setIsLoading(true);
       try {
-        let data: BookingData | null = null;
-
-        if (offerId) {
-          // Fetch from offer
-          const res = await fetch(`/api/offers/${offerId}`);
-          if (res.ok) {
-            const offer = await res.json();
-            data = {
-              id: offer.id,
-              checkIn: offer.checkIn,
-              checkOut: offer.checkOut,
-              nights: offer.nights,
-              guests: offer.guests,
-              pricePerNight: offer.pricePerNight,
-              cleaningFee: offer.cleaningFee ?? 85,
-              serviceFee: offer.serviceFee ?? Math.round(offer.pricePerNight * offer.nights * 0.05),
-              totalPrice: offer.totalPrice,
-              reference: offer.reference,
-              listing: {
-                id: offer.listing?.id ?? offer.listingId,
-                title: offer.listing?.title ?? "Logement",
-                image: offer.listing?.image,
-                location: offer.listing?.location,
-                rating: offer.listing?.rating,
-                bedrooms: offer.listing?.bedrooms,
-                maxGuests: offer.listing?.maxGuests,
-                type: offer.listing?.type,
-              },
-            };
-          }
-        } else if (bookingId) {
-          // Fetch from booking
-          const res = await fetch(`/api/bookings/${bookingId}`);
-          if (res.ok) {
-            const b = await res.json();
-            const nights = Math.ceil(
-              (new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) /
-                86_400_000
-            );
-            data = {
-              id: b.id,
-              checkIn: b.checkIn,
-              checkOut: b.checkOut,
-              nights,
-              guests: b.guests,
-              pricePerNight: b.pricePerNight ?? b.listing?.pricePerNight ?? 0,
-              cleaningFee: b.cleaningFee ?? 85,
-              serviceFee: b.serviceFee ?? Math.round((b.totalPrice ?? 0) * 0.05),
-              totalPrice: b.totalPrice,
-              reference: b.reference,
-              listing: {
-                id: b.listing?.id ?? b.listingId,
-                title: b.listing?.title ?? "Logement",
-                image: b.listing?.image,
-                location: b.listing?.location,
-                rating: b.listing?.rating,
-                bedrooms: b.listing?.bedrooms,
-                maxGuests: b.listing?.maxGuests,
-                type: b.listing?.type,
-              },
-            };
-          }
+        const res = await fetch(`/api/offers/${offerId}`);
+        if (res.ok) {
+          const offer = await res.json();
+          setBooking({
+            id: offer.id,
+            checkIn: offer.checkIn,
+            checkOut: offer.checkOut,
+            nights: offer.nights,
+            guests: offer.guests,
+            pricePerNight: offer.pricePerNight,
+            cleaningFee: offer.cleaningFee ?? 85,
+            serviceFee:
+              offer.serviceFee ??
+              Math.round(offer.pricePerNight * offer.nights * 0.05),
+            totalPrice: offer.totalPrice,
+            reference: offer.reference,
+            listing: {
+              id: offer.listing.id,
+              title: offer.listing.title,
+              image: offer.listing.image,
+              location: offer.listing.location,
+              bedrooms: offer.listing.bedrooms,
+              maxGuests: offer.listing.maxGuests,
+              type: offer.listing.type,
+            },
+          });
+        } else {
+          showToast("Offre non trouvée", "error");
         }
-
-        if (!data) {
-          // Fallback: try to build from query params directly
-          const total = searchParams.get("total");
-          const title = searchParams.get("title");
-          if (total && title) {
-            data = {
-              id: offerId ?? bookingId ?? "unknown",
-              checkIn: searchParams.get("checkIn") ?? "",
-              checkOut: searchParams.get("checkOut") ?? "",
-              nights: parseInt(searchParams.get("nights") ?? "1"),
-              guests: parseInt(searchParams.get("guests") ?? "1"),
-              pricePerNight: parseInt(searchParams.get("price") ?? "0"),
-              cleaningFee: 85,
-              serviceFee: Math.round(parseInt(total) * 0.05),
-              totalPrice: parseInt(total),
-              listing: {
-                id: searchParams.get("listingId") ?? "",
-                title,
-                image: searchParams.get("image") ?? undefined,
-                location: searchParams.get("location") ?? undefined,
-              },
-            };
-          }
-        }
-
-        setBooking(data);
-      } catch (e) {
-        console.error(e);
+      } catch (error) {
+        console.error("Error fetching offer:", error);
+        showToast("Erreur de chargement", "error");
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchBooking();
-  }, [bookingId, offerId, searchParams]);
+    fetchOffer();
+  }, [offerId, showToast]);
 
-  // Form validation
   const validate = () => {
     const errs: Record<string, string> = {};
     if (paymentMethod === "card") {
-      if (!form.cardHolder.trim())
-        errs.cardHolder = "Nom requis";
+      if (!form.cardHolder.trim()) errs.cardHolder = "Nom requis";
       const raw = form.cardNumber.replace(/\s/g, "");
       if (raw.length < 16) errs.cardNumber = "Numéro invalide (16 chiffres)";
       const exp = form.expiry.replace(/\s/g, "");
@@ -370,30 +300,32 @@ export default function PaymentPage() {
 
   const handlePay = async () => {
     if (!validate()) return;
+    if (!booking) {
+      showToast("Aucune réservation à payer", "error");
+      return;
+    }
+
     setIsProcessing(true);
     try {
-      // POST to payment endpoint
       const res = await fetch("/api/payments", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          bookingId: booking?.id,
-          offerId,
+          offerId: booking.id,
           method: paymentMethod,
-          amount: booking?.totalPrice,
+          amount: booking.totalPrice,
           cardHolder: form.cardHolder,
-          // never send raw card data — in production route through Konnect/Stripe
           last4: form.cardNumber.replace(/\s/g, "").slice(-4),
         }),
       });
 
+      const data = await res.json();
+
       if (res.ok) {
         setIsSuccess(true);
         showToast("Paiement effectué avec succès !", "success");
-        // Redirect after 3s
         setTimeout(() => router.push("/fr/reservations"), 3000);
       } else {
-        const data = await res.json();
         showToast(data.error ?? "Erreur lors du paiement", "error");
       }
     } catch {
@@ -403,7 +335,6 @@ export default function PaymentPage() {
     }
   };
 
-  // ── Loading ──────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
@@ -412,7 +343,6 @@ export default function PaymentPage() {
     );
   }
 
-  // ── Success state ────────────────────────────────────────────────────────
   if (isSuccess) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4">
@@ -448,11 +378,29 @@ export default function PaymentPage() {
     );
   }
 
-  const listingImageUrl = booking?.listing.image
+  if (!booking) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center px-4">
+        <div className="text-center">
+          <IoReceiptOutline className="text-5xl text-gray-300 dark:text-slate-700 mx-auto mb-4" />
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            Aucune réservation trouvée
+          </h1>
+          <Link
+            href="/fr/messages"
+            className="text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            Retour aux messages
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const listingImageUrl = booking.listing.image
     ? pipListing(booking.listing.image)
     : null;
 
-  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 antialiased transition-colors duration-300">
       {toast && (
@@ -463,11 +411,10 @@ export default function PaymentPage() {
         />
       )}
 
-      {/* ── Navbar ────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-gray-100 dark:border-slate-800 flex items-center px-5 lg:px-10 justify-between transition-colors">
         <div className="flex items-center gap-4">
           <Link
-            href="/fr/messages"
+            href={`/fr/messages${conversationId ? `?conversation=${conversationId}` : ""}`}
             className="w-9 h-9 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
           >
             <IoArrowBackOutline className="text-gray-600 dark:text-gray-400 text-lg" />
@@ -486,22 +433,16 @@ export default function PaymentPage() {
 
       <main className="max-w-screen-xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-
-          {/* ── LEFT: Form ──────────────────────────────────────────────── */}
           <div className="lg:col-span-7 space-y-8">
-
-            {/* Header */}
             <div>
               <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-1.5">
-                Finaliser votre{" "}
-                <span className={GRAD_TEXT}>réservation</span>
+                Finaliser votre <span className={GRAD_TEXT}>réservation</span>
               </h1>
               <p className="text-sm text-gray-400 dark:text-gray-600">
                 Vérifiez vos informations et procédez au paiement sécurisé.
               </p>
             </div>
 
-            {/* Payment method selection */}
             <section>
               <h2 className="text-base font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                 <IoCardOutline className="text-indigo-500" />
@@ -527,7 +468,6 @@ export default function PaymentPage() {
               </div>
             </section>
 
-            {/* Card form */}
             {paymentMethod === "card" && (
               <section className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-6 space-y-5 shadow-sm">
                 <div className="flex items-center gap-2 mb-1">
@@ -539,7 +479,6 @@ export default function PaymentPage() {
                   </h3>
                 </div>
 
-                {/* Cardholder */}
                 <Field label="Nom sur la carte">
                   <input
                     type="text"
@@ -557,7 +496,6 @@ export default function PaymentPage() {
                   )}
                 </Field>
 
-                {/* Card number */}
                 <Field label="Numéro de carte">
                   <div className="relative">
                     <input
@@ -583,7 +521,6 @@ export default function PaymentPage() {
                   )}
                 </Field>
 
-                {/* Expiry + CVV */}
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Expiration (MM / AA)">
                     <input
@@ -640,7 +577,6 @@ export default function PaymentPage() {
                   </Field>
                 </div>
 
-                {/* Pay button */}
                 <button
                   onClick={handlePay}
                   disabled={isProcessing}
@@ -648,16 +584,13 @@ export default function PaymentPage() {
                 >
                   {isProcessing ? (
                     <>
-                      <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />{" "}
                       Traitement en cours…
                     </>
                   ) : (
                     <>
-                      <IoLockClosedOutline className="text-lg" />
-                      Payer{" "}
-                      {booking
-                        ? `${booking.totalPrice.toLocaleString("fr-FR")} TND`
-                        : ""}
+                      <IoLockClosedOutline className="text-lg" /> Payer{" "}
+                      {booking.totalPrice.toLocaleString("fr-FR")} TND{" "}
                       <IoShieldCheckmarkOutline className="text-lg" />
                     </>
                   )}
@@ -665,7 +598,6 @@ export default function PaymentPage() {
               </section>
             )}
 
-            {/* E-dinar section */}
             {paymentMethod === "edinar" && (
               <section className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-6 text-center shadow-sm">
                 <div className="w-16 h-16 rounded-2xl bg-purple-50 dark:bg-purple-950/30 flex items-center justify-center mx-auto mb-4">
@@ -685,16 +617,13 @@ export default function PaymentPage() {
                 >
                   {isProcessing ? (
                     <>
-                      <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                      <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />{" "}
                       Redirection…
                     </>
                   ) : (
                     <>
-                      <IoWalletOutline className="text-lg" />
-                      Payer via Konnect ·{" "}
-                      {booking
-                        ? `${booking.totalPrice.toLocaleString("fr-FR")} TND`
-                        : ""}
+                      <IoWalletOutline className="text-lg" /> Payer via Konnect
+                      · {booking.totalPrice.toLocaleString("fr-FR")} TND{" "}
                       <IoChevronForwardOutline className="text-lg" />
                     </>
                   )}
@@ -702,7 +631,6 @@ export default function PaymentPage() {
               </section>
             )}
 
-            {/* Security badges */}
             <div className="flex flex-wrap items-center justify-center gap-6 py-4 opacity-50 hover:opacity-80 transition-opacity">
               {[
                 {
@@ -710,10 +638,7 @@ export default function PaymentPage() {
                   label: "SSL Sécurisé 256-bit",
                 },
                 { icon: <IoLockClosedOutline />, label: "Données chiffrées" },
-                {
-                  icon: <IoCheckmarkCircleOutline />,
-                  label: "PCI Compliant",
-                },
+                { icon: <IoCheckmarkCircleOutline />, label: "PCI Compliant" },
               ].map(({ icon, label }) => (
                 <div key={label} className="flex items-center gap-2">
                   <span className="text-gray-500 dark:text-gray-500 text-sm">
@@ -727,206 +652,176 @@ export default function PaymentPage() {
             </div>
           </div>
 
-          {/* ── RIGHT: Summary sticky card ──────────────────────────────── */}
           <aside className="lg:col-span-5 lg:sticky lg:top-24">
-            {booking ? (
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm overflow-hidden">
+              <div className="relative h-48 bg-gray-100 dark:bg-slate-800">
+                {listingImageUrl && !imgErr ? (
+                  <img
+                    src={listingImageUrl}
+                    alt={booking.listing.title}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgErr(true)}
+                  />
+                ) : (
+                  <div
+                    className={`w-full h-full ${GRAD} flex items-center justify-center`}
+                  >
+                    <IoHomeOutline className="text-white text-5xl opacity-30" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4">
+                  <h3 className="text-white font-extrabold text-lg leading-tight">
+                    {booking.listing.title}
+                  </h3>
+                  {booking.listing.location && (
+                    <p className="text-white/80 text-xs flex items-center gap-1 mt-1">
+                      <IoLocationOutline className="text-sm" />
+                      {booking.listing.location}
+                    </p>
+                  )}
+                </div>
+                {booking.listing.type && (
+                  <div className="absolute top-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-2.5 py-1 rounded-lg">
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">
+                      {booking.listing.type}
+                    </span>
+                  </div>
+                )}
+              </div>
 
-                {/* Listing image */}
-                <div className="relative h-48 bg-gray-100 dark:bg-slate-800">
-                  {listingImageUrl && !imgErr ? (
-                    <img
-                      src={listingImageUrl}
-                      alt={booking.listing.title}
-                      className="w-full h-full object-cover"
-                      onError={() => setImgErr(true)}
-                    />
-                  ) : (
-                    <div
-                      className={`w-full h-full ${GRAD} flex items-center justify-center`}
+              <div className="p-6 space-y-5">
+                <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-slate-800">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-1">
+                      Séjour
+                    </p>
+                    <p className="font-extrabold text-gray-900 dark:text-white">
+                      {booking.nights} nuit{booking.nights > 1 ? "s" : ""}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-1">
+                      Dates
+                    </p>
+                    <p className="font-extrabold text-gray-900 dark:text-white text-sm">
+                      {fmtShort(booking.checkIn)} → {fmtShort(booking.checkOut)}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    {
+                      icon: <IoCalendarOutline />,
+                      label: fmtDate(booking.checkIn),
+                    },
+                    {
+                      icon: <IoPeopleOutline />,
+                      label: `${booking.guests} voyageur${booking.guests > 1 ? "s" : ""}`,
+                    },
+                    ...(booking.listing.bedrooms
+                      ? [
+                          {
+                            icon: <IoBedOutline />,
+                            label: `${booking.listing.bedrooms} chambre${booking.listing.bedrooms > 1 ? "s" : ""}`,
+                          },
+                        ]
+                      : []),
+                  ].map(({ icon, label }) => (
+                    <span
+                      key={label}
+                      className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-800 px-2.5 py-1 rounded-full"
                     >
-                      <IoHomeOutline className="text-white text-5xl opacity-30" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-white font-extrabold text-lg leading-tight">
-                      {booking.listing.title}
-                    </h3>
-                    {booking.listing.location && (
-                      <p className="text-white/80 text-xs flex items-center gap-1 mt-1">
-                        <IoLocationOutline className="text-sm" />
-                        {booking.listing.location}
-                      </p>
-                    )}
-                  </div>
-                  {/* Type badge */}
-                  {booking.listing.type && (
-                    <div className="absolute top-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-2.5 py-1 rounded-lg">
-                      <span className="text-[10px] font-bold uppercase tracking-wide text-indigo-600 dark:text-indigo-400">
-                        {booking.listing.type}
-                      </span>
-                    </div>
-                  )}
+                      <span className="text-indigo-400">{icon}</span>
+                      {label}
+                    </span>
+                  ))}
                 </div>
 
-                {/* Details */}
-                <div className="p-6 space-y-5">
-
-                  {/* Stay row */}
-                  <div className="flex justify-between items-center pb-4 border-b border-gray-100 dark:border-slate-800">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-1">
-                        Séjour
-                      </p>
-                      <p className="font-extrabold text-gray-900 dark:text-white">
-                        {booking.nights} nuit
-                        {booking.nights > 1 ? "s" : ""}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-1">
-                        Dates
-                      </p>
-                      <p className="font-extrabold text-gray-900 dark:text-white text-sm">
-                        {fmtShort(booking.checkIn)} →{" "}
-                        {fmtShort(booking.checkOut)}
-                      </p>
-                    </div>
+                <div className="space-y-2.5">
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>
+                      {booking.pricePerNight.toLocaleString("fr-FR")} TND ×{" "}
+                      {booking.nights} nuit{booking.nights > 1 ? "s" : ""}
+                    </span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {(booking.pricePerNight * booking.nights).toLocaleString(
+                        "fr-FR",
+                      )}{" "}
+                      TND
+                    </span>
                   </div>
-
-                  {/* Info chips */}
-                  <div className="flex flex-wrap gap-2">
-                    {[
-                      {
-                        icon: <IoCalendarOutline />,
-                        label: `${fmtDate(booking.checkIn)}`,
-                      },
-                      {
-                        icon: <IoPeopleOutline />,
-                        label: `${booking.guests} voyageur${booking.guests > 1 ? "s" : ""}`,
-                      },
-                      ...(booking.listing.bedrooms
-                        ? [
-                            {
-                              icon: <IoBedOutline />,
-                              label: `${booking.listing.bedrooms} chambre${booking.listing.bedrooms > 1 ? "s" : ""}`,
-                            },
-                          ]
-                        : []),
-                    ].map(({ icon, label }) => (
-                      <span
-                        key={label}
-                        className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-800 px-2.5 py-1 rounded-full"
-                      >
-                        <span className="text-indigo-400">{icon}</span>
-                        {label}
-                      </span>
-                    ))}
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>Frais de ménage</span>
+                    <span className="font-medium text-gray-900 dark:text-white">
+                      {booking.cleaningFee.toLocaleString("fr-FR")} TND
+                    </span>
                   </div>
-
-                  {/* Price breakdown */}
-                  <div className="space-y-2.5">
-                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                      <span>
-                        {booking.pricePerNight.toLocaleString("fr-FR")} TND ×{" "}
-                        {booking.nights} nuit
-                        {booking.nights > 1 ? "s" : ""}
-                      </span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {(booking.pricePerNight * booking.nights).toLocaleString(
-                          "fr-FR"
-                        )}{" "}
-                        TND
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                      <span>Frais de ménage</span>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {booking.cleaningFee.toLocaleString("fr-FR")} TND
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
-                      <span>Frais de service NestHub</span>
-                      <span className="font-medium text-indigo-500">
-                        {booking.serviceFee.toLocaleString("fr-FR")} TND
-                      </span>
-                    </div>
+                  <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>Frais de service NestHub</span>
+                    <span className="font-medium text-indigo-500">
+                      {booking.serviceFee.toLocaleString("fr-FR")} TND
+                    </span>
                   </div>
-
-                  {/* Total */}
-                  <div className="pt-4 border-t-2 border-dashed border-gray-100 dark:border-slate-800 flex justify-between items-center">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-1">
-                        Total (TND)
-                      </p>
-                      <p
-                        className={`text-3xl font-extrabold tracking-tight ${GRAD_TEXT}`}
-                      >
-                        {booking.totalPrice.toLocaleString("fr-FR")}{" "}
-                        <span className="text-lg">TND</span>
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center">
-                      <IoReceiptOutline className="text-indigo-500 text-xl" />
-                    </div>
-                  </div>
-
-                  {/* Price guarantee note */}
-                  <div className="flex items-start gap-3 p-3.5 bg-gray-50 dark:bg-slate-800/40 rounded-xl border border-gray-100 dark:border-slate-800">
-                    <IoInformationCircleOutline className="text-indigo-400 text-base flex-shrink-0 mt-0.5" />
-                    <p className="text-[11px] leading-relaxed text-gray-500 dark:text-gray-500 italic">
-                      Le prix affiché est ferme et définitif. Aucuns frais
-                      supplémentaires ne vous seront demandés lors de votre
-                      arrivée.
-                    </p>
-                  </div>
-
-                  {/* Reference */}
-                  {booking.reference && (
-                    <p className="text-center text-[10px] text-gray-300 dark:text-slate-700 font-mono">
-                      Réf. {booking.reference}
-                    </p>
-                  )}
                 </div>
+
+                <div className="pt-4 border-t-2 border-dashed border-gray-100 dark:border-slate-800 flex justify-between items-center">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mb-1">
+                      Total (TND)
+                    </p>
+                    <p
+                      className={`text-3xl font-extrabold tracking-tight ${GRAD_TEXT}`}
+                    >
+                      {booking.totalPrice.toLocaleString("fr-FR")}{" "}
+                      <span className="text-lg">TND</span>
+                    </p>
+                  </div>
+                  <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/30 flex items-center justify-center">
+                    <IoReceiptOutline className="text-indigo-500 text-xl" />
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3.5 bg-gray-50 dark:bg-slate-800/40 rounded-xl border border-gray-100 dark:border-slate-800">
+                  <IoInformationCircleOutline className="text-indigo-400 text-base flex-shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed text-gray-500 dark:text-gray-500 italic">
+                    Le prix affiché est ferme et définitif. Aucuns frais
+                    supplémentaires ne vous seront demandés lors de votre
+                    arrivée.
+                  </p>
+                </div>
+
+                {booking.reference && (
+                  <p className="text-center text-[10px] text-gray-300 dark:text-slate-700 font-mono">
+                    Réf. {booking.reference}
+                  </p>
+                )}
               </div>
-            ) : (
-              /* No booking data fallback */
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 p-8 text-center">
-                <IoReceiptOutline className="text-4xl text-gray-200 dark:text-slate-700 mx-auto mb-3" />
-                <p className="text-sm text-gray-400 dark:text-gray-600">
-                  Aucune réservation trouvée
-                </p>
-                <Link
-                  href="/fr/search"
-                  className="inline-block mt-4 text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
-                >
-                  Retour à la recherche
-                </Link>
-              </div>
-            )}
+            </div>
           </aside>
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="mt-16 border-t border-gray-100 dark:border-slate-800 bg-gray-50 dark:bg-slate-900/50 py-8 transition-colors">
         <div className="max-w-screen-xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-gray-400 dark:text-gray-600">
             © 2026 NestHub. Tous droits réservés.
           </p>
           <div className="flex gap-6">
-            {["Politique de confidentialité", "Conditions générales", "Aide"].map(
-              (link) => (
-                <Link
-                  key={link}
-                  href="#"
-                  className="text-xs text-gray-400 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-400 transition-colors"
-                >
-                  {link}
-                </Link>
-              )
-            )}
+            {[
+              "Politique de confidentialité",
+              "Conditions générales",
+              "Aide",
+            ].map((link) => (
+              <Link
+                key={link}
+                href="#"
+                className="text-xs text-gray-400 dark:text-gray-600 hover:text-gray-700 dark:hover:text-gray-400 transition-colors"
+              >
+                {link}
+              </Link>
+            ))}
           </div>
         </div>
       </footer>

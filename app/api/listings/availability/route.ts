@@ -35,50 +35,81 @@ export async function GET(request: NextRequest) {
       `📅 Période: ${startDate.toISOString()} -> ${endDate.toISOString()}`,
     );
 
-    const [blockedDates, bookings, pricingRules] = await Promise.all([
-      prisma.blockedDate.findMany({
-        where: {
-          listingId: listingId,
-          OR: [
-            { startDate: { gte: startDate, lte: endDate } },
-            { endDate: { gte: startDate, lte: endDate } },
-          ],
-        },
-      }),
-      prisma.booking.findMany({
-        where: {
-          listingId: listingId,
-          status: { notIn: ["CANCELLED", "REJECTED", "EXPIRED"] },
-          OR: [
-            { checkIn: { gte: startDate, lte: endDate } },
-            { checkOut: { gte: startDate, lte: endDate } },
-          ],
-        },
-        include: {
-          tenant: { select: { firstName: true, lastName: true, email: true } },
-        },
-      }),
-      prisma.pricingRule.findMany({
-        where: {
-          listingId: listingId,
-          isActive: true,
-          OR: [
-            { startDate: { gte: startDate, lte: endDate } },
-            { endDate: { gte: startDate, lte: endDate } },
-          ],
-        },
-      }),
-    ]);
+    // ✅ AJOUTER pendingBookings
+    const [blockedDates, bookings, pricingRules, pendingBookings] =
+      await Promise.all([
+        prisma.blockedDate.findMany({
+          where: {
+            listingId: listingId,
+            OR: [
+              { startDate: { gte: startDate, lte: endDate } },
+              { endDate: { gte: startDate, lte: endDate } },
+            ],
+          },
+        }),
+        prisma.booking.findMany({
+          where: {
+            listingId: listingId,
+            status: { notIn: ["CANCELLED", "REJECTED", "EXPIRED"] },
+            OR: [
+              { checkIn: { gte: startDate, lte: endDate } },
+              { checkOut: { gte: startDate, lte: endDate } },
+            ],
+          },
+          include: {
+            tenant: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        }),
+        prisma.pricingRule.findMany({
+          where: {
+            listingId: listingId,
+            isActive: true,
+            OR: [
+              { startDate: { gte: startDate, lte: endDate } },
+              { endDate: { gte: startDate, lte: endDate } },
+            ],
+          },
+        }),
+        // ✅ NOUVEAU: Récupérer les pending bookings (offres acceptées en attente de paiement)
+        prisma.pendingBooking.findMany({
+          where: {
+            listingId: listingId,
+            expiresAt: { gt: new Date() }, // Non expirées
+            isReleased: false,
+          },
+        }),
+      ]);
+
+    // ✅ Convertir les pending bookings en format blockedDates pour le frontend
+    const pendingBlockedDates = pendingBookings.flatMap((pb) => {
+      const dates = pb.dates as string[];
+      return dates.map((dateStr) => ({
+        id: `pending-${pb.id}-${dateStr}`,
+        listingId: pb.listingId,
+        startDate: new Date(dateStr),
+        endDate: new Date(dateStr),
+        reason: `⏳ En attente de paiement - Expire ${new Date(pb.expiresAt).toLocaleString()}`,
+        isRecurring: false,
+        blockedById: "",
+        createdAt: new Date(),
+      }));
+    });
+
+    // ✅ Fusionner toutes les dates bloquées
+    const allBlockedDates = [...blockedDates, ...pendingBlockedDates];
 
     console.log(`📊 Résultats:`);
     console.log(`   - blockedDates: ${blockedDates.length}`);
+    console.log(`   - pendingBlockedDates: ${pendingBlockedDates.length}`);
     console.log(`   - bookings: ${bookings.length}`);
     console.log(`   - pricingRules: ${pricingRules.length}`);
 
     // Log détaillé des blockedDates
-    if (blockedDates.length > 0) {
-      console.log("📅 blockedDates détaillés:");
-      blockedDates.forEach((bd, i) => {
+    if (allBlockedDates.length > 0) {
+      console.log("📅 Toutes les dates bloquées (y compris pending):");
+      allBlockedDates.forEach((bd, i) => {
         console.log(
           `   ${i + 1}. id=${bd.id}, startDate=${bd.startDate}, endDate=${bd.endDate}, reason=${bd.reason}`,
         );
@@ -112,7 +143,7 @@ export async function GET(request: NextRequest) {
     }
 
     const response = {
-      blockedDates,
+      blockedDates: allBlockedDates,
       bookings,
       pricingRules,
     };

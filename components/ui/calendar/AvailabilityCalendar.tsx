@@ -7,7 +7,8 @@ interface AvailabilityCalendarProps {
   availability?:
     | Record<string, { available: boolean; price?: number }>
     | { date: string; isAvailable: boolean }[];
-  blockedDates?: { startDate: string; endDate: string }[] | string[];
+  blockedDates?: { startDate: string; endDate: string; reason?: string }[] | string[];
+  pendingDates?: string[]; // ✅ AJOUT : dates en attente de paiement
   selectedStart?: string;
   selectedEnd?: string;
   onSelectRange?: (start: string, end: string) => void;
@@ -16,6 +17,7 @@ interface AvailabilityCalendarProps {
 export default function AvailabilityCalendar({
   availability = [],
   blockedDates = [],
+  pendingDates = [], // ✅ AJOUT
   selectedStart,
   selectedEnd,
   onSelectRange,
@@ -29,7 +31,6 @@ export default function AvailabilityCalendar({
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
-  // Ajuster pour commencer par lundi
   const startOffset = firstDay === 0 ? 6 : firstDay - 1;
 
   const monthName = currentDate.toLocaleString("fr-FR", {
@@ -40,7 +41,6 @@ export default function AvailabilityCalendar({
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
-  // Normaliser les données
   const getAvailabilityMap = () => {
     if (!availability) return {};
     if (Array.isArray(availability)) {
@@ -77,24 +77,37 @@ export default function AvailabilityCalendar({
     return set;
   };
 
+  // ✅ AJOUT : Set des dates en attente
+  const getPendingSet = () => {
+    if (!pendingDates) return new Set<string>();
+    return new Set(pendingDates.map(d => d.split("T")[0]));
+  };
+
   const availabilityMap = getAvailabilityMap();
   const blockedSet = getBlockedSet();
+  const pendingSet = getPendingSet();
 
-  // Vérifier si une date est bloquée
   const isBlocked = (day: number) => {
     const date = new Date(year, month, day);
     const dateStr = date.toISOString().split("T")[0];
     return blockedSet.has(dateStr);
   };
 
-  // Vérifier si une date est disponible
+  // ✅ AJOUT : Vérifier si une date est en attente de paiement
+  const isPending = (day: number) => {
+    const date = new Date(year, month, day);
+    const dateStr = date.toISOString().split("T")[0];
+    return pendingSet.has(dateStr);
+  };
+
   const isDateAvailable = (day: number) => {
     const dateStr = new Date(year, month, day).toISOString().split("T")[0];
     if (isBlocked(day)) return false;
+    if (isPending(day)) return false; // Les dates en attente ne sont pas disponibles
     if (availabilityMap[dateStr] !== undefined) {
       return availabilityMap[dateStr];
     }
-    return true; // par défaut disponible
+    return true;
   };
 
   const isPast = (day: number) => {
@@ -104,7 +117,6 @@ export default function AvailabilityCalendar({
     return date < today;
   };
 
-  // Vérifier si une date est sélectionnée
   const isSelected = (day: number) => {
     const dateStr = new Date(year, month, day).toISOString().split("T")[0];
     return (
@@ -115,7 +127,6 @@ export default function AvailabilityCalendar({
     );
   };
 
-  // Vérifier si une date est dans l'intervalle
   const isInRange = (day: number) => {
     const dateStr = new Date(year, month, day).toISOString().split("T")[0];
     const start = tempStart || selectedStart;
@@ -129,7 +140,6 @@ export default function AvailabilityCalendar({
 
     const dateStr = new Date(year, month, day).toISOString().split("T")[0];
 
-    // Sélection en cours
     if (!tempStart || (tempStart && tempEnd)) {
       setTempStart(dateStr);
       setTempEnd(null);
@@ -145,7 +155,6 @@ export default function AvailabilityCalendar({
     }
   };
 
-  // Synchronisation avec les props
   useEffect(() => {
     if (selectedStart && selectedEnd) {
       setTempStart(selectedStart);
@@ -159,37 +168,35 @@ export default function AvailabilityCalendar({
   const getDayStyle = (day: number) => {
     const past = isPast(day);
     const blocked = isBlocked(day);
+    const pending = isPending(day);
     const available = isDateAvailable(day);
     const selected = isSelected(day);
     const inRange = isInRange(day);
 
-    // Date passée
     if (past)
       return "bg-gray-100 dark:bg-slate-800 text-gray-300 dark:text-gray-600 cursor-not-allowed";
 
-    // Date sélectionnée
-    if (selected && !blocked)
+    if (selected && !blocked && !pending)
       return "bg-sky-500 dark:bg-sky-600 text-white font-semibold cursor-pointer hover:bg-sky-600 dark:hover:bg-sky-700";
 
-    // Date dans l'intervalle
-    if (inRange && !blocked)
+    if (inRange && !blocked && !pending)
       return "bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 font-semibold cursor-pointer";
 
-    // Date bloquée
+    // ✅ Style pour les dates en attente de paiement (orange/amber)
+    if (pending)
+      return "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-semibold cursor-not-allowed border border-amber-200 dark:border-amber-800";
+
     if (blocked)
       return "bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-semibold cursor-not-allowed line-through";
 
-    // Date disponible
     if (available)
       return "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-semibold cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50";
 
-    // Neutre / pas d'information
     return "bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors cursor-pointer";
   };
 
   return (
     <div>
-      {/* Header navigation */}
       <div className="flex justify-between items-center mb-6">
         <button
           onClick={prevMonth}
@@ -208,7 +215,6 @@ export default function AvailabilityCalendar({
         </button>
       </div>
 
-      {/* Jours de la semaine */}
       <div className="grid grid-cols-7 mb-2">
         {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((d) => (
           <div
@@ -220,24 +226,22 @@ export default function AvailabilityCalendar({
         ))}
       </div>
 
-      {/* Grille des jours */}
       <div className="grid grid-cols-7 gap-1">
-        {/* Cases vides avant le 1er */}
         {Array.from({ length: startOffset }).map((_, i) => (
           <div key={`empty-${i}`} className="aspect-square" />
         ))}
 
-        {/* Jours du mois */}
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
           const isStart =
             (tempStart || selectedStart) ===
             new Date(year, month, day).toISOString().split("T")[0];
+          const pending = isPending(day);
 
           return (
             <button
               key={day}
               onClick={() => handleDateClick(day)}
-              disabled={isPast(day) || isBlocked(day)}
+              disabled={isPast(day) || isBlocked(day) || isPending(day)}
               className={`
                 aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all duration-200
                 relative
@@ -245,7 +249,10 @@ export default function AvailabilityCalendar({
               `}
             >
               {day}
-              {isStart && !isPast(day) && !isBlocked(day) && (
+              {pending && !isPast(day) && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-500" />
+              )}
+              {isStart && !isPast(day) && !isBlocked(day) && !pending && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sky-500 dark:bg-sky-400" />
               )}
             </button>
@@ -253,7 +260,7 @@ export default function AvailabilityCalendar({
         })}
       </div>
 
-      {/* Légende */}
+      {/* Légende mise à jour */}
       <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-gray-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-emerald-500" />
@@ -264,7 +271,13 @@ export default function AvailabilityCalendar({
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            Indisponible 
+            Réservé
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-amber-500" />
+          <span className="text-xs text-gray-600 dark:text-gray-400">
+            En attente de paiement
           </span>
         </div>
         <div className="flex items-center gap-2">
