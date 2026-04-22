@@ -1,7 +1,7 @@
 // components/ui/chat/EditableBookingCard.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   IoCalendarOutline,
   IoPeopleOutline,
@@ -13,6 +13,8 @@ import {
   IoCloseOutline,
   IoPencilOutline,
   IoSaveOutline,
+  IoCheckmarkCircleOutline,
+  IoTimeOutline,
 } from "react-icons/io5";
 import { MdHolidayVillage } from "react-icons/md";
 
@@ -41,6 +43,8 @@ interface EditableBookingCardProps {
   initialGuests: number;
   onUpdate: (updatedInfoRequest: any) => void;
   onSendSystemMessage: (message: string) => void;
+  isOfferAccepted?: boolean; // ✅ AJOUT : Indique si une offre a été acceptée
+  offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED"; // ✅ AJOUT
 }
 
 function fmtDate(dateStr: string) {
@@ -73,6 +77,8 @@ export function EditableBookingCard({
   initialGuests,
   onUpdate,
   onSendSystemMessage,
+  isOfferAccepted = false, // ✅ DÉFAUT: false
+  offerStatus,
 }: EditableBookingCardProps) {
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
@@ -89,6 +95,9 @@ export function EditableBookingCard({
   const totalPrice = basePrice + cleaningFee + serviceFee;
 
   const listingImageUrl = listing.image ? pipListingImage(listing.image) : null;
+
+  // ✅ Vérifier si les modifications sont bloquées (offre acceptée)
+  const isLocked = isOfferAccepted || offerStatus === "ACCEPTED";
 
   const hasChanges = () => {
     return (
@@ -124,6 +133,10 @@ export function EditableBookingCard({
   };
 
   const handleSave = async () => {
+    if (isLocked) {
+      setError("Les dates sont verrouillées car l'offre a été acceptée");
+      return;
+    }
     if (!validateDates()) return;
 
     setIsLoading(true);
@@ -179,11 +192,11 @@ export function EditableBookingCard({
                 Détails du séjour
               </h3>
               <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                Votre demande d'information
+                {isLocked ? "Réservation confirmée" : "Votre demande d'information"}
               </p>
             </div>
           </div>
-          {!isEditing && (
+          {!isEditing && !isLocked && (
             <button
               onClick={() => setIsEditing(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-sky-50 to-purple-50 dark:from-sky-950/30 dark:to-purple-950/30 text-sky-600 dark:text-sky-400 hover:from-sky-100 hover:to-purple-100 transition-all"
@@ -191,6 +204,15 @@ export function EditableBookingCard({
               <IoPencilOutline className="text-xs" />
               Modifier
             </button>
+          )}
+          {/* ✅ Badge si offre acceptée */}
+          {isLocked && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/40">
+              <IoCheckmarkCircleOutline className="text-emerald-600 dark:text-emerald-400 text-xs" />
+              <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                Offre acceptée
+              </span>
+            </div>
           )}
         </div>
       </div>
@@ -247,8 +269,12 @@ export function EditableBookingCard({
           </div>
         </div>
 
-        {/* Dates */}
-        <div className="bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20 rounded-xl p-4 space-y-3">
+        {/* Dates - avec style verrouillé si isLocked */}
+        <div className={`rounded-xl p-4 space-y-3 ${
+          isLocked 
+            ? "bg-slate-50 dark:bg-slate-800/30" 
+            : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
+        }`}>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center">
               <IoCalendarOutline className="text-white text-sm" />
@@ -256,9 +282,10 @@ export function EditableBookingCard({
             <span className="text-[11px] font-semibold uppercase tracking-wider bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
               Dates du séjour
             </span>
+            {isLocked && <IoTimeOutline className="text-slate-400 text-xs ml-auto" />}
           </div>
 
-          {isEditing ? (
+          {isEditing && !isLocked ? (
             <div className="space-y-2">
               <div>
                 <label className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 block">
@@ -270,6 +297,7 @@ export function EditableBookingCard({
                   onChange={(e) => setCheckIn(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
                   className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
+                  disabled={isLocked}
                 />
               </div>
               <div>
@@ -282,6 +310,7 @@ export function EditableBookingCard({
                   onChange={(e) => setCheckOut(e.target.value)}
                   min={checkIn || new Date().toISOString().split("T")[0]}
                   className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
+                  disabled={isLocked}
                 />
               </div>
             </div>
@@ -316,7 +345,11 @@ export function EditableBookingCard({
         </div>
 
         {/* Guests */}
-        <div className="bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20 rounded-xl p-4 space-y-3">
+        <div className={`rounded-xl p-4 space-y-3 ${
+          isLocked 
+            ? "bg-slate-50 dark:bg-slate-800/30" 
+            : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
+        }`}>
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center">
               <IoPeopleOutline className="text-white text-sm" />
@@ -326,7 +359,7 @@ export function EditableBookingCard({
             </span>
           </div>
 
-          {isEditing ? (
+          {isEditing && !isLocked ? (
             <div>
               <label className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 block">
                 Nombre de personnes
@@ -340,6 +373,7 @@ export function EditableBookingCard({
                 min="1"
                 max={listing.maxGuests || 10}
                 className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
+                disabled={isLocked}
               />
             </div>
           ) : (
@@ -356,7 +390,11 @@ export function EditableBookingCard({
 
         {/* Price */}
         {nights > 0 && listing.pricePerNight && (
-          <div className="bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20 rounded-xl p-4">
+          <div className={`rounded-xl p-4 ${
+            isLocked 
+              ? "bg-slate-50 dark:bg-slate-800/30" 
+              : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
+          }`}>
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center">
                 <IoWalletOutline className="text-white text-sm" />
@@ -394,6 +432,18 @@ export function EditableBookingCard({
           </div>
         )}
 
+        {/* Message verrouillé si offre acceptée */}
+        {isLocked && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 text-center border border-emerald-200 dark:border-emerald-800/30">
+            <div className="flex items-center justify-center gap-2">
+              <IoCheckmarkCircleOutline className="text-emerald-500 text-sm" />
+              <p className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
+                Offre acceptée - Les dates sont verrouillées
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Error message */}
         {error && (
           <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-3 text-center border border-red-200 dark:border-red-800/30">
@@ -404,7 +454,7 @@ export function EditableBookingCard({
         )}
 
         {/* Action buttons */}
-        {isEditing && (
+        {isEditing && !isLocked && (
           <div className="flex gap-3 pt-2">
             <button
               onClick={handleCancel}

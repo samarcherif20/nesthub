@@ -31,23 +31,61 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
+    // ✅ Récupérer le listing via ListingService
     const listing = await ListingService.getListingById(
       id,
       shouldIncrementViews,
     );
-    if (!listing)
+    
+    if (!listing) {
       return NextResponse.json(
         { error: "Annonce non trouvée" },
         { status: 404 },
       );
-    return NextResponse.json(listing);
+    }
+
+    // ✅ AJOUT : Récupérer les pending bookings (offres acceptées en attente de paiement)
+    const pendingBookings = await prisma.pendingBooking.findMany({
+      where: {
+        listingId: id,
+        expiresAt: { gt: new Date() }, // Non expirées
+        isReleased: false,
+      },
+    });
+
+    // ✅ Extraire les dates des pending bookings
+    const pendingDates = pendingBookings.flatMap(pb => {
+      const dates = pb.dates as string[];
+      return dates.map(dateStr => dateStr.split("T")[0]);
+    });
+
+    // ✅ Récupérer les blocked dates normales (si pas déjà dans listing)
+    const blockedDatesList = await prisma.blockedDate.findMany({
+      where: {
+        listingId: id,
+        startDate: { gte: new Date() },
+      },
+    });
+
+    const blockedDates = blockedDatesList.map(bd => 
+      bd.startDate.toISOString().split("T")[0]
+    );
+
+    // ✅ Fusionner les données
+    const response = {
+      ...listing,
+      blockedDates: blockedDates,
+      pendingDates: pendingDates, // ✅ NOUVEAU
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("[GET /api/listings/:id] Erreur:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-// POST - Incrémenter les vues
+// POST - Incrémenter les vues (inchangé)
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -95,7 +133,7 @@ export async function POST(
   }
 }
 
-// PUT - Mise à jour (✅ sans getListingId)
+// PUT - Mise à jour (inchangé)
 export const PUT = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;
@@ -136,11 +174,10 @@ export const PUT = withAuth(
   {
     requireListingAccess: true,
     requiredPermission: "edit",
-    // ✅ getListingId supprimé - withAuth récupère l'id depuis context.params
   },
 );
 
-// DELETE
+// DELETE (inchangé)
 export const DELETE = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;
@@ -162,7 +199,7 @@ export const DELETE = withAuth(
   },
 );
 
-// PATCH
+// PATCH (inchangé)
 export const PATCH = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;

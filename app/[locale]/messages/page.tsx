@@ -1,9 +1,10 @@
-// app/fr/messages/page.tsx
+// app/[locale]/messages/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
 import {
   IoSearchOutline,
   IoChatbubbleOutline,
@@ -12,110 +13,29 @@ import {
 import { ChatBox } from "@/components/ui/chat/ChatBox";
 import { EditableBookingCard } from "@/components/ui/chat/EditableBookingCard";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { TenantHeader } from "@/components/ui/header/TenantHeader";
+import { 
+  useMessages, 
+  formatRelativeTime, 
+  pipAvatar, 
+  GRAD 
+} from "./hooks/useMessages";
 
-// ─── pip helpers ──────────────────────────────────────────────────────────────
-
-const pipAvatar = (url: string) =>
-  `/api/users/avatar?url=${encodeURIComponent(url)}`;
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-
-const GRAD = "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Conversation {
-  id: string;
-  listing: {
-    id: string;
-    title: string;
-    image?: string;
-    pricePerNight?: number;
-    location?: string;
-    rating?: number;
-    bedrooms?: number;
-    maxGuests?: number;
-    cleaningFee?: number;
-    type?: string;
-  };
-  otherUser: {
-    id: string;
-    name: string;
-    image?: string;
-    isOnline?: boolean;
-    isVerified?: boolean;
-  };
-  infoRequest?: {
-    id: string;
-    checkIn: string;
-    checkOut: string;
-    guests: number;
-    status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
-    expiresAt?: string;
-  };
-   offer?: {  // 👈 AJOUTEZ CETTE PROPRIÉTÉ
-    id: string;
-    status: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
-    totalPrice: number;
-    createdAt: string;
-    expiresAt: string;
-  };
-  lastMessage?: string;
-  lastMessageAt: string;
-  unreadCount: number;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function formatRelativeTime(dateStr: string) {
-  if (!dateStr) return "";
-
-  const date = new Date(dateStr);
-  const now = new Date();
-
-  // Vérifier si la date est valide
-  if (isNaN(date.getTime())) return "";
-
-  let diffMs = now.getTime() - date.getTime();
-  if (diffMs < 0) diffMs = 0;
-
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
-  const diffDays = Math.floor(diffMs / 86400000);
-
-  if (diffMins < 1) return "À l'instant";
-  if (diffMins < 60) return `il y a ${diffMins} min`;
-  if (diffHours < 24) return `il y a ${diffHours} h`;
-  if (diffDays === 1) return "hier";
-  if (diffDays < 7) return `il y a ${diffDays} jours`;
-
-  return date.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-  });
-}
-
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-
+// ─── Avatar Component ─────────────────────────────────────────────────────────
 function Avatar({
   src,
   name,
   size = 44,
-  online,
 }: {
   src?: string;
   name: string;
   size?: number;
-  online?: boolean;
 }) {
   const [err, setErr] = useState(false);
   const url = src ? pipAvatar(src) : null;
 
   return (
-    <div
-      className="relative flex-shrink-0"
-      style={{ width: size, height: size }}
-    >
+    <div className="relative flex-shrink-0" style={{ width: size, height: size }}>
       <div
         className="w-full h-full rounded-full overflow-hidden flex items-center justify-center font-bold text-white"
         style={{
@@ -142,17 +62,22 @@ function Avatar({
   );
 }
 
-// ─── Conversation item ────────────────────────────────────────────────────────
-
+// ─── Conversation Item Component ──────────────────────────────────────────────
 function ConvItem({
   conv,
   isActive,
   onClick,
+  t,
 }: {
-  conv: Conversation;
+  conv: any;
   isActive: boolean;
   onClick: () => void;
+  t: any;
 }) {
+  const hasOffer = conv.offer?.status === "PENDING";
+  const isOfferAccepted = conv.offer?.status === "ACCEPTED";
+  const isOfferRejected = conv.offer?.status === "REJECTED";
+
   return (
     <button
       onClick={onClick}
@@ -163,12 +88,7 @@ function ConvItem({
       }`}
     >
       <div className="flex items-center gap-3 p-4">
-        <Avatar
-          src={conv.otherUser.image}
-          name={conv.otherUser.name}
-          size={52}
-          online={conv.otherUser.isOnline}
-        />
+        <Avatar src={conv.otherUser.image} name={conv.otherUser.name} size={52} />
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-baseline gap-2 mb-0.5">
             <span className="text-sm font-semibold truncate text-gray-900 dark:text-white">
@@ -181,8 +101,24 @@ function ConvItem({
           <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate font-medium mb-1">
             {conv.listing.title}
           </p>
-          {conv.lastMessage && (
-            <p className="text-xs text-gray-400 dark:text-gray-500 truncate">
+          {hasOffer && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              {t("offer.pending")}
+            </span>
+          )}
+          {isOfferAccepted && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded-full">
+              {t("offer.accepted")}
+            </span>
+          )}
+          {isOfferRejected && (
+            <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/30 px-2 py-0.5 rounded-full">
+              {t("offer.rejected")}
+            </span>
+          )}
+          {!hasOffer && !isOfferAccepted && !isOfferRejected && conv.lastMessage && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">
               {conv.lastMessage.length > 50
                 ? conv.lastMessage.slice(0, 50) + "..."
                 : conv.lastMessage}
@@ -201,20 +137,17 @@ function ConvItem({
   );
 }
 
-// ─── Composant ResizableDiv ───────────────────────────────────────────────────
-
+// ─── Resizable Div Component ──────────────────────────────────────────────────
 function ResizableDiv({
   children,
   defaultWidth = 380,
   minWidth = 280,
   maxWidth = 500,
-  className = "",
 }: {
   children: React.ReactNode;
   defaultWidth?: number;
   minWidth?: number;
   maxWidth?: number;
-  className?: string;
 }) {
   const [width, setWidth] = useState(defaultWidth);
   const [isResizing, setIsResizing] = useState(false);
@@ -229,16 +162,13 @@ function ResizableDiv({
     document.body.style.userSelect = "none";
   };
 
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isResizing) return;
-      const delta = e.clientX - startXRef.current;
-      let newWidth = startWidthRef.current + delta;
-      newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
-      setWidth(newWidth);
-    },
-    [isResizing, minWidth, maxWidth],
-  );
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    const delta = e.clientX - startXRef.current;
+    let newWidth = startWidthRef.current + delta;
+    newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+    setWidth(newWidth);
+  }, [isResizing, minWidth, maxWidth]);
 
   const handleMouseUp = useCallback(() => {
     setIsResizing(false);
@@ -258,7 +188,7 @@ function ResizableDiv({
   }, [isResizing, handleMouseMove, handleMouseUp]);
 
   return (
-    <div className={`relative flex-shrink-0 ${className}`} style={{ width }}>
+    <div className="relative flex-shrink-0" style={{ width }}>
       {children}
       <div
         onMouseDown={handleMouseDown}
@@ -270,125 +200,49 @@ function ResizableDiv({
   );
 }
 
-// ─── Skeleton loader pour les conversations ───────────────────────────────────
-
-function ConvSkeleton() {
+// ─── Empty State Component ────────────────────────────────────────────────────
+function EmptyState({ title, message, t }: { title: string; message: string; t: any }) {
   return (
-    <div className="flex items-center gap-3 p-4 animate-pulse">
-      <div className="w-[52px] h-[52px] rounded-full bg-gray-100 dark:bg-slate-800 shrink-0" />
-      <div className="flex-1 space-y-2">
-        <div className="h-3 bg-gray-100 dark:bg-slate-800 rounded-full w-2/3" />
-        <div className="h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full w-full" />
-        <div className="h-2.5 bg-gray-100 dark:bg-slate-800 rounded-full w-1/2" />
+    <div className="flex flex-col items-center justify-center h-full text-center p-8">
+      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center mb-4">
+        <IoChatbubbleOutline className="w-8 h-8 text-sky-500 dark:text-sky-400" />
       </div>
+      <p className="text-slate-500 dark:text-slate-400 font-medium">
+        {title}
+      </p>
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+        {message}
+      </p>
     </div>
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TenantMessagesPage() {
-  const { user } = useUser();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "unread" | "read">(
-    "all",
-  );
-  const [isMobileView, setIsMobileView] = useState(false);
-  const [showChat, setShowChat] = useState(false);
-  const searchParams = useSearchParams();
-  const conversationIdParam = searchParams.get("conversation");
-
-  // Détecter l'écran mobile
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobileView(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Auto-select from URL param
-  useEffect(() => {
-    if (conversationIdParam && conversations.length > 0 && !isMobileView) {
-      const conv = conversations.find((c) => c.id === conversationIdParam);
-      if (conv) setSelectedConv(conv);
-    }
-  }, [conversationIdParam, conversations, isMobileView]);
-
-  // Load conversations
-  const loadConversations = useCallback(async () => {
-    try {
-      const res = await fetch("/api/conversations");
-      if (!res.ok) return;
-      const data = await res.json();
-      setConversations(data);
-      if (data.length > 0 && !conversationIdParam && !isMobileView) {
-        setSelectedConv(data[0]);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [conversationIdParam, isMobileView]);
-
-  useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
-
-  const handleSelectConv = useCallback(
-    (conv: Conversation) => {
-      setSelectedConv(conv);
-      if (isMobileView) {
-        setShowChat(true);
-      }
-    },
-    [isMobileView],
-  );
-
-  const handleBack = () => {
-    setShowChat(false);
-    setSelectedConv(null);
-  };
-
-  const handleUpdateInfoRequest = useCallback((updatedInfoRequest: any) => {
-    setSelectedConv((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        infoRequest: updatedInfoRequest,
-      };
-    });
-  }, []);
-
-  const handleSendSystemMessage = useCallback((message: string) => {
-    console.log("System message to send:", message);
-  }, []);
-
-  // Filtrer les conversations par recherche et par statut de lecture
-  const filteredBySearch = conversations.filter(
-    (c) =>
-      c.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.listing.title.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  const filtered = filteredBySearch.filter((c) => {
-    if (filterType === "unread") return c.unreadCount > 0;
-    if (filterType === "read") return c.unreadCount === 0;
-    return true;
-  });
-
-  const unreadCount = conversations.filter((c) => c.unreadCount > 0).length;
+  const t = useTranslations("MessagesPage");
+  const {
+    conversations,
+    selectedConv,
+    isLoading,
+    searchQuery,
+    filterType,
+    unreadCount,
+    filtered,
+    isMobileView,
+    showChat,
+    setSearchQuery,
+    setFilterType,
+    handleSelectConv,
+    handleBack,
+    handleUpdateInfoRequest,
+    handleSendSystemMessage,
+  } = useMessages();
 
   if (isLoading) {
     return (
       <LoadingSpinner
         fullScreen
-        text="Chargement des messages..."
+        text={t("loading")}
         size="lg"
         color="primary"
         variant="spinner"
@@ -400,7 +254,7 @@ export default function TenantMessagesPage() {
   // Vue mobile
   if (isMobileView) {
     return (
-      <div className="h-screen bg-gradient-to-br from-sky-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
+      <div className="h-screen bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900 overflow-hidden">
         {showChat && selectedConv ? (
           <div className="h-full flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
             <div className="flex items-center gap-3 p-3 border-b border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90">
@@ -410,19 +264,12 @@ export default function TenantMessagesPage() {
               >
                 <IoArrowBackOutline className="w-5 h-5" />
               </button>
-              <Avatar
-                src={selectedConv.otherUser.image}
-                name={selectedConv.otherUser.name}
-                size={36}
-                online={selectedConv.otherUser.isOnline}
-              />
+              <Avatar src={selectedConv.otherUser.image} name={selectedConv.otherUser.name} size={36} />
               <div>
                 <p className="font-medium text-slate-900 dark:text-white">
                   {selectedConv.otherUser.name}
                 </p>
-                <p className="text-xs text-slate-500">
-                  {selectedConv.listing.title}
-                </p>
+                <p className="text-xs text-slate-500">{selectedConv.listing.title}</p>
               </div>
             </div>
             <div className="flex-1 overflow-hidden">
@@ -432,9 +279,8 @@ export default function TenantMessagesPage() {
                 recipientName={selectedConv.otherUser.name}
                 recipientImage={selectedConv.otherUser.image}
                 listingTitle={selectedConv.listing.title}
-                offerId={selectedConv.offer?.id} // 👈 AJOUTEZ CETTE LIGNE
-                offerStatus={selectedConv.offer?.status} // 👈 AJOUTE CETTE LIGNE
-
+                offerId={selectedConv.offer?.id}
+                offerStatus={selectedConv.offer?.status}
                 listing={{
                   id: selectedConv.listing.id,
                   title: selectedConv.listing.title,
@@ -454,7 +300,7 @@ export default function TenantMessagesPage() {
           <div className="h-full flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm">
             <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90">
               <h1 className="text-xl font-bold bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent">
-                Messages
+                {t("title")}
               </h1>
               <div className="mt-3">
                 <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2">
@@ -463,7 +309,7 @@ export default function TenantMessagesPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Rechercher une discussion..."
+                    placeholder={t("searchPlaceholder")}
                     className="flex-1 bg-transparent border-none outline-none text-sm"
                   />
                 </div>
@@ -471,12 +317,11 @@ export default function TenantMessagesPage() {
             </div>
             <div className="flex-1 overflow-y-auto">
               {filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                  <IoChatbubbleOutline className="w-12 h-12 text-slate-300 dark:text-slate-700 mb-3" />
-                  <p className="text-slate-500 dark:text-slate-400">
-                    Aucune conversation
-                  </p>
-                </div>
+                <EmptyState 
+                  title={searchQuery ? t("noResults") : t("noConversations")}
+                  message={searchQuery ? t("noResultsHint") : t("noConversationsHint")}
+                  t={t}
+                />
               ) : (
                 filtered.map((conv) => (
                   <ConvItem
@@ -484,6 +329,7 @@ export default function TenantMessagesPage() {
                     conv={conv}
                     isActive={false}
                     onClick={() => handleSelectConv(conv)}
+                    t={t}
                   />
                 ))
               )}
@@ -498,163 +344,154 @@ export default function TenantMessagesPage() {
   const hasInfoRequest = !!selectedConv?.infoRequest;
 
   return (
-    <div className="flex h-screen bg-gradient-to-br from-sky-50 via-white to-purple-50 dark:from-slate-950 dark:via-slate-900 dark:to-purple-950">
-      {/* Colonne gauche - Liste des messages (resizable) */}
-      <ResizableDiv defaultWidth={380} minWidth={280} maxWidth={500}>
-        <div className="h-full border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-          <div className="p-5 border-b border-slate-200/50 dark:border-slate-800/50">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-              Conversations
-            </h1>
+    <div className="h-screen flex flex-col bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900 overflow-hidden">
+      <TenantHeader />
+      <div className="flex flex-1 overflow-hidden">
+        {/* Colonne gauche - Liste des messages (resizable) */}
+        <ResizableDiv defaultWidth={380} minWidth={280} maxWidth={500}>
+          <div className="h-full border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+            <div className="p-5 border-b border-slate-200/50 dark:border-slate-800/50">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                {t("conversations")}
+              </h1>
 
-            {/* Filtres */}
-            <div className="flex gap-2 mb-4">
-              <button
-                onClick={() => setFilterType("all")}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  filterType === "all"
-                    ? "bg-indigo-500 text-white shadow-md"
-                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
-                }`}
-              >
-                Toutes ({conversations.length})
-              </button>
-              <button
-                onClick={() => setFilterType("unread")}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
-                  filterType === "unread"
-                    ? "bg-indigo-500 text-white shadow-md"
-                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
-                }`}
-              >
-                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                Non lus ({unreadCount})
-              </button>
-              <button
-                onClick={() => setFilterType("read")}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                  filterType === "read"
-                    ? "bg-indigo-500 text-white shadow-md"
-                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
-                }`}
-              >
-                Lus ({conversations.length - unreadCount})
-              </button>
-            </div>
-
-            <hr className="border-t border-gray-200 dark:border-gray-700 mb-4" />
-
-            <div className="mt-4">
-              <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-3 py-2 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all focus-within:ring-2 focus-within:ring-indigo-400">
-                <IoSearchOutline className="text-slate-400 text-lg" />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Rechercher une discussion..."
-                  className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder-slate-400"
-                />
+              {/* Filtres */}
+              <div className="flex gap-2 mb-4">
+                <button
+                  onClick={() => setFilterType("all")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    filterType === "all"
+                      ? "bg-indigo-500 text-white shadow-md"
+                      : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {t("filters.all")} ({conversations.length})
+                </button>
+                <button
+                  onClick={() => setFilterType("unread")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
+                    filterType === "unread"
+                      ? "bg-indigo-500 text-white shadow-md"
+                      : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                  {t("filters.unread")} ({unreadCount})
+                </button>
+                <button
+                  onClick={() => setFilterType("read")}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+                    filterType === "read"
+                      ? "bg-indigo-500 text-white shadow-md"
+                      : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {t("filters.read")} ({conversations.length - unreadCount})
+                </button>
               </div>
-            </div>
-          </div>
 
-          <div className="flex-1 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center mb-4">
-                  <IoChatbubbleOutline className="w-8 h-8 text-sky-500 dark:text-sky-400" />
-                </div>
-                <p className="text-slate-500 dark:text-slate-400 font-medium">
-                  {searchQuery ? "Aucun résultat" : "Aucune conversation"}
-                </p>
-                {!searchQuery && filterType !== "all" && (
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                    Aucune conversation{" "}
-                    {filterType === "unread" ? "non lue" : "lue"}
-                  </p>
-                )}
-                {!searchQuery && filterType === "all" && (
-                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
-                    Vos messages apparaîtront ici
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="py-1">
-                {filtered.map((conv) => (
-                  <ConvItem
-                    key={conv.id}
-                    conv={conv}
-                    isActive={selectedConv?.id === conv.id}
-                    onClick={() => handleSelectConv(conv)}
+              <hr className="border-t border-gray-200 dark:border-gray-700 mb-4" />
+
+              <div className="mt-4">
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-800 rounded-xl px-3 py-2 shadow-sm border border-slate-200/50 dark:border-slate-700/50 transition-all focus-within:ring-2 focus-within:ring-indigo-400">
+                  <IoSearchOutline className="text-slate-400 text-lg" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder={t("searchPlaceholder")}
+                    className="flex-1 bg-transparent outline-none text-sm text-slate-900 dark:text-white placeholder-slate-400"
                   />
-                ))}
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      </ResizableDiv>
-
-      {/* Colonne droite - Chat + Carte intégrée */}
-      <div className="flex-1 flex flex-col">
-        {selectedConv ? (
-          <div className="flex-1 flex gap-4 p-4 overflow-hidden">
-            {/* ChatBox */}
-            <div className="flex-1 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-lg border border-slate-200/50 dark:border-slate-700/50 transition-all">
-              <ChatBox
-                conversationId={selectedConv.id}
-                recipientId={selectedConv.otherUser.id}
-                recipientName={selectedConv.otherUser.name}
-                recipientImage={selectedConv.otherUser.image}
-                listingTitle={selectedConv.listing.title}
-                offerId={selectedConv.offer?.id} // 👈 AJOUTEZ CETTE LIGNE
-                offerStatus={selectedConv.offer?.status} // 👈 AJOUTE CETTE LIGNE
-
-                listing={{
-                  id: selectedConv.listing.id,
-                  title: selectedConv.listing.title,
-                  image: selectedConv.listing.image,
-                  pricePerNight: selectedConv.listing.pricePerNight,
-                  location: selectedConv.listing.location,
-                  bedrooms: selectedConv.listing.bedrooms,
-                  maxGuests: selectedConv.listing.maxGuests,
-                  cleaningFee: selectedConv.listing.cleaningFee,
-                  infoRequestId: selectedConv.infoRequest?.id,
-                }}
-                userRole="TENANT"
-              />
             </div>
 
-            {/* Carte du logement */}
-            {hasInfoRequest && selectedConv.infoRequest && (
-              <div className="w-[280] flex-shrink-0 flex items-center justify-center overflow-y-auto">
-                <EditableBookingCard
-                  listing={selectedConv.listing}
-                  infoRequestId={selectedConv.infoRequest.id}
-                  initialCheckIn={selectedConv.infoRequest.checkIn}
-                  initialCheckOut={selectedConv.infoRequest.checkOut}
-                  initialGuests={selectedConv.infoRequest.guests}
-                  onUpdate={handleUpdateInfoRequest}
-                  onSendSystemMessage={handleSendSystemMessage}
+            <div className="flex-1 overflow-y-auto">
+              {filtered.length === 0 ? (
+                <EmptyState 
+                  title={searchQuery ? t("noResults") : t("noConversations")}
+                  message={searchQuery ? t("noResultsHint") : searchQuery ? "" : t("noConversationsHint")}
+                  t={t}
+                />
+              ) : (
+                <div className="py-1">
+                  {filtered.map((conv) => (
+                    <ConvItem
+                      key={conv.id}
+                      conv={conv}
+                      isActive={selectedConv?.id === conv.id}
+                      onClick={() => handleSelectConv(conv)}
+                      t={t}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </ResizableDiv>
+
+        {/* Colonne droite - Chat + Carte intégrée */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {selectedConv ? (
+            <div className="flex-1 flex gap-4 p-4 overflow-hidden">
+              {/* ChatBox */}
+              <div className="flex-1 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-lg border border-slate-200/50 dark:border-slate-700/50 transition-all">
+                <ChatBox
+                  conversationId={selectedConv.id}
+                  recipientId={selectedConv.otherUser.id}
+                  recipientName={selectedConv.otherUser.name}
+                  recipientImage={selectedConv.otherUser.image}
+                  listingTitle={selectedConv.listing.title}
+                  offerId={selectedConv.offer?.id}
+                  offerStatus={selectedConv.offer?.status}
+                  listing={{
+                    id: selectedConv.listing.id,
+                    title: selectedConv.listing.title,
+                    image: selectedConv.listing.image,
+                    pricePerNight: selectedConv.listing.pricePerNight,
+                    location: selectedConv.listing.location,
+                    bedrooms: selectedConv.listing.bedrooms,
+                    maxGuests: selectedConv.listing.maxGuests,
+                    cleaningFee: selectedConv.listing.cleaningFee,
+                    infoRequestId: selectedConv.infoRequest?.id,
+                  }}
+                  userRole="TENANT"
                 />
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center mx-auto mb-4">
-                <IoChatbubbleOutline className="w-10 h-10 text-sky-500 dark:text-sky-400" />
-              </div>
-              <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">
-                Sélectionnez une conversation
-              </p>
-              <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
-                pour commencer à discuter
-              </p>
+
+              {/* Carte du logement */}
+              {hasInfoRequest && selectedConv.infoRequest && (
+                <div className="w-[280px] flex-shrink-0 flex items-center justify-center overflow-y-auto">
+                  <EditableBookingCard
+                    listing={selectedConv.listing}
+                    infoRequestId={selectedConv.infoRequest.id}
+                    initialCheckIn={selectedConv.infoRequest.checkIn}
+                    initialCheckOut={selectedConv.infoRequest.checkOut}
+                    initialGuests={selectedConv.infoRequest.guests}
+                    onUpdate={handleUpdateInfoRequest}
+                    onSendSystemMessage={handleSendSystemMessage}
+                    isOfferAccepted={selectedConv.offer?.status === "ACCEPTED"}
+                    offerStatus={selectedConv.offer?.status}
+                  />
+                </div>
+              )}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center mx-auto mb-4">
+                  <IoChatbubbleOutline className="w-10 h-10 text-sky-500 dark:text-sky-400" />
+                </div>
+                <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">
+                  {t("selectConversation")}
+                </p>
+                <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+                  {t("selectConversationHint")}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -160,6 +160,7 @@ model User {
   // Pour les signalements (Report)
   reportsCreated Report[] @relation("reports")
   reportReceived Report[] @relation("reported")
+  paymentTransactions PaymentTransaction[]  // 👈 Relation inverse pour PaymentTransaction
 
   @@index([email])
   @@index([status])
@@ -1485,7 +1486,7 @@ model Offer {
   parentOfferId  String?
   parentOffer    Offer?        @relation("CounterOffers", fields: [parentOfferId], references: [id])
   childOffers    Offer[]       @relation("CounterOffers")
-  
+  paymentTransactions PaymentTransaction[]  // 👈 Relation inverse pour PaymentTransaction
   expiresAt      DateTime
   acceptedAt     DateTime?
   rejectedAt     DateTime?
@@ -1568,4 +1569,27 @@ model PendingBooking {
   @@index([expiresAt])
   @@index([isReleased])
   @@map("pending_bookings")
+}
+// Ajoute à ton schema.prisma
+model PaymentTransaction {
+  id                    String    @id @default(cuid())
+  offerId               String
+  offer                 Offer     @relation(fields: [offerId], references: [id])
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id])
+  amount                Float
+  currency              String    @default("TND")
+  status                String    @default("PENDING") // PENDING, SUCCESS, FAILED, REFUNDED
+  provider              String    @default("KONNECT")
+  providerTransactionId String?
+  paymentUrl            String?
+  metadata              Json?
+  error                 String?
+  paidAt                DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([offerId])
+  @@index([userId])
+  @@index([status])
 }

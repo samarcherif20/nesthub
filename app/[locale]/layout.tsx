@@ -40,6 +40,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
         <body suppressHydrationWarning>
           <ThemeProviderWrapper>
             <NextIntlClientProvider messages={messages} locale={locale}>
+              
               {children}
             </NextIntlClientProvider>
           </ThemeProviderWrapper>

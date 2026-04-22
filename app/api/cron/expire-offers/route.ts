@@ -1,13 +1,25 @@
-import { NextResponse } from "next/server";
+// app/api/cron/expire-offers/route.ts
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-// Ce endpoint doit être appelé par un CRON toutes les heures
-// Sur Vercel: utiliser vercel.json ou le dashboard
-export async function GET() {
+export const runtime = "nodejs";
+export const maxDuration = 300;
+
+export async function POST(req: NextRequest) {
   try {
+    // ✅ Ajoute cette vérification d'auth
+    const authHeader = req.headers.get("authorization");
+    const isValidAuth = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+    const isDev = process.env.NODE_ENV === "development";
+
+    if (!isValidAuth && !isDev) {
+      console.error("❌ Cron: Authentification échouée");
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    console.log("🕐 Cron: Expiration des offres");
     const now = new Date();
 
-    // Trouver les offres expirées
     const expiredOffers = await prisma.offer.findMany({
       where: {
         status: "PENDING",
@@ -16,23 +28,19 @@ export async function GET() {
       include: {
         listing: true,
         infoRequest: {
-          include: {
-            conversation: true,
-          },
+          include: { conversation: true },
         },
       },
     });
 
-    console.log(`🔍 ${expiredOffers.length} offres expirées trouvées`);
+    console.log(`📊 ${expiredOffers.length} offre(s) expirée(s)`);
 
     for (const offer of expiredOffers) {
-      // Mettre à jour le statut
       await prisma.offer.update({
         where: { id: offer.id },
         data: { status: "EXPIRED" },
       });
 
-      // Message système dans le chat
       const conversation = offer.infoRequest?.conversation;
       if (conversation) {
         await prisma.message.create({
@@ -47,14 +55,13 @@ export async function GET() {
         });
       }
 
-      // Notifier les deux parties
       await prisma.notification.createMany({
         data: [
           {
             userId: offer.tenantId,
             type: "OFFER_EXPIRED",
             title: "Offre expirée",
-            content: `Votre offre pour "${offer.listing.title}" a expiré faute de réponse.`,
+            content: `Votre offre pour "${offer.listing.title}" a expiré.`,
             data: { offerId: offer.id },
             channels: ["IN_APP", "EMAIL"],
           },
@@ -62,7 +69,7 @@ export async function GET() {
             userId: offer.ownerId,
             type: "OFFER_EXPIRED",
             title: "Offre expirée",
-            content: `L'offre de ${offer.tenantId} pour "${offer.listing.title}" a expiré.`,
+            content: `L'offre pour "${offer.listing.title}" a expiré.`,
             data: { offerId: offer.id },
             channels: ["IN_APP", "EMAIL"],
           },

@@ -30,6 +30,7 @@ export interface Listing {
   blockedDates: string[];
   houseRules: string[];
   owner: Owner;
+  pendingDates: string[]; // ✅ AJOUT
 }
 
 export interface BookingData {
@@ -86,7 +87,7 @@ export function useListing(id: string) {
           equipment: data.equipment ?? {},
           availability: data.availability ?? {},
           blockedDates: data.blockedDates ?? [],
-          houseRules: data.houseRules ?? defaultHouseRules,
+          pendingDates: data.pendingDates ?? [], // ✅ AJOUT          houseRules: data.houseRules ?? defaultHouseRules,
           owner: {
             name: data.owner?.name ?? "Hôte NestHub",
             isVerified: data.owner?.isVerified ?? true,

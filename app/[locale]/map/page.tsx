@@ -1,6 +1,9 @@
+// app/[locale]/map/page.tsx
 "use client";
+
 import { useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 import "leaflet/dist/leaflet.css";
 import {
@@ -39,11 +42,16 @@ const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
   ssr: false,
 });
 
-// Style dégradé
-const gradientButton =
-  "bg-gradient-to-r from-sky-500 via-sky-400 to-purple-600 hover:from-sky-600 hover:via-sky-500 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300";
+const gradientButton = `
+  bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 
+  hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600
+  text-white shadow-md hover:shadow-lg 
+  transition-all duration-300
+`;
 
-// Fonction proxy pour les images
+const gradientText =
+  "bg-gradient-to-r from-indigo-600 via-sky-500 to-purple-600 bg-clip-text text-transparent";
+
 const getImageUrl = (url: string | null | undefined): string => {
   if (!url) return "https://placehold.co/600x400/e2e8f0/1e90ff?text=NestHub";
   if (url.includes("vercel-storage.com")) {
@@ -53,6 +61,7 @@ const getImageUrl = (url: string | null | undefined): string => {
 };
 
 export default function MapPage() {
+  const t = useTranslations("MapPage");
   const {
     filteredListings,
     loading,
@@ -92,16 +101,16 @@ export default function MapPage() {
     e.stopPropagation();
     const isFav = !favorites.includes(id);
     toggleFavorite(id);
-    showAlert("success", isFav ? "Ajouté aux favoris" : "Retiré des favoris");
+    showAlert("success", isFav ? t("alerts.added") : t("alerts.removed"));
   };
 
   const handleResetFilters = () => {
     resetFilters();
-    showAlert("info", "Tous les filtres ont été réinitialisés");
+    showAlert("info", t("alerts.reset"));
   };
 
   const handleApplyFilters = () => {
-    showAlert("success", "Filtres appliqués");
+    showAlert("success", t("alerts.applied"));
   };
 
   if (!L || loading) {
@@ -111,7 +120,7 @@ export default function MapPage() {
         variant="spinner"
         size="lg"
         color="primary"
-        text="Chargement de la map..."
+        text={t("loading")}
         speed="normal"
       />
     );
@@ -121,9 +130,8 @@ export default function MapPage() {
 
   return (
     <div className="relative min-h-screen bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900">
-      {/* Alert Banner */}
       {alert && (
-        <div className="fixed top-24 right-8 z-[60] animate-in slide-in-from-top-2 fade-in duration-300">
+        <div className="fixed top-20 right-8 z-[60] animate-in slide-in-from-top-2 fade-in duration-300">
           <AlertBanner
             type={alert.type}
             message={alert.message}
@@ -132,22 +140,26 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Compteur flottant sur la carte */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg border border-gray-200 dark:border-slate-800">
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-3">
+      {/* Counter floating on map */}
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full px-5 py-2.5 shadow-lg border border-slate-200 dark:border-slate-700">
+        <span className="text-sm font-medium text-slate-700 dark:text-slate-300 flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             <IoHomeOutline className="dark:text-white text-slate-900 text-sm" />
-            <span>{filteredCount} logements</span>
+            <span>
+              {filteredCount} {t("listings")}
+            </span>
           </span>
-          <span className="w-px h-4 bg-gray-300 dark:bg-gray-600"></span>
+          <span className="w-px h-4 bg-slate-300 dark:bg-slate-600"></span>
           <span className="flex items-center gap-1.5">
             <IoHeart className="text-red-500 text-sm" />
-            <span>{favoritesCount} favoris</span>
+            <span>
+              {favoritesCount} {t("favorites")}
+            </span>
           </span>
         </span>
       </div>
 
-      {/* Carte */}
+      {/* Map */}
       <MapContainer
         center={center}
         zoom={7}
@@ -191,48 +203,48 @@ export default function MapPage() {
                     {favorites.includes(listing.id) ? (
                       <IoHeart className="text-red-500 text-lg" />
                     ) : (
-                      <IoHeartOutline className="text-gray-600 dark:text-gray-400 text-lg" />
+                      <IoHeartOutline className="text-slate-600 dark:text-slate-400 text-lg" />
                     )}
                   </button>
                   {listing.isVerified && (
-                    <span className="absolute bottom-2 left-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm px-2 py-0.5 rounded-lg text-sky-600 dark:text-sky-400 text-xs font-bold flex items-center gap-1">
+                    <span className="absolute bottom-2 left-2 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-2 py-0.5 rounded-lg text-indigo-600 dark:text-indigo-400 text-xs font-bold flex items-center gap-1">
                       <IoCheckmarkCircle className="text-sm" />
-                      VÉRIFIÉ
+                      {t("verified")}
                     </span>
                   )}
                 </div>
-                <h3 className="font-semibold text-sm mt-2 line-clamp-1 text-gray-800 dark:text-white">
+                <h3 className="font-semibold text-sm mt-2 line-clamp-1 text-slate-800 dark:text-white">
                   {listing.title}
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                   <IoLocationOutline className="text-sm" />
                   {listing.governorate}, {listing.delegation}
                 </p>
                 <div className="flex items-center gap-3 mt-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     <IoBedOutline className="text-sm" /> {listing.bedrooms}
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     <IoWaterOutline className="text-sm" /> {listing.bathrooms}
                   </span>
                 </div>
                 <div className="flex items-center gap-1 mt-1">
                   <FaStar className="text-yellow-500 text-xs" />
-                  <span className="text-xs font-semibold text-gray-900 dark:text-white">
+                  <span className="text-xs font-semibold text-slate-900 dark:text-white">
                     {listing.rating || 4.5}
                   </span>
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    ({listing.reviewCount || 0} avis)
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    ({listing.reviewCount || 0} {t("reviews")})
                   </span>
                 </div>
-                <p className="text-sm font-bold bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent mt-2">
-                  {listing.pricePerNight} TND / nuit
+                <p className={`text-sm font-bold mt-2 ${gradientText}`}>
+                  {listing.pricePerNight} TND / {t("perNight")}
                 </p>
                 <Link
                   href={`/fr/listings/${listing.id}`}
                   className={`block mt-3 text-center text-white text-xs py-2 rounded-lg transition-all duration-300 ${gradientButton}`}
                 >
-                  Voir l'annonce
+                  {t("viewListing")}
                 </Link>
               </div>
             </Popup>
@@ -240,56 +252,56 @@ export default function MapPage() {
         ))}
       </MapContainer>
 
-      {/* Sidebar avec la liste et recherche */}
-      <div className="absolute top-4 left-4 bottom-4 w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden z-10 flex flex-col border border-gray-200 dark:border-slate-700">
-        {/* Header avec recherche */}
-        <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gradient-to-r from-sky-50 to-purple-50 dark:from-slate-900 dark:to-purple-900/50">
-          {/* Bouton retour */}
+      {/* Sidebar with listings and search */}
+      <div className="absolute top-4 left-4 bottom-4 w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden z-10 flex flex-col border border-slate-200 dark:border-slate-700">
+        {/* Header with search */}
+        <div className="p-4 border-b border-slate-200 dark:border-slate-700 bg-gradient-to-r from-sky-50 to-purple-50 dark:from-slate-900 dark:to-purple-900/50">
+          {/* Back button */}
           <Link
             href="/fr/search"
-            className="flex items-center justify-center gap-2 w-full mb-3 px-3 py-2 bg-white dark:bg-slate-900 rounded-lg hover:shadow-md transition-all duration-300 group"
+            className="flex items-center justify-center gap-2 w-full mb-3 px-3 py-2 bg-white dark:bg-slate-800 rounded-lg hover:shadow-md transition-all duration-300 group"
           >
-            <IoArrowBackOutline className="text-gray-500 group-hover:text-sky-600 dark:group-hover:text-sky-400 group-hover:-translate-x-1 transition-all duration-300" />
-            <span className="text-sm font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 group-hover:text-sky-600 dark:group-hover:text-sky-400">
-              RETOUR À LA RECHERCHE
+            <IoArrowBackOutline className="text-slate-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:-translate-x-1 transition-all duration-300" />
+            <span className="text-sm font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
+              {t("backToSearch")}
             </span>
           </Link>
 
-          {/* Barre de recherche */}
+          {/* Search bar */}
           <div className="relative">
-            <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm" />
+            <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
             <input
               type="text"
-              placeholder="Rechercher par titre, gouvernorat, délégation..."
+              placeholder={t("searchPlaceholder")}
               value={filters.searchTerm}
               onChange={(e) => updateSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 dark:focus:ring-sky-400 text-gray-700 dark:text-gray-200"
+              className="w-full pl-9 pr-8 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-slate-700 dark:text-slate-200"
             />
             {filters.searchTerm && (
               <button
                 onClick={() => updateSearchTerm("")}
                 className="absolute right-3 top-1/2 -translate-y-1/2"
               >
-                <IoCloseOutline className="text-gray-400 hover:text-gray-600 text-sm" />
+                <IoCloseOutline className="text-slate-400 hover:text-slate-600 text-sm" />
               </button>
             )}
           </div>
 
-          {/* Bouton filtres */}
+          {/* Filter button */}
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="flex items-center gap-2 mt-3 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-slate-900 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition w-full justify-center"
+            className="flex items-center gap-2 mt-3 px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-white dark:bg-slate-800 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition w-full justify-center"
           >
             <IoFilterOutline className="text-sm" />
-            {showFilters ? "Masquer les filtres" : "Afficher les filtres"}
+            {showFilters ? t("hideFilters") : t("showFilters")}
           </button>
 
-          {/* Panneau des filtres */}
+          {/* Filters panel */}
           {showFilters && (
-            <div className="mt-3 p-3 bg-white dark:bg-slate-900 rounded-lg space-y-3">
+            <div className="mt-3 p-3 bg-white dark:bg-slate-800 rounded-lg space-y-3">
               <div>
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400 block mb-1">
-                  Prix max: {filters.priceRange[1]} TND
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                  {t("maxPrice")} {filters.priceRange[1]} TND
                 </label>
                 <input
                   type="range"
@@ -303,73 +315,73 @@ export default function MapPage() {
                       parseInt(e.target.value),
                     ])
                   }
-                  className="w-full h-2 bg-sky-200 dark:bg-sky-900 rounded-lg cursor-pointer accent-sky-500"
+                  className="w-full h-2 bg-indigo-200 dark:bg-indigo-900 rounded-lg cursor-pointer accent-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400 block mb-1">
-                  Type de logement
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                  {t("propertyType")}
                 </label>
                 <select
                   value={filters.selectedType}
                   onChange={(e) => updateSelectedType(e.target.value)}
-                  className="w-full px-2 py-1 text-xs bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="w-full px-2 py-1 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 >
-                  <option value="all">Tous</option>
-                  <option value="villa">Villa</option>
-                  <option value="appartement">Appartement</option>
-                  <option value="maison">Maison</option>
-                  <option value="studio">Studio</option>
-                  <option value="duplex">Duplex</option>
+                  <option value="all">{t("allTypes")}</option>
+                  <option value="villa">{t("villa")}</option>
+                  <option value="appartement">{t("apartment")}</option>
+                  <option value="maison">{t("house")}</option>
+                  <option value="studio">{t("studio")}</option>
+                  <option value="duplex">{t("duplex")}</option>
                 </select>
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-600 dark:text-gray-400 block mb-1">
-                  Note minimale: {filters.minRating}+ ⭐
+                <label className="text-xs font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                  {t("minRating")} {filters.minRating}+ ⭐
                 </label>
                 <select
                   value={filters.minRating}
                   onChange={(e) => updateMinRating(Number(e.target.value))}
-                  className="w-full px-2 py-1 text-xs bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  className="w-full px-2 py-1 text-xs bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 >
-                  <option value={0}>Toutes</option>
-                  <option value={4}>4+ étoiles</option>
-                  <option value={4.5}>4.5+ étoiles</option>
+                  <option value={0}>{t("allRatings")}</option>
+                  <option value={4}>4+ {t("stars")}</option>
+                  <option value={4.5}>4.5+ {t("stars")}</option>
                 </select>
               </div>
 
               <button
                 onClick={handleResetFilters}
-                className="w-full px-3 py-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/30 rounded-lg hover:bg-sky-100 dark:hover:bg-sky-950/50 transition"
+                className="w-full px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition"
               >
-                Réinitialiser les filtres
+                {t("resetFilters")}
               </button>
 
               <button
                 onClick={handleApplyFilters}
                 className={`w-full px-3 py-1.5 text-xs font-medium rounded-lg transition ${gradientButton}`}
               >
-                Appliquer les filtres
+                {t("applyFilters")}
               </button>
             </div>
           )}
         </div>
 
-        {/* Liste des logements */}
+        {/* Listings list */}
         <div className="flex-1 overflow-y-auto p-3 space-y-2">
           {filteredCount === 0 ? (
             <div className="text-center py-10">
-              <IoHomeOutline className="text-4xl text-gray-300 dark:text-gray-600 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Aucun logement trouvé
+              <IoHomeOutline className="text-4xl text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {t("noListings")}
               </p>
               <button
                 onClick={handleResetFilters}
                 className={`mt-3 px-4 py-1.5 text-xs rounded-lg ${gradientButton}`}
               >
-                Réinitialiser les filtres
+                {t("resetFilters")}
               </button>
             </div>
           ) : (
@@ -379,7 +391,7 @@ export default function MapPage() {
                 href={`/fr/listings/${listing.id}`}
                 className="block transition-all duration-300"
               >
-                <div className="p-3 rounded-xl transition-all duration-300 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 hover:border-sky-300 dark:hover:border-sky-700 shadow-sm hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5">
+                <div className="p-3 rounded-xl transition-all duration-300 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 shadow-sm hover:shadow-lg hover:scale-[1.02] hover:-translate-y-0.5">
                   <div className="flex gap-3">
                     <div className="relative flex-shrink-0">
                       <img
@@ -393,14 +405,14 @@ export default function MapPage() {
                         onError={() => handleImageError(listing.id)}
                       />
                       {listing.isVerified && (
-                        <div className="absolute -top-1 -right-1 bg-sky-500 rounded-full p-0.5">
+                        <div className="absolute -top-1 -right-1 bg-indigo-500 rounded-full p-0.5">
                           <IoCheckmarkCircle className="text-white text-xs" />
                         </div>
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start gap-1">
-                        <h3 className="font-semibold text-sm line-clamp-1 text-gray-900 dark:text-white">
+                        <h3 className="font-semibold text-sm line-clamp-1 text-slate-900 dark:text-white">
                           {listing.title}
                         </h3>
                         <button
@@ -410,33 +422,35 @@ export default function MapPage() {
                           {favorites.includes(listing.id) ? (
                             <IoHeart className="text-red-500 text-sm" />
                           ) : (
-                            <IoHeartOutline className="text-gray-400 dark:text-gray-500 text-sm" />
+                            <IoHeartOutline className="text-slate-400 dark:text-slate-500 text-sm" />
                           )}
                         </button>
                       </div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
                         <IoLocationSharp className="text-xs" />
                         <span className="truncate">
                           {listing.governorate}, {listing.delegation}
                         </span>
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                           <IoBedOutline className="text-xs" />{" "}
                           {listing.bedrooms}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                           <IoWaterOutline className="text-xs" />{" "}
                           {listing.bathrooms}
                         </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                           <FaStar className="text-yellow-500 text-xs" />
                           {listing.rating || 4.5}
                         </span>
                       </div>
-                      <p className="font-bold bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent text-sm mt-1">
+                      <p className={`font-bold text-sm mt-1 ${gradientText}`}>
                         {listing.pricePerNight} TND{" "}
-                        <span className="text-xs text-gray-400">/ nuit</span>
+                        <span className="text-xs text-slate-400">
+                          {t("perNight")}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -446,16 +460,16 @@ export default function MapPage() {
           )}
         </div>
 
-        {/* Pied de la sidebar */}
-        <div className="p-3 border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50">
-          <div className="flex justify-between items-center text-xs text-gray-500 dark:text-gray-400">
+        {/* Sidebar footer */}
+        <div className="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+          <div className="flex justify-between items-center text-xs text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1">
               <IoEyeOutline className="text-xs" />
-              {filteredCount} / {totalListings} biens
+              {filteredCount} / {totalListings} {t("properties")}
             </span>
             <span className="flex items-center gap-1">
               <IoHeart className="text-red-500 text-xs" />
-              {favoritesCount} favoris
+              {favoritesCount} {t("favorites")}
             </span>
           </div>
         </div>

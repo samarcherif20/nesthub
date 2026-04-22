@@ -2,19 +2,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export const runtime = 'nodejs'; // Pour Vercel Edge
-export const maxDuration = 300; // 5 minutes max
+export const runtime = "nodejs";
+export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
-    // Vérifier la clé API pour la sécurité
+    // ✅ Ajoute cette vérification d'auth
     const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const isValidAuth = authHeader === `Bearer ${process.env.CRON_SECRET}`;
+    const isDev = process.env.NODE_ENV === "development";
+
+    if (!isValidAuth && !isDev) {
       console.error("❌ Cron: Authentification échouée");
-      return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    console.log("🕐 Cron: Début de la libération des réservations expirées");
+    console.log("🕐 Cron: Libération des réservations expirées");
     const now = new Date();
 
     const expiredBookings = await prisma.pendingBooking.findMany({
@@ -24,13 +27,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`📊 ${expiredBookings.length} réservation(s) expirée(s) trouvée(s)`);
+    console.log(`📊 ${expiredBookings.length} réservation(s) expirée(s)`);
     let releasedCount = 0;
 
     for (const booking of expiredBookings) {
       const dates = booking.dates as string[];
-      
-      // Libérer les dates
+
       for (const dateStr of dates) {
         const date = new Date(dateStr);
         await prisma.blockedDate.deleteMany({
@@ -54,19 +56,16 @@ export async function POST(req: NextRequest) {
         });
       }
 
-      // Marquer comme libéré
       await prisma.pendingBooking.update({
         where: { id: booking.id },
         data: { isReleased: true, releasedAt: now },
       });
 
-      // Mettre à jour l'offre
       await prisma.offer.update({
         where: { id: booking.offerId },
         data: { status: "EXPIRED" },
       });
 
-      // Récupérer l'offre pour la notification
       const offer = await prisma.offer.findUnique({
         where: { id: booking.offerId },
         include: { listing: true },
@@ -85,14 +84,12 @@ export async function POST(req: NextRequest) {
       }
 
       releasedCount++;
-      console.log(`✅ Réservation ${booking.id} libérée`);
     }
 
-    console.log(`🎉 Cron terminé: ${releasedCount} réservation(s) libérée(s)`);
     return NextResponse.json({
       success: true,
       releasedCount,
-      message: `${releasedCount} réservation(s) expirée(s) libérée(s)`,
+      message: `${releasedCount} réservation(s) libérée(s)`,
     });
   } catch (error) {
     console.error("❌ Erreur cron:", error);

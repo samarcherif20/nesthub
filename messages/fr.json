@@ -2679,5 +2679,382 @@
     "session_revoked": "Session révoquée avec succès",
     "session_error": "Erreur lors de la révocation de la session",
     "coming_soon": "Fonctionnalité à venir"
+  },
+
+  "SearchPage": {
+    "hero": {
+      "title": "Le luxe méditerranéen, organisé pour vous !",
+      "subtitle": "Découvrez les plus belles propriétés de la région"
+    },
+    "search": {
+      "location": "Zone",
+      "locationPlaceholder": "Où voulez-vous aller ?",
+      "dates": "Dates",
+      "checkIn": "Arrivée",
+      "checkOut": "Départ",
+      "guests": "Voyageurs",
+      "guestSingular": "voyageur",
+      "guestPlural": "voyageurs",
+      "button": "Rechercher"
+    },
+    "categories": {
+      "all": "Tous",
+      "Villa": "Villa",
+      "Appartement": "Appartement",
+      "Maison": "Maison",
+      "Studio": "Studio",
+      "Duplex": "Duplex"
+    },
+    "results": {
+      "title": "Dernières pépites pour vous",
+      "titleWithDestination": "Résultats pour \"{destination}\"",
+      "listingSingular": "logement trouvé",
+      "listingPlural": "logements trouvés",
+      "noResults": "Aucun résultat trouvé",
+      "noResultsHint": "Essayez de modifier vos filtres ou votre recherche"
+    },
+    "sort": {
+      "relevance": "Pertinence",
+      "priceAsc": "Prix croissant",
+      "priceDesc": "Prix décroissant",
+      "rating": "Meilleures notes"
+    },
+    "filters": {
+      "title": "Filtres",
+      "reset": "Réinitialiser",
+      "clearAll": "Tout effacer",
+      "maxPrice": "Prix maximum",
+      "rating": "Note minimale",
+      "bedrooms": "Chambres",
+      "amenities": "Équipements",
+      "all": "Tous",
+      "apply": "Appliquer !",
+      "resetAll": "Réinitialiser tous les filtres"
+    },
+    "map": {
+      "show": "Voir sur la carte"
+    },
+    "mobile": {
+      "explore": "Explorer",
+      "favorites": "Favoris",
+      "messages": "Messages",
+      "profile": "Profil"
+    },
+    "alerts": {
+      "addedToFavorites": "Ajouté aux favoris",
+      "removedFromFavorites": "Retiré des favoris",
+      "filtersReset": "Tous les filtres ont été réinitialisés"
+    },
+    "badges": {
+      "premium": "Premium",
+      "popular": "Populaire",
+      "new": "Nouveau"
+    },
+    "price": {
+      "perNight": "/nuit",
+      "perMonth": "/mois"
+    },
+    "reviews": "avis",
+    "details": {
+      "beds": "lits",
+      "baths": "sdb",
+      "guests": "pers."
+    },
+    "buttons": {
+      "bookNow": "Réserver maintenant...",
+      "book": "Réserver"
+    }
+  },
+
+  "FavoritesPage": {
+    "title": "Mes favoris",
+    "loading": "Chargement de vos favoris...",
+    "count": " Vous possédez {count} propriété(s) en favoris",
+    "total": "sur {total} total",
+    "clearAll": "Tout supprimer",
+    "reviews": "avis",
+    "alerts": {
+      "removed": "a été retiré de vos favoris",
+      "allRemoved": "Tous vos favoris ont été supprimés",
+      "addedToCompare": "ajouté à la comparaison",
+      "removedFromCompare": "retiré de la comparaison"
+    },
+    "modal": {
+      "title": "Supprimer tous les favoris ?",
+      "message": "Cette action est irréversible. Vous perdrez tous vos favoris.",
+      "cancel": "Annuler",
+      "confirm": "Supprimer tout"
+    },
+    "share": {
+      "title": "Mes favoris NestHub",
+      "text": "Découvrez ma sélection de propriétés sur NestHub",
+      "copied": "Lien copié dans le presse-papier !"
+    },
+    "sort": {
+      "relevance": "Pertinence",
+      "priceAsc": "Prix croissant",
+      "priceDesc": "Prix décroissant",
+      "rating": "Meilleures notes"
+    },
+    "categories": {
+      "all": "Tous",
+      "villa": "Villas",
+      "appartement": "Appartements",
+      "maison": "Maisons",
+      "studio": "Studios",
+      "duplex": "Duplex"
+    },
+    "empty": {
+      "title": "Aucun favori",
+      "message": "Vous n'avez pas encore ajouté de propriétés à vos favoris. Commencez à explorer et sauvegardez vos coups de cœur !",
+      "button": "Découvrir des annonces",
+      "noResults": "Aucun résultat",
+      "noResultsHint": "Aucune propriété de type \"{category}\" dans vos favoris",
+      "viewAll": "Voir tous les favoris"
+    },
+    "badges": {
+      "verified": "VÉRIFIÉ"
+    },
+    "details": {
+      "beds": "lit(s)",
+      "baths": "SDB"
+    },
+    "buttons": {
+      "compare": "Comparer",
+      "compareCount": "Comparer ({count})"
+    }
+  },
+
+  "ComparePage": {
+    "loading": "Chargement de la comparaison...",
+    "bestChoice": "Meilleur choix",
+    "verified": "Vérifié",
+    "remove": "Retirer",
+    "reviews": "avis",
+    "score": "Score",
+    "beds": "chambre(s)",
+    "guests": "personne(s)",
+    "viewDetails": "Voir détails",
+    "share": "Partager",
+    "copyLink": "Copier le lien",
+    "clearAll": "Tout effacer",
+    "title": "Comparer vos",
+    "highlight": "sélections",
+    "count": "logement (s)",
+    "subtitle": "Analyse côte à côte",
+    "add": "Ajouter",
+    "addHint": "Depuis favoris",
+    "breadcrumb": {
+      "home": "ACCEUIL",
+      "favorites": "FAVORIS",
+      "compare": "COMPARER"
+    },
+    "sort": {
+      "rating": "Trier par note",
+      "price": "Trier par prix croissant",
+      "beds": "Trier par chambres",
+      "guests": "Trier par capacité"
+    },
+    "metrics": {
+      "listings": "Logements",
+      "avgRating": "Note moyenne",
+      "avgPrice": "Prix moyen",
+      "avgBeds": "Chambres moy.",
+      "bedsUnit": "ch."
+    },
+    "labels": {
+      "price": "Tarif",
+      "rating": "Note",
+      "score": "Score",
+      "features": "Caractéristiques",
+      "location": "Emplacement",
+      "action": "Action"
+    },
+    "expertChoice": {
+      "title": "Choix de l'expert",
+      "subtitle": "Basé sur note, prix et équipements",
+      "book": "Réserver"
+    },
+    "testimonial": {
+      "text": "\"Une expérience de comparaison transparente et fiable. J'ai trouvé ma villa idéale en moins de 5 minutes grâce à NestHub.\"",
+      "author": "Sonia M.",
+      "role": "Voyageuse vérifiée · 12 séjours"
+    },
+    "empty": {
+      "title": "Aucune propriété à comparer",
+      "message": "Ajoutez des logements depuis vos favoris pour les analyser côte à côte.",
+      "button": "Voir mes favoris"
+    }
+  },
+  "MapPage": {
+    "loading": "Chargement de la carte...",
+    "listings": "logements",
+    "favorites": "favoris",
+    "verified": "VÉRIFIÉ",
+    "reviews": "avis",
+    "perNight": "nuit",
+    "viewListing": "Voir l'annonce",
+    "backToSearch": "RETOUR À LA RECHERCHE",
+    "searchPlaceholder": "Rechercher par titre, gouvernorat, délégation...",
+    "showFilters": "Afficher les filtres",
+    "hideFilters": "Masquer les filtres",
+    "maxPrice": "Prix max:",
+    "propertyType": "Type de logement",
+    "allTypes": "Tous",
+    "villa": "Villa",
+    "apartment": "Appartement",
+    "house": "Maison",
+    "studio": "Studio",
+    "duplex": "Duplex",
+    "minRating": "Note minimale:",
+    "allRatings": "Toutes",
+    "stars": "étoiles",
+    "resetFilters": "Réinitialiser les filtres",
+    "applyFilters": "Appliquer les filtres",
+    "noListings": "Aucun logement trouvé",
+    "properties": "biens",
+    "alerts": {
+      "added": "Ajouté aux favoris",
+      "removed": "Retiré des favoris",
+      "reset": "Tous les filtres ont été réinitialisés",
+      "applied": "Filtres appliqués"
+    }
+  },
+
+  "MessagesPage": {
+    "loading": "Chargement des messages...",
+    "title": "Conversations",
+    "conversations": "Conversations",
+    "searchPlaceholder": "Rechercher une discussion...",
+    "noConversations": "Aucune conversation",
+    "noConversationsHint": "Vos messages apparaîtront ici",
+    "noResults": "Aucun résultat",
+    "noResultsHint": "Aucune conversation ne correspond à votre recherche",
+    "selectConversation": "Sélectionnez une conversation",
+    "selectConversationHint": "pour commencer à discuter",
+    "filters": {
+      "all": "Toutes",
+      "unread": "Non lus",
+      "read": "Lus"
+    },
+    "offer": {
+      "pending": "Offre en attente",
+      "accepted": "Offre acceptée",
+      "rejected": "Offre refusée"
+    }
+  },
+
+  "ListingPage": {
+    "loading": "Chargement de l'annonce...",
+    "notFound": "Annonce introuvable",
+    "backToSearch": "Retour à la recherche",
+    "verified": "Vérifié",
+    "reviews": "avis",
+    "share": "Partager",
+    "save": "Sauvegarder",
+    "saved": "Sauvegardé",
+    "hostedBy": "Hébergé par",
+    "trustScore": "Score confiance",
+    "about": "À propos",
+    "amenities": "Équipements",
+    "showLess": "Voir moins",
+    "seeAll": "Voir les {count}",
+    "availability": "Disponibilités",
+    "selectDates": "Sélectionnez vos dates",
+    "houseRules": "Règlement",
+    "noRules": "Aucun règlement spécifique renseigné.",
+    "pricePerNight": "Tarif par nuit",
+    "checkIn": "Arrivée",
+    "checkOut": "Départ",
+    "guests": "Voyageurs",
+    "cleaningFee": "Frais de ménage",
+    "serviceFee": "Frais de service (5%)",
+    "total": "Total",
+    "selectDatesToSeePrice": "Sélectionnez vos dates pour voir le prix total",
+    "selectDatesButton": "Choisissez vos dates",
+    "requestInfo": "Demander une information",
+    "sending": "Envoi en cours…",
+    "noCommitment": "Aucun engagement, l'hôte vous répondra sous 24h",
+    "securePayment": "Paiement sécurisé",
+    "flexibleCancellation": "Annulation flexible",
+    "support247": "Support 24h/24",
+    "toast": {
+      "selectDates": "Veuillez sélectionner vos dates de séjour",
+      "requestSent": "Demande d'information envoyée avec succès !",
+      "error": "Une erreur est survenue",
+      "connectionError": "Erreur de connexion. Veuillez réessayer.",
+      "addedToFavorites": "Ajouté aux favoris",
+      "removedFromFavorites": "Retiré des favoris",
+      "linkCopied": "Lien copié dans le presse-papier !"
+    },
+    "modal": {
+      "title": "Demande envoyée !",
+      "message": "Votre demande d'information a bien été transmise au propriétaire.",
+      "dates": "Dates sélectionnées",
+      "guests": "Voyageurs",
+      "close": "Fermer",
+      "viewNotifications": "Voir mes notifications"
+    },
+    "breadcrumb": {
+      "home": "ACCEUIL",
+      "search": "RECHERCHE"
+    },
+    "lightbox": {
+      "reset": "Reset"
+    }
+  },
+  "ReservationsPage": {
+    "title": "Mes Réservations",
+    "subtitle": "Retrouvez l'historique complet de vos séjours et gérez vos prochaines escapades.",
+    "upcoming": "À venir",
+    "past": "Passées",
+    "cancelled": "Annulées",
+    "upcomingLower": "à venir",
+    "pastLower": "passée",
+    "cancelledLower": "annulée",
+    "host": "Hôte",
+    "leaveReview": "Laisser un avis",
+    "payNow": "Finaliser le paiement",
+    "viewDetails": "Voir les détails",
+    "viewListing": "Voir le bien",
+    "viewConversation": "Voir la conversation",
+    "cancel": "Annuler",
+    "refresh": "Actualiser",
+    "noReservations": "Aucune réservation",
+    "findListing": "Trouver un bien",
+    "exploreTitle": "Envie d'évasion ?",
+    "exploreText": "Réservez votre prochain séjour exceptionnel.",
+    "confirmCancel": "Confirmer l'annulation de cette réservation ?",
+    "cancelled": "Réservation annulée",
+    "errorCancel": "Erreur lors de l'annulation",
+    "connectionError": "Erreur de connexion"
+  
+  },
+  "TenantHeader": {
+    "searchPlaceholder": "Où voulez-vous aller ?",
+    "nav": {
+      "explorer": "Explorer",
+      "favoris": "Favoris",
+      "messages": "Messages",
+      "réservations": "Réservations"
+    },
+    "role": "Rôle: Locataire",
+    "login": "Connexion",
+    "userMenu": {
+      "profile": "Mon profil",
+      "dashboard": "Tableau de bord",
+      "reservations": "Mes réservations",
+      "wallet": "Portefeuille",
+      "reviews": "Mes avis",
+      "settings": "Paramètres",
+      "becomeHost": "Devenir propriétaire",
+      "help": "Aide",
+      "theme": "Thème",
+      "logout": "Déconnexion",
+      "verifiedTenant": "Locataire vérifié",
+      "roleTenant": "Rôle: Locataire"
+    }
   }
+
 }
+

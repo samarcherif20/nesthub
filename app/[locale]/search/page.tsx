@@ -1,50 +1,93 @@
+// app/[locale]/search/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useUser } from "@clerk/nextjs";
 import { useSearch, categories, allAmenities } from "./hooks/useSearch";
-import { FaHome, FaCity } from "react-icons/fa";
-import { MdOutlineVilla } from "react-icons/md";
-import { TbBuildingCommunity } from "react-icons/tb";
+import {
+  FaHome,
+  FaCity,
+  FaSearch,
+  FaStar,
+  FaBed,
+  FaHeart,
+  FaRegHeart,
+  FaBath,
+  FaMapMarkedAlt,
+  FaFilter,
+  FaTimes,
+  FaGem,
+  FaFire,
+  FaClock,
+  FaComments,
+  FaUser,
+  FaTh,
+  FaList,
+  FaTree,
+  FaWifi,
+  FaTv,
+  FaUtensils,
+  FaParking,
+  FaSwimmer,
+  FaDumbbell,
+  FaHotTub,
+} from "react-icons/fa";
+import {
+  MdOutlineVilla,
+  MdOutlinePeople,
+  MdOutlineLocationOn,
+} from "react-icons/md";
+import { TbAirConditioning, TbBuildingCommunity } from "react-icons/tb";
 import { GiModernCity } from "react-icons/gi";
-import UserMenu from "@/components/ui/UserMenu";
+import {
+  IoChatbubbleOutline,
+  IoHomeOutline,
+  IoCalendarOutline,
+  IoPersonOutline,
+  IoSearchOutline,
+} from "react-icons/io5";
 import AlertBanner from "@/components/ui/Alert";
 import Pagination from "@/components/ui/Pagination";
-import NotificationBell from "@/components/ui/notifications/NotificationBell";
 import { ChatDrawer } from "@/components/ui/chat/ChatDrawer";
+import { TenantHeader } from "@/components/ui/header/TenantHeader";
 
-import {
-  IoSearchOutline,
-  IoHeartOutline,
-  IoHeart,
-  IoGridOutline,
-  IoListOutline,
-  IoMapOutline,
-  IoLocationOutline,
-  IoStar,
-  IoFilterOutline,
-  IoCloseOutline,
-  IoBedOutline,
-  IoDiamondOutline,
-  IoFlameOutline,
-  IoTimeOutline,
-  IoChatbubbleOutline,
-  IoPeopleOutline,
-  IoHomeOutline,
-} from "react-icons/io5";
-import { MdOutlineBathtub } from "react-icons/md";
+const gradientButton = `
+  bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 
+  hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600
+  text-white shadow-md hover:shadow-lg 
+  transition-all duration-300
+`;
 
-const pip = (url: string) =>
-  `/api/listings/image?url=${encodeURIComponent(url)}`;
-
-// Styles globaux
-const gradientButton =
-  "bg-gradient-to-r from-indigo-500 via-sky-400 to-purple-600 hover:from-indigo-700 hover:via-sky-600 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300";
 const gradientText =
   "bg-gradient-to-r from-indigo-600 via-sky-500 to-purple-600 bg-clip-text text-transparent";
 
+// Category icon helper
+const getCategoryIcon = (catId: string, isActive: boolean) => {
+  const iconClass = isActive
+    ? "text-indigo-600 dark:text-indigo-400"
+    : "text-gray-600 dark:text-gray-400";
+  switch (catId) {
+    case "all":
+      return <FaHome className={`text-2xl ${iconClass}`} />;
+    case "Villa":
+      return <MdOutlineVilla className={`text-2xl ${iconClass}`} />;
+    case "Appartement":
+      return <TbBuildingCommunity className={`text-2xl ${iconClass}`} />;
+    case "Maison":
+      return <FaHome className={`text-2xl ${iconClass}`} />;
+    case "Studio":
+      return <FaCity className={`text-2xl ${iconClass}`} />;
+    case "Duplex":
+      return <GiModernCity className={`text-2xl ${iconClass}`} />;
+    default:
+      return <FaHome className={`text-2xl ${iconClass}`} />;
+  }
+};
+
 export default function SearchPage() {
+  const t = useTranslations("SearchPage");
   const { user } = useUser();
   const [mounted, setMounted] = useState(false);
   const [alert, setAlert] = useState<{
@@ -54,9 +97,11 @@ export default function SearchPage() {
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [bedroomsFilter, setBedroomsFilter] = useState<number | null>(null);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
-  
-  // Déterminer le rôle de l'utilisateur pour le ChatDrawer
-  const userRole = user?.publicMetadata?.role === "PROPERTY_OWNER" ? "PROPERTY_OWNER" : "TENANT";
+
+  const userRole =
+    user?.publicMetadata?.role === "PROPERTY_OWNER"
+      ? "PROPERTY_OWNER"
+      : "TENANT";
 
   const {
     listings,
@@ -88,7 +133,6 @@ export default function SearchPage() {
     totalCount,
     startIndex,
     endIndex,
-    isMounted,
     selectCategory,
   } = useSearch();
 
@@ -109,14 +153,17 @@ export default function SearchPage() {
     e.stopPropagation();
     toggleFavorite(id, e);
     const isFav = favorites.includes(id);
-    showAlert("success", isFav ? "Retiré des favoris" : "Ajouté aux favoris");
+    showAlert(
+      "success",
+      isFav ? t("alerts.removedFromFavorites") : t("alerts.addedToFavorites"),
+    );
   };
 
   const handleResetFilters = () => {
     resetFilters();
     setRatingFilter(null);
     setBedroomsFilter(null);
-    showAlert("info", "Tous les filtres ont été réinitialisés");
+    showAlert("info", t("alerts.filtersReset"));
   };
 
   const activeFiltersCount =
@@ -125,21 +172,18 @@ export default function SearchPage() {
     (ratingFilter ? 1 : 0) +
     (bedroomsFilter ? 1 : 0);
 
-  // Filtrer les listings par note et chambres
   let filteredListings = [...listings];
-  if (ratingFilter) {
+  if (ratingFilter)
     filteredListings = filteredListings.filter(
       (l) => (l.rating || 0) >= ratingFilter,
     );
-  }
-  if (bedroomsFilter) {
+  if (bedroomsFilter)
     filteredListings = filteredListings.filter(
       (l) => l.bedrooms >= bedroomsFilter,
     );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900">
       {alert && (
         <div className="fixed top-20 right-8 z-[60] animate-in slide-in-from-top-2 fade-in duration-300">
           <AlertBanner
@@ -150,107 +194,48 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* Chat Drawer - s'ouvre à droite */}
-      <ChatDrawer
-        isOpen={isChatDrawerOpen}
-        onClose={() => setIsChatDrawerOpen(false)}
-        userRole={userRole}
-      />
+      <TenantHeader />
 
-      <header className="fixed top-0 w-full z-50 bg-white/70 dark:bg-slate-900/70 backdrop-blur-md shadow-sm dark:shadow-slate-800/30 transition-all duration-300">
-        <div className="px-6 py-2 max-w-7xl mx-auto w-full">
-          {/* Logo + Navigation sur la même ligne */}
-          <div className="flex justify-between items-center">
-            <Link href="/fr/search">
-              <img
-                src="/logo/logo.png"
-                alt="NESTHUB"
-                className="h-25 w-auto object-contain scale-180 mt-4.5"
-              />
-            </Link>
-
-            <div className="flex items-center gap-6">
-              <Link
-                href="/fr/reservations"
-                className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-medium transition"
-              >
-                Mes réservations
-              </Link>
-
-              <Link href="/fr/favorites">
-                <button className="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full relative cursor-pointer transition">
-                  <IoHeartOutline className="text-slate-600 dark:text-slate-400 text-xl" />
-                  {isMounted && favorites.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                      {favorites.length}
-                    </span>
-                  )}
-                </button>
-              </Link>
-              
-              {/* ✅ Icône Messenger dans le header */}
-              <button
-                onClick={() => setIsChatDrawerOpen(true)}
-                className="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-full relative cursor-pointer transition"
-              >
-                <IoChatbubbleOutline className="text-slate-600 dark:text-slate-400 text-xl" />
-              </button>
-              
-              <NotificationBell />
-
-              {mounted && <UserMenu />}
-              {!mounted && (
-                <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-slate-700 animate-pulse"></div>
-              )}
-            </div>
-          </div>
-
-          {/* NESTHUB centré en dessous - toujours visible */}
-          <div className="flex justify-center mt-2">
-            <span
-              className={`text-base font-bold tracking-wider -ml-270 font-headline -mt-10 ${gradientText}`}
-            >
-              N E S T H U B
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <main className="pt-47.5 pb-32">
+      <main className="pt-8 pb-32">
+        {/* Hero Section */}
         <section className="max-w-7xl mx-auto px-6 mb-10">
-          <div className="relative h-[480px] w-full rounded-2xl overflow-hidden mb-[-80px] shadow-xl">
+          <div className="relative h-[400px] w-full rounded-2xl overflow-hidden mb-[-80px] shadow-xl">
             <img
               className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuSOcHlc9X1DdNnMm2HQoLo-hw5CeTaVurUHqgjjy31qswZa6glxoG6ls9F-aecsza7AOc7bBiRekQJVTA3bs1JggWxJWhpn5NLCnjca4uVkTp9Z_apWHFRoH8yXjd2GkTfMkzOo6U_r9p4U6DCI9_PuAe2-5FCX7pvzpNMjZVrFCckGsi-AygMzB9U57kI_NlLhYPWdunLD3pZCRf-szzLy76BSF5lrzOhJRxYHr9nap9xcOMKQrXOtce0eOZNHxeXVImc7JZ_GC0"
+              src="https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg"
               alt="hero"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-            <div className="absolute bottom-32 left-12 max-w-2xl">
-              <h1 className="font-headline text-5xl font-extrabold text-white tracking-tight mb-4 leading-tight">
-                Le luxe méditerranéen, <br /> organisé pour vous !
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-center max-w-3xl w-full px-4">
+              <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4 leading-tight">
+                {t("hero.title")}
               </h1>
+              <p className="text-white/80 text-lg hidden md:block">
+                {t("hero.subtitle")}
+              </p>
             </div>
           </div>
 
-          <div className="relative z-10 max-w-5xl mx-auto">
+          {/* Search Bar */}
+          <div className="relative z-10 max-w-4xl mx-auto">
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-2xl p-4 flex flex-col md:flex-row items-center gap-2 border border-white/40 dark:border-slate-700/40">
-              <div className="flex-1 w-full px-6 py-2">
+              <div className="flex-1 w-full px-4 py-1">
                 <label className="block text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">
-                  Zone
+                  {t("search.location")}
                 </label>
                 <input
                   value={searchDestination}
                   onChange={(e) => setSearchDestination(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && handleSearch()}
-                  className="w-full bg-transparent border-none p-0 text-gray-900 dark:text-white font-semibold focus:ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500"
-                  placeholder="Où voulez-vous habiter ?"
+                  className="w-full bg-transparent border-none p-0 text-gray-900 dark:text-white font-semibold focus:ring-0 placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm"
+                  placeholder={t("search.locationPlaceholder")}
                   type="text"
                 />
               </div>
-              <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 hidden md:block" />
-              <div className="flex-1 w-full px-6 py-2">
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden md:block" />
+              <div className="flex-1 w-full px-4 py-1">
                 <label className="block text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">
-                  Dates
+                  {t("search.dates")}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -264,7 +249,9 @@ export default function SearchPage() {
                     }
                     className="w-full bg-transparent text-sm text-gray-900 dark:text-white font-semibold focus:ring-0 dark:[color-scheme:dark]"
                   />
-                  <span className="text-gray-400 dark:text-gray-500">→</span>
+                  <span className="text-gray-400 dark:text-gray-500 text-sm">
+                    →
+                  </span>
                   <input
                     type="date"
                     value={searchDates.checkOut}
@@ -278,119 +265,75 @@ export default function SearchPage() {
                   />
                 </div>
               </div>
-              <div className="h-10 w-px bg-slate-200 dark:bg-slate-700 hidden md:block" />
-              <div className="flex-1 w-full px-6 py-2">
+              <div className="h-8 w-px bg-slate-200 dark:bg-slate-700 hidden md:block" />
+              <div className="flex-1 w-full px-4 py-1">
                 <label className="block text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">
-                  Personnes
+                  {t("search.guests")}
                 </label>
                 <select
                   value={searchGuests}
                   onChange={(e) => setSearchGuests(parseInt(e.target.value))}
-                  className="w-full bg-transparent text-gray-900 dark:text-white font-semibold focus:ring-0"
+                  className="w-full bg-transparent text-gray-900 dark:text-white font-semibold focus:ring-0 text-sm"
                 >
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                     <option key={n} value={n}>
-                      {n} personne{n > 1 ? "s" : ""}
+                      {n}{" "}
+                      {n === 1
+                        ? t("search.guestSingular")
+                        : t("search.guestPlural")}
                     </option>
                   ))}
                 </select>
               </div>
               <button
                 onClick={handleSearch}
-                className={`w-full md:w-auto h-16 px-8 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${gradientButton}`}
+                className={`w-full md:w-auto px-6 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 ${gradientButton}`}
               >
-                <IoSearchOutline className="text-xl" /> Rechercher
+                <IoSearchOutline className="text-base" /> {t("search.button")}
               </button>
             </div>
           </div>
         </section>
 
+        {/* Categories - Centrées */}
         <section className="max-w-7xl mx-auto px-6 mb-12">
-          <div className="flex items-center gap-8 overflow-x-auto no-scrollbar py-4">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => selectCategory(cat.id)}
-                className={`flex flex-col items-center gap-2 min-w-fit pb-2 transition-all ${selectedCategory === cat.id ? "border-b-2 border-indigo-600 dark:border-indigo-400" : "opacity-60 hover:opacity-100"}`}
-              >
-                <span className="text-2xl">
-                  {cat.id === "all" && (
-                    <FaHome
-                      className={
-                        selectedCategory === cat.id
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-400"
-                      }
-                    />
-                  )}
-                  {cat.id === "Villa" && (
-                    <MdOutlineVilla
-                      className={
-                        selectedCategory === cat.id
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-400"
-                      }
-                    />
-                  )}
-                  {cat.id === "Appartement" && (
-                    <TbBuildingCommunity
-                      className={
-                        selectedCategory === cat.id
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-400"
-                      }
-                    />
-                  )}
-                  {cat.id === "Maison" && (
-                    <FaHome
-                      className={
-                        selectedCategory === cat.id
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-400"
-                      }
-                    />
-                  )}
-                  {cat.id === "Studio" && (
-                    <FaCity
-                      className={
-                        selectedCategory === cat.id
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-400"
-                      }
-                    />
-                  )}
-                  {cat.id === "Duplex" && (
-                    <GiModernCity
-                      className={
-                        selectedCategory === cat.id
-                          ? "text-indigo-600 dark:text-indigo-400"
-                          : "text-gray-600 dark:text-gray-400"
-                      }
-                    />
-                  )}
-                </span>
-                <span
-                  className={`text-sm ${selectedCategory === cat.id ? "font-semibold text-indigo-600 dark:text-indigo-400" : "font-medium text-gray-700 dark:text-gray-300"}`}
+          <div className="flex items-center justify-center gap-8 overflow-x-auto no-scrollbar py-4 flex-wrap">
+            {categories.map((cat) => {
+              const isActive = selectedCategory === cat.id;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => selectCategory(cat.id)}
+                  className={`flex flex-col items-center gap-2 min-w-fit pb-2 transition-all ${isActive ? "border-b-2 border-indigo-600 dark:border-indigo-400" : "opacity-60 hover:opacity-100"}`}
                 >
-                  {cat.name}
-                </span>
-              </button>
-            ))}
+                  {getCategoryIcon(cat.id, isActive)}
+                  <span
+                    className={`text-sm ${isActive ? "font-semibold text-indigo-600 dark:text-indigo-400" : "font-medium text-gray-700 dark:text-gray-300"}`}
+                  >
+                    {t(`categories.${cat.id}`)}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </section>
 
+        {/* Results Section */}
         <section className="max-w-7xl mx-auto px-6">
           <div className="flex justify-between items-center flex-wrap gap-4 mb-8">
             <div>
-              <h2 className="font-headline text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+              <h2 className="font-headline text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
                 {searchDestination
-                  ? `Résultats pour "${searchDestination}"`
-                  : "Dernières pépites pour vous"}
+                  ? t("results.titleWithDestination", {
+                      destination: searchDestination,
+                    })
+                  : t("results.title")}
               </h2>
-              <p className="text-slate-500 dark:text-slate-400 mt-1">
-                {filteredListings.length} logement
-                {filteredListings.length > 1 ? "s" : ""} trouvé
-                {filteredListings.length > 1 ? "s" : ""}
+              <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
+                {filteredListings.length}{" "}
+                {filteredListings.length === 1
+                  ? t("results.listingSingular")
+                  : t("results.listingPlural")}
                 {filteredListings.length > 0 &&
                   ` · ${startIndex}-${Math.min(endIndex, filteredListings.length)}`}
               </p>
@@ -401,13 +344,13 @@ export default function SearchPage() {
                   onClick={() => setViewMode("grid")}
                   className={`p-2 rounded-lg transition ${viewMode === "grid" ? "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"}`}
                 >
-                  <IoGridOutline className="text-xl" />
+                  <FaTh className="text-lg" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
                   className={`p-2 rounded-lg transition ${viewMode === "list" ? "bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"}`}
                 >
-                  <IoListOutline className="text-xl" />
+                  <FaList className="text-lg" />
                 </button>
               </div>
               <select
@@ -415,17 +358,17 @@ export default function SearchPage() {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
               >
-                <option value="relevance">Pertinence</option>
-                <option value="price_asc">Prix croissant</option>
-                <option value="price_desc">Prix décroissant</option>
-                <option value="rating">Meilleures notes</option>
+                <option value="relevance">{t("sort.relevance")}</option>
+                <option value="price_asc">{t("sort.priceAsc")}</option>
+                <option value="price_desc">{t("sort.priceDesc")}</option>
+                <option value="rating">{t("sort.rating")}</option>
               </select>
               <button
                 onClick={() => setIsFilterOpen(true)}
                 className="lg:hidden px-4 py-2 border border-gray-200 dark:border-slate-700 rounded-xl text-sm flex items-center gap-2 bg-white dark:bg-slate-800 text-gray-700 dark:text-gray-300"
               >
-                <IoFilterOutline className="text-lg" />
-                Filtres
+                <FaFilter className="text-lg" />
+                {t("filters.title")}
                 {activeFiltersCount > 0 && (
                   <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs rounded-full px-1.5 py-0.5">
                     {activeFiltersCount}
@@ -435,13 +378,14 @@ export default function SearchPage() {
             </div>
           </div>
 
+          {/* Active Filters */}
           {activeFiltersCount > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
               {selectedCategory !== "all" && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
-                  {categories.find((c) => c.id === selectedCategory)?.name}
+                  {t(`categories.${selectedCategory}`)}
                   <button onClick={() => selectCategory("all")}>
-                    <IoCloseOutline className="w-3 h-3" />
+                    <FaTimes className="w-3 h-3" />
                   </button>
                 </span>
               )}
@@ -452,23 +396,25 @@ export default function SearchPage() {
                 >
                   {amenity}
                   <button onClick={() => toggleAmenity(amenity)}>
-                    <IoCloseOutline className="w-3 h-3" />
+                    <FaTimes className="w-3 h-3" />
                   </button>
                 </span>
               ))}
               {ratingFilter && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400">
-                  {ratingFilter}+ étoiles
+                  <FaStar className="w-3 h-3" />
+                  {ratingFilter}+
                   <button onClick={() => setRatingFilter(null)}>
-                    <IoCloseOutline className="w-3 h-3" />
+                    <FaTimes className="w-3 h-3" />
                   </button>
                 </span>
               )}
               {bedroomsFilter && (
                 <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-                  {bedroomsFilter}+ chambres
+                  <FaBed className="w-3 h-3" />
+                  {bedroomsFilter}+
                   <button onClick={() => setBedroomsFilter(null)}>
-                    <IoCloseOutline className="w-3 h-3" />
+                    <FaTimes className="w-3 h-3" />
                   </button>
                 </span>
               )}
@@ -476,29 +422,31 @@ export default function SearchPage() {
                 onClick={handleResetFilters}
                 className="text-xs text-slate-400 hover:text-indigo-600 transition"
               >
-                Tout effacer
+                {t("filters.clearAll")}
               </button>
             </div>
           )}
 
           <div className="flex flex-col lg:flex-row gap-8">
+            {/* Filters Sidebar - Desktop */}
             <aside className="hidden lg:block lg:w-80 flex-shrink-0">
               <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm dark:shadow-slate-800/30 p-6 sticky top-24 border border-gray-100 dark:border-slate-800">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                    Filtres
+                    {t("filters.title")}
                   </h3>
                   <button
                     onClick={handleResetFilters}
                     className="text-sm text-indigo-600 dark:text-indigo-400 hover:underline"
                   >
-                    Réinitialiser
+                    {t("filters.reset")}
                   </button>
                 </div>
 
+                {/* Price Range */}
                 <div className="mb-8">
                   <label className="block text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">
-                    Prix max : {priceRange[1]} TND
+                    {t("filters.maxPrice")} {priceRange[1]} TND
                   </label>
                   <input
                     type="range"
@@ -520,53 +468,64 @@ export default function SearchPage() {
                   </div>
                 </div>
 
+                {/* Rating Filter */}
                 <div className="mb-8">
                   <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-300">
-                    Note
+                    {t("filters.rating")}
                   </h4>
                   <div className="flex gap-2">
                     {[
-                      { value: null, label: "Tous" },
-                      { value: 4, label: "4+ ⭐" },
-                      { value: 4.5, label: "4.5+ ⭐" },
+                      { value: null, label: t("filters.all") },
+                      { value: 4, label: "4+" },
+                      { value: 4.5, label: "4.5+" },
                     ].map((option) => (
                       <button
                         key={option.value ?? "all"}
                         onClick={() => setRatingFilter(option.value)}
-                        className={`px-3 py-1 rounded-full text-sm transition ${ratingFilter === option.value ? gradientButton : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"}`}
+                        className={`px-3 py-1 rounded-full text-sm transition flex items-center gap-1 ${
+                          ratingFilter === option.value
+                            ? gradientButton
+                            : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
+                        }`}
                       >
+                        {option.value && <FaStar className="w-3 h-3" />}
                         {option.label}
                       </button>
                     ))}
                   </div>
                 </div>
 
+                {/* Bedrooms Filter */}
                 <div className="mb-8">
                   <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-300">
-                    Chambres
+                    {t("filters.bedrooms")}
                   </h4>
                   <div className="flex gap-2">
                     {[null, 1, 2, 3, 4].map((value) => (
                       <button
                         key={value ?? "all"}
                         onClick={() => setBedroomsFilter(value)}
-                        className={`px-3 py-1 rounded-full text-sm transition flex items-center gap-1 ${bedroomsFilter === value ? gradientButton : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"}`}
+                        className={`px-3 py-1 rounded-full text-sm transition flex items-center gap-1 ${
+                          bedroomsFilter === value
+                            ? gradientButton
+                            : "bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-slate-700"
+                        }`}
                       >
                         {value ? (
                           <>
-                            <IoBedOutline className="w-3 h-3" /> {value}
+                            <FaBed className="w-3 h-3" /> {value}
                           </>
                         ) : (
-                          "Tous"
+                          t("filters.all")
                         )}
                       </button>
                     ))}
                   </div>
                 </div>
-
+                {/* Amenities */}
                 <div className="mb-8">
                   <h4 className="font-semibold mb-3 text-gray-700 dark:text-gray-300">
-                    Équipements
+                    {t("filters.amenities")}
                     {selectedAmenities.length > 0 && (
                       <span className="ml-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-xs rounded-full px-2 py-0.5">
                         {selectedAmenities.length}
@@ -597,14 +556,15 @@ export default function SearchPage() {
                   onClick={handleSearch}
                   className={`w-full py-3 rounded-xl font-semibold transition ${gradientButton}`}
                 >
-                  Appliquer les filtres
+                  {t("filters.apply")}
                 </button>
               </div>
             </aside>
 
+            {/* Listings Grid/List */}
             <main className="flex-1">
               {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {[...Array(6)].map((_, i) => (
                     <div key={i} className="animate-pulse">
                       <div className="bg-gray-200 dark:bg-slate-800 rounded-xl aspect-[4/3] mb-4" />
@@ -615,22 +575,22 @@ export default function SearchPage() {
                 </div>
               ) : filteredListings.length === 0 ? (
                 <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-xl">
-                  <IoSearchOutline className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <IoSearchOutline className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold mb-2 text-gray-900 dark:text-white">
-                    Aucun résultat trouvé
+                    {t("results.noResults")}
                   </h3>
                   <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    Essayez de modifier vos filtres ou votre recherche
+                    {t("results.noResultsHint")}
                   </p>
                   <button
                     onClick={handleResetFilters}
                     className={`px-6 py-2 rounded-xl transition ${gradientButton}`}
                   >
-                    Réinitialiser tous les filtres
+                    {t("filters.resetAll")}
                   </button>
                 </div>
               ) : viewMode === "grid" ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 lg:gap-10 xl:gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                   {filteredListings.map((listing) => (
                     <ListingCard
                       key={listing.id}
@@ -638,6 +598,8 @@ export default function SearchPage() {
                       isFavorite={favorites.includes(listing.id)}
                       onToggleFavorite={handleToggleFavorite}
                       gradientButton={gradientButton}
+                      t={t}
+                      gradientText={gradientText}
                     />
                   ))}
                 </div>
@@ -650,6 +612,8 @@ export default function SearchPage() {
                       isFavorite={favorites.includes(listing.id)}
                       onToggleFavorite={handleToggleFavorite}
                       gradientButton={gradientButton}
+                      t={t}
+                      gradientText={gradientText}
                     />
                   ))}
                 </div>
@@ -671,88 +635,98 @@ export default function SearchPage() {
         </section>
       </main>
 
+      {/* Map Button */}
       <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40">
         <Link href="/fr/map">
           <button
             className={`px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-2xl hover:scale-105 transition-transform active:scale-95 ${gradientButton}`}
           >
-            <IoMapOutline className="text-xl" /> Afficher la carte
+            <FaMapMarkedAlt className="text-lg" /> {t("map.show")}
           </button>
         </Link>
       </div>
 
-      {/* ✅ Bouton Messenger flottant qui ouvre le drawer */}
+      {/* Chat Button */}
       <div className="fixed bottom-24 right-6 z-40">
         <button
           onClick={() => setIsChatDrawerOpen(true)}
           className={`p-3 rounded-full shadow-2xl hover:scale-105 transition-transform active:scale-95 ${gradientButton}`}
         >
-          <IoChatbubbleOutline className="text-xl" />
+          <FaComments className="text-xl" />
         </button>
       </div>
 
+      {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-2 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl md:hidden z-50 rounded-t-3xl shadow-lg">
         <Link
           href="/fr/search"
           className="flex flex-col items-center justify-center bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-2xl px-5 py-2"
         >
           <IoSearchOutline className="text-xl" />
-          <span className="text-[11px] font-medium mt-1">Explorer</span>
+          <span className="text-[11px] font-medium mt-1">
+            {t("mobile.explore")}
+          </span>
         </Link>
         <Link
           href="/fr/favorites"
           className="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-5 py-2"
         >
-          <IoHeartOutline className="text-xl" />
-          <span className="text-[11px] font-medium mt-1">Favoris</span>
+          <FaRegHeart className="text-xl" />
+          <span className="text-[11px] font-medium mt-1">
+            {t("mobile.favorites")}
+          </span>
         </Link>
-        {/* ✅ Bouton Messenger mobile */}
         <button
           onClick={() => setIsChatDrawerOpen(true)}
           className="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-5 py-2"
         >
-          <IoChatbubbleOutline className="text-xl" />
-          <span className="text-[11px] font-medium mt-1">Messages</span>
+          <FaComments className="text-xl" />
+          <span className="text-[11px] font-medium mt-1">
+            {t("mobile.messages")}
+          </span>
         </button>
         <Link
           href="/fr/profile"
           className="flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-5 py-2"
         >
-          <IoHomeOutline className="text-xl" />
-          <span className="text-[11px] font-medium mt-1">Profil</span>
+          <FaUser className="text-xl" />
+          <span className="text-[11px] font-medium mt-1">
+            {t("mobile.profile")}
+          </span>
         </Link>
       </nav>
+
+      <ChatDrawer
+        isOpen={isChatDrawerOpen}
+        onClose={() => setIsChatDrawerOpen(false)}
+        userRole={userRole}
+      />
     </div>
   );
 }
 
-/* ─────────────────────────────────────────── */
-/* Composant Carte - inchangé */
-/* ─────────────────────────────────────────── */
+// ListingCard Component (inchangé)
 function ListingCard({
   listing,
   isFavorite,
   onToggleFavorite,
   gradientButton,
-}: {
-  listing: any;
-  isFavorite: boolean;
-  onToggleFavorite: (id: string, e: React.MouseEvent) => void;
-  gradientButton: string;
-}) {
+  t,
+  gradientText,
+  getAmenityIcon,
+}: any) {
   const displayPrice =
     listing.pricePerNight || listing.price || listing.pricePerMonth || 0;
   const priceUnit = listing.pricePerNight
-    ? "/nuit"
+    ? t("price.perNight")
     : listing.pricePerMonth
-      ? "/mois"
-      : "/nuit";
+      ? t("price.perMonth")
+      : t("price.perNight");
 
   const getImageUrl = (url: string) => {
     if (!url) return "/images/placeholder.jpg";
-    if (url.includes("vercel-storage.com")) {
+    if (url.includes("vercel-storage.com"))
       return `/api/listings/image?url=${encodeURIComponent(url)}`;
-    }
     return url;
   };
 
@@ -776,17 +750,17 @@ function ListingCard({
         <div className="absolute top-3 left-3 flex gap-2">
           {isPremium && (
             <span className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1">
-              <IoDiamondOutline className="w-3 h-3" /> Premium
+              <FaGem className="w-3 h-3" /> {t("badges.premium")}
             </span>
           )}
           {isPopular && (
             <span className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1">
-              <IoFlameOutline className="w-3 h-3" /> Populaire
+              <FaFire className="w-3 h-3" /> {t("badges.popular")}
             </span>
           )}
           {isNew && !isPopular && (
             <span className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg flex items-center gap-1">
-              <IoTimeOutline className="w-3 h-3" /> Nouveau
+              <FaClock className="w-3 h-3" /> {t("badges.new")}
             </span>
           )}
         </div>
@@ -796,15 +770,15 @@ function ListingCard({
           className="absolute top-3 right-3 h-8 w-8 rounded-full bg-black/20 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/40 transition"
         >
           {isFavorite ? (
-            <IoHeart className="text-red-500 text-xl" />
+            <FaHeart className="text-red-500 text-xl" />
           ) : (
-            <IoHeartOutline className="text-xl" />
+            <FaRegHeart className="text-xl" />
           )}
         </button>
 
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
           <div className="flex items-center gap-1 text-white/90 text-xs font-medium">
-            <IoLocationOutline className="w-3 h-3" />
+            <MdOutlineLocationOn className="w-3 h-3" />
             <span className="truncate">{listing.location}</span>
           </div>
         </div>
@@ -816,10 +790,10 @@ function ListingCard({
             {listing.title}
           </h3>
           <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs mt-1">
-            <IoStar className="text-amber-500 text-sm" />
+            <FaStar className="text-amber-500 text-sm" />
             <span className="font-semibold">{listing.rating || 4.5}</span>
             <span className="text-slate-400">
-              ({listing.reviewCount || 0} avis)
+              ({listing.reviewCount || 0} {t("reviews")})
             </span>
           </div>
         </div>
@@ -827,7 +801,7 @@ function ListingCard({
 
       <div className="mt-3 flex items-center justify-between">
         <div className="flex items-baseline gap-1">
-          <span className="text-xl font-extrabold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          <span className={`text-xl font-extrabold ${gradientText}`}>
             {displayPrice.toLocaleString()}
           </span>
           <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase">
@@ -840,9 +814,10 @@ function ListingCard({
             {listing.amenities.slice(0, 2).map((a: string) => (
               <span
                 key={a}
-                className="text-[9px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500"
+                className="text-[9px] bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-slate-500 flex items-center gap-0.5"
               >
-                {a}
+                {getAmenityIcon(a)}
+                <span className="hidden sm:inline">{a}</span>
               </span>
             ))}
             {listing.amenities.length > 2 && (
@@ -857,39 +832,34 @@ function ListingCard({
       <button
         className={`w-full mt-3 py-2 rounded-lg text-sm font-semibold transition-all ${gradientButton} opacity-0 group-hover:opacity-100`}
       >
-        Réserver maintenant
+        {t("buttons.bookNow")}
       </button>
     </Link>
   );
 }
 
-/* ─────────────────────────────────────────── */
-/* Composant Ligne - inchangé */
-/* ─────────────────────────────────────────── */
+// ListingRow Component (inchangé)
 function ListingRow({
   listing,
   isFavorite,
   onToggleFavorite,
   gradientButton,
-}: {
-  listing: any;
-  isFavorite: boolean;
-  onToggleFavorite: (id: string, e: React.MouseEvent) => void;
-  gradientButton: string;
-}) {
+  t,
+  gradientText,
+  getAmenityIcon,
+}: any) {
   const displayPrice =
     listing.pricePerNight || listing.price || listing.pricePerMonth || 0;
   const priceUnit = listing.pricePerNight
-    ? "/nuit"
+    ? t("price.perNight")
     : listing.pricePerMonth
-      ? "/mois"
-      : "/nuit";
+      ? t("price.perMonth")
+      : t("price.perNight");
 
   const getImageUrl = (url: string) => {
     if (!url) return "/images/placeholder.jpg";
-    if (url.includes("vercel-storage.com")) {
+    if (url.includes("vercel-storage.com"))
       return `/api/listings/image?url=${encodeURIComponent(url)}`;
-    }
     return url;
   };
 
@@ -910,9 +880,9 @@ function ListingRow({
             className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/20 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/40 transition"
           >
             {isFavorite ? (
-              <IoHeart className="text-red-500 text-sm" />
+              <FaHeart className="text-red-500 text-sm" />
             ) : (
-              <IoHeartOutline className="text-sm" />
+              <FaRegHeart className="text-sm" />
             )}
           </button>
         </div>
@@ -924,29 +894,30 @@ function ListingRow({
               </h3>
               <div className="flex items-center gap-2 mt-1">
                 <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs">
-                  <IoStar className="text-amber-500 text-sm" />
+                  <FaStar className="text-amber-500 text-sm" />
                   <span className="font-semibold">{listing.rating || 4.5}</span>
                   <span className="text-slate-400">
-                    ({listing.reviewCount || 0})
+                    ({listing.reviewCount || 0} {t("reviews")})
                   </span>
                 </div>
                 <span className="text-slate-300 dark:text-slate-600">•</span>
                 <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400 text-xs">
-                  <IoLocationOutline className="w-3 h-3" />
+                  <MdOutlineLocationOn className="w-3 h-3" />
                   <span>{listing.location}</span>
                 </div>
               </div>
               <div className="flex gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="flex items-center gap-1">
-                  <IoBedOutline className="w-3 h-3" /> {listing.bedrooms} lits
+                  <FaBed className="w-3 h-3" /> {listing.bedrooms}{" "}
+                  {t("details.beds")}
                 </span>
                 <span className="flex items-center gap-1">
-                  <MdOutlineBathtub className="w-3 h-3" /> {listing.bathrooms}{" "}
-                  sdb
+                  <FaBath className="w-3 h-3" /> {listing.bathrooms}{" "}
+                  {t("details.baths")}
                 </span>
                 <span className="flex items-center gap-1">
-                  <IoPeopleOutline className="w-3 h-3" /> {listing.maxGuests}{" "}
-                  pers.
+                  <MdOutlinePeople className="w-3 h-3" /> {listing.maxGuests}{" "}
+                  {t("details.guests")}
                 </span>
               </div>
               {listing.amenities && listing.amenities.length > 0 && (
@@ -954,9 +925,10 @@ function ListingRow({
                   {listing.amenities.slice(0, 4).map((a: string) => (
                     <span
                       key={a}
-                      className="text-xs bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded text-gray-600 dark:text-gray-400"
+                      className="text-xs bg-gray-100 dark:bg-slate-800 px-2 py-0.5 rounded text-gray-600 dark:text-gray-400 flex items-center gap-1"
                     >
-                      ✓ {a}
+                      {getAmenityIcon(a)}
+                      {a}
                     </span>
                   ))}
                   {listing.amenities.length > 4 && (
@@ -968,7 +940,7 @@ function ListingRow({
               )}
             </div>
             <div className="text-right flex-shrink-0">
-              <div className="text-xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <div className={`text-xl font-bold ${gradientText}`}>
                 {displayPrice.toLocaleString()} TND
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -977,7 +949,7 @@ function ListingRow({
               <button
                 className={`mt-3 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${gradientButton} opacity-0 group-hover:opacity-100`}
               >
-                Réserver
+                {t("buttons.book")}
               </button>
             </div>
           </div>

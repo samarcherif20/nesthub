@@ -136,6 +136,10 @@ export default clerkMiddleware(async (auth, req) => {
       "/api/auth/login",
       "/api/auth/register",
       "/api/cron/reactivate-users",
+      "/api/cron/expire-info-requests",      // ✅ AJOUT
+      "/api/cron/expire-offers",              // ✅ AJOUT
+      "/api/cron/release-expired-bookings",   // ✅ AJOUT
+      "/api/cron/test-all",                   // ✅ AJOUT
       "/api/get-redirect-url",
       "/api/auth/reset-password", //
       "/api/cohost/invitations/accept", // ✅ AJOUTE CETTE LIGNE
