@@ -69,7 +69,8 @@ model User {
   vacationMessage      String?
   twoFactorEnabled     Boolean               @default(false)
   twoFactorRecoveryCodes String?
-  
+  stripeCustomerId String? @unique
+  stripeAccountId  String? @unique // Pour Stripe Connect (versements propriétaires)
   // Relations Admin
   writtenNotes         AdminNote[]           @relation("AuthorUser")
   adminNotes           AdminNote[]           @relation("TargetUser")
@@ -527,10 +528,12 @@ enum PaymentStatus {
 }
 
 enum NotificationType {
+  REVIEW_REMINDER  
   BOOKING_REQUEST
   BOOKING_ACCEPTED
   BOOKING_REJECTED
   BOOKING_CANCELLED
+  BOOKING_CONFIRMED  
   PAYMENT_RECEIVED
   PAYMENT_REFUNDED
   NEW_MESSAGE
@@ -844,6 +847,7 @@ model Booking {
   review        Review?
   dispute       Dispute?
   notifications Notification[]
+  depositAuthorizations DepositAuthorization[]
 
   @@index([listingId])
   @@index([tenantId])
@@ -1588,8 +1592,37 @@ model PaymentTransaction {
   paidAt                DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-
+  stripePaymentIntentId String? @unique
+  stripeSetupIntentId   String? @unique
   @@index([offerId])
   @@index([userId])
   @@index([status])
+}
+// Ajoute ce nouveau modèle pour les webhooks Stripe
+model StripeWebhookEvent {
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  type          String
+  data          Json
+  processed     Boolean  @default(false)
+  processedAt   DateTime?
+  createdAt     DateTime @default(now())
+
+  @@index([processed])
+  @@map("stripe_webhook_events")
+}
+// Ajoute ce modèle pour la pré-autorisation des cautions
+model DepositAuthorization {
+  id                 String   @id @default(cuid())
+  bookingId          String
+  booking            Booking  @relation(fields: [bookingId], references: [id])
+  amount             Float
+  stripeSetupIntentId String  @unique
+  status             String   @default("PENDING") // PENDING, AUTHORIZED, RELEASED, FAILED
+  authorizedAt       DateTime?
+  releasedAt         DateTime?
+  expiresAt          DateTime?
+  createdAt          DateTime @default(now())
+
+  @@map("deposit_authorizations")
 }

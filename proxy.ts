@@ -136,16 +136,19 @@ export default clerkMiddleware(async (auth, req) => {
       "/api/auth/login",
       "/api/auth/register",
       "/api/cron/reactivate-users",
-      "/api/cron/expire-info-requests",      // ✅ AJOUT
-      "/api/cron/expire-offers",              // ✅ AJOUT
-      "/api/cron/release-expired-bookings",   // ✅ AJOUT
-      "/api/cron/test-all",                   // ✅ AJOUT
+      "/api/cron/expire-info-requests",
+      "/api/cron/expire-offers",
+      "/api/cron/release-expired-bookings",
+      "/api/cron/test-all",
       "/api/get-redirect-url",
-      "/api/auth/reset-password", //
-      "/api/cohost/invitations/accept", // ✅ AJOUTE CETTE LIGNE
+      "/api/auth/reset-password",
+      "/api/cohost/invitations/accept",
       "/api/admin/invitations/accept",
-      "/api/notifications",        // ✅ AJOUTE CETTE LIGNE
-      "/api/notifications/test",   // ✅ AJOUTE CETTE LIGNE
+      "/api/notifications",
+      "/api/notifications/test",
+      "/api/stripe/webhook",
+      "/api/webhook/stripe",
+      "/api/payments/webhook",
     ];
 
     const isPublicApiRoute = publicApiRoutes.some((route) =>

@@ -3030,17 +3030,18 @@
     "connectionError": "Erreur de connexion"
   
   },
+  
   "TenantHeader": {
-    "searchPlaceholder": "Où voulez-vous aller ?",
+   
+    "role": "Locataire",
+    "login": "Connexion",
     "nav": {
       "explorer": "Explorer",
-      "favoris": "Favoris",
+      "favorites": "Favoris",
       "messages": "Messages",
-      "réservations": "Réservations"
+      "reservations": "Réservations"
     },
-    "role": "Rôle: Locataire",
-    "login": "Connexion",
-    "userMenu": {
+    "menu": {
       "profile": "Mon profil",
       "dashboard": "Tableau de bord",
       "reservations": "Mes réservations",
@@ -3050,11 +3051,27 @@
       "becomeHost": "Devenir propriétaire",
       "help": "Aide",
       "theme": "Thème",
-      "logout": "Déconnexion",
-      "verifiedTenant": "Locataire vérifié",
-      "roleTenant": "Rôle: Locataire"
-    }
+      "logout": "Déconnexion"
+    },
+    "verifiedTenant": "Locataire vérifié",
+    "logout": {
+      "title": "Déconnexion",
+      "message": "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "cancel": "Annuler",
+      "confirm": "Déconnexion"
+    }},
+    
+  "search": {
+    "placeholder": "Où voulez-vous aller ?...",
+    "results": "Résultats de recherche",
+    "seeAll": "Voir tous les résultats",
+    "noResults": "Aucun résultat trouvé",
+    "searchDirectly": "Rechercher directement"
   }
-
 }
+  
+
+  
+
+
 
