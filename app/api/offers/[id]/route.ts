@@ -39,10 +39,12 @@ export async function GET(
             type: true,
             governorate: true,
             delegation: true,
+            street: true,
             rooms: true,
             maxGuests: true,
             pricePerNight: true,
             cleaningFee: true,
+            equipment: true,
             photos: {
               take: 1,
               where: { isMain: true },
@@ -56,6 +58,9 @@ export async function GET(
             username: true,
             firstName: true,
             lastName: true,
+            email: true,
+            phoneNumber: true,
+            profilePictureUrl: true,
           },
         },
         owner: {
@@ -64,9 +69,21 @@ export async function GET(
             username: true,
             firstName: true,
             lastName: true,
+            email: true,
+            phoneNumber: true,
+            profilePictureUrl: true,
+            stats: {
+              select: { averageRating: true, totalReviews: true },
+            },
           },
         },
         infoRequest: true,
+        booking: {
+          select: {
+            id: true,
+            revealedInfo: true,
+          },
+        },
       },
     });
 
@@ -74,7 +91,16 @@ export async function GET(
       return NextResponse.json({ error: "Offre non trouvée" }, { status: 404 });
     }
 
-    // Formater la réponse pour la page de paiement
+    // Récupérer la conversation via l'infoRequest si besoin
+    let conversationId = null;
+    if (offer.infoRequest?.id) {
+      const conversation = await prisma.conversation.findFirst({
+        where: { infoRequestId: offer.infoRequest.id },
+        select: { id: true },
+      });
+      conversationId = conversation?.id || null;
+    }
+
     const formattedOffer = {
       id: offer.id,
       reference: offer.reference,
@@ -89,23 +115,34 @@ export async function GET(
       status: offer.status,
       createdAt: offer.createdAt,
       expiresAt: offer.expiresAt,
+      conversationId: conversationId,
+      bookingId: offer.booking?.id,
+      revealedInfo: offer.booking?.revealedInfo,
       listing: {
         id: offer.listing.id,
         title: offer.listing.title,
         type: offer.listing.type,
         location:
           offer.listing.governorate && offer.listing.delegation
-            ? `${offer.listing.governorate}, ${offer.listing.delegation}`
+            ? `${offer.listing.delegation}, ${offer.listing.governorate}`
             : null,
+        fullAddress: offer.booking?.revealedInfo?.exactAddress || null,
         bedrooms: offer.listing.rooms,
         maxGuests: offer.listing.maxGuests,
         pricePerNight: offer.listing.pricePerNight,
         cleaningFee: offer.listing.cleaningFee,
         image: offer.listing.photos[0]?.url,
+        equipment: offer.listing.equipment,
       },
       tenant: offer.tenant
         ? {
             id: offer.tenant.id,
+            username: offer.tenant.username,
+            firstName: offer.tenant.firstName,
+            lastName: offer.tenant.lastName,
+            email: offer.tenant.email,
+            phone: offer.tenant.phoneNumber,
+            profilePictureUrl: offer.tenant.profilePictureUrl,
             name:
               offer.tenant.firstName && offer.tenant.lastName
                 ? `${offer.tenant.firstName} ${offer.tenant.lastName}`
@@ -115,6 +152,14 @@ export async function GET(
       owner: offer.owner
         ? {
             id: offer.owner.id,
+            username: offer.owner.username,
+            firstName: offer.owner.firstName,
+            lastName: offer.owner.lastName,
+            email: offer.owner.email,
+            phone: offer.owner.phoneNumber,
+            profilePictureUrl: offer.owner.profilePictureUrl,
+            rating: offer.owner.stats?.averageRating,
+            reviewCount: offer.owner.stats?.totalReviews,
             name:
               offer.owner.firstName && offer.owner.lastName
                 ? `${offer.owner.firstName} ${offer.owner.lastName}`

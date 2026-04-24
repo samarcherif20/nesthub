@@ -394,15 +394,7 @@ export default function OwnerCalendarPage() {
           </div>
         )}
 
-        <div className="mx-3  mt-120 p-4 rounded-2xl bg-gradient-to-br from-sky-500 to-purple-600 text-white shadow-lg">
-          <p className="font-bold text-sm">{t("sidebar.upgradeToPro")}</p>
-          <p className="text-[10px] opacity-80 mt-0.5">
-            {t("sidebar.manageMoreProperties")}
-          </p>
-          <button className="mt-3 bg-white text-sky-700 text-[11px] font-black py-1.5 px-4 rounded-full w-full hover:bg-sky-50">
-            {t("actions.upgrade")}
-          </button>
-        </div>
+        
       </aside>
 
       {/* MAIN CONTENT */}
@@ -670,6 +662,15 @@ export default function OwnerCalendarPage() {
                   : t("aiTip.excellent")}
             </p>
           </div>
+        </div>
+        <div className="mx-3  mb-25  p-4 rounded-2xl bg-gradient-to-br from-sky-500 to-purple-600 text-white shadow-lg mb">
+          <p className="font-bold text-sm">{t("sidebar.upgradeToPro")}</p>
+          <p className="text-[10px] opacity-80 mt-0.5">
+            {t("sidebar.manageMoreProperties")}
+          </p>
+          <button className="mt-3 bg-white text-sky-700 text-[11px] font-black py-1.5 px-4 rounded-full w-full hover:bg-sky-50">
+            {t("actions.upgrade")}
+          </button>
         </div>
       </aside>
     </div>

@@ -1,4 +1,3 @@
-// app/api/bookings/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
@@ -27,15 +26,10 @@ export async function GET(
 
     const { id } = await params;
 
-    console.log("🔍 [API] Recherche de la réservation:", {
-      id,
-      tenantId: user.id,
-    });
-
     const booking = await prisma.booking.findFirst({
       where: {
         id: id,
-        tenantId: user.id,
+        OR: [{ tenantId: user.id }, { ownerId: user.id }],
       },
       include: {
         listing: {
@@ -49,38 +43,55 @@ export async function GET(
         owner: {
           select: {
             id: true,
+            username: true,
             firstName: true,
             lastName: true,
+            email: true,
+            phoneNumber: true,
             profilePictureUrl: true,
             stats: {
               select: { averageRating: true, totalReviews: true },
             },
           },
         },
+        tenant: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            profilePictureUrl: true,
+          },
+        },
         revealedInfo: true,
         contract: true,
         review: true,
+        offer: {
+          select: { id: true },
+        },
       },
     });
 
     if (!booking) {
-      console.log("❌ [API] Réservation non trouvée");
       return NextResponse.json(
         { error: "Réservation non trouvée" },
         { status: 404 },
       );
     }
 
-    const hasReview = !!booking.review;
+    // Récupérer la conversation via l'infoRequest du booking
+    let conversationId = null;
+    if (booking.infoRequestId) {
+      const conversation = await prisma.conversation.findFirst({
+        where: { infoRequestId: booking.infoRequestId },
+        select: { id: true },
+      });
+      conversationId = conversation?.id || null;
+    }
 
-    console.log("📊 [API] DONNÉES DE LA DB:", {
-      id: booking.id,
-      reference: booking.reference,
-      status: booking.status,
-      paymentStatus: booking.paymentStatus,
-      hasReview: hasReview,
-      isCompleted: booking.status === "COMPLETED",
-    });
+    const hasReview = !!booking.review;
 
     return NextResponse.json({
       id: booking.id,
@@ -96,6 +107,8 @@ export async function GET(
       cleaningFee: booking.cleaningFee || 0,
       serviceFee: booking.serviceFee || 0,
       hasReview: hasReview,
+      conversationId: conversationId,
+      offerId: booking.offer?.id,
       listing: {
         id: booking.listing.id,
         title: booking.listing.title,
@@ -112,11 +125,23 @@ export async function GET(
       },
       owner: {
         id: booking.owner?.id,
+        username: booking.owner?.username,
         firstName: booking.owner?.firstName,
         lastName: booking.owner?.lastName,
+        email: booking.owner?.email,
+        phone: booking.owner?.phoneNumber,
         profilePictureUrl: booking.owner?.profilePictureUrl,
         rating: booking.owner?.stats?.averageRating,
         reviewCount: booking.owner?.stats?.totalReviews,
+      },
+      tenant: {
+        id: booking.tenant?.id,
+        username: booking.tenant?.username,
+        firstName: booking.tenant?.firstName,
+        lastName: booking.tenant?.lastName,
+        email: booking.tenant?.email,
+        phone: booking.tenant?.phoneNumber,
+        profilePictureUrl: booking.tenant?.profilePictureUrl,
       },
       revealedInfo: booking.revealedInfo,
       contract: booking.contract,

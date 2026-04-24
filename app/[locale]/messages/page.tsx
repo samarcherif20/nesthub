@@ -238,6 +238,38 @@ export default function TenantMessagesPage() {
     handleSendSystemMessage,
   } = useMessages();
 
+  // État local pour suivre le statut de paiement de la réservation sélectionnée
+  const [isPaid, setIsPaid] = useState(false);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
+
+  // Vérifier le statut de paiement quand la conversation sélectionnée change
+  useEffect(() => {
+    const checkPaymentStatus = async () => {
+      if (!selectedConv?.offer?.id || selectedConv.offer?.status !== "ACCEPTED") {
+        setIsPaid(false);
+        return;
+      }
+
+      setIsCheckingPayment(true);
+      try {
+        const res = await fetch(`/api/bookings/by-offer/${selectedConv.offer.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setIsPaid(data.isPaid === true);
+        } else {
+          setIsPaid(false);
+        }
+      } catch (error) {
+        console.error("Erreur vérification paiement:", error);
+        setIsPaid(false);
+      } finally {
+        setIsCheckingPayment(false);
+      }
+    };
+
+    checkPaymentStatus();
+  }, [selectedConv?.offer?.id, selectedConv?.offer?.status]);
+
   if (isLoading) {
     return (
       <LoadingSpinner
@@ -281,6 +313,7 @@ export default function TenantMessagesPage() {
                 listingTitle={selectedConv.listing.title}
                 offerId={selectedConv.offer?.id}
                 offerStatus={selectedConv.offer?.status}
+                isPaid={isPaid}
                 listing={{
                   id: selectedConv.listing.id,
                   title: selectedConv.listing.title,
@@ -444,6 +477,7 @@ export default function TenantMessagesPage() {
                   listingTitle={selectedConv.listing.title}
                   offerId={selectedConv.offer?.id}
                   offerStatus={selectedConv.offer?.status}
+                  isPaid={isPaid}
                   listing={{
                     id: selectedConv.listing.id,
                     title: selectedConv.listing.title,

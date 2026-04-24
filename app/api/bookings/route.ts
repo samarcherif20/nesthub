@@ -35,11 +35,9 @@ export async function GET(req: NextRequest) {
     } else if (role === "owner") {
       whereClause.ownerId = user.id;
     } else {
-      // Si pas de rôle spécifié, retourner les réservations où l'utilisateur est soit tenant soit owner
       whereClause.OR = [{ tenantId: user.id }, { ownerId: user.id }];
     }
 
-    // Si status est 'ALL' ou non fourni, ne pas filtrer
     if (status && status !== "ALL") {
       const statusList = status.split(",");
       whereClause.status = { in: statusList };
@@ -68,9 +66,9 @@ export async function GET(req: NextRequest) {
           owner: {
             select: {
               id: true,
+              username: true, // On garde le username
               firstName: true,
               lastName: true,
-              username: true,
               profilePictureUrl: true,
               isIdentityVerified: true,
               stats: {
@@ -81,9 +79,9 @@ export async function GET(req: NextRequest) {
           tenant: {
             select: {
               id: true,
+              username: true, // On garde le username
               firstName: true,
               lastName: true,
-              username: true,
               profilePictureUrl: true,
               isIdentityVerified: true,
               stats: {
@@ -145,9 +143,8 @@ export async function GET(req: NextRequest) {
         cancelledAt: booking.cancelledAt,
         tenant: {
           id: booking.tenant?.id,
-          name: booking.tenant?.firstName
-            ? `${booking.tenant.firstName} ${booking.tenant.lastName || ""}`.trim()
-            : booking.tenant?.username || "Locataire",
+          username: booking.tenant?.username || null, // AJOUTÉ
+          name: booking.tenant?.username || "Locataire", // MODIFIÉ: utilise username
           firstName: booking.tenant?.firstName,
           lastName: booking.tenant?.lastName,
           image: booking.tenant?.profilePictureUrl || null,
@@ -156,9 +153,8 @@ export async function GET(req: NextRequest) {
         },
         owner: {
           id: booking.owner?.id,
-          name: booking.owner?.firstName
-            ? `${booking.owner.firstName} ${booking.owner.lastName || ""}`.trim()
-            : booking.owner?.username || "Hôte",
+          username: booking.owner?.username || null, // AJOUTÉ
+          name: booking.owner?.username || "Hôte", // MODIFIÉ: utilise username
           firstName: booking.owner?.firstName,
           lastName: booking.owner?.lastName,
           image: booking.owner?.profilePictureUrl || null,

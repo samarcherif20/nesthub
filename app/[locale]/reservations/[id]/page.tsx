@@ -8,7 +8,6 @@ import {
   IoArrowBackOutline,
   IoLocationOutline,
   IoCalendarOutline,
-  IoPeopleOutline,
   IoKeyOutline,
   IoCopyOutline,
   IoCheckmarkCircleOutline,
@@ -20,8 +19,6 @@ import {
   IoCallOutline,
   IoStarSharp,
   IoStarOutline,
-  IoCloseOutline,
-  IoCloudUploadOutline,
   IoMapOutline,
   IoTimeOutline,
   IoReceiptOutline,
@@ -35,6 +32,7 @@ import {
 } from "react-icons/io5";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
 import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
+import { ReviewModal } from "@/components/ui/modals/ReviewModal";
 
 // ─── pip helper ───────────────────────────────────────────────────────────────
 const pipListing = (url: string) =>
@@ -43,8 +41,7 @@ const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
 
 // ─── Design tokens ─────────────────────────────────────────────────────────────
-const GRAD =
-  "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600";
+const GRAD = "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600";
 const GRAD_TEXT =
   "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent";
 const BTN_GRAD = `${GRAD} text-white font-bold shadow-lg shadow-indigo-200/40 dark:shadow-indigo-900/20 hover:opacity-90 active:scale-[.98] transition-all`;
@@ -90,21 +87,6 @@ interface BookingDetails {
   contract?: { pdfUrl: string };
   hasReview?: boolean;
   conversationId?: string;
-}
-
-interface ReviewData {
-  rating: number;
-  criteria: {
-    cleanliness: number;
-    communication: number;
-    checkIn: number;
-    accuracy: number;
-    location: number;
-    value: number;
-  };
-  publicComment: string;
-  privateNote: string;
-  photos: File[];
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -198,40 +180,6 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-// ─── Star rating input ────────────────────────────────────────────────────────
-function StarRating({
-  value,
-  onChange,
-  size = "lg",
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  size?: "sm" | "lg";
-}) {
-  const [hovered, setHovered] = useState(0);
-  const sz = size === "lg" ? "text-4xl" : "text-2xl";
-  return (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <button
-          key={s}
-          type="button"
-          onClick={() => onChange(s)}
-          onMouseEnter={() => setHovered(s)}
-          onMouseLeave={() => setHovered(0)}
-          className={`${sz} transition-all hover:scale-110 active:scale-95`}
-        >
-          {s <= (hovered || value) ? (
-            <IoStarSharp className="text-amber-400" />
-          ) : (
-            <IoStarOutline className="text-gray-300 dark:text-slate-700" />
-          )}
-        </button>
-      ))}
-    </div>
-  );
-}
-
 // ─── Score bar (static display) ───────────────────────────────────────────────
 function ScoreBar({ value }: { value: number }) {
   return (
@@ -240,310 +188,6 @@ function ScoreBar({ value }: { value: number }) {
         className={`h-full ${GRAD} rounded-full transition-all duration-500`}
         style={{ width: `${(value / 5) * 100}%` }}
       />
-    </div>
-  );
-}
-
-// ─── Review Modal ─────────────────────────────────────────────────────────────
-function ReviewModal({
-  isOpen,
-  onClose,
-  onSubmit,
-  booking,
-  submitting,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: ReviewData) => void;
-  booking: BookingDetails;
-  submitting: boolean;
-}) {
-  const [rating, setRating] = useState(0);
-  const [criteria, setCriteria] = useState({
-    cleanliness: 0,
-    communication: 0,
-    checkIn: 0,
-    accuracy: 0,
-    location: 0,
-    value: 0,
-  });
-  const [publicComment, setPublicComment] = useState("");
-  const [privateNote, setPrivateNote] = useState("");
-  const [photos, setPhotos] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  const [imgErr, setImgErr] = useState(false);
-
-  const mainPhoto = booking.listing.photos.find((p) => p.isMain) ?? booking.listing.photos[0];
-  const location = [booking.listing.street, booking.listing.delegation, booking.listing.governorate]
-    .filter(Boolean)
-    .join(", ");
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", h);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", h);
-      document.body.style.overflow = "";
-    };
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    previewUrls.forEach((url) => URL.revokeObjectURL(url));
-    const urls = photos.map((f) => URL.createObjectURL(f));
-    setPreviewUrls(urls);
-    return () => urls.forEach((u) => URL.revokeObjectURL(u));
-  }, [photos]);
-
-  const avgCriteria =
-    Object.values(criteria).reduce((a, b) => a + b, 0) /
-    Object.values(criteria).length;
-
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) setPhotos(Array.from(e.target.files).slice(0, 6));
-  };
-
-  const handleSubmit = () => {
-    if (rating === 0) {
-      alert("Veuillez donner une note globale");
-      return;
-    }
-    onSubmit({ rating, criteria, publicComment, privateNote, photos });
-  };
-
-  const CRITERIA_LABELS: { key: keyof typeof criteria; label: string }[] = [
-    { key: "cleanliness", label: "Propreté" },
-    { key: "communication", label: "Communication" },
-    { key: "checkIn", label: "Arrivée" },
-    { key: "accuracy", label: "Précision" },
-    { key: "location", label: "Emplacement" },
-    { key: "value", label: "Qualité-prix" },
-  ];
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="max-w-4xl w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[92vh] border border-gray-100 dark:border-slate-800 animate-in zoom-in-95 fade-in duration-200">
-
-        {/* Left: property recap */}
-        <div className="w-full md:w-5/12 bg-gray-50 dark:bg-slate-800/40 p-8 md:p-10 overflow-y-auto border-r border-gray-100 dark:border-slate-800">
-          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-8 leading-tight tracking-tight">
-            Laisser un avis sur votre séjour
-          </h2>
-
-          <div className="group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-gray-100 dark:border-slate-800 shadow-sm">
-            <div className="h-48 relative overflow-hidden">
-              {mainPhoto && !imgErr ? (
-                <img
-                  src={pipListing(mainPhoto.url)}
-                  alt={booking.listing.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                  onError={() => setImgErr(true)}
-                />
-              ) : (
-                <div className={`w-full h-full ${GRAD} flex items-center justify-center opacity-60`}>
-                  <IoHomeOutline className="text-white text-5xl" />
-                </div>
-              )}
-              <div className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1 rounded-full">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-                  {booking.listing.delegation}
-                </span>
-              </div>
-            </div>
-            <div className="p-5">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400 mb-1">
-                Séjour passé
-              </p>
-              <h3 className="font-extrabold text-gray-900 dark:text-white text-base mb-2 line-clamp-2">
-                {booking.listing.title}
-              </h3>
-              <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-4">
-                <IoCalendarOutline className="text-sm flex-shrink-0" />
-                <span className="text-sm">
-                  {fmtShort(booking.checkIn)} → {fmtShort(booking.checkOut)}
-                </span>
-              </div>
-              <div className="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-slate-800">
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-sky-400 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                  {booking.owner.profilePictureUrl ? (
-                    <img
-                      src={pipAvatar(booking.owner.profilePictureUrl)}
-                      alt=""
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    `${booking.owner.firstName.charAt(0)}${booking.owner.lastName.charAt(0)}`
-                  )}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    {booking.owner.firstName} {booking.owner.lastName}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-600">Votre hôte</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right: form */}
-        <div className="w-full md:w-7/12 p-8 md:p-10 overflow-y-auto max-h-[92vh] scrollbar-thin">
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors text-gray-400 dark:text-gray-600"
-            >
-              <IoCloseOutline className="text-xl" />
-            </button>
-          </div>
-
-          <div className="space-y-8">
-            <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 dark:text-gray-600 block mb-3">
-                Note globale
-              </label>
-              <StarRating value={rating} onChange={setRating} size="lg" />
-            </div>
-
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 dark:text-gray-600">
-                  Détail des critères
-                </label>
-                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                  Moyenne : {avgCriteria > 0 ? avgCriteria.toFixed(1) : "—"}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5">
-                {CRITERIA_LABELS.map(({ key, label }) => (
-                  <div key={key} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                        {label}
-                      </span>
-                      <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
-                        {criteria[key] > 0 ? criteria[key].toFixed(1) : "—"}
-                      </span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="5"
-                      step="0.5"
-                      value={criteria[key]}
-                      onChange={(e) =>
-                        setCriteria((p) => ({
-                          ...p,
-                          [key]: parseFloat(e.target.value),
-                        }))
-                      }
-                      className="w-full h-1.5 rounded-full cursor-pointer accent-indigo-600"
-                    />
-                    <ScoreBar value={criteria[key]} />
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 dark:text-gray-600 block mb-2">
-                Votre commentaire public
-              </label>
-              <textarea
-                value={publicComment}
-                onChange={(e) => setPublicComment(e.target.value)}
-                placeholder="Partagez votre expérience avec les futurs voyageurs..."
-                rows={4}
-                className="w-full bg-gray-50 dark:bg-slate-800/60 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 resize-none transition-colors"
-              />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 dark:text-gray-600 block mb-2">
-                Note privée pour {booking.owner.firstName}
-              </label>
-              <textarea
-                value={privateNote}
-                onChange={(e) => setPrivateNote(e.target.value)}
-                placeholder="Conseils ou remerciements personnalisés..."
-                rows={3}
-                className="w-full bg-gray-50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-700 rounded-xl p-4 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400/30 resize-none transition-colors italic"
-              />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-extrabold uppercase tracking-widest text-gray-400 dark:text-gray-600 block mb-2">
-                Photos du séjour <span className="normal-case font-normal">(optionnel, max 6)</span>
-              </label>
-              <label className="flex flex-col items-center justify-center gap-3 p-7 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-2xl bg-white dark:bg-slate-900 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group">
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={handlePhotoChange}
-                  className="hidden"
-                />
-                <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <IoCloudUploadOutline className="text-indigo-500 dark:text-indigo-400 text-2xl" />
-                </div>
-                <div className="text-center">
-                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Glissez-déposez vos photos
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-gray-600 mt-1">
-                    ou cliquez pour parcourir (max 10 Mo par photo)
-                  </p>
-                </div>
-              </label>
-              {previewUrls.length > 0 && (
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  {previewUrls.map((url, i) => (
-                    <div key={i} className="relative w-16 h-16 rounded-xl overflow-hidden border border-gray-100 dark:border-slate-800">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                      <button
-                        onClick={() =>
-                          setPhotos((p) => p.filter((_, j) => j !== i))
-                        }
-                        className="absolute top-0.5 right-0.5 w-5 h-5 bg-black/60 rounded-full flex items-center justify-center text-white"
-                      >
-                        <IoCloseOutline className="text-xs" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-6 border-t border-gray-100 dark:border-slate-800">
-              <button
-                onClick={onClose}
-                className="w-full sm:w-auto px-7 py-3.5 rounded-full text-sm font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleSubmit}
-                disabled={submitting || rating === 0}
-                className={`w-full sm:w-auto px-10 py-3.5 rounded-full text-sm ${BTN_GRAD} disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
-              >
-                {submitting ? (
-                  <>
-                    <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                    Envoi en cours…
-                  </>
-                ) : (
-                  "Publier l'avis"
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -561,7 +205,10 @@ export default function BookingDetailsPage() {
   const [toast, setToast] = useState<string | null>(null);
   const [mainImgErr, setMainImgErr] = useState(false);
   const [ownerImgErr, setOwnerImgErr] = useState(false);
-  const [staticMapCoords, setStaticMapCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [staticMapCoords, setStaticMapCoords] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   const showToast = (msg: string) => {
     setToast(msg);
@@ -575,19 +222,23 @@ export default function BookingDetailsPage() {
       const data = await res.json();
       if (!data.nights && data.checkIn && data.checkOut) {
         data.nights = Math.ceil(
-          (new Date(data.checkOut).getTime() - new Date(data.checkIn).getTime()) /
-            86_400_000
+          (new Date(data.checkOut).getTime() -
+            new Date(data.checkIn).getTime()) /
+            86_400_000,
         );
       }
       setBooking(data);
-      
+
       // Récupérer les coordonnées du listing pour la carte
       if (data.listing?.id) {
         const listingRes = await fetch(`/api/listings/${data.listing.id}`);
         if (listingRes.ok) {
           const listingData = await listingRes.json();
           if (listingData.latitude && listingData.longitude) {
-            setStaticMapCoords({ lat: listingData.latitude, lng: listingData.longitude });
+            setStaticMapCoords({
+              lat: listingData.latitude,
+              lng: listingData.longitude,
+            });
           }
         }
       }
@@ -602,7 +253,7 @@ export default function BookingDetailsPage() {
     fetchBooking();
   }, [fetchBooking]);
 
-  const handleSubmitReview = async (reviewData: ReviewData) => {
+  const handleSubmitReview = async (reviewData: any) => {
     if (!booking) return;
     setSubmitting(true);
     try {
@@ -612,11 +263,14 @@ export default function BookingDetailsPage() {
       formData.append("criteria", JSON.stringify(reviewData.criteria));
       formData.append("publicComment", reviewData.publicComment);
       formData.append("privateNote", reviewData.privateNote);
-      reviewData.photos.forEach((photo, i) => {
+      reviewData.photos.forEach((photo: File, i: number) => {
         formData.append(`photo_${i}`, photo);
       });
 
-      const res = await fetch("/api/reviews", { method: "POST", body: formData });
+      const res = await fetch("/api/reviews", {
+        method: "POST",
+        body: formData,
+      });
       if (res.ok) {
         showToast("Merci pour votre avis !");
         setIsReviewModalOpen(false);
@@ -689,7 +343,6 @@ export default function BookingDetailsPage() {
       )}
 
       <main className="pt-8 pb-24 px-4 sm:px-6 max-w-7xl mx-auto">
-
         {/* Back + header */}
         <div className="mb-10">
           <button
@@ -737,10 +390,8 @@ export default function BookingDetailsPage() {
 
         {/* Main grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
           {/* LEFT column */}
           <div className="lg:col-span-8 space-y-8">
-
             {/* Booking info + photo */}
             <section className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="bg-gray-50 dark:bg-slate-800/40 rounded-2xl p-7 border border-gray-100 dark:border-slate-800">
@@ -795,7 +446,9 @@ export default function BookingDetailsPage() {
                     onError={() => setMainImgErr(true)}
                   />
                 ) : (
-                  <div className={`w-full h-full ${GRAD} flex items-center justify-center opacity-50`}>
+                  <div
+                    className={`w-full h-full ${GRAD} flex items-center justify-center opacity-50`}
+                  >
                     <IoHomeOutline className="text-white text-6xl" />
                   </div>
                 )}
@@ -818,7 +471,9 @@ export default function BookingDetailsPage() {
                   <div className="w-12 h-12 bg-sky-50 dark:bg-sky-950/40 rounded-xl flex items-center justify-center text-sky-500 dark:text-sky-400">
                     <IoKeyOutline className="text-2xl" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Accès et Instructions</h3>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Accès et Instructions
+                  </h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -890,10 +545,17 @@ export default function BookingDetailsPage() {
                           <IoMapOutline className="text-indigo-500 dark:text-indigo-400 text-2xl" />
                         </div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                          {booking.revealedInfo?.exactAddress || location || "Emplacement du logement"}
+                          {booking.revealedInfo?.exactAddress ||
+                            location ||
+                            "Emplacement du logement"}
                         </p>
-                        <button 
-                          onClick={() => window.open(`https://maps.google.com/?q=${encodeURIComponent(location)}`, '_blank')}
+                        <button
+                          onClick={() =>
+                            window.open(
+                              `https://maps.google.com/?q=${encodeURIComponent(location)}`,
+                              "_blank",
+                            )
+                          }
                           className="mt-2 px-4 py-2 bg-white dark:bg-slate-900 rounded-full text-xs font-bold shadow-md hover:shadow-lg transition-shadow text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-slate-700 flex items-center gap-1"
                         >
                           <IoMapOutline className="text-sm" />
@@ -914,9 +576,12 @@ export default function BookingDetailsPage() {
                     <IoInformationCircleOutline className="text-amber-500 text-2xl" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-amber-800 dark:text-amber-400">Informations d'accès</h3>
+                    <h3 className="text-xl font-bold text-amber-800 dark:text-amber-400">
+                      Informations d'accès
+                    </h3>
                     <p className="text-sm text-amber-700 dark:text-amber-500 mt-1">
-                      Les informations d'accès seront disponibles 24h avant votre arrivée.
+                      Les informations d'accès seront disponibles 24h avant
+                      votre arrivée.
                     </p>
                   </div>
                 </div>
@@ -930,13 +595,30 @@ export default function BookingDetailsPage() {
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
-                  { icon: <IoVolumeOffOutline className="text-2xl" />, label: "Non Fumeur" },
-                  { icon: <IoPawOutline className="text-2xl" />, label: "Animaux autorisés" },
-                  { icon: <IoMoonOutline className="text-2xl" />, label: "Pas de fêtes" },
-                  { icon: <IoTimeOutline className="text-2xl" />, label: "Silence 22h–08h" },
+                  {
+                    icon: <IoVolumeOffOutline className="text-2xl" />,
+                    label: "Non Fumeur",
+                  },
+                  {
+                    icon: <IoPawOutline className="text-2xl" />,
+                    label: "Animaux autorisés",
+                  },
+                  {
+                    icon: <IoMoonOutline className="text-2xl" />,
+                    label: "Pas de fêtes",
+                  },
+                  {
+                    icon: <IoTimeOutline className="text-2xl" />,
+                    label: "Silence 22h–08h",
+                  },
                 ].map(({ icon, label }) => (
-                  <div key={label} className="flex flex-col items-center text-center gap-2.5">
-                    <div className="text-gray-500 dark:text-gray-400">{icon}</div>
+                  <div
+                    key={label}
+                    className="flex flex-col items-center text-center gap-2.5"
+                  >
+                    <div className="text-gray-500 dark:text-gray-400">
+                      {icon}
+                    </div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
                       {label}
                     </span>
@@ -948,7 +630,6 @@ export default function BookingDetailsPage() {
 
           {/* RIGHT column */}
           <aside className="lg:col-span-4 space-y-6">
-
             {/* Payment summary */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-7 border border-gray-100 dark:border-slate-800 shadow-sm">
               <div className="flex items-center gap-3 mb-6">
@@ -1138,13 +819,12 @@ export default function BookingDetailsPage() {
         </footer>
       </main>
 
-      {/* Review modal */}
+      {/* Review Modal - Using the separate component */}
       <ReviewModal
         isOpen={isReviewModalOpen}
         onClose={() => setIsReviewModalOpen(false)}
         onSubmit={handleSubmitReview}
         booking={booking}
-        submitting={submitting}
       />
     </div>
   );

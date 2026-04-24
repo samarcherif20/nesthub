@@ -256,12 +256,12 @@ function UserMenu({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                user?.firstName?.charAt(0) || "U"
+                user?.username?.charAt(0) || "U"
               )}
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-bold text-slate-800 dark:text-white text-sm sm:text-base truncate">
-                {user?.firstName} {user?.lastName}
+                {user?.username}
               </p>
               <p className="text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {user?.emailAddresses[0]?.emailAddress}
@@ -547,16 +547,14 @@ export function TenantHeader({}: TenantHeaderProps) {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        user?.firstName?.charAt(0) || "U"
+                        user?.username?.charAt(0) || "U"
                       )}
                     </div>
                     <div className="hidden sm:flex flex-col text-left leading-none">
                       <span className={`text-xs font-semibold ${textColor}`}>
-                        {user?.firstName} {user?.lastName}
+                        {user?.username}
                       </span>
-                      <span className={`text-[10px] ${textMuted}`}>
-                        {user?.emailAddresses[0]?.emailAddress?.split("@")[0]}
-                      </span>
+                     
                       <span className={`text-[9px] ${textMuted}`}>
                         {t("role")}
                       </span>

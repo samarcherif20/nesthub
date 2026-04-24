@@ -544,10 +544,8 @@ export default function OwnerReservationsPage() {
   const pendingBookings = bookings.filter((b) => b.status === "PENDING");
   const nonPendingBookings = bookings.filter((b) => b.status !== "PENDING");
 
-  // ── Render ──────────────────────────────────────────────────────────────────
-
   return (
-    <div className="min-h-screen bg-[#f9f9ff] dark:bg-slate-950 text-gray-900 dark:text-gray-100 antialiased transition-colors">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors">
       {toast && (
         <Toast
           message={toast.message}
@@ -556,21 +554,19 @@ export default function OwnerReservationsPage() {
         />
       )}
 
-      
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-28">
-        {/* ── Page header ── */}
+      <main className="w-full px-6 pt-10 pb-28">
+        {/* Page header */}
         <div className="mb-10">
-          <h1 className="text-4xl md:text-[3.5rem] font-extrabold tracking-tight text-gray-900 dark:text-white leading-none mb-2">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-2">
             Gestion des Réservations
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl leading-relaxed">
+          <p className="text-gray-500 dark:text-gray-400 text-base">
             Suivez et gérez les demandes de séjour pour vos propriétés
             d'exception.
           </p>
         </div>
 
-        {/* ── Tabs ── */}
+        {/* Tabs */}
         <div className="flex gap-1 mb-10 bg-gray-100 dark:bg-slate-800/60 p-1.5 rounded-2xl w-fit">
           {(
             [
@@ -604,9 +600,9 @@ export default function OwnerReservationsPage() {
           ))}
         </div>
 
-        {/* ── Main grid ── */}
+        {/* Main grid - with sidebar cards */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* ── Booking cards (8 cols) ── */}
+          {/* Booking cards - 8 cols */}
           <div className="lg:col-span-8 space-y-8">
             {isLoading ? (
               [...Array(2)].map((_, i) => (
@@ -644,7 +640,7 @@ export default function OwnerReservationsPage() {
             )}
           </div>
 
-          {/* ── Right sidebar (4 cols) ── */}
+          {/* Right sidebar (4 cols) - 3 CARDS CONSERVÉES */}
           <div className="lg:col-span-4 space-y-6">
             {/* Stats card */}
             <div
@@ -747,7 +743,7 @@ export default function OwnerReservationsPage() {
         </div>
       </main>
 
-      {/* ── Mobile nav ── */}
+      {/* Mobile nav */}
       <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-t border-gray-100 dark:border-slate-800 z-50 rounded-t-[2rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.08)]">
         {[
           { icon: <IoSearchOutline />, label: "Explorer", href: "/fr/search" },

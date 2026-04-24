@@ -210,14 +210,14 @@ export default function SearchPage() {
               <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-white tracking-tight mb-4 leading-tight">
                 {t("hero.title")}
               </h1>
-              <p className="text-white/80 text-lg hidden md:block">
+              <p className="text-white/80 text-lg hidden md:block mb-2">
                 {t("hero.subtitle")}
               </p>
             </div>
           </div>
 
           {/* Search Bar */}
-          <div className="relative z-10 max-w-4xl mx-auto">
+          <div className="relative z-10 max-w-4xl mx-auto mt-7">
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl shadow-2xl p-4 flex flex-col md:flex-row items-center gap-2 border border-white/40 dark:border-slate-700/40">
               <div className="flex-1 w-full px-4 py-1">
                 <label className="block text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider mb-1">
@@ -296,7 +296,7 @@ export default function SearchPage() {
         </section>
 
         {/* Categories - Centrées */}
-        <section className="max-w-7xl mx-auto px-6 mb-12">
+        <section className="max-w-7xl mx-auto px-6 mb-6 mt-2">
           <div className="flex items-center justify-center gap-8 overflow-x-auto no-scrollbar py-4 flex-wrap">
             {categories.map((cat) => {
               const isActive = selectedCategory === cat.id;

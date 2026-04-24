@@ -92,8 +92,8 @@ interface ChatBoxProps {
   listing?: ListingInfo;
   userRole?: "TENANT" | "PROPERTY_OWNER";
   offerId?: string;
-  offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED"; // 👈 AJOUTE CETTE LIGNE
-
+  offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
+  isPaid?: boolean; // 👈 AJOUTÉ
 }
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
@@ -673,8 +673,8 @@ export function ChatBox({
   listing,
   userRole = "TENANT",
   offerId,
-  offerStatus, // 👈 AJOUTE CETTE LIGNE
-
+  offerStatus,
+  isPaid = false, // 👈 AJOUTÉ avec valeur par défaut
 }: ChatBoxProps) {
   const { user: clerkUser } = useUser();
   const isTenant = userRole === "TENANT";
@@ -756,8 +756,7 @@ export function ChatBox({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const showPaymentBanner = offerStatus === "ACCEPTED";
-
+  const showPaymentBanner = offerStatus === "ACCEPTED" && !isPaid; // 👈 MODIFIÉ - ajout de !isPaid
 
   const loadMessages = useCallback(async () => {
     if (!conversationId) return;
@@ -1181,33 +1180,35 @@ export function ChatBox({
         )}
       </div>
 
-     {/* Bandeau de paiement - uniquement si offre ACCEPTED */}
-{showPaymentBanner && offerId && (
-  <div className="mx-4 mt-2 mb-1 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
-          <IoCardOutline className="text-emerald-600 dark:text-emerald-400 text-sm" />
+      {/* Bandeau de paiement - uniquement si offre ACCEPTED ET paiement NON effectué */}
+      {showPaymentBanner && offerId && (
+        <div className="mx-4 mt-2 mb-1 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center">
+                <IoCardOutline className="text-emerald-600 dark:text-emerald-400 text-sm" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
+                  Offre acceptée !
+                </p>
+                <p className="text-[10px] text-emerald-600/70 dark:text-emerald-500/70">
+                  Procédez au paiement pour finaliser votre réservation
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() =>
+                (window.location.href = `/fr/payment?offerId=${offerId}`)
+              }
+              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-all"
+            >
+              Payer maintenant
+              <IoArrowForwardOutline className="text-xs" />
+            </button>
+          </div>
         </div>
-        <div>
-          <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-            Offre acceptée !
-          </p>
-          <p className="text-[10px] text-emerald-600/70 dark:text-emerald-500/70">
-            Procédez au paiement pour finaliser votre réservation
-          </p>
-        </div>
-      </div>
-      <button
-        onClick={() => window.location.href = `/fr/payment?offerId=${offerId}`}
-        className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-all"
-      >
-        Payer maintenant
-        <IoArrowForwardOutline className="text-xs" />
-      </button>
-    </div>
-  </div>
-)}
+      )}
 
       {/* Info panel (pour le propriétaire) */}
       {isOwner && showInfoPanel && listing && (
@@ -1352,11 +1353,13 @@ export function ChatBox({
                   onContextMenu={(e) => isOwn && handleContextMenu(e, msg)}
                 >
                   {!isOwn && (
-                    <Avatar
-                      src={msg.senderImage}
-                      name={msg.senderName}
-                      size={28}
-                    />
+                    <div className="flex-shrink-0">
+                      <Avatar
+                        src={msg.senderImage}
+                        name={msg.senderName}
+                        size={28}
+                      />
+                    </div>
                   )}
                   <div
                     className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm ${messageBgClass} ${messageTextClass} ${isOwn ? "rounded-br-md" : "rounded-bl-md"} shadow-sm`}
@@ -1370,7 +1373,7 @@ export function ChatBox({
                       </div>
                     )}
                     {!isOwn && (
-                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                      <p className="text-[10px] font-medium text-slate-700 dark:text-slate-400 mb-1">
                         {msg.senderName}
                       </p>
                     )}

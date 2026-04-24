@@ -30,6 +30,8 @@ import {
   IoEyeOffOutline,
   IoChevronForwardOutline,
 } from "react-icons/io5";
+import { TenantHeader } from "@/components/ui/header/TenantHeader";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 const pipListing = (url: string) => `/api/listings/image?url=${encodeURIComponent(url)}`;
 
@@ -234,9 +236,15 @@ export default function PaymentPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
-        <div className={`w-12 h-12 rounded-2xl ${GRAD} animate-pulse`} />
-      </div>
+     
+<LoadingSpinner
+        fullScreen={true}
+        variant="spinner"
+        size="lg"
+        color="primary"
+        text="chargement de votre page de paiemenet"
+        speed="normal"
+      />
     );
   }
 
@@ -273,18 +281,7 @@ export default function PaymentPage() {
     <div className="min-h-screen bg-white dark:bg-slate-950">
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      <header className="sticky top-0 z-50 h-16 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl border-b border-gray-100 dark:border-slate-800 flex items-center px-5 lg:px-10 justify-between">
-        <div className="flex items-center gap-4">
-          <Link href={`/fr/messages${conversationId ? `?conversation=${conversationId}` : ""}`} className="w-9 h-9 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center hover:bg-gray-200 transition">
-            <IoArrowBackOutline className="text-gray-600 dark:text-gray-400 text-lg" />
-          </Link>
-          <span className={`text-xl font-extrabold tracking-tight ${GRAD_TEXT}`}>NestHub</span>
-        </div>
-        <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-600 font-medium">
-          <IoLockClosedOutline className="text-sm text-emerald-500" />
-          Paiement sécurisé par Stripe
-        </div>
-      </header>
+      <TenantHeader></TenantHeader>
 
       <main className="max-w-screen-xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
