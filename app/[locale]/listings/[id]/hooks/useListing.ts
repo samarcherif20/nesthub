@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 export interface Owner {
   name: string;
   isVerified: boolean;
+  username?: string;
   avatar?: string;
 }
 
@@ -14,6 +15,9 @@ export interface Listing {
   location: string;
   governorate: string;
   delegation: string;
+  street?: string;
+  latitude?: number;
+  longitude?: number;
   pricePerNight: number;
   rating: number;
   reviewCount: number;
@@ -30,7 +34,8 @@ export interface Listing {
   blockedDates: string[];
   houseRules: string[];
   owner: Owner;
-  pendingDates: string[]; // ✅ AJOUT
+  pendingDates: string[];
+  cleaningFee?: number;
 }
 
 export interface BookingData {
@@ -61,6 +66,12 @@ export function useListing(id: string) {
         if (!res.ok) throw new Error("Failed to fetch listing");
         const data = await res.json();
 
+        console.log("📦 Données reçues de l'API:", data);
+        console.log("📍 Coordonnées brutes:", {
+          lat: data.latitude,
+          lng: data.longitude,
+        });
+
         // Transform data to match Listing interface
         const transformedListing: Listing = {
           id: data.id,
@@ -73,10 +84,13 @@ export function useListing(id: string) {
             ),
           governorate: data.governorate,
           delegation: data.delegation,
+          street: data.street,
+          latitude: data.latitude,
+          longitude: data.longitude,
           pricePerNight: data.pricePerNight,
           rating: data.rating ?? 4.5,
           reviewCount: data.reviewCount ?? 0,
-          images: data.images ?? [],
+          images: data.images ?? data.photos?.map((p: any) => p.url) ?? [],
           type: data.type,
           isVerified: data.isVerified ?? false,
           bedrooms: data.bedrooms ?? data.rooms ?? 1,
@@ -87,13 +101,22 @@ export function useListing(id: string) {
           equipment: data.equipment ?? {},
           availability: data.availability ?? {},
           blockedDates: data.blockedDates ?? [],
-          pendingDates: data.pendingDates ?? [], // ✅ AJOUT          houseRules: data.houseRules ?? defaultHouseRules,
+          pendingDates: data.pendingDates ?? [],
+          houseRules: data.houseRules ?? defaultHouseRules,
+          cleaningFee: data.cleaningFee ?? 85,
           owner: {
-            name: data.owner?.name ?? "Hôte NestHub",
-            isVerified: data.owner?.isVerified ?? true,
-            avatar: data.owner?.avatar,
+            name:
+              data.owner?.username ?? data.owner?.firstName ?? "Hôte NestHub",
+            username: data.owner?.username,
+            isVerified: data.owner?.isIdentityVerified ?? true,
+            avatar: data.owner?.profilePictureUrl,
           },
         };
+
+        console.log("📍 Coordonnées dans transformedListing:", {
+          latitude: transformedListing.latitude,
+          longitude: transformedListing.longitude,
+        });
 
         setListing(transformedListing);
       } catch (error) {
@@ -111,7 +134,7 @@ export function useListing(id: string) {
     if (!listing || !checkIn || !checkOut) return 0;
     const nights = nightsBetween(checkIn, checkOut);
     const basePrice = listing.pricePerNight * nights;
-    const cleaningFee = 85;
+    const cleaningFee = listing.cleaningFee ?? 85;
     const serviceFee = Math.round(basePrice * 0.05);
     return basePrice + cleaningFee + serviceFee;
   }, [listing, checkIn, checkOut]);
@@ -167,7 +190,7 @@ export function useListing(id: string) {
     basePrice: listing
       ? listing.pricePerNight * nightsBetween(checkIn, checkOut)
       : 0,
-    cleaningFee: 85,
+    cleaningFee: listing?.cleaningFee ?? 85,
     serviceFee: listing
       ? Math.round(
           listing.pricePerNight * nightsBetween(checkIn, checkOut) * 0.05,
