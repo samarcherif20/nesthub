@@ -50,15 +50,16 @@ import {
   AlertCircle,
   Eye,
   EyeOff,
-  ChevronDown,
   Loader2,
   MapPin,
-  TrendingUp,
   Lightbulb,
   Rocket,
   Moon,
   Save,
-  ArrowLeft,
+  Coffee,
+  PartyPopper,
+  Dog,
+  Ban,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -88,10 +89,17 @@ interface ListingFormData {
   description: string;
   rooms: number;
   bathrooms: number;
-  maxGuests: number;
+  numberOfKitchens: number;
+  maxGuests: number | null;
   surfaceArea: number | null;
   floorNumber: number | null;
   hasElevator: boolean;
+  hasBalcony: boolean;
+  hasGarden: boolean;
+  hasGarage: boolean;
+  isFurnished: boolean;
+  petsAllowed: boolean;
+  smokingAllowed: boolean;
   equipment: Record<string, boolean>;
   services: Record<string, boolean>;
   houseRules: Record<string, boolean>;
@@ -129,10 +137,17 @@ const initial: ListingFormData = {
   description: "",
   rooms: 1,
   bathrooms: 1,
-  maxGuests: 2,
+  numberOfKitchens: 1,
+  maxGuests: null,
   surfaceArea: null,
   floorNumber: null,
   hasElevator: false,
+  hasBalcony: false,
+  hasGarden: false,
+  hasGarage: false,
+  isFurnished: false,
+  petsAllowed: false,
+  smokingAllowed: false,
   equipment: {},
   services: {},
   houseRules: {},
@@ -199,7 +214,7 @@ const equipmentIds = [
   "dryer",
 ];
 
-const serviceIds = ["cleaning", "linen", "pets", "smoking"];
+const serviceIds = ["cleaning", "linen"];
 const houseRuleIds = ["noParties", "quietAfter22"];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -219,7 +234,7 @@ function Stepper({
       <button
         type="button"
         onClick={() => onChange(Math.max(min, value - 1))}
-        className="w-9 h-9 flex items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors active:scale-90"
+        className="w-9 h-9 flex items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all active:scale-90 cursor-pointer"
       >
         <ChevronLeft size={16} />
       </button>
@@ -229,7 +244,7 @@ function Stepper({
       <button
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
-        className="w-9 h-9 flex items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-colors active:scale-90"
+        className="w-9 h-9 flex items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all active:scale-90 cursor-pointer"
       >
         <ChevronRight size={16} />
       </button>
@@ -250,7 +265,7 @@ function Toggle({
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
-      className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500/40 ${checked ? "bg-sky-600" : "bg-slate-200 dark:bg-slate-700"}`}
+      className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500/40 cursor-pointer ${checked ? "bg-sky-600" : "bg-slate-200 dark:bg-slate-700"}`}
     >
       <span
         className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-200 ${checked ? "translate-x-6" : "translate-x-0"}`}
@@ -274,7 +289,6 @@ function SectionTitle({ num, title }: { num?: number; title: string }) {
   );
 }
 
-// Fonction pour obtenir l'URL affichable de l'image
 const getDisplayUrl = (url: string) => {
   if (!url) return null;
   if (url.startsWith("blob:")) return url;
@@ -282,7 +296,6 @@ const getDisplayUrl = (url: string) => {
   return `/api/listings/image?url=${encodeURIComponent(url)}`;
 };
 
-// Tooltip component
 function Tooltip({
   children,
   text,
@@ -299,6 +312,39 @@ function Tooltip({
     </span>
   );
 }
+
+const geocodeAddress = async (
+  address: string,
+): Promise<{ lat: number; lng: number } | null> => {
+  try {
+    console.log("🔍 [GEOCODAGE] Appel pour:", address);
+    if (!address || address.length < 10) {
+      console.log("⚠️ [GEOCODAGE] Adresse trop courte");
+      return null;
+    }
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=tn`,
+      { headers: { "Accept-Language": "fr" } },
+    );
+    if (!response.ok) {
+      console.error("❌ [GEOCODAGE] Erreur HTTP:", response.status);
+      return null;
+    }
+    const data = await response.json();
+    console.log("📡 [GEOCODAGE] Réponse:", data);
+    if (data && data.length > 0) {
+      const lat = parseFloat(data[0].lat);
+      const lng = parseFloat(data[0].lon);
+      console.log("✅ [GEOCODAGE] Coordonnées trouvées:", { lat, lng });
+      return { lat, lng };
+    }
+    console.log("❌ [GEOCODAGE] Aucun résultat pour:", address);
+    return null;
+  } catch (error) {
+    console.error("❌ [GEOCODAGE] Erreur:", error);
+    return null;
+  }
+};
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 export default function CreateListingPage({
@@ -320,6 +366,7 @@ export default function CreateListingPage({
   const [fieldErrors, setFieldErrors] = useState<FieldError[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   const STEPS = [
     { id: 1, key: "typeLocation", icon: Building2 },
@@ -330,31 +377,17 @@ export default function CreateListingPage({
     { id: 6, key: "preview", icon: Eye },
   ];
 
-  // Détecter les modifications non sauvegardées
-  useEffect(() => {
-    const hasChanges =
-      form.title !== "" ||
-      form.description !== "" ||
-      form.photos.length > 0 ||
-      form.governorate !== "" ||
-      form.delegation !== "" ||
-      form.street !== "";
-    setHasUnsavedChanges(hasChanges);
-  }, [form]);
+  // ═══════════════════════════════════════════════════════════════════
+  // 1. DÉCLARATION DE upd EN PREMIER
+  // ═══════════════════════════════════════════════════════════════════
+  const upd = useCallback(
+    (u: Partial<ListingFormData>) => setForm((p) => ({ ...p, ...u })),
+    [],
+  );
 
-  // Confirmation avant de quitter la page
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue = t("confirmLeave");
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [hasUnsavedChanges, t]);
-
-  // Validation d'un champ spécifique
+  // ═══════════════════════════════════════════════════════════════════
+  // 2. Validation - surfaceArea et floorNumber obligatoires
+  // ═══════════════════════════════════════════════════════════════════
   const validateField = useCallback(
     (field: string, value: any): string | null => {
       switch (field) {
@@ -385,8 +418,15 @@ export default function CreateListingPage({
         case "bathrooms":
           if (value < 1) return t("validation.bathroomsRequired");
           return null;
-        case "maxGuests":
-          if (value < 1) return t("validation.maxGuestsRequired");
+        case "numberOfKitchens":
+          if (value < 1) return t("validation.kitchensRequired");
+          return null;
+        case "surfaceArea":
+          if (!value || value <= 0) return "La surface est requise";
+          return null;
+        case "floorNumber":
+          if (value === null || value === undefined)
+            return "Le numéro d'étage est requis";
           return null;
         case "photos":
           if (form.photos.length === 0) return t("validation.photosRequired");
@@ -423,26 +463,104 @@ export default function CreateListingPage({
     ],
   );
 
-  // Valider tous les champs de l'étape courante
+  const handleBlur = useCallback(
+    (field: string, value: any) => {
+      const error = validateField(field, value);
+      setFieldErrors((prev) => {
+        const filtered = prev.filter((e) => e.field !== field);
+        if (error) return [...filtered, { field, message: error }];
+        return filtered;
+      });
+    },
+    [validateField],
+  );
+
+  // ═══════════════════════════════════════════════════════════════════
+  // 3. updateMapFromAddress - utilise upd et handleBlur (déclarés maintenant)
+  // ═══════════════════════════════════════════════════════════════════
+  const updateMapFromAddress = useCallback(async () => {
+    const addressParts = [];
+    if (form.street?.trim()) addressParts.push(form.street.trim());
+    if (form.delegation?.trim()) addressParts.push(form.delegation.trim());
+    if (form.governorate?.trim()) addressParts.push(form.governorate.trim());
+    addressParts.push("Tunisie");
+    const fullAddress = addressParts.join(", ");
+    console.log("📍 [MAP] Adresse complète:", fullAddress);
+    if (
+      !form.governorate?.trim() ||
+      !form.delegation?.trim() ||
+      !form.street?.trim()
+    ) {
+      console.log("⚠️ [MAP] Adresse incomplète, attente des champs...");
+      return;
+    }
+    setIsGeocoding(true);
+    try {
+      const coords = await geocodeAddress(fullAddress);
+      console.log("🎯 [MAP] Coordonnées reçues:", coords);
+      if (coords) {
+        upd({ latitude: coords.lat, longitude: coords.lng });
+        handleBlur("location", null);
+        toast.success("Position trouvée sur la carte !");
+      } else {
+        console.log("❌ [MAP] Aucune coordonnée trouvée");
+        toast.warning(
+          "Adresse non trouvée, veuillez ajuster la position manuellement",
+        );
+      }
+    } catch (error) {
+      console.error("❌ [MAP] Erreur géocodage:", error);
+    } finally {
+      setIsGeocoding(false);
+    }
+  }, [form.governorate, form.delegation, form.street, upd, handleBlur]);
+
+  // Détecter les modifications non sauvegardées
+  useEffect(() => {
+    const hasChanges =
+      form.title !== "" ||
+      form.description !== "" ||
+      form.photos.length > 0 ||
+      form.governorate !== "" ||
+      form.delegation !== "" ||
+      form.street !== "";
+    setHasUnsavedChanges(hasChanges);
+  }, [form]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = t("confirmLeave");
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges, t]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (form.governorate && form.delegation && form.street) {
+        updateMapFromAddress();
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [form.governorate, form.delegation, form.street, updateMapFromAddress]);
+
   const validateStep = useCallback((): boolean => {
     const errors: FieldError[] = [];
 
     if (step === 1) {
       const titleError = validateField("title", form.title);
       if (titleError) errors.push({ field: "title", message: titleError });
-
       const descError = validateField("description", form.description);
       if (descError) errors.push({ field: "description", message: descError });
-
       const govError = validateField("governorate", form.governorate);
       if (govError) errors.push({ field: "governorate", message: govError });
-
       const delError = validateField("delegation", form.delegation);
       if (delError) errors.push({ field: "delegation", message: delError });
-
       const streetError = validateField("street", form.street);
       if (streetError) errors.push({ field: "street", message: streetError });
-
       const locError = validateField("location", null);
       if (locError) errors.push({ field: "location", message: locError });
     }
@@ -450,13 +568,20 @@ export default function CreateListingPage({
     if (step === 2) {
       const roomsError = validateField("rooms", form.rooms);
       if (roomsError) errors.push({ field: "rooms", message: roomsError });
-
       const bathsError = validateField("bathrooms", form.bathrooms);
       if (bathsError) errors.push({ field: "bathrooms", message: bathsError });
-
-      const guestsError = validateField("maxGuests", form.maxGuests);
-      if (guestsError)
-        errors.push({ field: "maxGuests", message: guestsError });
+      const kitchensError = validateField(
+        "numberOfKitchens",
+        form.numberOfKitchens,
+      );
+      if (kitchensError)
+        errors.push({ field: "numberOfKitchens", message: kitchensError });
+      const surfaceError = validateField("surfaceArea", form.surfaceArea);
+      if (surfaceError)
+        errors.push({ field: "surfaceArea", message: surfaceError });
+      const floorError = validateField("floorNumber", form.floorNumber);
+      if (floorError)
+        errors.push({ field: "floorNumber", message: floorError });
     }
 
     if (step === 4) {
@@ -471,7 +596,6 @@ export default function CreateListingPage({
       );
       if (priceNightError)
         errors.push({ field: "pricePerNight", message: priceNightError });
-
       const priceMonthError = validateField(
         "pricePerMonth",
         form.pricePerMonth,
@@ -481,7 +605,6 @@ export default function CreateListingPage({
     }
 
     setFieldErrors(errors);
-
     if (errors.length > 0) {
       toast.error(errors[0].message);
       return false;
@@ -489,7 +612,7 @@ export default function CreateListingPage({
     return true;
   }, [step, form, validateField]);
 
-  // Vérifier si l'étape est valide (sans afficher les erreurs)
+  // ✅ isStepValid avec surfaceArea et floorNumber obligatoires
   const isStepValid = useMemo(() => {
     if (step === 1) {
       if (!form.title.trim() || form.title.length < 5) return false;
@@ -503,7 +626,10 @@ export default function CreateListingPage({
     if (step === 2) {
       if (form.rooms < 1) return false;
       if (form.bathrooms < 1) return false;
-      if (form.maxGuests < 1) return false;
+      if (form.numberOfKitchens < 1) return false;
+      if (!form.surfaceArea || form.surfaceArea <= 0) return false;
+      if (form.floorNumber === null || form.floorNumber === undefined)
+        return false;
     }
     if (step === 4) {
       if (form.photos.length === 0) return false;
@@ -524,18 +650,6 @@ export default function CreateListingPage({
     return true;
   }, [step, form]);
 
-  const handleBlur = useCallback(
-    (field: string, value: any) => {
-      const error = validateField(field, value);
-      setFieldErrors((prev) => {
-        const filtered = prev.filter((e) => e.field !== field);
-        if (error) return [...filtered, { field, message: error }];
-        return filtered;
-      });
-    },
-    [validateField],
-  );
-
   const getFieldError = useCallback(
     (field: string): string | null => {
       const error = fieldErrors.find((e) => e.field === field);
@@ -544,7 +658,7 @@ export default function CreateListingPage({
     [fieldErrors],
   );
 
-  // Indicateur de complétion par étape
+  // ✅ stepCompletion avec surfaceArea et floorNumber
   const stepCompletion = useMemo(
     () => ({
       1:
@@ -552,7 +666,14 @@ export default function CreateListingPage({
         form.description &&
         form.governorate &&
         form.latitude !== null,
-      2: form.rooms > 0 && form.bathrooms > 0 && form.maxGuests > 0,
+      2:
+        form.rooms > 0 &&
+        form.bathrooms > 0 &&
+        form.numberOfKitchens > 0 &&
+        form.surfaceArea &&
+        form.surfaceArea > 0 &&
+        form.floorNumber !== null &&
+        form.floorNumber !== undefined,
       3: true,
       4: form.photos.length > 0 && form.photos.some((p) => p.isMain),
       5:
@@ -563,7 +684,6 @@ export default function CreateListingPage({
     [form],
   );
 
-  // ── Load draft from localStorage ─────────────────────────────────────
   useEffect(() => {
     try {
       const d = localStorage.getItem("listing_draft");
@@ -575,71 +695,63 @@ export default function CreateListingPage({
     } catch {}
   }, []);
 
-  // ── Nettoyer les URLs objet au démontage ────────────────────────────
   useEffect(() => {
     return () => {
       form.photos.forEach((photo) => {
-        if (photo.url && photo.url.startsWith("blob:")) {
+        if (photo.url && photo.url.startsWith("blob:"))
           URL.revokeObjectURL(photo.url);
-        }
-        if (photo.thumbnailUrl && photo.thumbnailUrl.startsWith("blob:")) {
+        if (photo.thumbnailUrl && photo.thumbnailUrl.startsWith("blob:"))
           URL.revokeObjectURL(photo.thumbnailUrl);
-        }
       });
     };
   }, [form.photos]);
 
-  // ── Upload photos to Vercel Blob ─────────────────────────────────────
-  const uploadPhotos = useCallback(async (photos: any[]) => {
-    const uploadedPhotos = [];
-
-    for (let i = 0; i < photos.length; i++) {
-      const photo = photos[i];
-
-      if (photo.file) {
-        const formData = new FormData();
-        formData.append("photos", photo.file);
-
-        const uploadRes = await fetch("/api/listings/upload-temp-photo", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (uploadRes.ok) {
-          const data = await uploadRes.json();
-          uploadedPhotos.push({
-            ...photo,
-            url: data.url,
-            thumbnailUrl: data.thumbnailUrl,
-            file: undefined,
-          });
-        } else {
-          throw new Error(`Échec upload photo ${i + 1}`);
-        }
-      } else {
-        uploadedPhotos.push(photo);
+  const uploadSinglePhoto = useCallback(
+    async (file: File): Promise<{ url: string; thumbnailUrl: string }> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      const uploadRes = await fetch("/api/listings/upload-temp-photo", {
+        method: "POST",
+        body: formData,
+      });
+      if (!uploadRes.ok) {
+        const error = await uploadRes.json();
+        throw new Error(error.error || `Échec upload photo`);
       }
-    }
+      const data = await uploadRes.json();
+      return { url: data.url, thumbnailUrl: data.thumbnailUrl || data.url };
+    },
+    [],
+  );
 
-    return uploadedPhotos;
-  }, []);
+  const uploadPhotos = useCallback(
+    async (photos: any[]) => {
+      const uploadedPhotos = [];
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+        if (photo.file) {
+          const { url, thumbnailUrl } = await uploadSinglePhoto(photo.file);
+          uploadedPhotos.push({ ...photo, url, thumbnailUrl, file: undefined });
+        } else {
+          uploadedPhotos.push(photo);
+        }
+      }
+      return uploadedPhotos;
+    },
+    [uploadSinglePhoto],
+  );
 
-  // ── Sauvegarder le brouillon ─────────────────────────────────────────
   const saveDraft = useCallback(async () => {
     if (saving) return;
-
     if (!navigator.onLine) {
       toast.error(t("error.networkError"));
       return;
     }
-
     setSaving(true);
-
     try {
       const uploadedPhotos = await uploadPhotos(form.photos);
       const formWithUrls = { ...form, photos: uploadedPhotos };
       localStorage.setItem("listing_draft", JSON.stringify(formWithUrls));
-
       let response;
       if (listingId) {
         response = await fetch(`/api/listings/${listingId}`, {
@@ -654,7 +766,6 @@ export default function CreateListingPage({
           body: JSON.stringify({ ...formWithUrls, status: "DRAFT" }),
         });
       }
-
       if (response && response.ok) {
         const data = await response.json();
         if (!listingId && data.id) {
@@ -679,7 +790,6 @@ export default function CreateListingPage({
     }
   }, [form, listingId, saving, uploadPhotos, t]);
 
-  // Auto-save toutes les 30 secondes
   useEffect(() => {
     const id = setInterval(() => {
       if (form.title || form.photos.length > 0) saveDraft();
@@ -687,34 +797,22 @@ export default function CreateListingPage({
     return () => clearInterval(id);
   }, [form, saveDraft]);
 
-  const upd = useCallback(
-    (u: Partial<ListingFormData>) => setForm((p) => ({ ...p, ...u })),
-    [],
-  );
-
-  // ── Navigation ────────────────────────────────────────────────────────
   const goToNextStep = () => {
     if (validateStep()) {
       setStep((s) => Math.min(STEPS.length, s + 1));
     }
   };
 
-  const goToPrevStep = () => {
-    setStep((s) => Math.max(1, s - 1));
-  };
+  const goToPrevStep = () => setStep((s) => Math.max(1, s - 1));
 
-  // ── Publier l'annonce ─────────────────────────────────────────────────
   const handlePublish = async () => {
     if (!validateStep()) return;
-
     if (!navigator.onLine) {
       toast.error(t("error.networkError"));
       return;
     }
-
     setSaving(true);
     const loadingToast = toast.loading(t("publishing"));
-
     try {
       const uploadedPhotos = await uploadPhotos(form.photos);
       const formWithUrls = {
@@ -722,28 +820,22 @@ export default function CreateListingPage({
         photos: uploadedPhotos,
         status: "ACTIVE",
       };
-
       const url = listingId ? `/api/listings/${listingId}` : "/api/listings";
       const method = listingId ? "PUT" : "POST";
-
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 30000);
-
       const response = await fetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formWithUrls),
         signal: controller.signal,
       });
-
       clearTimeout(timeoutId);
       const data = await response.json();
-
       if (response.ok) {
         localStorage.removeItem("listing_draft");
         toast.dismiss(loadingToast);
         toast.success(t("success.published"));
-
         const newListingId = data.id || listingId;
         if (newListingId) {
           router.push(`/${locale}/dashboard/owner/listings/${newListingId}`);
@@ -769,55 +861,31 @@ export default function CreateListingPage({
     }
   };
 
-  // ── Photo handling ────────────────────────────────────────────────────
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
-
     const newPhotos = [];
     for (const file of Array.from(files).slice(0, 20 - form.photos.length)) {
-      const formData = new FormData();
-      formData.append("photos", file);
-
-      const uploadRes = await fetch("/api/listings/upload-temp-photo", {
-        method: "POST",
-        body: formData,
+      const { url, thumbnailUrl } = await uploadSinglePhoto(file);
+      newPhotos.push({
+        url,
+        thumbnailUrl,
+        isMain: form.photos.length === 0 && newPhotos.length === 0,
+        file: undefined,
       });
-
-      if (uploadRes.ok) {
-        const data = await uploadRes.json();
-        newPhotos.push({
-          url: data.url,
-          thumbnailUrl: data.thumbnailUrl,
-          isMain: false, // ✅ AUCUNE PHOTO N'EST MAIN PAR DÉFAUT
-          file: undefined,
-        });
-      }
     }
-
     upd({ photos: [...form.photos, ...newPhotos] });
   };
 
   const removePhoto = (idx: number) => {
     const newPhotos = form.photos.filter((_, i) => i !== idx);
-    // Si la photo supprimée était la principale et qu'il reste des photos, ne pas définir automatiquement de nouvelle photo principale
-    // L'utilisateur devra choisir manuellement
+    if (newPhotos.length > 0 && !newPhotos.some((p) => p.isMain)) {
+      newPhotos[0].isMain = true;
+    }
     upd({ photos: newPhotos });
-    const error = validateField("photos", null);
-    setFieldErrors((prev) => {
-      const filtered = prev.filter((e) => e.field !== "photos");
-      if (error) return [...filtered, { field: "photos", message: error }];
-      return filtered;
-    });
   };
 
   const setMainPhoto = (idx: number) => {
     upd({ photos: form.photos.map((p, i) => ({ ...p, isMain: i === idx })) });
-    const error = validateField("photos", null);
-    setFieldErrors((prev) => {
-      const filtered = prev.filter((e) => e.field !== "photos");
-      if (error) return [...filtered, { field: "photos", message: error }];
-      return filtered;
-    });
     toast.success(t("step4.mainPhotoSet"));
   };
 
@@ -841,25 +909,23 @@ export default function CreateListingPage({
   const serviceIcons: Record<string, any> = {
     cleaning: Sparkles,
     linen: Sparkles,
-    pets: Home,
-    smoking: EyeOff,
   };
-
   const ruleIcons: Record<string, any> = {
-    noParties: Sparkles,
+    noParties: PartyPopper,
     quietAfter22: Moon,
+    petsAllowed: Dog,
+    smokingAllowed: Ban,
   };
 
   return (
     <div className="h-full flex flex-col bg-slate-50/20 dark:bg-slate-950 overflow-hidden">
       {/* Header fixe */}
       <div className="flex-shrink-0 bg-white dark:bg-slate-950 backdrop-blur-sm z-10 border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-6xl mx-auto  py-4">
-          {/* Breadcrumb */}
+        <div className="max-w-6xl mx-auto py-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-2">
             <Link
               href={`/${locale}/dashboard/owner/listings`}
-              className="hover:text-indigo-600 transition-colors"
+              className="hover:text-indigo-600 transition-colors cursor-pointer"
             >
               {t("breadcrumb.myListings")}
             </Link>
@@ -884,7 +950,7 @@ export default function CreateListingPage({
                 type="button"
                 onClick={saveDraft}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-lg transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {saving ? (
                   <Loader2 size={14} className="animate-spin" />
@@ -904,7 +970,6 @@ export default function CreateListingPage({
             </Tooltip>
           </div>
 
-          {/* Progress bar */}
           <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-4">
             <div
               className="h-full bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 rounded-full transition-all duration-500"
@@ -912,13 +977,11 @@ export default function CreateListingPage({
             />
           </div>
 
-          {/* Step dots avec badges de complétion */}
           <div className="flex items-center justify-between mt-4">
             {STEPS.map((s) => {
               const Icon = s.icon;
               const isComplete =
                 stepCompletion[s.id as keyof typeof stepCompletion];
-
               return (
                 <button
                   key={s.id}
@@ -939,7 +1002,7 @@ export default function CreateListingPage({
                       {s.id < step ? <Check size={14} /> : <Icon size={14} />}
                     </div>
                     {isComplete && s.id !== step && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900"></div>
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
                     )}
                   </div>
                   <span
@@ -955,10 +1018,9 @@ export default function CreateListingPage({
       </div>
 
       {/* Contenu scrollable */}
-      <div className="flex-1 overflow-y-auto  py-8">
+      <div className="flex-1 overflow-y-auto py-8">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Content area */}
             <div className="lg:col-span-2 space-y-8">
               {/* ══════ STEP 1 : Type & Location ══════════════════════ */}
               {step === 1 && (
@@ -982,8 +1044,7 @@ export default function CreateListingPage({
                               className="sr-only"
                             />
                             <div
-                              className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200
-                              ${
+                              className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 ${
                                 form.type === pt.value
                                   ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20 shadow-sm"
                                   : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"
@@ -1029,8 +1090,7 @@ export default function CreateListingPage({
                           onBlur={() => handleBlur("title", form.title)}
                           placeholder={t("step1.titlePlaceholder")}
                           maxLength={100}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 outline-none transition-all
-                            ${getFieldError("title") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 outline-none transition-all ${getFieldError("title") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
                         />
                         {getFieldError("title") && (
                           <p className="text-xs text-rose-500 mt-1">
@@ -1058,8 +1118,7 @@ export default function CreateListingPage({
                           placeholder={t("step1.descriptionPlaceholder")}
                           rows={4}
                           maxLength={2000}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 outline-none resize-none
-                            ${getFieldError("description") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 outline-none resize-none ${getFieldError("description") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
                         />
                         {getFieldError("description") && (
                           <p className="text-xs text-rose-500 mt-1">
@@ -1074,24 +1133,17 @@ export default function CreateListingPage({
                     <SectionTitle num={3} title={t("step1.locationTitle")} />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                       <div>
-                        <div className="flex items-center gap-1 mb-1.5">
-                          <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                            {t("step1.governorate")}
-                          </label>
-                          <Tooltip text={t("required")}>
-                            <span className="text-rose-500 text-xs cursor-help">
-                              *
-                            </span>
-                          </Tooltip>
-                        </div>
+                        <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                          {t("step1.governorate")}{" "}
+                          <span className="text-rose-500">*</span>
+                        </label>
                         <select
                           value={form.governorate}
                           onChange={(e) => upd({ governorate: e.target.value })}
                           onBlur={() =>
                             handleBlur("governorate", form.governorate)
                           }
-                          className={`w-full appearance-none bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-8 text-base focus:ring-2 focus:ring-sky-500/30 outline-none
-                            ${getFieldError("governorate") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          className={`w-full appearance-none bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-8 text-base focus:ring-2 focus:ring-sky-500/30 outline-none ${getFieldError("governorate") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
                         >
                           <option value="">{t("step1.choose")}</option>
                           {governorates.map((g) => (
@@ -1107,16 +1159,10 @@ export default function CreateListingPage({
                         )}
                       </div>
                       <div>
-                        <div className="flex items-center gap-1 mb-1.5">
-                          <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                            {t("step1.delegation")}
-                          </label>
-                          <Tooltip text={t("required")}>
-                            <span className="text-rose-500 text-xs cursor-help">
-                              *
-                            </span>
-                          </Tooltip>
-                        </div>
+                        <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                          {t("step1.delegation")}{" "}
+                          <span className="text-rose-500">*</span>
+                        </label>
                         <input
                           type="text"
                           value={form.delegation}
@@ -1125,8 +1171,7 @@ export default function CreateListingPage({
                             handleBlur("delegation", form.delegation)
                           }
                           placeholder={t("step1.delegationPlaceholder")}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none
-                            ${getFieldError("delegation") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none ${getFieldError("delegation") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
                         />
                         {getFieldError("delegation") && (
                           <p className="text-xs text-rose-500 mt-1">
@@ -1135,24 +1180,17 @@ export default function CreateListingPage({
                         )}
                       </div>
                       <div>
-                        <div className="flex items-center gap-1 mb-1.5">
-                          <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                            {t("step1.street")}
-                          </label>
-                          <Tooltip text={t("required")}>
-                            <span className="text-rose-500 text-xs cursor-help">
-                              *
-                            </span>
-                          </Tooltip>
-                        </div>
+                        <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                          {t("step1.street")}{" "}
+                          <span className="text-rose-500">*</span>
+                        </label>
                         <input
                           type="text"
                           value={form.street}
                           onChange={(e) => upd({ street: e.target.value })}
                           onBlur={() => handleBlur("street", form.street)}
                           placeholder={t("step1.streetPlaceholder")}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none
-                            ${getFieldError("street") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none ${getFieldError("street") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
                         />
                         {getFieldError("street") && (
                           <p className="text-xs text-rose-500 mt-1">
@@ -1163,16 +1201,16 @@ export default function CreateListingPage({
                     </div>
 
                     <div>
-                      <div className="flex items-center gap-1 mb-1.5">
-                        <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                          {t("step1.exactLocation")}
-                        </label>
-                        <Tooltip text={t("required")}>
-                          <span className="text-rose-500 text-xs cursor-help">
-                            *
-                          </span>
-                        </Tooltip>
-                      </div>
+                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                        {t("step1.exactLocation")}{" "}
+                        <span className="text-rose-500">*</span>
+                        {isGeocoding && (
+                          <Loader2
+                            size={12}
+                            className="inline ml-2 animate-spin"
+                          />
+                        )}
+                      </label>
                       <div className="h-64 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
                         <MapPickerWrapper
                           latitude={form.latitude}
@@ -1184,6 +1222,9 @@ export default function CreateListingPage({
                           onAddressChange={(address) =>
                             console.log("Address:", address)
                           }
+                          isGeocoding={isGeocoding}
+                          showCurrentLocation={true}
+                          readOnly={false}
                         />
                       </div>
                       {getFieldError("location") && (
@@ -1205,20 +1246,23 @@ export default function CreateListingPage({
                       {
                         key: "rooms",
                         icon: Bed,
+                        label: "Chambres",
                         value: form.rooms,
                         set: (v: number) => upd({ rooms: v }),
                       },
                       {
                         key: "bathrooms",
                         icon: Bath,
+                        label: "Salles de bain",
                         value: form.bathrooms,
                         set: (v: number) => upd({ bathrooms: v }),
                       },
                       {
-                        key: "maxGuests",
-                        icon: Users,
-                        value: form.maxGuests,
-                        set: (v: number) => upd({ maxGuests: v }),
+                        key: "numberOfKitchens",
+                        icon: Utensils,
+                        label: "Cuisines",
+                        value: form.numberOfKitchens,
+                        set: (v: number) => upd({ numberOfKitchens: v }),
                       },
                     ].map((row) => {
                       const Icon = row.icon;
@@ -1234,19 +1278,14 @@ export default function CreateListingPage({
                                 className="text-sky-600 dark:text-sky-400"
                               />
                             </div>
-                            <div>
-                              <p className="font-bold text-sm text-slate-900 dark:text-white">
-                                {t(`step2.${row.key}`)}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {t(`step2.${row.key}Desc`)}
-                              </p>
-                            </div>
+                            <p className="font-bold text-sm text-slate-900 dark:text-white">
+                              {row.label}
+                            </p>
                           </div>
                           <Stepper
                             value={row.value}
                             min={1}
-                            max={row.key === "maxGuests" ? 30 : 20}
+                            max={10}
                             onChange={row.set}
                           />
                         </div>
@@ -1254,10 +1293,98 @@ export default function CreateListingPage({
                     })}
                   </div>
 
+                  {/* Capacité voyageurs - OPTIONNEL avec gestion null */}
+                  <div className="mt-4 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                        <Users
+                          size={16}
+                          className="text-purple-600 dark:text-purple-400"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-bold text-sm text-slate-900 dark:text-white">
+                          Capacité voyageurs
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Optionnel
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = form.maxGuests ?? 0;
+                          upd({ maxGuests: Math.max(0, current - 1) });
+                        }}
+                        disabled={form.maxGuests === null}
+                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-30"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      <span className="w-12 text-center font-bold text-base text-slate-900 dark:text-white">
+                        {form.maxGuests === null ? "—" : form.maxGuests}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const current = form.maxGuests ?? 0;
+                          upd({ maxGuests: Math.min(50, current + 1) });
+                        }}
+                        disabled={form.maxGuests === null}
+                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-30"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => upd({ maxGuests: null })}
+                        className="ml-1 px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded transition-colors"
+                      >
+                        Effacer
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Balcon, Jardin, Garage */}
+                  <div className="grid grid-cols-1 gap-3 mt-4">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                      <Trees size={16} className="text-emerald-500" />
+                      <p className="font-bold text-sm text-slate-900 dark:text-white">
+                        Balcon / Terrasse
+                      </p>
+                      <Toggle
+                        checked={form.hasBalcony}
+                        onChange={(v) => upd({ hasBalcony: v })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                      <Trees size={16} className="text-emerald-500" />
+                      <p className="font-bold text-sm text-slate-900 dark:text-white">
+                        Jardin
+                      </p>
+                      <Toggle
+                        checked={form.hasGarden}
+                        onChange={(v) => upd({ hasGarden: v })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                      <Car size={16} className="text-emerald-500" />
+                      <p className="font-bold text-sm text-slate-900 dark:text-white">
+                        Garage / Parking privé
+                      </p>
+                      <Toggle
+                        checked={form.hasGarage}
+                        onChange={(v) => upd({ hasGarage: v })}
+                      />
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                        {t("step2.surface")}
+                        Surface (m²)
                       </label>
                       <div className="relative">
                         <input
@@ -1270,17 +1397,25 @@ export default function CreateListingPage({
                                 : null,
                             })
                           }
+                          onBlur={() =>
+                            handleBlur("surfaceArea", form.surfaceArea)
+                          }
                           placeholder="120"
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 px-4 pr-12 text-base outline-none focus:ring-2 focus:ring-sky-500/30"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                          {t("units.sqm")}
+                          m²
                         </span>
                       </div>
+                      {getFieldError("surfaceArea") && (
+                        <p className="text-xs text-rose-500 mt-1">
+                          {getFieldError("surfaceArea")}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                        {t("step2.floor")}
+                        Étage
                       </label>
                       <div className="relative">
                         <input
@@ -1293,7 +1428,10 @@ export default function CreateListingPage({
                                 : null,
                             })
                           }
-                          placeholder={t("step2.floorPlaceholder")}
+                          onBlur={() =>
+                            handleBlur("floorNumber", form.floorNumber)
+                          }
+                          placeholder="RDC = 0"
                           className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 px-4 pr-10 text-base outline-none focus:ring-2 focus:ring-sky-500/30"
                         />
                         <ArrowUp
@@ -1301,26 +1439,22 @@ export default function CreateListingPage({
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
                         />
                       </div>
+                      {getFieldError("floorNumber") && (
+                        <p className="text-xs text-rose-500 mt-1">
+                          {getFieldError("floorNumber")}
+                        </p>
+                      )}
                     </div>
                   </div>
 
                   <div className="mt-4 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                        <ArrowUp
-                          size={16}
-                          className="text-violet-600 dark:text-violet-400"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm text-slate-900 dark:text-white">
-                          {t("step2.elevator")}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {t("step2.elevatorDesc")}
-                        </p>
-                      </div>
-                    </div>
+                    <ArrowUp
+                      size={16}
+                      className="text-violet-600 dark:text-violet-400"
+                    />
+                    <p className="font-bold text-sm text-slate-900 dark:text-white">
+                      Ascenseur
+                    </p>
                     <Toggle
                       checked={form.hasElevator}
                       onChange={(v) => upd({ hasElevator: v })}
@@ -1329,7 +1463,7 @@ export default function CreateListingPage({
                 </div>
               )}
 
-              {/* ══════ STEP 3 : Equipment ════════════════════════════ */}
+              {/* ══════ STEP 3 : Equipment / Services / Rules ════════════════════════════ */}
               {step === 3 && (
                 <div className="space-y-5">
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
@@ -1354,11 +1488,7 @@ export default function CreateListingPage({
                               className="sr-only"
                             />
                             <div
-                              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border-2 transition-all duration-200 ${
-                                active
-                                  ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20"
-                                  : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"
-                              }`}
+                              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border-2 transition-all duration-200 ${active ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20" : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"}`}
                             >
                               <Icon
                                 size={18}
@@ -1381,77 +1511,130 @@ export default function CreateListingPage({
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                     <SectionTitle title={t("step3.servicesTitle")} />
                     <div className="space-y-3">
-                      {serviceIds.map((id) => {
-                        const Icon = serviceIcons[id] || Sparkles;
-                        return (
-                          <div
-                            key={id}
-                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                                <Icon
-                                  size={16}
-                                  className="text-violet-600 dark:text-violet-400"
-                                />
-                              </div>
-                              <div>
-                                <p className="font-semibold text-sm text-slate-900 dark:text-white">
-                                  {t(`services.${id}`)}
-                                </p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">
-                                  {t(`services.${id}Desc`)}
-                                </p>
-                              </div>
-                            </div>
-                            <Toggle
-                              checked={!!form.services[id]}
-                              onChange={(v) =>
-                                upd({ services: { ...form.services, [id]: v } })
-                              }
-                            />
-                          </div>
-                        );
-                      })}
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <Sparkles
+                          size={16}
+                          className="text-violet-600 dark:text-violet-400"
+                        />
+                        <div>
+                          <p className="font-semibold text-sm text-slate-900 dark:text-white">
+                            Ménage inclus
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Service de nettoyage professionnel
+                          </p>
+                        </div>
+                        <Toggle
+                          checked={!!form.services.cleaning}
+                          onChange={(v) =>
+                            upd({ services: { ...form.services, cleaning: v } })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <Sparkles
+                          size={16}
+                          className="text-violet-600 dark:text-violet-400"
+                        />
+                        <div>
+                          <p className="font-semibold text-sm text-slate-900 dark:text-white">
+                            Draps et linge fournis
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Linge de maison inclus
+                          </p>
+                        </div>
+                        <Toggle
+                          checked={!!form.services.linen}
+                          onChange={(v) =>
+                            upd({ services: { ...form.services, linen: v } })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <Home
+                          size={16}
+                          className="text-violet-600 dark:text-violet-400"
+                        />
+                        <div>
+                          <p className="font-semibold text-sm text-slate-900 dark:text-white">
+                            Meublé
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Logement équipé et meublé
+                          </p>
+                        </div>
+                        <Toggle
+                          checked={form.isFurnished}
+                          onChange={(v) => upd({ isFurnished: v })}
+                        />
+                      </div>
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                     <SectionTitle title={t("step3.rulesTitle")} />
                     <div className="space-y-3 mb-4">
-                      {houseRuleIds.map((id) => {
-                        const Icon = ruleIcons[id] || X;
-                        return (
-                          <div
-                            key={id}
-                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <Icon size={16} className="text-slate-400" />
-                              <span className="font-semibold text-sm text-slate-900 dark:text-white">
-                                {t(`houseRules.${id}`)}
-                              </span>
-                            </div>
-                            <Toggle
-                              checked={!!form.houseRules[id]}
-                              onChange={(v) =>
-                                upd({
-                                  houseRules: { ...form.houseRules, [id]: v },
-                                })
-                              }
-                            />
-                          </div>
-                        );
-                      })}
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <PartyPopper size={16} className="text-slate-500" />
+                        <span className="font-semibold text-sm">
+                          Pas de fêtes / événements
+                        </span>
+                        <Toggle
+                          checked={!!form.houseRules.noParties}
+                          onChange={(v) =>
+                            upd({
+                              houseRules: { ...form.houseRules, noParties: v },
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <Moon size={16} className="text-slate-500" />
+                        <span className="font-semibold text-sm">
+                          Silence après 22h
+                        </span>
+                        <Toggle
+                          checked={!!form.houseRules.quietAfter22}
+                          onChange={(v) =>
+                            upd({
+                              houseRules: {
+                                ...form.houseRules,
+                                quietAfter22: v,
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <Dog size={16} className="text-slate-500" />
+                        <span className="font-semibold text-sm">
+                          Animaux acceptés
+                        </span>
+                        <Toggle
+                          checked={form.petsAllowed}
+                          onChange={(v) => upd({ petsAllowed: v })}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <Ban size={16} className="text-slate-500" />
+                        <span className="font-semibold text-sm">
+                          Fumeurs acceptés
+                        </span>
+                        <Toggle
+                          checked={form.smokingAllowed}
+                          onChange={(v) => upd({ smokingAllowed: v })}
+                        />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                        {t("step3.customRulesLabel")}
+                        Règles personnalisées
                       </label>
                       <textarea
                         value={form.customRules}
                         onChange={(e) => upd({ customRules: e.target.value })}
-                        placeholder={t("step3.customRulesPlaceholder")}
+                        placeholder="Ajoutez des règles spéciales..."
                         rows={3}
                         maxLength={500}
                         className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 px-4 text-base outline-none focus:ring-2 focus:ring-sky-500/30 resize-none"
@@ -1465,7 +1648,6 @@ export default function CreateListingPage({
               {step === 4 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                   <SectionTitle title={t("step4.title")} />
-
                   <div
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -1478,8 +1660,7 @@ export default function CreateListingPage({
                       handleFiles(e.dataTransfer.files);
                     }}
                     onClick={() => fileRef.current?.click()}
-                    className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all duration-200
-                      ${dragActive ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-sky-300"}`}
+                    className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all duration-200 ${dragActive ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-sky-300"}`}
                   >
                     <input
                       ref={fileRef}
@@ -1497,11 +1678,9 @@ export default function CreateListingPage({
                       {t("step4.dropHint")}
                     </p>
                     <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700">
-                      <Info size={12} />
-                      {form.photos.length}/20
+                      <Info size={12} /> {form.photos.length}/20
                     </div>
                   </div>
-
                   {getFieldError("photos") && (
                     <div className="mt-3 p-3 bg-rose-50 dark:bg-rose-900/15 border border-rose-200 rounded-lg">
                       <p className="text-xs text-rose-600">
@@ -1509,11 +1688,10 @@ export default function CreateListingPage({
                       </p>
                     </div>
                   )}
-
                   {form.photos.length > 0 && (
                     <div className="mt-5">
                       <p className="text-xs text-slate-500 mb-3">
-                        {t("step4.clickStarToSetMain")}
+                        Cliquez sur l'étoile pour définir la photo principale
                       </p>
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                         {form.photos.map((photo, idx) => (
@@ -1529,14 +1707,14 @@ export default function CreateListingPage({
                             {photo.isMain && (
                               <div className="absolute top-2 left-2">
                                 <span className="bg-sky-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                  {t("step4.mainPhoto")}
+                                  Principale
                                 </span>
                               </div>
                             )}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                               {!photo.isMain && (
-                                <Tooltip text={t("step4.setAsMain")}>
+                                <Tooltip text="Définir comme principale">
                                   <button
                                     type="button"
                                     onClick={() => setMainPhoto(idx)}
@@ -1546,7 +1724,7 @@ export default function CreateListingPage({
                                   </button>
                                 </Tooltip>
                               )}
-                              <Tooltip text={t("step4.delete")}>
+                              <Tooltip text="Supprimer">
                                 <button
                                   type="button"
                                   onClick={() => removePhoto(idx)}
@@ -1566,7 +1744,7 @@ export default function CreateListingPage({
                           >
                             <Plus size={20} />
                             <span className="text-[9px] font-bold">
-                              {t("step4.add")}
+                              Ajouter
                             </span>
                           </button>
                         )}
@@ -1587,7 +1765,7 @@ export default function CreateListingPage({
                           key={rt}
                           type="button"
                           onClick={() => upd({ rentalType: rt })}
-                          className={`flex-1 py-2 rounded-md text-sm font-bold transition-all ${form.rentalType === rt ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm" : "text-slate-500"}`}
+                          className={`flex-1 py-2 rounded-md text-sm font-bold transition-all cursor-pointer ${form.rentalType === rt ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm" : "text-slate-500"}`}
                         >
                           {t(`step5.${rt}`)}
                         </button>
@@ -1603,16 +1781,12 @@ export default function CreateListingPage({
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Sun size={16} className="text-sky-500" />
-                            <div className="flex items-center gap-1">
-                              <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                {t("step5.pricePerNight")}
-                              </label>
-                              <Tooltip text={t("required")}>
-                                <span className="text-rose-500 text-xs cursor-help">
-                                  *
-                                </span>
-                              </Tooltip>
-                            </div>
+                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                              Prix par nuit
+                            </label>
+                            <Tooltip text="Requis">
+                              <span className="text-rose-500 text-xs">*</span>
+                            </Tooltip>
                           </div>
                           <div className="flex items-baseline gap-2">
                             <input
@@ -1632,7 +1806,7 @@ export default function CreateListingPage({
                               className={`w-full text-2xl font-black bg-transparent border-none outline-none ${getFieldError("pricePerNight") ? "text-rose-500" : "text-slate-900 dark:text-white"}`}
                             />
                             <span className="text-xs font-bold text-slate-400">
-                              {t("unit.perNight")}
+                              TND / nuit
                             </span>
                           </div>
                           {getFieldError("pricePerNight") && (
@@ -1647,16 +1821,12 @@ export default function CreateListingPage({
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Calendar size={16} className="text-purple-500" />
-                            <div className="flex items-center gap-1">
-                              <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                                {t("step5.pricePerMonth")}
-                              </label>
-                              <Tooltip text={t("required")}>
-                                <span className="text-rose-500 text-xs cursor-help">
-                                  *
-                                </span>
-                              </Tooltip>
-                            </div>
+                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                              Prix par mois
+                            </label>
+                            <Tooltip text="Requis">
+                              <span className="text-rose-500 text-xs">*</span>
+                            </Tooltip>
                           </div>
                           <div className="flex items-baseline gap-2">
                             <input
@@ -1676,7 +1846,7 @@ export default function CreateListingPage({
                               className={`w-full text-2xl font-black bg-transparent border-none outline-none ${getFieldError("pricePerMonth") ? "text-rose-500" : "text-slate-900 dark:text-white"}`}
                             />
                             <span className="text-xs font-bold text-slate-400">
-                              {t("unit.perMonth")}
+                              TND / mois
                             </span>
                           </div>
                           {getFieldError("pricePerMonth") && (
@@ -1693,16 +1863,14 @@ export default function CreateListingPage({
                     <SectionTitle title={t("step5.feesTitle")} />
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Shield size={16} className="text-emerald-500" />
-                          <div>
-                            <p className="font-bold text-sm text-slate-900 dark:text-white">
-                              {t("step5.deposit")}
-                            </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              {t("step5.depositDesc")}
-                            </p>
-                          </div>
+                        <Shield size={16} className="text-emerald-500" />
+                        <div>
+                          <p className="font-bold text-sm">
+                            Caution de sécurité
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Montant remboursable
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           {form.securityDeposit !== null && (
@@ -1712,7 +1880,7 @@ export default function CreateListingPage({
                               onChange={(e) =>
                                 upd({ securityDeposit: Number(e.target.value) })
                               }
-                              className="w-20 bg-white dark:bg-slate-800 border rounded py-1.5 px-2 text-sm text-right dark:text-white"
+                              className="w-20 bg-white dark:bg-slate-800 border rounded py-1.5 px-2 text-sm text-right"
                             />
                           )}
                           <Toggle
@@ -1724,16 +1892,12 @@ export default function CreateListingPage({
                         </div>
                       </div>
                       <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <Sparkles size={16} className="text-sky-500" />
-                          <div>
-                            <p className="font-bold text-sm text-slate-900 dark:text-white">
-                              {t("step5.cleaningFee")}
-                            </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              {t("step5.cleaningFeeDesc")}
-                            </p>
-                          </div>
+                        <Sparkles size={16} className="text-sky-500" />
+                        <div>
+                          <p className="font-bold text-sm">Frais de ménage</p>
+                          <p className="text-xs text-slate-500">
+                            Nettoyage inclus
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           {form.cleaningFee !== null && (
@@ -1743,7 +1907,7 @@ export default function CreateListingPage({
                               onChange={(e) =>
                                 upd({ cleaningFee: Number(e.target.value) })
                               }
-                              className="w-20 bg-white dark:bg-slate-800 border rounded py-1.5 px-2 text-sm text-right dark:text-white"
+                              className="w-20 bg-white dark:bg-slate-800 border rounded py-1.5 px-2 text-sm text-right"
                             />
                           )}
                           <Toggle
@@ -1787,7 +1951,7 @@ export default function CreateListingPage({
                           {t(`propertyTypes.${form.type}`)}
                         </span>
                         <h3 className="text-white text-base font-bold">
-                          {form.title || t("preview.noTitle")}
+                          {form.title || "Sans titre"}
                         </h3>
                         <div className="flex items-center gap-1 text-white/70 text-xs mt-0.5">
                           <MapPin size={12} />
@@ -1798,12 +1962,10 @@ export default function CreateListingPage({
                       <div className="bg-white/90 rounded-lg px-3 py-1.5 text-right">
                         <p className="font-black text-sky-700 text-base">
                           {form.pricePerNight || form.pricePerMonth || "---"}{" "}
-                          {t("currency.tnd")}
+                          TND
                         </p>
                         <p className="text-[9px] text-slate-500">
-                          {form.rentalType === "LONG_TERM"
-                            ? t("unit.perMonthShort")
-                            : t("unit.perNightShort")}
+                          {form.rentalType === "LONG_TERM" ? "/mois" : "/nuit"}
                         </p>
                       </div>
                     </div>
@@ -1812,20 +1974,20 @@ export default function CreateListingPage({
                     <div className="flex gap-4 text-xs text-slate-500 dark:text-slate-400 pb-3 border-b border-slate-100 dark:border-slate-800">
                       <span>
                         <Bed size={14} className="inline mr-1.5" />
-                        {form.rooms} {t("units.bedrooms")}
+                        {form.rooms} ch.
                       </span>
                       <span>
                         <Bath size={14} className="inline mr-1.5" />
-                        {form.bathrooms} {t("units.bathrooms")}
+                        {form.bathrooms} sdb
                       </span>
                       <span>
                         <Users size={14} className="inline mr-1.5" />
-                        {form.maxGuests} {t("units.persons")}
+                        {form.maxGuests === null ? "—" : form.maxGuests} pers.
                       </span>
                       {form.surfaceArea && (
                         <span>
                           <Ruler size={14} className="inline mr-1.5" />
-                          {form.surfaceArea} {t("units.sqm")}
+                          {form.surfaceArea} m²
                         </span>
                       )}
                     </div>
@@ -1839,59 +2001,68 @@ export default function CreateListingPage({
               )}
             </div>
 
-            {/* ── Sidebar améliorée ─────────────────────────────────── */}
+            {/* Sidebar */}
             <div className="hidden lg:block">
               <div className="sticky top-4 space-y-4">
-                {/* Tips section */}
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-2 mb-3">
                     <Lightbulb size={16} className="text-sky-500" />
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                      {t("sidebar.tipTitle")}
+                    <h3 className="font-bold text-sm">
+                      Conseils pour réussir votre annonce
                     </h3>
                   </div>
                   <ul className="space-y-2">
-                    {[1, 2, 3, 4].map((i) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-400"
-                      >
-                        <Check
-                          size={12}
-                          className="text-sky-500 shrink-0 mt-0.5"
-                        />
-                        {t(`sidebar.tip${i}`)}
-                      </li>
-                    ))}
+                    <li className="flex items-start gap-2 text-xs">
+                      <Check
+                        size={12}
+                        className="text-sky-500 shrink-0 mt-0.5"
+                      />
+                      Des photos de qualité augmentent les réservations
+                    </li>
+                    <li className="flex items-start gap-2 text-xs">
+                      <Check
+                        size={12}
+                        className="text-sky-500 shrink-0 mt-0.5"
+                      />
+                      Un titre accrocheur attire plus de voyageurs
+                    </li>
+                    <li className="flex items-start gap-2 text-xs">
+                      <Check
+                        size={12}
+                        className="text-sky-500 shrink-0 mt-0.5"
+                      />
+                      Répondez rapidement aux demandes
+                    </li>
+                    <li className="flex items-start gap-2 text-xs">
+                      <Check
+                        size={12}
+                        className="text-sky-500 shrink-0 mt-0.5"
+                      />
+                      Un prix compétitif augmente vos chances
+                    </li>
                   </ul>
                 </div>
-
-                {/* Why Nesthub */}
                 <div className="relative overflow-hidden rounded-xl p-5 text-white">
                   <div className="absolute inset-0 bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600"></div>
                   <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
                   <div className="relative z-10">
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-2">
-                      {t("sidebar.whyNesthub")}
+                      Pourquoi NestHub ?
                     </p>
                     <ul className="space-y-1.5">
-                      {[
-                        { icon: Shield, key: "benefit1" },
-                        { icon: Users, key: "benefit2" },
-                        { icon: Sparkles, key: "benefit3" },
-                        { icon: Rocket, key: "benefit4" },
-                      ].map((b) => {
-                        const Icon = b.icon;
-                        return (
-                          <li
-                            key={b.key}
-                            className="flex items-center gap-2 text-xs text-white/90"
-                          >
-                            <Icon size={12} /> {t(`sidebar.${b.key}`)}
-                          </li>
-                        );
-                      })}
+                      <li className="flex items-center gap-2 text-xs text-white/90">
+                        <Shield size={12} /> Paiement sécurisé
+                      </li>
+                      <li className="flex items-center gap-2 text-xs text-white/90">
+                        <Users size={12} /> Assistance 24/7
+                      </li>
+                      <li className="flex items-center gap-2 text-xs text-white/90">
+                        <Sparkles size={12} /> Assurance incluse
+                      </li>
+                      <li className="flex items-center gap-2 text-xs text-white/90">
+                        <Rocket size={12} /> Visibilité maximale
+                      </li>
                     </ul>
                   </div>
                 </div>
@@ -1901,62 +2072,47 @@ export default function CreateListingPage({
         </div>
       </div>
 
-      {/* ── Bottom navigation fixe ────────────────────────────────────────── */}
-      <div className="flex-shrink-0 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800  py-4">
+      {/* Bottom navigation */}
+      <div className="flex-shrink-0 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <button
             type="button"
             onClick={goToPrevStep}
             disabled={step === 1}
-            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 disabled:opacity-30 hover:text-slate-900 dark:hover:text-white transition-colors"
+            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 disabled:opacity-30 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
           >
-            <ChevronLeft size={16} />
-            {t("nav.previous")}
+            <ChevronLeft size={16} /> Précédent
           </button>
-
           <div className="flex items-center gap-1.5">
             {STEPS.map((s) => (
               <div
                 key={s.id}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  s.id === step
-                    ? "w-5 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600"
-                    : s.id < step
-                      ? "w-3 bg-sky-400"
-                      : "w-3 bg-slate-300 dark:bg-slate-700"
-                }`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${s.id === step ? "w-5 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600" : s.id < step ? "w-3 bg-sky-400" : "w-3 bg-slate-300 dark:bg-slate-700"}`}
               />
             ))}
           </div>
-
           {step === STEPS.length ? (
             <button
               type="button"
               onClick={handlePublish}
               disabled={saving || !isStepValid}
-              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white font-bold text-sm rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white font-bold text-sm rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               {saving ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <Rocket size={14} />
               )}
-              {saving ? t("publishing") : t("publish")}
+              {saving ? "Publication..." : "Publier"}
             </button>
           ) : (
             <button
               type="button"
               onClick={goToNextStep}
               disabled={!isStepValid}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all
-                ${
-                  isStepValid
-                    ? "bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white shadow-md"
-                    : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
-                }`}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all cursor-pointer ${isStepValid ? "bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white shadow-md" : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"}`}
             >
-              {t("nav.continue")}
-              <ChevronRight size={14} />
+              Continuer <ChevronRight size={14} />
             </button>
           )}
         </div>

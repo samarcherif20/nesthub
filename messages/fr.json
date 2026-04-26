@@ -1745,9 +1745,13 @@
       "draft": "Brouillon"
     },
     "bookingStatus": {
-      "confirmed": "Confirmé",
-      "pending": "En attente",
-      "paid": "Payé"
+       "pending": "En attente",
+      "accepted": "Acceptée",
+      "confirmed": "Confirmée",
+      "completed": "Terminée",
+      "cancelled": "Annulée",
+      "rejected": "Refusée",
+      "expired": "Expirée"
     },
     "stats": {
       "views": "Vues",

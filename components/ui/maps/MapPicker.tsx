@@ -12,15 +12,13 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import {
-  Search,
   MapPin,
-  Crosshair,
   Loader2,
+  Target,
+  Crosshair,
+  Locate,
   Navigation,
-  ZoomIn,
-  ZoomOut,
 } from "lucide-react";
-
 import "leaflet/dist/leaflet.css";
 
 // Fix pour les icônes Leaflet
@@ -38,40 +36,37 @@ const createCustomIcon = (readOnly: boolean = false) =>
     className: "custom-marker",
     html: `
     <div style="
-      width: ${readOnly ? "36px" : "40px"};
-      height: ${readOnly ? "36px" : "40px"};
+      width: ${readOnly ? "36px" : "48px"};
+      height: ${readOnly ? "36px" : "48px"};
       background: linear-gradient(135deg, ${readOnly ? "#6366f1" : "#3b82f6"}, ${readOnly ? "#8b5cf6" : "#8b5cf6"});
       border-radius: 50% 50% 50% 0;
       transform: rotate(-45deg);
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 ${readOnly ? "3" : "4"}px 12px rgba(${readOnly ? "99, 102, 241" : "59, 130, 246"}, 0.4);
+      box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
       border: 3px solid white;
       transition: all 0.3s ease;
+      cursor: pointer;
     ">
-      <svg style="transform: rotate(45deg); width: ${readOnly ? "18px" : "20px"}; height: ${readOnly ? "18px" : "20px"}; color: white;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <svg style="transform: rotate(45deg); width: ${readOnly ? "18px" : "24px"}; height: ${readOnly ? "18px" : "24px"}; color: white;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
         <polyline points="9 22 9 12 15 12 15 22"></polyline>
       </svg>
     </div>
   `,
-    iconSize: [readOnly ? 36 : 40, readOnly ? 36 : 40],
-    iconAnchor: [readOnly ? 18 : 20, readOnly ? 36 : 40],
+    iconSize: [readOnly ? 36 : 48, readOnly ? 36 : 48],
+    iconAnchor: [readOnly ? 18 : 24, readOnly ? 36 : 48],
   });
 
 // Icône pour les marqueurs secondaires (listings)
 const createListingIcon = (status: string) => {
-  let color = "#6366f1"; // indigo par défaut
-  if (status === "ACTIVE")
-    color = "#10b981"; // vert
-  else if (status === "INACTIVE")
-    color = "#f59e0b"; // orange
-  else if (status === "DRAFT")
-    color = "#64748b"; // gris
-  else if (status === "ARCHIVED")
-    color = "#8b5cf6"; // violet
-  else if (status === "PENDING_REVIEW") color = "#3b82f6"; // bleu
+  let color = "#6366f1";
+  if (status === "ACTIVE") color = "#10b981";
+  else if (status === "INACTIVE") color = "#f59e0b";
+  else if (status === "DRAFT") color = "#64748b";
+  else if (status === "ARCHIVED") color = "#8b5cf6";
+  else if (status === "PENDING_REVIEW") color = "#3b82f6";
 
   return L.divIcon({
     className: "custom-marker-listing",
@@ -95,17 +90,6 @@ const createListingIcon = (status: string) => {
           <polyline points="9 22 9 12 15 12 15 22"></polyline>
         </svg>
       </div>
-      <div style="
-        position: absolute;
-        bottom: -4px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 0;
-        height: 0;
-        border-left: 4px solid transparent;
-        border-right: 4px solid transparent;
-        border-top: 6px solid ${color};
-      "></div>
     `,
     iconSize: [32, 32],
     iconAnchor: [16, 28],
@@ -129,17 +113,10 @@ interface MapPickerProps {
   onAddressChange?: (address: string) => void;
   className?: string;
   readOnly?: boolean;
-  // NOUVELLES PROPS
   markers?: ListingMarker[];
   showAllMarkers?: boolean;
   onMarkerClick?: (listingId: string) => void;
-}
-
-interface SearchResult {
-  place_id: number;
-  display_name: string;
-  lat: string;
-  lon: string;
+  isGeocoding?: boolean;
 }
 
 function MapClickHandler({
@@ -179,18 +156,25 @@ function MapController({
   return null;
 }
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+// ✅ Effet pour centrer la carte quand les coordonnées changent
+function CenterMapOnPosition({
+  position,
+  readOnly,
+}: {
+  position: [number, number] | null;
+  readOnly?: boolean;
+}) {
+  const map = useMap();
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
+    if (position && !readOnly) {
+      map.flyTo(position, 15, {
+        duration: 1.2,
+      });
+    }
+  }, [map, position, readOnly]);
 
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-
-  return debouncedValue;
+  return null;
 }
 
 export default function MapPicker({
@@ -203,20 +187,15 @@ export default function MapPicker({
   markers = [],
   showAllMarkers = false,
   onMarkerClick,
+  isGeocoding = false,
 }: MapPickerProps) {
   const defaultCenter: [number, number] = [34.0, 9.0];
   const defaultZoom = 6;
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const [mapReady, setMapReady] = useState(false);
-
-  const searchRef = useRef<HTMLDivElement>(null);
-  const debouncedSearch = useDebounce(searchQuery, 500);
+  const [address, setAddress] = useState<string>("");
 
   const position = useMemo<[number, number] | null>(
     () =>
@@ -224,40 +203,7 @@ export default function MapPicker({
     [latitude, longitude],
   );
 
-  // Recherche d'adresses
-  useEffect(() => {
-    if (readOnly) return;
-
-    const searchAddress = async () => {
-      if (!debouncedSearch || debouncedSearch.length < 3) {
-        setSearchResults([]);
-        return;
-      }
-
-      setIsSearching(true);
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/search?` +
-            `format=json&q=${encodeURIComponent(debouncedSearch)}&countrycodes=tn&limit=5`,
-          {
-            headers: {
-              "Accept-Language": "fr,en",
-            },
-          },
-        );
-        const data = await response.json();
-        setSearchResults(data);
-        setShowResults(true);
-      } catch (error) {
-        console.error("Search error:", error);
-      } finally {
-        setIsSearching(false);
-      }
-    };
-
-    searchAddress();
-  }, [debouncedSearch, readOnly]);
-
+  // Reverse geocoding pour obtenir l'adresse
   const reverseGeocode = useCallback(
     async (lat: number, lng: number) => {
       try {
@@ -266,13 +212,20 @@ export default function MapPicker({
             `format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
           {
             headers: {
-              "Accept-Language": "fr,en",
+              "Accept-Language": "fr",
             },
           },
         );
         const data = await response.json();
-        if (data.display_name && onAddressChange) {
-          onAddressChange(data.display_name);
+        if (data.display_name) {
+          const formattedAddress = data.display_name
+            .split(",")
+            .slice(0, 3)
+            .join(",");
+          setAddress(formattedAddress);
+          if (onAddressChange) {
+            onAddressChange(data.display_name);
+          }
         }
         return data;
       } catch (error) {
@@ -293,15 +246,7 @@ export default function MapPicker({
     [onLocationChange, reverseGeocode, readOnly],
   );
 
-  const handleSelectResult = (result: SearchResult) => {
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
-    handleLocationChange(lat, lng);
-    setSearchQuery(result.display_name.split(",")[0]);
-    setShowResults(false);
-    setSearchResults([]);
-  };
-
+  // ✅ Bouton de localisation
   const getCurrentLocation = () => {
     if (readOnly) return;
 
@@ -322,7 +267,15 @@ export default function MapPicker({
       (error) => {
         console.error("Geolocation error:", error);
         setIsLocating(false);
-        alert("Impossible d'obtenir votre position");
+        let message = "Impossible d'obtenir votre position";
+        if (error.code === 1) {
+          message = "Veuillez autoriser l'accès à votre position";
+        } else if (error.code === 2) {
+          message = "Position indisponible, réessayez plus tard";
+        } else if (error.code === 3) {
+          message = "Délai d'attente dépassé, vérifiez votre connexion";
+        }
+        alert(message);
       },
       {
         enableHighAccuracy: true,
@@ -332,21 +285,7 @@ export default function MapPicker({
     );
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchRef.current &&
-        !searchRef.current.contains(event.target as Node)
-      ) {
-        setShowResults(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  // Centrer la carte sur tous les marqueurs quand showAllMarkers est actif
+  // Centrer la carte sur tous les marqueurs
   useEffect(() => {
     if (!mapReady || !showAllMarkers || markers.length === 0) return;
 
@@ -359,79 +298,21 @@ export default function MapPicker({
     }
   }, [markers, showAllMarkers, mapReady]);
 
+  // Mettre à jour l'adresse quand les coordonnées changent
+  useEffect(() => {
+    if (position) {
+      reverseGeocode(position[0], position[1]);
+    }
+  }, [position, reverseGeocode]);
+
   return (
     <div className={`relative w-full h-full ${className}`}>
-      {/* Barre de recherche - Masquée en mode lecture seule */}
-      {!readOnly && (
-        <div ref={searchRef} className="absolute top-3 left-3 right-3 z-[20]">
-          <div className="relative">
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
-              {isSearching ? (
-                <Loader2 size={18} className="animate-spin" />
-              ) : (
-                <Search size={18} />
-              )}
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onFocus={() => searchResults.length > 0 && setShowResults(true)}
-              placeholder="Rechercher une adresse en Tunisie..."
-              className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-3 pl-10 pr-12 shadow-lg focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 text-sm font-medium"
-            />
-            <button
-              type="button"
-              onClick={getCurrentLocation}
-              disabled={isLocating}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors disabled:opacity-50"
-              title="Utiliser ma position"
-            >
-              {isLocating ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Navigation size={16} />
-              )}
-            </button>
-          </div>
-
-          {/* Résultats de recherche */}
-          {showResults && searchResults.length > 0 && (
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto backdrop-blur-sm z-[20]">
-              {searchResults.map((result) => (
-                <button
-                  key={result.place_id}
-                  type="button"
-                  onClick={() => handleSelectResult(result)}
-                  className="w-full px-4 py-3 text-left hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors border-b border-slate-100 dark:border-slate-700 last:border-b-0 group"
-                >
-                  <div className="flex items-start gap-3">
-                    <MapPin
-                      size={16}
-                      className="text-indigo-500 shrink-0 mt-0.5 group-hover:scale-110 transition-transform"
-                    />
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-                        {result.display_name.split(",")[0]}
-                      </p>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        {result.display_name.split(",").slice(1).join(",")}
-                      </p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Conteneur de la carte */}
       <MapContainer
         center={position || defaultCenter}
         zoom={position ? 15 : defaultZoom}
         style={{ height: "100%", width: "100%" }}
-        className="rounded-xl z-0"
+        className="rounded-xl z-0 shadow-sm"
         whenReady={() => setMapReady(true)}
         dragging={!readOnly}
         touchZoom={!readOnly}
@@ -448,6 +329,11 @@ export default function MapPicker({
           readOnly={readOnly}
         />
         {mapReady && <MapController center={mapCenter} zoom={16} />}
+
+        {/* ✅ Centre la carte sur la position quand elle change */}
+        {mapReady && (
+          <CenterMapOnPosition position={position} readOnly={readOnly} />
+        )}
 
         {/* Marqueur principal (sélectionné) */}
         {position && (
@@ -467,7 +353,7 @@ export default function MapPicker({
           />
         )}
 
-        {/* Marqueurs supplémentaires (tous les listings) */}
+        {/* Marqueurs supplémentaires */}
         {showAllMarkers &&
           markers.map((marker) => (
             <Marker
@@ -506,36 +392,79 @@ export default function MapPicker({
           ))}
       </MapContainer>
 
-      {/* Instructions - Masquées en mode lecture seule */}
-      {!readOnly && !position && (
-        <div className="absolute bottom-4 left-4 right-4 z-[5] pointer-events-none">
-          <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl px-4 py-3 shadow-lg border border-slate-200 dark:border-slate-700">
-            <p className="text-sm text-slate-600 dark:text-slate-400 text-center">
-              <span className="font-semibold text-slate-900 dark:text-white">
-                Cliquez sur la carte
-              </span>{" "}
-              pour placer le marqueur
+      {/* ✅ Bouton de localisation - Design épuré */}
+      {!readOnly && (
+        <button
+          type="button"
+          onClick={getCurrentLocation}
+          disabled={isLocating}
+          className="absolute bottom-4 right-4 z-[20] flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer disabled:opacity-50 hover:scale-105 active:scale-95 border border-slate-200 dark:border-slate-700 group"
+          title="Utiliser ma position"
+        >
+          {isLocating ? (
+            <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+          ) : (
+            <Crosshair className="w-5 h-5 text-indigo-500 group-hover:text-indigo-600 transition-colors" />
+          )}
+        </button>
+      )}
+
+      {/* ✅ Indicateur de géocodage - Version élégante */}
+      {isGeocoding && (
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[20] animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-full px-4 py-2 shadow-lg border border-indigo-200 dark:border-indigo-800">
+            <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              Localisation en cours...
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ Affichage de l'adresse - Version élégante */}
+      {address && !readOnly && position && (
+        <div className="absolute top-4 left-4 right-24 z-[20] pointer-events-none animate-in fade-in slide-in-from-left-2 duration-300">
+          <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md border border-slate-200 dark:border-slate-700">
+            <MapPin className="w-3.5 h-3.5 text-emerald-500" />
+            <p className="text-xs text-slate-600 dark:text-slate-300 truncate font-medium">
+              {address}
             </p>
           </div>
         </div>
       )}
 
-      {/* Affichage des coordonnées */}
-      {position && (
-        <div className="absolute bottom-4 right-4 z-[5]">
-          <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-lg px-3 py-2 shadow-lg border border-slate-200 dark:border-slate-700">
-            <p className="text-xs text-slate-600 dark:text-slate-300 font-mono font-semibold flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-              {position[0].toFixed(6)}, {position[1].toFixed(6)}
-            </p>
+      {/* Instructions au centre */}
+      {!readOnly && !position && !isGeocoding && (
+        <div className="absolute inset-0 flex items-center justify-center z-[10] pointer-events-none">
+          <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl px-5 py-3 shadow-xl border border-indigo-200 dark:border-indigo-800/50 animate-in fade-in zoom-in-95 duration-300">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-indigo-500" />
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Cliquez sur la carte pour placer le marqueur
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Affichage des coordonnées - Version compacte */}
+      {position && !readOnly && (
+        <div className="absolute bottom-4 left-4 z-[20] pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-1.5">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+              <code className="text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                {position[0].toFixed(6)}, {position[1].toFixed(6)}
+              </code>
+            </div>
           </div>
         </div>
       )}
 
       {/* Overlay en mode lecture seule */}
       {readOnly && (
-        <div className="absolute bottom-4 left-4 z-[5] pointer-events-none">
-          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700">
+        <div className="absolute bottom-4 left-4 z-[20] pointer-events-none">
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-1.5 shadow-md border border-slate-200 dark:border-slate-700">
             <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
             <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
               Vue seule
@@ -544,40 +473,37 @@ export default function MapPicker({
         </div>
       )}
 
-      {/* Légende des couleurs en mode lecture seule avec marqueurs */}
+      {/* Légende des couleurs */}
       {readOnly && showAllMarkers && markers.length > 0 && (
-        <div className="absolute bottom-4 left-4 z-[5] bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl px-4 py-3 shadow-lg border border-slate-200 dark:border-slate-700">
-          <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-            Légende
-          </p>
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-emerald-500"></div>
-              <span className="text-xs text-slate-600 dark:text-slate-400">
+        <div className="absolute bottom-4 left-4 z-[20] bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-xl px-4 py-2 shadow-lg border border-slate-200 dark:border-slate-700">
+          <div className="flex flex-wrap gap-2">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">
                 Active
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-              <span className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">
                 Inactive
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-slate-500"></div>
-              <span className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-slate-500"></div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">
                 Brouillon
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-              <span className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">
                 Archivé
               </span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              <span className="text-xs text-slate-600 dark:text-slate-400">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">
                 En attente
               </span>
             </div>

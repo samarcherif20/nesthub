@@ -1,7 +1,7 @@
+// app/api/listings/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-// ✅ AJOUT - Importer les fonctions de permission
 import { getUserPermissions, checkListingAccess } from "@/lib/auth/permissions";
 
 // Fonction de validation des données
@@ -21,10 +21,20 @@ function validateListingData(data: any): string[] {
     errors.push("La localisation est requise");
   if (data.rooms < 1) errors.push("Au moins 1 chambre est requise");
   if (data.bathrooms < 1) errors.push("Au moins 1 salle de bain est requise");
-  if (data.maxGuests < 1) errors.push("Au moins 1 voyageur est requis");
+  if (data.numberOfKitchens < 1) errors.push("Au moins 1 cuisine est requise");
+
+  // ✅ surfaceArea obligatoire
+  if (!data.surfaceArea || data.surfaceArea <= 0)
+    errors.push("La surface est requise");
+
+  // ✅ floorNumber obligatoire
+  if (data.floorNumber === null || data.floorNumber === undefined)
+    errors.push("Le numéro d'étage est requis");
+
+  // ✅ maxGuests optionnel (pas de validation)
+
   if (data.photos?.length === 0) errors.push("Au moins une photo est requise");
 
-  // Validation des prix selon le type de location
   if (data.rentalType === "SHORT_TERM" || data.rentalType === "BOTH") {
     if (!data.pricePerNight || data.pricePerNight <= 0) {
       errors.push(
@@ -64,8 +74,6 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const search = searchParams.get("search") || "";
-
-    // 🔥 RÉCUPÉRER LE TYPE (CORRECTION)
     const type = searchParams.get("type");
 
     const minPrice = searchParams.get("minPrice")
@@ -112,7 +120,6 @@ export async function GET(request: NextRequest) {
       where.status = "ACTIVE";
     }
 
-    // 🔥 AJOUTER LE FILTRE PAR TYPE (CORRECTION)
     if (type) {
       where.type = type;
     }
@@ -219,7 +226,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Créer une annonce
+// POST - Créer une annonce (CORRIGÉ)
 export async function POST(request: NextRequest) {
   try {
     console.log("🔵 POST /api/listings - Début");
@@ -281,6 +288,7 @@ export async function POST(request: NextRequest) {
 
     const slug = `${body.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${Date.now()}`;
 
+    // ✅ CORRECTION : Utiliser connect pour lier l'owner
     const listing = await prisma.listing.create({
       data: {
         title: body.title,
@@ -293,10 +301,17 @@ export async function POST(request: NextRequest) {
         description: body.description,
         rooms: body.rooms,
         bathrooms: body.bathrooms,
-        maxGuests: body.maxGuests,
+        numberOfKitchens: body.numberOfKitchens || 1,
+        maxGuests: body.maxGuests === null ? null : body.maxGuests,
         surfaceArea: body.surfaceArea,
         floorNumber: body.floorNumber,
-        hasElevator: body.hasElevator,
+        hasElevator: body.hasElevator || false,
+        hasBalcony: body.hasBalcony || false,
+        hasGarden: body.hasGarden || false,
+        hasGarage: body.hasGarage || false,
+        isFurnished: body.isFurnished || false,
+        petsAllowed: body.petsAllowed || false,
+        smokingAllowed: body.smokingAllowed || false,
         equipment: body.equipment || {},
         houseRules: body.houseRules || {},
         customRules: body.customRules || "",
@@ -312,7 +327,9 @@ export async function POST(request: NextRequest) {
           : "[]",
         services: body.services ? JSON.stringify(body.services) : "{}",
         slug,
-        ownerId: permissions.userId,
+        owner: {
+          connect: { id: permissions.userId },
+        },
         status: body.status || "DRAFT",
         publishedAt: body.status === "ACTIVE" ? new Date() : null,
       },
@@ -421,10 +438,17 @@ export async function PUT(request: NextRequest) {
         description: body.description,
         rooms: body.rooms,
         bathrooms: body.bathrooms,
-        maxGuests: body.maxGuests,
+        numberOfKitchens: body.numberOfKitchens || 1,
+        maxGuests: body.maxGuests === null ? null : body.maxGuests,
         surfaceArea: body.surfaceArea,
         floorNumber: body.floorNumber,
-        hasElevator: body.hasElevator,
+        hasElevator: body.hasElevator || false,
+        hasBalcony: body.hasBalcony || false,
+        hasGarden: body.hasGarden || false,
+        hasGarage: body.hasGarage || false,
+        isFurnished: body.isFurnished || false,
+        petsAllowed: body.petsAllowed || false,
+        smokingAllowed: body.smokingAllowed || false,
         equipment: body.equipment || {},
         houseRules: body.houseRules || {},
         customRules: body.customRules || "",

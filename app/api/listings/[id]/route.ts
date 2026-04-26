@@ -1,3 +1,4 @@
+// app/api/listings/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
@@ -9,13 +10,14 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-// GET - Public
+// GET - Public (mais avec infos supplémentaires si propriétaire)
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { userId: clerkId } = getAuth(request);
     const { id } = await params;
 
     let shouldIncrementViews = true;
+    let isOwner = false;
 
     if (clerkId) {
       const user = await prisma.user.findUnique({
@@ -27,16 +29,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           where: { id, ownerId: user.id },
           select: { id: true },
         });
-        if (listing) shouldIncrementViews = false;
+        if (listing) {
+          shouldIncrementViews = false;
+          isOwner = true;
+        }
       }
     }
 
-    // ✅ Récupérer le listing via ListingService
     const listing = await ListingService.getListingById(
       id,
       shouldIncrementViews,
     );
-    
+
     if (!listing) {
       return NextResponse.json(
         { error: "Annonce non trouvée" },
@@ -44,22 +48,52 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // ✅ AJOUT : Récupérer les pending bookings (offres acceptées en attente de paiement)
+    const bookingCount = await prisma.booking.count({
+      where: {
+        listingId: id,
+        status: { in: ["CONFIRMED", "COMPLETED", "ACCEPTED", "PAID"] },
+      },
+    });
+
+    const totalRevenueResult = await prisma.booking.aggregate({
+      where: {
+        listingId: id,
+        status: { in: ["CONFIRMED", "COMPLETED"] },
+      },
+      _sum: { totalPrice: true },
+    });
+
+    const totalRevenue = totalRevenueResult._sum.totalPrice || 0;
+
+    const owner = await prisma.user.findUnique({
+      where: { id: listing.ownerId },
+      select: {
+        id: true,
+        username: true,
+        firstName: true,
+        lastName: true,
+        profilePictureUrl: true,
+        isIdentityVerified: true,
+        createdAt: true,
+        stats: {
+          select: { averageRating: true, totalReviews: true },
+        },
+      },
+    });
+
     const pendingBookings = await prisma.pendingBooking.findMany({
       where: {
         listingId: id,
-        expiresAt: { gt: new Date() }, // Non expirées
+        expiresAt: { gt: new Date() },
         isReleased: false,
       },
     });
 
-    // ✅ Extraire les dates des pending bookings
-    const pendingDates = pendingBookings.flatMap(pb => {
+    const pendingDates = pendingBookings.flatMap((pb) => {
       const dates = pb.dates as string[];
-      return dates.map(dateStr => dateStr.split("T")[0]);
+      return dates.map((dateStr) => dateStr.split("T")[0]);
     });
 
-    // ✅ Récupérer les blocked dates normales (si pas déjà dans listing)
     const blockedDatesList = await prisma.blockedDate.findMany({
       where: {
         listingId: id,
@@ -67,15 +101,96 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    const blockedDates = blockedDatesList.map(bd => 
-      bd.startDate.toISOString().split("T")[0]
+    const blockedDates = blockedDatesList.map(
+      (bd) => bd.startDate.toISOString().split("T")[0],
     );
 
-    // ✅ Fusionner les données
+    // ✅ Récupérer les réservations si l'utilisateur est le propriétaire
+    let upcomingBookings = [];
+    let pastBookings = [];
+
+    if (isOwner) {
+      const now = new Date();
+
+      upcomingBookings = await prisma.booking.findMany({
+        where: {
+          listingId: id,
+          checkOut: { gte: now },
+          status: { in: ["CONFIRMED", "PAID", "ACCEPTED"] },
+        },
+        include: {
+          tenant: {
+            select: {
+              firstName: true,
+              lastName: true,
+              username: true,
+              profilePictureUrl: true,
+            },
+          },
+        },
+        orderBy: { checkIn: "asc" },
+        take: 10,
+      });
+
+      pastBookings = await prisma.booking.findMany({
+        where: {
+          listingId: id,
+          checkOut: { lt: now },
+          status: { in: ["COMPLETED", "CANCELLED", "REJECTED"] },
+        },
+        include: {
+          tenant: {
+            select: {
+              firstName: true,
+              lastName: true,
+              username: true,
+              profilePictureUrl: true,
+            },
+          },
+        },
+        orderBy: { checkOut: "desc" },
+        take: 10,
+      });
+    }
+
+    // Formater les réservations
+    const formattedUpcomingBookings = upcomingBookings.map((b) => ({
+      id: b.id,
+      tenantName: b.tenant?.firstName
+        ? `${b.tenant.firstName} ${b.tenant.lastName || ""}`.trim()
+        : b.tenant?.username || "Locataire",
+      tenantAvatar: b.tenant?.profilePictureUrl,
+      checkIn: b.checkIn,
+      checkOut: b.checkOut,
+      nights: b.totalNights,
+      status: b.status,
+      totalPrice: b.totalPrice,
+    }));
+
+    const formattedPastBookings = pastBookings.map((b) => ({
+      id: b.id,
+      tenantName: b.tenant?.firstName
+        ? `${b.tenant.firstName} ${b.tenant.lastName || ""}`.trim()
+        : b.tenant?.username || "Locataire",
+      tenantAvatar: b.tenant?.profilePictureUrl,
+      checkIn: b.checkIn,
+      checkOut: b.checkOut,
+      nights: b.totalNights,
+      status: b.status,
+      totalPrice: b.totalPrice,
+    }));
+
     const response = {
       ...listing,
+      bookingCount: bookingCount,
+      totalRevenue: totalRevenue,
+      owner: owner,
       blockedDates: blockedDates,
-      pendingDates: pendingDates, // ✅ NOUVEAU
+      pendingDates: pendingDates,
+      // ✅ Ajouter les réservations (seulement pour le propriétaire)
+      upcomingBookings: formattedUpcomingBookings,
+      pastBookings: formattedPastBookings,
+      isOwner: isOwner,
     };
 
     return NextResponse.json(response);
@@ -199,7 +314,7 @@ export const DELETE = withAuth(
   },
 );
 
-// PATCH (inchangé)
+// PATCH - Changer le statut (inchangé)
 export const PATCH = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;

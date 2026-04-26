@@ -34,30 +34,28 @@ import {
   DollarSign,
   CreditCard,
   Clock,
+  AlertCircle,
   Wifi,
   Wind,
   Flame,
   Utensils,
-  Car,
   Waves,
+  Car,
+  WashingMachine,
   Dumbbell,
   Tv,
   Trees,
-  WashingMachine,
   Fan,
-  Shield,
-  Sparkles,
   Coffee,
-  Smartphone,
   Music,
   BookOpen,
-  Lock,
   ArrowUp,
 } from "lucide-react";
 
 import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
 import DeleteListingModal from "@/components/ui/modals/DeleteListingModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import AvailabilityCalendar from "@/components/ui/calendar/AvailabilityCalendar";
 import { TbHomeEdit, TbHomeOff, TbHomeShare, TbMapShare } from "react-icons/tb";
 import { PiCalendarSlashDuotone } from "react-icons/pi";
 import { LiaMapMarkedAltSolid } from "react-icons/lia";
@@ -108,13 +106,11 @@ function ContentSkeleton() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2 space-y-6">
-        {/* Gallery skeleton */}
         <div className="grid grid-cols-3 gap-3 h-90">
           <div className="col-span-2 row-span-2 rounded-2xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
           <div className="rounded-2xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
           <div className="rounded-2xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
         </div>
-        {/* Description skeleton */}
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-700">
           <div className="h-6 w-32 bg-slate-200 dark:bg-slate-700 rounded mb-4 animate-pulse" />
           <div className="space-y-2">
@@ -162,77 +158,6 @@ const EQUIPMENT_ICONS: Record<string, any> = {
 // Shadow styles
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_20px_-4px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.3),0_8px_20px_-4px_rgba(0,0,0,0.4)]";
-
-// Quick Stats Card Component
-function QuickStatsCard({ listing, t }: { listing: any; t: any }) {
-  const conversionRate =
-    listing.viewCount > 0
-      ? ((listing.bookingCount / listing.viewCount) * 100).toFixed(1)
-      : "0";
-
-  const revenue = listing.pricePerNight
-    ? listing.pricePerNight * (listing.bookingCount || 0)
-    : listing.pricePerMonth
-      ? listing.pricePerMonth * (listing.bookingCount || 0)
-      : 0;
-
-  return (
-    <div className="grid grid-cols-4 gap-2 pt-4 mt-4 border-t border-slate-100 dark:border-slate-700">
-      <div className="text-center">
-        <div className="flex justify-center mb-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-            <Eye className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          </div>
-        </div>
-        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">
-          {t("quickStats.views")}
-        </p>
-        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-          {listing.viewCount?.toLocaleString() || 0}
-        </p>
-      </div>
-      <div className="text-center">
-        <div className="flex justify-center mb-2">
-          <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-            <CalendarDays className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-          </div>
-        </div>
-        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">
-          {t("quickStats.bookings")}
-        </p>
-        <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-          {listing.bookingCount || 0}
-        </p>
-      </div>
-      <div className="text-center">
-        <div className="flex justify-center mb-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-          </div>
-        </div>
-        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">
-          {t("quickStats.conversion")}
-        </p>
-        <p className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
-          {conversionRate}%
-        </p>
-      </div>
-      <div className="text-center">
-        <div className="flex justify-center mb-2">
-          <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-            <DollarSign className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-          </div>
-        </div>
-        <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">
-          {t("quickStats.revenue")}
-        </p>
-        <p className="text-sm font-bold text-amber-600 dark:text-amber-400">
-          {revenue.toLocaleString()} {t("currency.tnd")}
-        </p>
-      </div>
-    </div>
-  );
-}
 
 // Status Badge Component
 function StatusBadge({ status, t }: { status: string; t: any }) {
@@ -325,6 +250,7 @@ export default function OwnerListingDetailPage({
   const t = useTranslations("OwnerListingDetail");
   const slideshowRef = React.useRef<NodeJS.Timeout | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
 
   const {
     listing,
@@ -358,6 +284,13 @@ export default function OwnerListingDetailPage({
     previewPhotos,
     remainingPhotosCount,
     getCalendarDays,
+    blockedDates,
+    availability,
+    updateAvailability,
+    loadingAvailability,
+    occupancyRate,      // ✅ AJOUTÉ
+    totalRevenue,       // ✅ AJOUTÉ
+    conversionRate,     // ✅ AJOUTÉ
   } = useListingDetail(id, locale, setError);
 
   const pip = (url: string) =>
@@ -368,20 +301,16 @@ export default function OwnerListingDetailPage({
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950">
         <main className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Breadcrumb skeleton */}
           <div className="mb-6 flex items-center gap-2">
             <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
             <ChevronRight className="w-4 h-4 text-slate-400" />
             <div className="h-4 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
           </div>
-          {/* Header skeleton */}
           <div className="mb-8">
             <div className="h-10 w-64 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-3" />
             <div className="h-5 w-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
           </div>
-          {/* KPIs skeleton */}
           <KPISkeleton />
-          {/* Content skeleton */}
           <ContentSkeleton />
         </main>
       </div>
@@ -448,9 +377,7 @@ export default function OwnerListingDetailPage({
           <div className="mb-6 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-              <p className="text-sm text-rose-600 dark:text-rose-400">
-                {error}
-              </p>
+              <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
             </div>
           </div>
         )}
@@ -500,8 +427,9 @@ export default function OwnerListingDetailPage({
           </div>
         </header>
 
-        {/* KPIs Cards */}
+        {/* ✅ KPIs Cards - CORRIGÉ AVEC VALEURS DYNAMIQUES */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Vues */}
           <div
             className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-indigo-100 dark:border-indigo-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
           >
@@ -514,12 +442,13 @@ export default function OwnerListingDetailPage({
                   {t("stats.views")}
                 </p>
                 <p className="text-xl lg:text-2xl font-headline font-bold text-indigo-600 dark:text-indigo-400">
-                  {listing.viewCount.toLocaleString()}
+                  {listing.viewCount?.toLocaleString() || 0}
                 </p>
               </div>
             </div>
           </div>
 
+          {/* Réservations */}
           <div
             className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-rose-100 dark:border-rose-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
           >
@@ -532,12 +461,13 @@ export default function OwnerListingDetailPage({
                   {t("stats.bookings")}
                 </p>
                 <p className="text-xl lg:text-2xl font-headline font-bold text-rose-600 dark:text-rose-400">
-                  {listing.bookingCount}
+                  {listing.bookingCount || 0}
                 </p>
               </div>
             </div>
           </div>
 
+          {/* Taux d'occupation - DYNAMIQUE */}
           <div
             className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-teal-100 dark:border-teal-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
           >
@@ -550,12 +480,13 @@ export default function OwnerListingDetailPage({
                   {t("stats.occupancy")}
                 </p>
                 <p className="text-xl lg:text-2xl font-headline font-bold text-teal-600 dark:text-teal-400">
-                  0%
+                  {occupancyRate}%
                 </p>
               </div>
             </div>
           </div>
 
+          {/* Revenus - DYNAMIQUE */}
           <div
             className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
           >
@@ -568,14 +499,14 @@ export default function OwnerListingDetailPage({
                   {t("stats.revenue")}
                 </p>
                 <p className="text-xl lg:text-2xl font-headline font-bold text-emerald-600 dark:text-emerald-400">
-                  {t("stats.revenueValue")}
+                  {totalRevenue.toLocaleString()} {t("currency.tnd")}
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Main Grid */}
+        {/* Main Grid - reste identique */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
@@ -675,7 +606,7 @@ export default function OwnerListingDetailPage({
               </div>
             </section>
 
-            {/* Amenities - Version avec icônes */}
+            {/* Amenities */}
             <section
               className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
             >
@@ -746,7 +677,7 @@ export default function OwnerListingDetailPage({
             </section>
           </div>
 
-          {/* Right Column */}
+          {/* Right Column - reste identique */}
           <div className="lg:col-span-1 space-y-5">
             {/* Next Bookings */}
             <section
@@ -804,7 +735,7 @@ export default function OwnerListingDetailPage({
               </div>
             </section>
 
-            {/* Calendar */}
+            {/* Availability Calendar */}
             <section
               className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
             >
@@ -813,53 +744,25 @@ export default function OwnerListingDetailPage({
                   <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   {t("sections.availability")}
                 </h2>
-                <div className="flex gap-0.5">
-                  <button
-                    onClick={() => changeMonth(-1)}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => changeMonth(1)}
-                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
+              </div>
+              
+              {loadingAvailability ? (
+                <div className="flex justify-center py-8">
+                  <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
                 </div>
-              </div>
-              <p className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-3 uppercase tracking-wider">
-                {currentMonth.toLocaleString("fr-FR", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </p>
-              <div className="grid grid-cols-7 gap-0.5">
-                {t("calendar.days")
-                  .split(",")
-                  .map((day, idx) => (
-                    <div
-                      key={idx}
-                      className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase py-1.5 text-center"
-                    >
-                      {day}
-                    </div>
-                  ))}
-                {getCalendarDays().map((day, idx) => (
-                  <div
-                    key={idx}
-                    className={`aspect-square flex items-center justify-center text-xs font-semibold rounded-md transition-all ${
-                      day === null
-                        ? "text-slate-300 dark:text-slate-700"
-                        : day === 12 || day === 13 || day === 14
-                          ? "bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 text-indigo-700 dark:text-indigo-400"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-400 cursor-default"
-                    }`}
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
+              ) : (
+                <AvailabilityCalendar
+                  listingId={listing.id}
+                  availability={availability}
+                  blockedDates={blockedDates}
+                  onUpdateAvailability={updateAvailability}
+                  readOnly={false}
+                  onDateSelect={(date) => {
+                    setSelectedDate(date);
+                    console.log("Date sélectionnée:", date);
+                  }}
+                />
+              )}
             </section>
           </div>
         </div>
@@ -902,9 +805,7 @@ export default function OwnerListingDetailPage({
               </div>
               <div>
                 <p className="font-bold text-xs text-slate-900 dark:text-white">
-                  {listing.owner?.firstName ||
-                    listing.owner?.username ||
-                    t("sections.ownerDefault")}
+                  {listing.owner?.username || t("sections.ownerDefault")}
                 </p>
                 <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
                   {t("sections.mainOwner")}
@@ -914,7 +815,7 @@ export default function OwnerListingDetailPage({
           </div>
         </section>
 
-        {/* Footer Actions avec Tooltips */}
+        {/* Footer Actions */}
         <footer className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="text-center sm:text-left">
             <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -964,7 +865,7 @@ export default function OwnerListingDetailPage({
         </footer>
       </main>
 
-      {/* Gallery Modal */}
+      {/* Gallery Modal - reste identique */}
       {showGalleryModal && listing && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex flex-col">
           <div className="flex justify-between items-center p-4 border-b border-white/10">

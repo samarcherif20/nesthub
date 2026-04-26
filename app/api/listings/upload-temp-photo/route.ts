@@ -7,153 +7,79 @@ import sharp from "sharp";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-interface WatermarkOptions {
-  text?: string;
-  position?:
-    | "bottom-left"
-    | "bottom-right"
-    | "top-left"
-    | "top-right"
-    | "center";
-  fontSize?: number;
-  fontFamily?: string;
-  fontWeight?: string | number;
-  letterSpacing?: number;
-  textColor?: string;
-  showLine?: boolean;
-  lineColor?: string;
-  opacity?: number;
-  margin?: number;
-}
-
-async function addWatermark(
-  imageBuffer: Buffer,
-  options: WatermarkOptions = {},
+/**
+ * Crée un watermark texte avec ombre pour être visible sur tous les fonds
+ * Position: BAS GAUCHE avec marge
+ * Couleur: GRIS avec ombre noire
+ * Texte: N E S T H U B
+ */
+async function createSimpleTextWatermark(
+  width: number,
+  height: number,
 ): Promise<Buffer> {
-  const {
-    text = "NESTHUB",
-    position = "bottom-left",
-    fontSize = 0.045,
-    fontFamily = "'Helvetica Neue', 'Montserrat', 'Arial', sans-serif",
-    fontWeight = "300",
-    letterSpacing = 6,
-    textColor = "#FFFFFF",
-    showLine = true,
-    lineColor = "#FFFFFF",
-    opacity = 0.9,
-    margin = 28,
-  } = options;
+  // Taille du texte (4% de la largeur)
+  const fontSize = Math.floor(Math.min(width, height) * 0.045);
+  const marginLeft = 20; // Marge à gauche
+  const marginBottom = 30; // ✅ Marge en bas (augmenter = plus haut)
+  const text = "N E S T H U B";
+  const letterSpacing = 6;
 
-  const image = sharp(imageBuffer);
-  const metadata = await image.metadata();
-
-  const { width = 1200, height = 800 } = metadata;
-  const calculatedFontSize = Math.floor(width * fontSize);
-
-  let x: number;
-  let y: number;
-  let textAnchor: "start" | "end" = "start";
-  let lineX1: number;
-  let lineX2: number;
-
-  const textWidth = calculatedFontSize * (text.length * 0.55);
-  const lineY = height - margin - calculatedFontSize - 8;
-
-  switch (position) {
-    case "bottom-left":
-      x = margin;
-      y = height - margin;
-      textAnchor = "start";
-      lineX1 = margin;
-      lineX2 = margin + textWidth;
-      break;
-    case "bottom-right":
-      x = width - margin;
-      y = height - margin;
-      textAnchor = "end";
-      lineX1 = width - margin - textWidth;
-      lineX2 = width - margin;
-      break;
-    case "top-left":
-      x = margin;
-      y = margin + calculatedFontSize;
-      textAnchor = "start";
-      lineX1 = margin;
-      lineX2 = margin + textWidth;
-      break;
-    case "top-right":
-      x = width - margin;
-      y = margin + calculatedFontSize;
-      textAnchor = "end";
-      lineX1 = width - margin - textWidth;
-      lineX2 = width - margin;
-      break;
-    default:
-      x = width / 2;
-      y = height / 2;
-      textAnchor = "middle";
-      lineX1 = width / 2 - textWidth / 2;
-      lineX2 = width / 2 + textWidth / 2;
-  }
-
-  const textOpacity = Math.min(Math.max(opacity, 0), 1);
-
+  // Créer le SVG avec le texte en bas à gauche + ombre portée
   const svgWatermark = `
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
-        <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" style="stop-color:${textColor}; stop-opacity:${textOpacity}" />
-          <stop offset="100%" style="stop-color:${textColor}; stop-opacity:${textOpacity * 0.8}" />
-        </linearGradient>
-        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%" style="stop-color:${lineColor}; stop-opacity:0" />
-          <stop offset="40%" style="stop-color:${lineColor}; stop-opacity:${textOpacity * 0.6}" />
-          <stop offset="60%" style="stop-color:${lineColor}; stop-opacity:${textOpacity * 0.6}" />
-          <stop offset="100%" style="stop-color:${lineColor}; stop-opacity:0" />
-        </linearGradient>
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="1" dy="1" stdDeviation="2" flood-color="black" flood-opacity="0.6"/>
+        </filter>
       </defs>
-      
-      ${
-        showLine
-          ? `
-      <line 
-        x1="${lineX1}" 
-        y1="${lineY}" 
-        x2="${lineX2}" 
-        y2="${lineY}" 
-        stroke="url(#lineGradient)"
-        stroke-width="1.5"
-        stroke-linecap="round"
-      />
-      `
-          : ""
-      }
-      
+      <style>
+        .watermark-text {
+          font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+          font-size: ${fontSize}px;
+          font-weight: 500;
+          letter-spacing: ${letterSpacing}px;
+          fill: #D1D5DB;
+          opacity: 0.85;
+          filter: url(#shadow);
+        }
+      </style>
       <text 
-        x="${x}" 
-        y="${y}" 
-        font-family="${fontFamily}" 
-        font-size="${calculatedFontSize}" 
-        font-weight="${fontWeight}"
-        fill="url(#textGradient)"
-        text-anchor="${textAnchor}"
-        letter-spacing="${letterSpacing}"
+        x="${marginLeft}" 
+        y="${height - marginBottom}" 
+        class="watermark-text"
       >
         ${text}
       </text>
     </svg>
   `;
 
+  return Buffer.from(svgWatermark);
+}
+
+/**
+ * Ajoute le watermark sur l'image
+ */
+async function addWatermark(imageBuffer: Buffer): Promise<Buffer> {
+  const image = sharp(imageBuffer);
+  const metadata = await image.metadata();
+
+  const { width = 1200, height = 800 } = metadata;
+
+  // Créer le watermark texte
+  const watermarkBuffer = await createSimpleTextWatermark(width, height);
+
+  // Ajouter le watermark (position 0,0 car le SVG gère déjà l'emplacement)
   return await image
     .composite([
       {
-        input: Buffer.from(svgWatermark),
+        input: watermarkBuffer,
         top: 0,
         left: 0,
         blend: "over",
       },
     ])
-    .toBuffer(); // ✅ NE PAS RECOMPRESSER ICI
+    .jpeg({ quality: 85, progressive: true })
+    .toBuffer();
 }
 
 export async function POST(request: NextRequest) {
@@ -178,10 +104,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ AUGMENTER LA LIMITE À 15MB
-    if (file.size > 15 * 1024 * 1024) {
+    if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { error: "Photo trop lourde (max 15MB)" },
+        { error: "Photo trop lourde (max 10MB)" },
         { status: 400 },
       );
     }
@@ -192,85 +117,38 @@ export async function POST(request: NextRequest) {
     const fileExt = file.type === "image/png" ? "png" : "jpg";
     const fileName = `listings/temp/${clerkId}-${timestamp}-${randomId}`;
 
-    // ✅ APPLIQUER LE WATERMARK SANS RECOMPRESSION
-    const watermarkedBuffer = await addWatermark(buffer, {
-      text: "NESTHUB",
-      position: "bottom-left",
-      fontSize: 0.045,
-      fontFamily: "'Helvetica Neue', 'Montserrat', 'Arial', sans-serif",
-      fontWeight: "300",
-      letterSpacing: 6,
-      textColor: "#FFFFFF",
-      showLine: true,
-      lineColor: "#FFFFFF",
-      opacity: 0.9,
-      margin: 28,
-    });
+    // ✅ Ajouter le watermark "N E S T H U B" en bas à gauche
+    const watermarkedBuffer = await addWatermark(buffer);
 
-    // ✅ OPTIMISATION AVEC HAUTE QUALITÉ
-    // On garde la taille originale ou on la réduit intelligemment
+    // Optimiser l'image avec watermark
     const optimizedBuffer = await sharp(watermarkedBuffer)
-      .resize(1920, 1920, {
-        fit: "inside",
-        withoutEnlargement: true, // Ne pas agrandir si l'image est plus petite
-      })
-      .jpeg({
-        quality: 92, // ✅ QUALITÉ MAXIMALE (92 au lieu de 82)
-        progressive: true, // Chargement progressif
-        mozjpeg: true, // Meilleure compression
-      })
-      .png({
-        quality: 95, // ✅ Haute qualité pour PNG
-        compressionLevel: 6, // Bon équilibre qualité/taille
-      })
-      .webp({
-        quality: 90, // ✅ Haute qualité pour WebP
-        lossless: false,
-      })
+      .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: 80, progressive: true })
       .toBuffer();
 
-    // ✅ MINIATURE DE HAUTE QUALITÉ
+    // Générer une miniature
     const thumbnailBuffer = await sharp(buffer)
-      .resize(800, 800, {
-        fit: "cover",
-        position: "center",
-      })
-      .jpeg({
-        quality: 85, // ✅ Miniature de bonne qualité
-        progressive: true,
-      })
+      .resize(400, 400, { fit: "cover" })
+      .jpeg({ quality: 60 })
       .toBuffer();
-
-    // Déterminer le bon content type
-    const isPng = file.type === "image/png";
-    const isWebP = file.type === "image/webp";
-    const finalExt = isPng ? "png" : isWebP ? "webp" : "jpg";
-    const contentType = isPng
-      ? "image/png"
-      : isWebP
-        ? "image/webp"
-        : "image/jpeg";
 
     // Upload sur Vercel Blob
     const [mainBlob, thumbBlob] = await Promise.all([
-      put(`${fileName}.${finalExt}`, optimizedBuffer, {
+      put(`${fileName}.${fileExt}`, optimizedBuffer, {
         access: "private",
-        contentType: contentType,
+        contentType: fileExt === "png" ? "image/png" : "image/jpeg",
         addRandomSuffix: true,
       }),
-      put(`${fileName}-thumb.${finalExt}`, thumbnailBuffer, {
+      put(`${fileName}-thumb.${fileExt}`, thumbnailBuffer, {
         access: "private",
-        contentType: contentType,
+        contentType: fileExt === "png" ? "image/png" : "image/jpeg",
         addRandomSuffix: true,
       }),
     ]);
 
-    console.log("✅ Photo watermarkée (haute qualité):", mainBlob.url);
     console.log(
-      `📊 Taille originale: ${(file.size / 1024 / 1024).toFixed(2)} MB`,
-    );
-    console.log(
-      `📊 Taille optimisée: ${(optimizedBuffer.length / 1024 / 1024).toFixed(2)} MB`,
+      '✅ Photo uploadée avec watermark "N E S T H U B" (bas gauche, marge 30px):',
+      mainBlob.url,
     );
 
     return NextResponse.json({

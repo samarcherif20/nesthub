@@ -603,11 +603,15 @@ model Listing {
   // Caractéristiques
   rooms       Int     @default(1)
   bathrooms   Int     @default(1)
-  maxGuests   Int     @default(2)
-  surfaceArea Int?
-  floorNumber Int?
+  maxGuests   Int?     
+  surfaceArea Int
+  floorNumber Int
   hasElevator Boolean @default(false)
-
+  // ✅ NOUVEAUX CHAMPS POUR CARACTÉRISTIQUES (Step 2)
+  hasBalcony        Boolean   @default(false)  // Balcon
+  hasGarden         Boolean   @default(false)  // Jardin
+  hasGarage         Boolean   @default(false)  // Garage
+  numberOfKitchens  Int       @default(1)      // Nombre de cuisines
   // Prix
   rentalType      RentalType @default(SHORT_TERM)
   pricePerNight   Float?
@@ -619,14 +623,18 @@ model Listing {
   services    Json?
   houseRules  Json?
   customRules String?
- 
+    // ✅ NOUVEAUX CHAMPS POUR SERVICES & RÈGLES (Step 3)
+  isFurnished       Boolean   @default(false)  // Meublé ou non (SERVICE)
+  petsAllowed       Boolean   @default(false)  // Animaux acceptés (REGLE)
+  smokingAllowed    Boolean   @default(false)  // Fumeurs acceptés (REGLE)
+
    
   // ✅ NOUVEAUX CHAMPS À AJOUTER
   cleaningFee           Float?        @default(0)        // Frais de ménage
   weekendPriceMultiplier Float?       @default(1.15)     // Multiplicateur weekend
   extraFees             Json?        @default("[]")      // Frais supplémentaires (stockés en JSON)
   seasonalRules         Json?        @default("[]")      // Règles saisonnières (stockées en JSON)
-
+  
   // Statistiques
   viewCount      Int    @default(0)
   bookingCount   Int    @default(0)

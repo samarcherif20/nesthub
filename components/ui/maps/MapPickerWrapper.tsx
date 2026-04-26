@@ -38,10 +38,11 @@ interface MapPickerWrapperProps {
   onAddressChange?: (address: string) => void;
   className?: string;
   readOnly?: boolean;
-  // NOUVELLES PROPS
   markers?: ListingMarker[];
   showAllMarkers?: boolean;
   onMarkerClick?: (listingId: string) => void;
+  isGeocoding?: boolean;      // ✅ AJOUTÉ
+  showCurrentLocation?: boolean; // ✅ AJOUTÉ
 }
 
 export default function MapPickerWrapper(props: MapPickerWrapperProps) {
