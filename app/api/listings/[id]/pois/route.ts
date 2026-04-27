@@ -9,7 +9,8 @@ export async function GET(
   try {
     const { id } = await params;
     const searchParams = req.nextUrl.searchParams;
-    const radius = parseInt(searchParams.get("radius") || "2000");
+    const radius = parseInt(searchParams.get("radius") || "3000");
+    const maxDistance = parseInt(searchParams.get("maxDistance") || "10000"); // Max 10km pour les filtres
 
     const listing = await prisma.listing.findUnique({
       where: { id },
@@ -137,7 +138,7 @@ export async function GET(
         const distance = R * c;
 
         // Limiter au rayon demandé
-        if (distance * 1000 > radius) continue;
+        if (distance * 1000 > maxDistance) continue;
 
         allPOIs.push({
           id: uniqueKey,
@@ -159,7 +160,7 @@ export async function GET(
     // Trier par distance et limiter
     const sortedPOIs = allPOIs
       .sort((a, b) => a.distance - b.distance)
-      .slice(0, 30);
+      .slice(0, 50);
 
     console.log(`✅ ${sortedPOIs.length} POIs trouvés`);
 

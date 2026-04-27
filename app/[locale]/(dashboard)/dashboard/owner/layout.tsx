@@ -26,7 +26,6 @@ import { MdOutlineBookOnline } from "react-icons/md";
 import { MdOutlineChatBubble } from "react-icons/md";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { PiMicrosoftTeamsLogo } from "react-icons/pi";
-import OnboardingGuard from "@/components/ui/owner/OnboardingGuard";
 import { FloatingChat } from "@/components/ui/chat/FloatingChat";
 import NotificationBell from "@/components/ui/notifications/NotificationBell";
 
@@ -259,16 +258,6 @@ export default function OwnerLayout({
       icon: PiMicrosoftTeamsLogo,
     },
   ];
-
-  // Pages qui ne nécessitent PAS d'avoir des annonces
-  const publicOwnerPages = [
-    `/${locale}/dashboard/owner/listings/create`,
-    `/${locale}/dashboard/owner/listings/new`,
-  ];
-
-  const requiresListings = !publicOwnerPages.some((page) =>
-    pathname?.startsWith(page),
-  );
 
   const isActive = (href: string) => {
     if (href === `/${locale}/dashboard/owner`) return pathname === href;
@@ -672,15 +661,7 @@ export default function OwnerLayout({
             </div>
           </div>
         </header>
-
-        {/* Main content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-          {requiresListings ? (
-            <OnboardingGuard locale={locale}>{children}</OnboardingGuard>
-          ) : (
-            children
-          )}
-        </main>
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
       </div>
 
       {/* Logout modal */}

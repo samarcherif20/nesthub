@@ -286,18 +286,8 @@ export default function AvailabilityCalendar({
             Sélectionné
           </span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-sky-200 dark:bg-sky-950/50" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">
-            Intervalle
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700" />
-          <span className="text-xs text-gray-600 dark:text-gray-400">
-            Passé
-          </span>
-        </div>
+        
+        
       </div>
     </div>
   );

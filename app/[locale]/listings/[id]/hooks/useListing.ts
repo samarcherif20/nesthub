@@ -1,5 +1,7 @@
 // hooks/useListing.ts
-import { useState, useEffect, useCallback } from "react";
+console.log("🔥🔥🔥 LE FICHIER useListing.ts EST CHARGÉ !!!");
+
+import { useState, useEffect } from "react";
 
 export interface Owner {
   name: string;
@@ -55,7 +57,6 @@ export function useListing(id: string) {
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState(1);
 
-  // Fetch listing data
   useEffect(() => {
     if (!id) return;
 
@@ -65,14 +66,18 @@ export function useListing(id: string) {
         const res = await fetch(`/api/listings/${id}`);
         if (!res.ok) throw new Error("Failed to fetch listing");
         const data = await res.json();
-
+        console.log("🔴 DATA COMPLETE:", JSON.stringify(data, null, 2));
+        console.log("🔴 LATITUDE VALUE:", data.latitude);
+        console.log("🔴 LONGITUDE VALUE:", data.longitude);
+        console.log("🔴 TYPE OF LATITUDE:", typeof data.latitude);
         console.log("📦 Données reçues de l'API:", data);
         console.log("📍 Coordonnées brutes:", {
           lat: data.latitude,
           lng: data.longitude,
         });
 
-        // Transform data to match Listing interface
+        const images = data.photos?.map((p: any) => p.url) ?? data.images ?? [];
+
         const transformedListing: Listing = {
           id: data.id,
           title: data.title,
@@ -90,10 +95,10 @@ export function useListing(id: string) {
           pricePerNight: data.pricePerNight,
           rating: data.rating ?? 4.5,
           reviewCount: data.reviewCount ?? 0,
-          images: data.images ?? data.photos?.map((p: any) => p.url) ?? [],
+          images: images,
           type: data.type,
           isVerified: data.isVerified ?? false,
-          bedrooms: data.bedrooms ?? data.rooms ?? 1,
+          bedrooms: data.rooms ?? data.bedrooms ?? 1,
           bathrooms: data.bathrooms ?? 1,
           maxGuests: data.maxGuests ?? 2,
           surfaceArea: data.surfaceArea ?? 0,
@@ -130,32 +135,33 @@ export function useListing(id: string) {
     fetchListing();
   }, [id]);
 
-  const calculateTotalPrice = useCallback((): number => {
-    if (!listing || !checkIn || !checkOut) return 0;
-    const nights = nightsBetween(checkIn, checkOut);
-    const basePrice = listing.pricePerNight * nights;
-    const cleaningFee = listing.cleaningFee ?? 85;
-    const serviceFee = Math.round(basePrice * 0.05);
-    return basePrice + cleaningFee + serviceFee;
-  }, [listing, checkIn, checkOut]);
+  const nights = (() => {
+    if (!checkIn || !checkOut) return 0;
+    const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
+    return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  })();
 
-  const resetDates = useCallback(() => {
+  const basePrice = listing ? listing.pricePerNight * nights : 0;
+  const cleaningFee = listing?.cleaningFee ?? 85;
+  const serviceFee = listing ? Math.round(basePrice * 0.05) : 0;
+  const totalToPay = basePrice + cleaningFee + serviceFee;
+
+  const calculateTotalPrice = () => totalToPay;
+
+  const resetDates = () => {
     setCheckIn("");
     setCheckOut("");
-  }, []);
+  };
 
-  const isDateBlocked = useCallback(
-    (date: string): boolean => {
-      if (!listing) return true;
-      if (listing.blockedDates?.includes(date)) return true;
-      if (listing.availability && listing.availability[date] === false)
-        return true;
-      return false;
-    },
-    [listing],
-  );
+  const isDateBlocked = (date: string) => {
+    if (!listing) return true;
+    if (listing.blockedDates?.includes(date)) return true;
+    if (listing.availability && listing.availability[date] === false)
+      return true;
+    return false;
+  };
 
-  const getAvailableDates = useCallback((): string[] => {
+  const getAvailableDates = () => {
     if (!listing) return [];
     const today = new Date();
     const dates: string[] = [];
@@ -168,10 +174,9 @@ export function useListing(id: string) {
       }
     }
     return dates;
-  }, [listing, isDateBlocked]);
+  };
 
   return {
-    // State
     listing,
     loading,
     selectedImage,
@@ -184,33 +189,16 @@ export function useListing(id: string) {
     setCheckOut,
     guests,
     setGuests,
-
-    // Computed values
-    nights: nightsBetween(checkIn, checkOut),
-    basePrice: listing
-      ? listing.pricePerNight * nightsBetween(checkIn, checkOut)
-      : 0,
-    cleaningFee: listing?.cleaningFee ?? 85,
-    serviceFee: listing
-      ? Math.round(
-          listing.pricePerNight * nightsBetween(checkIn, checkOut) * 0.05,
-        )
-      : 0,
-    totalToPay: calculateTotalPrice(),
-
-    // Actions
+    nights,
+    basePrice,
+    cleaningFee,
+    serviceFee,
+    totalToPay,
     calculateTotalPrice,
     resetDates,
     isDateBlocked,
     getAvailableDates,
   };
-}
-
-// Helper functions
-function nightsBetween(start: string, end: string): number {
-  if (!start || !end) return 0;
-  const diff = new Date(end).getTime() - new Date(start).getTime();
-  return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 }
 
 function extractAmenities(equipment: Record<string, unknown>): string[] {

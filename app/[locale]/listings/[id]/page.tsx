@@ -48,6 +48,7 @@ import {
   IoMapOutline,
   IoLocationSharp,
   IoWalkOutline,
+  IoArrowUp,
 } from "react-icons/io5";
 import {
   FaSwimmingPool,
@@ -75,7 +76,6 @@ import {
   MdOutlineIron,
   MdOutlineSafetyCheck,
 } from "react-icons/md";
-//import { useListing } from "../hooks/useListing";
 import { useListingTest as useListing } from "@/hooks/useListingTest";
 
 // ✅ Import dynamique de ListingMap avec SSR désactivé
@@ -98,40 +98,117 @@ const BTN_GRAD = `${GRAD} text-white font-bold shadow-lg shadow-indigo-200/60 da
 
 const EQUIPMENT_MAP: Record<string, { label: string; icon: React.ReactNode }> =
   {
-    wifi: { label: "Wi-Fi", icon: <IoWifi /> },
-    parking: { label: "Parking", icon: <FaParking /> },
-    swimmingPool: { label: "Piscine", icon: <FaSwimmingPool /> },
-    airConditioning: { label: "Climatisation", icon: <IoSnowOutline /> },
-    kitchen: { label: "Cuisine équipée", icon: <FaUtensils /> },
+    // Connexion & Divertissement
+    wifi: { label: "Wi-Fi haut débit", icon: <IoWifi /> },
     tv: { label: "Télévision", icon: <IoTvOutline /> },
+    netflix: { label: "Netflix", icon: <IoTvOutline /> },
+    cableTv: { label: "TV par câble", icon: <IoTvOutline /> },
+    smartTv: { label: "Smart TV", icon: <IoTvOutline /> },
+
+    // Climatisation & Chauffage
+    ac: { label: "Climatisation", icon: <IoSnowOutline /> },
+    airConditioning: { label: "Climatisation", icon: <IoSnowOutline /> },
     heating: { label: "Chauffage", icon: <IoFlameOutline /> },
+    fan: { label: "Ventilateur", icon: <IoFlameOutline /> },
+
+    // Cuisine & Électroménager
+    kitchen: { label: "Cuisine équipée", icon: <FaUtensils /> },
+    washer: { label: "Machine à laver", icon: <FaWind /> },
     washingMachine: { label: "Machine à laver", icon: <FaWind /> },
     dryer: { label: "Sèche-linge", icon: <FaWind /> },
     dishwasher: { label: "Lave-vaisselle", icon: <IoRestaurantOutline /> },
     oven: { label: "Four", icon: <IoRestaurantOutline /> },
     microwave: { label: "Micro-ondes", icon: <MdMicrowave /> },
-    coffeeMaker: { label: "Cafetière", icon: <FaCoffee /> },
     refrigerator: { label: "Réfrigérateur", icon: <FaSnowflake /> },
-    balcony: { label: "Balcon", icon: <MdBalcony /> },
+    coffeeMaker: { label: "Cafetière", icon: <FaCoffee /> },
+    kettle: { label: "Bouilloire", icon: <FaCoffee /> },
+    toaster: { label: "Grille-pain", icon: <FaUtensils /> },
+    blender: { label: "Mixeur", icon: <FaUtensils /> },
+    espressoMachine: { label: "Machine à expresso", icon: <FaCoffee /> },
+    freezer: { label: "Congélateur", icon: <FaSnowflake /> },
+
+    // Extérieur & Parking
+    parking: { label: "Parking gratuit", icon: <FaParking /> },
+    garage: { label: "Garage", icon: <FaParking /> },
+    pool: { label: "Piscine", icon: <FaSwimmingPool /> },
+    swimmingPool: { label: "Piscine", icon: <FaSwimmingPool /> },
     garden: { label: "Jardin", icon: <IoLeafOutline /> },
     terrace: { label: "Terrasse", icon: <MdOutlineDeck /> },
-    elevator: { label: "Ascenseur", icon: <MdOutlineElevator /> },
+    balcony: { label: "Balcon", icon: <MdBalcony /> },
+    bbq: { label: "Barbecue", icon: <FaFire /> },
+    beachAccess: { label: "Accès plage", icon: <FaUmbrellaBeach /> },
+    outdoorFurniture: { label: "Mobilier de jardin", icon: <IoLeafOutline /> },
+
+    // Sports & Bien-être
     gym: { label: "Salle de sport", icon: <IoBarbellOutline /> },
     sauna: { label: "Sauna", icon: <IoWaterOutline /> },
     jacuzzi: { label: "Jacuzzi", icon: <IoWaterOutline /> },
-    beachAccess: { label: "Accès plage", icon: <FaUmbrellaBeach /> },
-    seaView: { label: "Vue mer", icon: <IoEyeOutline /> },
-    mountainView: { label: "Vue montagne", icon: <FaMountain /> },
-    cityView: { label: "Vue ville", icon: <FaCity /> },
-    babyBed: { label: "Lit bébé", icon: <FaBaby /> },
-    workDesk: { label: "Bureau", icon: <IoHomeOutline /> },
-    allowedPets: { label: "Animaux acceptés", icon: <FaDog /> },
-    allowedSmoking: { label: "Fumeurs acceptés", icon: <FaSmoking /> },
+    hammam: { label: "Hammam", icon: <IoWaterOutline /> },
+
+    // Services & Sécurité
+    elevator: { label: "Ascenseur", icon: <MdOutlineElevator /> },
     iron: { label: "Fer à repasser", icon: <MdOutlineIron /> },
+    ironingBoard: { label: "Planche à repasser", icon: <MdOutlineIron /> },
+    hairDryer: { label: "Sèche-cheveux", icon: <IoFlameOutline /> },
+    hangers: { label: "Cintres", icon: <IoCheckmarkCircle /> },
+    desk: { label: "Bureau", icon: <IoHomeOutline /> },
+    workspace: { label: "Espace de travail", icon: <IoHomeOutline /> },
+    printer: { label: "Imprimante", icon: <IoHomeOutline /> },
+    vacuum: { label: "Aspirateur", icon: <FaWind /> },
     safe: { label: "Coffre-fort", icon: <MdOutlineSafetyCheck /> },
+    smokeDetector: {
+      label: "Détecteur de fumée",
+      icon: <IoAlertCircleOutline />,
+    },
+    fireExtinguisher: { label: "Extincteur", icon: <IoAlertCircleOutline /> },
+    firstAidKit: { label: "Kit de secours", icon: <IoCheckmarkCircle /> },
+    securityCameras: {
+      label: "Caméras de surveillance",
+      icon: <IoShieldCheckmarkOutline />,
+    },
+
+    // Accessibilité
+    wheelchair: { label: "Accessible PMR", icon: <FaWheelchair /> },
     shower: { label: "Douche italienne", icon: <FaShower /> },
+    grabRails: { label: "Barres d'appui", icon: <FaWheelchair /> },
+
+    // Enfants & Animaux
+    babyBed: { label: "Lit bébé", icon: <FaBaby /> },
+    crib: { label: "Lit bébé", icon: <FaBaby /> },
+    highChair: { label: "Chaise haute", icon: <FaBaby /> },
+    babyBath: { label: "Baignoire bébé", icon: <FaBaby /> },
+    allowedPets: { label: "Animaux acceptés", icon: <FaDog /> },
+    petsAllowed: { label: "Animaux acceptés", icon: <FaDog /> },
+
+    // Règles
+    smokingAllowed: { label: "Fumeurs acceptés", icon: <FaSmoking /> },
+    allowedSmoking: { label: "Fumeurs acceptés", icon: <FaSmoking /> },
+    noParties: { label: "Pas de fêtes", icon: <IoAlertCircleOutline /> },
+    quietAfter22: { label: "Calme après 22h", icon: <IoTimeOutline /> },
+
+    // Vues
+    seaView: { label: "Vue sur mer", icon: <IoEyeOutline /> },
+    mountainView: { label: "Vue sur montagne", icon: <FaMountain /> },
+    cityView: { label: "Vue sur ville", icon: <FaCity /> },
+    poolView: { label: "Vue sur piscine", icon: <IoEyeOutline /> },
+    gardenView: { label: "Vue sur jardin", icon: <IoLeafOutline /> },
+
+    // Services supplémentaires
+    cleaning: { label: "Ménage inclus", icon: <IoCheckmarkCircle /> },
+    linen: { label: "Draps et linge fournis", icon: <IoCheckmarkCircle /> },
+    isFurnished: { label: "Meublé", icon: <IoHomeOutline /> },
+    concierge: { label: "Conciergerie", icon: <IoPersonOutline /> },
+    breakfast: { label: "Petit-déjeuner inclus", icon: <FaCoffee /> },
+    airportShuttle: { label: "Navette aéroport", icon: <IoCarOutline /> },
+    housekeeping: { label: "Ménage quotidien", icon: <IoCheckmarkCircle /> },
+
+    // Extras
+    hotWater: { label: "Eau chaude 24/7", icon: <IoWaterOutline /> },
     fireplace: { label: "Cheminée", icon: <FaFire /> },
-    wheelchair: { label: "Accès PMR", icon: <FaWheelchair /> },
+    conciergeService: {
+      label: "Service de conciergerie",
+      icon: <IoPersonOutline />,
+    },
   };
 
 interface NearbyPOI {
@@ -160,14 +237,42 @@ function resolveEquipmentList(
   } else if (amenities && amenities.length > 0) {
     keys = amenities;
   }
+
+  const getTranslation = (key: string): string => {
+    const translations: Record<string, string> = {
+      ac: "Climatisation",
+      pool: "Piscine",
+      washer: "Machine à laver",
+      dryer: "Sèche-linge",
+      kitchen: "Cuisine équipée",
+      wifi: "Wi-Fi",
+      tv: "Télévision",
+      parking: "Parking",
+      elevator: "Ascenseur",
+      balcony: "Balcon",
+      garden: "Jardin",
+      terrace: "Terrasse",
+      gym: "Salle de sport",
+      heating: "Chauffage",
+      bbq: "Barbecue",
+      safe: "Coffre-fort",
+    };
+    return (
+      translations[key] ||
+      key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, " ")
+    );
+  };
+
   return keys.map((raw) => {
     if (EQUIPMENT_MAP[raw]) return EQUIPMENT_MAP[raw];
-    const match = Object.values(EQUIPMENT_MAP).find(
-      (e) => e.label.toLowerCase() === raw.toLowerCase(),
+    const match = Object.entries(EQUIPMENT_MAP).find(
+      ([key, value]) =>
+        key.toLowerCase() === raw.toLowerCase() ||
+        value.label.toLowerCase().includes(raw.toLowerCase()),
     );
-    if (match) return match;
+    if (match) return match[1];
     return {
-      label: raw.charAt(0).toUpperCase() + raw.slice(1).replace(/_/g, " "),
+      label: getTranslation(raw),
       icon: <IoCheckmarkCircle />,
     };
   });
@@ -179,20 +284,24 @@ function parseHouseRules(raw: unknown): string[] {
   if (typeof raw === "object") {
     const r = raw as Record<string, unknown>;
     const lines: string[] = [];
-    if (r.checkIn) lines.push(`Arrivée à partir de ${r.checkIn}`);
-    if (r.checkOut) lines.push(`Départ avant ${r.checkOut}`);
+    if (r.checkIn) lines.push(`🕒 Arrivée à partir de ${r.checkIn}`);
+    if (r.checkOut) lines.push(`🕒 Départ avant ${r.checkOut}`);
     if (r.noSmoking === true)
-      lines.push("Interdiction de fumer dans le logement");
-    if (r.noPets === true) lines.push("Animaux non autorisés");
-    if (r.noParties === true) lines.push("Fêtes non autorisées");
-    if (r.quietHours) lines.push(`Calme après ${r.quietHours}`);
+      lines.push("🚭 Interdiction de fumer dans le logement");
+    if (r.noPets === true) lines.push("🐾 Animaux non autorisés");
+    if (r.noParties === true) lines.push("🎉 Fêtes et événements interdits");
+    if (r.quietHours) lines.push(`🔇 Calme après ${r.quietHours}`);
     if (r.customRules && typeof r.customRules === "string") {
       r.customRules
         .split("\n")
         .map((s) => s.trim())
         .filter(Boolean)
-        .forEach((s) => lines.push(s));
+        .forEach((s) => lines.push(`📌 ${s}`));
     }
+    if (r.petsAllowed === true) lines.push("🐕 Animaux acceptés");
+    if (r.smokingAllowed === true)
+      lines.push("🚬 Fumeurs acceptés (extérieur)");
+    if (r.childrenAllowed === true) lines.push("👶 Enfants bienvenus");
     return lines;
   }
   return [];
@@ -379,13 +488,21 @@ export default function ListingDetailPage() {
   const [nearbyPOIs, setNearbyPOIs] = useState<NearbyPOI[]>([]);
   const [poiFilters, setPoiFilters] = useState<string[]>([]);
   const [loadingPOIs, setLoadingPOIs] = useState(false);
+  const [showAllDistances, setShowAllDistances] = useState(false);
   const slideshowInterval = useRef<NodeJS.Timeout | null>(null);
+  const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
 
   const showToast = useCallback(
     (message: string, type: "success" | "error" | "info" = "info") =>
       setToast({ message, type }),
     [],
   );
+
+  const getImageUrl = useCallback((url: string) => {
+    if (!url) return "";
+    if (url.includes("/api/listings/image")) return url;
+    return `/api/listings/image?url=${encodeURIComponent(url)}`;
+  }, []);
 
   useEffect(() => {
     const saved = localStorage.getItem("favorites");
@@ -396,7 +513,7 @@ export default function ListingDetailPage() {
     if (!listing?.latitude || !listing?.longitude) return;
     setLoadingPOIs(true);
     try {
-      const res = await fetch(`/api/listings/${id}/pois?radius=2000`);
+      const res = await fetch(`/api/listings/${id}/pois?radius=10000`);
       const data = await res.json();
       if (data.success) {
         setNearbyPOIs(data.pois);
@@ -441,6 +558,10 @@ export default function ListingDetailPage() {
     },
     [listing?.latitude, listing?.longitude],
   );
+
+  const handleToggleDistance = useCallback(() => {
+    setShowAllDistances((prev) => !prev);
+  }, []);
 
   const handleInfoRequest = async () => {
     if (!checkIn || !checkOut) {
@@ -492,7 +613,7 @@ export default function ListingDetailPage() {
   };
 
   const incrementGuests = () => {
-    if (listing && guests < listing.maxGuests) setGuests(guests + 1);
+    if (listing?.maxGuests && guests < listing.maxGuests) setGuests(guests + 1);
   };
   const decrementGuests = () => {
     if (guests > 1) setGuests(guests - 1);
@@ -549,18 +670,6 @@ export default function ListingDetailPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showAllPhotos, selectedImage, listing?.images, isPlaying]);
 
-  // ✅ LOGS pour debug
-  console.log("🔍 [DEBUG] Listing chargé:", {
-    hasListing: !!listing,
-    latitude: listing?.latitude,
-    longitude: listing?.longitude,
-    hasLat: !!listing?.latitude,
-    hasLng: !!listing?.longitude,
-    location: listing?.location,
-    poisCount: nearbyPOIs.length,
-    filteredPoisCount: filteredPOIs.length,
-  });
-
   if (loading)
     return (
       <LoadingSpinner
@@ -605,6 +714,45 @@ export default function ListingDetailPage() {
   const houseRules = parseHouseRules(listing.houseRules);
   const totalPhotos = listing.images?.length || 0;
   const remainingPhotos = totalPhotos - 4;
+
+  // Fonctions de formatage
+  const formatMaxGuests = () => {
+    if (!listing.maxGuests) return "Capacité non spécifiée";
+    if (listing.maxGuests === 1) return "1 personne max.";
+    return `${listing.maxGuests} personnes max.`;
+  };
+
+  const formatBathrooms = () => {
+    if (listing.bathrooms === 1) return "1 salle de bain";
+    return `${listing.bathrooms} salles de bain`;
+  };
+
+  const formatBedrooms = () => {
+    if (listing.bedrooms === 1) return "1 chambre";
+    return `${listing.bedrooms} chambres`;
+  };
+
+  const formatSurfaceArea = () => {
+    if (!listing.surfaceArea) return null;
+    return `${listing.surfaceArea} m²`;
+  };
+
+  const formatKitchens = () => {
+    if (listing.numberOfKitchens === 1) return "1 cuisine";
+    return `${listing.numberOfKitchens} cuisines`;
+  };
+
+  const formatFloorNumber = () => {
+    if (listing.floorNumber === undefined || listing.floorNumber === null)
+      return null;
+    if (listing.floorNumber === 0) return "Rez-de-chaussée";
+    if (listing.floorNumber === 1) return "1er étage";
+    return `${listing.floorNumber}ème étage`;
+  };
+
+  const formatPrice = (price: number) => {
+    return price.toLocaleString("fr-FR");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900">
@@ -750,8 +898,15 @@ export default function ListingDetailPage() {
               {listing.images?.[0] ? (
                 <img
                   alt={listing.title}
-                  src={listing.images[0]}
+                  src={getImageUrl(listing.images[0])}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                  onError={(e) => {
+                    console.error(
+                      "Erreur chargement image:",
+                      listing.images[0],
+                    );
+                    setImageErrors((prev) => ({ ...prev, [0]: true }));
+                  }}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">
@@ -771,8 +926,12 @@ export default function ListingDetailPage() {
               >
                 <img
                   alt={`Vue ${idx + 2}`}
-                  src={img}
+                  src={getImageUrl(img)}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+                  onError={(e) => {
+                    console.error("Erreur chargement image:", img);
+                    setImageErrors((prev) => ({ ...prev, [idx + 1]: true }));
+                  }}
                 />
               </div>
             ))}
@@ -787,8 +946,15 @@ export default function ListingDetailPage() {
               >
                 <img
                   alt="Plus de photos"
-                  src={listing.images?.[4]}
+                  src={getImageUrl(listing.images[4])}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.06]"
+                  onError={(e) => {
+                    console.error(
+                      "Erreur chargement image:",
+                      listing.images[4],
+                    );
+                    setImageErrors((prev) => ({ ...prev, [4]: true }));
+                  }}
                 />
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                   <span className="text-white text-lg font-bold">
@@ -866,10 +1032,16 @@ export default function ListingDetailPage() {
               <div className="flex justify-center items-center min-h-[55vh]">
                 {listing.images?.[selectedImage] ? (
                   <img
-                    src={listing.images[selectedImage]}
+                    src={getImageUrl(listing.images[selectedImage])}
                     alt=""
                     className="transition-transform duration-300 ease-out max-h-[65vh] object-contain"
                     style={{ transform: `scale(${zoomLevel})` }}
+                    onError={(e) => {
+                      console.error(
+                        "Erreur chargement image lightbox:",
+                        listing.images[selectedImage],
+                      );
+                    }}
                   />
                 ) : (
                   <div className="w-full h-64 bg-slate-800 rounded-xl flex items-center justify-center">
@@ -895,9 +1067,12 @@ export default function ListingDetailPage() {
                     }`}
                   >
                     <img
-                      src={img}
+                      src={getImageUrl(img)}
                       alt=""
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.error("Erreur chargement miniature:", img);
+                      }}
                     />
                   </button>
                 ))}
@@ -913,42 +1088,66 @@ export default function ListingDetailPage() {
             {/* Stat chips */}
             <div className="flex flex-wrap gap-2 mb-6">
               {[
+                { icon: <IoBedOutline />, label: formatBedrooms(), show: true },
                 {
-                  icon: <IoBedOutline />,
-                  label: `${listing.bedrooms} chambre${listing.bedrooms > 1 ? "s" : ""}`,
+                  icon: <FaShower />,
+                  label: formatBathrooms(),
+                  show: listing.bathrooms > 0,
                 },
                 {
                   icon: <IoPeopleOutline />,
-                  label: `${listing.maxGuests} personne${listing.maxGuests > 1 ? "s" : ""} max.`,
+                  label: formatMaxGuests(),
+                  show: true,
                 },
-                ...(listing.bathrooms > 0
-                  ? [
-                      {
-                        icon: <FaShower />,
-                        label: `${listing.bathrooms} salle${listing.bathrooms > 1 ? "s" : ""} de bain`,
-                      },
-                    ]
-                  : []),
-                ...(listing.surfaceArea > 0
-                  ? [
-                      {
-                        icon: <MdOutlineSquareFoot />,
-                        label: `${listing.surfaceArea} m²`,
-                      },
-                    ]
-                  : []),
-              ].map(({ icon, label }) => (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-700 text-xs font-medium border border-gray-200"
-                >
-                  <span className="text-sky-500 text-xs">{icon}</span> {label}
-                </span>
-              ))}
+                {
+                  icon: <MdOutlineSquareFoot />,
+                  label: formatSurfaceArea(),
+                  show: !!listing.surfaceArea,
+                },
+                {
+                  icon: <FaUtensils />,
+                  label: formatKitchens(),
+                  show: listing.numberOfKitchens > 0,
+                },
+                {
+                  icon: <IoArrowUp />,
+                  label: formatFloorNumber(),
+                  show: !!formatFloorNumber(),
+                },
+                {
+                  icon: <MdOutlineElevator />,
+                  label: "Ascenseur",
+                  show: listing.hasElevator === true,
+                },
+                {
+                  icon: <MdBalcony />,
+                  label: "Balcon/Terrasse",
+                  show: listing.hasBalcony === true,
+                },
+                {
+                  icon: <IoLeafOutline />,
+                  label: "Jardin",
+                  show: listing.hasGarden === true,
+                },
+                {
+                  icon: <FaParking />,
+                  label: "Garage/Parking",
+                  show: listing.hasGarage === true,
+                },
+              ]
+                .filter((item) => item.show && item.label)
+                .map(({ icon, label }) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-xs font-medium border border-gray-200 dark:border-slate-700"
+                  >
+                    <span className="text-sky-500 text-xs">{icon}</span> {label}
+                  </span>
+                ))}
             </div>
 
             {/* Host card */}
-            <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-100 mb-6">
+            <div className="flex items-center justify-between gap-4 p-4 rounded-xl bg-gray-50 dark:bg-slate-800/40 border border-gray-100 dark:border-slate-700 mb-6">
               <div className="flex items-center gap-3">
                 <div className="relative shrink-0">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
@@ -973,7 +1172,7 @@ export default function ListingDetailPage() {
                 <div className="text-right shrink-0">
                   <div className="flex items-center justify-end gap-0.5">
                     <IoStar className="text-amber-400 text-xs" />
-                    <span className="font-extrabold text-lg text-gray-900">
+                    <span className="font-extrabold text-lg text-gray-900 dark:text-white">
                       {listing.rating}
                     </span>
                   </div>
@@ -1001,7 +1200,7 @@ export default function ListingDetailPage() {
                   equipmentItems.length > 10 ? (
                     <button
                       onClick={() => setShowAllAmenities((p) => !p)}
-                      className="text-[10px] font-semibold text-gray-500 hover:text-gray-800 underline"
+                      className="text-[10px] font-semibold text-gray-500 hover:text-gray-800 dark:hover:text-gray-300 underline"
                     >
                       {showAllAmenities
                         ? "Voir moins"
@@ -1014,7 +1213,7 @@ export default function ListingDetailPage() {
                   {visibleEquipment.map(({ label, icon }, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800/40 border text-xs text-gray-700"
+                      className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-slate-800/40 border text-xs text-gray-700 dark:text-gray-300"
                     >
                       <span className="text-sky-500 shrink-0 text-sm">
                         {icon}
@@ -1032,9 +1231,9 @@ export default function ListingDetailPage() {
                 Sélectionnez vos dates
               </p>
               {checkIn && checkOut && nights > 0 && (
-                <div className="inline-flex items-center gap-2 mb-3 px-2 py-1.5 rounded-lg bg-sky-50 border border-sky-100">
+                <div className="inline-flex items-center gap-2 mb-3 px-2 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/30 border border-sky-100 dark:border-sky-800">
                   <IoCalendarOutline className="text-sky-500 text-sm" />
-                  <span className="text-[11px] font-semibold text-sky-700">
+                  <span className="text-[11px] font-semibold text-sky-700 dark:text-sky-400">
                     {nights} nuit{nights > 1 ? "s" : ""} · {fmtDate(checkIn)} →{" "}
                     {fmtDate(checkOut)}
                   </span>
@@ -1092,7 +1291,7 @@ export default function ListingDetailPage() {
                   {houseRules.map((rule, idx) => (
                     <li
                       key={idx}
-                      className="flex items-start gap-2 text-xs text-gray-600"
+                      className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-400"
                     >
                       <IoTimeOutline className="text-sky-400 shrink-0 mt-0.5 text-sm" />
                       <span>{rule}</span>
@@ -1100,19 +1299,18 @@ export default function ListingDetailPage() {
                   ))}
                 </ul>
               ) : (
-                <div className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 border">
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-gray-50 dark:bg-slate-800/40 border">
                   <IoInformationCircleOutline className="text-gray-300 text-base shrink-0 mt-0.5" />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     Aucun règlement spécifique renseigné.
                   </p>
                 </div>
               )}
             </Section>
           </div>
-
           {/* RIGHT column: Booking widget */}
           <aside className="lg:w-[40%]">
-            <div className="sticky top-20 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 shadow-lg overflow-hidden">
+            <div className="sticky top-20 bg-white dark:bg-slate-900 rounded-xl border border-gray-200 dark:border-slate-700 shadow-lg overflow-hidden">
               <div className="bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-4 py-4">
                 <div className="flex items-end justify-between">
                   <div>
@@ -1121,10 +1319,7 @@ export default function ListingDetailPage() {
                     </p>
                     <div className="flex items-baseline gap-1">
                       <span className="text-2xl font-extrabold text-white leading-none">
-                        {listing.pricePerNight.toLocaleString("fr-FR")}
-                      </span>
-                      <span className="text-white/80 font-semibold text-xs">
-                        TND
+                        {formatPrice(listing.pricePerNight)} TND
                       </span>
                     </div>
                   </div>
@@ -1144,7 +1339,8 @@ export default function ListingDetailPage() {
                 </div>
               </div>
               <div className="p-4 space-y-3">
-                <div className="rounded-lg border overflow-hidden divide-y bg-gray-50">
+                {/* Date pickers */}
+                <div className="rounded-lg border overflow-hidden divide-y bg-gray-50 dark:bg-slate-800">
                   <div className="grid grid-cols-2 divide-x">
                     <div className="p-2">
                       <label className="block text-[9px] font-bold uppercase tracking-wider text-sky-500 mb-0.5">
@@ -1175,6 +1371,8 @@ export default function ListingDetailPage() {
                       />
                     </div>
                   </div>
+
+                  {/* ✅ CORRECTION ICI - Guest selector avec des fonctions correctes */}
                   <div className="p-2">
                     <label className="block text-[9px] font-bold uppercase tracking-wider text-indigo-500 mb-1">
                       Voyageurs
@@ -1182,69 +1380,97 @@ export default function ListingDetailPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <button
-                          onClick={decrementGuests}
+                          onClick={() => {
+                            if (guests > 1) {
+                              setGuests(guests - 1);
+                            }
+                          }}
                           disabled={guests <= 1}
-                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 disabled:opacity-50"
+                          className="w-7 h-7 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          type="button"
                         >
-                          <IoRemoveOutline className="text-xs" />
+                          <IoRemoveOutline className="text-sm" />
                         </button>
-                        <span className="text-sm font-semibold w-6 text-center">
+                        <span className="text-sm font-semibold w-8 text-center">
                           {guests}
                         </span>
                         <button
-                          onClick={incrementGuests}
-                          disabled={listing && guests >= listing.maxGuests}
-                          className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-300 disabled:opacity-50"
+                          onClick={() => {
+                            if (
+                              listing.maxGuests &&
+                              guests < listing.maxGuests
+                            ) {
+                              setGuests(guests + 1);
+                            }
+                          }}
+                          disabled={
+                            listing.maxGuests
+                              ? guests >= listing.maxGuests
+                              : false
+                          }
+                          className="w-7 h-7 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                          type="button"
                         >
-                          <IoAddOutline className="text-xs" />
+                          <IoAddOutline className="text-sm" />
                         </button>
                       </div>
                       <span className="text-[10px] text-gray-400">
-                        Max {listing.maxGuests} pers.
+                        Max{" "}
+                        {listing.maxGuests
+                          ? `${listing.maxGuests} pers.`
+                          : "Non spécifié"}
                       </span>
                     </div>
+                    {/* Affichage du message si max atteint */}
+                    {guests === listing.maxGuests && listing.maxGuests && (
+                      <p className="text-[9px] text-amber-500 mt-1 text-center">
+                        Capacité maximale atteinte
+                      </p>
+                    )}
                   </div>
                 </div>
 
+                {/* Price breakdown */}
                 {checkIn && checkOut && nights > 0 ? (
-                  <div className="rounded-lg bg-gray-50 p-3 space-y-2">
+                  <div className="rounded-lg bg-gray-50 dark:bg-slate-800 p-3 space-y-2">
                     <div className="flex justify-between text-xs">
                       <span>
-                        {listing.pricePerNight.toLocaleString("fr-FR")} TND ×{" "}
-                        {nights} nuit{nights > 1 ? "s" : ""}
+                        {formatPrice(listing.pricePerNight)} TND × {nights} nuit
+                        {nights > 1 ? "s" : ""}
                       </span>
                       <span className="font-semibold">
-                        {basePrice.toLocaleString("fr-FR")} TND
+                        {formatPrice(basePrice)} TND
                       </span>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>Frais de ménage</span>
-                      <span>{cleaningFee} TND</span>
+                      <span>{formatPrice(cleaningFee)} TND</span>
                     </div>
                     <div className="flex justify-between text-xs text-gray-500">
                       <span>Frais de service (5%)</span>
-                      <span>{serviceFee.toLocaleString("fr-FR")} TND</span>
+                      <span>{formatPrice(serviceFee)} TND</span>
                     </div>
                     <div className="pt-2 border-t flex justify-between font-extrabold text-sm">
                       <span className={GRAD_TEXT}>Total</span>
                       <span className={GRAD_TEXT}>
-                        {totalToPay.toLocaleString("fr-FR")} TND
+                        {formatPrice(totalToPay)} TND
                       </span>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-dashed p-3 text-center text-xs text-gray-400 bg-gray-50">
+                  <div className="rounded-lg border border-dashed p-3 text-center text-xs text-gray-400 bg-gray-50 dark:bg-slate-800">
                     Sélectionnez vos dates pour voir le prix total
                   </div>
                 )}
 
+                {/* Info request button */}
                 <button
                   onClick={handleInfoRequest}
                   disabled={infoRequestLoading || !checkIn || !checkOut}
                   className={`w-full py-2.5 rounded-lg text-xs font-extrabold transition-all ${
                     checkIn && checkOut && !infoRequestLoading
                       ? BTN_GRAD
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-100 dark:bg-slate-800 text-gray-400 cursor-not-allowed"
                   }`}
                 >
                   {infoRequestLoading ? (
@@ -1262,6 +1488,7 @@ export default function ListingDetailPage() {
                   Aucun engagement, l'hôte vous répondra sous 24h
                 </p>
 
+                {/* Security badges */}
                 <div className="grid grid-cols-3 gap-1.5 pt-1">
                   {[
                     {
@@ -1276,12 +1503,12 @@ export default function ListingDetailPage() {
                   ].map(({ icon, label }) => (
                     <div
                       key={label}
-                      className="text-center p-2 rounded-lg bg-gray-50 border"
+                      className="text-center p-2 rounded-lg bg-gray-50 dark:bg-slate-800 border"
                     >
                       <span className="flex justify-center text-indigo-400 mb-1 text-base">
                         {icon}
                       </span>
-                      <p className="text-[9px] text-gray-500 font-medium leading-tight">
+                      <p className="text-[9px] text-gray-500 dark:text-gray-400 font-medium leading-tight">
                         {label}
                       </p>
                     </div>
@@ -1319,16 +1546,10 @@ export default function ListingDetailPage() {
 
             {/* Carte avec ListingMap */}
             <div className="relative rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-slate-700">
-              {/* Dans la section de la carte */}
               <div className="h-[450px] w-full">
                 {(() => {
-                  // Force la récupération des coordonnées depuis l'objet
-                  const lat =
-                    (listing as any)?.latitude ?? (listing as any)?.lat;
-                  const lng =
-                    (listing as any)?.longitude ?? (listing as any)?.lng;
-
-                  console.log("🎯 COORDONNÉES FORCÉES:", { lat, lng, listing });
+                  const lat = listing?.latitude;
+                  const lng = listing?.longitude;
 
                   if (lat && lng) {
                     return (
@@ -1338,6 +1559,7 @@ export default function ListingDetailPage() {
                         pois={filteredPOIs}
                         zoom={14}
                         onPoiClick={handlePoiClick}
+                        showAllDistances={showAllDistances}
                       />
                     );
                   } else {
@@ -1346,11 +1568,6 @@ export default function ListingDetailPage() {
                         <IoMapOutline className="text-4xl text-gray-400 mb-2" />
                         <p className="text-sm text-gray-500">
                           Position non disponible
-                        </p>
-                        <p className="text-xs text-gray-400 mt-2">
-                          Latitude: {lat || "non définie"}
-                          <br />
-                          Longitude: {lng || "non définie"}
                         </p>
                       </div>
                     );
@@ -1363,7 +1580,8 @@ export default function ListingDetailPage() {
                 <POILegend
                   pois={nearbyPOIs}
                   onFilterChange={setPoiFilters}
-                  activeFilters={poiFilters}
+                  onToggleDistance={handleToggleDistance}
+                  showAllDistances={showAllDistances}
                 />
               )}
 
@@ -1380,7 +1598,7 @@ export default function ListingDetailPage() {
               )}
             </div>
 
-            {/* Liste des POIs - le reste reste identique */}
+            {/* Liste des POIs */}
             {nearbyPOIs.length > 0 && (
               <div className="mt-4">
                 <div className="flex items-center justify-between mb-3">

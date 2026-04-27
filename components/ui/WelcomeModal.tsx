@@ -1,9 +1,9 @@
 // components/ui/WelcomeModal.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, ArrowRight, X } from "lucide-react";
+import { Sparkles, ArrowRight, X, BellRing } from "lucide-react";
 
 interface WelcomeModalProps {
   locale: string;
@@ -23,32 +23,46 @@ export function WelcomeModal({
   onDiscover,
 }: WelcomeModalProps) {
   const router = useRouter();
-  const [countdown, setCountdown] = useState(10);
   const [redirecting, setRedirecting] = useState(false);
-
-  // ✅ Compte à rebours pour redirection automatique
-  useEffect(() => {
-    if (isOpen && countdown > 0) {
-      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-    if (isOpen && countdown === 0 && !redirecting) {
-      setRedirecting(true);
-      router.push(`/${locale}/dashboard/owner/listings/create`);
-    }
-  }, [isOpen, countdown, locale, router, redirecting]);
 
   const handleCreateListing = () => {
     setRedirecting(true);
     router.push(`/${locale}/dashboard/owner/listings/create`);
   };
 
-  const handleLater = () => {
+  const handleLater = async () => {
+    // Envoyer une notification de rappel via ton API existante
+    await sendReminderNotification();
     if (onLater) onLater();
   };
 
   const handleDiscover = () => {
     if (onDiscover) onDiscover();
+  };
+
+  const sendReminderNotification = async () => {
+    try {
+      // Utiliser ton système de notification existant
+      const response = await fetch("/api/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "SYSTEM_ALERT",
+          title: "Créez votre première annonce 🏠",
+          message: "N'oubliez pas de créer votre première annonce pour commencer à recevoir des réservations !",
+          scheduledFor: new Date(Date.now() + 86400000).toISOString(), // Dans 24h
+          channels: ["IN_APP", "EMAIL"],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de l'envoi du rappel");
+      }
+
+      console.log("Rappel planifié avec succès");
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du rappel:", error);
+    }
   };
 
   if (!isOpen) return null;
@@ -91,19 +105,6 @@ export function WelcomeModal({
             Nous sommes ravis de vous compter parmi nos hôtes d'exception. Pour commencer à recevoir des voyageurs, la première étape est de créer votre annonce.
           </p>
 
-          {/* Compte à rebours */}
-          <div className="bg-slate-100 rounded-xl p-4 text-center mb-4">
-            <p className="text-sm font-medium text-slate-600 mb-2">
-              Redirection automatique dans {countdown} secondes
-            </p>
-            <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[#005cab] to-[#712ae2] rounded-full transition-all duration-1000"
-                style={{ width: `${(countdown / 10) * 100}%` }}
-              />
-            </div>
-          </div>
-
           <div className="flex flex-col gap-4">
             <button
               onClick={handleCreateListing}
@@ -121,19 +122,36 @@ export function WelcomeModal({
             </button>
 
             <div className="flex items-center justify-center md:justify-start gap-4 mt-2">
-              <button onClick={handleLater} className="text-[#707785] hover:text-[#005cab] font-semibold text-sm transition-colors duration-200">
-                Plus tard
+              <button
+                onClick={handleLater}
+                className="text-[#707785] hover:text-[#005cab] font-semibold text-sm transition-colors duration-200 flex items-center gap-1.5"
+              >
+                <BellRing className="w-3.5 h-3.5" />
+                Plus tard (rappel dans 24h)
               </button>
               <span className="w-1 h-1 rounded-full bg-[#707785]/30"></span>
-              <button onClick={handleDiscover} className="text-[#707785] hover:text-[#005cab] font-semibold text-sm transition-colors duration-200">
+              <button
+                onClick={handleDiscover}
+                className="text-[#707785] hover:text-[#005cab] font-semibold text-sm transition-colors duration-200"
+              >
                 Découvrir mon tableau de bord
               </button>
             </div>
           </div>
+
+          {/* Message d'information */}
+          <div className="mt-6 p-3 bg-blue-50 rounded-xl border border-blue-100">
+            <p className="text-xs text-blue-600 text-center">
+              💡 Vous pourrez toujours créer votre première annonce plus tard depuis votre tableau de bord.
+            </p>
+          </div>
         </div>
 
         {onClose && (
-          <button onClick={onClose} className="absolute top-4 right-4 text-[#707785] hover:text-[#181c22] transition-colors p-2 hidden md:block">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-[#707785] hover:text-[#181c22] transition-colors p-2 hidden md:block"
+          >
             <X className="w-5 h-5" />
           </button>
         )}
