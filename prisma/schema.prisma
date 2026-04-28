@@ -317,15 +317,18 @@ model AdminNote {
   id           String   @id @default(uuid())
   authorId     String
   targetUserId String
+  conversationId String? 
   content      String
   isPrivate    Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   author       User     @relation("AuthorUser", fields: [authorId], references: [id])
   targetUser   User     @relation("TargetUser", fields: [targetUserId], references: [id])
-
+  conversation Conversation? @relation(fields: [conversationId], references: [id]) 
+ 
   @@index([authorId])
   @@index([targetUserId])
+  @@index([conversationId]) 
   @@map("admin_notes")
 }
 
@@ -486,6 +489,7 @@ enum ListingType {
 enum ListingStatus {
   DRAFT
   PENDING_REVIEW
+  REJECTED
   ACTIVE
   INACTIVE
   ARCHIVED
@@ -1325,6 +1329,7 @@ model Conversation {
 
   messages Message[]
   reports Report[]
+  adminNotes AdminNote[]  
 
   @@unique([listingId, ownerId, tenantId])
   @@index([ownerId])
@@ -1412,6 +1417,7 @@ enum ChatStatus {
   EXPIRED
   CLOSED_BY_TENANT
   CLOSED_BY_OWNER
+  CLOSED_BY_ADMIN
 }
 
 enum ContractStatus {

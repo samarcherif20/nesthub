@@ -330,7 +330,7 @@ export async function POST(request: NextRequest) {
         owner: {
           connect: { id: permissions.userId },
         },
-        status: body.status || "DRAFT",
+        status: "PENDING_REVIEW",
         publishedAt: body.status === "ACTIVE" ? new Date() : null,
       },
     });

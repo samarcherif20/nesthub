@@ -110,8 +110,7 @@ export async function GET(
     );
   }
 }
-
-// POST - Envoyer un message
+// POST - Envoyer un message (version corrigée avec vérification du statut)
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ conversationId: string }> },
@@ -164,6 +163,87 @@ export async function POST(
       );
     }
 
+    // 🔥 ============================================
+    // 🔥 VÉRIFICATION CRUCIALE : STATUT DE LA CONVERSATION
+    // 🔥 ============================================
+
+    // 1. Vérifier si la conversation est bloquée par un modérateur
+    if (conversation.isBlocked) {
+      return NextResponse.json(
+        {
+          error:
+            "Cette conversation a été bloquée par un modérateur. Vous ne pouvez plus envoyer de messages.",
+          code: "CONVERSATION_BLOCKED",
+        },
+        { status: 403 },
+      );
+    }
+
+    // 2. Vérifier si la conversation est fermée (seul OPEN permet d'envoyer)
+    if (conversation.status !== "OPEN") {
+      let errorMessage =
+        "Cette conversation est fermée. Vous ne pouvez plus envoyer de messages.";
+
+      if (conversation.status === "CLOSED_BY_ADMIN") {
+        errorMessage =
+          "Cette conversation a été fermée par un modérateur. Vous ne pouvez plus envoyer de messages.";
+      } else if (conversation.status === "CLOSED_BY_OWNER") {
+        errorMessage =
+          "Le propriétaire a fermé cette conversation. Vous ne pouvez plus envoyer de messages.";
+      } else if (conversation.status === "CLOSED_BY_TENANT") {
+        errorMessage =
+          "Le locataire a fermé cette conversation. Vous ne pouvez plus envoyer de messages.";
+      } else if (conversation.status === "EXPIRED") {
+        errorMessage =
+          "Cette conversation a expiré. Vous ne pouvez plus envoyer de messages.";
+      }
+
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          code: "CONVERSATION_CLOSED",
+          status: conversation.status,
+        },
+        { status: 403 },
+      );
+    }
+
+    // 3. Vérifier si l'utilisateur n'a pas bloqué l'autre
+    const blockExists = await prisma.block.findFirst({
+      where: {
+        OR: [
+          {
+            blockerId: user.id,
+            blockedId:
+              conversation.ownerId === user.id
+                ? conversation.tenantId
+                : conversation.ownerId,
+          },
+          {
+            blockerId:
+              conversation.ownerId === user.id
+                ? conversation.tenantId
+                : conversation.ownerId,
+            blockedId: user.id,
+          },
+        ],
+      },
+    });
+
+    if (blockExists) {
+      return NextResponse.json(
+        {
+          error: "Vous ne pouvez plus envoyer de messages à cet utilisateur.",
+          code: "USER_BLOCKED",
+        },
+        { status: 403 },
+      );
+    }
+
+    // ============================================
+    // FIN DES VÉRIFICATIONS - CONTINUER L'ENVOI
+    // ============================================
+
     const receiverId =
       conversation.ownerId === user.id
         ? conversation.tenantId
@@ -173,20 +253,16 @@ export async function POST(
     let blockedReason = null;
     let finalContent = content;
 
+    // ... reste de ton code de modération et d'envoi ...
     try {
       const moderation = await moderateMessage(content);
-
       if (moderation.isBlocked) {
         isBlocked = true;
         blockedReason = moderation.reason;
         finalContent = `[Message bloqué - ${moderation.reason}]`;
-        console.log(
-          `🛡️ [API REST] Message bloqué par ${moderation.method}: ${moderation.reason}`,
-        );
       }
     } catch (error) {
-      console.error("❌ ERREUR dans moderateMessage:", error);
-
+      // fallback regex
       const phoneRegex =
         /(\+216)?[ \-\s]?[259][0-9]{7,8}|[0-9]{2}[-\s]?[0-9]{3}[-\s]?[0-9]{3}/;
       const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;

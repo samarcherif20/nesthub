@@ -594,3 +594,54 @@
    background: #c7d2fe;
    border-radius: 10px;
  }
+
+ /* Animations pour les cercles sur la carte */
+.animated-circle {
+  transition: all 0.3s ease-in-out;
+  transform-origin: center;
+  animation: none;
+}
+
+.animated-circle.pulse {
+  animation: radarPulse 0.8s ease-out;
+}
+
+@keyframes radarPulse {
+  0% {
+    r: 0;
+    opacity: 1;
+  }
+  50% {
+    r: 30px;
+    opacity: 0.6;
+  }
+  100% {
+    r: 60px;
+    opacity: 0;
+  }
+}
+
+/* Option: Effet de glow (lueur) */
+.animated-circle:hover {
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.6));
+}
+
+/* Animation d'onde continue (alternative) */
+@keyframes continuousPulse {
+  0% {
+    stroke-width: 2px;
+    fill-opacity: 0.2;
+  }
+  50% {
+    stroke-width: 5px;
+    fill-opacity: 0.4;
+  }
+  100% {
+    stroke-width: 2px;
+    fill-opacity: 0.2;
+  }
+}
+
+.animated-circle.pulse-continuous {
+  animation: continuousPulse 2s ease-in-out infinite;
+}

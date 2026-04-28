@@ -1,4 +1,4 @@
-// hooks/useListingForm.ts - VERSION CORRIGÉE AVEC SURFACE/ETAGE OBLIGATOIRES
+// hooks/useListingForm.ts - VERSION COMPLÈTE CORRIGÉE
 
 import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -125,7 +125,6 @@ export const useListingForm = (locale: string) => {
     { id: 6, key: "preview", icon: "👁️" },
   ];
 
-  // ✅ Validation avec surfaceArea et floorNumber obligatoires
   const validateField = useCallback(
     (field: string, value: any): string | null => {
       switch (field) {
@@ -161,16 +160,13 @@ export const useListingForm = (locale: string) => {
         case "numberOfKitchens":
           if (value < 1) return "Au moins 1 cuisine est requise";
           return null;
-        // ✅ surfaceArea OBLIGATOIRE
         case "surfaceArea":
           if (!value || value <= 0) return "La surface est requise";
           return null;
-        // ✅ floorNumber OBLIGATOIRE
         case "floorNumber":
           if (value === null || value === undefined)
             return "Le numéro d'étage est requis";
           return null;
-        // ✅ maxGuests OPTIONNEL (pas de validation)
         case "photos":
           if (form.photos.length === 0) return "Au moins une photo est requise";
           if (!form.photos.some((p) => p.isMain))
@@ -192,13 +188,6 @@ export const useListingForm = (locale: string) => {
             return "Le prix par mois est requis";
           }
           return null;
-        case "hasBalcony":
-        case "hasGarden":
-        case "hasGarage":
-        case "isFurnished":
-        case "petsAllowed":
-        case "smokingAllowed":
-          return null;
         default:
           return null;
       }
@@ -212,7 +201,6 @@ export const useListingForm = (locale: string) => {
     ],
   );
 
-  // ✅ isStepValid avec surfaceArea et floorNumber obligatoires
   const isStepValid = useMemo(() => {
     if (step === 1) {
       if (!form.title.trim() || form.title.length < 5) return false;
@@ -227,12 +215,9 @@ export const useListingForm = (locale: string) => {
       if (form.rooms < 1) return false;
       if (form.bathrooms < 1) return false;
       if (form.numberOfKitchens < 1) return false;
-      // ✅ surfaceArea OBLIGATOIRE
       if (!form.surfaceArea || form.surfaceArea <= 0) return false;
-      // ✅ floorNumber OBLIGATOIRE
       if (form.floorNumber === null || form.floorNumber === undefined)
         return false;
-      // ✅ maxGuests OPTIONNEL - pas de vérification
     }
     if (step === 4) {
       if (form.photos.length === 0) return false;
@@ -278,7 +263,6 @@ export const useListingForm = (locale: string) => {
     [],
   );
 
-  // Upload photo unique
   const uploadSinglePhoto = useCallback(
     async (file: File): Promise<{ url: string; thumbnailUrl: string }> => {
       const formData = new FormData();
@@ -297,7 +281,6 @@ export const useListingForm = (locale: string) => {
     [],
   );
 
-  // Upload multiple photos
   const uploadPhotos = useCallback(
     async (photos: any[]): Promise<any[]> => {
       if (!photos.some((p) => p.file)) return photos;
@@ -336,7 +319,6 @@ export const useListingForm = (locale: string) => {
     [uploadSinglePhoto],
   );
 
-  // Sauvegarde du brouillon
   const saveDraft = useCallback(async () => {
     if (saving || uploadingPhotos) return;
     setSaving(true);
@@ -373,7 +355,6 @@ export const useListingForm = (locale: string) => {
     }
   }, [form, listingId, saving, uploadingPhotos, uploadPhotos]);
 
-  // Auto-save
   useEffect(() => {
     const id = setInterval(() => {
       if (form.title || form.photos.length > 0) saveDraft();
@@ -381,7 +362,6 @@ export const useListingForm = (locale: string) => {
     return () => clearInterval(id);
   }, [form, saveDraft]);
 
-  // Charger le brouillon
   useEffect(() => {
     try {
       const d = localStorage.getItem("listing_draft");
@@ -399,7 +379,6 @@ export const useListingForm = (locale: string) => {
     } catch {}
   }, []);
 
-  // Nettoyer les URLs blob
   useEffect(() => {
     return () => {
       form.photos.forEach((photo) => {
@@ -420,7 +399,6 @@ export const useListingForm = (locale: string) => {
     }
   };
 
-  // ✅ Validation complète de l'étape courante avec surfaceArea et floorNumber
   const validateStep = () => {
     const errors: FieldError[] = [];
     if (step === 1) {
@@ -448,11 +426,9 @@ export const useListingForm = (locale: string) => {
       );
       if (kitchensError)
         errors.push({ field: "numberOfKitchens", message: kitchensError });
-      // ✅ surfaceArea OBLIGATOIRE
       const surfaceError = validateField("surfaceArea", form.surfaceArea);
       if (surfaceError)
         errors.push({ field: "surfaceArea", message: surfaceError });
-      // ✅ floorNumber OBLIGATOIRE
       const floorError = validateField("floorNumber", form.floorNumber);
       if (floorError)
         errors.push({ field: "floorNumber", message: floorError });
@@ -485,56 +461,122 @@ export const useListingForm = (locale: string) => {
 
   const goToPrevStep = () => setStep((s) => Math.max(1, s - 1));
 
-  // Publication finale
+  // ✅ PUBLICATION CORRIGÉE - ENVOI EN PENDING_REVIEW
   const handlePublish = async () => {
-    if (!isStepValid) return;
+    if (!isStepValid) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
     if (uploadingPhotos) {
       toast.error("Veuillez attendre la fin de l'upload des photos");
       return;
     }
+
+    if (form.photos.length === 0) {
+      toast.error("Ajoutez au moins une photo");
+      return;
+    }
+
+    if (
+      form.rentalType === "SHORT_TERM" &&
+      (!form.pricePerNight || form.pricePerNight <= 0)
+    ) {
+      toast.error("Veuillez saisir un prix par nuit valide");
+      return;
+    }
+
     setSaving(true);
+
     try {
       let finalPhotos = form.photos;
       const hasNewFiles = form.photos.some((p) => p.file);
-      if (hasNewFiles) finalPhotos = await uploadPhotos(form.photos);
+
+      if (hasNewFiles) {
+        toast.loading("Upload des photos en cours...", {
+          id: "upload-progress",
+        });
+        finalPhotos = await uploadPhotos(form.photos);
+        upd({ photos: finalPhotos });
+      }
+
       const formDataToSend = {
-        ...form,
+        title: form.title,
+        type: form.type,
+        governorate: form.governorate,
+        delegation: form.delegation,
+        street: form.street,
+        latitude: form.latitude,
+        longitude: form.longitude,
+        description: form.description,
+        rooms: form.rooms,
+        bathrooms: form.bathrooms,
+        numberOfKitchens: form.numberOfKitchens,
+        maxGuests: form.maxGuests,
+        surfaceArea: form.surfaceArea,
+        floorNumber: form.floorNumber,
+        hasElevator: form.hasElevator,
+        hasBalcony: form.hasBalcony,
+        hasGarden: form.hasGarden,
+        hasGarage: form.hasGarage,
+        isFurnished: form.isFurnished,
+        petsAllowed: form.petsAllowed,
+        smokingAllowed: form.smokingAllowed,
+        equipment: form.equipment,
+        services: form.services,
+        houseRules: form.houseRules,
+        customRules: form.customRules,
         photos: finalPhotos.map((p) => ({
           url: p.url,
           thumbnailUrl: p.thumbnailUrl,
           isMain: p.isMain,
         })),
+        rentalType: form.rentalType,
         pricePerNight: form.pricePerNight ? Number(form.pricePerNight) : null,
         pricePerMonth: form.pricePerMonth ? Number(form.pricePerMonth) : null,
-        maxGuests: form.maxGuests, // ✅ null ou nombre
-        status: "ACTIVE",
+        securityDeposit: form.securityDeposit,
+        cleaningFee: form.cleaningFee || 0,
+        extraFees: form.extraFees,
+        weekendPriceMultiplier: form.weekendPriceMultiplier,
+        seasonalRules: form.seasonalRules,
+        status: "PENDING_REVIEW",
       };
+
+      console.log("📸 Photos à envoyer:", formDataToSend.photos.length);
+
       const url = listingId ? `/api/listings/${listingId}` : "/api/listings";
       const method = listingId ? "PUT" : "POST";
+
       const response = await fetch(url, {
         method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formDataToSend),
       });
+
       const data = await response.json();
+
       if (response.ok) {
         localStorage.removeItem("listing_draft");
-        toast.success("Annonce publiée avec succès");
+        toast.dismiss("upload-progress");
+        toast.success(
+          "Annonce soumise avec succès ! Elle est en attente de validation par l'administrateur.",
+        );
         router.push(`/${locale}/dashboard/owner/listings`);
       } else {
         toast.error(
           data.details || data.error || "Erreur lors de la publication",
         );
+        console.error("Erreur API:", data);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Erreur handlePublish:", e);
       toast.error("Erreur lors de la publication");
     } finally {
       setSaving(false);
+      toast.dismiss("upload-progress");
     }
   };
 
-  // Ajout de photos
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
     const remainingSlots = 20 - form.photos.length;

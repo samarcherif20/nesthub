@@ -5,6 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
+import { AnimatedCircle } from "@/components/ui/maps/AnimatedCircle";
 import "leaflet/dist/leaflet.css";
 import {
   IoHeartOutline,
@@ -32,10 +33,6 @@ const MapContainer = dynamic(
 );
 const TileLayer = dynamic(
   () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false },
-);
-const Circle = dynamic(
-  () => import("react-leaflet").then((mod) => mod.Circle),
   { ssr: false },
 );
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
@@ -172,16 +169,14 @@ export default function MapPage() {
         />
 
         {filteredListings.map((listing) => (
-          <Circle
+          <AnimatedCircle
             key={listing.id}
             center={[listing.latitude, listing.longitude]}
             radius={2000}
-            pathOptions={{
-              color: "#ef4444",
-              fillColor: "#ef4444",
-              fillOpacity: 0.25,
-              weight: 2.5,
-            }}
+            color="#ef4444"
+            fillColor="#ef4444"
+            fillOpacity={0.25}
+            weight={2.5}
           >
             <Popup>
               <div className="min-w-[260px] p-3 bg-white dark:bg-slate-900 rounded-xl">
@@ -248,7 +243,7 @@ export default function MapPage() {
                 </Link>
               </div>
             </Popup>
-          </Circle>
+          </AnimatedCircle>
         ))}
       </MapContainer>
 

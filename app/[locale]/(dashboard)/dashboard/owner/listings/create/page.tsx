@@ -313,32 +313,40 @@ function Tooltip({
   );
 }
 
+// Dans CreateListingPage, remplace la fonction geocodeAddress par :
+
 const geocodeAddress = async (
   address: string,
 ): Promise<{ lat: number; lng: number } | null> => {
   try {
-    console.log("🔍 [GEOCODAGE] Appel pour:", address);
+    console.log("🔍 [GEOCODAGE] Appel API pour:", address);
     if (!address || address.length < 10) {
       console.log("⚠️ [GEOCODAGE] Adresse trop courte");
       return null;
     }
+
     const response = await fetch(
-      `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1&countrycodes=tn`,
-      { headers: { "Accept-Language": "fr" } },
+      `/api/geocode?address=${encodeURIComponent(address)}`,
     );
+
     if (!response.ok) {
       console.error("❌ [GEOCODAGE] Erreur HTTP:", response.status);
       return null;
     }
+
     const data = await response.json();
-    console.log("📡 [GEOCODAGE] Réponse:", data);
-    if (data && data.length > 0) {
-      const lat = parseFloat(data[0].lat);
-      const lng = parseFloat(data[0].lon);
-      console.log("✅ [GEOCODAGE] Coordonnées trouvées:", { lat, lng });
-      return { lat, lng };
+    console.log("📡 [GEOCODAGE] Réponse API:", data);
+
+    if (data.success && data.results && data.results.length > 0) {
+      const firstResult = data.results[0];
+      console.log("✅ [GEOCODAGE] Coordonnées trouvées:", {
+        lat: firstResult.lat,
+        lng: firstResult.lon,
+      });
+      return { lat: firstResult.lat, lng: firstResult.lon };
     }
-    console.log("❌ [GEOCODAGE] Aucun résultat pour:", address);
+
+    console.log("❌ [GEOCODAGE] Aucun résultat");
     return null;
   } catch (error) {
     console.error("❌ [GEOCODAGE] Erreur:", error);

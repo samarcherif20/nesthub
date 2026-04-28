@@ -1,4 +1,4 @@
-// app/api/listings/upload-temp-photo/route.ts
+// app/api/listings/upload-temp-photo/route.ts - CORRIGÉ
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { getAuth } from "@clerk/nextjs/server";
@@ -7,24 +7,16 @@ import sharp from "sharp";
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
-/**
- * Crée un watermark texte avec ombre pour être visible sur tous les fonds
- * Position: BAS GAUCHE avec marge
- * Couleur: GRIS avec ombre noire
- * Texte: N E S T H U B
- */
 async function createSimpleTextWatermark(
   width: number,
   height: number,
 ): Promise<Buffer> {
-  // Taille du texte (4% de la largeur)
   const fontSize = Math.floor(Math.min(width, height) * 0.045);
-  const marginLeft = 20; // Marge à gauche
-  const marginBottom = 30; // ✅ Marge en bas (augmenter = plus haut)
+  const marginLeft = 20;
+  const marginBottom = 30;
   const text = "N E S T H U B";
   const letterSpacing = 6;
 
-  // Créer le SVG avec le texte en bas à gauche + ombre portée
   const svgWatermark = `
     <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
@@ -43,41 +35,21 @@ async function createSimpleTextWatermark(
           filter: url(#shadow);
         }
       </style>
-      <text 
-        x="${marginLeft}" 
-        y="${height - marginBottom}" 
-        class="watermark-text"
-      >
+      <text x="${marginLeft}" y="${height - marginBottom}" class="watermark-text">
         ${text}
       </text>
     </svg>
   `;
-
   return Buffer.from(svgWatermark);
 }
 
-/**
- * Ajoute le watermark sur l'image
- */
 async function addWatermark(imageBuffer: Buffer): Promise<Buffer> {
   const image = sharp(imageBuffer);
   const metadata = await image.metadata();
-
   const { width = 1200, height = 800 } = metadata;
-
-  // Créer le watermark texte
   const watermarkBuffer = await createSimpleTextWatermark(width, height);
-
-  // Ajouter le watermark (position 0,0 car le SVG gère déjà l'emplacement)
   return await image
-    .composite([
-      {
-        input: watermarkBuffer,
-        top: 0,
-        left: 0,
-        blend: "over",
-      },
-    ])
+    .composite([{ input: watermarkBuffer, top: 0, left: 0, blend: "over" }])
     .jpeg({ quality: 85, progressive: true })
     .toBuffer();
 }
@@ -85,13 +57,13 @@ async function addWatermark(imageBuffer: Buffer): Promise<Buffer> {
 export async function POST(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
-
     if (!clerkId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     const formData = await request.formData();
-    const file = formData.get("photos") as File;
+    // ✅ CORRECTION: Le frontend envoie "file", pas "photos"
+    const file = formData.get("file") as File;
 
     if (!file) {
       return NextResponse.json({ error: "Aucune photo" }, { status: 400 });
@@ -117,39 +89,32 @@ export async function POST(request: NextRequest) {
     const fileExt = file.type === "image/png" ? "png" : "jpg";
     const fileName = `listings/temp/${clerkId}-${timestamp}-${randomId}`;
 
-    // ✅ Ajouter le watermark "N E S T H U B" en bas à gauche
     const watermarkedBuffer = await addWatermark(buffer);
-
-    // Optimiser l'image avec watermark
     const optimizedBuffer = await sharp(watermarkedBuffer)
       .resize(1200, 1200, { fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: 80, progressive: true })
       .toBuffer();
 
-    // Générer une miniature
     const thumbnailBuffer = await sharp(buffer)
       .resize(400, 400, { fit: "cover" })
       .jpeg({ quality: 60 })
       .toBuffer();
 
-    // Upload sur Vercel Blob
+    // app/api/listings/upload-temp-photo/route.ts - CORRECTION
     const [mainBlob, thumbBlob] = await Promise.all([
       put(`${fileName}.${fileExt}`, optimizedBuffer, {
-        access: "private",
+        access: "private", // ← Change "public" en "private"
         contentType: fileExt === "png" ? "image/png" : "image/jpeg",
         addRandomSuffix: true,
       }),
       put(`${fileName}-thumb.${fileExt}`, thumbnailBuffer, {
-        access: "private",
+        access: "private", // ← Change "public" en "private"
         contentType: fileExt === "png" ? "image/png" : "image/jpeg",
         addRandomSuffix: true,
       }),
     ]);
 
-    console.log(
-      '✅ Photo uploadée avec watermark "N E S T H U B" (bas gauche, marge 30px):',
-      mainBlob.url,
-    );
+    console.log("✅ Photo uploadée avec succès:", mainBlob.url);
 
     return NextResponse.json({
       success: true,

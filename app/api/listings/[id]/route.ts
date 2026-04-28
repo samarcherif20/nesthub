@@ -10,6 +10,17 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
+interface FormattedBooking {
+  id: string;
+  tenantName: string;
+  tenantAvatar: string | null;
+  checkIn: Date;
+  checkOut: Date;
+  nights: number;
+  status: string;
+  totalPrice: number;
+}
+
 // GET - Public (mais avec infos supplémentaires si propriétaire)
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
@@ -65,6 +76,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const totalRevenue = totalRevenueResult._sum.totalPrice || 0;
 
+    // ✅ CORRECTION - Ajout de email et phoneNumber
     const owner = await prisma.user.findUnique({
       where: { id: listing.ownerId },
       select: {
@@ -72,6 +84,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         username: true,
         firstName: true,
         lastName: true,
+        email: true, // 👈 AJOUTÉ
+        phoneNumber: true, // 👈 AJOUTÉ
         profilePictureUrl: true,
         isIdentityVerified: true,
         createdAt: true,
@@ -105,14 +119,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       (bd) => bd.startDate.toISOString().split("T")[0],
     );
 
-    // ✅ Récupérer les réservations si l'utilisateur est le propriétaire
-    let upcomingBookings = [];
-    let pastBookings = [];
+    // ✅ CORRECTION - Typage explicite des réservations
+    let upcomingBookings: FormattedBooking[] = [];
+    let pastBookings: FormattedBooking[] = [];
 
     if (isOwner) {
       const now = new Date();
 
-      upcomingBookings = await prisma.booking.findMany({
+      const upcomingBookingsRaw = await prisma.booking.findMany({
         where: {
           listingId: id,
           checkOut: { gte: now },
@@ -132,7 +146,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         take: 10,
       });
 
-      pastBookings = await prisma.booking.findMany({
+      const pastBookingsRaw = await prisma.booking.findMany({
         where: {
           listingId: id,
           checkOut: { lt: now },
@@ -151,34 +165,33 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         orderBy: { checkOut: "desc" },
         take: 10,
       });
+
+      upcomingBookings = upcomingBookingsRaw.map((b) => ({
+        id: b.id,
+        tenantName: b.tenant?.firstName
+          ? `${b.tenant.firstName} ${b.tenant.lastName || ""}`.trim()
+          : b.tenant?.username || "Locataire",
+        tenantAvatar: b.tenant?.profilePictureUrl || null,
+        checkIn: b.checkIn,
+        checkOut: b.checkOut,
+        nights: b.totalNights,
+        status: b.status,
+        totalPrice: b.totalPrice,
+      }));
+
+      pastBookings = pastBookingsRaw.map((b) => ({
+        id: b.id,
+        tenantName: b.tenant?.firstName
+          ? `${b.tenant.firstName} ${b.tenant.lastName || ""}`.trim()
+          : b.tenant?.username || "Locataire",
+        tenantAvatar: b.tenant?.profilePictureUrl || null,
+        checkIn: b.checkIn,
+        checkOut: b.checkOut,
+        nights: b.totalNights,
+        status: b.status,
+        totalPrice: b.totalPrice,
+      }));
     }
-
-    // Formater les réservations
-    const formattedUpcomingBookings = upcomingBookings.map((b) => ({
-      id: b.id,
-      tenantName: b.tenant?.firstName
-        ? `${b.tenant.firstName} ${b.tenant.lastName || ""}`.trim()
-        : b.tenant?.username || "Locataire",
-      tenantAvatar: b.tenant?.profilePictureUrl,
-      checkIn: b.checkIn,
-      checkOut: b.checkOut,
-      nights: b.totalNights,
-      status: b.status,
-      totalPrice: b.totalPrice,
-    }));
-
-    const formattedPastBookings = pastBookings.map((b) => ({
-      id: b.id,
-      tenantName: b.tenant?.firstName
-        ? `${b.tenant.firstName} ${b.tenant.lastName || ""}`.trim()
-        : b.tenant?.username || "Locataire",
-      tenantAvatar: b.tenant?.profilePictureUrl,
-      checkIn: b.checkIn,
-      checkOut: b.checkOut,
-      nights: b.totalNights,
-      status: b.status,
-      totalPrice: b.totalPrice,
-    }));
 
     const response = {
       ...listing,
@@ -187,9 +200,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       owner: owner,
       blockedDates: blockedDates,
       pendingDates: pendingDates,
-      // ✅ Ajouter les réservations (seulement pour le propriétaire)
-      upcomingBookings: formattedUpcomingBookings,
-      pastBookings: formattedPastBookings,
+      upcomingBookings: upcomingBookings,
+      pastBookings: pastBookings,
       isOwner: isOwner,
     };
 
@@ -200,7 +212,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// POST - Incrémenter les vues (inchangé)
+// POST - Incrémenter les vues
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -209,8 +221,9 @@ export async function POST(
     const { userId: clerkId } = getAuth(request);
     const { id } = await params;
 
-    if (!id)
+    if (!id) {
       return NextResponse.json({ error: "ID manquant" }, { status: 400 });
+    }
 
     if (clerkId) {
       const user = await prisma.user.findUnique({
@@ -237,6 +250,7 @@ export async function POST(
       data: { viewCount: { increment: 1 } },
       select: { viewCount: true, title: true },
     });
+
     return NextResponse.json({
       success: true,
       message: "Vue comptée",
@@ -248,7 +262,7 @@ export async function POST(
   }
 }
 
-// PUT - Mise à jour (inchangé)
+// PUT - Mise à jour
 export const PUT = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;
@@ -260,9 +274,11 @@ export const PUT = withAuth(
       for (const [key, value] of Object.entries(obj)) {
         if (value === null) result[key] = undefined;
         else if (Array.isArray(value)) result[key] = value;
-        else if (typeof value === "object" && value !== null)
+        else if (typeof value === "object" && value !== null) {
           result[key] = convertNullToUndefined(value);
-        else result[key] = value;
+        } else {
+          result[key] = value;
+        }
       }
       return result;
     };
@@ -292,7 +308,7 @@ export const PUT = withAuth(
   },
 );
 
-// DELETE (inchangé)
+// DELETE - Supprimer ou archiver
 export const DELETE = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;
@@ -314,7 +330,7 @@ export const DELETE = withAuth(
   },
 );
 
-// PATCH - Changer le statut (inchangé)
+// PATCH - Changer le statut
 export const PATCH = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;
@@ -328,11 +344,12 @@ export const PATCH = withAuth(
       const existingListing = await prisma.listing.findFirst({
         where: { id, ownerId: user.id },
       });
-      if (!existingListing)
+      if (!existingListing) {
         return NextResponse.json(
           { error: "Annonce non trouvée" },
           { status: 404 },
         );
+      }
 
       result = await prisma.listing.update({ where: { id }, data: { status } });
       await prisma.listingHistory.create({
@@ -351,8 +368,9 @@ export const PATCH = withAuth(
         where: { id },
         select: { status: true, ownerId: true },
       });
-      if (!listing || listing.ownerId !== user.id)
+      if (!listing || listing.ownerId !== user.id) {
         return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
+      }
       const newStatus = listing.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
       result = await prisma.listing.update({
         where: { id },
