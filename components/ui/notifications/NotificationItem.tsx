@@ -11,6 +11,17 @@ import {
   IoCalendarOutline,
   IoMailOutline,
   IoTimeOutline,
+  IoHomeOutline,
+  IoCreateOutline,
+  IoGitBranchOutline,
+  IoChatbubbleOutline,
+  IoStarOutline,
+  IoCardOutline,
+  IoPricetagOutline,
+  IoCheckmarkDoneCircle,
+  IoCloseCircle,
+  IoDocumentTextOutline,
+  IoCashOutline,
 } from "react-icons/io5";
 
 interface Notification {
@@ -23,12 +34,15 @@ interface Notification {
   data?: {
     infoRequestId?: string;
     listingId?: string;
+    listingTitle?: string;
     tenantId?: string;
     tenantName?: string;
     tenantEmail?: string;
     checkIn?: string;
     checkOut?: string;
     guests?: number;
+    rejectionReason?: string;
+    changes?: any[];
   };
 }
 
@@ -41,19 +55,40 @@ interface NotificationItemProps {
   processingAction?: string | null;
 }
 
+// Icônes avec couleurs différenciées
 const getIcon = (type: string) => {
-  switch (type) {
-    case "INFO_REQUEST_RECEIVED":
-      return <IoCalendarOutline className="text-amber-500 text-xl" />;
-    case "INFO_REQUEST_ACCEPTED":
-      return <IoCheckmarkCircle className="text-emerald-500 text-xl" />;
-    case "INFO_REQUEST_REJECTED":
-      return <IoCloseCircleOutline className="text-red-500 text-xl" />;
-    case "INFO_REQUEST_EXPIRED":
-      return <IoTimeOutline className="text-gray-500 text-xl" />;
-    default:
-      return <IoCalendarOutline className="text-gray-500 text-xl" />;
-  }
+  const iconStyle = (color: string) => ({ className: `text-${color}` });
+  
+  // Demandes d'information
+  if (type === "INFO_REQUEST_RECEIVED") return <IoCalendarOutline className="text-amber-500" />;
+  if (type === "INFO_REQUEST_ACCEPTED") return <IoCheckmarkCircle className="text-emerald-500" />;
+  if (type === "INFO_REQUEST_REJECTED") return <IoCloseCircleOutline className="text-red-500" />;
+  if (type === "INFO_REQUEST_EXPIRED") return <IoTimeOutline className="text-gray-400" />;
+  
+  // Annonces - nouvelles
+  if (type === "LISTING_PENDING_REVIEW") return <IoCreateOutline className="text-orange-500" />;
+  if (type === "LISTING_APPROVED") return <IoCheckmarkDoneCircle className="text-emerald-500" />;
+  if (type === "LISTING_REJECTED") return <IoCloseCircle className="text-red-500" />;
+  if (type === "LISTING_ACTIVATED") return <IoHomeOutline className="text-emerald-500" />;
+  
+  // Annonces - modifications
+  if (type === "LISTING_REVISION_APPROVED") return <IoGitBranchOutline className="text-purple-500" />;
+  if (type === "LISTING_REVISION_REJECTED") return <IoGitBranchOutline className="text-red-500" />;
+  
+  // Autres
+  if (type === "NEW_MESSAGE") return <IoChatbubbleOutline className="text-sky-500" />;
+  if (type === "NEW_REVIEW") return <IoStarOutline className="text-yellow-500" />;
+  if (type === "PAYMENT_RECEIVED") return <IoCashOutline className="text-emerald-500" />;
+  if (type === "PAYMENT_REFUNDED") return <IoCardOutline className="text-red-500" />;
+  if (type === "FAVORITE_PRICE_CHANGE") return <IoPricetagOutline className="text-pink-500" />;
+  
+  // Offres
+  if (type === "OFFER_CREATED") return <IoDocumentTextOutline className="text-blue-500" />;
+  if (type === "OFFER_ACCEPTED") return <IoCheckmarkCircle className="text-emerald-500" />;
+  if (type === "OFFER_REJECTED") return <IoCloseCircleOutline className="text-red-500" />;
+  
+  // Default
+  return <IoHomeOutline className="text-gray-400" />;
 };
 
 export default function NotificationItem({
@@ -78,18 +113,13 @@ export default function NotificationItem({
       try {
         const response = await fetch(
           `/api/info-requests/${notification.data.infoRequestId}/accept`,
-          {
-            method: "POST",
-          },
+          { method: "POST" }
         );
         if (response.ok) {
           onAccept(notification.data.infoRequestId, notification.id);
-        } else {
-          const error = await response.json();
-          console.error("Erreur:", error);
         }
       } catch (error) {
-        console.error("Erreur acceptation:", error);
+        console.error("Erreur:", error);
       } finally {
         setIsProcessing(false);
       }
@@ -108,13 +138,13 @@ export default function NotificationItem({
             body: JSON.stringify({
               reason: "Le propriétaire n'est pas disponible pour ces dates",
             }),
-          },
+          }
         );
         if (response.ok) {
           onReject(notification.data.infoRequestId, notification.id);
         }
       } catch (error) {
-        console.error("Erreur refus:", error);
+        console.error("Erreur:", error);
       } finally {
         setIsProcessing(false);
       }
@@ -127,129 +157,101 @@ export default function NotificationItem({
   });
 
   const isInfoRequest = notification.type === "INFO_REQUEST_RECEIVED";
-  const isProcessingAction =
-    processingAction === notification.id || isProcessing;
+  const isProcessingAction = processingAction === notification.id || isProcessing;
 
   return (
     <div
       className={`p-4 transition-colors ${
         notification.isRead
-          ? "bg-white dark:bg-slate-900 hover:bg-gray-50 dark:hover:bg-slate-800"
-          : "bg-blue-50 dark:bg-blue-950/20 hover:bg-blue-100 dark:hover:bg-blue-950/30"
-      }`}
+          ? "bg-white dark:bg-gray-950"
+          : "bg-gray-50 dark:bg-gray-900/50"
+      } hover:bg-gray-100 dark:hover:bg-gray-900 border-b border-gray-100 dark:border-gray-800`}
     >
       <div className="flex gap-3">
-        <div className="flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center">
-            {getIcon(notification.type)}
-          </div>
+        {/* Icône colorée */}
+        <div className="flex-shrink-0 text-lg mt-0.5">
+          {getIcon(notification.type)}
         </div>
+
+        {/* Contenu */}
         <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+          <div className="flex flex-wrap justify-between items-start gap-1">
+            <p className={`text-sm font-medium ${notification.isRead ? "text-gray-600 dark:text-gray-400" : "text-gray-900 dark:text-gray-100"}`}>
               {notification.title}
             </p>
-            <span className="text-[10px] text-gray-400 whitespace-nowrap ml-2">
+            <span className="text-xs text-gray-400 whitespace-nowrap">
               {timeAgo}
             </span>
           </div>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+
+          <p className={`text-xs mt-0.5 ${notification.isRead ? "text-gray-500" : "text-gray-600 dark:text-gray-400"}`}>
             {notification.content}
           </p>
 
-          {/* Détails supplémentaires pour les demandes d'information */}
+          {/* Détails pour les demandes d'information */}
           {isInfoRequest && notification.data && (
-            <div className="mt-2 p-2 bg-gray-50 dark:bg-slate-800/50 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                <IoPersonOutline className="text-sky-500" />
-                <span className="font-medium">Locataire:</span>{" "}
-                {notification.data.tenantName || "Non spécifié"}
-              </p>
-              {notification.data.tenantEmail && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-1">
-                  <IoMailOutline className="text-sky-500" />
-                  <span className="font-medium">Email:</span>{" "}
-                  {notification.data.tenantEmail}
+            <div className="mt-2 text-xs text-gray-500 dark:text-gray-500 space-y-0.5">
+              {notification.data.tenantName && (
+                <p className="flex items-center gap-1.5">
+                  <IoPersonOutline className="text-gray-400 text-[11px]" />
+                  <span>{notification.data.tenantName}</span>
                 </p>
               )}
               {notification.data.checkIn && notification.data.checkOut && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-1">
-                  <IoCalendarOutline className="text-sky-500" />
-                  <span className="font-medium">Dates:</span>{" "}
-                  {new Date(notification.data.checkIn).toLocaleDateString(
-                    "fr-FR",
-                  )}{" "}
-                  →{" "}
-                  {new Date(notification.data.checkOut).toLocaleDateString(
-                    "fr-FR",
-                  )}
+                <p className="flex items-center gap-1.5">
+                  <IoCalendarOutline className="text-gray-400 text-[11px]" />
+                  <span>{new Date(notification.data.checkIn).toLocaleDateString("fr-FR")} → {new Date(notification.data.checkOut).toLocaleDateString("fr-FR")}</span>
                 </p>
               )}
               {notification.data.guests && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-1">
-                  <IoPersonOutline className="text-sky-500" />
-                  <span className="font-medium">Voyageurs:</span>{" "}
-                  {notification.data.guests} personne
-                  {notification.data.guests > 1 ? "s" : ""}
+                <p className="flex items-center gap-1.5">
+                  <IoPersonOutline className="text-gray-400 text-[11px]" />
+                  <span>{notification.data.guests} voyageur{notification.data.guests > 1 ? "s" : ""}</span>
                 </p>
               )}
             </div>
           )}
 
-          {/* Boutons d'action pour les demandes d'information non traitées */}
+          {/* Actions */}
           {isInfoRequest && !notification.isRead && onAccept && onReject && (
             <div className="flex gap-2 mt-3">
               <button
                 onClick={handleAccept}
                 disabled={isProcessingAction}
-                className="px-3 py-1.5 text-xs font-semibold bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition disabled:opacity-50 flex items-center gap-1"
+                className="px-3 py-1 text-xs font-medium bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition disabled:opacity-50"
               >
-                <IoCheckmarkCircle className="text-sm" />
                 Accepter
               </button>
               <button
                 onClick={handleReject}
                 disabled={isProcessingAction}
-                className="px-3 py-1.5 text-xs font-semibold bg-red-500 text-white rounded-lg hover:bg-red-600 transition disabled:opacity-50 flex items-center gap-1"
+                className="px-3 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50"
               >
-                <IoCloseCircleOutline className="text-sm" />
                 Refuser
               </button>
               <button
                 onClick={handleMarkAsRead}
-                disabled={isProcessingAction}
-                className="px-3 py-1.5 text-xs font-semibold bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-slate-600 transition disabled:opacity-50"
+                className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition"
               >
                 Ignorer
               </button>
             </div>
           )}
 
-          {/* Lien pour voir le profil si disponible */}
-          {notification.data?.tenantId && (
-            <Link
-              href={`/fr/dashboard/owner/tenant/${notification.data.tenantId}`}
-              className="inline-block mt-2 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 hover:underline"
-              onClick={handleMarkAsRead}
-            >
-              Voir le profil du locataire →
-            </Link>
-          )}
-
-          {/* Bouton simple "Marquer comme lu" pour les autres types */}
+          {/* Marquer comme lu simple */}
           {!notification.isRead && !isInfoRequest && (
             <button
               onClick={handleMarkAsRead}
-              className="mt-2 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400"
+              className="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             >
               Marquer comme lu
             </button>
           )}
         </div>
 
-        {/* Indicateur non lu */}
+        {/* Point non lu */}
         {!notification.isRead && (
-          <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-2" />
+          <div className="w-1.5 h-1.5 bg-blue-500 rounded-full flex-shrink-0 mt-2" />
         )}
       </div>
     </div>

@@ -18,6 +18,13 @@ interface Listing {
   surfaceArea: number | null;
   floorNumber: number | null;
   hasElevator: boolean;
+  hasBalcony: boolean;
+  hasGarden: boolean;
+  hasGarage: boolean;
+  isFurnished: boolean;
+  petsAllowed: boolean;
+  smokingAllowed: boolean;
+  numberOfKitchens: number;
   equipment: Record<string, boolean>;
   services: Record<string, boolean>;
   houseRules: Record<string, boolean>;
@@ -38,7 +45,26 @@ interface Listing {
   viewCount: number;
   createdAt: string;
   updatedAt: string;
+  rejectionReason?: string;
+  rejectionDetails?: string;
+  rejectedAt?: string;
+  rejectedBy?: string;
 }
+
+// 🔥 Fonction pour convertir null en undefined (supprime les champs null)
+const removeNullFields = (obj: any): any => {
+  const result: any = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== null && value !== undefined) {
+      if (typeof value === "object" && !Array.isArray(value)) {
+        result[key] = removeNullFields(value);
+      } else {
+        result[key] = value;
+      }
+    }
+  }
+  return result;
+};
 
 export function useEditListing(id: string, locale: string) {
   const router = useRouter();
@@ -51,7 +77,6 @@ export function useEditListing(id: string, locale: string) {
     type: "success" | "error" | "warning" | "info";
     message: string;
   } | null>(null);
-  const [shouldRedirect, setShouldRedirect] = useState(false);
 
   const showAlert = useCallback(
     (type: "success" | "error" | "warning" | "info", message: string) => {
@@ -66,7 +91,8 @@ export function useEditListing(id: string, locale: string) {
     try {
       const res = await fetch(`/api/listings/${id}`);
       if (res.ok) {
-        setListing(await res.json());
+        const data = await res.json();
+        setListing(data);
       } else {
         showAlert("error", "Annonce non trouvée");
         router.push(`/${locale}/dashboard/owner/listings`);
@@ -89,7 +115,7 @@ export function useEditListing(id: string, locale: string) {
     [listing],
   );
 
-  // ✅ MODIFIER LA FONCTION SAVE
+  // 🔥 FONCTION SAVE CORRIGÉE
   const save = useCallback(
     async (
       extraData?: Partial<Listing>,
@@ -98,18 +124,30 @@ export function useEditListing(id: string, locale: string) {
       if (!listing) return;
       setSaving(true);
       try {
+        const dataToSend = { ...listing, ...extraData };
+        delete dataToSend.status;
+        const cleanData = removeNullFields(dataToSend);
+
         const res = await fetch(`/api/listings/${id}`, {
-          method: "PUT",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...listing, ...extraData }),
+          body: JSON.stringify(cleanData),
         });
+
         if (res.ok) {
           const data = await res.json();
           setListing(data);
           setLastSaved(new Date());
-          showAlert("success", "Modifications enregistrées avec succès");
 
-          // ✅ REDIRECTION APRÈS SAUVEGARDE
+          if (listing.status === "ACTIVE") {
+            showAlert(
+              "success",
+              "Modifications envoyées pour validation. L'annonce reste visible en attendant l'approbation de l'admin.",
+            );
+          } else {
+            showAlert("success", "Modifications enregistrées avec succès");
+          }
+
           if (redirectAfterSave) {
             router.push(`/${locale}/dashboard/owner/listings`);
           }
@@ -132,9 +170,10 @@ export function useEditListing(id: string, locale: string) {
       setUploadingPhotos(true);
       try {
         const uploaded = [];
+        const currentPhotos = listing.photos || [];
         for (const file of Array.from(files).slice(
           0,
-          20 - listing.photos.length,
+          20 - currentPhotos.length,
         )) {
           const fd = new FormData();
           fd.append("photos", file);
@@ -148,13 +187,13 @@ export function useEditListing(id: string, locale: string) {
               id: data.id ?? crypto.randomUUID(),
               url: data.url,
               thumbnailUrl: data.thumbnailUrl ?? data.url,
-              isMain: listing.photos.length === 0 && uploaded.length === 0,
-              position: listing.photos.length + uploaded.length,
+              isMain: currentPhotos.length === 0 && uploaded.length === 0,
+              position: currentPhotos.length + uploaded.length,
             });
           }
         }
         if (uploaded.length > 0) {
-          const updatedPhotos = [...listing.photos, ...uploaded];
+          const updatedPhotos = [...currentPhotos, ...uploaded];
           setListing({ ...listing, photos: updatedPhotos });
           showAlert("success", `${uploaded.length} photo(s) ajoutée(s)`);
         }
@@ -170,9 +209,11 @@ export function useEditListing(id: string, locale: string) {
   const removePhoto = useCallback(
     (photoId: string) => {
       if (!listing) return;
-      const filtered = listing.photos.filter((p) => p.id !== photoId);
-      if (filtered.length > 0 && !filtered.some((p) => p.isMain))
+      const currentPhotos = listing.photos || [];
+      const filtered = currentPhotos.filter((p) => p.id !== photoId);
+      if (filtered.length > 0 && !filtered.some((p) => p.isMain)) {
         filtered[0].isMain = true;
+      }
       setListing({ ...listing, photos: filtered });
       showAlert("success", "Photo supprimée");
     },
@@ -182,19 +223,64 @@ export function useEditListing(id: string, locale: string) {
   const setMainPhoto = useCallback(
     (photoId: string) => {
       if (!listing) return;
+      const currentPhotos = listing.photos || [];
       setListing({
         ...listing,
-        photos: listing.photos.map((p) => ({ ...p, isMain: p.id === photoId })),
+        photos: currentPhotos.map((p) => ({ ...p, isMain: p.id === photoId })),
       });
       showAlert("success", "Photo principale mise à jour");
     },
     [listing, showAlert],
   );
 
+  // ✅ FONCTION SAVEANDRESUBMIT CORRIGÉE
+  const saveAndResubmit = useCallback(async () => {
+    if (!listing) return;
+
+    setSaving(true);
+    try {
+      const cleanData = removeNullFields(listing);
+      delete cleanData.status;
+
+      const saveRes = await fetch(`/api/listings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(cleanData),
+      });
+
+      if (!saveRes.ok) {
+        const error = await saveRes.json();
+        throw new Error(error.error || "Erreur lors de la sauvegarde");
+      }
+
+      const resubmitRes = await fetch(`/api/listings/${id}/resubmit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (resubmitRes.ok) {
+        showAlert(
+          "success",
+          "✅ Modifications sauvegardées et soumises pour validation",
+        );
+        router.push(`/${locale}/dashboard/owner/listings`);
+      } else {
+        const error = await resubmitRes.json();
+        showAlert("error", error.error || "Erreur lors de la soumission");
+      }
+    } catch (error: any) {
+      console.error(error);
+      showAlert("error", error.message || "Erreur lors de l'opération");
+    } finally {
+      setSaving(false);
+    }
+  }, [listing, id, showAlert, locale, router]);
+
+  // 🔥 QUALITY SCORE CORRIGÉ - Protection contre photos undefined
   const qualityScore = listing
     ? Math.min(
         85 +
-          (listing.photos.length || 0) * 2 +
+          (listing.photos?.length || 0) * 2 +
           (listing.description?.length || 0) / 100,
         98,
       )
@@ -214,5 +300,6 @@ export function useEditListing(id: string, locale: string) {
     handleFileChange,
     removePhoto,
     setMainPhoto,
+    saveAndResubmit,
   };
 }

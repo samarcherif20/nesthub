@@ -3,112 +3,170 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-interface RouteParams {
-  params: Promise<{ id: string }>;
-}
-
-// PATCH - Valider ou rejeter une annonce
-export async function PATCH(request: NextRequest, { params }: RouteParams) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const { userId: clerkId } = getAuth(request);
+    const { id } = await params;
+    const body = await request.json();
+    const { action, rejectionReason, rejectionDetails, isRevision } = body;
+
     if (!clerkId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // Vérifier que l'utilisateur est admin
     const admin = await prisma.user.findUnique({
       where: { clerkId },
-      select: { role: true, id: true },
-    });
-
-    if (admin?.role !== "ADMIN") {
-      return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
-    }
-
-    const { id } = await params;
-    const body = await request.json();
-    const { action, rejectionReason } = body; // action: "approve" ou "reject"
-
-    const listing = await prisma.listing.findUnique({
-      where: { id },
-      select: { ownerId: true, title: true, status: true },
-    });
-
-    if (!listing) {
-      return NextResponse.json({ error: "Annonce non trouvée" }, { status: 404 });
-    }
-
-    if (listing.status !== "PENDING_REVIEW") {
-      return NextResponse.json({ error: "Cette annonce n'est pas en attente de validation" }, { status: 400 });
-    }
-
-    let newStatus: string;
-    let notificationTitle: string;
-    let notificationMessage: string;
-    let notificationType: string;
-
-    if (action === "approve") {
-      newStatus = "ACTIVE";
-      notificationTitle = "✅ Annonce approuvée";
-      notificationMessage = `Félicitations ! Votre annonce "${listing.title}" a été approuvée et est maintenant en ligne.`;
-      notificationType = "LISTING_ACTIVATED";
-    } else {
-      newStatus = "REJECTED";
-      notificationTitle = "❌ Annonce rejetée";
-      notificationMessage = `Votre annonce "${listing.title}" a été rejetée. ${rejectionReason ? `Raison : ${rejectionReason}` : "Veuillez corriger les informations et soumettre à nouveau."}`;
-      notificationType = "LISTING_SUSPENDED";
-    }
-
-    // Mettre à jour le statut de l'annonce
-    const updatedListing = await prisma.listing.update({
-      where: { id },
-      data: {
-        status: newStatus,
-        publishedAt: action === "approve" ? new Date() : null,
+      select: {
+        id: true,
+        role: true,
+        firstName: true,
+        lastName: true,
+        email: true,
       },
     });
 
-    // Créer une notification pour le propriétaire
+    if (admin?.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Accès non autorisé" },
+        { status: 403 },
+      );
+    }
+
+    const listing = await prisma.listing.findUnique({
+      where: { id },
+      include: { owner: true },
+    });
+
+    if (!listing) {
+      return NextResponse.json(
+        { error: "Annonce non trouvée" },
+        { status: 404 },
+      );
+    }
+
+    let updatedListing;
+    let notificationType;
+    let notificationTitle;
+    let notificationContent;
+
+    // 🔥 DISTINCTION ENTRE NOUVELLE ANNONCE ET MODIFICATION
+    if (isRevision) {
+      // ========== CAS 1: MODIFICATION D'UNE ANNONCE EXISTANTE ==========
+      if (action === "approve") {
+        // Appliquer les modifications
+        const pendingData = listing.pendingRevision as any;
+
+        updatedListing = await prisma.listing.update({
+          where: { id },
+          data: {
+            ...pendingData, // Applique les changements
+            hasPendingRevision: false,
+            pendingRevision: null,
+            updatedAt: new Date(),
+          },
+        });
+
+        notificationType = "LISTING_REVISION_APPROVED";
+        notificationTitle = "✅ Modification approuvée";
+        notificationContent = `Votre demande de modification pour l'annonce "${listing.title}" a été approuvée et les changements sont maintenant en ligne.`;
+
+        console.log(
+          `✅ [REVISION] Modification approuvée pour l'annonce ${id}`,
+        );
+      } else {
+        // Rejeter la modification - L'annonce reste ACTIVE
+        updatedListing = await prisma.listing.update({
+          where: { id },
+          data: {
+            hasPendingRevision: false,
+            pendingRevision: null,
+            // Ne pas modifier les données existantes !
+          },
+        });
+
+        notificationType = "LISTING_REVISION_REJECTED";
+        notificationTitle = "❌ Modification refusée";
+        notificationContent = `Votre demande de modification pour l'annonce "${listing.title}" a été refusée.\n\nMotif: ${rejectionReason || "Non spécifié"}${rejectionDetails ? `\nDétails: ${rejectionDetails}` : ""}\n\nVotre annonce reste active avec ses informations actuelles.`;
+
+        console.log(`❌ [REVISION] Modification rejetée pour l'annonce ${id}`);
+      }
+    } else {
+      // ========== CAS 2: NOUVELLE ANNONCE ==========
+      if (action === "approve") {
+        updatedListing = await prisma.listing.update({
+          where: { id },
+          data: {
+            status: "ACTIVE",
+            publishedAt: new Date(),
+            validatedAt: new Date(),
+            validatedBy: admin.id,
+            rejectionReason: null,
+            rejectionDetails: null,
+            rejectedAt: null,
+            rejectedBy: null,
+          },
+        });
+
+        notificationType = "LISTING_APPROVED";
+        notificationTitle = "✅ Annonce approuvée";
+        notificationContent = `Félicitations ! Votre annonce "${listing.title}" a été validée et est maintenant en ligne.`;
+
+        console.log(`✅ [NEW] Nouvelle annonce approuvée: ${id}`);
+      } else {
+        updatedListing = await prisma.listing.update({
+          where: { id },
+          data: {
+            status: "REJECTED",
+            rejectionReason: rejectionReason,
+            rejectionDetails: rejectionDetails,
+            rejectedAt: new Date(),
+            rejectedBy: admin.id,
+          },
+        });
+
+        notificationType = "LISTING_REJECTED";
+        notificationTitle = "❌ Annonce refusée";
+        notificationContent = `Votre annonce "${listing.title}" a été refusée.\n\nMotif: ${rejectionReason || "Non spécifié"}${rejectionDetails ? `\nDétails: ${rejectionDetails}` : ""}\n\nVeuillez modifier votre annonce et la soumettre à nouveau.`;
+
+        console.log(`❌ [NEW] Nouvelle annonce rejetée: ${id}`);
+      }
+    }
+
+    // Créer la notification pour le propriétaire
     await prisma.notification.create({
       data: {
         userId: listing.ownerId,
         type: notificationType as any,
         title: notificationTitle,
-        content: notificationMessage,
+        content: notificationContent,
         channels: ["IN_APP", "EMAIL"],
-        data: { listingId: id, listingTitle: listing.title },
-      },
-    });
-
-    // Enregistrer l'action dans l'historique admin
-    await prisma.userAction.create({
-      data: {
-        userId: listing.ownerId,
-        actionType: action === "approve" ? "APPROVE_LISTING" : "REJECT_LISTING",
-        performedBy: admin.id,
-        reason: rejectionReason || null,
-        content: JSON.stringify({ listingId: id, listingTitle: listing.title }),
-      },
-    });
-
-    // Ajouter une entrée dans listingHistory
-    await prisma.listingHistory.create({
-      data: {
-        listingId: id,
-        actionType: action === "approve" ? "APPROVED" : "REJECTED",
-        oldValue: "PENDING_REVIEW",
-        newValue: newStatus,
-        changedBy: admin.id,
+        data: {
+          listingId: listing.id,
+          listingTitle: listing.title,
+          rejectionReason: rejectionReason,
+          adminName: `${admin.firstName} ${admin.lastName}`,
+        },
       },
     });
 
     return NextResponse.json({
       success: true,
-      message: action === "approve" ? "Annonce approuvée avec succès" : "Annonce rejetée",
       listing: updatedListing,
+      message:
+        action === "approve"
+          ? isRevision
+            ? "Modification approuvée"
+            : "Annonce approuvée"
+          : isRevision
+            ? "Modification rejetée"
+            : "Annonce rejetée",
+      status: updatedListing.status,
     });
   } catch (error) {
-    console.error("[VALIDATE_LISTING] Erreur:", error);
+    console.error("[VALIDATE] Erreur:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

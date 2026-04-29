@@ -1952,6 +1952,7 @@
       "archived": "Archivée"
     }
   },
+  
   "OwnerListings": {
     "currency": {
       "tnd": "TND"
@@ -1971,6 +1972,7 @@
       "active": "Publiées",
       "inactive": "Masquées",
       "draft": "Brouillons",
+      "pending": "En validation",
       "archived": "Archivées"
     },
     "filters": {
@@ -2005,7 +2007,11 @@
       "draft": "Brouillon",
       "draftDesc": "En cours de création, non publiée",
       "archived": "Archivée",
-      "archivedDesc": "Stockée dans les archives, peut être restaurée"
+      "archivedDesc": "Stockée dans les archives, peut être restaurée",
+      "pendingReview": "En validation",
+      "pendingReviewDesc": "En attente de validation par l'administrateur",
+      "rejected": "Rejetée",
+      "rejectedDesc": "Non conforme, veuillez la modifier"
     },
     "performance": {
       "spinner": "chargement de vos annonces......",
@@ -2013,18 +2019,20 @@
       "toOptimize": "À optimiser"
     },
     "aiInsights": {
-      "draft": " Brouillon - Complétez et publiez votre annonce",
-      "archived": " Archivée - Restaurez pour réactiver",
-      "inactive": " Masquée - Publiez pour être visible",
-      "lowViews": " Plus de photos = +20% de vues",
-      "noBookings": " Vérifiez votre prix par rapport au marché",
-      "lowConversion": " Faible conversion - Améliorez votre annonce",
-      "excellent": " Excellente performance ! Continuez ainsi",
-      "optimize": " Optimisez votre annonce"
+      "draft": "Brouillon - Complétez et publiez votre annonce",
+      "archived": "Archivée - Restaurez pour réactiver",
+      "inactive": "Masquée - Publiez pour être visible",
+      "pendingReview": "En attente de validation par l'administrateur",
+      "rejected": "Annonce rejetée, veuillez la modifier",
+      "lowViews": "Plus de photos = +20% de vues",
+      "noBookings": "Vérifiez votre prix par rapport au marché",
+      "lowConversion": "Faible conversion - Améliorez votre annonce",
+      "excellent": "Excellente performance ! Continuez ainsi",
+      "optimize": "Optimisez votre annonce"
     },
     "recommendations": {
-      "lowConversion": " Faible conversion ({rate}%) - Améliorez vos photos ou ajustez le prix",
-      "excellentPerformance": " Excellente performance ! {count} réservations ce mois-ci"
+      "lowConversion": "Faible conversion ({rate}%) - Améliorez vos photos ou ajustez le prix",
+      "excellentPerformance": "Excellente performance ! {count} réservations ce mois-ci"
     },
     "actions": {
       "edit": "Modifier l'annonce",
@@ -2204,7 +2212,9 @@
     "status": {
       "active": "Publiée",
       "draft": "Brouillon",
-      "inactive": "Masquée"
+      "inactive": "Masquée",
+      "pending_review": "En validation",
+      "rejected": "Rejetée"
     },
 
     "completion": {
@@ -2350,8 +2360,27 @@
 
     "success": {
       "saved": "Les modifications ont été sauvegardées avec succès"
+    },
+    
+    "validation": {
+      "titleRequired": "Le titre est requis",
+      "titleMin": "Le titre doit contenir au moins 5 caractères",
+      "descriptionRequired": "La description est requise",
+      "descriptionMin": "La description doit contenir au moins 20 caractères",
+      "governorateRequired": "Le gouvernorat est requis",
+      "delegationRequired": "La délégation est requise",
+      "streetRequired": "La rue est requise",
+      "locationRequired": "La localisation sur la carte est requise",
+      "roomsRequired": "Au moins 1 chambre est requise",
+      "bathroomsRequired": "Au moins 1 salle de bain est requise",
+      "kitchensRequired": "Au moins 1 cuisine est requise",
+      "photosRequired": "Au moins une photo est requise",
+      "mainPhotoRequired": "Veuillez définir une photo principale",
+      "pricePerNightRequired": "Le prix par nuit est requis",
+      "pricePerMonthRequired": "Le prix par mois est requis"
     }
-  },
+  }
+,
 
   "OwnerCalendar": {
     "common": {

@@ -79,39 +79,67 @@ const block3d =
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
 
-// STATUTS
+// STATUTS CONFIGURATION - AMELIOREE ET VISIBLE
 const STATUS_CONFIG = {
   ACTIVE: {
-    color: "text-white dark:text-white",
-    bg: "bg-emerald-600 dark:bg-emerald-600",
-    border: "border-emerald-600 dark:border-emerald-600",
+    color: "text-white",
+    bg: "bg-gradient-to-r from-emerald-500 to-emerald-600",
+    border: "border-emerald-500",
     icon: CheckCircle,
     labelKey: "active",
     descKey: "activeDesc",
+    glow: "shadow-lg shadow-emerald-500/30",
+    cardBorder: "border-emerald-200 dark:border-emerald-800",
   },
   INACTIVE: {
-    color: "text-white dark:text-white",
-    bg: "bg-amber-500 dark:bg-amber-500",
-    border: "border-amber-500 dark:border-amber-500",
+    color: "text-white",
+    bg: "bg-gradient-to-r from-amber-500 to-amber-600",
+    border: "border-amber-500",
     icon: EyeOff,
     labelKey: "inactive",
     descKey: "inactiveDesc",
+    glow: "shadow-lg shadow-amber-500/30",
+    cardBorder: "border-amber-200 dark:border-amber-800",
   },
   DRAFT: {
-    color: "text-white dark:text-white",
-    bg: "bg-slate-500 dark:bg-slate-500",
-    border: "border-slate-500 dark:border-slate-500",
+    color: "text-white",
+    bg: "bg-gradient-to-r from-slate-500 to-slate-600",
+    border: "border-slate-500",
     icon: AlertCircle,
     labelKey: "draft",
     descKey: "draftDesc",
+    glow: "shadow-lg shadow-slate-500/30",
+    cardBorder: "border-slate-200 dark:border-slate-700",
   },
   ARCHIVED: {
-    color: "text-white dark:text-white",
-    bg: "bg-purple-600 dark:bg-purple-600",
-    border: "border-purple-600 dark:border-purple-600",
+    color: "text-white",
+    bg: "bg-gradient-to-r from-purple-500 to-purple-600",
+    border: "border-purple-500",
     icon: Archive,
     labelKey: "archived",
     descKey: "archivedDesc",
+    glow: "shadow-lg shadow-purple-500/30",
+    cardBorder: "border-purple-200 dark:border-purple-800",
+  },
+  PENDING_REVIEW: {
+    color: "text-white",
+    bg: "bg-gradient-to-r from-orange-500 to-amber-500",
+    border: "border-orange-500",
+    icon: Clock,
+    labelKey: "pendingReview",
+    descKey: "pendingReviewDesc",
+    glow: "shadow-lg shadow-orange-500/30",
+    cardBorder: "border-orange-200 dark:border-orange-800",
+  },
+  REJECTED: {
+    color: "text-white",
+    bg: "bg-gradient-to-r from-red-500 to-rose-600",
+    border: "border-red-500",
+    icon: AlertTriangle,
+    labelKey: "rejected",
+    descKey: "rejectedDesc",
+    glow: "shadow-lg shadow-red-500/30",
+    cardBorder: "border-red-200 dark:border-red-800",
   },
 } as const;
 
@@ -125,7 +153,7 @@ const TYPE_ICONS: Record<string, React.ElementType> = {
   ROOM: Home,
 };
 
-// Vérifier si l'annonce est nouvelle (moins de 7 jours)
+// Verifier si l'annonce est nouvelle (moins de 7 jours)
 const isNewListing = (createdAt: string) => {
   const created = new Date(createdAt);
   const now = new Date();
@@ -135,7 +163,7 @@ const isNewListing = (createdAt: string) => {
   return diffDays < 7;
 };
 
-// Tooltip component - uniquement pour le header
+// Tooltip component
 function Tooltip({
   children,
   text,
@@ -150,6 +178,83 @@ function Tooltip({
         {text}
       </span>
     </span>
+  );
+}
+
+// BADGE DE STATUT AMELIORE
+function StatusBadge({ status, t }: { status: string; t: any }) {
+  const cfg =
+    STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.DRAFT;
+  const Icon = cfg.icon;
+
+  return (
+    <div className="relative group">
+      <span
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-bold ${cfg.color} ${cfg.bg} ${cfg.border} border ${cfg.glow} cursor-help shadow-md`}
+      >
+        <Icon size={12} /> {t(`status.${cfg.labelKey}`)}
+      </span>
+      <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50 shadow-lg">
+        {t(`status.${cfg.descKey}`)}
+      </div>
+    </div>
+  );
+}
+
+// BADGE DE PERFORMANCE
+function PerformanceBadge({ listing, t }: { listing: any; t: any }) {
+  const conversionRate =
+    listing.viewCount > 0
+      ? (listing.bookingCount / listing.viewCount) * 100
+      : 0;
+
+  if (listing.status !== "ACTIVE") return null;
+
+  if (conversionRate > 5) {
+    return (
+      <div className="absolute top-3 left-3 flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
+        <Flame size={10} className="text-white" />
+        {t("performance.topPerformance")}
+      </div>
+    );
+  }
+
+  if (listing.viewCount > 100 && listing.bookingCount === 0) {
+    return (
+      <div className="absolute top-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
+        <AlertTriangle size={10} />
+        {t("performance.toOptimize")}
+      </div>
+    );
+  }
+
+  return null;
+}
+
+// BADGE NOUVEAU
+function NewBadge({ t }: { t: any }) {
+  return (
+    <div className="absolute top-3 left-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
+      {t("badges.new")}
+    </div>
+  );
+}
+
+// BADGE EN ATTENTE DE VALIDATION
+function PendingReviewBadge({ t }: { t: any }) {
+  return (
+    <div className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10 flex items-center gap-1">
+      <Clock size={10} /> {t("status.pendingReview")}
+    </div>
+  );
+}
+
+// BADGE REJETE
+function RejectedBadge({ t }: { t: any }) {
+  return (
+    <div className="absolute top-3 left-3 bg-gradient-to-r from-red-500 to-rose-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10 flex items-center gap-1">
+      <AlertTriangle size={10} /> {t("status.rejected")}
+    </div>
   );
 }
 
@@ -184,6 +289,22 @@ const getAIInsight = (listing: any, t: any) => {
         bg: "bg-amber-50 dark:bg-amber-900/20",
         border: "border-amber-200 dark:border-amber-800",
         icon: EyeOff,
+      };
+    case "PENDING_REVIEW":
+      return {
+        message: t("aiInsights.pendingReview"),
+        color: "text-orange-600",
+        bg: "bg-orange-50 dark:bg-orange-900/20",
+        border: "border-orange-200 dark:border-orange-800",
+        icon: Clock,
+      };
+    case "REJECTED":
+      return {
+        message: t("aiInsights.rejected"),
+        color: "text-red-600",
+        bg: "bg-red-50 dark:bg-red-900/20",
+        border: "border-red-200 dark:border-red-800",
+        icon: AlertTriangle,
       };
     case "ACTIVE":
       if (listing.viewCount < 30)
@@ -227,55 +348,6 @@ const getAIInsight = (listing: any, t: any) => {
       };
   }
 };
-
-// BADGE DE PERFORMANCE
-function PerformanceBadge({ listing, t }: { listing: any; t: any }) {
-  const conversionRate =
-    listing.viewCount > 0
-      ? (listing.bookingCount / listing.viewCount) * 100
-      : 0;
-
-  if (listing.status !== "ACTIVE") return null;
-
-  if (conversionRate > 5) {
-    return (
-      <div className="absolute top-3 left-3 flex items-center gap-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
-        <Flame size={10} className="text-white" />
-        {t("performance.topPerformance")}
-      </div>
-    );
-  }
-
-  if (listing.viewCount > 100 && listing.bookingCount === 0) {
-    return (
-      <div className="absolute top-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
-        <AlertTriangle size={10} />
-        {t("performance.toOptimize")}
-      </div>
-    );
-  }
-
-  return null;
-}
-
-// BADGE DE STATUT
-function StatusBadge({ status, t }: { status: string; t: any }) {
-  const cfg =
-    STATUS_CONFIG[status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.DRAFT;
-  const Icon = cfg.icon;
-  return (
-    <div className="relative group">
-      <span
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold ${cfg.color} ${cfg.bg} ${cfg.border} border cursor-help z-10`}
-      >
-        <Icon size={11} /> {t(`status.${cfg.labelKey}`)}
-      </span>
-      <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-slate-800 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-50">
-        {t(`status.${cfg.descKey}`)}
-      </div>
-    </div>
-  );
-}
 
 // STATISTIQUES RAPIDES
 function QuickStatsCard({ listing, t }: { listing: any; t: any }) {
@@ -709,6 +781,12 @@ export default function OwnerListingsPage({
       icon: FileWarning,
     },
     {
+      id: "pending" as const,
+      label: t("tabs.pending"),
+      count: tabCounts.pending || 0,
+      icon: Clock,
+    },
+    {
       id: "archived" as const,
       label: t("tabs.archived"),
       count: tabCounts.archived,
@@ -1104,11 +1182,14 @@ export default function OwnerListingsPage({
                 const InsightIcon = aiInsight.icon;
                 const buttonId = `menu-btn-${listing.id}`;
                 const isNew = isNewListing(listing.createdAt);
+                const statusCfg =
+                  STATUS_CONFIG[listing.status as keyof typeof STATUS_CONFIG] ||
+                  STATUS_CONFIG.DRAFT;
 
                 return (
                   <div
                     key={listing.id}
-                    className={`group bg-white dark:bg-slate-900 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 overflow-hidden ${card3d} hover:shadow-lg transition-all duration-300`}
+                    className={`group bg-white dark:bg-slate-900 rounded-2xl border-2 overflow-hidden ${card3d} hover:shadow-lg transition-all duration-300 ${statusCfg.cardBorder}`}
                   >
                     {/* Image Section */}
                     <div className="relative h-56 overflow-hidden bg-slate-100 dark:bg-slate-800">
@@ -1130,12 +1211,13 @@ export default function OwnerListingsPage({
 
                       <PerformanceBadge listing={listing} t={t} />
 
-                      {/* NEW Badge */}
-                      {isNew && (
-                        <div className="absolute top-3 left-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
-                          {t("badges.new")}
-                        </div>
+                      {isNew && <NewBadge t={t} />}
+
+                      {listing.status === "PENDING_REVIEW" && (
+                        <PendingReviewBadge t={t} />
                       )}
+
+                      {listing.status === "REJECTED" && <RejectedBadge t={t} />}
 
                       <div className="absolute top-3 right-3">
                         <StatusBadge status={listing.status} t={t} />
@@ -1283,11 +1365,14 @@ export default function OwnerListingsPage({
                 const InsightIcon = aiInsight.icon;
                 const buttonId = `menu-btn-${listing.id}`;
                 const isNew = isNewListing(listing.createdAt);
+                const statusCfg =
+                  STATUS_CONFIG[listing.status as keyof typeof STATUS_CONFIG] ||
+                  STATUS_CONFIG.DRAFT;
 
                 return (
                   <div
                     key={listing.id}
-                    className="group hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 transition-colors p-4 flex flex-col xl:flex-row xl:items-center gap-4"
+                    className={`group hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 transition-colors p-4 flex flex-col xl:flex-row xl:items-center gap-4 border-l-4 ${statusCfg.cardBorder.replace("border-2", "border-l-4")}`}
                   >
                     <div className="relative shrink-0 w-full xl:w-40 h-28 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
                       {img ? (
@@ -1304,14 +1389,14 @@ export default function OwnerListingsPage({
                           />
                         </div>
                       )}
-                      {listing.status === "ACTIVE" && (
-                        <div className="absolute top-2 left-2 bg-emerald-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full">
-                          {t("status.active")}
-                        </div>
-                      )}
                       {isNew && (
                         <div className="absolute top-2 right-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full">
                           {t("badges.new")}
+                        </div>
+                      )}
+                      {listing.status === "PENDING_REVIEW" && (
+                        <div className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <Clock size={8} /> {t("status.pendingReview")}
                         </div>
                       )}
                       {isLoading && (

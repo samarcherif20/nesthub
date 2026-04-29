@@ -1,5 +1,6 @@
 "use client";
 
+import { IoNotificationsOutline } from "react-icons/io5";
 import NotificationItem from "./NotificationItem";
 
 interface Notification {
@@ -42,9 +43,13 @@ export default function NotificationList({
 
   if (notifications.length === 0) {
     return (
-      <div className="p-8 text-center">
-        <div className="text-4xl mb-2">🔔</div>
-        <p className="text-sm text-gray-400">Aucune notification</p>
+      <div className="absolute top-full right-0 mt-2 w-80 sm:w-96 bg-white dark:bg-gray-900 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+        <div className="p-8 text-center">
+          <div className="flex justify-center mb-2">
+            <IoNotificationsOutline className="text-5xl text-gray-300 dark:text-gray-600" />
+          </div>
+          <p className="text-sm text-gray-400">Aucune notification</p>
+        </div>
       </div>
     );
   }

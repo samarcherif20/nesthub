@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useTranslations } from "next-intl";
 import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
 import {
@@ -15,6 +14,9 @@ import {
   IoCheckmarkCircle,
   IoTimeOutline as IoTimeIcon,
   IoEyeOutline,
+  IoGitBranchOutline,
+  IoCreateOutline,
+  IoCloseOutline,
 } from "react-icons/io5";
 import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -32,8 +34,24 @@ interface ListingValidation {
   type: string;
   governorate: string;
   delegation: string;
-  pricePerNight: number;
+  street: string;
+  pricePerNight: number | null;
+  pricePerMonth: number | null;
   images: string[];
+  rooms: number;
+  bathrooms: number;
+  surfaceArea: number;
+  floorNumber: number;
+  maxGuests: number;
+  hasElevator: boolean;
+  hasBalcony: boolean;
+  hasGarden: boolean;
+  hasGarage: boolean;
+  isFurnished: boolean;
+  petsAllowed: boolean;
+  smokingAllowed: boolean;
+  status: string;
+  hasPendingRevision: boolean;
   owner: {
     id: string;
     firstName: string;
@@ -42,7 +60,6 @@ interface ListingValidation {
     profilePictureUrl: string | null;
     email: string;
   };
-  status: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,6 +69,14 @@ interface PaginationData {
   limit: number;
   totalCount: number;
   totalPages: number;
+}
+
+interface StatsData {
+  total: number;
+  pending: number;
+  revisions: number;
+  processedToday: number;
+  avgResponseTime: number;
 }
 
 const getAvatarUrl = (url: string | null | undefined): string => {
@@ -77,66 +102,161 @@ export default function ListingsValidationPage() {
   const { getToken } = useAuth();
   const [listings, setListings] = useState<ListingValidation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"all" | "pending" | "revisions">(
+    "all",
+  );
   const [pagination, setPagination] = useState<PaginationData>({
     page: 1,
-    limit: 5,
+    limit: 10,
     totalCount: 0,
     totalPages: 1,
   });
   const [search, setSearch] = useState("");
+  const [tempSearch, setTempSearch] = useState(""); // Pour la recherche temporaire
   const debouncedSearch = useDebounce(search, 500);
   const [alert, setAlert] = useState<{
     type: "success" | "error" | "info";
     message: string;
   } | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [stats, setStats] = useState<StatsData>({
+    total: 0,
+    pending: 0,
+    revisions: 0,
+    processedToday: 0,
+    avgResponseTime: 0,
+  });
   const isInitialMount = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const showAlert = (type: "success" | "error" | "info", message: string) => {
     setAlert({ type, message });
     setTimeout(() => setAlert(null), 3000);
   };
 
+  // Fetch statistics
+  const fetchStats = useCallback(async () => {
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const response = await fetch(`/api/admin/listings/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  }, [getToken]);
+
   const fetchListings = useCallback(async () => {
+    // Annuler la requête précédente si elle existe
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     setLoading(true);
     try {
       const token = await getToken({ template: "my-app-template" });
       const params = new URLSearchParams({
         page: pagination.page.toString(),
         limit: pagination.limit.toString(),
-        status: "PENDING_REVIEW",
+        type: activeTab,
         search: debouncedSearch,
       });
 
       const response = await fetch(`/api/admin/listings?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal,
       });
 
-      if (!response.ok) throw new Error("Erreur lors du chargement");
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Erreur lors du chargement");
+      }
 
       const data = await response.json();
-      setListings(data.listings);
-      setPagination(data.pagination);
+      setListings(data.listings || []);
+      setPagination(
+        data.pagination || {
+          page: 1,
+          limit: 10,
+          totalCount: 0,
+          totalPages: 1,
+        },
+      );
     } catch (error) {
-      console.error(error);
-      showAlert("error", "Erreur lors du chargement des annonces");
+      if (error instanceof Error && error.name !== "AbortError") {
+        console.error(error);
+        showAlert("error", "Erreur lors du chargement des annonces");
+        setListings([]);
+      }
     } finally {
       setLoading(false);
+      setInitialLoading(false);
     }
-  }, [getToken, pagination.page, pagination.limit, debouncedSearch]);
+  }, [getToken, pagination.page, pagination.limit, activeTab, debouncedSearch]);
 
+  // Initial load
   useEffect(() => {
+    fetchStats();
     fetchListings();
+
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, []);
 
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
+  // Handle tab change
+  const handleTabChange = (tab: typeof activeTab) => {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
     setPagination((prev) => ({ ...prev, page: 1 }));
-    fetchListings();
+    setSearch("");
+    setTempSearch("");
+  };
+
+  // Handle search submit
+  const handleSearchSubmit = () => {
+    setSearch(tempSearch);
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  const handleSearchClear = () => {
+    setTempSearch("");
+    setSearch("");
+    setPagination((prev) => ({ ...prev, page: 1 }));
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    if (page === pagination.page) return;
+    setPagination((prev) => ({ ...prev, page }));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Reset page when search changes
+  useEffect(() => {
+    if (!isInitialMount.current && debouncedSearch !== "") {
+      setPagination((prev) => ({ ...prev, page: 1 }));
+    }
   }, [debouncedSearch]);
+
+  // Fetch when dependencies change
+  useEffect(() => {
+    if (!isInitialMount.current) {
+      fetchListings();
+    }
+    isInitialMount.current = false;
+  }, [fetchListings, pagination.page, activeTab, debouncedSearch]);
 
   const getListingTypeLabel = (type: string) => {
     const types: Record<string, string> = {
@@ -151,33 +271,61 @@ export default function ListingsValidationPage() {
     return types[type] || type;
   };
 
-  const getStatusBadge = () => {
+  const getStatusBadge = (status: string, hasPendingRevision: boolean) => {
+    if (status === "PENDING_REVIEW" && !hasPendingRevision) {
+      return (
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 flex items-center gap-1">
+          <IoHourglassOutline size={10} />
+          Nouvelle
+        </span>
+      );
+    }
+    if (status === "ACTIVE" && hasPendingRevision) {
+      return (
+        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 flex items-center gap-1">
+          <IoGitBranchOutline size={10} />
+          Modification
+        </span>
+      );
+    }
     return (
-      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+      <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
         En attente
       </span>
     );
   };
 
-  const handlePageChange = (page: number) => {
-    setPagination((prev) => ({ ...prev, page }));
-    fetchListings();
-  };
-
   const handleImageError = (listingId: string) =>
     setImageErrors((prev) => ({ ...prev, [listingId]: true }));
 
-  if (loading) {
+  const tabs = [
+    {
+      id: "all" as const,
+      label: "Toutes",
+      icon: IoHourglassOutline,
+      count: stats.total,
+    },
+    {
+      id: "pending" as const,
+      label: "Nouvelles annonces",
+      icon: IoCreateOutline,
+      count: stats.pending,
+    },
+    {
+      id: "revisions" as const,
+      label: "Modifications",
+      icon: IoGitBranchOutline,
+      count: stats.revisions,
+    },
+  ];
+
+  if (initialLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
         <LoadingSpinner size="lg" color="primary" />
       </div>
     );
   }
-
-  const totalPending = pagination.totalCount;
-  const processedToday = 0;
-  const avgResponseTime = 3.4;
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-slate-950 overflow-x-hidden">
@@ -205,11 +353,10 @@ export default function ListingsValidationPage() {
             </div>
           </div>
 
-          {/* Cartes KPIs avec indicateurs de performance */}
+          {/* Cartes KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            {/* Carte 1 - Total en attente */}
             <div
-              className={`bg-white dark:bg-slate-900 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 p-4 ${card3d}`}
+              className={`bg-white dark:bg-slate-900 rounded-2xl border border-orange-100 dark:border-orange-900/40 p-4 ${card3d}`}
             >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
@@ -220,19 +367,20 @@ export default function ListingsValidationPage() {
                     En attente
                   </p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {totalPending}
+                    {stats.total}
                   </p>
                 </div>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center text-red-500 text-[11px] font-semibold">
+                <div className="flex items-center text-orange-500 text-[11px] font-semibold">
                   <IoTrendingUpOutline className="text-sm mr-1" />
-                  <span>12% plus qu'hier</span>
+                  <span>
+                    {stats.pending} nouvelles, {stats.revisions} modifications
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Carte 2 - Traités aujourd'hui */}
             <div
               className={`bg-white dark:bg-slate-900 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 p-4 ${card3d}`}
             >
@@ -245,19 +393,12 @@ export default function ListingsValidationPage() {
                     Traités aujourd'hui
                   </p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {processedToday}
+                    {stats.processedToday}
                   </p>
-                </div>
-              </div>
-              <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center text-emerald-600 text-[11px] font-semibold">
-                  <IoCheckmarkCircle className="text-sm mr-1" />
-                  <span>85% taux de complétion</span>
                 </div>
               </div>
             </div>
 
-            {/* Carte 3 - Temps moyen de réponse */}
             <div
               className={`bg-white dark:bg-slate-900 rounded-2xl border border-purple-100 dark:border-purple-900/40 p-4 ${card3d}`}
             >
@@ -270,7 +411,7 @@ export default function ListingsValidationPage() {
                     Temps moyen
                   </p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                    {avgResponseTime}h
+                    {stats.avgResponseTime}h
                   </p>
                 </div>
               </div>
@@ -283,6 +424,39 @@ export default function ListingsValidationPage() {
             </div>
           </div>
 
+          {/* Onglets */}
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                    isActive
+                      ? "bg-gradient-to-r from-indigo-500 to-violet-600 text-white shadow-md"
+                      : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  <Icon size={14} />
+                  {tab.label}
+                  {tab.count > 0 && (
+                    <span
+                      className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
           {/* Filtres */}
           <div className="bg-white dark:bg-slate-900 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 overflow-hidden mb-6">
             <div className="px-5 py-4 border-b border-indigo-50 dark:border-indigo-900/30 bg-gradient-to-r from-indigo-50/40 to-violet-50/20 dark:from-indigo-900/10 dark:to-violet-900/5">
@@ -291,19 +465,72 @@ export default function ListingsValidationPage() {
                   <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-base" />
                   <input
                     type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    value={tempSearch}
+                    onChange={(e) => setTempSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
                     placeholder="Rechercher par titre, propriétaire..."
                     className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors text-slate-900 dark:text-slate-100"
                   />
+                  {tempSearch && (
+                    <button
+                      onClick={handleSearchClear}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      <IoCloseOutline size={18} />
+                    </button>
+                  )}
                 </div>
                 <button
-                  onClick={() => fetchListings()}
-                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-semibold shadow-sm transition-all"
+                  onClick={handleSearchSubmit}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Appliquer
+                  {loading ? "Chargement..." : "Appliquer"}
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* Résultats */}
+          <div className="mb-4 flex justify-between items-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {pagination.totalCount > 0 ? (
+                <>
+                  Affichage de{" "}
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {listings.length}
+                  </span>{" "}
+                  sur{" "}
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {pagination.totalCount}
+                  </span>{" "}
+                  annonces
+                </>
+              ) : (
+                "Aucune annonce trouvée"
+              )}
+            </p>
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-slate-500 dark:text-slate-400">
+                Afficher:
+              </label>
+              <select
+                value={pagination.limit}
+                onChange={(e) => {
+                  const newLimit = parseInt(e.target.value);
+                  setPagination((prev) => ({
+                    ...prev,
+                    limit: newLimit,
+                    page: 1,
+                  }));
+                }}
+                className="px-2 py-1 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm text-slate-900 dark:text-slate-100"
+              >
+                <option value={5}>5</option>
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
             </div>
           </div>
 
@@ -323,7 +550,10 @@ export default function ListingsValidationPage() {
                       Type
                     </th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
-                      Date de soumission
+                      Prix
+                    </th>
+                    <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
+                      Date
                     </th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
                       Statut
@@ -334,110 +564,167 @@ export default function ListingsValidationPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {listings.map((listing) => {
-                    const listingImageUrl = listing.images?.[0];
-                    const proxiedUrl = getListingImageUrl(listingImageUrl);
-                    const hasImageError = imageErrors[listing.id];
-                    return (
-                      <tr
-                        key={listing.id}
-                        className="hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 transition-colors"
-                      >
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 overflow-hidden flex items-center justify-center">
-                              {listing.owner.profilePictureUrl ? (
-                                <img
-                                  src={getAvatarUrl(
-                                    listing.owner.profilePictureUrl,
-                                  )}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                  onError={(e) =>
-                                    (e.currentTarget.style.display = "none")
-                                  }
-                                />
-                              ) : (
-                                <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs">
-                                  {listing.owner.firstName?.charAt(0) || "P"}
-                                </span>
-                              )}
+                  {loading && listings.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center">
+                        <LoadingSpinner size="md" color="primary" />
+                      </td>
+                    </tr>
+                  ) : listings.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-4 py-12 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <IoHomeOutline className="w-12 h-12 text-slate-400 mb-3" />
+                          <p className="text-slate-500 dark:text-slate-400">
+                            Aucune annonce trouvée
+                          </p>
+                          {(search || activeTab !== "all") && (
+                            <button
+                              onClick={() => {
+                                setSearch("");
+                                setTempSearch("");
+                                setActiveTab("all");
+                              }}
+                              className="mt-3 text-sm text-indigo-600 hover:text-indigo-700"
+                            >
+                              Réinitialiser les filtres
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    listings.map((listing) => {
+                      const listingImageUrl = listing.images?.[0];
+                      const proxiedUrl = getListingImageUrl(listingImageUrl);
+                      const hasImageError = imageErrors[listing.id];
+                      const displayPrice =
+                        listing.pricePerNight || listing.pricePerMonth;
+                      const priceUnit = listing.pricePerNight
+                        ? "/nuit"
+                        : "/mois";
+
+                      return (
+                        <tr
+                          key={listing.id}
+                          className="hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 transition-colors"
+                        >
+                          <td className="px-4 py-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 overflow-hidden flex items-center justify-center">
+                                {listing.owner.profilePictureUrl ? (
+                                  <img
+                                    src={getAvatarUrl(
+                                      listing.owner.profilePictureUrl,
+                                    )}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                    onError={(e) =>
+                                      (e.currentTarget.style.display = "none")
+                                    }
+                                  />
+                                ) : (
+                                  <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                                    {listing.owner.firstName?.charAt(0) || "P"}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                                  {listing.owner.firstName}{" "}
+                                  {listing.owner.lastName}
+                                </p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                  {listing.owner.email}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                {listing.owner.firstName}{" "}
-                                {listing.owner.lastName}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">
-                                Propriétaire
-                              </p>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <div className="flex items-center gap-2">
+                              <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                                {listingImageUrl && !hasImageError ? (
+                                  <img
+                                    src={proxiedUrl}
+                                    alt={listing.title}
+                                    className="w-full h-full object-cover"
+                                    onError={() => handleImageError(listing.id)}
+                                  />
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+                                    <IoHomeOutline className="w-5 h-5 text-slate-400" />
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1 max-w-[200px]">
+                                  {listing.title}
+                                </p>
+                                <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                  <IoLocationOutline className="text-[9px]" />
+                                  <span className="truncate max-w-[150px]">
+                                    {listing.governorate}, {listing.delegation}
+                                  </span>
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
-                              {listingImageUrl && !hasImageError ? (
-                                <img
-                                  src={proxiedUrl}
-                                  alt={listing.title}
-                                  className="w-full h-full object-cover"
-                                  onError={() => handleImageError(listing.id)}
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                                  <IoHomeOutline className="w-5 h-5 text-slate-400" />
-                                </div>
-                              )}
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-800 dark:text-slate-200 line-clamp-1 max-w-[200px]">
-                                {listing.title}
-                              </p>
-                              <p className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                                <IoLocationOutline className="text-[9px]" />
-                                <span className="truncate max-w-[150px]">
-                                  {listing.governorate}, {listing.delegation}
-                                </span>
-                              </p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-                            {getListingTypeLabel(listing.type)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          <p className="text-sm text-slate-900 dark:text-white">
-                            {format(
-                              new Date(listing.createdAt),
-                              "dd MMM yyyy",
-                              { locale: fr },
+                          </td>
+                          <td className="px-4 py-3.5 whitespace-nowrap">
+                            <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+                              {getListingTypeLabel(listing.type)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 whitespace-nowrap">
+                            {displayPrice ? (
+                              <div>
+                                <p className="text-sm font-bold text-slate-800 dark:text-white">
+                                  {displayPrice.toLocaleString()} TND
+                                </p>
+                                <p className="text-[9px] text-slate-400">
+                                  {priceUnit}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-slate-400">—</span>
                             )}
-                          </p>
-                          <p className="text-[10px] text-slate-400">
-                            {formatDistanceToNow(new Date(listing.createdAt), {
-                              addSuffix: true,
-                              locale: fr,
-                            })}
-                          </p>
-                        </td>
-                        <td className="px-4 py-3.5 whitespace-nowrap">
-                          {getStatusBadge()}
-                        </td>
-                        <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                          <Link
-                            href={`/admin/listings/${listing.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-all"
-                          >
-                            <IoEyeOutline className="text-sm" />
-                            Traiter
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          </td>
+                          <td className="px-4 py-3.5 whitespace-nowrap">
+                            <p className="text-sm text-slate-900 dark:text-white">
+                              {format(
+                                new Date(listing.createdAt),
+                                "dd MMM yyyy",
+                                { locale: fr },
+                              )}
+                            </p>
+                            <p className="text-[10px] text-slate-400">
+                              {formatDistanceToNow(
+                                new Date(listing.createdAt),
+                                {
+                                  addSuffix: true,
+                                  locale: fr,
+                                },
+                              )}
+                            </p>
+                          </td>
+                          <td className="px-4 py-3.5 whitespace-nowrap">
+                            {getStatusBadge(
+                              listing.status,
+                              listing.hasPendingRevision,
+                            )}
+                          </td>
+                          <td className="px-4 py-3.5 text-center whitespace-nowrap">
+                            <Link
+                              href={`/admin/listings/${listing.id}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-all"
+                            >
+                              <IoEyeOutline className="text-sm" />
+                              Traiter
+                            </Link>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>

@@ -20,27 +20,36 @@ export default function NotificationBell() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const response = await fetch("/api/notifications?limit=50");
       const data = await response.json();
-      // ✅ Correction: data peut être un tableau ou un objet
       const notificationsArray = Array.isArray(data)
         ? data
         : data.notifications || [];
-      setNotifications(notificationsArray);
-      const unread = notificationsArray.filter(
+
+      const oldUnreadCount = unreadCount;
+      const newUnreadCount = notificationsArray.filter(
         (n: Notification) => !n.isRead,
       ).length;
-      setUnreadCount(unread);
+
+      setNotifications(notificationsArray);
+      setUnreadCount(newUnreadCount);
+
+      // ✅ Déclencher l'animation si une nouvelle notification non lue arrive
+      if (newUnreadCount > oldUnreadCount && newUnreadCount > 0) {
+        setIsAnimating(true);
+        setTimeout(() => setIsAnimating(false), 1000);
+      }
     } catch (error) {
       console.error("Error fetching notifications:", error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [unreadCount]);
 
   useEffect(() => {
     fetchNotifications();
@@ -133,7 +142,9 @@ export default function NotificationBell() {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+        className={`relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors focus:outline-none ${
+          isAnimating ? "animate-swing" : ""
+        }`}
       >
         {unreadCount > 0 ? (
           <>
@@ -153,7 +164,8 @@ export default function NotificationBell() {
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-2 w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 z-9999 overflow-hidden">
+            {" "}
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-800">
               <h3 className="font-bold text-gray-900 dark:text-white">
                 Notifications
@@ -179,6 +191,30 @@ export default function NotificationBell() {
           </div>
         </>
       )}
+
+      <style jsx>{`
+        @keyframes swing {
+          0% {
+            transform: rotate(0deg);
+          }
+          25% {
+            transform: rotate(15deg);
+          }
+          50% {
+            transform: rotate(-15deg);
+          }
+          75% {
+            transform: rotate(8deg);
+          }
+          100% {
+            transform: rotate(0deg);
+          }
+        }
+        .animate-swing {
+          animation: swing 0.6s ease-in-out;
+          transform-origin: top center;
+        }
+      `}</style>
     </div>
   );
 }

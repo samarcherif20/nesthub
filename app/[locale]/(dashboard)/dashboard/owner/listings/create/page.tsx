@@ -1,3 +1,4 @@
+// app/[locale]/dashboard/owner/listings/create/page.tsx
 "use client";
 
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
@@ -45,18 +46,14 @@ import {
   Trash2,
   Image as ImageIcon,
   Camera,
-  X,
   Info,
-  AlertCircle,
   Eye,
-  EyeOff,
   Loader2,
   MapPin,
   Lightbulb,
   Rocket,
   Moon,
   Save,
-  Coffee,
   PartyPopper,
   Dog,
   Ban,
@@ -165,11 +162,11 @@ const initial: ListingFormData = {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 const propertyTypes = [
-  { value: "APARTMENT", icon: Building2 },
-  { value: "VILLA", icon: Home },
-  { value: "STUDIO", icon: Hotel },
-  { value: "DUPLEX", icon: Layers },
-  { value: "HOUSE", icon: Home },
+  { value: "APARTMENT", icon: Building2, label: "Appartement" },
+  { value: "VILLA", icon: Home, label: "Villa" },
+  { value: "STUDIO", icon: Hotel, label: "Studio" },
+  { value: "DUPLEX", icon: Layers, label: "Duplex" },
+  { value: "HOUSE", icon: Home, label: "Maison" },
 ];
 
 const governorates = [
@@ -213,9 +210,6 @@ const equipmentIds = [
   "dishwasher",
   "dryer",
 ];
-
-const serviceIds = ["cleaning", "linen"];
-const houseRuleIds = ["noParties", "quietAfter22"];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function Stepper({
@@ -313,40 +307,36 @@ function Tooltip({
   );
 }
 
-// Dans CreateListingPage, remplace la fonction geocodeAddress par :
-
+// ═══════════════════════════════════════════════════════════════════
+// FONCTION DE GEOCODAGE
+// ═══════════════════════════════════════════════════════════════════
 const geocodeAddress = async (
   address: string,
 ): Promise<{ lat: number; lng: number } | null> => {
   try {
     console.log("🔍 [GEOCODAGE] Appel API pour:", address);
-    if (!address || address.length < 10) {
-      console.log("⚠️ [GEOCODAGE] Adresse trop courte");
-      return null;
-    }
+    if (!address || address.length < 10) return null;
 
     const response = await fetch(
       `/api/geocode?address=${encodeURIComponent(address)}`,
     );
 
     if (!response.ok) {
-      console.error("❌ [GEOCODAGE] Erreur HTTP:", response.status);
+      if (response.status === 429)
+        toast.error("Trop de requêtes. Veuillez patienter.");
       return null;
     }
 
     const data = await response.json();
-    console.log("📡 [GEOCODAGE] Réponse API:", data);
 
     if (data.success && data.results && data.results.length > 0) {
       const firstResult = data.results[0];
-      console.log("✅ [GEOCODAGE] Coordonnées trouvées:", {
-        lat: firstResult.lat,
-        lng: firstResult.lon,
-      });
       return { lat: firstResult.lat, lng: firstResult.lon };
     }
 
-    console.log("❌ [GEOCODAGE] Aucun résultat");
+    toast.warning(
+      "Adresse non trouvée, veuillez ajuster la position manuellement",
+    );
     return null;
   } catch (error) {
     console.error("❌ [GEOCODAGE] Erreur:", error);
@@ -354,7 +344,9 @@ const geocodeAddress = async (
   }
 };
 
-// ─── Page ────────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════
+// COMPOSANT PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════
 export default function CreateListingPage({
   params,
 }: {
@@ -375,59 +367,66 @@ export default function CreateListingPage({
   const fileRef = useRef<HTMLInputElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const geocodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const formRef = useRef(form);
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   const STEPS = [
-    { id: 1, key: "typeLocation", icon: Building2 },
-    { id: 2, key: "characteristics", icon: Ruler },
-    { id: 3, key: "equipment", icon: Wifi },
-    { id: 4, key: "photos", icon: Camera },
-    { id: 5, key: "pricing", icon: Sparkles },
-    { id: 6, key: "preview", icon: Eye },
+    {
+      id: 1,
+      key: "typeLocation",
+      icon: Building2,
+      title: "Type & Localisation",
+    },
+    { id: 2, key: "characteristics", icon: Ruler, title: "Caractéristiques" },
+    { id: 3, key: "equipment", icon: Wifi, title: "Équipements" },
+    { id: 4, key: "photos", icon: Camera, title: "Photos" },
+    { id: 5, key: "pricing", icon: Sparkles, title: "Tarifs" },
+    { id: 6, key: "preview", icon: Eye, title: "Aperçu" },
   ];
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 1. DÉCLARATION DE upd EN PREMIER
-  // ═══════════════════════════════════════════════════════════════════
   const upd = useCallback(
     (u: Partial<ListingFormData>) => setForm((p) => ({ ...p, ...u })),
     [],
   );
 
-  // ═══════════════════════════════════════════════════════════════════
-  // 2. Validation - surfaceArea et floorNumber obligatoires
-  // ═══════════════════════════════════════════════════════════════════
   const validateField = useCallback(
     (field: string, value: any): string | null => {
       switch (field) {
         case "title":
-          if (!value?.trim()) return t("validation.titleRequired");
-          if (value.length < 5) return t("validation.titleMin");
+          if (!value?.trim()) return "Le titre est requis";
+          if (value.length < 5)
+            return "Le titre doit contenir au moins 5 caractères";
           return null;
         case "description":
-          if (!value?.trim()) return t("validation.descriptionRequired");
-          if (value.length < 20) return t("validation.descriptionMin");
+          if (!value?.trim()) return "La description est requise";
+          if (value.length < 20)
+            return "La description doit contenir au moins 20 caractères";
           return null;
         case "governorate":
-          if (!value) return t("validation.governorateRequired");
+          if (!value) return "Le gouvernorat est requis";
           return null;
         case "delegation":
-          if (!value?.trim()) return t("validation.delegationRequired");
+          if (!value?.trim()) return "La délégation est requise";
           return null;
         case "street":
-          if (!value?.trim()) return t("validation.streetRequired");
+          if (!value?.trim()) return "La rue est requise";
           return null;
         case "location":
           if (form.latitude === null || form.longitude === null)
-            return t("validation.locationRequired");
+            return "La localisation sur la carte est requise";
           return null;
         case "rooms":
-          if (value < 1) return t("validation.roomsRequired");
+          if (value < 1) return "Au moins 1 chambre est requise";
           return null;
         case "bathrooms":
-          if (value < 1) return t("validation.bathroomsRequired");
+          if (value < 1) return "Au moins 1 salle de bain est requise";
           return null;
         case "numberOfKitchens":
-          if (value < 1) return t("validation.kitchensRequired");
+          if (value < 1) return "Au moins 1 cuisine est requise";
           return null;
         case "surfaceArea":
           if (!value || value <= 0) return "La surface est requise";
@@ -437,16 +436,16 @@ export default function CreateListingPage({
             return "Le numéro d'étage est requis";
           return null;
         case "photos":
-          if (form.photos.length === 0) return t("validation.photosRequired");
+          if (form.photos.length === 0) return "Au moins une photo est requise";
           if (!form.photos.some((p) => p.isMain))
-            return t("validation.mainPhotoRequired");
+            return "Veuillez définir une photo principale";
           return null;
         case "pricePerNight":
           if (
             (form.rentalType === "SHORT_TERM" || form.rentalType === "BOTH") &&
             (!value || value <= 0)
           ) {
-            return t("validation.pricePerNightRequired");
+            return "Le prix par nuit est requis";
           }
           return null;
         case "pricePerMonth":
@@ -454,7 +453,7 @@ export default function CreateListingPage({
             (form.rentalType === "LONG_TERM" || form.rentalType === "BOTH") &&
             (!value || value <= 0)
           ) {
-            return t("validation.pricePerMonthRequired");
+            return "Le prix par mois est requis";
           }
           return null;
         default:
@@ -467,7 +466,6 @@ export default function CreateListingPage({
       form.photos.length,
       form.photos,
       form.rentalType,
-      t,
     ],
   );
 
@@ -483,47 +481,63 @@ export default function CreateListingPage({
     [validateField],
   );
 
+  const getFieldError = useCallback(
+    (field: string): string | null => {
+      const error = fieldErrors.find((e) => e.field === field);
+      return error ? error.message : null;
+    },
+    [fieldErrors],
+  );
+
   // ═══════════════════════════════════════════════════════════════════
-  // 3. updateMapFromAddress - utilise upd et handleBlur (déclarés maintenant)
+  // GÉOCODAGE SUR ENTER AVEC DEBOUNCE
   // ═══════════════════════════════════════════════════════════════════
-  const updateMapFromAddress = useCallback(async () => {
-    const addressParts = [];
-    if (form.street?.trim()) addressParts.push(form.street.trim());
-    if (form.delegation?.trim()) addressParts.push(form.delegation.trim());
-    if (form.governorate?.trim()) addressParts.push(form.governorate.trim());
-    addressParts.push("Tunisie");
-    const fullAddress = addressParts.join(", ");
-    console.log("📍 [MAP] Adresse complète:", fullAddress);
-    if (
-      !form.governorate?.trim() ||
-      !form.delegation?.trim() ||
-      !form.street?.trim()
-    ) {
-      console.log("⚠️ [MAP] Adresse incomplète, attente des champs...");
+  const handleGeocodeOnEnter = useCallback(async () => {
+    const currentForm = formRef.current;
+
+    if (!currentForm.governorate?.trim()) {
+      toast.warning("Veuillez d'abord sélectionner un gouvernorat");
       return;
     }
-    setIsGeocoding(true);
-    try {
-      const coords = await geocodeAddress(fullAddress);
-      console.log("🎯 [MAP] Coordonnées reçues:", coords);
-      if (coords) {
-        upd({ latitude: coords.lat, longitude: coords.lng });
-        handleBlur("location", null);
-        toast.success("Position trouvée sur la carte !");
-      } else {
-        console.log("❌ [MAP] Aucune coordonnée trouvée");
-        toast.warning(
-          "Adresse non trouvée, veuillez ajuster la position manuellement",
-        );
-      }
-    } catch (error) {
-      console.error("❌ [MAP] Erreur géocodage:", error);
-    } finally {
-      setIsGeocoding(false);
+    if (!currentForm.delegation?.trim()) {
+      toast.warning("Veuillez d'abord remplir la délégation");
+      return;
     }
-  }, [form.governorate, form.delegation, form.street, upd, handleBlur]);
+    if (!currentForm.street?.trim()) {
+      toast.warning("Veuillez d'abord remplir la rue/quartier");
+      return;
+    }
 
-  // Détecter les modifications non sauvegardées
+    if (geocodeTimeoutRef.current) clearTimeout(geocodeTimeoutRef.current);
+
+    geocodeTimeoutRef.current = setTimeout(async () => {
+      const latestForm = formRef.current;
+      const fullAddress = `${latestForm.street.trim()}, ${latestForm.delegation.trim()}, ${latestForm.governorate.trim()}, Tunisie`;
+
+      setIsGeocoding(true);
+      try {
+        const coords = await geocodeAddress(fullAddress);
+        if (coords) {
+          upd({ latitude: coords.lat, longitude: coords.lng });
+          setTimeout(() => {
+            const error = validateField("location", null);
+            if (!error)
+              setFieldErrors((prev) =>
+                prev.filter((e) => e.field !== "location"),
+              );
+            toast.success("📍 Position trouvée sur la carte !");
+          }, 100);
+        }
+      } catch (error) {
+        console.error("Erreur géocodage:", error);
+      } finally {
+        setIsGeocoding(false);
+        geocodeTimeoutRef.current = null;
+      }
+    }, 800);
+  }, [upd, validateField]);
+
+  // Détecter modifications non sauvegardées
   useEffect(() => {
     const hasChanges =
       form.title !== "" ||
@@ -539,21 +553,13 @@ export default function CreateListingPage({
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
         e.preventDefault();
-        e.returnValue = t("confirmLeave");
+        e.returnValue =
+          "Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?";
       }
     };
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [hasUnsavedChanges, t]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (form.governorate && form.delegation && form.street) {
-        updateMapFromAddress();
-      }
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [form.governorate, form.delegation, form.street, updateMapFromAddress]);
+  }, [hasUnsavedChanges]);
 
   const validateStep = useCallback((): boolean => {
     const errors: FieldError[] = [];
@@ -572,7 +578,6 @@ export default function CreateListingPage({
       const locError = validateField("location", null);
       if (locError) errors.push({ field: "location", message: locError });
     }
-
     if (step === 2) {
       const roomsError = validateField("rooms", form.rooms);
       if (roomsError) errors.push({ field: "rooms", message: roomsError });
@@ -591,12 +596,10 @@ export default function CreateListingPage({
       if (floorError)
         errors.push({ field: "floorNumber", message: floorError });
     }
-
     if (step === 4) {
       const photosError = validateField("photos", null);
       if (photosError) errors.push({ field: "photos", message: photosError });
     }
-
     if (step === 5) {
       const priceNightError = validateField(
         "pricePerNight",
@@ -620,7 +623,6 @@ export default function CreateListingPage({
     return true;
   }, [step, form, validateField]);
 
-  // ✅ isStepValid avec surfaceArea et floorNumber obligatoires
   const isStepValid = useMemo(() => {
     if (step === 1) {
       if (!form.title.trim() || form.title.length < 5) return false;
@@ -658,15 +660,6 @@ export default function CreateListingPage({
     return true;
   }, [step, form]);
 
-  const getFieldError = useCallback(
-    (field: string): string | null => {
-      const error = fieldErrors.find((e) => e.field === field);
-      return error ? error.message : null;
-    },
-    [fieldErrors],
-  );
-
-  // ✅ stepCompletion avec surfaceArea et floorNumber
   const stepCompletion = useMemo(
     () => ({
       1:
@@ -680,8 +673,7 @@ export default function CreateListingPage({
         form.numberOfKitchens > 0 &&
         form.surfaceArea &&
         form.surfaceArea > 0 &&
-        form.floorNumber !== null &&
-        form.floorNumber !== undefined,
+        form.floorNumber !== null,
       3: true,
       4: form.photos.length > 0 && form.photos.some((p) => p.isMain),
       5:
@@ -692,25 +684,27 @@ export default function CreateListingPage({
     [form],
   );
 
+  // Charger brouillon
   useEffect(() => {
     try {
-      const d = localStorage.getItem("listing_draft");
-      if (d) {
-        const parsed = JSON.parse(d);
+      const draft = localStorage.getItem("listing_draft");
+      if (draft) {
+        const parsed = JSON.parse(draft);
         setForm((p) => ({ ...p, ...parsed }));
         if (parsed.id) setListingId(parsed.id);
       }
     } catch {}
   }, []);
 
+  // Nettoyer URLs blob
   useEffect(() => {
     return () => {
       form.photos.forEach((photo) => {
-        if (photo.url && photo.url.startsWith("blob:"))
-          URL.revokeObjectURL(photo.url);
-        if (photo.thumbnailUrl && photo.thumbnailUrl.startsWith("blob:"))
+        if (photo.url?.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+        if (photo.thumbnailUrl?.startsWith("blob:"))
           URL.revokeObjectURL(photo.thumbnailUrl);
       });
+      if (geocodeTimeoutRef.current) clearTimeout(geocodeTimeoutRef.current);
     };
   }, [form.photos]);
 
@@ -722,10 +716,7 @@ export default function CreateListingPage({
         method: "POST",
         body: formData,
       });
-      if (!uploadRes.ok) {
-        const error = await uploadRes.json();
-        throw new Error(error.error || `Échec upload photo`);
-      }
+      if (!uploadRes.ok) throw new Error("Échec upload photo");
       const data = await uploadRes.json();
       return { url: data.url, thumbnailUrl: data.thumbnailUrl || data.url };
     },
@@ -735,8 +726,7 @@ export default function CreateListingPage({
   const uploadPhotos = useCallback(
     async (photos: any[]) => {
       const uploadedPhotos = [];
-      for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
+      for (const photo of photos) {
         if (photo.file) {
           const { url, thumbnailUrl } = await uploadSinglePhoto(photo.file);
           uploadedPhotos.push({ ...photo, url, thumbnailUrl, file: undefined });
@@ -751,15 +741,12 @@ export default function CreateListingPage({
 
   const saveDraft = useCallback(async () => {
     if (saving) return;
-    if (!navigator.onLine) {
-      toast.error(t("error.networkError"));
-      return;
-    }
     setSaving(true);
     try {
       const uploadedPhotos = await uploadPhotos(form.photos);
       const formWithUrls = { ...form, photos: uploadedPhotos };
       localStorage.setItem("listing_draft", JSON.stringify(formWithUrls));
+
       let response;
       if (listingId) {
         response = await fetch(`/api/listings/${listingId}`, {
@@ -774,6 +761,7 @@ export default function CreateListingPage({
           body: JSON.stringify({ ...formWithUrls, status: "DRAFT" }),
         });
       }
+
       if (response && response.ok) {
         const data = await response.json();
         if (!listingId && data.id) {
@@ -785,42 +773,33 @@ export default function CreateListingPage({
           localStorage.setItem("listing_draft", JSON.stringify(draft));
         }
         setLastSaved(new Date());
-        toast.success(t("success.draftSaved"));
-      } else if (response) {
-        const error = await response.json();
-        toast.error(error.details || error.error || t("error.saveFailed"));
+        toast.success("Brouillon sauvegardé");
       }
     } catch (e) {
       console.error(e);
-      toast.error(t("error.saveFailed"));
+      toast.error("Erreur lors de la sauvegarde");
     } finally {
       setSaving(false);
     }
-  }, [form, listingId, saving, uploadPhotos, t]);
+  }, [form, listingId, saving, uploadPhotos]);
 
+  // Sauvegarde automatique toutes les 30 secondes
   useEffect(() => {
-    const id = setInterval(() => {
+    const interval = setInterval(() => {
       if (form.title || form.photos.length > 0) saveDraft();
     }, 30000);
-    return () => clearInterval(id);
+    return () => clearInterval(interval);
   }, [form, saveDraft]);
 
   const goToNextStep = () => {
-    if (validateStep()) {
-      setStep((s) => Math.min(STEPS.length, s + 1));
-    }
+    if (validateStep()) setStep((s) => Math.min(STEPS.length, s + 1));
   };
-
   const goToPrevStep = () => setStep((s) => Math.max(1, s - 1));
 
   const handlePublish = async () => {
     if (!validateStep()) return;
-    if (!navigator.onLine) {
-      toast.error(t("error.networkError"));
-      return;
-    }
     setSaving(true);
-    const loadingToast = toast.loading(t("publishing"));
+    const loadingToast = toast.loading("Publication en cours...");
     try {
       const uploadedPhotos = await uploadPhotos(form.photos);
       const formWithUrls = {
@@ -830,40 +809,27 @@ export default function CreateListingPage({
       };
       const url = listingId ? `/api/listings/${listingId}` : "/api/listings";
       const method = listingId ? "PUT" : "POST";
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
       const response = await fetch(url, {
-        method: method,
+        method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formWithUrls),
-        signal: controller.signal,
       });
-      clearTimeout(timeoutId);
       const data = await response.json();
+
       if (response.ok) {
         localStorage.removeItem("listing_draft");
         toast.dismiss(loadingToast);
-        toast.success(t("success.published"));
-        const newListingId = data.id || listingId;
-        if (newListingId) {
-          router.push(`/${locale}/dashboard/owner/listings/${newListingId}`);
-        } else {
-          router.push(`/${locale}/dashboard/owner/listings`);
-        }
+        toast.success("Annonce publiée avec succès !");
+        router.push(`/${locale}/dashboard/owner/listings`);
       } else {
         toast.dismiss(loadingToast);
-        const errorMessage =
-          data.details || data.error || t("error.publishFailed");
-        toast.error(errorMessage);
+        toast.error(
+          data.details || data.error || "Erreur lors de la publication",
+        );
       }
-    } catch (e: any) {
+    } catch (e) {
       toast.dismiss(loadingToast);
-      if (e.name === "AbortError") {
-        toast.error(t("error.timeoutError"));
-      } else {
-        console.error(e);
-        toast.error(t("error.publishFailed"));
-      }
+      toast.error("Erreur lors de la publication");
     } finally {
       setSaving(false);
     }
@@ -886,15 +852,14 @@ export default function CreateListingPage({
 
   const removePhoto = (idx: number) => {
     const newPhotos = form.photos.filter((_, i) => i !== idx);
-    if (newPhotos.length > 0 && !newPhotos.some((p) => p.isMain)) {
+    if (newPhotos.length > 0 && !newPhotos.some((p) => p.isMain))
       newPhotos[0].isMain = true;
-    }
     upd({ photos: newPhotos });
   };
 
   const setMainPhoto = (idx: number) => {
     upd({ photos: form.photos.map((p, i) => ({ ...p, isMain: i === idx })) });
-    toast.success(t("step4.mainPhotoSet"));
+    toast.success("Photo principale définie");
   };
 
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
@@ -914,58 +879,44 @@ export default function CreateListingPage({
     dryer: Fan,
   };
 
-  const serviceIcons: Record<string, any> = {
-    cleaning: Sparkles,
-    linen: Sparkles,
-  };
-  const ruleIcons: Record<string, any> = {
-    noParties: PartyPopper,
-    quietAfter22: Moon,
-    petsAllowed: Dog,
-    smokingAllowed: Ban,
-  };
-
   return (
     <div className="h-full flex flex-col bg-slate-50/20 dark:bg-slate-950 overflow-hidden">
-      {/* Header fixe */}
-      <div className="flex-shrink-0 bg-white dark:bg-slate-950 backdrop-blur-sm z-10 border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-6xl mx-auto py-4">
+      {/* Header */}
+      <div className="flex-shrink-0 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+        <div className="max-w-6xl mx-auto py-4 px-6">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-2">
             <Link
               href={`/${locale}/dashboard/owner/listings`}
-              className="hover:text-indigo-600 transition-colors cursor-pointer"
+              className="hover:text-indigo-600 transition-colors"
             >
-              {t("breadcrumb.myListings")}
+              Mes annonces
             </Link>
             <ChevronRight size={12} />
-            <span className="text-black dark:text-white">
-              {t("breadcrumb.newListing")}
-            </span>
+            <span className="text-black dark:text-white">Nouvelle annonce</span>
           </div>
 
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-4xl md:text-4xl font-black tracking-tight mb-1.5 text-slate-900 dark:text-white">
-                {t("pageTitle")}
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+                Créer une annonce
               </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {t("stepOf", { current: step, total: STEPS.length })} ·{" "}
-                {t(`steps.${STEPS[step - 1].key}`)}
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Étape {step} sur {STEPS.length} · {STEPS[step - 1].title}
               </p>
             </div>
-            <Tooltip text={t("saveDraft")}>
+            <Tooltip text="Sauvegarder le brouillon">
               <button
                 type="button"
                 onClick={saveDraft}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-sky-600 dark:text-sky-400 hover:bg-sky-50 dark:hover:bg-sky-900/30 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-sky-600 hover:bg-sky-50 rounded-lg transition-colors disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 size={14} className="animate-spin" />
                 ) : (
                   <Save size={14} />
                 )}
-                {saving ? t("saving") : t("saveDraft")}
+                {saving ? "Sauvegarde..." : "Brouillon"}
                 {lastSaved && !saving && (
                   <span className="text-xs text-slate-400">
                     {lastSaved.toLocaleTimeString("fr-FR", {
@@ -978,6 +929,7 @@ export default function CreateListingPage({
             </Tooltip>
           </div>
 
+          {/* Progress bar */}
           <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mt-4">
             <div
               className="h-full bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 rounded-full transition-all duration-500"
@@ -985,6 +937,7 @@ export default function CreateListingPage({
             />
           </div>
 
+          {/* Steps */}
           <div className="flex items-center justify-between mt-4">
             {STEPS.map((s) => {
               const Icon = s.icon;
@@ -999,13 +952,7 @@ export default function CreateListingPage({
                 >
                   <div className="relative">
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
-                        s.id < step
-                          ? "bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600 text-white shadow-md"
-                          : s.id === step
-                            ? "bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600 text-white shadow-md"
-                            : "bg-slate-200 dark:bg-slate-700 text-slate-400"
-                      }`}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${s.id < step ? "bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600 text-white shadow-md" : s.id === step ? "bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600 text-white shadow-md" : "bg-slate-200 dark:bg-slate-700 text-slate-400"}`}
                     >
                       {s.id < step ? <Check size={14} /> : <Icon size={14} />}
                     </div>
@@ -1016,7 +963,7 @@ export default function CreateListingPage({
                   <span
                     className={`hidden md:block text-[10px] font-bold uppercase tracking-wider ${s.id <= step ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`}
                   >
-                    {t(`steps.${s.key}`)}
+                    {s.title}
                   </span>
                 </button>
               );
@@ -1027,14 +974,17 @@ export default function CreateListingPage({
 
       {/* Contenu scrollable */}
       <div className="flex-1 overflow-y-auto py-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              {/* ══════ STEP 1 : Type & Location ══════════════════════ */}
+              {/* ═══════════════════════════════════════════════════════════════ */}
+              {/* STEP 1 : TYPE & LOCALISATION */}
+              {/* ═══════════════════════════════════════════════════════════════ */}
               {step === 1 && (
                 <>
+                  {/* Type de propriété */}
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle num={1} title={t("step1.typeTitle")} />
+                    <SectionTitle num={1} title="Type de logement" />
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                       {propertyTypes.map((pt) => {
                         const Icon = pt.icon;
@@ -1052,11 +1002,7 @@ export default function CreateListingPage({
                               className="sr-only"
                             />
                             <div
-                              className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 ${
-                                form.type === pt.value
-                                  ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20 shadow-sm"
-                                  : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"
-                              }`}
+                              className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 ${form.type === pt.value ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20 shadow-sm" : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"}`}
                             >
                               <Icon
                                 size={22}
@@ -1065,7 +1011,7 @@ export default function CreateListingPage({
                               <span
                                 className={`text-xs font-bold text-center ${form.type === pt.value ? "text-sky-700" : "text-slate-500"}`}
                               >
-                                {t(`propertyTypes.${pt.value}`)}
+                                {pt.label}
                               </span>
                             </div>
                           </label>
@@ -1074,21 +1020,17 @@ export default function CreateListingPage({
                     </div>
                   </div>
 
+                  {/* Titre et description */}
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle
-                      num={2}
-                      title={t("step1.titleSectionTitle")}
-                    />
+                    <SectionTitle num={2} title="Titre et description" />
                     <div className="space-y-4">
                       <div>
                         <div className="flex items-center gap-1 mb-1.5">
                           <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                            {t("step1.titleLabel")}
+                            Titre de l'annonce
                           </label>
-                          <Tooltip text={t("required")}>
-                            <span className="text-rose-500 text-xs cursor-help">
-                              *
-                            </span>
+                          <Tooltip text="Requis">
+                            <span className="text-rose-500 text-xs">*</span>
                           </Tooltip>
                         </div>
                         <input
@@ -1096,9 +1038,9 @@ export default function CreateListingPage({
                           value={form.title}
                           onChange={(e) => upd({ title: e.target.value })}
                           onBlur={() => handleBlur("title", form.title)}
-                          placeholder={t("step1.titlePlaceholder")}
+                          placeholder="Ex: Superbe appartement en bord de mer"
                           maxLength={100}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 outline-none transition-all ${getFieldError("title") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none ${getFieldError("title") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
                         />
                         {getFieldError("title") && (
                           <p className="text-xs text-rose-500 mt-1">
@@ -1109,12 +1051,10 @@ export default function CreateListingPage({
                       <div>
                         <div className="flex items-center gap-1 mb-1.5">
                           <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                            {t("step1.descriptionLabel")}
+                            Description
                           </label>
-                          <Tooltip text={t("required")}>
-                            <span className="text-rose-500 text-xs cursor-help">
-                              *
-                            </span>
+                          <Tooltip text="Requis">
+                            <span className="text-rose-500 text-xs">*</span>
                           </Tooltip>
                         </div>
                         <textarea
@@ -1123,10 +1063,10 @@ export default function CreateListingPage({
                           onBlur={() =>
                             handleBlur("description", form.description)
                           }
-                          placeholder={t("step1.descriptionPlaceholder")}
+                          placeholder="Décrivez votre logement en détail..."
                           rows={4}
                           maxLength={2000}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500 outline-none resize-none ${getFieldError("description") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none resize-none ${getFieldError("description") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
                         />
                         {getFieldError("description") && (
                           <p className="text-xs text-rose-500 mt-1">
@@ -1137,13 +1077,14 @@ export default function CreateListingPage({
                     </div>
                   </div>
 
+                  {/* Localisation */}
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle num={3} title={t("step1.locationTitle")} />
+                    <SectionTitle num={3} title="Localisation" />
+
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                          {t("step1.governorate")}{" "}
-                          <span className="text-rose-500">*</span>
+                          Gouvernorat <span className="text-rose-500">*</span>
                         </label>
                         <select
                           value={form.governorate}
@@ -1151,9 +1092,9 @@ export default function CreateListingPage({
                           onBlur={() =>
                             handleBlur("governorate", form.governorate)
                           }
-                          className={`w-full appearance-none bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-8 text-base focus:ring-2 focus:ring-sky-500/30 outline-none ${getFieldError("governorate") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-8 text-base focus:ring-2 focus:ring-sky-500/30 outline-none"
                         >
-                          <option value="">{t("step1.choose")}</option>
+                          <option value="">Sélectionner</option>
                           {governorates.map((g) => (
                             <option key={g} value={g}>
                               {g}
@@ -1166,40 +1107,71 @@ export default function CreateListingPage({
                           </p>
                         )}
                       </div>
+
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                          {t("step1.delegation")}{" "}
-                          <span className="text-rose-500">*</span>
+                          Délégation <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          value={form.delegation}
-                          onChange={(e) => upd({ delegation: e.target.value })}
-                          onBlur={() =>
-                            handleBlur("delegation", form.delegation)
-                          }
-                          placeholder={t("step1.delegationPlaceholder")}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none ${getFieldError("delegation") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={form.delegation}
+                            onChange={(e) =>
+                              upd({ delegation: e.target.value })
+                            }
+                            onBlur={() =>
+                              handleBlur("delegation", form.delegation)
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleGeocodeOnEnter();
+                              }
+                            }}
+                            placeholder="Ex: Hammamet"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-10 text-base focus:ring-2 focus:ring-sky-500/30 outline-none"
+                          />
+                          {isGeocoding && (
+                            <Loader2
+                              size={16}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-sky-500"
+                            />
+                          )}
+                        </div>
                         {getFieldError("delegation") && (
                           <p className="text-xs text-rose-500 mt-1">
                             {getFieldError("delegation")}
                           </p>
                         )}
                       </div>
+
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                          {t("step1.street")}{" "}
+                          Rue / Quartier{" "}
                           <span className="text-rose-500">*</span>
                         </label>
-                        <input
-                          type="text"
-                          value={form.street}
-                          onChange={(e) => upd({ street: e.target.value })}
-                          onBlur={() => handleBlur("street", form.street)}
-                          placeholder={t("step1.streetPlaceholder")}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none ${getFieldError("street") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
-                        />
+                        <div className="relative">
+                          <input
+                            type="text"
+                            value={form.street}
+                            onChange={(e) => upd({ street: e.target.value })}
+                            onBlur={() => handleBlur("street", form.street)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                handleGeocodeOnEnter();
+                              }
+                            }}
+                            placeholder="Ex: Avenue Habib Bourguiba"
+                            className="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-10 text-base focus:ring-2 focus:ring-sky-500/30 outline-none"
+                          />
+                          {isGeocoding && (
+                            <Loader2
+                              size={16}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-sky-500"
+                            />
+                          )}
+                        </div>
                         {getFieldError("street") && (
                           <p className="text-xs text-rose-500 mt-1">
                             {getFieldError("street")}
@@ -1208,19 +1180,26 @@ export default function CreateListingPage({
                       </div>
                     </div>
 
+                    {/* Aide */}
+                    <div className="mb-4">
+                      <p className="text-xs text-slate-400">
+                        💡 Appuyez sur{" "}
+                        <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-mono">
+                          Entrée
+                        </kbd>{" "}
+                        dans les champs "Délégation" ou "Rue" pour localiser
+                        l'adresse sur la carte
+                      </p>
+                    </div>
+
+                    {/* Carte */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                        {t("step1.exactLocation")}{" "}
-                        <span className="text-rose-500">*</span>
-                        {isGeocoding && (
-                          <Loader2
-                            size={12}
-                            className="inline ml-2 animate-spin"
-                          />
-                        )}
+                        Position exacte <span className="text-rose-500">*</span>
                       </label>
                       <div className="h-64 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
                         <MapPickerWrapper
+                          key={`${form.latitude}-${form.longitude}-${isGeocoding}`}
                           latitude={form.latitude}
                           longitude={form.longitude}
                           onLocationChange={(lat, lng) => {
@@ -1245,10 +1224,10 @@ export default function CreateListingPage({
                 </>
               )}
 
-              {/* ══════ STEP 2 : Characteristics ══════════════════════ */}
+              {/* STEP 2 : Caractéristiques */}
               {step === 2 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                  <SectionTitle title={t("step2.title")} />
+                  <SectionTitle title="Caractéristiques" />
                   <div className="space-y-4">
                     {[
                       {
@@ -1286,9 +1265,7 @@ export default function CreateListingPage({
                                 className="text-sky-600 dark:text-sky-400"
                               />
                             </div>
-                            <p className="font-bold text-sm text-slate-900 dark:text-white">
-                              {row.label}
-                            </p>
+                            <p className="font-bold text-sm">{row.label}</p>
                           </div>
                           <Stepper
                             value={row.value}
@@ -1301,7 +1278,7 @@ export default function CreateListingPage({
                     })}
                   </div>
 
-                  {/* Capacité voyageurs - OPTIONNEL avec gestion null */}
+                  {/* Capacité voyageurs */}
                   <div className="mt-4 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
@@ -1311,12 +1288,8 @@ export default function CreateListingPage({
                         />
                       </div>
                       <div>
-                        <p className="font-bold text-sm text-slate-900 dark:text-white">
-                          Capacité voyageurs
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          Optionnel
-                        </p>
+                        <p className="font-bold text-sm">Capacité voyageurs</p>
+                        <p className="text-xs text-slate-500">Optionnel</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1327,11 +1300,11 @@ export default function CreateListingPage({
                           upd({ maxGuests: Math.max(0, current - 1) });
                         }}
                         disabled={form.maxGuests === null}
-                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-30"
+                        className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 disabled:opacity-30"
                       >
                         <ChevronLeft size={16} />
                       </button>
-                      <span className="w-12 text-center font-bold text-base text-slate-900 dark:text-white">
+                      <span className="w-12 text-center font-bold text-base">
                         {form.maxGuests === null ? "—" : form.maxGuests}
                       </span>
                       <button
@@ -1341,27 +1314,27 @@ export default function CreateListingPage({
                           upd({ maxGuests: Math.min(50, current + 1) });
                         }}
                         disabled={form.maxGuests === null}
-                        className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 transition-colors disabled:opacity-30"
+                        className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 disabled:opacity-30"
                       >
                         <ChevronRight size={16} />
                       </button>
                       <button
                         type="button"
                         onClick={() => upd({ maxGuests: null })}
-                        className="ml-1 px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded transition-colors"
+                        className="ml-1 px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded"
                       >
                         Effacer
                       </button>
                     </div>
                   </div>
 
-                  {/* Balcon, Jardin, Garage */}
+                  {/* Équipements extérieurs */}
                   <div className="grid grid-cols-1 gap-3 mt-4">
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Trees size={16} className="text-emerald-500" />
-                      <p className="font-bold text-sm text-slate-900 dark:text-white">
+                      <span className="font-bold text-sm">
                         Balcon / Terrasse
-                      </p>
+                      </span>
                       <Toggle
                         checked={form.hasBalcony}
                         onChange={(v) => upd({ hasBalcony: v })}
@@ -1369,9 +1342,7 @@ export default function CreateListingPage({
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Trees size={16} className="text-emerald-500" />
-                      <p className="font-bold text-sm text-slate-900 dark:text-white">
-                        Jardin
-                      </p>
+                      <span className="font-bold text-sm">Jardin</span>
                       <Toggle
                         checked={form.hasGarden}
                         onChange={(v) => upd({ hasGarden: v })}
@@ -1379,9 +1350,9 @@ export default function CreateListingPage({
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Car size={16} className="text-emerald-500" />
-                      <p className="font-bold text-sm text-slate-900 dark:text-white">
-                        Garage / Parking privé
-                      </p>
+                      <span className="font-bold text-sm">
+                        Garage / Parking
+                      </span>
                       <Toggle
                         checked={form.hasGarage}
                         onChange={(v) => upd({ hasGarage: v })}
@@ -1391,7 +1362,7 @@ export default function CreateListingPage({
 
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
                         Surface (m²)
                       </label>
                       <div className="relative">
@@ -1409,7 +1380,7 @@ export default function CreateListingPage({
                             handleBlur("surfaceArea", form.surfaceArea)
                           }
                           placeholder="120"
-                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 px-4 pr-12 text-base outline-none focus:ring-2 focus:ring-sky-500/30"
+                          className="w-full bg-slate-50 border rounded-lg py-3 px-4 pr-12 outline-none"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
                           m²
@@ -1422,7 +1393,7 @@ export default function CreateListingPage({
                       )}
                     </div>
                     <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
+                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
                         Étage
                       </label>
                       <div className="relative">
@@ -1440,7 +1411,7 @@ export default function CreateListingPage({
                             handleBlur("floorNumber", form.floorNumber)
                           }
                           placeholder="RDC = 0"
-                          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 px-4 pr-10 text-base outline-none focus:ring-2 focus:ring-sky-500/30"
+                          className="w-full bg-slate-50 border rounded-lg py-3 px-4 pr-10 outline-none"
                         />
                         <ArrowUp
                           size={14}
@@ -1456,13 +1427,8 @@ export default function CreateListingPage({
                   </div>
 
                   <div className="mt-4 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                    <ArrowUp
-                      size={16}
-                      className="text-violet-600 dark:text-violet-400"
-                    />
-                    <p className="font-bold text-sm text-slate-900 dark:text-white">
-                      Ascenseur
-                    </p>
+                    <ArrowUp size={16} className="text-violet-600" />
+                    <span className="font-bold text-sm">Ascenseur</span>
                     <Toggle
                       checked={form.hasElevator}
                       onChange={(v) => upd({ hasElevator: v })}
@@ -1471,191 +1437,122 @@ export default function CreateListingPage({
                 </div>
               )}
 
-              {/* ══════ STEP 3 : Equipment / Services / Rules ════════════════════════════ */}
+              {/* STEP 3 : Équipements */}
               {step === 3 && (
-                <div className="space-y-5">
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title={t("step3.equipmentTitle")} />
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                      {equipmentIds.map((id) => {
-                        const active = !!form.equipment[id];
-                        const Icon = equipmentIcons[id] || Check;
-                        return (
-                          <label key={id} className="cursor-pointer group">
-                            <input
-                              type="checkbox"
-                              checked={active}
-                              onChange={(e) =>
-                                upd({
-                                  equipment: {
-                                    ...form.equipment,
-                                    [id]: e.target.checked,
-                                  },
-                                })
+                <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+                  <SectionTitle title="Équipements" />
+                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+                    {equipmentIds.map((id) => {
+                      const active = !!form.equipment[id];
+                      const Icon = equipmentIcons[id] || Check;
+                      return (
+                        <label key={id} className="cursor-pointer group">
+                          <input
+                            type="checkbox"
+                            checked={active}
+                            onChange={(e) =>
+                              upd({
+                                equipment: {
+                                  ...form.equipment,
+                                  [id]: e.target.checked,
+                                },
+                              })
+                            }
+                            className="sr-only"
+                          />
+                          <div
+                            className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border-2 transition-all duration-200 ${active ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20" : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"}`}
+                          >
+                            <Icon
+                              size={18}
+                              className={
+                                active ? "text-sky-600" : "text-slate-400"
                               }
-                              className="sr-only"
                             />
-                            <div
-                              className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border-2 transition-all duration-200 ${active ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20" : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"}`}
+                            <span
+                              className={`text-[9px] font-bold text-center ${active ? "text-sky-700" : "text-slate-500"}`}
                             >
-                              <Icon
-                                size={18}
-                                className={
-                                  active ? "text-sky-600" : "text-slate-400"
-                                }
-                              />
-                              <span
-                                className={`text-[9px] font-bold text-center ${active ? "text-sky-700" : "text-slate-500"}`}
-                              >
-                                {t(`equipment.${id}`)}
-                              </span>
-                            </div>
-                          </label>
-                        );
-                      })}
+                              {id}
+                            </span>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-6 space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                      <Sparkles size={16} className="text-violet-600" />
+                      <div>
+                        <p className="font-semibold text-sm">Meublé</p>
+                        <p className="text-xs text-slate-500">
+                          Logement équipé et meublé
+                        </p>
+                      </div>
+                      <Toggle
+                        checked={form.isFurnished}
+                        onChange={(v) => upd({ isFurnished: v })}
+                      />
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title={t("step3.servicesTitle")} />
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <Sparkles
-                          size={16}
-                          className="text-violet-600 dark:text-violet-400"
-                        />
-                        <div>
-                          <p className="font-semibold text-sm text-slate-900 dark:text-white">
-                            Ménage inclus
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Service de nettoyage professionnel
-                          </p>
-                        </div>
-                        <Toggle
-                          checked={!!form.services.cleaning}
-                          onChange={(v) =>
-                            upd({ services: { ...form.services, cleaning: v } })
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <Sparkles
-                          size={16}
-                          className="text-violet-600 dark:text-violet-400"
-                        />
-                        <div>
-                          <p className="font-semibold text-sm text-slate-900 dark:text-white">
-                            Draps et linge fournis
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Linge de maison inclus
-                          </p>
-                        </div>
-                        <Toggle
-                          checked={!!form.services.linen}
-                          onChange={(v) =>
-                            upd({ services: { ...form.services, linen: v } })
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <Home
-                          size={16}
-                          className="text-violet-600 dark:text-violet-400"
-                        />
-                        <div>
-                          <p className="font-semibold text-sm text-slate-900 dark:text-white">
-                            Meublé
-                          </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            Logement équipé et meublé
-                          </p>
-                        </div>
-                        <Toggle
-                          checked={form.isFurnished}
-                          onChange={(v) => upd({ isFurnished: v })}
-                        />
-                      </div>
+                  <div className="mt-6 space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                      <PartyPopper size={16} className="text-slate-500" />
+                      <span className="font-semibold text-sm">
+                        Pas de fêtes
+                      </span>
+                      <Toggle
+                        checked={!!form.houseRules.noParties}
+                        onChange={(v) =>
+                          upd({
+                            houseRules: { ...form.houseRules, noParties: v },
+                          })
+                        }
+                      />
                     </div>
-                  </div>
-
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title={t("step3.rulesTitle")} />
-                    <div className="space-y-3 mb-4">
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <PartyPopper size={16} className="text-slate-500" />
-                        <span className="font-semibold text-sm">
-                          Pas de fêtes / événements
-                        </span>
-                        <Toggle
-                          checked={!!form.houseRules.noParties}
-                          onChange={(v) =>
-                            upd({
-                              houseRules: { ...form.houseRules, noParties: v },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <Moon size={16} className="text-slate-500" />
-                        <span className="font-semibold text-sm">
-                          Silence après 22h
-                        </span>
-                        <Toggle
-                          checked={!!form.houseRules.quietAfter22}
-                          onChange={(v) =>
-                            upd({
-                              houseRules: {
-                                ...form.houseRules,
-                                quietAfter22: v,
-                              },
-                            })
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <Dog size={16} className="text-slate-500" />
-                        <span className="font-semibold text-sm">
-                          Animaux acceptés
-                        </span>
-                        <Toggle
-                          checked={form.petsAllowed}
-                          onChange={(v) => upd({ petsAllowed: v })}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <Ban size={16} className="text-slate-500" />
-                        <span className="font-semibold text-sm">
-                          Fumeurs acceptés
-                        </span>
-                        <Toggle
-                          checked={form.smokingAllowed}
-                          onChange={(v) => upd({ smokingAllowed: v })}
-                        />
-                      </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                      <Moon size={16} className="text-slate-500" />
+                      <span className="font-semibold text-sm">
+                        Silence après 22h
+                      </span>
+                      <Toggle
+                        checked={!!form.houseRules.quietAfter22}
+                        onChange={(v) =>
+                          upd({
+                            houseRules: { ...form.houseRules, quietAfter22: v },
+                          })
+                        }
+                      />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                        Règles personnalisées
-                      </label>
-                      <textarea
-                        value={form.customRules}
-                        onChange={(e) => upd({ customRules: e.target.value })}
-                        placeholder="Ajoutez des règles spéciales..."
-                        rows={3}
-                        maxLength={500}
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-3 px-4 text-base outline-none focus:ring-2 focus:ring-sky-500/30 resize-none"
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                      <Dog size={16} className="text-slate-500" />
+                      <span className="font-semibold text-sm">
+                        Animaux acceptés
+                      </span>
+                      <Toggle
+                        checked={form.petsAllowed}
+                        onChange={(v) => upd({ petsAllowed: v })}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                      <Ban size={16} className="text-slate-500" />
+                      <span className="font-semibold text-sm">
+                        Fumeurs acceptés
+                      </span>
+                      <Toggle
+                        checked={form.smokingAllowed}
+                        onChange={(v) => upd({ smokingAllowed: v })}
                       />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* ══════ STEP 4 : Photos ════════════════════════════════ */}
+              {/* STEP 4 : Photos */}
               {step === 4 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                  <SectionTitle title={t("step4.title")} />
+                  <SectionTitle title="Photos" />
                   <div
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -1679,18 +1576,18 @@ export default function CreateListingPage({
                       onChange={(e) => handleFiles(e.target.files)}
                     />
                     <Camera size={28} className="text-sky-500 mb-2" />
-                    <p className="font-bold text-base text-slate-900 dark:text-white">
-                      {t("step4.dropHere")}
+                    <p className="font-bold text-base">
+                      Déposez vos photos ici
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-1">
-                      {t("step4.dropHint")}
+                    <p className="text-xs text-slate-500 text-center mt-1">
+                      PNG, JPG jusqu'à 20 photos
                     </p>
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700">
+                    <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
                       <Info size={12} /> {form.photos.length}/20
                     </div>
                   </div>
                   {getFieldError("photos") && (
-                    <div className="mt-3 p-3 bg-rose-50 dark:bg-rose-900/15 border border-rose-200 rounded-lg">
+                    <div className="mt-3 p-3 bg-rose-50 border border-rose-200 rounded-lg">
                       <p className="text-xs text-rose-600">
                         {getFieldError("photos")}
                       </p>
@@ -1705,7 +1602,7 @@ export default function CreateListingPage({
                         {form.photos.map((photo, idx) => (
                           <div
                             key={idx}
-                            className={`relative group rounded-lg overflow-hidden aspect-square bg-slate-100 dark:bg-slate-800 ${photo.isMain ? "ring-2 ring-sky-500" : ""}`}
+                            className={`relative group rounded-lg overflow-hidden aspect-square bg-slate-100 ${photo.isMain ? "ring-2 ring-sky-500" : ""}`}
                           >
                             <img
                               src={getDisplayUrl(photo.url)}
@@ -1726,7 +1623,7 @@ export default function CreateListingPage({
                                   <button
                                     type="button"
                                     onClick={() => setMainPhoto(idx)}
-                                    className="w-6 h-6 rounded-full bg-white/90 text-amber-500 flex items-center justify-center text-xs hover:scale-110 transition-transform"
+                                    className="w-6 h-6 rounded-full bg-white/90 text-amber-500 flex items-center justify-center text-xs hover:scale-110"
                                   >
                                     <Star size={12} />
                                   </button>
@@ -1736,7 +1633,7 @@ export default function CreateListingPage({
                                 <button
                                   type="button"
                                   onClick={() => removePhoto(idx)}
-                                  className="w-6 h-6 rounded-full bg-white/90 text-rose-500 flex items-center justify-center text-xs hover:scale-110 transition-transform"
+                                  className="w-6 h-6 rounded-full bg-white/90 text-rose-500 flex items-center justify-center text-xs hover:scale-110"
                                 >
                                   <Trash2 size={12} />
                                 </button>
@@ -1748,7 +1645,7 @@ export default function CreateListingPage({
                           <button
                             type="button"
                             onClick={() => fileRef.current?.click()}
-                            className="aspect-square rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:border-sky-300 hover:text-sky-500 transition-all"
+                            className="aspect-square rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1.5 text-slate-400 hover:border-sky-300 hover:text-sky-500"
                           >
                             <Plus size={20} />
                             <span className="text-[9px] font-bold">
@@ -1762,11 +1659,11 @@ export default function CreateListingPage({
                 </div>
               )}
 
-              {/* ══════ STEP 5 : Pricing ══════════════════════════════ */}
+              {/* STEP 5 : Tarifs */}
               {step === 5 && (
                 <div className="space-y-5">
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title={t("step5.rentalTypeTitle")} />
+                    <SectionTitle title="Type de location" />
                     <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg gap-1">
                       {["SHORT_TERM", "LONG_TERM", "BOTH"].map((rt) => (
                         <button
@@ -1775,21 +1672,25 @@ export default function CreateListingPage({
                           onClick={() => upd({ rentalType: rt })}
                           className={`flex-1 py-2 rounded-md text-sm font-bold transition-all cursor-pointer ${form.rentalType === rt ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm" : "text-slate-500"}`}
                         >
-                          {t(`step5.${rt}`)}
+                          {rt === "SHORT_TERM"
+                            ? "Courte durée"
+                            : rt === "LONG_TERM"
+                              ? "Longue durée"
+                              : "Les deux"}
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title={t("step5.pricesTitle")} />
+                    <SectionTitle title="Tarifs" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {(form.rentalType === "SHORT_TERM" ||
                         form.rentalType === "BOTH") && (
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Sun size={16} className="text-sky-500" />
-                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                            <label className="text-xs font-black uppercase">
                               Prix par nuit
                             </label>
                             <Tooltip text="Requis">
@@ -1811,7 +1712,7 @@ export default function CreateListingPage({
                                 handleBlur("pricePerNight", form.pricePerNight)
                               }
                               placeholder="0"
-                              className={`w-full text-2xl font-black bg-transparent border-none outline-none ${getFieldError("pricePerNight") ? "text-rose-500" : "text-slate-900 dark:text-white"}`}
+                              className="w-full text-2xl font-black bg-transparent border-none outline-none"
                             />
                             <span className="text-xs font-bold text-slate-400">
                               TND / nuit
@@ -1829,7 +1730,7 @@ export default function CreateListingPage({
                         <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                           <div className="flex items-center gap-2 mb-2">
                             <Calendar size={16} className="text-purple-500" />
-                            <label className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                            <label className="text-xs font-black uppercase">
                               Prix par mois
                             </label>
                             <Tooltip text="Requis">
@@ -1851,7 +1752,7 @@ export default function CreateListingPage({
                                 handleBlur("pricePerMonth", form.pricePerMonth)
                               }
                               placeholder="0"
-                              className={`w-full text-2xl font-black bg-transparent border-none outline-none ${getFieldError("pricePerMonth") ? "text-rose-500" : "text-slate-900 dark:text-white"}`}
+                              className="w-full text-2xl font-black bg-transparent border-none outline-none"
                             />
                             <span className="text-xs font-bold text-slate-400">
                               TND / mois
@@ -1868,7 +1769,7 @@ export default function CreateListingPage({
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title={t("step5.feesTitle")} />
+                    <SectionTitle title="Frais supplémentaires" />
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                         <Shield size={16} className="text-emerald-500" />
@@ -1888,7 +1789,7 @@ export default function CreateListingPage({
                               onChange={(e) =>
                                 upd({ securityDeposit: Number(e.target.value) })
                               }
-                              className="w-20 bg-white dark:bg-slate-800 border rounded py-1.5 px-2 text-sm text-right"
+                              className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
                             />
                           )}
                           <Toggle
@@ -1915,7 +1816,7 @@ export default function CreateListingPage({
                               onChange={(e) =>
                                 upd({ cleaningFee: Number(e.target.value) })
                               }
-                              className="w-20 bg-white dark:bg-slate-800 border rounded py-1.5 px-2 text-sm text-right"
+                              className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
                             />
                           )}
                           <Toggle
@@ -1931,7 +1832,7 @@ export default function CreateListingPage({
                 </div>
               )}
 
-              {/* ══════ STEP 6 : Preview ══════════════════════════════ */}
+              {/* STEP 6 : Aperçu */}
               {step === 6 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
                   <div className="relative h-56 bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600">
@@ -1956,7 +1857,8 @@ export default function CreateListingPage({
                     <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
                       <div>
                         <span className="inline-block bg-white/20 text-white text-[9px] font-bold px-2 py-0.5 rounded-full mb-1">
-                          {t(`propertyTypes.${form.type}`)}
+                          {propertyTypes.find((p) => p.value === form.type)
+                            ?.label || "Logement"}
                         </span>
                         <h3 className="text-white text-base font-bold">
                           {form.title || "Sans titre"}
@@ -1979,7 +1881,7 @@ export default function CreateListingPage({
                     </div>
                   </div>
                   <div className="p-4">
-                    <div className="flex gap-4 text-xs text-slate-500 dark:text-slate-400 pb-3 border-b border-slate-100 dark:border-slate-800">
+                    <div className="flex gap-4 text-xs text-slate-500 pb-3 border-b border-slate-100">
                       <span>
                         <Bed size={14} className="inline mr-1.5" />
                         {form.rooms} ch.
@@ -2000,7 +1902,7 @@ export default function CreateListingPage({
                       )}
                     </div>
                     {form.description && (
-                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-3 line-clamp-2">
+                      <p className="text-sm text-slate-600 mt-3 line-clamp-2">
                         {form.description}
                       </p>
                     )}
@@ -2009,15 +1911,13 @@ export default function CreateListingPage({
               )}
             </div>
 
-            {/* Sidebar */}
+            {/* Sidebar conseils */}
             <div className="hidden lg:block">
               <div className="sticky top-4 space-y-4">
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-2 mb-3">
                     <Lightbulb size={16} className="text-sky-500" />
-                    <h3 className="font-bold text-sm">
-                      Conseils pour réussir votre annonce
-                    </h3>
+                    <h3 className="font-bold text-sm">Conseils</h3>
                   </div>
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2 text-xs">
@@ -2051,9 +1951,7 @@ export default function CreateListingPage({
                   </ul>
                 </div>
                 <div className="relative overflow-hidden rounded-xl p-5 text-white">
-                  <div className="absolute inset-0 bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600"></div>
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-                  <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600" />
                   <div className="relative z-10">
                     <p className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-2">
                       Pourquoi NestHub ?
@@ -2080,14 +1978,14 @@ export default function CreateListingPage({
         </div>
       </div>
 
-      {/* Bottom navigation */}
+      {/* Navigation bas */}
       <div className="flex-shrink-0 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-4">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <button
             type="button"
             onClick={goToPrevStep}
             disabled={step === 1}
-            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-slate-600 dark:text-slate-400 disabled:opacity-30 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-slate-600 disabled:opacity-30 hover:text-slate-900 transition-colors"
           >
             <ChevronLeft size={16} /> Précédent
           </button>
@@ -2104,7 +2002,7 @@ export default function CreateListingPage({
               type="button"
               onClick={handlePublish}
               disabled={saving || !isStepValid}
-              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white font-bold text-sm rounded-lg shadow-md disabled:opacity-50 disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white font-bold text-sm rounded-lg shadow-md disabled:opacity-50 transition-all"
             >
               {saving ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -2118,7 +2016,7 @@ export default function CreateListingPage({
               type="button"
               onClick={goToNextStep}
               disabled={!isStepValid}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all cursor-pointer ${isStepValid ? "bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white shadow-md" : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"}`}
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all ${isStepValid ? "bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white shadow-md" : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"}`}
             >
               Continuer <ChevronRight size={14} />
             </button>

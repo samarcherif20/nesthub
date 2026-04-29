@@ -1,15 +1,14 @@
-// app/api/listings/my/route.ts (CORRIGÉ)
-import { NextRequest, NextResponse } from 'next/server';
-import { getAuth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { NextRequest, NextResponse } from "next/server";
+import { getAuth } from "@clerk/nextjs/server";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
     const { searchParams } = new URL(request.url);
-    
+
     if (!clerkId) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({
@@ -18,49 +17,74 @@ export async function GET(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
     }
 
     // Récupérer les paramètres
-    const status = searchParams.get('status') || 'ALL';
-    const page = parseInt(searchParams.get('page') || '1');
-    const pageSize = parseInt(searchParams.get('pageSize') || '10');
-    const search = searchParams.get('search') || '';
-    
+    const statusParam = searchParams.get("status") || "ALL";
+    const page = parseInt(searchParams.get("page") || "1");
+    const pageSize = parseInt(searchParams.get("pageSize") || "10");
+    const search = searchParams.get("search") || "";
+
     // 🔥 FILTRES AVANCÉS
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const minRooms = searchParams.get('minRooms');
-    const governorate = searchParams.get('governorate');
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    const minRooms = searchParams.get("minRooms");
+    const governorate = searchParams.get("governorate");
 
     // Construction du WHERE
     let where: any = {
       ownerId: user.id,
     };
 
-    // Filtre par statut
-    if (status && status !== 'ALL') {
-      where.status = status;
+    // 🔥 CORRECTION : Mapper les statuts frontend vers les valeurs Prisma
+    let statusFilter = null;
+    switch (statusParam) {
+      case "ALL":
+        statusFilter = null;
+        break;
+      case "ACTIVE":
+        statusFilter = "ACTIVE";
+        break;
+      case "INACTIVE":
+        statusFilter = "INACTIVE";
+        break;
+      case "DRAFT":
+        statusFilter = "DRAFT";
+        break;
+      case "ARCHIVED":
+        statusFilter = "ARCHIVED";
+        break;
+      case "PENDING":
+      case "PENDING_REVIEW":
+        statusFilter = "PENDING_REVIEW";
+        break;
+      default:
+        statusFilter = null;
+    }
+
+    if (statusFilter) {
+      where.status = statusFilter;
     }
 
     // 🔥 Filtre par gouvernorat
-    if (governorate && governorate !== '') {
+    if (governorate && governorate !== "") {
       where.governorate = governorate;
     }
 
     // 🔥 Filtre par nombre de chambres
-    if (minRooms && minRooms !== '') {
+    if (minRooms && minRooms !== "") {
       where.rooms = { gte: parseInt(minRooms) };
     }
 
-    // 🔥 FILTRE PRIX CORRIGÉ
-    // Une annonce est dans la plage si:
-    // - pricePerNight EST DANS [minPrice, maxPrice] OU
-    // - pricePerMonth EST DANS [minPrice, maxPrice]
-    if ((minPrice && minPrice !== '') || (maxPrice && maxPrice !== '')) {
-      const min = minPrice && minPrice !== '' ? parseFloat(minPrice) : 0;
-      const max = maxPrice && maxPrice !== '' ? parseFloat(maxPrice) : 999999;
-      
+    // 🔥 FILTRE PRIX
+    if ((minPrice && minPrice !== "") || (maxPrice && maxPrice !== "")) {
+      const min = minPrice && minPrice !== "" ? parseFloat(minPrice) : 0;
+      const max = maxPrice && maxPrice !== "" ? parseFloat(maxPrice) : 999999;
+
       where.AND = [
         {
           OR: [
@@ -88,14 +112,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Filtre par recherche
-    if (search && search !== '') {
+    if (search && search !== "") {
       where.OR = [
-        { title: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
       ];
     }
 
-    console.log('📝 Where clause finale:', JSON.stringify(where, null, 2));
+    console.log("📝 Where clause finale:", JSON.stringify(where, null, 2));
 
     const skip = (page - 1) * pageSize;
 
@@ -108,25 +132,27 @@ export async function GET(request: NextRequest) {
             take: 1,
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         skip,
         take: pageSize,
       }),
       prisma.listing.count({ where }),
     ]);
 
-    console.log(`📊 Résultats: ${listings.length} annonces sur ${totalCount} total`);
+    console.log(
+      `📊 Résultats: ${listings.length} annonces sur ${totalCount} total`,
+    );
 
     // Calculer les prix min/max pour le slider
     const allListings = await prisma.listing.findMany({
       where: { ownerId: user.id },
       select: { pricePerNight: true, pricePerMonth: true },
     });
-    
+
     let minGlobal = Infinity;
     let maxGlobal = -Infinity;
-    
-    allListings.forEach(l => {
+
+    allListings.forEach((l) => {
       if (l.pricePerNight !== null && l.pricePerNight > 0) {
         minGlobal = Math.min(minGlobal, l.pricePerNight);
         maxGlobal = Math.max(maxGlobal, l.pricePerNight);
@@ -136,7 +162,7 @@ export async function GET(request: NextRequest) {
         maxGlobal = Math.max(maxGlobal, l.pricePerMonth);
       }
     });
-    
+
     const priceRange = {
       min: minGlobal === Infinity ? 0 : Math.floor(minGlobal),
       max: maxGlobal === -Infinity ? 10000 : Math.ceil(maxGlobal),
@@ -152,9 +178,8 @@ export async function GET(request: NextRequest) {
       },
       priceRange,
     });
-
   } catch (error) {
-    console.error('[GET /api/listings/my] Erreur:', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    console.error("[GET /api/listings/my] Erreur:", error);
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

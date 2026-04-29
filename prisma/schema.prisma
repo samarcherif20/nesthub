@@ -532,6 +532,10 @@ enum PaymentStatus {
 }
 
 enum NotificationType {
+   LISTING_REVISION_APPROVED  
+  LISTING_REVISION_REJECTED  
+  LISTING_REJECTED     
+  LISTING_PENDING_REVIEW   
   REVIEW_REMINDER  
   BOOKING_REQUEST
   BOOKING_ACCEPTED
@@ -594,6 +598,8 @@ model Listing {
   description String?       @db.Text
   type        ListingType   @default(APARTMENT)
   status      ListingStatus @default(DRAFT)
+  hasPendingRevision Boolean @default(false)  // ← AJOUTER CETTE LIGNE
+  pendingRevision    Json?        // ← AJOUTE CETTE LIGNE
 
   // Localisation
   governorate  String
@@ -677,7 +683,11 @@ model Listing {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   archivedAt  DateTime?
- 
+  rejectionReason  String?   
+  rejectionDetails String?   
+  rejectedAt       DateTime? 
+  rejectedBy       String?   
+
   @@index([ownerId])
   @@index([status])
   @@index([type])

@@ -9,7 +9,8 @@ import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
 import { Toggle } from "@/components/ui/Toggle";
 import { useEditListing } from "./hooks/useEditListing";
 import Alert from "@/components/ui/Alert";
-
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import {
   Home,
   Building2,
@@ -61,7 +62,7 @@ import {
   Award,
 } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import router from "next/router";
+import { useRouter } from "next/navigation";
 
 // Tooltip component simple sans UI change
 function Tooltip({
@@ -148,7 +149,10 @@ const SECTIONS = [
   { id: "publish", label: "Publication", icon: Rocket },
 ];
 
+// 🔥 FONCTION CALCUL COMPLETUDE CORRIGÉE
 function calculateCompletionScore(listing: any, photosLength: number): number {
+  if (!listing) return 0;
+
   let score = 0;
   let total = 0;
 
@@ -162,11 +166,12 @@ function calculateCompletionScore(listing: any, photosLength: number): number {
   else if (listing.description && listing.description.length > 0) score += 4;
 
   total += 15;
-  if (photosLength >= 10) score += 15;
-  else if (photosLength >= 7) score += 12;
-  else if (photosLength >= 5) score += 10;
-  else if (photosLength >= 3) score += 6;
-  else if (photosLength >= 1) score += 3;
+  const safePhotosLength = photosLength || 0;
+  if (safePhotosLength >= 10) score += 15;
+  else if (safePhotosLength >= 7) score += 12;
+  else if (safePhotosLength >= 5) score += 10;
+  else if (safePhotosLength >= 3) score += 6;
+  else if (safePhotosLength >= 1) score += 3;
 
   total += 15;
   if (listing.governorate && listing.delegation && listing.latitude)
@@ -238,6 +243,7 @@ export default function EditListingPage({
   params: Promise<{ locale: string; id: string }>;
 }) {
   const { locale, id } = React.use(params);
+  const router = useRouter();
   const t = useTranslations("EditListing");
   const fileRef = useRef<HTMLInputElement>(null);
   const [active, setActive] = useState("details");
@@ -257,11 +263,14 @@ export default function EditListingPage({
     handleFileChange,
     removePhoto,
     setMainPhoto,
+    saveAndResubmit,
   } = useEditListing(id, locale);
 
+  // 🔥 COMPLETION SCORE CORRIGÉ
   const completionScore = useMemo(() => {
     if (!listing) return 0;
-    return calculateCompletionScore(listing, listing.photos?.length || 0);
+    const photosLength = listing.photos?.length ?? 0;
+    return calculateCompletionScore(listing, photosLength);
   }, [listing]);
 
   // Détecter les modifications non sauvegardées
@@ -427,6 +436,56 @@ export default function EditListingPage({
           </div>
         </div>
       </div>
+
+      {/* ⚠️ Bandeau d'alerte - Annonce rejetée */}
+      {listing.status === "REJECTED" && listing.rejectionReason && (
+        <div className="fixed top-20 right-6 z-50 w-[90%] max-w-md animate-in slide-in-from-top-2 fade-in duration-300">
+          <div className="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 rounded-xl shadow-lg overflow-hidden">
+            <div className="p-4 flex gap-3 items-start">
+              <div className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="text-red-600 dark:text-red-400 text-base" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-red-800 dark:text-red-300">
+                  Annonce rejetée par l'administration
+                </h3>
+                <p className="text-xs text-red-700 dark:text-red-300/80 mt-1 leading-relaxed">
+                  <span className="font-semibold">Motif :</span>{" "}
+                  {listing.rejectionReason}
+                  {listing.rejectionDetails && (
+                    <span className="block mt-1 text-red-600/80 dark:text-red-400/80">
+                      {listing.rejectionDetails}
+                    </span>
+                  )}
+                </p>
+                <p className="text-[10px] text-red-500/70 dark:text-red-400/70 mt-2 flex items-center gap-1">
+                  <Calendar size={10} />
+                  Rejeté le{" "}
+                  {listing.rejectedAt
+                    ? format(
+                        new Date(listing.rejectedAt),
+                        "dd MMM yyyy à HH:mm",
+                        { locale: fr },
+                      )
+                    : "récemment"}
+                </p>
+              </div>
+              <button
+                onClick={saveAndResubmit}
+                disabled={saving}
+                className="shrink-0 px-3 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-xs font-semibold rounded-lg shadow-sm transition-all flex items-center gap-1 disabled:opacity-50"
+              >
+                {saving ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Rocket size={12} />
+                )}
+                Sauvegarder & Resoumettre
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MAIN LAYOUT - Scrollable content */}
       <div className="flex-1 overflow-y-auto">
@@ -696,7 +755,7 @@ export default function EditListingPage({
                                 />
                                 <input
                                   type="number"
-                                  value={listing.surfaceArea ?? ""}
+                                  value={listing.surfaceArea || ""}
                                   onChange={(e) =>
                                     setField(
                                       "surfaceArea",
@@ -841,11 +900,7 @@ export default function EditListingPage({
                                         [eqId]: !active,
                                       })
                                     }
-                                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${
-                                      active
-                                        ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
-                                        : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-indigo-300"
-                                    }`}
+                                    className={`flex flex-col items-center gap-1 p-2 rounded-lg border transition-all ${active ? "border-indigo-500 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:border-indigo-300"}`}
                                   >
                                     <Icon
                                       size={16}
@@ -879,7 +934,6 @@ export default function EditListingPage({
                         className="hidden"
                         onChange={(e) => handleFileChange(e.target.files)}
                       />
-
                       <Tooltip text={t("tooltips.addPhotos")}>
                         <div
                           onClick={() => fileRef.current?.click()}
@@ -907,7 +961,6 @@ export default function EditListingPage({
                           </div>
                         </div>
                       </Tooltip>
-
                       {listing.photos.length < 5 && (
                         <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
                           <AlertCircle
@@ -921,17 +974,12 @@ export default function EditListingPage({
                           </span>
                         </div>
                       )}
-
                       {listing.photos.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                          {listing.photos.map((photo) => (
+                          {listing.photos.map((photo, idx) => (
                             <div
                               key={photo.id}
-                              className={`relative group rounded-lg overflow-hidden aspect-square bg-slate-100 dark:bg-slate-700 ${
-                                photo.isMain
-                                  ? "ring-2 ring-indigo-500 ring-offset-1"
-                                  : ""
-                              }`}
+                              className={`relative group rounded-lg overflow-hidden aspect-square bg-slate-100 dark:bg-slate-700 ${photo.isMain ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
                             >
                               <img
                                 src={getDisplayUrl(photo.url) ?? ""}
@@ -998,11 +1046,7 @@ export default function EditListingPage({
                           <button
                             key={v}
                             onClick={() => setField("rentalType", v)}
-                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                              listing.rentalType === v
-                                ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm"
-                                : "text-slate-500 dark:text-slate-400"
-                            }`}
+                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${listing.rentalType === v ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
                           >
                             {t(`rentalTypes.${l}`)}
                           </button>
@@ -1146,19 +1190,11 @@ export default function EditListingPage({
                   {active === "publish" && (
                     <div className="space-y-6">
                       <div
-                        className={`p-4 rounded-lg border ${
-                          listing.status === "ACTIVE"
-                            ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800"
-                            : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"
-                        }`}
+                        className={`p-4 rounded-lg border ${listing.status === "ACTIVE" ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700"}`}
                       >
                         <div className="flex items-center gap-3">
                           <div
-                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                              listing.status === "ACTIVE"
-                                ? "bg-emerald-100 dark:bg-emerald-900/50"
-                                : "bg-slate-100 dark:bg-slate-800"
-                            }`}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center ${listing.status === "ACTIVE" ? "bg-emerald-100 dark:bg-emerald-900/50" : "bg-slate-100 dark:bg-slate-800"}`}
                           >
                             {listing.status === "ACTIVE" ? (
                               <CheckCircle

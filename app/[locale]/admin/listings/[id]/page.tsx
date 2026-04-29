@@ -19,6 +19,10 @@ import {
   IoCalendarOutline,
   IoPeopleOutline,
   IoCheckmarkDoneOutline,
+  IoGitBranchOutline,
+  IoCreateOutline,
+  IoDocumentTextOutline,
+  IoArrowBackOutline,
 } from "react-icons/io5";
 import { FaParking, FaShower, FaDog, FaSmoking } from "react-icons/fa";
 import {
@@ -70,6 +74,14 @@ interface ListingDetail {
   isFurnished: boolean;
   petsAllowed: boolean;
   smokingAllowed: boolean;
+  hasPendingRevision?: boolean;
+  pendingRevisionData?: {
+    changes: Array<{
+      field: string;
+      oldValue: any;
+      newValue: any;
+    }>;
+  };
   equipment: Record<string, boolean>;
   services: Record<string, boolean>;
   houseRules: Record<string, boolean>;
@@ -113,19 +125,28 @@ const getImageUrl = (url: string | null | undefined): string => {
   return url;
 };
 
-const getStatusBadge = (status: string) => {
+const getStatusBadge = (status: string, hasPendingRevision?: boolean) => {
+  if (status === "ACTIVE" && hasPendingRevision) {
+    return (
+      <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
+        <IoGitBranchOutline className="text-sm" />
+        Modification en attente
+      </span>
+    );
+  }
   switch (status) {
     case "ACTIVE":
-      return <span className="bg-emerald-100 text-emerald-700 px-4 py-1.5 rounded-full text-xs font-bold">Active</span>;
+      return <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-4 py-1.5 rounded-full text-xs font-bold">Active</span>;
     case "PENDING_REVIEW":
       return (
-        <span className="bg-amber-100 text-amber-700 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
+        <span className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-4 py-1.5 rounded-full text-xs font-bold flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-          En attente de validation
+          <IoCreateOutline className="text-sm" />
+          Nouvelle annonce - En attente
         </span>
       );
     default:
-      return <span className="bg-slate-100 text-slate-600 px-4 py-1.5 rounded-full text-xs font-bold">{status}</span>;
+      return <span className="bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-4 py-1.5 rounded-full text-xs font-bold">{status}</span>;
   }
 };
 
@@ -215,6 +236,7 @@ export default function AdminListingDetailPage() {
   const [rejectionDetails, setRejectionDetails] = useState("");
   const [alert, setAlert] = useState<{ type: "success" | "error" | "info"; message: string } | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showChanges, setShowChanges] = useState(false);
 
   const showAlert = (type: "success" | "error" | "info", message: string) => {
     setAlert({ type, message });
@@ -267,12 +289,21 @@ export default function AdminListingDetailPage() {
         body: JSON.stringify({
           action,
           rejectionReason: fullReason,
+          isRevision: listing?.hasPendingRevision || false,
         }),
       });
 
       if (!response.ok) throw new Error("Erreur lors de la validation");
 
-      showAlert("success", `Annonce ${action === "approve" ? "approuvée" : "rejetée"} avec succès`);
+      const successMessage = listing?.hasPendingRevision
+        ? action === "approve" 
+          ? "Modification approuvée avec succès" 
+          : "Modification rejetée"
+        : action === "approve" 
+          ? "Annonce approuvée avec succès" 
+          : "Annonce rejetée";
+
+      showAlert("success", successMessage);
       setTimeout(() => {
         router.push("/admin/listings/validation");
       }, 1500);
@@ -307,6 +338,8 @@ export default function AdminListingDetailPage() {
   const otherPhotos = listing.photos?.filter((p) => !p.isMain) || [];
   const displayPhotos = [mainImage, ...otherPhotos.slice(0, 4)].filter(Boolean);
   const isPending = listing.status === "PENDING_REVIEW";
+  const isRevision = listing.hasPendingRevision && listing.status === "ACTIVE";
+  const needsValidation = isPending || isRevision;
 
   const activeEquipment = Object.entries(listing.equipment || {})
     .filter(([, active]) => active === true)
@@ -317,7 +350,7 @@ export default function AdminListingDetailPage() {
     .map(([key]) => getRuleLabel(key));
 
   return (
-    <div className="min-h-screen bg-background text-on-surface antialiased">
+    <div className="min-h-screen bg-[#f9f9ff] dark:bg-slate-950 antialiased">
       {alert && (
         <div className="fixed top-4 right-8 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
           <AlertBanner type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
@@ -325,9 +358,32 @@ export default function AdminListingDetailPage() {
       )}
 
       <div className="w-full px-4 lg:px-8">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8 pt-6">
+        {/* Bouton retour */}
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors mt-4 mb-2 text-sm"
+        >
+          <IoArrowBackOutline className="text-lg" />
+          Retour à la liste
+        </button>
+
+        {/* Header avec distinction claire */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6 pt-2">
           <div>
+            <div className="flex items-center gap-3 mb-2">
+              {isRevision && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                  <IoGitBranchOutline className="text-purple-600 dark:text-purple-400 text-sm" />
+                  <span className="text-xs font-semibold text-purple-700 dark:text-purple-400">MODIFICATION</span>
+                </div>
+              )}
+              {isPending && !isRevision && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+                  <IoCreateOutline className="text-amber-600 dark:text-amber-400 text-sm" />
+                  <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">NOUVELLE ANNONCE</span>
+                </div>
+              )}
+            </div>
             <h2 className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-1">
               {listing.title}
             </h2>
@@ -338,7 +394,7 @@ export default function AdminListingDetailPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            {getStatusBadge(listing.status)}
+            {getStatusBadge(listing.status, listing.hasPendingRevision)}
             <button
               onClick={() => window.open(`/fr/listings/${listing.id}`, "_blank")}
               className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-slate-200 transition-colors"
@@ -348,10 +404,82 @@ export default function AdminListingDetailPage() {
           </div>
         </div>
 
+        {/* Bannière pour les modifications */}
+        {isRevision && listing.pendingRevisionData && (
+          <div className="mb-6 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/30 border border-purple-200 dark:border-purple-800 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-200 dark:bg-purple-800/50 flex items-center justify-center flex-shrink-0">
+                <IoGitBranchOutline className="text-purple-600 dark:text-purple-400 text-xl" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-bold text-purple-900 dark:text-purple-300 mb-1">
+                  Modification en attente de validation
+                </h4>
+                <p className="text-sm text-purple-700 dark:text-purple-400 mb-3">
+                  Le propriétaire a demandé à modifier son annonce active. Veuillez examiner les changements ci-dessous.
+                </p>
+                <button
+                  onClick={() => setShowChanges(!showChanges)}
+                  className="text-sm text-purple-600 dark:text-purple-400 font-semibold hover:underline flex items-center gap-1"
+                >
+                  <IoDocumentTextOutline />
+                  {showChanges ? "Masquer les changements" : "Afficher les changements"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Affichage des changements */}
+        {showChanges && isRevision && listing.pendingRevisionData && (
+          <div className="mb-6 bg-white dark:bg-slate-900 rounded-xl border-2 border-purple-200 dark:border-purple-800 overflow-hidden shadow-lg">
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-950/50 dark:to-purple-900/30 border-b border-purple-200 dark:border-purple-800">
+              <h4 className="font-bold text-purple-900 dark:text-purple-300 flex items-center gap-2">
+                <IoDocumentTextOutline />
+                Détail des modifications
+              </h4>
+            </div>
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {listing.pendingRevisionData.changes.map((change, idx) => (
+                <div key={idx} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <p className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-3">
+                    {change.field === "title" && "📝 Titre"}
+                    {change.field === "description" && "📄 Description"}
+                    {change.field === "pricePerNight" && "💰 Prix par nuit"}
+                    {change.field === "pricePerMonth" && "💰 Prix par mois"}
+                    {change.field === "photos" && "🖼️ Photos"}
+                    {change.field === "equipment" && "🔧 Équipements"}
+                    {change.field === "houseRules" && "📋 Règles"}
+                    {change.field}
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-red-50 dark:bg-red-950/20 p-3 rounded-lg">
+                      <p className="text-xs text-red-600 dark:text-red-400 font-semibold mb-1">❌ Ancienne valeur</p>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 line-through">
+                        {change.field === "pricePerNight" || change.field === "pricePerMonth" 
+                          ? change.oldValue ? `${change.oldValue.toLocaleString()} TND` : "Non défini"
+                          : change.oldValue || "—"}
+                      </p>
+                    </div>
+                    <div className="bg-emerald-50 dark:bg-emerald-950/20 p-3 rounded-lg">
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mb-1">✅ Nouvelle valeur</p>
+                      <p className="text-sm text-emerald-700 dark:text-emerald-400 font-semibold">
+                        {change.field === "pricePerNight" || change.field === "pricePerMonth" 
+                          ? change.newValue ? `${change.newValue.toLocaleString()} TND` : "Non défini"
+                          : change.newValue || "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
-          {/* LEFT COLUMN */}
+          {/* LEFT COLUMN - Contenu identique à l'original */}
           <div className="lg:col-span-8 space-y-6 lg:space-y-8">
-            {/* GALLERIE : 1 grande + 4 petites */}
+            {/* GALLERIE */}
             <section className="grid grid-cols-4 gap-2 lg:gap-3 h-[300px] lg:h-[500px]">
               <div
                 className="col-span-2 row-span-2 relative overflow-hidden rounded-xl lg:rounded-2xl bg-slate-100 cursor-pointer"
@@ -628,92 +756,144 @@ export default function AdminListingDetailPage() {
                 </div>
               </div>
 
-             {/* Décision administrative */}
-{isPending && (
-  <div className="bg-slate-900 text-white p-5 lg:p-6 rounded-2xl lg:rounded-3xl relative overflow-hidden">
-    <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl"></div>
-    <h3 className="text-lg lg:text-xl font-bold mb-4 relative z-10">Décision administrative</h3>
-    
-    <div className="space-y-4 relative z-10">
-      {/* Boutons d'action en haut */}
-      <div className="space-y-2">
-        <button
-          onClick={() => handleValidate("approve")}
-          disabled={actionLoading}
-          className="w-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white py-2.5 lg:py-3 rounded-xl font-bold shadow-lg hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
-        >
-          <IoCheckmarkCircleOutline className="text-base lg:text-lg" />
-          Approuver l'annonce
-        </button>
-        
-        <button
-          onClick={() => handleValidate("reject")}
-          disabled={actionLoading || !rejectionReason}
-          className="w-full bg-white/10 text-white py-2.5 lg:py-3 rounded-xl font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-        >
-          <IoCloseOutline className="text-base lg:text-lg text-red-400" />
-          Rejeter l'annonce
-        </button>
-      </div>
+              {/* Décision administrative - Version améliorée avec distinction claire */}
+              {needsValidation && (
+                <div className={`rounded-2xl lg:rounded-3xl p-5 lg:p-6 relative overflow-hidden ${
+                  isRevision 
+                    ? "bg-gradient-to-br from-purple-900 to-purple-950 text-white" 
+                    : "bg-gradient-to-br from-slate-900 to-slate-950 text-white"
+                }`}>
+                  <div className={`absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl ${
+                    isRevision ? "bg-purple-500/20" : "bg-indigo-500/20"
+                  }`}></div>
+                  
+                  <div className="relative z-10">
+                    {/* En-tête avec distinction */}
+                    <div className="mb-5">
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-3 ${
+                        isRevision 
+                          ? "bg-purple-500/20 text-purple-300" 
+                          : "bg-amber-500/20 text-amber-300"
+                      }`}>
+                        {isRevision ? (
+                          <>
+                            <IoGitBranchOutline className="text-sm" />
+                            MODIFICATION EN ATTENTE
+                          </>
+                        ) : (
+                          <>
+                            <IoCreateOutline className="text-sm" />
+                            NOUVELLE ANNONCE
+                          </>
+                        )}
+                      </div>
+                      <h3 className="text-xl lg:text-2xl font-bold">
+                        {isRevision ? "Validation de modification" : "Validation d'annonce"}
+                      </h3>
+                      <p className="text-slate-300 text-sm mt-2">
+                        {isRevision 
+                          ? "Ce propriétaire souhaite modifier son annonce active. Choisissez une action ci-dessous." 
+                          : "Cette annonce est nouvelle et nécessite votre validation avant publication."}
+                      </p>
+                    </div>
+                    
+                    {/* Boutons d'action stylisés */}
+                    <div className="space-y-3 mb-6">
+                      <button
+                        onClick={() => handleValidate("approve")}
+                        disabled={actionLoading}
+                        className="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <IoCheckmarkCircleOutline className="text-lg" />
+                        {isRevision ? "Approuver la modification" : "Approuver l'annonce"}
+                      </button>
+                      
+                      <button
+                        onClick={() => handleValidate("reject")}
+                        disabled={actionLoading || !rejectionReason}
+                        className="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <IoCloseOutline className="text-lg" />
+                        {isRevision ? "Rejeter la modification" : "Rejeter l'annonce"}
+                      </button>
+                    </div>
 
-      {/* Motifs de rejet - 3 par ligne sans emojis */}
-      <div className="space-y-2">
-        <label className="block text-[9px] lg:text-[10px] uppercase font-bold text-slate-400 tracking-widest">
-          Motif du rejet (obligatoire)
-        </label>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-          {[
-            { id: "photos", label: "Photos de mauvaise qualité" },
-            { id: "description", label: "Description incomplète" },
-            { id: "price", label: "Prix incohérent" },
-            { id: "rules", label: "Règlement non conforme" },
-            { id: "info", label: "Informations manquantes" },
-            { id: "duplicate", label: "Doublon avec une annonce existante" },
-          ].map((reason) => (
-            <label
-              key={reason.id}
-              className={`flex items-center p-2 rounded-lg cursor-pointer transition-all ${
-                rejectionReason === reason.label
-                  ? "bg-red-500/20 border border-red-400/50"
-                  : "bg-white/5 hover:bg-white/10 border border-transparent"
-              }`}
-            >
-              <input
-                type="radio"
-                name="rejection_reason"
-                value={reason.label}
-                checked={rejectionReason === reason.label}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                className="w-3.5 h-3.5 border-2 border-slate-500 text-red-500 focus:ring-red-500/20 bg-transparent checked:bg-red-500"
-              />
-              <span className="ml-2 text-xs text-slate-200">
-                {reason.label}
-              </span>
-            </label>
-          ))}
-        </div>
-      </div>
+                    {/* Motifs de rejet */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest">
+                          Motif du rejet <span className="text-red-400">*</span>
+                        </label>
+                        {rejectionReason && (
+                          <button
+                            onClick={() => setRejectionReason("")}
+                            className="text-xs text-slate-400 hover:text-slate-300"
+                          >
+                            Effacer
+                          </button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { id: "photos", label: "📷 Photos de mauvaise qualité", icon: "🖼️" },
+                          { id: "description", label: "📝 Description incomplète", icon: "📄" },
+                          { id: "price", label: "💰 Prix incohérent", icon: "💵" },
+                          { id: "rules", label: "📋 Règlement non conforme", icon: "⚠️" },
+                          { id: "info", label: "ℹ️ Informations manquantes", icon: "❓" },
+                          { id: "duplicate", label: "🔄 Doublon avec une annonce existante", icon: "📌" },
+                        ].map((reason) => (
+                          <label
+                            key={reason.id}
+                            className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all text-sm ${
+                              rejectionReason === reason.label
+                                ? "bg-red-500/20 border border-red-400/50"
+                                : "bg-white/5 hover:bg-white/10 border border-transparent"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="rejection_reason"
+                              value={reason.label}
+                              checked={rejectionReason === reason.label}
+                              onChange={(e) => setRejectionReason(e.target.value)}
+                              className="w-3.5 h-3.5 border-2 border-slate-500 text-red-500 focus:ring-red-500/20 bg-transparent checked:bg-red-500"
+                            />
+                            <span className="text-xs text-slate-200">
+                              {reason.label}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
 
-      {/* Précisions complémentaires */}
-      <div className="space-y-1.5">
-        <label className="block text-[9px] uppercase font-bold text-slate-400 tracking-widest">
-          Précisions complémentaires (optionnel)
-        </label>
-        <textarea
-          value={rejectionDetails}
-          onChange={(e) => setRejectionDetails(e.target.value)}
-          placeholder="Détaillez les raisons du rejet pour aider l'annonceur..."
-          rows={2}
-          className="w-full bg-slate-800 border-none rounded-lg p-2 text-xs text-white focus:ring-2 focus:ring-indigo-500/40 placeholder:text-slate-500 resize-none"
-        />
-      </div>
+                    {/* Précisions complémentaires */}
+                    <div className="space-y-2 mt-4">
+                      <label className="block text-[10px] uppercase font-bold text-slate-400 tracking-widest">
+                        Précisions complémentaires (optionnel)
+                      </label>
+                      <textarea
+                        value={rejectionDetails}
+                        onChange={(e) => setRejectionDetails(e.target.value)}
+                        placeholder="Détaillez les raisons du rejet pour aider l'annonceur à améliorer son annonce..."
+                        rows={3}
+                        className="w-full bg-slate-800/50 border border-slate-700 rounded-lg p-2 text-xs text-white focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 placeholder:text-slate-500 resize-none transition-all"
+                      />
+                    </div>
 
-      <p className="text-[9px] text-center text-slate-500 italic pt-2">
-        Action irréversible après confirmation. L'annonceur sera notifié par email.
-      </p>
-    </div>
-  </div>
-)}
+                    <div className={`mt-4 p-3 rounded-lg text-xs ${
+                      isRevision 
+                        ? "bg-purple-500/10 text-purple-300" 
+                        : "bg-indigo-500/10 text-indigo-300"
+                    }`}>
+                      <p className="text-center">
+                        {isRevision 
+                          ? "ℹ️ En cas de rejet, l'annonce restera active avec ses informations actuelles." 
+                          : "⚠️ Cette action est irréversible. L'annonceur sera notifié par email."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Propriétaire */}
               <div className="bg-white dark:bg-slate-900 p-5 lg:p-8 rounded-xl lg:rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
