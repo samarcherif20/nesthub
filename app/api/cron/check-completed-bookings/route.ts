@@ -3,38 +3,49 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
+  return handleRequest(req);
+}
+
+export async function POST(req: NextRequest) {
+  return handleRequest(req);
+}
+
+async function handleRequest(req: NextRequest) {
   try {
-    // Vérifier la clé secrète pour sécuriser le cron
     const authHeader = req.headers.get("authorization");
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const expected = `Bearer ${process.env.CRON_SECRET}`;
+
+    console.log("🔑 Auth header reçu:", authHeader);
+    console.log("🔐 Expected:", expected);
+
+    if (authHeader !== expected) {
+      console.error("❌ Cron: Authentification échouée");
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
+
+    console.log("🕐 Cron: Vérification des séjours terminés");
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // Trouver les réservations qui se terminent aujourd'hui ou sont déjà terminées
     const completedBookings = await prisma.booking.findMany({
       where: {
-        status: "CONFIRMED", // Uniquement les réservations confirmées
-        checkOut: {
-          lt: today, // Date de check-out passée
-        },
+        status: "CONFIRMED",
+        checkOut: { lt: today },
       },
       include: {
         tenant: true,
-        listing: {
-          select: { title: true, id: true },
-        },
+        listing: { select: { title: true, id: true } },
       },
     });
 
-    console.log(`📋 ${completedBookings.length} réservations terminées trouvées`);
+    console.log(
+      `📋 ${completedBookings.length} réservations terminées trouvées`,
+    );
 
-    const results = [];
+    let processedCount = 0;
 
     for (const booking of completedBookings) {
-      // Vérifier si une notification a déjà été envoyée
       const existingNotification = await prisma.notification.findFirst({
         where: {
           bookingId: booking.id,
@@ -47,14 +58,12 @@ export async function GET(req: NextRequest) {
         continue;
       }
 
-      // Marquer la réservation comme COMPLETED
       await prisma.booking.update({
         where: { id: booking.id },
         data: { status: "COMPLETED" },
       });
 
-      // Créer la notification
-      const notification = await prisma.notification.create({
+      await prisma.notification.create({
         data: {
           userId: booking.tenantId,
           type: "REVIEW_REMINDER",
@@ -69,19 +78,13 @@ export async function GET(req: NextRequest) {
         },
       });
 
-      results.push({
-        bookingId: booking.id,
-        reference: booking.reference,
-        notificationId: notification.id,
-      });
-
+      processedCount++;
       console.log(`✅ Notification envoyée pour ${booking.reference}`);
     }
 
     return NextResponse.json({
       success: true,
-      processed: results.length,
-      results,
+      processed: processedCount,
     });
   } catch (error) {
     console.error("Erreur cron check-completed-bookings:", error);

@@ -532,7 +532,9 @@ enum PaymentStatus {
 }
 
 enum NotificationType {
-   LISTING_REVISION_APPROVED  
+  EXTENSION_ACCEPTED
+  EXTENSION_REJECTED
+  LISTING_REVISION_APPROVED  
   LISTING_REVISION_REJECTED  
   LISTING_REJECTED     
   LISTING_PENDING_REVIEW   
@@ -861,7 +863,8 @@ model Booking {
   actualCheckIn  DateTime?
   actualCheckOut DateTime?
   depositReleasedAt DateTime?
- 
+  stripePaymentIntentId String?
+  stripeRefundId        String?
   // Relations
   payments      Payment[]
   messages      BookingMessage[]
@@ -870,6 +873,7 @@ model Booking {
   dispute       Dispute?
   notifications Notification[]
   depositAuthorizations DepositAuthorization[]
+  extensions BookingExtension[]  // 👈 AJOUTEZ CETTE LIGNE dans le modèle Booking
 
   @@index([listingId])
   @@index([tenantId])
@@ -1649,4 +1653,22 @@ model DepositAuthorization {
   createdAt          DateTime @default(now())
 
   @@map("deposit_authorizations")
+}
+
+model BookingExtension {
+  id                String   @id @default(cuid())
+  bookingId         String
+  booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  requestedCheckOut DateTime
+  status            String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  message           String?
+  rejectionReason   String?
+  additionalPrice   Float?   // Prix supplémentaire si applicable
+  requestedBy       String   // TENANT ou OWNER
+  requestedAt       DateTime @default(now())
+  respondedAt       DateTime?
+  
+  @@index([bookingId])
+  @@index([status])
+  @@map("booking_extensions")
 }

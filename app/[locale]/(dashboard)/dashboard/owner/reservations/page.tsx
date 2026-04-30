@@ -18,11 +18,7 @@ import {
   IoFlashOutline,
   IoCameraOutline,
   IoTimeOutline,
-  IoNotificationsOutline,
-  IoHeartOutline,
   IoSearchOutline,
-  IoChevronForwardOutline,
-  IoStarSharp,
   IoPersonOutline,
   IoAlertCircleOutline,
 } from "react-icons/io5";
@@ -267,6 +263,10 @@ function RequestCard({
   const [imgErr, setImgErr] = useState(false);
   const img = listingImage(booking.listing);
 
+  // Vérifier si l'annulation est possible
+  const canCancel =
+    booking.status === "CONFIRMED" && new Date(booking.checkIn) > new Date();
+
   return (
     <div className="group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-slate-800 hover:-translate-y-1 hover:shadow-xl hover:shadow-gray-100/50 dark:hover:shadow-black/30 transition-all duration-500">
       <div className="flex flex-col md:flex-row">
@@ -286,13 +286,11 @@ function RequestCard({
               <IoHomeOutline className="text-white text-5xl" />
             </div>
           )}
-          {/* Property label */}
           <div className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1 rounded-full">
             <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
               {booking.listing.title}
             </span>
           </div>
-          {/* Status */}
           <div className="absolute top-3 right-3">
             <StatusBadge status={booking.status} />
           </div>
@@ -416,13 +414,26 @@ function RequestCard({
               </button>
             </div>
           ) : (
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-3">
+              {/* Voir le logement - Dashboard owner */}
               <Link
-                href={`/fr/listings/${booking.listing.id}`}
-                className="flex-1 py-3 px-4 rounded-full text-sm font-bold text-center bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors"
+                href={`/fr/dashboard/owner/listings/${booking.listing.id}`}
+                className="flex-1 py-3.5 px-4 rounded-full text-sm font-bold text-center bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors"
               >
                 Voir le logement
               </Link>
+
+              {/* Bouton Annuler - pour les réservations confirmées uniquement */}
+              {canCancel && (
+                <Link
+                  href={`/fr/dashboard/owner/reservations/${booking.id}/cancel`}
+                  className="px-5 py-3.5 rounded-full text-sm font-bold text-center bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/40 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
+                >
+                  Annuler
+                </Link>
+              )}
+
+              {/* Message chat */}
               <Link
                 href={`/fr/dashboard/owner/messages`}
                 className="w-11 h-11 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
@@ -640,7 +651,7 @@ export default function OwnerReservationsPage() {
             )}
           </div>
 
-          {/* Right sidebar (4 cols) - 3 CARDS CONSERVÉES */}
+          {/* Right sidebar (4 cols) */}
           <div className="lg:col-span-4 space-y-6">
             {/* Stats card */}
             <div

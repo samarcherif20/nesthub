@@ -139,6 +139,7 @@ export default clerkMiddleware(async (auth, req) => {
       "/api/cron/expire-info-requests",
       "/api/cron/expire-offers",
       "/api/cron/release-expired-bookings",
+      "/api/cron/check-completed-bookings",
       "/api/cron/test-all",
       "/api/get-redirect-url",
       "/api/auth/reset-password",
