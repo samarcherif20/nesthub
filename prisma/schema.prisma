@@ -532,6 +532,12 @@ enum PaymentStatus {
 }
 
 enum NotificationType {
+  DISPUTE_OPENED           // Un nouveau litige a été ouvert (pour l'autre partie)
+  DISPUTE_OPENED_ADMIN     // Un nouveau litige a été ouvert (pour les admins)
+  DISPUTE_MESSAGE          // Nouveau message dans un litige
+  DISPUTE_RESOLVED         // Litige résolu avec succès
+  DISPUTE_REJECTED         // Litige rejeté
+  DISPUTE_ESCALATED        // Litige escaladé (priorité haute)
   EXTENSION_ACCEPTED
   EXTENSION_REJECTED
   LISTING_REVISION_APPROVED  
@@ -865,6 +871,8 @@ model Booking {
   depositReleasedAt DateTime?
   stripePaymentIntentId String?
   stripeRefundId        String?
+
+ 
   // Relations
   payments      Payment[]
   messages      BookingMessage[]

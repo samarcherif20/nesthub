@@ -34,6 +34,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 // ✅ Importer le composant NotificationBell
 import NotificationBell from "@/components/ui/notifications/NotificationBell";
+import { TbMessageUser } from "react-icons/tb";
 
 // Types
 interface Counters {
@@ -235,9 +236,9 @@ export default function AdminLayout({
       countColor: "bg-primary",
     },
     {
-      name: tLayout("reports"),
-      href: `/${locale}/admin/reports`,
-      icon: <MdOutlineReportGmailerrorred size={18} />,
+      name: "modération",
+      href: `/${locale}/admin/moderation`,
+      icon: <TbMessageUser  size={18} />,
       count: counters.pendingReports,
       countColor: "bg-red-500",
     },

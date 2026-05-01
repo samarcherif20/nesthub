@@ -57,7 +57,8 @@ export default function OwnerCancelBookingPage() {
   };
 
   const handleCancel = async () => {
-    if (confirmText !== "ANNULER") {
+    // Convertir en majuscules pour la comparaison
+    if (confirmText.toUpperCase() !== "ANNULER") {
       setAlert({ type: "error", message: 'Veuillez saisir "ANNULER" pour confirmer' });
       return;
     }
@@ -123,6 +124,9 @@ export default function OwnerCancelBookingPage() {
 
   const mainPhoto = booking.listing?.photos?.find((p: any) => p.isMain) || booking.listing?.photos?.[0];
   const imageUrl = mainPhoto?.url ? pipListingImage(mainPhoto.url) : null;
+
+  // ✅ Vérifier si le bouton doit être désactivé (comparaison insensible à la casse)
+  const isConfirmDisabled = confirmText.toUpperCase() !== "ANNULER" || submitting;
 
   return (
     <div className="p-6">
@@ -313,11 +317,15 @@ export default function OwnerCancelBookingPage() {
       </div>
 
       {/* Action Buttons */}
-      <div className="-mt-12 flex flex-col sm:flex-row-reverse gap-3">
+      <div className="mt-8 flex flex-col sm:flex-row-reverse gap-3">
         <button
           onClick={handleCancel}
-          disabled={submitting}
-          className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          disabled={isConfirmDisabled}
+          className={`px-6 py-3 bg-red-600 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 ${
+            isConfirmDisabled 
+              ? "opacity-50 cursor-not-allowed" 
+              : "hover:bg-red-700"
+          }`}
         >
           <IoCloseOutline className="text-lg" />
           {submitting ? "Annulation en cours..." : "Confirmer l'annulation"}

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
+import { tndToStripeAmount, getCurrentExchangeRate } from "@/lib/currency";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -19,7 +20,6 @@ export async function POST(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // Récupérer l'utilisateur
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
     });
@@ -31,13 +31,13 @@ export async function POST(
       );
     }
 
-    // Récupérer la réservation
     const booking = await prisma.booking.findUnique({
       where: { id },
       include: {
         listing: true,
         tenant: true,
         owner: true,
+        payments: true,
       },
     });
 
@@ -48,7 +48,6 @@ export async function POST(
       );
     }
 
-    // Vérifier qui annule
     const isTenant = booking.tenantId === user.id;
     const isOwner = booking.ownerId === user.id;
 
@@ -56,7 +55,6 @@ export async function POST(
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
-    // Vérifier si déjà annulée
     if (booking.status === "CANCELLED") {
       return NextResponse.json(
         { error: "Réservation déjà annulée" },
@@ -64,7 +62,6 @@ export async function POST(
       );
     }
 
-    // Vérifier si le séjour a déjà commencé
     if (new Date(booking.checkIn) < new Date()) {
       return NextResponse.json(
         { error: "Impossible d'annuler un séjour déjà commencé" },
@@ -72,19 +69,16 @@ export async function POST(
       );
     }
 
-    // Calculer les jours avant le check-in
     const today = new Date();
     const checkInDate = new Date(booking.checkIn);
     const daysUntilCheckIn = Math.ceil(
       (checkInDate.getTime() - today.getTime()) / (1000 * 3600 * 24),
     );
 
-    // Calculer le remboursement
     let refundPercentage = 0;
     let refundAmount = 0;
 
     if (isTenant) {
-      // Locataire annule
       if (daysUntilCheckIn >= 30) {
         refundPercentage = 100;
       } else if (daysUntilCheckIn >= 7) {
@@ -94,32 +88,93 @@ export async function POST(
       }
       refundAmount = (booking.totalPrice * refundPercentage) / 100;
     } else {
-      // Propriétaire annule → remboursement total
       refundPercentage = 100;
       refundAmount = booking.totalPrice;
     }
 
-    // Remboursement Stripe
-    let stripeRefundId = null;
+    let paymentIntentId = booking.stripePaymentIntentId;
+
     if (
+      !paymentIntentId &&
       booking.paymentStatus === "PAID" &&
-      booking.stripePaymentIntentId &&
       refundAmount > 0
     ) {
-      try {
-        const refund = await stripe.refunds.create({
-          payment_intent: booking.stripePaymentIntentId,
-          amount: Math.round(refundAmount * 100),
-          reason: "requested_by_customer",
+      const transaction = await prisma.paymentTransaction.findFirst({
+        where: { offerId: booking.offerId!, status: "SUCCESS" },
+      });
+
+      if (transaction?.stripePaymentIntentId) {
+        paymentIntentId = transaction.stripePaymentIntentId;
+        console.log(
+          "✅ PaymentIntent trouvé via transaction:",
+          paymentIntentId,
+        );
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { stripePaymentIntentId: paymentIntentId },
         });
-        stripeRefundId = refund.id;
-      } catch (stripeError) {
-        console.error("Erreur remboursement Stripe:", stripeError);
-        // Continue sans remboursement auto
+      }
+
+      if (!paymentIntentId) {
+        const payment = booking.payments[0];
+        if (payment?.providerTransactionId) {
+          paymentIntentId = payment.providerTransactionId;
+          console.log("✅ PaymentIntent trouvé via payment:", paymentIntentId);
+          await prisma.booking.update({
+            where: { id: booking.id },
+            data: { stripePaymentIntentId: paymentIntentId },
+          });
+        }
       }
     }
 
-    // Mettre à jour la réservation
+    let stripeRefundId = null;
+    if (
+      booking.paymentStatus === "PAID" &&
+      paymentIntentId &&
+      refundAmount > 0
+    ) {
+      try {
+        console.log(
+          `💰 Tentative remboursement ${refundAmount} TND (${refundPercentage}%) pour paymentIntent: ${paymentIntentId}`,
+        );
+
+        const rate = await getCurrentExchangeRate();
+        console.log(`📊 Taux de change: 1 TND = ${rate} EUR`);
+
+        const refundAmountInCents = await tndToStripeAmount(refundAmount);
+        console.log(
+          `💰 Montant remboursement: ${refundAmount} TND = ${refundAmountInCents / 100} EUR`,
+        );
+
+        const paymentIntent =
+          await stripe.paymentIntents.retrieve(paymentIntentId);
+        const originalAmountInCents = paymentIntent.amount;
+        console.log(
+          `💰 Montant original Stripe: ${originalAmountInCents / 100} ${paymentIntent.currency.toUpperCase()}`,
+        );
+
+        let finalRefundAmount = refundAmountInCents;
+        if (refundAmountInCents > originalAmountInCents) {
+          console.warn(
+            `⚠️ Montant remboursement (${refundAmountInCents / 100} EUR) > montant original (${originalAmountInCents / 100} EUR), ajustement...`,
+          );
+          finalRefundAmount = originalAmountInCents;
+        }
+
+        const refund = await stripe.refunds.create({
+          payment_intent: paymentIntentId,
+          amount: finalRefundAmount,
+          reason: "requested_by_customer",
+        });
+
+        stripeRefundId = refund.id;
+        console.log("✅ Remboursement Stripe effectué:", refund.id);
+      } catch (stripeError) {
+        console.error("❌ Erreur remboursement Stripe:", stripeError);
+      }
+    }
+
     const updatedBooking = await prisma.booking.update({
       where: { id },
       data: {
@@ -146,10 +201,8 @@ export async function POST(
       },
     });
 
-    // Mettre à jour les dates disponibles dans le calendrier
     let currentDate = new Date(booking.checkIn);
     while (currentDate < new Date(booking.checkOut)) {
-      const dateStr = currentDate.toISOString().split("T")[0];
       await prisma.availabilityCalendar.upsert({
         where: {
           listingId_date: {
@@ -167,28 +220,78 @@ export async function POST(
       currentDate.setDate(currentDate.getDate() + 1);
     }
 
-    // Notifier l'autre partie
-    const otherUserId = isTenant ? booking.ownerId : booking.tenantId;
+    // ============================================
+    // ✅ NOTIFICATIONS CORRIGÉES - LES DEUX PARTIES
+    // ============================================
+
+    // 1. NOTIFICATION POUR LE LOCATAIRE
+    const tenantRefundMessage =
+      refundAmount > 0
+        ? `✅ Un remboursement de ${refundAmount} TND a été initié. Il sera crédité sur votre carte bancaire sous 2 à 4 jours ouvrés (délai bancaire standard).`
+        : `❌ Aucun remboursement n'a été effectué car l'annulation est trop tardive.`;
 
     await prisma.notification.create({
       data: {
-        userId: otherUserId!,
+        userId: booking.tenantId,
         type: "BOOKING_CANCELLED",
         title: isTenant
-          ? "❌ Réservation annulée"
-          : "⚠️ Le propriétaire a annulé votre réservation",
-        content: `${booking.listing.title} - ${refundAmount > 0 ? `Remboursement: ${refundAmount} TND` : "Aucun remboursement"}`,
+          ? "✅ Votre réservation a été annulée"
+          : "❌ Le propriétaire a annulé votre réservation",
+        content: `${
+          isTenant ? "Vous avez annulé" : "Le propriétaire a annulé"
+        } la réservation pour "${booking.listing.title}".\n\n${tenantRefundMessage}${
+          refundAmount > 0
+            ? `\n\n💰 Montant remboursé : ${refundAmount} TND (soit ${refundPercentage}% du montant total).`
+            : ""
+        }`,
         channels: ["IN_APP", "EMAIL"],
         data: {
           bookingId: booking.id,
           listingTitle: booking.listing.title,
           refundAmount: refundAmount,
+          refundPercentage: refundPercentage,
           cancelledBy: isTenant ? "TENANT" : "OWNER",
+          expectedDelay: "2 à 4 jours ouvrés",
         },
       },
     });
 
-    // Notifier aussi l'admin
+    // 2. NOTIFICATION POUR LE PROPRIÉTAIRE
+    const ownerRefundMessage =
+      refundAmount > 0
+        ? `Le locataire a été remboursé de ${refundAmount} TND (${refundPercentage}% du montant total).${
+            refundPercentage < 100
+              ? ` Vous conservez ${booking.totalPrice - refundAmount} TND.`
+              : " Vous ne recevrez rien pour cette réservation."
+          }`
+        : "Aucun remboursement n'a été effectué. Vous conservez l'intégralité du paiement.";
+
+    await prisma.notification.create({
+      data: {
+        userId: booking.ownerId!,
+        type: "BOOKING_CANCELLED",
+        title: isOwner
+          ? "✅ Vous avez annulé une réservation"
+          : "❌ Un locataire a annulé sa réservation",
+        content: `${isOwner ? "Vous avez annulé" : "Le locataire a annulé"} la réservation pour "${booking.listing.title}".\n\n${ownerRefundMessage}${
+          isOwner && refundAmount > 0
+            ? `\n\n⚠️ Pénalité : Cette annulation est comptabilisée dans votre historique.`
+            : ""
+        }`,
+        channels: ["IN_APP", "EMAIL"],
+        data: {
+          bookingId: booking.id,
+          listingTitle: booking.listing.title,
+          refundAmount: refundAmount,
+          refundPercentage: refundPercentage,
+          cancelledBy: isTenant ? "TENANT" : "OWNER",
+          ownerKept:
+            refundPercentage < 100 ? booking.totalPrice - refundAmount : 0,
+        },
+      },
+    });
+
+    // 3. NOTIFICATION POUR L'ADMIN
     const admins = await prisma.user.findMany({ where: { role: "ADMIN" } });
     for (const admin of admins) {
       await prisma.notification.create({
@@ -196,28 +299,32 @@ export async function POST(
           userId: admin.id,
           type: "SYSTEM_ALERT",
           title: "📢 Annulation de réservation",
-          content: `${isTenant ? "Locataire" : "Propriétaire"} a annulé: ${booking.listing.title} - Remboursement: ${refundAmount} TND`,
+          content: `${isTenant ? "Locataire" : "Propriétaire"} a annulé: ${booking.listing.title} - Remboursement: ${refundAmount} TND (${refundPercentage}%)`,
           channels: ["IN_APP"],
-          data: { bookingId: booking.id },
+          data: {
+            bookingId: booking.id,
+            cancelledBy: isTenant ? "TENANT" : "OWNER",
+            refundAmount: refundAmount,
+          },
         },
       });
     }
 
-    // Si c'est le propriétaire qui annule, ajouter une pénalité
+    // 4. PÉNALITÉ POUR LE PROPRIÉTAIRE (si c'est lui qui annule)
     if (isOwner) {
       await prisma.userStats.update({
         where: { userId: booking.ownerId! },
         data: { cancellationCount: { increment: 1 } },
       });
 
-      // Récupérer le nombre d'annulations du propriétaire
       const ownerStats = await prisma.userStats.findUnique({
         where: { userId: booking.ownerId! },
       });
 
       let penaltyMessage = "";
       if (ownerStats?.cancellationCount === 1) {
-        penaltyMessage = "⚠️ Avertissement: première annulation.";
+        penaltyMessage =
+          "⚠️ Avertissement: première annulation. Deux autres annulations entraîneront une suspension.";
       } else if (ownerStats?.cancellationCount === 2) {
         penaltyMessage =
           "⚠️ Deuxième annulation: votre listing est désactivé pour 7 jours.";
@@ -226,8 +333,20 @@ export async function POST(
           data: { status: "INACTIVE", blockReason: "Annulations répétées" },
         });
       } else if (ownerStats && ownerStats.cancellationCount >= 3) {
+        // ✅ AMÉLIORATION CAS 7 : Désactiver TOUS les listings du propriétaire
         penaltyMessage =
-          "⚠️ Troisième annulation: votre compte est suspendu temporairement.";
+          "⚠️ Troisième annulation: votre compte est suspendu temporairement pour 30 jours. Tous vos listings ont été désactivés.";
+
+        // Désactiver TOUS les listings du propriétaire
+        await prisma.listing.updateMany({
+          where: { ownerId: booking.ownerId! },
+          data: {
+            status: "INACTIVE",
+            blockReason: "Compte suspendu pour annulations répétées",
+          },
+        });
+
+        // Suspendre le compte
         await prisma.user.update({
           where: { id: booking.ownerId! },
           data: {
@@ -237,7 +356,6 @@ export async function POST(
         });
       }
 
-      // Notifier le propriétaire de la pénalité
       if (penaltyMessage) {
         await prisma.notification.create({
           data: {

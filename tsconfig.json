@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-, "prisma/seed.ts", "app/[locale]/terms/page.etsx"  ],
+, "prisma/seed.ts", "app/[locale]/terms/page.etsx", "scripts/test-annulations.js"  ],
   "exclude": ["node_modules"]
 }

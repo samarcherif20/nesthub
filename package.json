@@ -15,7 +15,8 @@
     "sync:clerk": "tsx scripts/sync-clerk-users.ts",
     "cron:start": "node scripts/cron-dev.js",
     "cron:run-all": "node scripts/cron-dev.js --run-all",
-    "cron:run": "node scripts/cron-dev.js --run"
+    "cron:run": "node scripts/cron-dev.js --run",
+    "test:annulations": "ts-node --project tsconfig.scripts.json scripts/test-annulations.js"
   },
   "dependencies": {
     "@azure/ai-form-recognizer": "^5.1.0",

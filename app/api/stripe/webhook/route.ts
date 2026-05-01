@@ -131,22 +131,22 @@ async function handlePaymentSuccess(paymentIntent: any) {
     bookingReference = existingBooking.reference;
     console.log("✅ Réservation déjà existante:", bookingReference);
 
-    // ✅ Mettre à jour paymentStatus si nécessaire
-    if (existingBooking.paymentStatus !== "PAID") {
-      await prisma.booking.update({
-        where: { id: existingBooking.id },
-        data: {
-          paymentStatus: "PAID",
-          status: "CONFIRMED",
-        },
-      });
-      console.log(
-        "✅ Réservation mise à jour avec paymentStatus PAID:",
-        bookingReference,
-      );
-    }
+    // ✅ CRITICAL: Mettre à jour avec stripePaymentIntentId
+    await prisma.booking.update({
+      where: { id: existingBooking.id },
+      data: {
+        paymentStatus: "PAID",
+        status: "CONFIRMED",
+        stripePaymentIntentId: paymentIntent.id, // ← AJOUTÉ !
+        confirmedAt: new Date(),
+      },
+    });
+    console.log(
+      "✅ Réservation mise à jour avec stripePaymentIntentId:",
+      paymentIntent.id,
+    );
   } else {
-    // 4. Créer la réservation (première fois)
+    // 4. Créer la réservation AVEC stripePaymentIntentId
     const newBooking = await prisma.booking.create({
       data: {
         reference: `NH-${Date.now()}-${transaction.offerId.slice(-6)}`,
@@ -165,25 +165,24 @@ async function handlePaymentSuccess(paymentIntent: any) {
         status: "CONFIRMED",
         paymentStatus: "PAID",
         offerId: transaction.offerId,
+        stripePaymentIntentId: paymentIntent.id, // ← AJOUTÉ !
         confirmedAt: new Date(),
       },
     });
     bookingId = newBooking.id;
     bookingReference = newBooking.reference;
     console.log(
-      "✅ Réservation créée avec paymentStatus PAID:",
-      bookingReference,
+      "✅ Réservation créée avec stripePaymentIntentId:",
+      paymentIntent.id,
     );
   }
 
-  // 5. Créer ou mettre à jour l'enregistrement de paiement (CORRIGÉ)
-  // Chercher un paiement existant pour cette réservation
+  // 5. Créer ou mettre à jour l'enregistrement de paiement
   const existingPayment = await prisma.payment.findFirst({
     where: { bookingId: bookingId },
   });
 
   if (existingPayment) {
-    // Mettre à jour le paiement existant
     await prisma.payment.update({
       where: { id: existingPayment.id },
       data: {
@@ -194,7 +193,6 @@ async function handlePaymentSuccess(paymentIntent: any) {
     });
     console.log("✅ Paiement mis à jour:", existingPayment.id);
   } else {
-    // Créer un nouveau paiement
     await prisma.payment.create({
       data: {
         bookingId: bookingId,

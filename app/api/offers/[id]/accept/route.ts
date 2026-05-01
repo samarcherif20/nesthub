@@ -1,3 +1,5 @@
+// app/api/offers/[id]/accept/route.ts (version corrigée)
+
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
@@ -69,7 +71,7 @@ export async function POST(
     const endDate = new Date(offer.checkOut);
     const datesToBlock: Date[] = [];
 
-    // Générer toutes les dates entre checkIn et checkOut
+    // Générer toutes les dates entre checkIn et checkOut (excluant checkOut)
     for (let d = new Date(startDate); d < endDate; d.setDate(d.getDate() + 1)) {
       datesToBlock.push(new Date(d));
     }
@@ -78,49 +80,65 @@ export async function POST(
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
-    // Bloquer chaque date dans BlockedDate
+    // 🔧 CORRECTION 1: Bloquer chaque date dans BlockedDate
     for (const date of datesToBlock) {
-      await prisma.blockedDate.upsert({
+      // Vérifier si un blocage existe déjà pour cette date
+      const existingBlock = await prisma.blockedDate.findFirst({
         where: {
-          listingId_startDate_endDate: {
+          listingId: offer.listingId,
+          startDate: date,
+        },
+      });
+
+      if (existingBlock) {
+        // Mettre à jour l'existant
+        await prisma.blockedDate.update({
+          where: { id: existingBlock.id },
+          data: {
+            reason: `Réservation en attente de paiement - Expire le ${expiresAt.toLocaleString()}`,
+          },
+        });
+      } else {
+        // Créer un nouveau blocage
+        await prisma.blockedDate.create({
+          data: {
             listingId: offer.listingId,
             startDate: date,
             endDate: date,
+            reason: `Réservation en attente de paiement - Expire le ${expiresAt.toLocaleString()}`,
+            blockedById: user.id,
           },
-        },
-        update: {
-          reason: `Réservation en attente de paiement - Expire le ${expiresAt.toLocaleString()}`,
-        },
-        create: {
-          listingId: offer.listingId,
-          startDate: date,
-          endDate: date,
-          reason: `Réservation en attente de paiement - Expire le ${expiresAt.toLocaleString()}`,
-          blockedById: user.id,
-        },
-      });
+        });
+      }
     }
 
-    // Bloquer dans AvailabilityCalendar
+    // 🔧 CORRECTION 2: Bloquer dans AvailabilityCalendar
     for (const date of datesToBlock) {
-      await prisma.availabilityCalendar.upsert({
+      const existingCalendar = await prisma.availabilityCalendar.findFirst({
         where: {
-          listingId_date: {
-            listingId: offer.listingId,
-            date: date,
-          },
-        },
-        update: {
-          isAvailable: false,
-          blockedReason: `En attente de paiement - Expire dans 24h`,
-        },
-        create: {
           listingId: offer.listingId,
           date: date,
-          isAvailable: false,
-          blockedReason: `En attente de paiement - Expire dans 24h`,
         },
       });
+
+      if (existingCalendar) {
+        await prisma.availabilityCalendar.update({
+          where: { id: existingCalendar.id },
+          data: {
+            isAvailable: false,
+            blockedReason: `En attente de paiement - Expire dans 24h`,
+          },
+        });
+      } else {
+        await prisma.availabilityCalendar.create({
+          data: {
+            listingId: offer.listingId,
+            date: date,
+            isAvailable: false,
+            blockedReason: `En attente de paiement - Expire dans 24h`,
+          },
+        });
+      }
     }
 
     // ✅ 2. Enregistrer le pending booking pour libération automatique

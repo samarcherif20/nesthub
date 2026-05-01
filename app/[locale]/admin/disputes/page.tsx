@@ -1,109 +1,56 @@
-// app/[locale]/(dashboard)/admin/disputes/page.tsx
+// app/[locale]/admin/disputes/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
-import Link from "next/link";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Alert from "@/components/ui/Alert";
 import {
   IoSearchOutline,
-  IoNotificationsOutline,
-  IoHelpCircleOutline,
-  IoSettingsOutline,
-  IoLogOutOutline,
-  IoShareOutline,
-  IoReceiptOutline,
-  IoHomeOutline,
-  IoChatbubbleOutline,
-  IoFilterOutline,
   IoCheckmarkCircleOutline,
   IoCloseCircleOutline,
   IoAlertCircleOutline,
   IoTimeOutline,
-  IoChevronForwardOutline,
   IoSendOutline,
-  IoImagesOutline,
   IoRefreshOutline,
-  IoArchiveOutline,
-  IoPersonCircleOutline,
-  IoEllipsisVerticalOutline,
   IoWalletOutline,
-  IoHammerOutline,
+  IoChatbubbleOutline,
+  IoImageOutline,
+  IoCloseOutline,
+  IoDocumentTextOutline,
+  IoHomeOutline,
+  IoCalendarOutline,
+  IoLocationOutline,
+  IoCashOutline,
 } from "react-icons/io5";
-import { MdOutlineGavel } from "react-icons/md";
+import {
+  MdOutlineGavel,
+  MdOutlineCleaningServices,
+  MdOutlineNoiseAware,
+} from "react-icons/md";
 import { TbBoom } from "react-icons/tb";
+import { GiBrokenWall } from "react-icons/gi";
+import { FaMoneyBillWave, FaCalendarTimes } from "react-icons/fa";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import AlertBanner from "@/components/ui/Alert";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
-// ─── pip helper ───────────────────────────────────────────────────────────────
-const pipAvatar = (url: string) => `/api/users/avatar?url=${encodeURIComponent(url)}`;
+const pipAvatar = (url: string) =>
+  `/api/users/avatar?url=${encodeURIComponent(url)}`;
+const pipImage = (url: string) =>
+  `/api/listings/image?url=${encodeURIComponent(url)}`;
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-function AdminSidebar({ active }: { active: string }) {
-  const navItems = [
-    { label: "Dashboard", href: "/fr/admin", icon: <IoShareOutline /> },
-    { label: "Transactions", href: "/fr/admin/transactions", icon: <IoReceiptOutline /> },
-    { label: "Property Listings", href: "/fr/admin/properties", icon: <IoHomeOutline /> },
-    { label: "Disputes", href: "/fr/admin/disputes", icon: <MdOutlineGavel /> },
-    { label: "Moderation", href: "/fr/admin/moderation", icon: <IoChatbubbleOutline /> },
-  ];
+// ✅ Fonction dédiée aux preuves (evidence)
+const pipEvidence = (url: string) => {
+  // Si l'URL est déjà complète (ex: https://...blob...)
+  if (url.startsWith("http")) return url;
+  // Pour les URLs dans /uploads/ (fichiers locaux)
+  if (url.startsWith("/uploads/")) return url;
+  // Fallback : utiliser l'API des listings
+  return `/api/listings/image?url=${encodeURIComponent(url)}`;
+};
 
-  return (
-    <aside className="h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-950 flex flex-col py-8 px-4 gap-6 z-50 border-r border-slate-100 dark:border-slate-800">
-      <div className="px-4">
-        <span className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-widest">
-          Nesthub Atlas
-        </span>
-        <div className="flex items-center gap-3 mt-5">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-            A
-          </div>
-          <div>
-            <p className="text-sm font-bold text-slate-900 dark:text-white leading-none">Admin Dashboard</p>
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider mt-0.5">Management Suite</p>
-          </div>
-        </div>
-      </div>
-
-      <nav className="flex-1 flex flex-col gap-0.5">
-        {navItems.map(({ label, href, icon }) => (
-          <Link
-            key={label}
-            href={href}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${
-              active === label
-                ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-slate-900 shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-blue-500 dark:hover:text-blue-300 hover:translate-x-1"
-            }`}
-          >
-            <span className="text-base">{icon}</span>
-            {label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="space-y-1">
-        <Link href="/fr/admin/settings" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-500 transition-colors">
-          <IoSettingsOutline className="text-base" />
-          Settings
-        </Link>
-        <Link href="/fr/logout" className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-blue-500 transition-colors">
-          <IoLogOutOutline className="text-base" />
-          Logout
-        </Link>
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-          <button className="w-full py-2.5 px-4 bg-[#005cab] text-white rounded-xl font-semibold text-sm shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
-            <IoHelpCircleOutline className="text-sm" />
-            Help Center
-          </button>
-        </div>
-      </div>
-    </aside>
-  );
-}
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 type Severity = "HIGH" | "MEDIUM" | "LOW";
-type DisputeStatus = "OPEN" | "IN_REVIEW" | "RESOLVED" | "DENIED" | "ARCHIVED";
+type DisputeStatus = "OPEN" | "IN_REVIEW" | "RESOLVED" | "REJECTED";
 
 interface DisputeMessage {
   id: string;
@@ -124,600 +71,850 @@ interface Dispute {
     lastName: string;
     image?: string;
   };
-  subject: string;
+  type: string;
   status: DisputeStatus;
   severity: Severity;
-  date: string;
+  createdAt: string;
+  description: string;
+  evidence?: string[];
   listing?: {
     id: string;
     title: string;
     image?: string;
+    location?: string;
+    governorate?: string;
+    delegation?: string;
+  };
+  booking?: {
+    id: string;
+    checkIn: string;
+    checkOut: string;
+    totalPrice: number;
+    nights?: number;
   };
   messages: DisputeMessage[];
   refundAmount?: number;
+  resolvedAmount?: number;
+  resolution?: string;
 }
 
-interface DisputeStats {
-  avgResolutionHours: number;
-  totalReported: number;
-  topSubject: string;
-  pendingPayouts: number;
-}
+const STATUS_CONFIG: Record<
+  DisputeStatus,
+  { label: string; color: string; bg: string; dot: string }
+> = {
+  OPEN: {
+    label: "En attente",
+    color: "text-red-600",
+    bg: "bg-red-50 dark:bg-red-950/30",
+    dot: "bg-red-500",
+  },
+  IN_REVIEW: {
+    label: "En examen",
+    color: "text-amber-600",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    dot: "bg-amber-500",
+  },
+  RESOLVED: {
+    label: "Résolu",
+    color: "text-green-600",
+    bg: "bg-green-50 dark:bg-green-950/30",
+    dot: "bg-green-500",
+  },
+  REJECTED: {
+    label: "Rejeté",
+    color: "text-gray-500",
+    bg: "bg-gray-50 dark:bg-gray-800",
+    dot: "bg-gray-400",
+  },
+};
 
-// ─── Severity badge ───────────────────────────────────────────────────────────
-function SeverityBadge({ severity }: { severity: Severity }) {
-  const map: Record<Severity, { dot: string; text: string; label: string }> = {
-    HIGH: { dot: "bg-red-500 animate-pulse", text: "text-red-600 dark:text-red-400", label: "High" },
-    MEDIUM: { dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", label: "Medium" },
-    LOW: { dot: "bg-blue-400", text: "text-blue-500 dark:text-blue-400", label: "Low" },
-  };
-  const { dot, text, label } = map[severity];
+const SEVERITY_CONFIG: Record<
+  Severity,
+  { label: string; color: string; bg: string; icon: JSX.Element }
+> = {
+  HIGH: {
+    label: "Élevée",
+    color: "text-red-600",
+    bg: "bg-red-50 dark:bg-red-950/30",
+    icon: <TbBoom className="text-red-500" />,
+  },
+  MEDIUM: {
+    label: "Moyenne",
+    color: "text-amber-600",
+    bg: "bg-amber-50 dark:bg-amber-950/30",
+    icon: <IoAlertCircleOutline className="text-amber-500" />,
+  },
+  LOW: {
+    label: "Basse",
+    color: "text-blue-600",
+    bg: "bg-blue-50 dark:bg-blue-950/30",
+    icon: <IoTimeOutline className="text-blue-500" />,
+  },
+};
+
+const TYPE_CONFIG: Record<
+  string,
+  { label: string; icon: JSX.Element; color: string }
+> = {
+  DAMAGE: {
+    label: "Dommages",
+    icon: <GiBrokenWall className="text-lg" />,
+    color: "bg-red-100 text-red-700",
+  },
+  CLEANING: {
+    label: "Propreté",
+    icon: <MdOutlineCleaningServices className="text-lg" />,
+    color: "bg-amber-100 text-amber-700",
+  },
+  MISREPRESENTATION: {
+    label: "Non conforme",
+    icon: <IoHomeOutline className="text-lg" />,
+    color: "bg-orange-100 text-orange-700",
+  },
+  NOISE: {
+    label: "Bruit",
+    icon: <MdOutlineNoiseAware className="text-lg" />,
+    color: "bg-purple-100 text-purple-700",
+  },
+  PAYMENT: {
+    label: "Paiement",
+    icon: <FaMoneyBillWave className="text-lg" />,
+    color: "bg-green-100 text-green-700",
+  },
+  CANCELLATION: {
+    label: "Annulation",
+    icon: <FaCalendarTimes className="text-lg" />,
+    color: "bg-blue-100 text-blue-700",
+  },
+  OTHER: {
+    label: "Autre",
+    icon: <IoDocumentTextOutline className="text-lg" />,
+    color: "bg-gray-100 text-gray-700",
+  },
+};
+
+function EvidenceGallery({ images }: { images?: string[] }) {
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+
+  if (!images || images.length === 0) {
+    return (
+      <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-center">
+        <IoImageOutline className="text-2xl text-slate-400 mx-auto mb-2" />
+        <p className="text-xs text-slate-400">Aucune preuve fournie</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center gap-1.5">
-      <div className={`w-2 h-2 rounded-full ${dot}`} />
-      <span className={`text-xs font-bold uppercase tracking-tight ${text}`}>{label}</span>
-    </div>
-  );
-}
+    <div className="mt-4">
+      <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1">
+        <IoImageOutline /> Preuves ({images.length})
+      </p>
+      <div className="flex flex-wrap gap-2">
+        {images.map((img, idx) => (
+          <button
+            key={idx}
+            onClick={() => setSelectedImage(img)}
+            className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-slate-200 dark:border-slate-700 hover:border-indigo-500 transition-all group"
+          >
+            {!imageErrors[img] ? (
+              <img
+                src={pipEvidence(img)}
+                alt={`Preuve ${idx + 1}`}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                onError={() =>
+                  setImageErrors((prev) => ({ ...prev, [img]: true }))
+                }
+              />
+            ) : (
+              <div className="w-full h-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <IoImageOutline className="text-slate-400 text-2xl" />
+              </div>
+            )}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
+          </button>
+        ))}
+      </div>
 
-// ─── Subject chip ─────────────────────────────────────────────────────────────
-function SubjectChip({ subject }: { subject: string }) {
-  const icons: Record<string, React.ReactNode> = {
-    Cleaning: <TbBoom className="text-xs" />,
-    Deposit: <IoWalletOutline className="text-xs" />,
-    Noise: <IoAlertCircleOutline className="text-xs" />,
-    Refund: <IoReceiptOutline className="text-xs" />,
-    Damage: <IoHammerOutline className="text-xs" />,
-  };
-  return (
-    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-medium">
-      {icons[subject] ?? <IoAlertCircleOutline className="text-xs" />}
-      {subject}
-    </span>
-  );
-}
-
-// ─── Avatar ───────────────────────────────────────────────────────────────────
-function Avatar({ name, image, size = 32 }: { name: string; size?: number; image?: string }) {
-  const [err, setErr] = useState(false);
-  const initials = name.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
-  const colors = ["bg-blue-200 text-blue-800", "bg-purple-200 text-purple-800", "bg-teal-200 text-teal-800", "bg-amber-200 text-amber-800", "bg-pink-200 text-pink-800"];
-  const color = colors[name.charCodeAt(0) % colors.length];
-  return (
-    <div
-      className={`rounded-full overflow-hidden flex items-center justify-center font-bold flex-shrink-0 ${!image || err ? color : "bg-slate-200"}`}
-      style={{ width: size, height: size, fontSize: size * 0.35 }}
-    >
-      {image && !err ? (
-        <img src={pipAvatar(image)} alt={name} className="w-full h-full object-cover" onError={() => setErr(true)} />
-      ) : (
-        initials
+      {/* Modal d'image agrandie */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-slate-300 transition"
+            >
+              <IoCloseOutline className="text-2xl" />
+            </button>
+            <img
+              src={pipEvidence(selectedImage)}
+              alt="Preuve agrandie"
+              className="max-w-full max-h-[85vh] object-contain rounded-xl"
+            />
+          </div>
+        </div>
       )}
     </div>
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+function DisputeDetailPanel({
+  dispute,
+  onResolve,
+  onReject,
+  actionLoading,
+  onSendMessage,
+  sendingMessage,
+}: any) {
+  const [newMessage, setNewMessage] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typeConfig = TYPE_CONFIG[dispute.type] || TYPE_CONFIG.OTHER;
+  const statusConfig = STATUS_CONFIG[dispute.status];
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [dispute.messages]);
+
+  const handleSend = () => {
+    if (!newMessage.trim()) return;
+    onSendMessage(dispute.id, newMessage);
+    setNewMessage("");
+  };
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-indigo-50/40 to-violet-50/20">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold ${typeConfig.color}`}
+            >
+              {typeConfig.icon}
+              {typeConfig.label}
+            </span>
+            <span
+              className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs font-bold ${statusConfig.bg} ${statusConfig.color}`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${statusConfig.dot}`}
+              ></span>
+              {statusConfig.label}
+            </span>
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-bold ${SEVERITY_CONFIG[dispute.severity].bg} ${SEVERITY_CONFIG[dispute.severity].color}`}
+            >
+              {SEVERITY_CONFIG[dispute.severity].icon}
+              {SEVERITY_CONFIG[dispute.severity].label}
+            </span>
+          </div>
+          <span className="font-mono text-xs text-slate-400">
+            #{dispute.reference?.slice(-8) || dispute.id.slice(-8)}
+          </span>
+        </div>
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+          {dispute.listing?.title || "Sans titre"}
+        </h3>
+        {dispute.listing?.location && (
+          <p className="text-xs text-slate-500 flex items-center gap-1 mt-1">
+            <IoLocationOutline className="text-xs" />
+            {dispute.listing.location}
+          </p>
+        )}
+      </div>
+
+      {/* Contenu scrollable */}
+      <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">
+        {/* Informations du rapporteur */}
+        <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center overflow-hidden">
+            {dispute.reporter.image ? (
+              <img
+                src={pipAvatar(dispute.reporter.image)}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-indigo-600 font-bold text-sm">
+                {dispute.reporter.firstName?.charAt(0)}
+                {dispute.reporter.lastName?.charAt(0)}
+              </span>
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+              {dispute.reporter.firstName} {dispute.reporter.lastName}
+            </p>
+            <p className="text-xs text-slate-500">A ouvert ce litige</p>
+          </div>
+        </div>
+
+        {/* Détails du séjour */}
+        {dispute.booking && (
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl">
+            <p className="text-xs font-semibold text-slate-500 mb-3 flex items-center gap-1">
+              <IoCalendarOutline /> Détails du séjour
+            </p>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Dates:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {format(new Date(dispute.booking.checkIn), "dd MMM yyyy", {
+                    locale: fr,
+                  })}{" "}
+                  -{" "}
+                  {format(new Date(dispute.booking.checkOut), "dd MMM yyyy", {
+                    locale: fr,
+                  })}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Nuits:</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">
+                  {dispute.booking.nights ||
+                    Math.ceil(
+                      (new Date(dispute.booking.checkOut).getTime() -
+                        new Date(dispute.booking.checkIn).getTime()) /
+                        (1000 * 3600 * 24),
+                    )}{" "}
+                  nuits
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Montant total:</span>
+                <span className="font-bold text-slate-900 dark:text-white">
+                  {dispute.booking.totalPrice.toLocaleString("fr-FR")} TND
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Montant demandé */}
+        {dispute.refundAmount && (
+          <div className="p-4 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800">
+            <p className="text-xs font-semibold text-amber-600 mb-1 flex items-center gap-1">
+              <IoCashOutline /> Montant demandé
+            </p>
+            <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
+              {dispute.refundAmount.toLocaleString("fr-FR")} TND
+            </p>
+          </div>
+        )}
+
+        {/* Description */}
+        <div>
+          <p className="text-xs font-semibold text-slate-500 mb-2 flex items-center gap-1">
+            <IoDocumentTextOutline /> Description du litige
+          </p>
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
+            <p className="text-sm text-slate-600 dark:text-slate-400 whitespace-pre-wrap">
+              {dispute.description || "Aucune description fournie"}
+            </p>
+          </div>
+        </div>
+
+        {/* Preuves */}
+        <EvidenceGallery images={dispute.evidence} />
+
+        {/* Résolution (si résolu) */}
+        {dispute.resolution && (
+          <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-xl border border-green-200 dark:border-green-800">
+            <p className="text-xs font-semibold text-green-600 mb-1 flex items-center gap-1">
+              <IoCheckmarkCircleOutline /> Résolution
+            </p>
+            <p className="text-sm text-green-700 dark:text-green-400">
+              {dispute.resolution}
+            </p>
+            {dispute.resolvedAmount && (
+              <p className="text-sm font-bold text-green-600 mt-2">
+                Remboursement accordé:{" "}
+                {dispute.resolvedAmount.toLocaleString("fr-FR")} TND
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Messages */}
+        <div>
+          <p className="text-xs font-semibold text-slate-500 mb-3 flex items-center gap-1">
+            <IoChatbubbleOutline /> Conversation ({dispute.messages.length})
+          </p>
+          <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+            {dispute.messages.length === 0 ? (
+              <div className="text-center py-6 text-slate-400">
+                <IoChatbubbleOutline className="text-2xl mx-auto mb-2 opacity-50" />
+                <p className="text-xs">Aucun message pour le moment</p>
+              </div>
+            ) : (
+              dispute.messages.map((msg: DisputeMessage) => {
+                const isUser =
+                  msg.senderRole === "TENANT" || msg.senderRole === "OWNER";
+                const isOwner = msg.senderRole === "OWNER";
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${isUser ? (isOwner ? "items-start" : "items-start") : "items-end"}`}
+                  >
+                    <div
+                      className={`px-4 py-2 rounded-2xl text-sm max-w-[85%] ${
+                        isUser
+                          ? "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-tl-none"
+                          : "bg-indigo-600 text-white rounded-tr-none"
+                      }`}
+                    >
+                      <p className="text-xs font-medium mb-1 opacity-70">
+                        {msg.senderName}{" "}
+                        {isUser
+                          ? isOwner
+                            ? "(Propriétaire)"
+                            : "(Locataire)"
+                          : "(Admin)"}
+                      </p>
+                      {msg.content}
+                      {msg.attachments?.map((url, i) => (
+                        <img
+                          key={i}
+                          src={pipImage(url)}
+                          className="mt-2 rounded-lg max-w-full h-auto max-h-32 object-cover"
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-slate-400 mt-1">
+                      {format(new Date(msg.createdAt), "dd MMM HH:mm", {
+                        locale: fr,
+                      })}
+                    </span>
+                  </div>
+                );
+              })
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="p-4 border-t border-slate-100 dark:border-slate-800 space-y-3 bg-slate-50 dark:bg-slate-800/30">
+        <div className="flex items-center gap-2">
+          <input
+            type="text"
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
+            placeholder="Ajouter une réponse..."
+            className="flex-1 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+          />
+          <button
+            onClick={handleSend}
+            disabled={sendingMessage || !newMessage.trim()}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all disabled:opacity-50"
+          >
+            <IoSendOutline className="text-sm" />
+          </button>
+        </div>
+
+        {(dispute.status === "OPEN" || dispute.status === "IN_REVIEW") && (
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => onResolve(dispute.id, dispute.refundAmount)}
+              disabled={actionLoading === dispute.id}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <IoCheckmarkCircleOutline /> Résoudre
+            </button>
+            <button
+              onClick={() => onReject(dispute.id)}
+              disabled={actionLoading === dispute.id}
+              className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <IoCloseCircleOutline /> Rejeter
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDisputesPage() {
   const { getToken } = useAuth();
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
-  const [stats, setStats] = useState<DisputeStats>({
-    avgResolutionHours: 4.2,
-    totalReported: 128,
-    topSubject: "Cleaning",
-    pendingPayouts: 2450,
-  });
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"active" | "archive">("active");
-  const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const [newMessage, setNewMessage] = useState("");
-  const [sendingMessage, setSendingMessage] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const authFetch = useCallback(
-    async (url: string, options: RequestInit = {}) => {
-      const token = await getToken({ template: "my-app-template" });
-      return fetch(url, {
-        ...options,
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          ...(options.headers ?? {}),
-        },
-      });
-    },
-    [getToken]
-  );
+  const [alert, setAlert] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+  const [stats, setStats] = useState({
+    open: 0,
+    inReview: 0,
+    resolved: 0,
+    totalRefund: 0,
+  });
 
   const fetchDisputes = useCallback(async () => {
     setLoading(true);
     try {
+      const token = await getToken({ template: "my-app-template" });
       const params = new URLSearchParams({
-        status: tab === "active" ? "OPEN,IN_REVIEW" : "RESOLVED,DENIED,ARCHIVED",
+        status: tab === "active" ? "OPEN,IN_REVIEW" : "RESOLVED,REJECTED",
         ...(search && { search }),
       });
-      const res = await authFetch(`/api/admin/disputes?${params}`);
+      const res = await fetch(`/api/admin/disputes?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.ok) {
         const data = await res.json();
-        const items: Dispute[] = data.disputes ?? [];
-        setDisputes(items);
-        if (data.stats) setStats(data.stats);
-        if (items.length > 0 && !selectedDispute) {
-          setSelectedDispute(items[0]);
+        setDisputes(data.disputes || []);
+        if (data.stats) {
+          setStats({
+            open: data.stats.open || 0,
+            inReview: data.stats.inReview || 0,
+            resolved: data.stats.resolved || 0,
+            totalRefund: data.stats.totalRefund || 0,
+          });
+        }
+        if (data.disputes?.length > 0 && !selectedDispute) {
+          setSelectedDispute(data.disputes[0]);
         }
       }
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
     } finally {
       setLoading(false);
     }
-  }, [authFetch, tab, search, selectedDispute]);
+  }, [getToken, tab, search]);
 
   useEffect(() => {
     fetchDisputes();
   }, [fetchDisputes]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [selectedDispute?.messages]);
-
-  const handleAction = async (action: "resolve" | "deny", disputeId: string) => {
-    setActionLoading(action);
+  const handleResolve = async (disputeId: string, resolvedAmount?: number) => {
+    setActionLoading(disputeId);
     try {
-      const res = await authFetch(`/api/admin/disputes/${disputeId}/${action}`, { method: "POST" });
+      const token = await getToken({ template: "my-app-template" });
+      const res = await fetch(`/api/admin/disputes/${disputeId}/resolve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          resolution: "Résolu par l'administrateur",
+          resolvedAmount,
+        }),
+      });
       if (res.ok) {
-        setAlert({ type: "success", message: action === "resolve" ? "Litige résolu avec succès" : "Litige refusé" });
-        setSelectedDispute((p) => p ? { ...p, status: action === "resolve" ? "RESOLVED" : "DENIED" } : p);
+        setAlert({ type: "success", message: "Litige résolu avec succès" });
         fetchDisputes();
-      } else {
-        setAlert({ type: "error", message: "Erreur lors de l'action" });
       }
-    } catch {
-      setAlert({ type: "error", message: "Erreur de connexion" });
+    } catch (error) {
+      setAlert({ type: "error", message: "Erreur lors de la résolution" });
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedDispute) return;
+  const handleReject = async (disputeId: string) => {
+    setActionLoading(disputeId);
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const res = await fetch(`/api/admin/disputes/${disputeId}/reject`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason: "Litige rejeté par l'administrateur" }),
+      });
+      if (res.ok) {
+        setAlert({ type: "success", message: "Litige rejeté" });
+        fetchDisputes();
+      }
+    } catch (error) {
+      setAlert({ type: "error", message: "Erreur lors du rejet" });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleSendMessage = async (disputeId: string, content: string) => {
     setSendingMessage(true);
     try {
-      const res = await authFetch(`/api/admin/disputes/${selectedDispute.id}/messages`, {
+      const token = await getToken({ template: "my-app-template" });
+      const res = await fetch(`/api/admin/disputes/${disputeId}/messages`, {
         method: "POST",
-        body: JSON.stringify({ content: newMessage }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content }),
       });
       if (res.ok) {
         const msg = await res.json();
-        setSelectedDispute((p) =>
-          p ? { ...p, messages: [...p.messages, msg.message ?? { id: Date.now().toString(), senderId: "admin", senderName: "Admin", senderRole: "ADMIN", content: newMessage, createdAt: new Date().toISOString() }] } : p
+        setSelectedDispute((prev) =>
+          prev ? { ...prev, messages: [...prev.messages, msg] } : prev,
         );
-        setNewMessage("");
+        fetchDisputes();
       }
-    } catch (e) {
-      console.error(e);
+    } catch (error) {
+      console.error(error);
     } finally {
       setSendingMessage(false);
     }
   };
+
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
 
   const filtered = disputes.filter((d) => {
     if (!search) return true;
     const q = search.toLowerCase();
     return (
       d.reference.toLowerCase().includes(q) ||
-      d.reporter.firstName.toLowerCase().includes(q) ||
-      d.reporter.lastName.toLowerCase().includes(q) ||
-      d.subject.toLowerCase().includes(q)
+      `${d.reporter.firstName} ${d.reporter.lastName}`.toLowerCase().includes(q)
     );
   });
 
-  const fmtTime = (d: string) =>
-    new Date(d).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  const totalActive = stats.open + stats.inReview;
 
-  const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" });
-
-  // ── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="bg-[#f9f9ff] dark:bg-slate-950 text-slate-900 dark:text-slate-100 min-h-screen flex transition-colors">
-      <AdminSidebar active="Disputes" />
+    <div className="min-h-screen bg-[#f9f9ff] dark:bg-slate-950">
+      {alert && (
+        <AlertBanner
+          type={alert.type}
+          message={alert.message}
+          onClose={() => setAlert(null)}
+        />
+      )}
 
-      <main className="ml-64 flex-1 flex flex-col min-h-screen">
-        {/* ── Top nav ── */}
-        <header className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-3xl sticky top-0 z-40 w-full px-6 md:px-8 h-16 flex items-center justify-between shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search litiges..."
-                className="pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl text-sm w-60 md:w-80 focus:ring-4 focus:ring-blue-500/20 outline-none text-slate-900 dark:text-slate-100 placeholder-slate-400"
-              />
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h1 className="text-3xl font-bold font-headline tracking-tight text-slate-900 dark:text-white">
+              Gestion des litiges
+            </h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">
+              Examinez et résolvez les litiges signalés
+            </p>
+          </div>
+          <div className="flex gap-2 bg-slate-100 dark:bg-slate-800 rounded-full p-1">
+            <button
+              onClick={() => {
+                setTab("active");
+                setSelectedDispute(null);
+              }}
+              className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${tab === "active" ? "bg-white dark:bg-slate-900 text-indigo-600 shadow-sm" : "text-slate-500"}`}
+            >
+              En cours ({totalActive})
+            </button>
+            <button
+              onClick={() => {
+                setTab("archive");
+                setSelectedDispute(null);
+              }}
+              className={`px-6 py-2 rounded-full text-sm font-semibold transition-all ${tab === "archive" ? "bg-white dark:bg-slate-900 text-indigo-600 shadow-sm" : "text-slate-500"}`}
+            >
+              Archivés ({stats.resolved})
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <IoAlertCircleOutline className="text-red-600 text-lg" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">
+                  Ouverts
+                </p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {stats.open}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={fetchDisputes}
-              className="p-2 text-slate-500 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-full transition-all"
-              title="Refresh"
-            >
-              <IoRefreshOutline className="text-xl" />
-            </button>
-            <button className="p-2 text-slate-500 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-full transition-all">
-              <IoNotificationsOutline className="text-xl" />
-            </button>
-            <button className="p-2 text-slate-500 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-full transition-all">
-              <IoPersonCircleOutline className="text-xl" />
-            </button>
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <IoTimeOutline className="text-amber-600 text-lg" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">
+                  En examen
+                </p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {stats.inReview}
+                </p>
+              </div>
+            </div>
           </div>
-        </header>
-
-        {/* Alert */}
-        {alert && (
-          <div className="fixed top-20 right-5 z-[60] w-full max-w-sm">
-            <Alert type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <IoCheckmarkCircleOutline className="text-emerald-600 text-lg" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">
+                  Résolus
+                </p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                  {stats.resolved}
+                </p>
+              </div>
+            </div>
           </div>
-        )}
+          <div className="bg-gradient-to-br from-indigo-600 to-violet-600 rounded-2xl p-5 text-white shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                <IoWalletOutline className="text-white text-lg" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-white/70 uppercase">
+                  Remboursements
+                </p>
+                <p className="text-2xl font-bold text-white">
+                  {stats.totalRefund.toLocaleString("fr-FR")} TND
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-        <section className="p-5 md:p-8 space-y-7 flex-1 max-w-7xl mx-auto w-full">
+        {/* Search Bar */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher par référence, utilisateur..."
+              className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
+            />
+          </div>
+        </div>
 
-          {/* ── Header ── */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Dispute Management
-              </h1>
-              <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-                Review and resolve reported issues within the Atlas ecosystem.
+        {/* Main Grid */}
+        <div className="grid grid-cols-12 gap-6 h-[calc(100vh-380px)]">
+          {/* Liste des litiges */}
+          <div className="col-span-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col">
+            <div className="p-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
+              <p className="text-xs font-semibold text-slate-500">
+                {filtered.length} litige{filtered.length !== 1 ? "s" : ""}
               </p>
             </div>
-            <div className="flex gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-full">
-              <button
-                onClick={() => { setTab("active"); setSelectedDispute(null); }}
-                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
-                  tab === "active"
-                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                Active Cases
-              </button>
-              <button
-                onClick={() => { setTab("archive"); setSelectedDispute(null); }}
-                className={`px-5 py-2 rounded-full text-sm font-semibold transition-all ${
-                  tab === "archive"
-                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-                }`}
-              >
-                Archive
-              </button>
-            </div>
-          </div>
-
-          {/* ── Main 2-column grid ── */}
-          <div className="grid grid-cols-12 gap-6" style={{ height: "calc(100vh - 320px)", minHeight: 500 }}>
-
-            {/* ── Left: Case Queue ── */}
-            <div className="col-span-12 lg:col-span-8 bg-slate-50 dark:bg-slate-800/40 rounded-2xl flex flex-col overflow-hidden border border-slate-100 dark:border-slate-800">
-              {/* Queue header */}
-              <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 rounded-t-2xl">
-                <span className="font-bold text-base text-slate-900 dark:text-white">Case Queue</span>
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 rounded-full text-[10px] font-bold tracking-wider uppercase flex items-center gap-1">
-                    <IoFilterOutline className="text-xs" />
-                    Filter
-                  </span>
-                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-600">
-                    {filtered.length} case{filtered.length !== 1 ? "s" : ""}
-                  </span>
+            <div className="flex-1 overflow-y-auto">
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <LoadingSpinner size="md" color="primary" />
                 </div>
-              </div>
-
-              {/* Table */}
-              <div className="flex-1 overflow-y-auto">
-                {loading ? (
-                  <div className="flex items-center justify-center h-full">
-                    <LoadingSpinner fullScreen={false} variant="spinner" size="md" color="primary" text="Chargement..." speed="normal" />
-                  </div>
-                ) : filtered.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-400 dark:text-slate-600 gap-3">
-                    <MdOutlineGavel className="text-5xl" />
-                    <p className="text-sm font-medium">Aucun litige trouvé</p>
-                  </div>
-                ) : (
-                  <table className="w-full text-left border-separate border-spacing-0">
-                    <thead>
-                      <tr className="sticky top-0 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-sm z-10">
-                        {["Case ID", "Reporter", "Subject", "Date", "Severity"].map((h) => (
-                          <th key={h} className="px-5 py-3 text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800 whitespace-nowrap">
-                            {h}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filtered.map((d, i) => {
-                        const isSelected = selectedDispute?.id === d.id;
-                        return (
-                          <tr
-                            key={d.id}
-                            onClick={() => setSelectedDispute(d)}
-                            className={`cursor-pointer transition-colors ${
-                              isSelected
-                                ? "bg-blue-50/60 dark:bg-blue-950/20"
-                                : i % 2 === 0
-                                  ? "hover:bg-white dark:hover:bg-slate-900"
-                                  : "bg-white/40 dark:bg-slate-900/30 hover:bg-white dark:hover:bg-slate-900"
-                            }`}
+              ) : filtered.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-slate-400">
+                  <MdOutlineGavel className="text-4xl mb-2" />
+                  <p className="text-sm">Aucun litige trouvé</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {filtered.map((dispute) => {
+                    const typeConfig =
+                      TYPE_CONFIG[dispute.type] || TYPE_CONFIG.OTHER;
+                    return (
+                      <button
+                        key={dispute.id}
+                        onClick={() => setSelectedDispute(dispute)}
+                        className={`w-full text-left p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-all ${selectedDispute?.id === dispute.id ? "bg-indigo-50/50 dark:bg-indigo-950/20 border-l-4 border-l-indigo-500" : ""}`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <span className="font-mono text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                            #
+                            {dispute.reference?.slice(-8) ||
+                              dispute.id.slice(-8)}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${SEVERITY_CONFIG[dispute.severity].bg} ${SEVERITY_CONFIG[dispute.severity].color}`}
                           >
-                            <td className="px-5 py-4 border-b border-slate-100/50 dark:border-slate-800/50 font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
-                              #{d.reference}
-                            </td>
-                            <td className="px-5 py-4 border-b border-slate-100/50 dark:border-slate-800/50">
-                              <div className="flex items-center gap-2.5">
-                                <Avatar
-                                  name={`${d.reporter.firstName} ${d.reporter.lastName}`}
-                                  image={d.reporter.image}
-                                  size={30}
-                                />
-                                <span className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                                  {d.reporter.firstName} {d.reporter.lastName.charAt(0)}.
-                                </span>
-                              </div>
-                            </td>
-                            <td className="px-5 py-4 border-b border-slate-100/50 dark:border-slate-800/50">
-                              <SubjectChip subject={d.subject} />
-                            </td>
-                            <td className="px-5 py-4 border-b border-slate-100/50 dark:border-slate-800/50 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                              {fmtDate(d.date)}
-                            </td>
-                            <td className="px-5 py-4 border-b border-slate-100/50 dark:border-slate-800/50">
-                              <SeverityBadge severity={d.severity} />
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-            </div>
-
-            {/* ── Right: Details panel ── */}
-            <div className="col-span-12 lg:col-span-4 bg-white dark:bg-slate-900 rounded-2xl flex flex-col border border-slate-100 dark:border-slate-800 shadow-[0_8px_16px_-4px_rgba(24,28,34,0.07)] overflow-hidden">
-              {selectedDispute ? (
-                <>
-                  {/* Panel header */}
-                  <div className="p-5 border-b border-slate-100 dark:border-slate-800">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <p className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest">
-                          Case Details
-                        </p>
-                        <h2 className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
-                          #{selectedDispute.reference}
-                        </h2>
-                      </div>
-                      {(selectedDispute.status === "OPEN" || selectedDispute.status === "IN_REVIEW") && (
-                        <span className="px-2.5 py-1 bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-400 rounded-lg text-[10px] font-bold uppercase">
-                          Action Required
-                        </span>
-                      )}
-                      {selectedDispute.status === "RESOLVED" && (
-                        <span className="px-2.5 py-1 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 rounded-lg text-[10px] font-bold uppercase">
-                          Resolved
-                        </span>
-                      )}
-                      {selectedDispute.status === "DENIED" && (
-                        <span className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-bold uppercase">
-                          Denied
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-slate-500 dark:text-slate-400">Issue:</span>
-                        <span className="font-semibold text-slate-900 dark:text-white">{selectedDispute.subject}</span>
-                      </div>
-                      {selectedDispute.listing && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-500 dark:text-slate-400">Listing:</span>
-                          <Link
-                            href={`/fr/listings/${selectedDispute.listing.id}`}
-                            className="font-semibold text-blue-600 dark:text-blue-400 hover:underline truncate max-w-[150px]"
-                          >
-                            {selectedDispute.listing.title}
-                          </Link>
-                        </div>
-                      )}
-                      {selectedDispute.refundAmount && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-500 dark:text-slate-400">Refund claimed:</span>
-                          <span className="font-semibold text-slate-900 dark:text-white">
-                            {selectedDispute.refundAmount.toLocaleString("fr-FR")} TND
+                            {SEVERITY_CONFIG[dispute.severity].label}
                           </span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Conversation */}
-                  <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
-                    {selectedDispute.messages.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full text-slate-300 dark:text-slate-700 gap-2">
-                        <IoChatbubbleOutline className="text-4xl" />
-                        <p className="text-xs">Aucun message</p>
-                      </div>
-                    ) : (
-                      selectedDispute.messages.map((msg) => {
-                        const isTenant = msg.senderRole === "TENANT";
-                        const isAdmin = msg.senderRole === "ADMIN";
-                        return (
-                          <div
-                            key={msg.id}
-                            className={`flex flex-col ${isTenant ? "items-start" : "items-end"} max-w-[88%] ${isTenant ? "mr-auto" : "ml-auto"}`}
-                          >
-                            {/* Attachment image */}
-                            {msg.attachments && msg.attachments.length > 0 && (
-                              <div className="mb-2 rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-800">
-                                <img
-                                  src={msg.attachments[0]}
-                                  alt="attachment"
-                                  className="w-full h-28 object-cover"
-                                />
-                              </div>
-                            )}
-                            <div
-                              className={`px-4 py-3 rounded-2xl text-sm leading-relaxed ${
-                                isTenant
-                                  ? "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none"
-                                  : isAdmin
-                                    ? "bg-purple-600 text-white rounded-tr-none"
-                                    : "bg-[#005cab] text-white rounded-tr-none"
-                              }`}
-                            >
-                              {msg.content}
-                            </div>
-                            <span className="text-[10px] text-slate-400 dark:text-slate-600 mt-1 mx-1 uppercase font-bold tracking-tight">
-                              {msg.senderName} · {fmtTime(msg.createdAt)}
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 flex items-center justify-center">
+                            <span className="text-indigo-600 text-xs font-bold">
+                              {dispute.reporter.firstName?.charAt(0)}
+                              {dispute.reporter.lastName?.charAt(0)}
                             </span>
                           </div>
-                        );
-                      })
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-
-                  {/* Message input + actions */}
-                  <div className="p-4 bg-slate-50 dark:bg-slate-800/40 border-t border-slate-100 dark:border-slate-800 rounded-b-2xl space-y-3">
-                    {/* Message input */}
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                        placeholder="Ajouter une note admin..."
-                        className="flex-1 px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-900 dark:text-slate-100 placeholder-slate-400"
-                      />
-                      <button
-                        onClick={handleSendMessage}
-                        disabled={sendingMessage || !newMessage.trim()}
-                        className="w-9 h-9 rounded-xl bg-[#005cab] flex items-center justify-center text-white hover:opacity-90 transition-opacity disabled:opacity-40 flex-shrink-0"
-                      >
-                        {sendingMessage ? (
-                          <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                        ) : (
-                          <IoSendOutline className="text-sm" />
-                        )}
+                          <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                            {dispute.reporter.firstName}{" "}
+                            {dispute.reporter.lastName}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${typeConfig.color}`}
+                          >
+                            {typeConfig.icon}
+                            {typeConfig.label}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold flex items-center gap-1 ${STATUS_CONFIG[dispute.status].color}`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${STATUS_CONFIG[dispute.status].dot}`}
+                            ></span>
+                            {STATUS_CONFIG[dispute.status].label}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 mt-2">
+                          {formatDate(dispute.createdAt)}
+                        </p>
                       </button>
-                    </div>
-
-                    {/* Open full case */}
-                    <Link
-                      href={`/fr/admin/disputes/${selectedDispute.id}`}
-                      className="w-full py-2.5 bg-gradient-to-r from-[#005cab] to-[#712ae2] text-white rounded-full font-bold text-sm shadow-lg shadow-blue-500/20 hover:opacity-90 active:scale-[.98] transition-all flex items-center justify-center gap-2"
-                    >
-                      Open Full Case
-                      <IoChevronForwardOutline className="text-sm" />
-                    </Link>
-
-                    {/* Accept / Deny — only for open cases */}
-                    {(selectedDispute.status === "OPEN" || selectedDispute.status === "IN_REVIEW") && (
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => handleAction("deny", selectedDispute.id)}
-                          disabled={!!actionLoading}
-                          className="py-2.5 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
-                        >
-                          {actionLoading === "deny" ? (
-                            <span className="w-3 h-3 rounded-full border-2 border-slate-300/30 border-t-slate-500 animate-spin" />
-                          ) : (
-                            <IoCloseCircleOutline className="text-sm" />
-                          )}
-                          DENIED
-                        </button>
-                        <button
-                          onClick={() => handleAction("resolve", selectedDispute.id)}
-                          disabled={!!actionLoading}
-                          className="py-2.5 bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700 rounded-full font-bold text-xs hover:bg-emerald-50 dark:hover:bg-emerald-950/20 transition-colors disabled:opacity-50 flex items-center justify-center gap-1.5"
-                        >
-                          {actionLoading === "resolve" ? (
-                            <span className="w-3 h-3 rounded-full border-2 border-emerald-300/30 border-t-emerald-500 animate-spin" />
-                          ) : (
-                            <IoCheckmarkCircleOutline className="text-sm" />
-                          )}
-                          RESOLVED
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </>
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center text-slate-300 dark:text-slate-700 gap-3">
-                  <MdOutlineGavel className="text-5xl" />
-                  <p className="text-sm font-medium text-slate-400 dark:text-slate-600">
-                    Sélectionner un litige
-                  </p>
+                    );
+                  })}
                 </div>
               )}
             </div>
           </div>
 
-          {/* ── Bento stats ── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              {
-                label: "Avg Resolution",
-                value: `${stats.avgResolutionHours}`,
-                unit: "hrs",
-                icon: <IoTimeOutline className="text-7xl" />,
-                cls: "bg-slate-100 dark:bg-slate-800/60",
-              },
-              {
-                label: "Total Reported",
-                value: `${stats.totalReported}`,
-                unit: "",
-                icon: <IoAlertCircleOutline className="text-7xl text-blue-600 dark:text-blue-400" />,
-                cls: "bg-blue-50 dark:bg-blue-950/20 border-2 border-blue-100 dark:border-blue-900/40",
-              },
-              {
-                label: "Top Subject",
-                value: stats.topSubject,
-                unit: "",
-                icon: <TbBoom className="text-7xl" />,
-                cls: "bg-slate-100 dark:bg-slate-800/60",
-              },
-              {
-                label: "Pending Payouts",
-                value: `${stats.pendingPayouts.toLocaleString("fr-FR")}`,
-                unit: "TND",
-                icon: <IoWalletOutline className="text-7xl" />,
-                cls: "bg-slate-100 dark:bg-slate-800/60",
-              },
-            ].map(({ label, value, unit, icon, cls }) => (
-              <div key={label} className={`${cls} rounded-2xl p-5 flex flex-col justify-between h-28 relative overflow-hidden border border-transparent`}>
-                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest relative z-10">
-                  {label}
-                </span>
-                <span className="text-2xl font-extrabold text-slate-900 dark:text-white relative z-10">
-                  {value}{unit && <span className="text-sm font-normal text-slate-500 dark:text-slate-400 ml-1">{unit}</span>}
-                </span>
-                <div className="absolute -right-4 -bottom-4 opacity-[0.06] pointer-events-none">
-                  {icon}
-                </div>
+          {/* Détail du litige */}
+          <div className="col-span-8 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+            {selectedDispute ? (
+              <DisputeDetailPanel
+                dispute={selectedDispute}
+                onResolve={handleResolve}
+                onReject={handleReject}
+                actionLoading={actionLoading}
+                onSendMessage={handleSendMessage}
+                sendingMessage={sendingMessage}
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-full py-12 text-slate-400">
+                <MdOutlineGavel className="text-5xl mb-3" />
+                <p className="text-sm">
+                  Sélectionnez un litige pour voir les détails
+                </p>
               </div>
-            ))}
+            )}
           </div>
-        </section>
-      </main>
+        </div>
+      </div>
     </div>
   );
 }
