@@ -1,3 +1,4 @@
+// app/api/listings/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
@@ -54,7 +55,55 @@ function filterValidPhotos(photos: any[]): any[] {
   );
 }
 
-// GET - Récupérer les annonces
+// 🔥 FONCTION POUR ENVOYER UNE NOTIFICATION AU PROPRIÉTAIRE
+async function sendNotificationToOwner(
+  ownerId: string,
+  title: string,
+  content: string,
+  type: string,
+  listingId: string,
+  listingTitle: string,
+) {
+  try {
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { id: true, email: true, firstName: true, lastName: true },
+    });
+
+    if (!owner) {
+      console.log(`❌ Propriétaire non trouvé: ${ownerId}`);
+      return;
+    }
+
+    const notification = await prisma.notification.create({
+      data: {
+        userId: ownerId,
+        type: type as any,
+        title: title,
+        content: content,
+        channels: ["IN_APP", "EMAIL"],
+        data: {
+          listingId,
+          listingTitle,
+          actionBy: "admin",
+          actionAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    console.log(
+      `📧 [NOTIFICATION] Envoyée au propriétaire ${owner.email || ownerId}:`,
+    );
+    console.log(`   - Titre: ${title}`);
+    console.log(`   - Type: ${type}`);
+
+    return notification;
+  } catch (error) {
+    console.error("❌ Erreur lors de l'envoi de la notification:", error);
+  }
+}
+
+// GET - Récupérer les annonces (CORRIGÉ POUR ADMIN)
 export async function GET(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
@@ -78,9 +127,26 @@ export async function GET(request: NextRequest) {
       : undefined;
     const governorate = searchParams.get("governorate") || undefined;
 
+    // 🔥 VÉRIFIER SI L'UTILISATEUR EST ADMIN
+    let isAdmin = false;
+    let userDb = null;
+
+    if (clerkId) {
+      userDb = await prisma.user.findUnique({
+        where: { clerkId },
+        select: { id: true, role: true },
+      });
+      isAdmin = userDb?.role === "ADMIN";
+    }
+
+    console.log(
+      `🔐 [API] User: ${clerkId || "visitor"}, isAdmin: ${isAdmin}, role: ${userDb?.role}`,
+    );
+
     let where: any = {};
 
     if (isMyListings && clerkId) {
+      // Mode "mes annonces"
       const permissions = await getUserPermissions(clerkId);
       if (!permissions) {
         return NextResponse.json(
@@ -104,13 +170,30 @@ export async function GET(request: NextRequest) {
         where.status = status;
       }
     } else {
-      where.status = "ACTIVE";
+      // 🔥 MODE PUBLIC - ADMIN voit TOUT, les autres voient seulement ACTIVE
+      if (isAdmin) {
+        // ADMIN : Ne pas filtrer par statut, voir TOUTES les annonces
+        console.log("👑 ADMIN - Accès à toutes les annonces (tous statuts)");
+        // Ne pas ajouter where.status
+      } else {
+        // Non-admin : seulement les annonces ACTIVE
+        console.log("👤 VISITEUR - Accès uniquement aux annonces ACTIVE");
+        where.status = "ACTIVE";
+      }
     }
 
-    if (type) where.type = type;
-    if (governorate) where.governorate = governorate;
-    if (minRooms) where.rooms = { gte: minRooms };
+    // Appliquer les filtres supplémentaires
+    if (type && type !== "ALL") {
+      where.type = type;
+    }
+    if (governorate) {
+      where.governorate = governorate;
+    }
+    if (minRooms) {
+      where.rooms = { gte: minRooms };
+    }
 
+    // Filtre par prix
     if (minPrice !== undefined || maxPrice !== undefined) {
       const min = minPrice !== undefined ? minPrice : 0;
       const max = maxPrice !== undefined ? maxPrice : 999999;
@@ -131,6 +214,7 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // Recherche
     if (search) {
       const searchOr = [
         { title: { contains: search, mode: "insensitive" } },
@@ -167,11 +251,14 @@ export async function GET(request: NextRequest) {
       prisma.listing.count({ where }),
     ]);
 
+    console.log(`📊 [API] Total annonces trouvées: ${totalCount}`);
+    console.log(`📊 Statuts trouvés:`, [
+      ...new Set(listings.map((l) => l.status)),
+    ]);
+
+    // Calcul des prix min/max pour les filtres
     const priceStats = await prisma.listing.aggregate({
-      where:
-        isMyListings && clerkId
-          ? { ownerId: where.ownerId }
-          : { status: "ACTIVE" },
+      where: isAdmin ? {} : { status: "ACTIVE" },
       _min: { pricePerNight: true, pricePerMonth: true },
       _max: { pricePerNight: true, pricePerMonth: true },
     });
@@ -454,7 +541,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// PATCH - Mise à jour partielle (unifiée)
+// PATCH - Mise à jour partielle (AVEC NOTIFICATIONS AU PROPRIÉTAIRE)
 export async function PATCH(request: NextRequest) {
   try {
     const { userId: clerkId } = getAuth(request);
@@ -474,6 +561,14 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
+    // 🔥 RÉCUPÉRER L'ADMIN
+    const adminUser = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { id: true, role: true, firstName: true, lastName: true },
+    });
+
+    const isAdmin = adminUser?.role === "ADMIN";
+
     const accessCheck = await checkListingAccess(clerkId, id, "edit");
     if (!accessCheck.allowed) {
       return NextResponse.json({ error: accessCheck.error }, { status: 403 });
@@ -482,7 +577,15 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { status, action, ...updateFields } = body;
 
-    const existingListing = await prisma.listing.findFirst({ where: { id } });
+    const existingListing = await prisma.listing.findFirst({
+      where: { id },
+      include: {
+        owner: {
+          select: { id: true, email: true, firstName: true, lastName: true },
+        },
+      },
+    });
+
     if (!existingListing) {
       return NextResponse.json(
         { error: "Annonce non trouvée" },
@@ -492,24 +595,72 @@ export async function PATCH(request: NextRequest) {
 
     let result;
     let updateData: any = { updatedAt: new Date() };
+    let notificationSent = false;
+    let notificationTitle = "";
+    let notificationContent = "";
+    let notificationType = "";
 
-    // CAS 1: Changement de statut
-    if (status !== undefined) {
+    // 🔥 CAS 1: Changement de statut par ADMIN
+    if (status !== undefined && isAdmin) {
+      const oldStatus = existingListing.status;
+      const newStatus = status;
+
+      console.log(
+        `📝 [PATCH] ADMIN change le statut: ${oldStatus} -> ${newStatus}`,
+      );
+
       updateData.status = status;
       result = await prisma.listing.update({ where: { id }, data: updateData });
+
       await prisma.listingHistory.create({
         data: {
           listingId: id,
-          actionType: "STATUS_CHANGE",
-          oldValue: { status: existingListing.status },
-          newValue: { status },
-          changedBy: accessCheck.userPermissions?.userId || "",
+          actionType: "STATUS_CHANGE_BY_ADMIN",
+          oldValue: { status: oldStatus },
+          newValue: { status: newStatus },
+          changedBy: adminUser?.id || "",
         },
       });
+
+      // 🔥 DÉTERMINER LA NOTIFICATION
+      if (oldStatus === "PENDING_REVIEW" && newStatus === "ACTIVE") {
+        notificationTitle = "✅ Annonce validée";
+        notificationContent = `Votre annonce "${existingListing.title}" a été validée par l'administrateur et est maintenant en ligne.`;
+        notificationType = "LISTING_ACTIVATED";
+        notificationSent = true;
+      } else if (oldStatus === "PENDING_REVIEW" && newStatus === "REJECTED") {
+        notificationTitle = "❌ Annonce rejetée";
+        notificationContent = `Votre annonce "${existingListing.title}" a été rejetée par l'administrateur. Veuillez la modifier et la soumettre à nouveau.`;
+        notificationType = "LISTING_REJECTED";
+        notificationSent = true;
+      } else if (newStatus === "ACTIVE" && oldStatus !== "ACTIVE") {
+        notificationTitle = "✅ Annonce activée";
+        notificationContent = `Votre annonce "${existingListing.title}" a été activée par l'administrateur.`;
+        notificationType = "LISTING_ACTIVATED";
+        notificationSent = true;
+      } else if (newStatus === "INACTIVE") {
+        notificationTitle = "⛔ Annonce désactivée";
+        notificationContent = `Votre annonce "${existingListing.title}" a été désactivée par l'administrateur.`;
+        notificationType = "LISTING_SUSPENDED";
+        notificationSent = true;
+      } else if (newStatus === "ARCHIVED") {
+        notificationTitle = "📦 Annonce archivée";
+        notificationContent = `Votre annonce "${existingListing.title}" a été archivée par l'administrateur.`;
+        notificationType = "SYSTEM_ALERT";
+        notificationSent = true;
+      }
+
+      console.log(`✅ Statut changé par ADMIN: ${oldStatus} -> ${newStatus}`);
     }
-    // CAS 2: Mise à jour partielle des données
+    // CAS 2: Changement de statut par non-admin (refusé)
+    else if (status !== undefined && !isAdmin) {
+      return NextResponse.json(
+        { error: "Seul un administrateur peut changer le statut" },
+        { status: 403 },
+      );
+    }
+    // CAS 3: Mise à jour partielle des données
     else if (Object.keys(updateFields).length > 0) {
-      // Nettoyer les champs null/undefined
       for (const [key, value] of Object.entries(updateFields)) {
         if (value !== null && value !== undefined) {
           updateData[key] = value;
@@ -529,7 +680,7 @@ export async function PATCH(request: NextRequest) {
         },
       });
     }
-    // CAS 3: Action spéciale
+    // CAS 4: Action RESTORE
     else if (action === "RESTORE") {
       result = await prisma.listing.update({
         where: { id },
@@ -539,6 +690,18 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json(
         { error: "Aucune modification fournie" },
         { status: 400 },
+      );
+    }
+
+    // 🔥 ENVOYER LA NOTIFICATION AU PROPRIÉTAIRE SI NÉCESSAIRE
+    if (notificationSent && existingListing.ownerId) {
+      await sendNotificationToOwner(
+        existingListing.ownerId,
+        notificationTitle,
+        notificationContent,
+        notificationType,
+        id,
+        existingListing.title,
       );
     }
 
@@ -594,6 +757,19 @@ export async function DELETE(request: NextRequest) {
         where: { id },
         data: { status: "ARCHIVED", archivedAt: new Date() },
       });
+
+      // 🔥 NOTIFIER LE PROPRIÉTAIRE QUE SON ANNONCE EST ARCHIVÉE
+      if (listing.ownerId) {
+        await sendNotificationToOwner(
+          listing.ownerId,
+          "📦 Annonce archivée",
+          `Votre annonce "${listing.title}" a été archivée par l'administrateur.`,
+          "SYSTEM_ALERT",
+          id,
+          listing.title,
+        );
+      }
+
       if (cancelBookings) {
         await prisma.booking.updateMany({
           where: {

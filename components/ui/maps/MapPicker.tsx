@@ -156,7 +156,34 @@ function MapController({
   return null;
 }
 
-// ✅ Effet pour centrer la carte quand les coordonnées changent
+// ✅ Composant pour centrer la carte sur tous les marqueurs
+function FitBoundsOnMarkers({ markers, enabled }: { markers: ListingMarker[]; enabled: boolean }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!enabled || !markers || markers.length === 0) return;
+    
+    // Filtrer les marqueurs valides
+    const validMarkers = markers.filter(m => m.latitude && m.longitude);
+    if (validMarkers.length === 0) return;
+
+    // Créer les bounds
+    const bounds = L.latLngBounds(
+      validMarkers.map((m) => [m.latitude, m.longitude])
+    );
+    
+    // Ajuster la vue avec un padding
+    map.fitBounds(bounds, { 
+      padding: [50, 50],
+      maxZoom: 13,
+      animate: true,
+      duration: 1
+    });
+  }, [markers, enabled, map]);
+
+  return null;
+}
+
 function CenterMapOnPosition({
   position,
   readOnly,
@@ -196,6 +223,7 @@ export default function MapPicker({
   const [mapCenter, setMapCenter] = useState<[number, number] | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const [address, setAddress] = useState<string>("");
+  const [hasFittedBounds, setHasFittedBounds] = useState(false);
 
   const position = useMemo<[number, number] | null>(
     () =>
@@ -246,7 +274,7 @@ export default function MapPicker({
     [onLocationChange, reverseGeocode, readOnly],
   );
 
-  // ✅ Bouton de localisation
+  // Bouton de localisation
   const getCurrentLocation = () => {
     if (readOnly) return;
 
@@ -285,19 +313,6 @@ export default function MapPicker({
     );
   };
 
-  // Centrer la carte sur tous les marqueurs
-  useEffect(() => {
-    if (!mapReady || !showAllMarkers || markers.length === 0) return;
-
-    const bounds = L.latLngBounds(
-      markers.map((m) => [m.latitude, m.longitude]),
-    );
-    const map = document.querySelector(".leaflet-container") as any;
-    if (map && map._leaflet_map) {
-      map._leaflet_map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  }, [markers, showAllMarkers, mapReady]);
-
   // Mettre à jour l'adresse quand les coordonnées changent
   useEffect(() => {
     if (position) {
@@ -305,9 +320,13 @@ export default function MapPicker({
     }
   }, [position, reverseGeocode]);
 
+  // Réinitialiser hasFittedBounds quand les markers changent
+  useEffect(() => {
+    setHasFittedBounds(false);
+  }, [markers.length]);
+
   return (
     <div className={`relative w-full h-full ${className}`}>
-      {/* Conteneur de la carte */}
       <MapContainer
         center={position || defaultCenter}
         zoom={position ? 15 : defaultZoom}
@@ -328,14 +347,19 @@ export default function MapPicker({
           onLocationChange={handleLocationChange}
           readOnly={readOnly}
         />
+        
         {mapReady && <MapController center={mapCenter} zoom={16} />}
 
-        {/* ✅ Centre la carte sur la position quand elle change */}
         {mapReady && (
           <CenterMapOnPosition position={position} readOnly={readOnly} />
         )}
 
-        {/* Marqueur principal (sélectionné) */}
+        {/* ✅ Centrage automatique sur tous les marqueurs */}
+        {mapReady && showAllMarkers && !hasFittedBounds && (
+          <FitBoundsOnMarkers markers={markers} enabled={true} />
+        )}
+
+        {/* Marqueur principal */}
         {position && (
           <Marker
             position={position}
@@ -353,7 +377,7 @@ export default function MapPicker({
           />
         )}
 
-        {/* Marqueurs supplémentaires */}
+        {/* Marqueurs des propriétés */}
         {showAllMarkers &&
           markers.map((marker) => (
             <Marker
@@ -392,7 +416,7 @@ export default function MapPicker({
           ))}
       </MapContainer>
 
-      {/* ✅ Bouton de localisation - Design épuré */}
+      {/* Bouton de localisation */}
       {!readOnly && (
         <button
           type="button"
@@ -409,7 +433,7 @@ export default function MapPicker({
         </button>
       )}
 
-      {/* ✅ Indicateur de géocodage - Version élégante */}
+      {/* Indicateur de géocodage */}
       {isGeocoding && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[20] animate-in fade-in slide-in-from-top-2 duration-300">
           <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-full px-4 py-2 shadow-lg border border-indigo-200 dark:border-indigo-800">
@@ -421,7 +445,7 @@ export default function MapPicker({
         </div>
       )}
 
-      {/* ✅ Affichage de l'adresse - Version élégante */}
+      {/* Affichage de l'adresse */}
       {address && !readOnly && position && (
         <div className="absolute top-4 left-4 right-24 z-[20] pointer-events-none animate-in fade-in slide-in-from-left-2 duration-300">
           <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md border border-slate-200 dark:border-slate-700">
@@ -447,7 +471,7 @@ export default function MapPicker({
         </div>
       )}
 
-      {/* Affichage des coordonnées - Version compacte */}
+      {/* Affichage des coordonnées */}
       {position && !readOnly && (
         <div className="absolute bottom-4 left-4 z-[20] pointer-events-none animate-in fade-in slide-in-from-bottom-2 duration-300">
           <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-full px-3 py-1.5 shadow-md border border-slate-200 dark:border-slate-700">

@@ -4,12 +4,26 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 
+export interface AdminAlert {
+  id: string;
+  type: "DISPUTE" | "VALIDATION" | "MODIFICATION";
+  title: string;
+  description: string;
+  priority: "HIGH" | "MEDIUM" | "LOW";
+  createdAt: string;
+  status: "PENDING" | "RESOLVED" | "DISMISSED";
+  listingId?: string;
+  listingTitle?: string;
+  time?: string;
+}
+
 export function useAdminProperties() {
   const { getToken } = useAuth();
   const PAGE_SIZE = 10;
 
   // États
   const [listings, setListings] = useState<any[]>([]);
+  const [filteredListings, setFilteredListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -23,6 +37,7 @@ export function useAdminProperties() {
     type: "success" | "error";
     message: string;
   } | null>(null);
+  const [adminAlerts, setAdminAlerts] = useState<AdminAlert[]>([]);
   const [menuState, setMenuState] = useState<{
     listing: any | null;
     position: { top: number; left: number };
@@ -38,9 +53,11 @@ export function useAdminProperties() {
     total: 0,
     active: 0,
     pending: 0,
+    rejected: 0,
     inactive: 0,
     archived: 0,
     draft: 0,
+    suspended: 0,
   });
 
   // Auth fetch
@@ -59,6 +76,54 @@ export function useAdminProperties() {
     [getToken],
   );
 
+  // Appliquer tous les filtres
+  const applyFilters = useCallback(
+    (items: any[]) => {
+      let filtered = [...items];
+
+      if (searchQuery.trim()) {
+        const query = searchQuery.toLowerCase();
+        filtered = filtered.filter((l) =>
+          l.title?.toLowerCase().includes(query),
+        );
+      }
+
+      if (statusFilter !== "ALL") {
+        filtered = filtered.filter((l) => l.status === statusFilter);
+      }
+
+      if (typeFilter !== "ALL") {
+        filtered = filtered.filter((l) => l.type === typeFilter);
+      }
+
+      if (priceMin) {
+        const min = parseFloat(priceMin);
+        filtered = filtered.filter((l) => {
+          const price = l.pricePerNight ?? l.pricePerMonth;
+          return price && price >= min;
+        });
+      }
+
+      if (priceMax) {
+        const max = parseFloat(priceMax);
+        filtered = filtered.filter((l) => {
+          const price = l.pricePerNight ?? l.pricePerMonth;
+          return price && price <= max;
+        });
+      }
+
+      if (governorate.trim()) {
+        const gov = governorate.toLowerCase();
+        filtered = filtered.filter((l) =>
+          l.governorate?.toLowerCase().includes(gov),
+        );
+      }
+
+      return filtered;
+    },
+    [searchQuery, statusFilter, typeFilter, priceMin, priceMax, governorate],
+  );
+
   // Fetch listings
   const fetchListings = useCallback(async () => {
     setLoading(true);
@@ -67,6 +132,7 @@ export function useAdminProperties() {
         page: currentPage.toString(),
         pageSize: PAGE_SIZE.toString(),
       });
+
       if (searchQuery) params.append("search", searchQuery);
       if (statusFilter !== "ALL") params.append("status", statusFilter);
       if (typeFilter !== "ALL") params.append("type", typeFilter);
@@ -80,27 +146,46 @@ export function useAdminProperties() {
       const items: any[] = data.listings ?? [];
 
       setListings(items);
+      setFilteredListings(items);
       setTotalPages(Math.max(1, data.pagination?.totalPages ?? 1));
       setTotalCount(Math.max(0, data.pagination?.totalCount ?? 0));
+
+      // ✅ CORRECTION STATS: Utiliser les vraies stats depuis l'API ou calculer correctement
       setStats({
-        total: Math.max(0, data.pagination?.totalCount ?? 0),
-        active: items.filter((l) => l.status === "ACTIVE").length,
-        pending: items.filter((l) => l.status === "PENDING_REVIEW").length,
-        inactive: items.filter((l) => l.status === "INACTIVE").length,
-        archived: items.filter((l) => l.status === "ARCHIVED").length,
-        draft: items.filter((l) => l.status === "DRAFT").length,
+        total:
+          data.stats?.total ?? Math.max(0, data.pagination?.totalCount ?? 0),
+        active:
+          data.stats?.active ??
+          items.filter((l) => l.status === "ACTIVE").length,
+        pending:
+          data.stats?.pending ??
+          items.filter((l) => l.status === "PENDING_REVIEW").length,
+        rejected:
+          data.stats?.rejected ??
+          items.filter((l) => l.status === "REJECTED").length,
+        inactive:
+          data.stats?.inactive ??
+          items.filter((l) => l.status === "INACTIVE").length,
+        archived:
+          data.stats?.archived ??
+          items.filter((l) => l.status === "ARCHIVED").length,
+        draft:
+          data.stats?.draft ?? items.filter((l) => l.status === "DRAFT").length,
+        suspended:
+          data.stats?.suspended ??
+          items.filter((l) => l.status === "SUSPENDED").length,
       });
 
       const withCoords = items.find((l) => l.latitude && l.longitude);
-      if (withCoords)
+      if (withCoords) {
         setMapCenter({ lat: withCoords.latitude, lng: withCoords.longitude });
-    } catch {
+      }
+    } catch (error) {
+      console.error("Error fetching listings:", error);
       setAlert({
         type: "error",
         message: "Erreur lors du chargement des annonces",
       });
-      setTotalPages(1);
-      setTotalCount(0);
     } finally {
       setLoading(false);
     }
@@ -115,74 +200,212 @@ export function useAdminProperties() {
     governorate,
   ]);
 
+  // Dans useAdminProperties.ts, remplacez fetchAdminAlerts par :
+
+  const fetchAdminAlerts = useCallback(async () => {
+    try {
+      const res = await authFetch("/api/admin/alerts");
+      if (res.ok) {
+        const data = await res.json();
+        const alerts = data.alerts || [];
+
+        const formattedAlerts: AdminAlert[] = alerts.map((alert: any) => ({
+          id: alert.id,
+          type: alert.type,
+          title: alert.title,
+          description: alert.description,
+          priority: alert.priority,
+          createdAt: alert.createdAt,
+          status: alert.status,
+          listingId: alert.listingId,
+          listingTitle: alert.listingTitle,
+          time: new Date(alert.createdAt).toLocaleString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            day: "numeric",
+            month: "short",
+          }),
+        }));
+
+        setAdminAlerts(formattedAlerts);
+      }
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
+      setAdminAlerts([]);
+    }
+  }, [authFetch]);
+
   useEffect(() => {
     fetchListings();
-  }, [fetchListings]);
+    fetchAdminAlerts();
+  }, [fetchListings, fetchAdminAlerts]);
 
-  // Close menu on escape
   useEffect(() => {
-    const h = (e: KeyboardEvent) => {
+    if (listings.length > 0) {
+      const filtered = applyFilters(listings);
+      setFilteredListings(filtered);
+      setTotalCount(filtered.length);
+      setTotalPages(Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
+    }
+  }, [applyFilters, listings, PAGE_SIZE]);
+
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setMenuState({ listing: null, position: { top: 0, left: 0 } });
         setShowExport(false);
       }
     };
-    window.addEventListener("keydown", h);
-    return () => window.removeEventListener("keydown", h);
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
   }, []);
 
-  // Actions
+  // Actions admin
   const handleAction = async (type: string, id: string) => {
-    const endpointMap: Record<string, string> = {
-      activate: `/api/admin/listings/${id}/activate`,
-      deactivate: `/api/admin/listings/${id}/deactivate`,
-      archive: `/api/admin/listings/${id}/archive`,
-      delete: `/api/admin/listings/${id}`,
-    };
-    try {
-      const res = await authFetch(endpointMap[type], {
-        method: type === "delete" ? "DELETE" : "PATCH",
+    if (!id || id === "undefined") {
+      console.error("ID invalide:", id);
+      setAlert({
+        type: "error",
+        message: "Erreur: ID de propriété invalide",
       });
+      return;
+    }
+
+    console.log(`🔧 Action: ${type} sur l'ID: ${id}`);
+
+    const endpoint = `/api/listings/${id}`;
+    const actionMap: Record<
+      string,
+      { status?: string; method?: string; message: string }
+    > = {
+      valider: {
+        status: "ACTIVE",
+        method: "PATCH",
+        message: "Propriété validée avec succès",
+      },
+      rejeter: {
+        status: "REJECTED",
+        method: "PATCH",
+        message: "Propriété rejetée",
+      },
+      activer: {
+        status: "ACTIVE",
+        method: "PATCH",
+        message: "Propriété activée",
+      },
+      desactiver: {
+        status: "INACTIVE",
+        method: "PATCH",
+        message: "Propriété désactivée",
+      },
+      archiver: {
+        status: "ARCHIVED",
+        method: "PATCH",
+        message: "Propriété archivée",
+      },
+      supprimer: { method: "DELETE", message: "Propriété supprimée" },
+    };
+
+    const actionConfig = actionMap[type];
+    if (!actionConfig) {
+      setAlert({ type: "error", message: "Action inconnue" });
+      return;
+    }
+
+    try {
+      let res;
+      if (actionConfig.method === "DELETE") {
+        res = await authFetch(endpoint, { method: "DELETE" });
+      } else {
+        res = await authFetch(endpoint, {
+          method: "PATCH",
+          body: JSON.stringify({ status: actionConfig.status }),
+        });
+      }
+
       if (res.ok) {
-        setAlert({ type: "success", message: `Action "${type}" effectuée` });
+        setAlert({ type: "success", message: actionConfig.message });
         fetchListings();
+        fetchAdminAlerts();
       } else {
         const data = await res.json().catch(() => ({}));
-        setAlert({ type: "error", message: data.error ?? "Erreur" });
+        setAlert({
+          type: "error",
+          message: data.error || `Erreur lors de l'action: ${type}`,
+        });
       }
-    } catch {
+    } catch (error) {
+      console.error("Erreur:", error);
       setAlert({ type: "error", message: "Erreur de connexion" });
     }
   };
 
-  // Export
+  // ✅ CORRECTION EXPORT
   const handleExport = async (format: "csv" | "pdf") => {
     setShowExport(false);
     try {
-      const res = await authFetch(
-        `/api/admin/listings/export?format=${format}&status=${statusFilter}&type=${typeFilter}&search=${searchQuery}`,
+      // Construire les filtres
+      const filters = {
+        search: searchQuery || undefined,
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+        type: typeFilter !== "ALL" ? typeFilter : undefined,
+        minPrice: priceMin || undefined,
+        maxPrice: priceMax || undefined,
+        governorate: governorate || undefined,
+      };
+
+      // Envoyer format dans l'URL et filters dans le body
+      const response = await authFetch(
+        `/api/admin/listings/export?format=${format}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ filters }),
+        },
       );
-      if (res.ok) {
-        const blob = await res.blob();
+
+      if (response.ok) {
+        const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `listings-export.${format}`;
+
+        // Extraire le nom du fichier du header Content-Disposition
+        const contentDisposition = response.headers.get("Content-Disposition");
+        let filename = `proprietes_${new Date().toISOString().split("T")[0]}.${format}`;
+        if (contentDisposition) {
+          const match = contentDisposition.match(
+            /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/,
+          );
+          if (match && match[1]) {
+            filename = match[1].replace(/['"]/g, "");
+          }
+        }
+
+        a.download = filename;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
+
+        setAlert({ type: "success", message: "Export généré avec succès" });
       } else {
-        setAlert({ type: "error", message: "Export non disponible" });
+        const data = await response.json().catch(() => ({}));
+        setAlert({
+          type: "error",
+          message: data.error || "Export non disponible",
+        });
       }
-    } catch {
+    } catch (error) {
+      console.error("Export error:", error);
       setAlert({ type: "error", message: "Erreur lors de l'export" });
     }
   };
 
-  // Getters
   const getMainImage = (listing: any) => {
-    const p = listing.photos?.find((x: any) => x.isMain) ?? listing.photos?.[0];
-    return p?.url
-      ? `/api/listings/image?url=${encodeURIComponent(p.url)}`
+    const photos = listing.photos ?? [];
+    const main = photos.find((x: any) => x.isMain) ?? photos[0];
+    return main?.url
+      ? `/api/listings/image?url=${encodeURIComponent(main.url)}`
       : null;
   };
 
@@ -199,8 +422,8 @@ export function useAdminProperties() {
   const mapListings = listings.filter((l) => l.latitude && l.longitude);
 
   return {
-    // Data
-    listings,
+    listings: filteredListings,
+    allListings: listings,
     loading,
     searchQuery,
     statusFilter,
@@ -211,6 +434,8 @@ export function useAdminProperties() {
     showFilters,
     showExport,
     alert,
+    recentAlerts: adminAlerts,
+    adminAlerts,
     menuState,
     mapCenter,
     priceMin,
@@ -219,7 +444,6 @@ export function useAdminProperties() {
     stats,
     mapListings,
     PAGE_SIZE,
-    // Setters
     setSearchQuery,
     setStatusFilter,
     setTypeFilter,
@@ -231,7 +455,6 @@ export function useAdminProperties() {
     setPriceMin,
     setPriceMax,
     setGovernorate,
-    // Actions
     fetchListings,
     handleAction,
     handleExport,

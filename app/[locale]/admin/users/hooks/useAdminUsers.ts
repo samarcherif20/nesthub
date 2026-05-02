@@ -29,7 +29,9 @@ export function useAdminUsers() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-
+  const [selectedUserForHistory, setSelectedUserForHistory] = useState<
+    string | undefined
+  >(undefined);
   // Filtres
   const [filters, setFilters] = useState<UserFilters>({
     search: "",
@@ -115,8 +117,9 @@ export function useAdminUsers() {
     }
   }, [getToken, filters, pagination.page, pagination.limit]);
 
+  // 2. MODIFIE la fonction fetchActions pour accepter un userId
   const fetchActions = useCallback(
-    async (page = 1, limit = 10, actionType?: string) => {
+    async (page = 1, limit = 10, actionType?: string, userId?: string) => {
       try {
         const token = await getToken({ template: "my-app-template" });
         if (!token) {
@@ -133,6 +136,12 @@ export function useAdminUsers() {
           params.append("actionType", actionType);
         }
 
+        // ✅ AJOUTE CETTE LIGNE - Filtrer par userId si présent
+        const targetUserId = userId || selectedUserForHistory;
+        if (targetUserId) {
+          params.append("userId", targetUserId);
+        }
+
         console.log(
           "📡 fetchActions URL:",
           `/api/admin/users/actions?${params}`,
@@ -145,16 +154,9 @@ export function useAdminUsers() {
           },
         });
 
-        console.log("📡 fetchActions status:", res.status);
-
         if (res.ok) {
           const data = await res.json();
           console.log("✅ Actions reçues:", data);
-
-          if (data.actions && data.actions.length > 0) {
-            console.log("👤 Premier admin:", data.actions[0].admin);
-          }
-
           setActions(data.actions);
         } else {
           const error = await res.text();
@@ -164,21 +166,19 @@ export function useAdminUsers() {
         console.error("❌ Exception fetchActions:", error);
       }
     },
-    [getToken],
+    [getToken, selectedUserForHistory],
   );
 
-  // Rafraîchir toutes les données
   const refresh = useCallback(() => {
     setRefreshKey((prev) => prev + 1);
     fetchUsers();
-    fetchActions();
-  }, [fetchUsers, fetchActions]);
+    fetchActions(1, 10, undefined, selectedUserForHistory);
+  }, [fetchUsers, fetchActions, selectedUserForHistory]);
 
   useEffect(() => {
     fetchUsers();
-    fetchActions();
-  }, [fetchUsers, fetchActions, refreshKey]);
-
+    fetchActions(1, 10, undefined, selectedUserForHistory);
+  }, [fetchUsers, fetchActions, refreshKey, selectedUserForHistory]);
   // --- Handlers d'actions API AVEC NOTIFICATIONS EMAIL ---
 
   const handleSuspend = async (
@@ -904,7 +904,10 @@ export function useAdminUsers() {
     setSelectedUser(user);
     setShowWarningModal(true);
   };
-  const openActionsHistory = () => setShowActionsHistory(true);
+  const openActionsHistory = (userId?: string) => {
+    setSelectedUserForHistory(userId);
+    setShowActionsHistory(true);
+  };
   const toggleExportOptions = () => setShowExportOptions((prev) => !prev);
 
   const closeModals = () => {
@@ -917,6 +920,7 @@ export function useAdminUsers() {
     setShowWarningModal(false);
     setShowActionsHistory(false);
     setShowExportOptions(false);
+    setSelectedUserForHistory(undefined); // ✅ AJOUTE CETTE LIGNE
   };
 
   return {
@@ -978,5 +982,6 @@ export function useAdminUsers() {
     handleUndoAction,
     handleExport,
     refresh,
+    selectedUserForHistory,
   };
 }

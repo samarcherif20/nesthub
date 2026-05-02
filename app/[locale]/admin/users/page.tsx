@@ -2,20 +2,17 @@
 
 import React, { useState, useEffect } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { useRouter, usePathname } from "next/navigation"; // ✅ Add usePathname
+import { useRouter, usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import Image from "next/image";
 
 import { useAdminUsers } from "./hooks/useAdminUsers";
 import { decodeJWT } from "@/lib/utils/jwt";
 
 import SearchBar from "@/components/ui/SearchBar";
-import FilterSelect from "@/components/ui/FilterSelect";
 import DateRangePicker from "@/components/ui/DateRangePicker";
 import Pagination from "@/components/ui/Pagination";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Alert from "@/components/ui/Alert";
-import StatsCard from "@/components/ui/StatsCard";
 
 import UserStatusBadge from "@/components/ui/badges/UserStatusBadge";
 import UserRoleBadge from "@/components/ui/badges/UserRoleBadge";
@@ -45,31 +42,25 @@ import {
   IoFilterOutline,
   IoSearchOutline,
   IoCloseOutline,
+  IoPersonOutline,
 } from "react-icons/io5";
 import { AiOutlineUsergroupAdd } from "react-icons/ai";
 import { PiUsersThree } from "react-icons/pi";
 import { GoShieldCheck } from "react-icons/go";
 import { BsFiletypeCsv, BsFiletypePdf, BsTelephone } from "react-icons/bs";
-import {
-  MdOutlinePeopleAlt,
-  MdOutlineVerified,
-  MdOutlinePending,
-} from "react-icons/md";
+import { MdOutlinePending } from "react-icons/md";
 import { RiUserSharedLine } from "react-icons/ri";
 import { FiChevronDown } from "react-icons/fi";
 
-// ─── Shadows — same as AdminContentPage & AdminTeamPage ──────
 const block3d =
   "shadow-[0_6px_0_0_rgba(0,0,0,0.06),0_12px_28px_-6px_rgba(0,0,0,0.11)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.38),0_12px_28px_-6px_rgba(0,0,0,0.48)]";
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
 
-// ✅ Accept async params (Next.js 15+ standard)
 export default function AdminUsersPage() {
-  // ✅ Hydration-safe, synchronous locale extraction
   const pathname = usePathname();
   const locale = pathname?.split("/")[1] || "fr";
-  
+
   const t = useTranslations("admin.usersManagement");
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
@@ -77,6 +68,7 @@ export default function AdminUsersPage() {
 
   const [isAdmin, setIsAdmin] = React.useState<boolean | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  const [avatarErrors, setAvatarErrors] = useState<Record<string, boolean>>({});
   const [menuPosition, setMenuPosition] = useState<{
     top: number;
     left: number;
@@ -109,7 +101,6 @@ export default function AdminUsersPage() {
           return;
         }
         const decoded = decodeJWT(token);
-        console.log("Rôle décodé:", decoded?.role);
         setIsAdmin(decoded?.role === "ADMIN");
       } catch (error) {
         console.error("Erreur vérification admin:", error);
@@ -166,6 +157,7 @@ export default function AdminUsersPage() {
     handleWarning,
     handleUndoAction,
     handleExport,
+    selectedUserForHistory,
   } = useAdminUsers();
 
   const openMenu = (event: React.MouseEvent, userId: string) => {
@@ -176,8 +168,15 @@ export default function AdminUsersPage() {
       userId,
     });
   };
-  
+
   const closeMenu = () => setMenuPosition({ top: 0, left: 0, userId: null });
+
+  // ✅ Fonction pour obtenir les initiales de l'utilisateur
+  const getUserInitials = (user: any) => {
+    const first = user.firstName?.charAt(0) || "";
+    const last = user.lastName?.charAt(0) || "";
+    return `${first}${last}`.toUpperCase().slice(0, 2);
+  };
 
   // Vérification de chargement
   if (!isUserLoaded || isAdmin === null) {
@@ -201,13 +200,13 @@ export default function AdminUsersPage() {
     );
   }
 
-
   const roleOptions = [
     { value: "ALL", label: t("filters.role.all") },
     { value: "ADMIN", label: t("filters.role.admin") },
     { value: "PROPERTY_OWNER", label: t("filters.role.property_owner") },
     { value: "TENANT", label: t("filters.role.tenant") },
   ];
+
   const statusOptions = [
     { value: "ALL", label: t("filters.status.all") },
     { value: "ACTIVE", label: t("filters.status.active") },
@@ -249,15 +248,13 @@ export default function AdminUsersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {/* History button */}
           <button
-            onClick={openActionsHistory}
+            onClick={() => openActionsHistory()}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all text-sm font-medium"
           >
             <IoArrowUndoOutline className="text-base" />
             {t("actions.history")}
           </button>
-          {/* Export button */}
           <div className="relative">
             <button
               onClick={toggleExportOptions}
@@ -371,7 +368,6 @@ export default function AdminUsersPage() {
         {/* Filters bar */}
         <div className="flex-shrink-0 px-5 py-4 border-b border-indigo-50 dark:border-indigo-900/30 bg-gradient-to-r from-indigo-50/40 to-violet-50/20 dark:from-indigo-900/10 dark:to-violet-900/5">
           <div className="flex flex-wrap items-center gap-3">
-            {/* Search */}
             <div className="relative flex-1 min-w-[200px]">
               <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-base" />
               <input
@@ -382,7 +378,6 @@ export default function AdminUsersPage() {
                 className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors text-slate-900 dark:text-slate-100 placeholder:text-indigo-300 dark:placeholder:text-indigo-700"
               />
             </div>
-            {/* Role filter */}
             <select
               value={filters.role}
               onChange={(e) => setFilter("role", e.target.value)}
@@ -394,7 +389,6 @@ export default function AdminUsersPage() {
                 </option>
               ))}
             </select>
-            {/* Status filter */}
             <select
               value={filters.status}
               onChange={(e) => setFilter("status", e.target.value)}
@@ -406,7 +400,6 @@ export default function AdminUsersPage() {
                 </option>
               ))}
             </select>
-            {/* Advanced toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-all ${
@@ -418,7 +411,6 @@ export default function AdminUsersPage() {
               <IoFilterOutline className="text-sm" />
               {t("actions.advancedFilters")}
             </button>
-            {/* Reset */}
             <button
               onClick={resetFilters}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
@@ -428,7 +420,6 @@ export default function AdminUsersPage() {
             </button>
           </div>
 
-          {/* Advanced filters */}
           {showFilters && (
             <div className="mt-3 pt-3 border-t border-indigo-100 dark:border-indigo-900/30 grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
@@ -524,7 +515,6 @@ export default function AdminUsersPage() {
                     key={`${user.id}-${user.status}`}
                     className="hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 transition-colors"
                   >
-                    {/* Checkbox */}
                     <td
                       className="px-4 py-3.5"
                       onClick={(e) => e.stopPropagation()}
@@ -536,8 +526,8 @@ export default function AdminUsersPage() {
                         className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                       />
                     </td>
-                    {/* User */}
-                    {/* Dans AdminUsersPage.tsx, remplacez la partie de l'avatar */}
+
+                    {/* User - Avatar amélioré */}
                     <td
                       className="px-4 py-3.5 cursor-pointer"
                       onClick={() =>
@@ -545,26 +535,23 @@ export default function AdminUsersPage() {
                       }
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 overflow-hidden flex-shrink-0">
-                          {user.profilePictureUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                          {user.profilePictureUrl && !avatarErrors[user.id] ? (
                             <img
                               src={`/api/admin/serve-image?url=${encodeURIComponent(user.profilePictureUrl)}`}
                               alt=""
                               className="w-full h-full object-cover"
-                              onError={(e) => {
-                                console.error(
-                                  "Erreur chargement image:",
-                                  user.profilePictureUrl,
-                                );
-                                e.currentTarget.style.display = "none";
+                              onError={() => {
+                                setAvatarErrors((prev) => ({
+                                  ...prev,
+                                  [user.id]: true,
+                                }));
                               }}
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-xs">
-                              {user.firstName?.[0]}
-                              {user.lastName?.[0]}
-                            </div>
+                            <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs">
+                              {getUserInitials(user)}
+                            </span>
                           )}
                         </div>
                         <div>
@@ -577,6 +564,7 @@ export default function AdminUsersPage() {
                         </div>
                       </div>
                     </td>
+
                     {/* Contact */}
                     <td className="px-4 py-3.5">
                       <p className="text-sm text-slate-600 dark:text-slate-400">
@@ -589,10 +577,12 @@ export default function AdminUsersPage() {
                         </p>
                       )}
                     </td>
+
                     {/* Role */}
                     <td className="px-4 py-3.5">
                       <UserRoleBadge role={user.role} />
                     </td>
+
                     {/* Status */}
                     <td className="px-4 py-3.5">
                       <UserStatusBadge
@@ -600,6 +590,7 @@ export default function AdminUsersPage() {
                         suspendedUntil={user.suspendedUntil}
                       />
                     </td>
+
                     {/* Verification */}
                     <td className="px-4 py-3.5">
                       <UserVerificationBadge
@@ -607,6 +598,7 @@ export default function AdminUsersPage() {
                         status={user.verificationRequests?.[0]?.status}
                       />
                     </td>
+
                     {/* Reliability */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-2">
@@ -627,10 +619,16 @@ export default function AdminUsersPage() {
                         </span>
                       </div>
                     </td>
-                    {/* Date */}
+
+                    {/* Registration Date */}
                     <td className="px-4 py-3.5 text-xs text-slate-500">
-                      {new Date(user.createdAt).toLocaleDateString(locale)}
+                      {new Date(user.createdAt).toLocaleDateString(locale, {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                      })}
                     </td>
+
                     {/* Actions */}
                     <td className="px-4 py-3.5">
                       <div className="flex items-center gap-1">
@@ -689,18 +687,30 @@ export default function AdminUsersPage() {
                 const u = users.find((u) => u.id === menuPosition.userId)!;
                 return (
                   <div className="py-1">
+                    <button
+                      onClick={() => {
+                        openAddNoteModal(u);
+                        closeMenu();
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300 hover:text-blue-600 flex items-center gap-2.5 transition-colors"
+                    >
+                      <IoCreateOutline className="text-base text-blue-500" />
+                      {t("actions.addNote")}
+                    </button>
+
                     {u.status === "ACTIVE" && (
                       <button
                         onClick={() => {
                           openWarningModal(u);
                           closeMenu();
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-700 dark:text-slate-300 hover:text-amber-600 flex items-center gap-2.5 transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-700 dark:text-slate-300 hover:text-amber-600 flex items-center gap-2.5 transition-colors border-t border-slate-100 dark:border-slate-800"
                       >
                         <IoWarningOutline className="text-base text-amber-500" />
                         {t("actions.warn")}
                       </button>
                     )}
+
                     {(u.status === "TEMPORARILY_SUSPENDED" ||
                       u.status === "PERMANENTLY_BANNED") && (
                       <button
@@ -708,12 +718,13 @@ export default function AdminUsersPage() {
                           openActivateModal(u);
                           closeMenu();
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-700 dark:text-slate-300 hover:text-emerald-600 flex items-center gap-2.5 transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-700 dark:text-slate-300 hover:text-emerald-600 flex items-center gap-2.5 transition-colors border-t border-slate-100 dark:border-slate-800"
                       >
                         <IoCheckmarkCircleOutline className="text-base text-emerald-500" />
                         {t("actions.reactivate")}
                       </button>
                     )}
+
                     {(u.status === "SECURITY_LOCKED" ||
                       u.status === "MANUALLY_BLOCKED") && (
                       <button
@@ -721,12 +732,13 @@ export default function AdminUsersPage() {
                           openActivateModal(u);
                           closeMenu();
                         }}
-                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-700 dark:text-slate-300 hover:text-emerald-600 flex items-center gap-2.5 transition-colors"
+                        className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-slate-700 dark:text-slate-300 hover:text-emerald-600 flex items-center gap-2.5 transition-colors border-t border-slate-100 dark:border-slate-800"
                       >
                         <IoCheckmarkCircleOutline className="text-base text-emerald-500" />
                         {t("actions.unlock")}
                       </button>
                     )}
+
                     {u.status === "ACTIVE" && (
                       <>
                         <button
@@ -734,7 +746,7 @@ export default function AdminUsersPage() {
                             openLockUnlockModal(u);
                             closeMenu();
                           }}
-                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-700 dark:text-slate-300 hover:text-amber-600 flex items-center gap-2.5 transition-colors border-t border-slate-50 dark:border-slate-800"
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 text-slate-700 dark:text-slate-300 hover:text-amber-600 flex items-center gap-2.5 transition-colors border-t border-slate-100 dark:border-slate-800"
                         >
                           <IoLockClosedOutline className="text-base text-amber-500" />
                           {t("actions.lock")}
@@ -751,6 +763,7 @@ export default function AdminUsersPage() {
                         </button>
                       </>
                     )}
+
                     {u.status !== "PERMANENTLY_BANNED" && (
                       <>
                         <button
@@ -758,7 +771,7 @@ export default function AdminUsersPage() {
                             openBanModal(u);
                             closeMenu();
                           }}
-                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-700 dark:text-slate-300 hover:text-red-600 flex items-center gap-2.5 transition-colors border-t border-slate-50 dark:border-slate-800"
+                          className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-700 dark:text-slate-300 hover:text-red-600 flex items-center gap-2.5 transition-colors border-t border-slate-100 dark:border-slate-800"
                         >
                           <IoBanOutline className="text-base text-red-500" />
                           {t("actions.ban")}
@@ -775,6 +788,17 @@ export default function AdminUsersPage() {
                         </button>
                       </>
                     )}
+
+                    <button
+                      onClick={() => {
+                        openActionsHistory(u.id);
+                        closeMenu();
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-slate-700 dark:text-slate-300 hover:text-indigo-600 flex items-center gap-2.5 transition-colors border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <IoArrowUndoOutline className="text-base text-indigo-500" />
+                      {t("actions.history")}
+                    </button>
                   </div>
                 );
               })()}
@@ -830,6 +854,7 @@ export default function AdminUsersPage() {
       <ActionsHistoryModal
         isOpen={showActionsHistory}
         onClose={closeModals}
+        userId={selectedUserForHistory} // ← AJOUTE CETTE LIGNE
         actions={actions}
         onUndo={handleUndoAction}
       />

@@ -1,3 +1,4 @@
+// useVerificationsHistory.ts - Version corrigée
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -24,9 +25,9 @@ export interface VerificationRequest {
 }
 
 export interface GlobalStats {
-  totalCount:     number;
+  totalCount: number;
   validatedCount: number;
-  rejectedCount:  number;
+  rejectedCount: number;
 }
 
 interface UseVerificationsHistoryProps {
@@ -38,18 +39,20 @@ export function useVerificationsHistory({
 }: UseVerificationsHistoryProps = {}) {
   const { getToken } = useAuth();
 
-  const [requests,     setRequests]     = useState<VerificationRequest[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState<string | null>(null);
-  const [search,       setSearch]       = useState("");
-  const [currentPage,  setCurrentPage]  = useState(1);
-  const [totalPages,   setTotalPages]   = useState(1);
-  const [totalItems,   setTotalItems]   = useState(0);
-  const [statusFilter, setStatusFilter] = useState<"ALL" | "VALIDATED" | "REJECTED">("ALL");
-  const [globalStats,  setGlobalStats]  = useState<GlobalStats>({
-    totalCount:     0,
+  const [requests, setRequests] = useState<VerificationRequest[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [statusFilter, setStatusFilter] = useState<
+    "ALL" | "VALIDATED" | "REJECTED"
+  >("ALL");
+  const [globalStats, setGlobalStats] = useState<GlobalStats>({
+    totalCount: 0,
     validatedCount: 0,
-    rejectedCount:  0,
+    rejectedCount: 0,
   });
 
   const fetchHistory = useCallback(async () => {
@@ -61,16 +64,16 @@ export function useVerificationsHistory({
       if (!token) throw new Error("Non authentifié");
 
       const qs = new URLSearchParams({
-        page:   currentPage.toString(),
-        limit:  itemsPerPage.toString(),
-        status: statusFilter,           // "ALL" | "VALIDATED" | "REJECTED"
+        page: currentPage.toString(),
+        limit: itemsPerPage.toString(),
+        status: statusFilter,
         ...(search.trim() && { search: search.trim() }),
       });
 
       const res = await fetch(`/api/admin/verifications/history?${qs}`, {
         headers: {
           "Content-Type": "application/json",
-          Authorization:  `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -78,19 +81,21 @@ export function useVerificationsHistory({
 
       const data = await res.json();
 
+      // ✅ PAS BESOIN DE TRANSFORMATION - L'API retourne déjà validatedBy correctement
+      // validatedBy est inclus dans la réponse de l'API via le include dans Prisma
       setRequests(data.requests ?? []);
       setTotalPages(data.pagination?.totalPages ?? 1);
       setTotalItems(data.pagination?.totalCount ?? 0);
 
-      // The API always returns global stats regardless of the active filter
       if (data.stats) {
         setGlobalStats({
-          totalCount:     data.stats.totalCount     ?? 0,
+          totalCount: data.stats.totalCount ?? 0,
           validatedCount: data.stats.validatedCount ?? 0,
-          rejectedCount:  data.stats.rejectedCount  ?? 0,
+          rejectedCount: data.stats.rejectedCount ?? 0,
         });
       }
     } catch (err) {
+      console.error("Fetch history error:", err);
       setError(err instanceof Error ? err.message : "Erreur");
     } finally {
       setLoading(false);
@@ -101,13 +106,14 @@ export function useVerificationsHistory({
     fetchHistory();
   }, [fetchHistory]);
 
-  // Changing filter resets to page 1
-  const changeStatusFilter = useCallback((filter: "ALL" | "VALIDATED" | "REJECTED") => {
-    setStatusFilter(filter);
-    setCurrentPage(1);
-  }, []);
+  const changeStatusFilter = useCallback(
+    (filter: "ALL" | "VALIDATED" | "REJECTED") => {
+      setStatusFilter(filter);
+      setCurrentPage(1);
+    },
+    [],
+  );
 
-  // Changing search resets to page 1
   const changeSearch = useCallback((value: string) => {
     setSearch(value);
     setCurrentPage(1);

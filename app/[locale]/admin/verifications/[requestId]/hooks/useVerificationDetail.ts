@@ -26,13 +26,17 @@ interface VerificationRequest {
   rejectionMotif?: string;
   createdAt: string;
   updatedAt: string;
+  processedAt?: string;
   user: {
     id: string;
     firstName: string;
     lastName: string;
     email: string;
+    phoneNumber?: string;
     profilePictureUrl?: string;
     createdAt: string;
+    role: string;
+    isIdentityVerified: boolean;
   };
 }
 
@@ -47,19 +51,17 @@ export function useVerificationDetail(requestId: string) {
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [rejectionMotif, setRejectionMotif] = useState("");
   const [adminComment, setAdminComment] = useState("");
-  
-  // Nouvel état pour suivre l'action sélectionnée
-  const [selectedAction, setSelectedAction] = useState<"validate" | "reject" | null>(null);
+  const [selectedAction, setSelectedAction] = useState<
+    "validate" | "reject" | null
+  >(null);
 
   const fetchRequest = useCallback(async () => {
     if (!requestId) {
-      console.error("[fetchRequest] Pas de requestId");
       setError("ID de demande manquant");
       setLoading(false);
       return;
     }
 
-    console.log("[fetchRequest] Début pour ID:", requestId);
     setLoading(true);
     setError(null);
 
@@ -69,12 +71,9 @@ export function useVerificationDetail(requestId: string) {
         throw new Error("Non authentifié");
       }
 
-      console.log("[fetchRequest] Token obtenu, appel API...");
       const res = await fetch(`/api/admin/verifications/${requestId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      console.log("[fetchRequest] Status réponse:", res.status);
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
@@ -82,14 +81,13 @@ export function useVerificationDetail(requestId: string) {
       }
 
       const data = await res.json();
-      console.log("[fetchRequest] Données reçues avec succès");
       setRequest(data);
+      if (data.adminComment) setAdminComment(data.adminComment);
     } catch (err) {
       console.error("[fetchRequest] Erreur:", err);
       setError(err instanceof Error ? err.message : "Erreur de chargement");
     } finally {
       setLoading(false);
-      console.log("[fetchRequest] Fin, loading:", false);
     }
   }, [requestId, getToken]);
 
@@ -99,22 +97,19 @@ export function useVerificationDetail(requestId: string) {
     }
   }, [requestId, fetchRequest]);
 
-  // Fonction pour sélectionner l'action "valider"
   const selectValidate = useCallback(() => {
     setSelectedAction("validate");
-    setShowRejectForm(false); // Ferme le formulaire de rejet si ouvert
-    setRejectionMotif(""); // Reset du motif
+    setShowRejectForm(false);
+    setRejectionMotif("");
     setError(null);
   }, []);
 
-  // Fonction pour sélectionner l'action "rejeter"
   const selectReject = useCallback(() => {
     setSelectedAction("reject");
-    setShowRejectForm(true); // Ouvre le formulaire
+    setShowRejectForm(true);
     setError(null);
   }, []);
 
-  // Fonction pour confirmer la décision (appelée par le footer)
   const confirmDecision = useCallback(async () => {
     if (!selectedAction) {
       setError("Veuillez sélectionner une action (Valider ou Rejeter)");
@@ -157,12 +152,13 @@ export function useVerificationDetail(requestId: string) {
         throw new Error(errorData.error || "Erreur lors de l'action");
       }
 
-      const message = selectedAction === "validate" 
-        ? "Demande validée avec succès !" 
-        : "Demande rejetée avec succès !";
-      
+      const message =
+        selectedAction === "validate"
+          ? "Demande validée avec succès !"
+          : "Demande rejetée avec succès !";
+
       setSuccess(message);
-      
+
       setTimeout(() => {
         const locale = window.location.pathname.split("/")[1] || "fr";
         router.push(`/${locale}/admin/verifications`);
@@ -172,14 +168,14 @@ export function useVerificationDetail(requestId: string) {
     } finally {
       setSubmitting(false);
     }
-  }, [requestId, getToken, selectedAction, rejectionMotif, adminComment, router]);
-
-  // Reset de la sélection quand on quitte
-  const resetSelection = useCallback(() => {
-    setSelectedAction(null);
-    setShowRejectForm(false);
-    setRejectionMotif("");
-  }, []);
+  }, [
+    requestId,
+    getToken,
+    selectedAction,
+    rejectionMotif,
+    adminComment,
+    router,
+  ]);
 
   const resetError = useCallback(() => setError(null), []);
   const resetSuccess = useCallback(() => setSuccess(null), []);
@@ -193,16 +189,15 @@ export function useVerificationDetail(requestId: string) {
     showRejectForm,
     rejectionMotif,
     adminComment,
-    selectedAction,        // Nouveau
+    selectedAction,
     extractedData: request?.extractedData || {},
     requestUser: request?.user,
     setShowRejectForm,
     setRejectionMotif,
     setAdminComment,
-    selectValidate,        // Nouveau (remplace handleValidate)
-    selectReject,          // Nouveau (remplace setShowRejectForm direct)
-    confirmDecision,       // Nouveau (remplace handleValidate/handleReject directs)
-    resetSelection,        // Nouveau
+    selectValidate,
+    selectReject,
+    confirmDecision,
     resetError,
     resetSuccess,
     fetchRequest,

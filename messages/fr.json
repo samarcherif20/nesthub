@@ -478,6 +478,19 @@
         "enterLinkUrl": "Entrez l'URL du lien:"
       },
       "actionsHistoryModal": {
+        "motifs": {
+          "listing": "Annonce",
+          "listingId": "ID annonce",
+          "listingTitle": "Titre",
+          "user": "Utilisateur",
+          "userId": "ID utilisateur",
+          "reason": "Motif",
+          "duration": "Durée",
+          "level": "Niveau",
+          "newLevel": "Nouveau niveau",
+          "changes": "Modifications",
+          "permanentDelete": "Suppression définitive"
+        },
         "title": "Historique des actions",
         "subtitle": "NESTHUB Administration",
         "close": "Fermer",
@@ -506,7 +519,13 @@
           "note": "Note interne",
           "rejectVerification": "Rejet vérification",
           "validateVerification": "Validation vérification",
-          "undone": "Action annulée"
+          "undone": "Action annulée",
+          "approveListing": "Annonce approuvée",
+          "rejectListing": "Annonce rejetée",
+          "updateListing": "Annonce modifiée",
+          "createListing": "Annonce créée",
+          "deleteListing": "Annonce supprimée",
+          "archiveListing": "Annonce archivée"
         },
         "status": {
           "active": "Actif",
@@ -1086,7 +1105,6 @@
     "inviteAdmin": "Inviter un administrateur",
     "secureLink": "Lien sécurisé · expire dans 48h",
     "newAdminEmail": "Email du nouvel admin",
-    "responsibility": "Responsabilité",
     "infoText": "Un lien unique sera envoyé par email et expirera dans",
     "sending": "Envoi en cours",
     "generateInvitation": "Générer l'invitation",
@@ -1116,9 +1134,18 @@
     "realTimeExpiry": "Suivi de l'expiration en temps réel",
     "expiryApplication": "Application de l'expiration 48h",
     "securityText": "NESTHUB's zero-trust invitation system generates transient access tokens. If an invitee does not complete registration within the 48-hour window, the encrypted token is automatically purged from the gateway cache. This prevents long-standing unauthorized link reuse.",
+    "refresh": "Rafraîchir les données",
     "autoPurge": "Purge auto",
     "limitedAccess": "Accès limité",
-    "policy": "Politique"
+    "policy": "Politique",
+    "fullAccessTitle": "Accès Administrateur Complet",
+    "fullAccessDescription": "Tous les administrateurs invités auront un accès complet à toutes les fonctionnalités et paramètres du système. Aucune restriction de rôle ne s'applique.",
+    "allStatus": "Tous",
+    "searchByEmail": "Rechercher par email",
+    "clearFilters": "Effacer",
+    "displayed": "affichés",
+    "noResults": "Aucun résultat trouvé",
+    "tryDifferentFilters": "Essayez d'autres filtres"
   },
 
   "AdminContent": {
@@ -1165,12 +1192,13 @@
   },
 
   "VerificationDetail": {
+    "verifications":"VÉRIFICATIONS",
     "alreadyValidated": "Cette demande a déjà été validée",
     "alreadyRejected": "Cette demande a déjà été rejetée",
     "validated": "Validée",
     "rejected": "Rejetée",
     "backk": "Retour",
-    "verification": "Demende de vérification n° : ",
+    "requestNumber": "DEMENDE DE VÉRIFICATIONS N° : ",
     "pending": "En attente",
     "front": "Recto",
     "back": "Verso",
@@ -1288,15 +1316,20 @@
       "owner": "PROPRIÉTAIRE",
       "tenant": "LOCATAIRE"
     },
-    "status": {
-      "pending": "En attente"
-    },
     "empty": {
       "title": "Toutes les vérifications sont terminées !",
       "description": "Félicitations, votre file d'attente est vide. Vous serez notifié dès qu'un nouveau propriétaire soumettra ses documents.",
       "backToDashboard": "Retour au tableau de bord",
       "viewHistory": "Voir l'historique"
-    }
+    },
+    "status": {
+      "pending": "En attente",
+
+      "all": "Tous les statuts",
+      "approved": "Approuvée",
+      "rejected": "Rejetée"
+    },
+    "resetFilters": "Réinitialiser"
   },
 
   "SSOCallback": {
@@ -1336,6 +1369,8 @@
     "privacy": "Confidentialité"
   },
   "VerificationsHistory": {
+    "verifications": "VÉRIFICATIONS",
+    "history": "HISTORIQUE",
     "title": "Historique des vérifications",
     "subtitle": "Consultez toutes les demandes de vérification déjà traitées",
     "backToPending": "Retour aux demandes en attente",
@@ -1745,7 +1780,7 @@
       "draft": "Brouillon"
     },
     "bookingStatus": {
-       "pending": "En attente",
+      "pending": "En attente",
       "accepted": "Acceptée",
       "confirmed": "Confirmée",
       "completed": "Terminée",
@@ -1952,7 +1987,7 @@
       "archived": "Archivée"
     }
   },
-  
+
   "OwnerListings": {
     "currency": {
       "tnd": "TND"
@@ -2361,7 +2396,7 @@
     "success": {
       "saved": "Les modifications ont été sauvegardées avec succès"
     },
-    
+
     "validation": {
       "titleRequired": "Le titre est requis",
       "titleMin": "Le titre doit contenir au moins 5 caractères",
@@ -2379,9 +2414,7 @@
       "pricePerNightRequired": "Le prix par nuit est requis",
       "pricePerMonthRequired": "Le prix par mois est requis"
     }
-  }
-,
-
+  },
   "OwnerCalendar": {
     "common": {
       "guest": "Voyageur",
@@ -3041,7 +3074,6 @@
     "subtitle": "Retrouvez l'historique complet de vos séjours et gérez vos prochaines escapades.",
     "upcoming": "À venir",
     "past": "Passées",
-    "cancelled": "Annulées",
     "upcomingLower": "à venir",
     "pastLower": "passée",
     "cancelledLower": "annulée",
@@ -3061,11 +3093,9 @@
     "cancelled": "Réservation annulée",
     "errorCancel": "Erreur lors de l'annulation",
     "connectionError": "Erreur de connexion"
-  
   },
-  
+
   "TenantHeader": {
-   
     "role": "Locataire",
     "login": "Connexion",
     "nav": {
@@ -3092,19 +3122,382 @@
       "message": "Êtes-vous sûr de vouloir vous déconnecter ?",
       "cancel": "Annuler",
       "confirm": "Déconnexion"
-    }},
-    
+    }
+  },
+
   "search": {
     "placeholder": "Où voulez-vous aller ?...",
     "results": "Résultats de recherche",
     "seeAll": "Voir tous les résultats",
     "noResults": "Aucun résultat trouvé",
     "searchDirectly": "Rechercher directement"
+  },
+  "AdminProperties": {
+    "title": "Gestion des Propriétés",
+    "description": "Contrôlez et modérez l'inventaire immobilier de NESTHUB.",
+    "refresh": "Actualiser",
+    "export": "Exporter",
+    "exportCSV": "Exporter en CSV",
+    "exportPDF": "Exporter en PDF",
+    "csvFormat": "Format tableur",
+    "pdfFormat": "Format document",
+    "searchPlaceholder": "Rechercher une propriété...",
+    "allStatus": "Tous les statuts",
+    "statusActive": "Active",
+    "statusInactive": "Inactive",
+    "statusDraft": "Brouillon",
+    "statusPending": "En attente",
+    "statusRejected": "Rejeté",
+    "statusArchived": "Archivé",
+    "statusSuspended": "Suspendu",
+    "allTypes": "Tous les types",
+    "typeApartment": "Appartement",
+    "typeVilla": "Villa",
+    "typeStudio": "Studio",
+    "typeDuplex": "Duplex",
+    "typeHouse": "Maison",
+    "typeRoom": "Chambre",
+    "advancedFilters": "Filtres avancés",
+    "resetFilters": "Réinitialiser",
+    "propertiesCount": "propriété",
+    "propertiesCountPlural": "propriétés",
+    "tableHeaderProperty": "Propriété",
+    "tableHeaderOwner": "Propriétaire",
+    "tableHeaderType": "Type",
+    "tableHeaderPrice": "Prix",
+    "tableHeaderStatus": "Statut",
+    "tableHeaderDate": "Date",
+    "tableHeaderActions": "Actions",
+    "pricePerNight": "/nuit",
+    "pricePerMonth": "/mois",
+    "noPropertiesFound": "Aucune propriété trouvée",
+    "viewListing": "Voir l'annonce",
+    "validateListing": "Valider l'annonce",
+    "rejectListing": "Rejeter",
+    "activateListing": "Activer",
+    "deactivateListing": "Désactiver",
+    "archiveListing": "Archiver",
+    "deleteListing": "Supprimer",
+    "confirmDelete": "Confirmer la suppression définitive ?",
+    "statsTotal": "Total",
+    "statsActive": "Actives",
+    "statsPending": "En attente",
+    "statsRejected": "Rejetées",
+    "statsArchived": "Archivées",
+    "mapTitle": "Distribution géographique",
+    "mapGeolocated": "propriété géolocalisée",
+    "mapGeolocatedPlural": "propriétés géolocalisées",
+    "mapNoProperties": "Aucune propriété géolocalisée",
+    "mapOthers": "autres",
+    "alertsTitle": "Alertes récentes",
+    "alertsNoData": "Aucune alerte récente",
+    "alertsQuiet": "Tout est calme pour le moment",
+    "alertsViewAll": "Voir toutes les alertes",
+    "alertsViewLess": "Voir moins",
+    "alertsTotal": "total",
+    "filterMinPrice": "Prix minimum (TND/nuit)",
+    "filterMaxPrice": "Prix maximum (TND/nuit)",
+    "filterGovernorate": "Gouvernorat",
+    "pricePlaceholder": "ex: 50",
+    "governoratePlaceholder": "ex: Tunis, Sousse...",
+    "actions": "Actions",
+    "view": "Voir",
+    "edit": "Modifier",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "success": "Succès",
+    "error": "Erreur",
+    "loading": "Chargement...",
+    "unauthorized": "Non autorisé",
+    "all": "Tous"
+  },
+
+  "AdminTransactions": {
+    "title": "Transactions",
+    "description": "Suivez et gérez toutes les transactions de la plateforme",
+    "export": "Exporter",
+    "exportCSV": "Export CSV",
+    "exportPDF": "Export PDF",
+    "refresh": "Actualiser",
+    "searchPlaceholder": "Rechercher par référence, client, email...",
+    "allStatus": "Tous statuts",
+    "statusSuccess": "Réussies",
+    "statusPending": "En attente",
+    "statusRefunded": "Remboursées",
+    "statusFailed": "Échouées",
+    "allTypes": "Tous types",
+    "typePayment": "Paiements",
+    "typeRefund": "Remboursements",
+    "typeCommission": "Commissions",
+    "typePayout": "Virements",
+    "statsTotal": "Total",
+    "statsSuccess": "Réussis",
+    "statsRefunded": "Remboursés",
+    "statsPending": "En attente",
+    "statsSuccessRate": "Taux succès",
+    "transactionsCount": "transactions",
+    "vsLastMonth": "vs mois dernier",
+    "totalVolume": "Volume total",
+    "totalVolumeDesc": "Toutes transactions confondues",
+    "commissions": "Commissions",
+    "commissionsDesc": "10% sur chaque transaction",
+    "refunds": "Remboursements",
+    "refundsDesc": "Transactions remboursées",
+    "tableDate": "Date et heure",
+    "tableAmount": "Montant",
+    "tableStatus": "État",
+    "tablePaymentMethod": "Moyen de paiement",
+    "tableDescription": "Description",
+    "tableCustomer": "Client",
+    "tableActions": "Actions",
+    "statusSuccessLabel": "Réussie",
+    "statusPendingLabel": "En attente",
+    "statusRefundedLabel": "Remboursée",
+    "statusFailedLabel": "Échouée",
+    "typePaymentLabel": "Paiement",
+    "typeRefundLabel": "Remboursement",
+    "booking": "Réservation",
+    "commission": "Commission",
+    "refundButton": "Rembourser",
+    "viewOnStripe": "Voir sur Stripe",
+    "noTransactions": "Aucune transaction trouvée",
+    "successRate": "Taux de succès",
+    "successfulTransactions": "Transactions réussies",
+    "conversionRate": "Taux de conversion",
+    "averageCommission": "Commission moyenne",
+    "commissionRate": "Taux de commission",
+    "averageRefund": "Remboursement moyen",
+    "refundRate": "Taux de remboursement",
+    "ofTotalVolume": "du volume total",
+    "apply": "Appliquer",
+    "previousMonth": "vs mois dernier",
+    "confirmRefund": "Voulez-vous vraiment rembourser cette transaction ?",
+    "refundSuccess": "Remboursement effectué avec succès",
+    "refundError": "Erreur lors du remboursement",
+    "csvFormat": "Format CSV pour tableur",
+    "pdfFormat": "Format PDF imprimable",
+    "percentageOfTotal": "Soit"
+  },
+  
+  "Moderation": {
+    "title": "Modération des Conversations",
+    "description": "Surveillez, signalez et résolvez les interactions utilisateurs",
+    "searchPlaceholder": "Rechercher par titre, participant...",
+    "apply": "Appliquer",
+    "empty": "Aucune conversation trouvée",
+    "stats": {
+      "active": "Actives",
+      "flagged": "Signalées"
+    },
+    "status": {
+      "active": "Active",
+      "flagged": "Signalée",
+      "closed": "Fermée"
+    },
+    "filters": {
+      "all": "Toutes",
+      "active": "Actives",
+      "flagged": "Signalées",
+      "closed": "Fermées"
+    },
+    "table": {
+      "participants": "Participants",
+      "listing": "Annonce",
+      "lastMessage": "Dernier message",
+      "date": "Date",
+      "status": "Statut",
+      "actions": "Actions",
+      "noMessage": "Aucun message",
+      "reports": "signalement"
+    },
+    "participants": {
+      "owner": "Propriétaire",
+      "tenant": "Locataire",
+      "and": "&"
+    },
+    "listing": {
+      "untitled": "Sans titre"
+    },
+    "actions": {
+      "flagged": "Conversation signalée avec succès",
+      "unflagged": "Signalement retiré avec succès",
+      "closed": "Conversation fermée avec succès",
+      "reopened": "Conversation réouverte avec succès",
+      "success": "Action effectuée avec succès"
+    },
+    "errors": {
+      "loadFailed": "Erreur lors du chargement des conversations",
+      "actionFailed": "Erreur lors de l'action"
+    },
+    "footer": {
+      "autoModeration": "Modération Automatique",
+      "autoDescription": "Notre IA a signalé des conversations potentiellement problématiques.",
+      "runAudit": "Lancer l'audit",
+      "communityRules": "Règles Communautaires",
+      "rulesDescription": "Assurez-vous que toutes les interactions respectent les normes Nesthub.",
+      "viewPolicy": "Voir la politique"
+    }
+  },
+  "ConversationDetail": {
+    "moderation": "MODERATION",
+    "conversationNumber": "CONVERSATION N°:",
+    "flagged": "SIGNALÉE",
+    "reports": "signalement(s)",
+    "owner": "Propriétaire",
+    "tenant": "Locataire",
+    "noMessages": "Aucun message",
+    "notePlaceholder": "Ajouter une note de modération...",
+    "send": "Envoyer",
+    "aiTitle": "Intelligence Modération",
+    "aiSubtitle": "Analyse temps réel activée",
+    "reliabilityScores": "Scores de Fiabilité",
+    "reliableUser": "Utilisateur fiable",
+    "moderateScore": "Score modéré",
+    "lowScore": "Score bas",
+    "exemplaryProfile": "Profil exemplaire",
+    "correctBehavior": "Comportement correct",
+    "toMonitor": "À surveiller",
+    "detectedAlerts": "Alertes Détectées",
+    "userReport": "Signalement utilisateur",
+    "reportedCount": "Cette conversation a été signalée {count} fois.",
+    "blockedConversation": "Conversation bloquée",
+    "suspendedByModerator": "Cette conversation a été suspendue par un modérateur.",
+    "internalNotes": "Notes Internes",
+    "quickActions": "Actions Rapides",
+    "removeFlag": "Retirer le signalement",
+    "flag": "Signaler",
+    "close": "Clôturer",
+    "reopen": "Rouvrir",
+    "backToList": "Retour",
+    "notFound": "Conversation non trouvée",
+    "errors": {
+      "loadFailed": "Erreur lors du chargement de la conversation",
+      "noteFailed": "Erreur lors de l'ajout de la note",
+      "actionFailed": "Erreur lors de l'action"
+    },
+    "success": {
+      "noteAdded": "Note ajoutée avec succès",
+      "flagged": "Conversation signalée avec succès",
+      "unflagged": "Signalement retiré avec succès",
+      "closed": "Conversation fermée avec succès",
+      "reopened": "Conversation réouverte avec succès",
+      "actionDone": "Action effectuée avec succès"
+    }
+  },
+  "Disputes": {
+    "title": "Gestion des litiges",
+    "description": "Examinez et résolvez les litiges signalés",
+    "searchPlaceholder": "Rechercher par référence, utilisateur...",
+    "disputesCount": "litige(s)",
+    "noDisputes": "Aucun litige trouvé",
+    "selectDispute": "Sélectionnez un litige pour voir les détails",
+    "untitled": "Sans titre",
+    "openedDispute": "A ouvert ce litige",
+    "evidence": "Preuves",
+    "enlargedEvidence": "Preuve agrandie",
+    "stayDetails": "Détails du séjour",
+    "dates": "Dates",
+    "nights": "Nuits",
+    "nightsUnit": "nuits",
+    "totalAmount": "Montant total",
+    "requestedAmount": "Montant demandé",
+    "description": "Description du litige",
+    "noDescription": "Aucune description fournie",
+    "resolution": "Résolution",
+    "refundGranted": "Remboursement accordé",
+    "conversation": "Conversation",
+    "noMessages": "Aucun message pour le moment",
+    "owner": "Propriétaire",
+    "tenant": "Locataire",
+    "addResponse": "Ajouter une réponse...",
+    "resolve": "Résoudre",
+    "reject": "Rejeter",
+    "tabs": {
+      "active": "En cours",
+      "archived": "Archivés"
+    },
+    "stats": {
+      "open": "Ouverts",
+      "inReview": "En examen",
+      "resolved": "Résolus",
+      "refunds": "Remboursements"
+    },
+    "status": {
+      "open": "En attente",
+      "inReview": "En examen",
+      "resolved": "Résolu",
+      "rejected": "Rejeté"
+    },
+    "severity": {
+      "high": "Élevée",
+      "medium": "Moyenne",
+      "low": "Basse"
+    },
+    "type": {
+      "damage": "Dommages",
+      "cleaning": "Propreté",
+      "misrepresentation": "Non conforme",
+      "noise": "Bruit",
+      "payment": "Paiement",
+      "cancellation": "Annulation",
+      "other": "Autre"
+    },
+    "resolutions": {
+      "adminResolved": "Résolu par l'administrateur",
+      "adminRejected": "Litige rejeté par l'administrateur"
+    },
+    "success": {
+      "resolved": "Litige résolu avec succès",
+      "rejected": "Litige rejeté"
+    },
+    "errors": {
+      "fetchFailed": "Erreur lors du chargement des litiges",
+      "resolveFailed": "Erreur lors de la résolution",
+      "rejectFailed": "Erreur lors du rejet",
+      "messageFailed": "Erreur lors de l'envoi du message"
+    }
+  },
+  
+  "Settings": {
+    "title": "Paramètres de l'Application",
+    "description": "Configurez les variables globales, les protocoles de sécurité et la logique métier de la plateforme.",
+    "searchPlaceholder": "Rechercher des paramètres...",
+    "loading": "Chargement des paramètres...",
+    "categories": "Gestion des Catégories",
+    "newCategory": "Nouvelle catégorie",
+    "addCategory": "Ajouter",
+    "commissionSettings": "Paramètres de Commission",
+    "standardCommission": "Commission Standard",
+    "premiumCommission": "Commission Premium",
+    "searchConfiguration": "Configuration de la Recherche",
+    "defaultSearchRadius": "Rayon de recherche par défaut",
+    "displayPriority": "Priorité d'affichage",
+    "newestFirst": "Nouveaux inscrits d'abord",
+    "topRatedFirst": "Mieux notés d'abord",
+    "highCommissionFirst": "Commission élevée d'abord",
+    "popularDestinations": "Destinations Populaires",
+    "addDestination": "+ Ajouter",
+    "moderationRules": "Règles de Modération",
+    "autoHideSuspicious": "Auto-masquage suspect",
+    "autoHideDescription": "Masquer automatiquement les annonces signalées plus de X fois.",
+    "reports": "signalements",
+    "blacklistedKeywords": "Liste noire des mots-clés",
+    "addKeyword": "Ajouter un mot-clé",
+    "add": "Ajouter",
+    "supportServices": "Services de Support",
+    "helpCenter": "Centre d'aide",
+    "testLink": "Tester le lien",
+    "emergencyNumber": "Numéro d'urgence",
+    "emergencyHint": "Visible uniquement pour les hôtes Premium",
+    "emailRouting": "Routage Email",
+    "manageAliases": "Gérer les alias",
+    "reset": "Réinitialiser",
+    "saveChanges": "Enregistrer",
+    "saveSuccess": "Paramètres sauvegardés avec succès",
+    "saveError": "Erreur lors de la sauvegarde",
+    "connectionError": "Erreur de connexion",
+    "resetSuccess": "Paramètres réinitialisés"
   }
 }
-  
-
-  
-
-
 

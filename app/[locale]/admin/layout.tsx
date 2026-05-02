@@ -25,7 +25,7 @@ import { MdOutlinePeopleAlt } from "react-icons/md";
 import { MdOutlineMapsHomeWork } from "react-icons/md";
 import { GrMoney } from "react-icons/gr";
 import { MdOutlineVerified } from "react-icons/md";
-import { PiGavel } from "react-icons/pi";
+import { PiGavel, PiGavelBold } from "react-icons/pi";
 import { PiFilesDuotone } from "react-icons/pi";
 import { RiSettings3Line } from "react-icons/ri";
 import { MdOutlineReportGmailerrorred } from "react-icons/md";
@@ -245,7 +245,7 @@ export default function AdminLayout({
     {
       name: tLayout("disputes"),
       href: `/${locale}/admin/disputes`,
-      icon: <PiGavel size={18} />,
+      icon: <PiGavelBold  size={18} />,
       count: counters.activeDisputes,
       countColor: "bg-amber-500",
     },
@@ -271,7 +271,7 @@ export default function AdminLayout({
 
   if (!mounted || !isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f9f9ff] dark:bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-background-light dark:bg-slate-950">
         <LoadingSpinner size="lg" color="primary" />
       </div>
     );
@@ -284,7 +284,7 @@ export default function AdminLayout({
   const sidebarW = isSidebarOpen ? "w-64" : "w-64 lg:w-20";
 
   return (
-    <div className="flex h-screen bg-[#f9f9ff] dark:bg-slate-950 overflow-hidden">
+    <div className="flex h-screen bg-background-light dark:bg-slate-950/20 overflow-hidden">
       {/* Overlay mobile */}
       {isSidebarOpen && (
         <div
@@ -328,7 +328,7 @@ export default function AdminLayout({
         {/* Toggle sidebar button */}
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="absolute -right-3 top-20 w-6 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-all z-10 shadow-md hidden lg:flex cursor-pointer"
+          className="absolute -right-3 bottom-33 w-6 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-all z-10 shadow-md hidden lg:flex cursor-pointer"
         >
           {isSidebarOpen ? (
             <FaChevronCircleLeft size={14} />

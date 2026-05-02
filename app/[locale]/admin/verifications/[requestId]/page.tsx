@@ -19,6 +19,7 @@ import {
   MdOutlineRotateLeft,
   MdOutlineFlip,
   MdOutlineImage,
+  MdOutlineChevronRight,
 } from "react-icons/md";
 import { TbShieldCheck, TbShieldX } from "react-icons/tb";
 import { FiMail, FiPhone, FiUser } from "react-icons/fi";
@@ -188,44 +189,32 @@ export default function VerificationDetailPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
 
-      {/* ══ HEADER ══════════════════════════════════════════════════════════ */}
-      <header className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-3">
-          <Link
-            href={`/${locale}/admin/verifications`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-              text-slate-500 dark:text-slate-400
-              hover:bg-slate-100 dark:hover:bg-slate-800
-              hover:text-slate-800 dark:hover:text-slate-200
-              border border-transparent hover:border-slate-200 dark:hover:border-slate-700 transition-all"
-          >
-            <MdOutlineArrowBack className="text-base" />
-            {t("backk")}
-          </Link>
-          <div className="w-px h-4 bg-slate-200 dark:bg-slate-700" />
-          <div className="flex items-center gap-2">
-            <HiOutlineIdentification className="text-indigo-500 dark:text-indigo-400 text-lg" />
-            <div>
-              <p className="text-sm font-semibold text-slate-900 dark:text-white leading-tight">
-                {t("verification")}{" "}
-                <span className="font-mono text-indigo-500 dark:text-indigo-400">
-                  #{requestId?.slice(-8).toUpperCase()}
-                </span>
-              </p>
-              <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-none">
-                {requestUser?.firstName} {requestUser?.lastName}
-              </p>
-            </div>
-          </div>
-        </div>
+{/* ══ HEADER ══════════════════════════════════════════════════════════ */}
+<header className="shrink-0 px-5 py-3 border-b border-slate-200 dark:border-slate-800">
+  {/* Breadcrumb et Status sur la même ligne */}
+  <div className="flex items-center justify-between">
+    <div className="flex items-center gap-2 text-sm">
+      <Link
+        href={`/${locale}/admin/verifications`}
+        className="text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors"
+      >
+        {t("verifications")}
+      </Link>
+      <MdOutlineChevronRight className="text-slate-400 dark:text-slate-600 text-sm" />
+      <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+        {t("requestNumber")} #{requestId?.slice(-8).toUpperCase()}
+      </span>
+    </div>
 
-        {/* dynamic status badge */}
-        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide ${statusBadge.wrap} ${statusBadge.text}`}>
-          <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dot} ${statusBadge.pulse ? "animate-pulse" : ""}`} />
-          {statusBadge.label}
-        </div>
-      </header>
+    {/* dynamic status badge */}
+    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wide ${statusBadge.wrap} ${statusBadge.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${statusBadge.dot} ${statusBadge.pulse ? "animate-pulse" : ""}`} />
+      {statusBadge.label}
+    </div>
+  </div>
+</header>
 
+      
       {/* ══ BODY ════════════════════════════════════════════════════════════ */}
       <div className="flex-1 flex min-h-0 overflow-hidden gap-0">
 
