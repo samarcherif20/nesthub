@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
+import { useSearchParams } from "next/navigation";
 
 export interface Conversation {
   id: string;
@@ -80,9 +81,12 @@ export function formatRelativeTime(dateStr: string): string {
 export const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
 
-// ✅ Hook useMessages
+// ✅ Hook useMessages modifié
 export function useMessages() {
   const { user } = useUser();
+  const searchParams = useSearchParams();
+  const conversationIdFromUrl = searchParams.get("conversation");
+  
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -92,9 +96,6 @@ export function useMessages() {
   );
   const [isMobileView, setIsMobileView] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [conversationIdParam, setConversationIdParam] = useState<string | null>(
-    null,
-  );
 
   // Détecter l'écran mobile
   useEffect(() => {
@@ -108,30 +109,49 @@ export function useMessages() {
 
   // Load conversations
   const loadConversations = useCallback(async () => {
+    setIsLoading(true);
     try {
       const res = await fetch("/api/conversations");
       if (!res.ok) return;
       const data = await res.json();
       setConversations(data);
-      if (data.length > 0 && !conversationIdParam && !isMobileView) {
-        setSelectedConv(data[0]);
+      
+      // ✅ NE SÉLECTIONNE UNE CONVERSATION QUE SI:
+      // 1. Il y a un conversationId dans l'URL
+      // 2. Cette conversation existe dans la liste
+      // 3. On n'est PAS sur mobile (ou on gère mobile différemment)
+      if (conversationIdFromUrl && !isMobileView) {
+        const targetConv = data.find((c: Conversation) => c.id === conversationIdFromUrl);
+        if (targetConv) {
+          setSelectedConv(targetConv);
+        }
       }
+      // ✅ PAS de sélection automatique de la première conversation sinon
+      
     } catch (e) {
       console.error(e);
     } finally {
       setIsLoading(false);
     }
-  }, [conversationIdParam, isMobileView]);
+  }, [conversationIdFromUrl, isMobileView]);
 
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
 
+  // Sélection manuelle d'une conversation (quand l'utilisateur clique)
   const handleSelectConv = useCallback(
     (conv: Conversation) => {
       setSelectedConv(conv);
       if (isMobileView) {
         setShowChat(true);
+      }
+      
+      // ✅ Mettre à jour l'URL sans recharger la page (optionnel)
+      if (typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("conversation", conv.id);
+        window.history.pushState({}, "", url.toString());
       }
     },
     [isMobileView],
@@ -140,6 +160,13 @@ export function useMessages() {
   const handleBack = useCallback(() => {
     setShowChat(false);
     setSelectedConv(null);
+    
+    // ✅ Retirer le paramètre de l'URL
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("conversation");
+      window.history.pushState({}, "", url.toString());
+    }
   }, []);
 
   const handleUpdateInfoRequest = useCallback((updatedInfoRequest: any) => {

@@ -1160,15 +1160,7 @@ export function ChatBox({
                       : "Bloquer cet utilisateur"}
                   </span>
                 </button>
-                <button
-                  onClick={handleClearHistory}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors"
-                >
-                  <IoTrashOutline className="text-slate-700 dark:text-slate-300flex-shrink-0" />
-                  <span className="text-slate-700 dark:text-slate-300">
-                    Effacer l'historique
-                  </span>
-                </button>
+                
               </div>
             )}
           </div>

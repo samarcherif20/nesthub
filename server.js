@@ -5,6 +5,7 @@ const { parse } = require("url");
 const next = require("next");
 const { Server } = require("socket.io");
 const { PrismaClient } = require("@prisma/client");
+const OpenAI = require("openai");
 
 const prisma = new PrismaClient();
 const dev = process.env.NODE_ENV !== "production";
@@ -21,6 +22,93 @@ let intentClassifier = null;
 
 // Variable pour l'instance socket.io (sera exposée à l'API)
 let globalIo = null;
+
+// 🔥 CLIENT GITHUB AI (via GitHub Token)
+const githubAI = new OpenAI({
+  baseURL: "https://models.github.ai/inference",
+  apiKey: process.env.GITHUB_TOKEN,
+});
+
+// 🧠 FONCTION DE DÉTECTION AVEC GITHUB AI (GPT-4o-mini)
+async function detectLeaksWithGitHubAI(content) {
+  const prompt = `Tu es un détecteur de fuite d'informations personnelles pour une plateforme de location immobilière.
+
+Message à analyser: "${content}"
+
+Détecte les éléments suivants:
+- Numéros de téléphone tunisiens (+216, 00216, ou commençant par 2,5,9 suivi de 6 chiffres)
+- Numéros écrits en lettres (ex: "un deux zéro un deux")
+- Adresses email
+- Numéros CIN (6-8 chiffres, ne commençant pas par 2,5,9)
+- RIB (Relevé d'Identité Bancaire)
+- IBAN (international)
+- Adresses physiques (rue, avenue, cité, code postal)
+- Liens WhatsApp (whatsapp.com, wa.me)
+- Liens externes (http, https)
+
+RÈGLES IMPORTANTES:
+1. Réponds UNIQUEMENT en JSON valide
+2. La première ligne doit être "{"
+3. La dernière ligne doit être "}"
+
+FORMAT DE RÉPONSE EXACT (sans texte avant ou après):
+{
+  "hasLeak": true/false,
+  "leaks": [
+    {
+      "type": "phone|cin|rib|iban|email|address|whatsapp|url|number_text",
+      "value": "la valeur exacte détectée",
+      "confidence": 0.95
+    }
+  ],
+  "riskLevel": "low|medium|high",
+  "explanation": "pourquoi c'est une fuite (1 phrase)"
+}
+
+Si aucune fuite:
+{
+  "hasLeak": false,
+  "leaks": [],
+  "riskLevel": "low",
+  "explanation": "Aucune information personnelle détectée"
+}`;
+
+  try {
+    console.log("🤖 [GitHub AI] Appel à gpt-4o-mini...");
+
+    const response = await githubAI.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "gpt-4o-mini",
+      temperature: 0.1,
+    });
+
+    const responseText = response.choices[0].message.content;
+    console.log("📥 [GitHub AI] Réponse reçue");
+
+    // Extraire le JSON de la réponse
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const result = JSON.parse(jsonMatch[0]);
+      console.log("✅ [GitHub AI] Résultat:", JSON.stringify(result, null, 2));
+      return result;
+    }
+
+    return {
+      hasLeak: false,
+      leaks: [],
+      riskLevel: "low",
+      explanation: "Erreur parsing JSON",
+    };
+  } catch (error) {
+    console.error("❌ [GitHub AI] Erreur:", error.message);
+    return {
+      hasLeak: false,
+      leaks: [],
+      riskLevel: "low",
+      explanation: "API error, fallback to regex",
+    };
+  }
+}
 
 // 🔥 FONCTION POUR CHARGER TOUS LES MODÈLES AU DÉMARRAGE
 async function preloadAIModel() {
@@ -163,75 +251,40 @@ app.prepare().then(async () => {
         console.log("🎤 [VOICE] Message vocal - skip modération");
       } else {
         try {
-          console.log("🛡️ [REGEX] Vérification...");
+          // ==========================================
+          // 🧠 ÉTAPE 1 : DÉTECTION AVEC GITHUB AI (GPT-4o-mini)
+          // ==========================================
+          console.log("🤖 [GitHub AI] Analyse du message...");
 
-          const phonePatterns = [
-            /[0-9]{8}/,
-            /[0-9]{2}[ \-\s][0-9]{2}[ \-\s][0-9]{2}[ \-\s][0-9]{2}/,
-            /[0-9]{2}\.[0-9]{2}\.[0-9]{2}\.[0-9]{2}/,
-            /\+216[0-9]{8}/,
-          ];
+          const aiResult = await detectLeaksWithGitHubAI(data.content);
 
-          if (phonePatterns.some((p) => p.test(data.content))) {
+          if (aiResult.hasLeak) {
             isBlocked = true;
-            blockedReason = "Numéro de téléphone détecté";
+            blockedReason = `[IA] ${aiResult.explanation}`;
             finalContent = `[Message bloqué - ${blockedReason}]`;
-            console.log(`🛡️ [REGEX] BLOQUÉ: ${blockedReason}`);
-            socket.emit("message-blocked", { reason: blockedReason });
-          } else if (
-            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(data.content)
-          ) {
-            isBlocked = true;
-            blockedReason = "Adresse email détectée";
-            finalContent = `[Message bloqué - ${blockedReason}]`;
-            console.log(`🛡️ [REGEX] BLOQUÉ: ${blockedReason}`);
-            socket.emit("message-blocked", { reason: blockedReason });
-          } else if (/(https?:\/\/[^\s]+)/g.test(data.content)) {
-            isBlocked = true;
-            blockedReason = "Lien externe détecté";
-            finalContent = `[Message bloqué - ${blockedReason}]`;
-            console.log(`🛡️ [REGEX] BLOQUÉ: ${blockedReason}`);
-            socket.emit("message-blocked", { reason: blockedReason });
-          } else {
+            console.log(`🛡️ [GitHub AI] BLOQUÉ: ${blockedReason}`);
+            socket.emit("message-blocked", {
+              reason: blockedReason,
+              leaks: aiResult.leaks,
+              riskLevel: aiResult.riskLevel,
+            });
+          }
+
+          // ==========================================
+          // 🛡️ ÉTAPE 2 : DÉTECTION DE TOXICITÉ (mots impolis)
+          // ==========================================
+          if (!isBlocked) {
             let classifier = global.toxicityClassifier;
-            let intent = global.intentClassifier;
-
             if (!classifier) {
               const { pipeline } = await import("@xenova/transformers");
               classifier = await pipeline(
                 "text-classification",
                 "Xenova/toxic-bert",
               );
-              intent = await pipeline(
-                "zero-shot-classification",
-                "Xenova/nli-deberta-v3-xsmall",
-              );
               global.toxicityClassifier = classifier;
-              global.intentClassifier = intent;
             }
 
-            if (intent) {
-              console.log("🛡️ [IA-INTENT] Analyse des intentions...");
-              const intentLabels = [
-                "demander un rendez-vous",
-                "proposer une rencontre",
-                "donner des coordonnées",
-                "planifier une visite",
-                "contact personnel",
-              ];
-              const intentResult = await intent(data.content, intentLabels);
-              console.log(`📊 Intent scores:`, intentResult.scores);
-
-              if (intentResult.scores[0] > 0.7) {
-                isBlocked = true;
-                blockedReason = "Tentative de rendez-vous ou contact";
-                finalContent = `[Message bloqué - ${blockedReason}]`;
-                console.log(`🛡️ [IA-INTENT] BLOQUÉ: ${blockedReason}`);
-                socket.emit("message-blocked", { reason: blockedReason });
-              }
-            }
-
-            if (!isBlocked && classifier) {
+            if (classifier) {
               console.log("🛡️ [IA-TOXIC] Analyse de toxicité...");
               const toxicResults = await classifier(data.content);
               const badResult = toxicResults.find(
@@ -241,15 +294,13 @@ app.prepare().then(async () => {
                 isBlocked = true;
                 blockedReason = `Contenu inapproprié (${badResult.label})`;
                 finalContent = `[Message bloqué - ${blockedReason}]`;
-                console.log(
-                  `🛡️ [IA-TOXIC] BLOQUÉ: ${badResult.label} (${badResult.score})`,
-                );
+                console.log(`🛡️ [IA-TOXIC] BLOQUÉ: ${badResult.label}`);
                 socket.emit("message-blocked", { reason: blockedReason });
               }
             }
           }
         } catch (error) {
-          console.error("❌ Erreur modération:", error);
+          console.error("❌ Erreur modération IA:", error);
         }
       }
 
@@ -400,6 +451,7 @@ app.prepare().then(async () => {
     if (err) throw err;
     console.log("🚀 Serveur prêt sur http://localhost:3000");
     console.log("🔌 Socket.io actif sur /api/socket");
+    console.log("🤖 GitHub AI (GPT-4o-mini) prêt à l'emploi");
     console.log("✅ Tous les modèles IA préchargés et prêts à l'emploi");
   });
 });

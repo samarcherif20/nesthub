@@ -293,3 +293,191 @@ export async function GET(
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
+// app/api/admin/listings/[id]/route.ts
+// Ajoute cette méthode PATCH après le GET
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { userId: clerkId } = getAuth(request);
+    const { id } = await params;
+
+    if (!clerkId) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    const admin = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { role: true, id: true },
+    });
+
+    if (admin?.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Accès non autorisé" },
+        { status: 403 },
+      );
+    }
+
+    const body = await request.json();
+    const { action, status, rejectionReason, ...updateData } = body;
+
+    // Récupérer l'annonce existante
+    const existingListing = await prisma.listing.findUnique({
+      where: { id },
+    });
+
+    if (!existingListing) {
+      return NextResponse.json(
+        { error: "Annonce non trouvée" },
+        { status: 404 },
+      );
+    }
+
+    let updatedListing;
+
+    // 🔥 CAS 1: Changement de statut
+    if (status) {
+      updatedListing = await prisma.listing.update({
+        where: { id },
+        data: {
+          status,
+          ...(status === "REJECTED" && {
+            rejectedAt: new Date(),
+            rejectedBy: admin.id,
+          }),
+          ...(status === "ACTIVE" && {
+            publishedAt: new Date(),
+            validatedAt: new Date(),
+            validatedBy: admin.id,
+          }),
+        },
+      });
+
+      console.log(`👑 ADMIN - Statut changé vers ${status}`);
+    }
+    // 🔥 CAS 2: Rejet avec motif
+    else if (action === "reject") {
+      updatedListing = await prisma.listing.update({
+        where: { id },
+        data: {
+          status: "REJECTED",
+          rejectionReason: rejectionReason || "Non spécifié",
+          rejectedAt: new Date(),
+          rejectedBy: admin.id,
+        },
+      });
+
+      console.log(`👑 ADMIN - Annonce rejetée: ${rejectionReason}`);
+    }
+    // 🔥 CAS 3: Approbation
+    else if (action === "approve") {
+      updatedListing = await prisma.listing.update({
+        where: { id },
+        data: {
+          status: "ACTIVE",
+          publishedAt: new Date(),
+          validatedAt: new Date(),
+          validatedBy: admin.id,
+          rejectionReason: null,
+          rejectedAt: null,
+          rejectedBy: null,
+        },
+      });
+
+      console.log(`👑 ADMIN - Annonce approuvée`);
+    }
+    // 🔥 CAS 4: Modification directe des champs
+    else if (Object.keys(updateData).length > 0) {
+      // Champs autorisés pour l'admin
+      const allowedFields = [
+        "title",
+        "description",
+        "type",
+        "pricePerNight",
+        "pricePerMonth",
+        "cleaningFee",
+        "securityDeposit",
+        "rooms",
+        "bathrooms",
+        "surfaceArea",
+        "maxGuests",
+        "floorNumber",
+        "hasElevator",
+        "hasBalcony",
+        "hasGarden",
+        "hasGarage",
+        "isFurnished",
+        "petsAllowed",
+        "smokingAllowed",
+        "governorate",
+        "delegation",
+        "street",
+        "latitude",
+        "longitude",
+        "equipment",
+        "services",
+        "houseRules",
+        "customRules",
+        "rentalType",
+      ];
+
+      const filteredData: any = {};
+      for (const field of allowedFields) {
+        if (updateData[field] !== undefined) {
+          filteredData[field] = updateData[field];
+        }
+      }
+
+      updatedListing = await prisma.listing.update({
+        where: { id },
+        data: { ...filteredData, updatedAt: new Date() },
+      });
+
+      console.log(
+        `👑 ADMIN - Champs modifiés: ${Object.keys(filteredData).join(", ")}`,
+      );
+    }
+    // 🔥 CAS 5: Forcer l'annulation d'une révision en attente
+    else if (action === "clearRevision") {
+      updatedListing = await prisma.listing.update({
+        where: { id },
+        data: {
+          hasPendingRevision: false,
+          pendingRevision: null,
+        },
+      });
+
+      console.log(`👑 ADMIN - Révision annulée`);
+    } else {
+      return NextResponse.json(
+        { error: "Aucune action ou modification fournie" },
+        { status: 400 },
+      );
+    }
+
+    // Créer un historique de l'action admin
+    await prisma.listingHistory.create({
+      data: {
+        listingId: id,
+        actionType: "ADMIN_UPDATE",
+        oldValue: { status: existingListing.status },
+        newValue: { status: updatedListing.status || existingListing.status },
+        changedBy: admin.id,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      listing: updatedListing,
+      message: "Modification effectuée avec succès",
+    });
+  } catch (error) {
+    console.error("Error updating listing:", error);
+    return NextResponse.json(
+      { error: "Erreur serveur lors de la modification" },
+      { status: 500 },
+    );
+  }
+}

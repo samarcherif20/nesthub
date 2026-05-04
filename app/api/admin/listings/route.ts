@@ -1,4 +1,4 @@
-// app/api/admin/listings/route.ts - VERSION CORRIGÉE
+// app/api/admin/listings/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const admin = await prisma.user.findUnique({
       where: { clerkId },
-      select: { role: true },
+      select: { id: true, role: true },
     });
 
     if (admin?.role !== "ADMIN") {
@@ -24,50 +24,71 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "5");
+    const limit = parseInt(searchParams.get("limit") || "10");
     const type = searchParams.get("type") || "all";
     const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
 
-    // 🔥 CORRECTION : Logique de base pour les statuts
-    let statusFilter: any = [];
-    
+    // 🔥 LOGIQUE DE FILTRAGE SELON LE TYPE (CORRIGÉE)
+    let where: any = {};
+
     if (type === "pending") {
-      // Uniquement les nouvelles annonces PENDING_REVIEW
-      statusFilter = [{ status: "PENDING_REVIEW", hasPendingRevision: false }];
+      // Uniquement les nouvelles annonces en attente
+      where = {
+        status: "PENDING_REVIEW",
+        hasPendingRevision: false,
+      };
     } else if (type === "revisions") {
-      // Uniquement les modifications en attente (ACTIVE + hasPendingRevision)
-      statusFilter = [{ status: "ACTIVE", hasPendingRevision: true }];
-    } else {
+      // Uniquement les modifications en attente
+      where = {
+        status: "ACTIVE",
+        hasPendingRevision: true,
+      };
+    } else if (type === "history") {
+      // Historique - annonces déjà validées ou rejetées
+      where = {
+        OR: [
+          { status: "ACTIVE", hasPendingRevision: false },
+          { status: "REJECTED" },
+          { status: "ARCHIVED" },
+          { status: "INACTIVE" },
+        ],
+      };
+    } else if (type === "all") {
       // Toutes les annonces en attente de validation
-      statusFilter = [
-        { status: "PENDING_REVIEW" },
-        { status: "ACTIVE", hasPendingRevision: true },
-      ];
+      where = {
+        OR: [
+          { status: "PENDING_REVIEW", hasPendingRevision: false },
+          { status: "ACTIVE", hasPendingRevision: true },
+        ],
+      };
     }
 
-    const where: any = {
-      OR: statusFilter,
-    };
-
-    // 🔥 CORRECTION : Logique de recherche améliorée
+    // 🔥 RECHERCHE (CORRIGÉE)
     if (search && search.trim() !== "") {
-      where.AND = [
-        {
-          OR: [
-            { title: { contains: search, mode: "insensitive" } },
-            { 
-              owner: {
-                OR: [
-                  { firstName: { contains: search, mode: "insensitive" } },
-                  { lastName: { contains: search, mode: "insensitive" } },
-                  { email: { contains: search, mode: "insensitive" } },
-                ]
-              }
+      const searchCondition = {
+        OR: [
+          { title: { contains: search, mode: "insensitive" } },
+          {
+            owner: {
+              OR: [
+                { firstName: { contains: search, mode: "insensitive" } },
+                { lastName: { contains: search, mode: "insensitive" } },
+                { email: { contains: search, mode: "insensitive" } },
+              ],
             },
-          ],
-        },
-      ];
+          },
+        ],
+      };
+
+      // Fusionner avec le where existant
+      if (Object.keys(where).length === 0) {
+        where = searchCondition;
+      } else {
+        where = {
+          AND: [where, searchCondition],
+        };
+      }
     }
 
     const [listings, totalCount] = await Promise.all([
@@ -97,7 +118,8 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy:
+          type === "history" ? { updatedAt: "desc" } : { createdAt: "desc" },
         skip,
         take: limit,
       }),
@@ -107,12 +129,15 @@ export async function GET(request: NextRequest) {
     const formattedListings = listings.map((listing) => ({
       id: listing.id,
       title: listing.title,
+      slug: listing.slug,
       description: listing.description,
       type: listing.type,
       status: listing.status,
       governorate: listing.governorate,
       delegation: listing.delegation,
       street: listing.street,
+      neighborhood: listing.neighborhood,
+      postalCode: listing.postalCode,
       latitude: listing.latitude,
       longitude: listing.longitude,
       rooms: listing.rooms,
@@ -140,7 +165,7 @@ export async function GET(request: NextRequest) {
       weekendPriceMultiplier: listing.weekendPriceMultiplier,
       extraFees: listing.extraFees,
       seasonalRules: listing.seasonalRules,
-      images: listing.photos.map((p) => p.url), // 🔥 Ajout pour la compatibilité
+      images: listing.photos.map((p) => p.url),
       photos: listing.photos.map((p) => ({
         id: p.id,
         url: p.url,
@@ -152,6 +177,17 @@ export async function GET(request: NextRequest) {
       bookingCount: listing.bookingCount,
       totalRevenue: 0,
       hasPendingRevision: listing.hasPendingRevision || false,
+      pendingRevision: listing.pendingRevision,
+      rejectionReason: listing.rejectionReason,
+      rejectionDetails: listing.rejectionDetails,
+      rejectedAt: listing.rejectedAt,
+      rejectedBy: listing.rejectedBy,
+      publishedAt: listing.publishedAt,
+      validatedAt: listing.validatedAt,
+      validatedBy: listing.validatedBy,
+      createdAt: listing.createdAt,
+      updatedAt: listing.updatedAt,
+      archivedAt: listing.archivedAt,
       owner: {
         id: listing.owner.id,
         firstName: listing.owner.firstName,
@@ -162,9 +198,24 @@ export async function GET(request: NextRequest) {
         isIdentityVerified: listing.owner.isIdentityVerified,
         createdAt: listing.owner.createdAt,
       },
-      createdAt: listing.createdAt,
-      updatedAt: listing.updatedAt,
     }));
+
+    // Calcul des statistiques par statut
+    const statusCounts = await prisma.listing.groupBy({
+      by: ["status"],
+      _count: true,
+    });
+
+    const stats = {
+      total: await prisma.listing.count(),
+      pending: statusCounts.find((s) => s.status === "PENDING_REVIEW")?._count || 0,
+      revisions: await prisma.listing.count({
+        where: { hasPendingRevision: true },
+      }),
+      active: statusCounts.find((s) => s.status === "ACTIVE")?._count || 0,
+      rejected: statusCounts.find((s) => s.status === "REJECTED")?._count || 0,
+      archived: statusCounts.find((s) => s.status === "ARCHIVED")?._count || 0,
+    };
 
     return NextResponse.json({
       listings: formattedListings,
@@ -174,9 +225,13 @@ export async function GET(request: NextRequest) {
         totalCount,
         totalPages: Math.ceil(totalCount / limit),
       },
+      stats,
     });
   } catch (error) {
     console.error("Error fetching admin listings:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Erreur serveur lors du chargement des annonces" },
+      { status: 500 },
+    );
   }
 }

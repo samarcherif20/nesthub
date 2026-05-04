@@ -3385,79 +3385,76 @@
       "actionDone": "Action effectuée avec succès"
     }
   },
+  
   "Disputes": {
-    "title": "Gestion des litiges",
-    "description": "Examinez et résolvez les litiges signalés",
-    "searchPlaceholder": "Rechercher par référence, utilisateur...",
-    "disputesCount": "litige(s)",
-    "noDisputes": "Aucun litige trouvé",
-    "selectDispute": "Sélectionnez un litige pour voir les détails",
-    "untitled": "Sans titre",
-    "openedDispute": "A ouvert ce litige",
-    "evidence": "Preuves",
-    "enlargedEvidence": "Preuve agrandie",
-    "stayDetails": "Détails du séjour",
-    "dates": "Dates",
-    "nights": "Nuits",
-    "nightsUnit": "nuits",
-    "totalAmount": "Montant total",
-    "requestedAmount": "Montant demandé",
-    "description": "Description du litige",
-    "noDescription": "Aucune description fournie",
-    "resolution": "Résolution",
-    "refundGranted": "Remboursement accordé",
-    "conversation": "Conversation",
-    "noMessages": "Aucun message pour le moment",
-    "owner": "Propriétaire",
-    "tenant": "Locataire",
-    "addResponse": "Ajouter une réponse...",
-    "resolve": "Résoudre",
-    "reject": "Rejeter",
+    "title": "Gestion des Litiges",
+    "description": "Examinez et résolvez les litiges signalés sur la plateforme.",
+    "refresh": "Actualiser",
     "tabs": {
-      "active": "En cours",
+      "active": "Actifs",
       "archived": "Archivés"
     },
     "stats": {
       "open": "Ouverts",
-      "inReview": "En examen",
+      "inReview": "En cours",
       "resolved": "Résolus",
       "refunds": "Remboursements"
     },
     "status": {
-      "open": "En attente",
-      "inReview": "En examen",
+      "open": "Ouvert",
+      "inReview": "En cours",
       "resolved": "Résolu",
       "rejected": "Rejeté"
     },
     "severity": {
-      "high": "Élevée",
+      "high": "Haute",
       "medium": "Moyenne",
-      "low": "Basse"
+      "low": "Faible"
     },
+    "severityLabel": "Sévérité",
     "type": {
-      "damage": "Dommages",
+      "damage": "Dégradation",
       "cleaning": "Propreté",
-      "misrepresentation": "Non conforme",
-      "noise": "Bruit",
+      "misrepresentation": "Annonce trompeuse",
+      "noise": "Nuisances sonores",
       "payment": "Paiement",
       "cancellation": "Annulation",
       "other": "Autre"
     },
-    "resolutions": {
-      "adminResolved": "Résolu par l'administrateur",
-      "adminRejected": "Litige rejeté par l'administrateur"
-    },
-    "success": {
-      "resolved": "Litige résolu avec succès",
-      "rejected": "Litige rejeté"
-    },
-    "errors": {
-      "fetchFailed": "Erreur lors du chargement des litiges",
-      "resolveFailed": "Erreur lors de la résolution",
-      "rejectFailed": "Erreur lors du rejet",
-      "messageFailed": "Erreur lors de l'envoi du message"
-    }
-  },
+    "unknownProperty": "Propriété inconnue",
+    "openedOn": "Litige ouvert le",
+    "checkIn": "Arrivée",
+    "checkOut": "Départ",
+    "totalAmount": "Montant total",
+    "refundRequested": "Remboursement demandé",
+    "description": "Description du problème",
+    "noDescription": "Aucune description fournie.",
+    "evidence": "Preuves jointes",
+    "resolution": "Résolution",
+    "refundGranted": "Remboursé",
+    "conversation": "Fil de discussion",
+    "messageCount": "messages",
+    "noMessages": "Aucun message pour l'instant",
+    "owner": "Propriétaire",
+    "tenant": "Locataire",
+    "admin": "Admin",
+    "replyAsAdmin": "Répondre en tant qu'admin...",
+    "refundAmountPlaceholder": "Montant à rembourser (TND)",
+    "confirm": "Confirmer",
+    "resolve": "Résoudre",
+    "reject": "Rejeter",
+    "resolveSuccess": "Litige résolu avec succès",
+    "resolveError": "Erreur lors de la résolution",
+    "rejectSuccess": "Litige rejeté",
+    "rejectError": "Erreur lors du rejet",
+    "connectionError": "Erreur de connexion",
+    "searchPlaceholder": "Rechercher un litige...",
+    "disputesCount": "litige(s)",
+    "noDisputes": "Aucun litige trouvé",
+    "selectDispute": "Sélectionnez un litige pour voir les détails",
+    "enlargedEvidence": "Preuve agrandie"
+  }
+,
   
   "Settings": {
     "title": "Paramètres de l'Application",

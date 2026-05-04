@@ -60,6 +60,9 @@ ChartJS.register(
   Filler,
 );
 
+// Helper pour les images
+const pip = (url: string) => `/api/listings/image?url=${encodeURIComponent(url)}`;
+
 // Types
 interface ListingStats {
   id: string;
@@ -123,6 +126,7 @@ export default function OwnerAnalyticsPage({
   const [dynamicPeriod, setDynamicPeriod] = useState<
     "7days" | "30days" | "90days" | "year"
   >("30days");
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchAnalytics();
@@ -398,7 +402,7 @@ export default function OwnerAnalyticsPage({
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-white dark:bg-slate-950">
       <div className="px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
@@ -577,7 +581,7 @@ export default function OwnerAnalyticsPage({
           </div>
         </div>
 
-        {/* Listings Performance Table */}
+        {/* Listings Performance Table - AVEC pip POUR LES IMAGES */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mb-12 overflow-hidden">
           <div className="p-6 border-b border-slate-100 dark:border-slate-700">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white">
@@ -613,23 +617,34 @@ export default function OwnerAnalyticsPage({
                   >
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100">
-                          <img
-                            src={listing.image}
-                            alt={listing.title}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 flex-shrink-0">
+                          {listing.image && !imageErrors[listing.id] ? (
+                            <img
+                              src={pip(listing.image)}
+                              alt={listing.title}
+                              className="w-full h-full object-cover"
+                              onError={() => {
+                                setImageErrors(prev => ({ ...prev, [listing.id]: true }));
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30">
+                              <Home size={16} className="text-indigo-400" />
+                            </div>
+                          )}
                         </div>
-                        <span className="font-medium text-sm">
+                        <span className="font-medium text-sm text-slate-900 dark:text-white">
                           {listing.title}
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm">
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
                       {listing.views.toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 text-sm">{listing.bookings}</td>
-                    <td className="px-6 py-4 text-sm font-semibold">
+                    <td className="px-6 py-4 text-sm text-slate-600 dark:text-slate-400">
+                      {listing.bookings}
+                    </td>
+                    <td className="px-6 py-4 text-sm font-semibold text-slate-900 dark:text-white">
                       {listing.revenue.toLocaleString()} TND
                     </td>
                     <td className="px-6 py-4">
@@ -664,16 +679,18 @@ export default function OwnerAnalyticsPage({
               {data.upcomingPayments.map((payment, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800 rounded-xl"
+                  className="flex items-center gap-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl"
                 >
-                  <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center font-bold text-xs shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center font-bold text-xs shadow-sm text-slate-700 dark:text-slate-300">
                     {payment.day}
                   </div>
                   <div className="flex-grow">
                     <div className="text-xs font-bold uppercase text-slate-400">
                       {payment.date}
                     </div>
-                    <div className="text-sm font-medium">{payment.title}</div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">
+                      {payment.title}
+                    </div>
                   </div>
                   <div className="text-sm font-bold text-indigo-600">
                     +{payment.amount} DT
@@ -681,7 +698,7 @@ export default function OwnerAnalyticsPage({
                 </div>
               ))}
             </div>
-            <button className="w-full mt-4 text-sm font-semibold text-indigo-600 py-2 hover:bg-indigo-50 rounded-lg transition-colors">
+            <button className="w-full mt-4 text-sm font-semibold text-indigo-600 py-2 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors">
               Voir tout le calendrier
             </button>
           </div>
@@ -691,7 +708,7 @@ export default function OwnerAnalyticsPage({
               <h3 className="font-bold text-slate-900 dark:text-white">
                 À faire
               </h3>
-              <span className="bg-purple-100 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-purple-100 dark:bg-purple-900/30 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {data.todoTasks.length} TÂCHES
               </span>
             </div>
@@ -699,14 +716,16 @@ export default function OwnerAnalyticsPage({
               {data.todoTasks.map((task, idx) => (
                 <label
                   key={idx}
-                  className="flex items-start gap-3 p-3 border rounded-xl cursor-pointer hover:bg-slate-50 transition-colors"
+                  className="flex items-start gap-3 p-3 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                 >
                   <input
                     type="checkbox"
                     className="mt-0.5 rounded border-slate-300 text-indigo-500 h-4 w-4"
                   />
                   <div className="flex-grow">
-                    <div className="text-sm font-medium">{task.title}</div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">
+                      {task.title}
+                    </div>
                     <div className="text-[10px] text-slate-500">
                       {task.property}
                     </div>
@@ -750,7 +769,7 @@ export default function OwnerAnalyticsPage({
                   <button
                     key={p}
                     onClick={() => setDynamicPeriod(p as any)}
-                    className={`px-3 py-1 text-xs rounded-lg transition-colors ${dynamicPeriod === p ? "bg-indigo-100 text-indigo-700" : "text-slate-500 hover:bg-slate-100"}`}
+                    className={`px-3 py-1 text-xs rounded-lg transition-colors ${dynamicPeriod === p ? "bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400" : "text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700"}`}
                   >
                     {p === "7days"
                       ? "7j"

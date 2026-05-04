@@ -695,7 +695,9 @@ model Listing {
   rejectionDetails String?   
   rejectedAt       DateTime? 
   rejectedBy       String?   
-
+ validatedAt   DateTime?
+  validatedBy   String?   // Référence à l'admin
+  
   @@index([ownerId])
   @@index([status])
   @@index([type])

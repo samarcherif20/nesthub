@@ -22,8 +22,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Compter les annonces par statut
-    const [total, pending, revisions, processedToday] = await Promise.all([
+    // 🔥 Compter les annonces par statut (complet)
+    const [
+      total,
+      pending,
+      revisions,
+      validated,
+      rejected,
+      processedToday,
+    ] = await Promise.all([
+      // Total en attente de validation
       prisma.listing.count({
         where: {
           OR: [
@@ -32,18 +40,34 @@ export async function GET(request: NextRequest) {
           ],
         },
       }),
+      // Nouvelles annonces en attente
       prisma.listing.count({
         where: {
           status: "PENDING_REVIEW",
           hasPendingRevision: false,
         },
       }),
+      // Modifications en attente
       prisma.listing.count({
         where: {
           status: "ACTIVE",
           hasPendingRevision: true,
         },
       }),
+      // ✅ Annonces validées (historique)
+      prisma.listing.count({
+        where: {
+          status: "ACTIVE",
+          hasPendingRevision: false,
+        },
+      }),
+      // ✅ Annonces rejetées (historique)
+      prisma.listing.count({
+        where: {
+          status: "REJECTED",
+        },
+      }),
+      // Traitées aujourd'hui
       prisma.listing.count({
         where: {
           updatedAt: {
@@ -57,13 +81,42 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    // Calculer le temps moyen de réponse (exemple)
-    const avgResponseTime = 3.4;
+    // Calculer le temps moyen de réponse (en heures)
+    // Récupérer les annonces traitées avec leurs dates
+    const processedListings = await prisma.listing.findMany({
+      where: {
+        OR: [
+          { validatedAt: { not: null } },
+          { rejectedAt: { not: null } },
+        ],
+      },
+      select: {
+        createdAt: true,
+        validatedAt: true,
+        rejectedAt: true,
+      },
+    });
+
+    let avgResponseTime = 0;
+    if (processedListings.length > 0) {
+      const totalHours = processedListings.reduce((sum, listing) => {
+        const processedAt = listing.validatedAt || listing.rejectedAt;
+        if (processedAt) {
+          const diffMs = processedAt.getTime() - listing.createdAt.getTime();
+          const diffHours = diffMs / (1000 * 60 * 60);
+          return sum + diffHours;
+        }
+        return sum;
+      }, 0);
+      avgResponseTime = parseFloat((totalHours / processedListings.length).toFixed(1));
+    }
 
     return NextResponse.json({
       total,
       pending,
       revisions,
+      validated,    // ✅ Ajouté
+      rejected,     // ✅ Ajouté
       processedToday,
       avgResponseTime,
     });

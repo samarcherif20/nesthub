@@ -21,23 +21,21 @@ import {
   IoSearchOutline,
   IoPersonOutline,
   IoAlertCircleOutline,
+  IoCloseOutline,
+  IoEyeOutline,
+  IoStarSharp,
+  IoWalletOutline,
+  IoChevronForwardOutline,
+  IoMoonOutline,
+  IoArrowForwardOutline,
+  IoSparklesOutline,
 } from "react-icons/io5";
 
-// ─── pip helpers ──────────────────────────────────────────────────────────────
-
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 const pipListing = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
 const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
-
-// ─── Design tokens ────────────────────────────────────────────────────────────
-
-const GRAD = "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600";
-const GRAD_TEXT =
-  "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent";
-const BTN_GRAD = `${GRAD} text-white font-bold shadow-md shadow-indigo-200/50 dark:shadow-indigo-900/20 hover:opacity-90 active:scale-[.98] transition-all`;
-
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tab = "PENDING" | "ACCEPTED" | "PAST";
 
@@ -83,17 +81,6 @@ interface Stats {
   weeklyRevenue: number;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function fmtDate(d: string) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
 function fmtShort(d: string) {
   if (!d) return "";
   return new Date(d).toLocaleDateString("fr-FR", {
@@ -101,25 +88,35 @@ function fmtShort(d: string) {
     month: "short",
   });
 }
-
+function fmtDay(d: string) {
+  if (!d) return "";
+  return new Date(d).toLocaleDateString("fr-FR", { weekday: "short" });
+}
 function tenantName(t: BookingRequest["tenant"]) {
   if (t.name) return t.name;
   if (t.firstName)
     return `${t.firstName}${t.lastName ? " " + t.lastName.charAt(0) + "." : ""}`;
   return "Locataire";
 }
-
 function listingImage(l: BookingRequest["listing"]) {
   const url = l.image ?? l.images?.[0];
   return url ? pipListing(url) : null;
 }
+function timeAgo(d: string) {
+  const ms = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(ms / 60000);
+  if (mins < 60) return `${mins}min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}j`;
+}
+
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
-
 function Avatar({
   src,
   name,
-  size = 56,
+  size = 36,
 }: {
   src?: string;
   name: string;
@@ -129,15 +126,15 @@ function Avatar({
   const url = src ? pipAvatar(src) : null;
   return (
     <div
-      className="rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-white"
+      className="rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center font-medium text-white shadow-md shadow-violet-500/15"
       style={{
         width: size,
         height: size,
-        fontSize: size * 0.36,
+        fontSize: size * 0.38,
         background:
           !url || err
-            ? "linear-gradient(135deg,#0ea5e9,#6366f1,#a855f7)"
-            : "#e2e8f0",
+            ? "linear-gradient(135deg,#0ea5e9,#8b5cf6,#a855f7)"
+            : "transparent",
       }}
     >
       {url && !err ? (
@@ -154,66 +151,52 @@ function Avatar({
   );
 }
 
-// ─── Score badge ──────────────────────────────────────────────────────────────
-
-function ScoreBadge({ score }: { score?: number }) {
-  if (!score) return null;
-  const color =
-    score >= 90
-      ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400"
-      : score >= 75
-        ? "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400"
-        : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400";
-  return (
-    <span
-      className={`text-[10px] font-extrabold px-2 py-0.5 rounded tracking-widest uppercase ${color}`}
-    >
-      Score: {score}/100
-    </span>
-  );
-}
-
 // ─── Status badge ─────────────────────────────────────────────────────────────
-
 function StatusBadge({ status }: { status: BookingRequest["status"] }) {
-  const map: Record<string, { label: string; cls: string }> = {
+  const map: Record<string, { label: string; dot: string; bg: string }> = {
     PENDING: {
       label: "En attente",
-      cls: "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border-amber-100 dark:border-amber-900/40",
+      dot: "bg-amber-400 animate-pulse",
+      bg: "bg-amber-50/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border-amber-200/60 dark:border-amber-700/40",
     },
     ACCEPTED: {
       label: "Acceptée",
-      cls: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/40",
+      dot: "bg-sky-500",
+      bg: "bg-sky-50/80 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 border-sky-200/60 dark:border-sky-700/40",
     },
     CONFIRMED: {
       label: "Confirmée",
-      cls: "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-400 border-sky-100 dark:border-sky-900/40",
+      dot: "bg-emerald-500",
+      bg: "bg-emerald-50/80 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-700/40",
     },
     REJECTED: {
       label: "Refusée",
-      cls: "bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/40",
+      dot: "bg-rose-500",
+      bg: "bg-rose-50/80 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 border-rose-200/60 dark:border-rose-700/40",
     },
     CANCELLED: {
       label: "Annulée",
-      cls: "bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-slate-700",
+      dot: "bg-gray-400",
+      bg: "bg-gray-100/80 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 border-gray-200/60 dark:border-gray-700/40",
     },
     COMPLETED: {
       label: "Terminée",
-      cls: "bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 border-gray-100 dark:border-slate-700",
+      dot: "bg-violet-500",
+      bg: "bg-violet-50/80 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-violet-200/60 dark:border-violet-700/40",
     },
   };
-  const { label, cls } = map[status] ?? map.PENDING;
+  const { label, dot, bg } = map[status] ?? map.PENDING;
   return (
     <span
-      className={`text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full border ${cls}`}
+      className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[.15em] px-3 py-1.5 rounded-full border backdrop-blur-sm ${bg}`}
     >
+      <span className={`w-2 h-2 rounded-full ${dot}`} />
       {label}
     </span>
   );
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
-
 function Toast({
   message,
   type,
@@ -224,29 +207,77 @@ function Toast({
   onClose: () => void;
 }) {
   useEffect(() => {
-    const t = setTimeout(onClose, 3000);
+    const t = setTimeout(onClose, 3500);
     return () => clearTimeout(t);
   }, [onClose]);
   return (
-    <div className="fixed top-24 right-4 z-[80] max-w-sm animate-in slide-in-from-top-3 duration-300">
-      <div
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl text-white text-sm font-medium shadow-xl ${
-          type === "success" ? "bg-emerald-500" : "bg-red-500"
-        }`}
+    <div
+      className={`fixed top-6 right-6 z-[80] flex items-center gap-2.5 pl-4 pr-3 py-3 rounded-2xl text-sm font-medium shadow-2xl backdrop-blur-xl border ${
+        type === "success"
+          ? "bg-emerald-50/90 dark:bg-emerald-900/80 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 shadow-emerald-500/10"
+          : "bg-rose-50/90 dark:bg-rose-900/80 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 shadow-rose-500/10"
+      }`}
+    >
+      {type === "success" ? (
+        <IoCheckmarkCircleOutline className="text-lg" />
+      ) : (
+        <IoAlertCircleOutline className="text-lg" />
+      )}
+      {message}
+      <button
+        onClick={onClose}
+        className="ml-1 p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
       >
-        {type === "success" ? (
-          <IoCheckmarkCircleOutline className="text-lg" />
-        ) : (
-          <IoAlertCircleOutline className="text-lg" />
+        <IoCloseOutline className="text-sm" />
+      </button>
+    </div>
+  );
+}
+
+// ─── Stat pill ────────────────────────────────────────────────────────────────
+function StatPill({
+  icon,
+  label,
+  value,
+  sub,
+  color,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  sub?: string;
+  color: string;
+}) {
+  const styles: Record<string, string> = {
+    sky: "bg-sky-50/60 dark:bg-sky-900/20 border-sky-100 dark:border-sky-800/30 text-sky-600 dark:text-sky-400",
+    violet:
+      "bg-violet-50/60 dark:bg-violet-900/20 border-violet-100 dark:border-violet-800/30 text-violet-600 dark:text-violet-400",
+    emerald:
+      "bg-emerald-50/60 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/30 text-emerald-600 dark:text-emerald-400",
+    amber:
+      "bg-amber-50/60 dark:bg-amber-900/20 border-amber-100 dark:border-amber-800/30 text-amber-600 dark:text-amber-400",
+  };
+  return (
+    <div
+      className={`flex items-center gap-3 p-4 rounded-2xl border ${styles[color]} bg-white/60 dark:bg-gray-900/60 backdrop-blur-sm`}
+    >
+      <span className="text-xl flex-shrink-0">{icon}</span>
+      <div className="min-w-0">
+        <p className="text-[9px] uppercase tracking-widest text-gray-400 dark:text-gray-500">
+          {label}
+        </p>
+        <p className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+          {value}
+        </p>
+        {sub && (
+          <p className="text-[10px] text-gray-400 dark:text-gray-500">{sub}</p>
         )}
-        {message}
       </div>
     </div>
   );
 }
 
-// ─── Booking request card ─────────────────────────────────────────────────────
-
+// ─── Request card ─────────────────────────────────────────────────────────────
 function RequestCard({
   booking,
   isPending,
@@ -261,137 +292,141 @@ function RequestCard({
   const [accepting, setAccepting] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   const [imgErr, setImgErr] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const img = listingImage(booking.listing);
-
-  // Vérifier si l'annulation est possible
   const canCancel =
     booking.status === "CONFIRMED" && new Date(booking.checkIn) > new Date();
 
   return (
-    <div className="group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-gray-100 dark:border-slate-800 hover:-translate-y-1 hover:shadow-xl hover:shadow-gray-100/50 dark:hover:shadow-black/30 transition-all duration-500">
-      <div className="flex flex-col md:flex-row">
-        {/* Listing image */}
-        <div className="md:w-72 h-56 md:h-auto relative overflow-hidden bg-gray-100 dark:bg-slate-800 flex-shrink-0">
+    <div
+      className={`group bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-3xl overflow-hidden border transition-all duration-500 ${
+        hovered
+          ? "border-indigo-200/60 dark:border-indigo-700/40 shadow-xl shadow-indigo-500/5 dark:shadow-indigo-500/5 -translate-y-0.5"
+          : "border-white/50 dark:border-gray-800 shadow-sm"
+      }`}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* Top accent */}
+      <div
+        className={`h-[2px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent transition-opacity duration-500 ${hovered ? "opacity-100" : "opacity-0"}`}
+      />
+
+      <div className="flex flex-col sm:flex-row">
+        {/* Image */}
+        <div className="sm:w-52 h-48 sm:h-auto relative overflow-hidden bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-950 dark:to-violet-950 flex-shrink-0">
           {img && !imgErr ? (
             <img
               src={img}
               alt={booking.listing.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className={`w-full h-full object-cover transition-all duration-700 ${hovered ? "scale-110 brightness-105" : "scale-100"}`}
               onError={() => setImgErr(true)}
             />
           ) : (
-            <div
-              className={`w-full h-full ${GRAD} flex items-center justify-center opacity-60`}
-            >
-              <IoHomeOutline className="text-white text-5xl" />
+            <div className="w-full h-full bg-gradient-to-br from-indigo-400 via-violet-500 to-purple-600 flex items-center justify-center">
+              <IoHomeOutline className="text-white/30 text-5xl" />
             </div>
           )}
-          <div className="absolute top-3 left-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-3 py-1 rounded-full">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-              {booking.listing.title}
-            </span>
-          </div>
-          <div className="absolute top-3 right-3">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/5" />
+          <div className="absolute top-3 left-3">
             <StatusBadge status={booking.status} />
           </div>
+          {isPending && (
+            <div className="absolute bottom-3 left-3 flex items-center gap-1 text-[9px] font-medium text-white bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/10">
+              <IoTimeOutline className="text-[10px]" />{" "}
+              {timeAgo(booking.createdAt)}
+            </div>
+          )}
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-6 flex flex-col justify-between">
+        <div className="flex-1 p-5 flex flex-col justify-between min-w-0">
           <div>
-            {/* Tenant + price */}
-            <div className="flex items-start justify-between gap-4 mb-5">
-              <div className="flex items-center gap-3.5">
+            {/* Top row */}
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-3 min-w-0">
                 <Avatar
                   src={booking.tenant.image}
                   name={tenantName(booking.tenant)}
-                  size={52}
+                  size={40}
                 />
-                <div>
-                  <h3 className="font-extrabold text-lg text-gray-900 dark:text-white leading-tight">
-                    {tenantName(booking.tenant)}
-                  </h3>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                    <ScoreBadge score={booking.tenant.score} />
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <h3 className="text-sm font-bold text-gray-900 dark:text-white truncate">
+                      {tenantName(booking.tenant)}
+                    </h3>
                     {booking.tenant.isVerified && (
-                      <IoShieldCheckmarkOutline className="text-emerald-500 text-base" />
+                      <IoShieldCheckmarkOutline className="text-emerald-500 text-sm flex-shrink-0" />
                     )}
                   </div>
+                  <p className="text-[10px] text-gray-400 dark:text-gray-500 truncate">
+                    {booking.listing.title}
+                  </p>
                 </div>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className={`text-2xl font-extrabold ${GRAD_TEXT}`}>
-                  {booking.totalPrice.toLocaleString("fr-FR")} TND
+                <p className="text-lg font-bold bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent leading-none">
+                  {booking.totalPrice.toLocaleString("fr-FR")}
                 </p>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-600 mt-0.5">
-                  {booking.nights} nuit{booking.nights > 1 ? "s" : ""} ·{" "}
-                  {fmtShort(booking.checkIn)} – {fmtShort(booking.checkOut)}
+                <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5 uppercase tracking-wider">
+                  TND
                 </p>
               </div>
+            </div>
+
+            {/* Info pills */}
+            <div className="flex flex-wrap gap-1.5 mb-3">
+              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl bg-indigo-50/60 dark:bg-indigo-900/20 text-gray-600 dark:text-gray-300 border border-indigo-100/50 dark:border-indigo-800/30">
+                <IoCalendarOutline className="text-indigo-500 dark:text-indigo-400 text-xs" />
+                {fmtShort(booking.checkIn)} → {fmtShort(booking.checkOut)}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl bg-violet-50/60 dark:bg-violet-900/20 text-gray-600 dark:text-gray-300 border border-violet-100/50 dark:border-violet-800/30">
+                <IoMoonOutline className="text-violet-500 dark:text-violet-400 text-xs" />
+                {booking.nights} nuit{booking.nights > 1 ? "s" : ""}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl bg-purple-50/60 dark:bg-purple-900/20 text-gray-600 dark:text-gray-300 border border-purple-100/50 dark:border-purple-800/30">
+                <IoPeopleOutline className="text-purple-500 dark:text-purple-400 text-xs" />
+                {booking.guests}
+              </span>
+              {booking.tenant.score && (
+                <span
+                  className={`inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-xl border ${
+                    booking.tenant.score >= 80
+                      ? "bg-emerald-50/60 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100/50 dark:border-emerald-800/30"
+                      : "bg-amber-50/60 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-100/50 dark:border-amber-800/30"
+                  }`}
+                >
+                  <IoStarSharp className="text-[10px]" /> {booking.tenant.score}
+                </span>
+              )}
             </div>
 
             {/* Message */}
             {booking.message && (
-              <div className="relative bg-gray-50 dark:bg-slate-800/50 rounded-xl p-4 mb-5 border border-gray-100 dark:border-slate-700/50">
-                <span className="absolute -top-3 -left-1 text-indigo-200 dark:text-indigo-900 text-4xl leading-none select-none pointer-events-none font-serif">
-                  "
-                </span>
-                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed italic">
-                  {booking.message.length > 180
-                    ? booking.message.slice(0, 180) + "…"
-                    : booking.message}
+              <div className="border-l-[3px] border-indigo-200 dark:border-indigo-800 pl-3 mb-3">
+                <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed italic line-clamp-2">
+                  &ldquo;{booking.message}&rdquo;
                 </p>
               </div>
             )}
-
-            {/* Info chips */}
-            <div className="flex flex-wrap gap-2 mb-4">
-              {[
-                {
-                  icon: <IoCalendarOutline />,
-                  label: `${fmtDate(booking.checkIn)} → ${fmtDate(booking.checkOut)}`,
-                },
-                {
-                  icon: <IoPeopleOutline />,
-                  label: `${booking.guests} voyageur${booking.guests > 1 ? "s" : ""}`,
-                },
-                ...(booking.listing.location
-                  ? [
-                      {
-                        icon: <IoLocationOutline />,
-                        label: booking.listing.location,
-                      },
-                    ]
-                  : []),
-              ].map(({ icon, label }) => (
-                <span
-                  key={label}
-                  className="inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-slate-800/60 border border-gray-100 dark:border-slate-800 px-2.5 py-1 rounded-full"
-                >
-                  <span className="text-indigo-400">{icon}</span>
-                  {label}
-                </span>
-              ))}
-            </div>
           </div>
 
           {/* Actions */}
           {isPending ? (
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               <button
                 onClick={() => {
                   setAccepting(true);
                   onAccept(booking.id);
                 }}
                 disabled={accepting || rejecting}
-                className={`flex-1 py-3.5 rounded-full text-sm flex items-center justify-center gap-2 ${BTN_GRAD} disabled:opacity-50`}
+                className="flex-1 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 hover:scale-[1.02] active:scale-[.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {accepting ? (
                   <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 ) : (
                   <>
-                    <IoCheckmarkCircleOutline className="text-base" />
-                    Accepter la demande
+                    <IoCheckmarkCircleOutline className="text-base" /> Accepter
                   </>
                 )}
               </button>
@@ -401,44 +436,42 @@ function RequestCard({
                   onReject(booking.id);
                 }}
                 disabled={accepting || rejecting}
-                className="px-6 py-3.5 rounded-full text-sm font-bold bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/40 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors disabled:opacity-50 flex items-center gap-1.5"
+                className="px-5 py-3 rounded-2xl text-sm font-bold text-rose-600 dark:text-rose-400 bg-rose-50/80 dark:bg-rose-900/20 border border-rose-200/60 dark:border-rose-800/40 hover:bg-rose-100 dark:hover:bg-rose-900/30 transition-all disabled:opacity-50 flex items-center gap-2 active:scale-[.98]"
               >
                 {rejecting ? (
-                  <span className="w-4 h-4 rounded-full border-2 border-red-300/30 border-t-red-400 animate-spin" />
+                  <span className="w-4 h-4 rounded-full border-2 border-rose-300/30 border-t-rose-400 animate-spin" />
                 ) : (
                   <>
-                    <IoCloseCircleOutline className="text-base" />
-                    Refuser
+                    <IoCloseCircleOutline className="text-base" /> Refuser
                   </>
                 )}
               </button>
             </div>
           ) : (
-            <div className="flex flex-wrap gap-3">
-              {/* Voir le logement - Dashboard owner */}
+            <div className="flex items-center gap-3 pt-1">
               <Link
                 href={`/fr/dashboard/owner/listings/${booking.listing.id}`}
-                className="flex-1 py-3.5 px-4 rounded-full text-sm font-bold text-center bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-950/50 transition-colors"
+                className="text-xs text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1"
               >
-                Voir le logement
+                <IoEyeOutline className="text-sm" /> Voir le bien
               </Link>
-
-              {/* Bouton Annuler - pour les réservations confirmées uniquement */}
               {canCancel && (
-                <Link
-                  href={`/fr/dashboard/owner/reservations/${booking.id}/cancel`}
-                  className="px-5 py-3.5 rounded-full text-sm font-bold text-center bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/40 hover:bg-red-100 dark:hover:bg-red-950/50 transition-colors"
-                >
-                  Annuler
-                </Link>
+                <>
+                  <span className="w-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
+                  <Link
+                    href={`/fr/dashboard/owner/reservations/${booking.id}/cancel`}
+                    className="text-xs text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 transition-colors"
+                  >
+                    Annuler
+                  </Link>
+                </>
               )}
-
-              {/* Message chat */}
+              <span className="w-1 h-1 rounded-full bg-gray-200 dark:bg-gray-700" />
               <Link
-                href={`/fr/dashboard/owner/messages`}
-                className="w-11 h-11 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+                href="/fr/dashboard/owner/messages"
+                className="text-xs text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex items-center gap-1"
               >
-                <IoChatbubbleOutline className="text-base" />
+                <IoChatbubbleOutline className="text-sm" /> Message
               </Link>
             </div>
           )}
@@ -448,8 +481,7 @@ function RequestCard({
   );
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
-
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function OwnerReservationsPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("PENDING");
@@ -469,20 +501,17 @@ export default function OwnerReservationsPage() {
   const loadBookings = useCallback(async () => {
     setIsLoading(true);
     try {
-      const statusMap: Record<Tab, string> = {
+      const m: Record<Tab, string> = {
         PENDING: "PENDING",
         ACCEPTED: "ACCEPTED,CONFIRMED",
         PAST: "COMPLETED,CANCELLED,REJECTED",
       };
       const res = await fetch(
-        `/api/bookings?role=owner&status=${statusMap[tab]}&pageSize=20`,
+        `/api/bookings?role=owner&status=${m[tab]}&pageSize=20`,
       );
       if (!res.ok) return;
       const data = await res.json();
-      const raw: BookingRequest[] = Array.isArray(data)
-        ? data
-        : (data.bookings ?? []);
-      setBookings(raw);
+      setBookings(Array.isArray(data) ? data : (data.bookings ?? []));
     } catch (e) {
       console.error(e);
     } finally {
@@ -494,22 +523,19 @@ export default function OwnerReservationsPage() {
     try {
       const res = await fetch("/api/bookings/stats?role=owner");
       if (!res.ok) return;
-      const data = await res.json();
+      const d = await res.json();
       setStats({
-        pendingCount: data.pendingCount ?? 0,
-        weeklyRequests: data.weeklyRequests ?? 0,
-        occupancyRate: data.occupancyRate ?? 0,
-        weeklyRevenue: data.weeklyRevenue ?? 0,
+        pendingCount: d.pendingCount ?? 0,
+        weeklyRequests: d.weeklyRequests ?? 0,
+        occupancyRate: d.occupancyRate ?? 0,
+        weeklyRevenue: d.weeklyRevenue ?? 0,
       });
-    } catch {
-      // stats are non-critical — silent fail
-    }
+    } catch {}
   }, []);
 
   useEffect(() => {
     loadBookings();
   }, [loadBookings]);
-
   useEffect(() => {
     loadStats();
   }, [loadStats]);
@@ -523,9 +549,8 @@ export default function OwnerReservationsPage() {
           p.map((b) => (b.id === id ? { ...b, status: "ACCEPTED" } : b)),
         );
         loadStats();
-      } else {
+      } else
         setToast({ message: "Erreur lors de l'acceptation", type: "error" });
-      }
     } catch {
       setToast({ message: "Erreur de connexion", type: "error" });
     }
@@ -544,19 +569,19 @@ export default function OwnerReservationsPage() {
           p.map((b) => (b.id === id ? { ...b, status: "REJECTED" } : b)),
         );
         loadStats();
-      } else {
-        setToast({ message: "Erreur lors du refus", type: "error" });
-      }
+      } else setToast({ message: "Erreur lors du refus", type: "error" });
     } catch {
       setToast({ message: "Erreur de connexion", type: "error" });
     }
   };
 
-  const pendingBookings = bookings.filter((b) => b.status === "PENDING");
-  const nonPendingBookings = bookings.filter((b) => b.status !== "PENDING");
+  const displayed =
+    tab === "PENDING"
+      ? bookings.filter((b) => b.status === "PENDING")
+      : bookings.filter((b) => b.status !== "PENDING");
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 text-gray-900 dark:text-gray-100 transition-colors">
+    <div className="min-h-screen  text-gray-900 dark:text-gray-100 transition-colors">
       {toast && (
         <Toast
           message={toast.message}
@@ -565,44 +590,84 @@ export default function OwnerReservationsPage() {
         />
       )}
 
-      <main className="w-full px-6 pt-10 pb-28">
-        {/* Page header */}
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mb-2">
+      <style>{`
+        @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        .fu { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) both }
+        .d1{animation-delay:.06s}.d2{animation-delay:.12s}.d3{animation-delay:.18s}
+        .d4{animation-delay:.24s}.d5{animation-delay:.3s}
+      `}</style>
+
+      <main className="w-full px-5 lg:px-8 pt-8 pb-28">
+        {/* Header */}
+        <div className="mb-8 fu">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
             Gestion des Réservations
           </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-base">
+          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Suivez et gérez les demandes de séjour pour vos propriétés
-            d'exception.
           </p>
         </div>
 
+        {/* Stats */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8 fu d1">
+          <StatPill
+            icon={<IoTimeOutline />}
+            label="En attente"
+            value={stats.pendingCount}
+            sub="à traiter"
+            color="amber"
+          />
+          <StatPill
+            icon={<IoCalendarOutline />}
+            label="Cette semaine"
+            value={stats.weeklyRequests}
+            sub="nouvelles"
+            color="sky"
+          />
+          <StatPill
+            icon={<IoTrendingUpOutline />}
+            label="Occupation"
+            value={`${stats.occupancyRate}%`}
+            sub="ce mois"
+            color="violet"
+          />
+          <StatPill
+            icon={<IoWalletOutline />}
+            label="Revenus"
+            value={`${stats.weeklyRevenue.toLocaleString()} TND`}
+            sub="estimés"
+            color="emerald"
+          />
+        </div>
+
         {/* Tabs */}
-        <div className="flex gap-1 mb-10 bg-gray-100 dark:bg-slate-800/60 p-1.5 rounded-2xl w-fit">
-          {(
-            [
-              {
-                key: "PENDING",
-                label: "Demandes (En attente)",
-                count: stats.pendingCount,
-              },
-              { key: "ACCEPTED", label: "Confirmées" },
-              { key: "PAST", label: "Passées" },
-            ] as { key: Tab; label: string; count?: number }[]
-          ).map(({ key, label, count }) => (
+        <div className="flex gap-1.5 mb-8 bg-white/40 dark:bg-gray-900/40 backdrop-blur-xl p-1.5 rounded-2xl border border-white/50 dark:border-gray-800 w-fit fu d2">
+          {[
+            {
+              key: "PENDING" as Tab,
+              label: "En attente",
+              count: stats.pendingCount,
+            },
+            { key: "ACCEPTED" as Tab, label: "Confirmées" },
+            { key: "PAST" as Tab, label: "Passées" },
+          ].map(({ key, label, count }) => (
             <button
               key={key}
               onClick={() => setTab(key)}
-              className={`px-6 py-3 rounded-xl text-sm font-semibold transition-all ${
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all duration-300 ${
                 tab === key
-                  ? "bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 shadow-sm"
-                  : "text-gray-500 dark:text-gray-400 hover:bg-white/50 dark:hover:bg-slate-800"
+                  ? "bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-600 text-white shadow-md shadow-violet-500/25"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
               }`}
             >
               {label}
               {count !== undefined && count > 0 && (
                 <span
-                  className={`ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-extrabold text-white ${GRAD}`}
+                  className={`text-[10px] min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center ${
+                    tab === key
+                      ? "bg-white/20 text-white"
+                      : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                  }`}
                 >
                   {count > 9 ? "9+" : count}
                 </span>
@@ -611,23 +676,23 @@ export default function OwnerReservationsPage() {
           ))}
         </div>
 
-        {/* Main grid - with sidebar cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Booking cards - 8 cols */}
-          <div className="lg:col-span-8 space-y-8">
+        {/* Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-7">
+          {/* Cards */}
+          <div className="space-y-5 min-w-0">
             {isLoading ? (
-              [...Array(2)].map((_, i) => (
+              [...Array(3)].map((_, i) => (
                 <div
                   key={i}
-                  className="bg-white dark:bg-slate-900 rounded-2xl h-64 animate-pulse border border-gray-100 dark:border-slate-800"
+                  className="bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl rounded-3xl border border-white/30 dark:border-gray-800/30 h-48 animate-pulse"
                 />
               ))
-            ) : bookings.length === 0 ? (
-              <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-900 rounded-2xl border border-gray-100 dark:border-slate-800 py-20 text-center">
-                <div className="w-16 h-16 rounded-2xl bg-gray-50 dark:bg-slate-800 flex items-center justify-center mb-4">
-                  <IoCalendarOutline className="text-gray-300 dark:text-slate-600 text-3xl" />
+            ) : displayed.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl rounded-3xl border-2 border-dashed border-gray-200/60 dark:border-gray-700/40">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-800/30 flex items-center justify-center mb-4">
+                  <IoCalendarOutline className="text-indigo-400 dark:text-indigo-600 text-2xl" />
                 </div>
-                <p className="font-semibold text-gray-500 dark:text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Aucune réservation{" "}
                   {tab === "PENDING"
                     ? "en attente"
@@ -637,92 +702,115 @@ export default function OwnerReservationsPage() {
                 </p>
               </div>
             ) : (
-              (tab === "PENDING" ? pendingBookings : nonPendingBookings).map(
-                (b) => (
-                  <RequestCard
+              <>
+                {displayed.map((b, i) => (
+                  <div
                     key={b.id}
-                    booking={b}
-                    isPending={tab === "PENDING" && b.status === "PENDING"}
-                    onAccept={handleAccept}
-                    onReject={handleReject}
-                  />
-                ),
-              )
+                    className="fu"
+                    style={{ animationDelay: `${i * 80 + 100}ms` }}
+                  >
+                    <RequestCard
+                      booking={b}
+                      isPending={tab === "PENDING" && b.status === "PENDING"}
+                      onAccept={handleAccept}
+                      onReject={handleReject}
+                    />
+                  </div>
+                ))}
+                <div className="flex items-center justify-center gap-2 py-3">
+                  <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
+                  <p className="text-xs text-gray-400 dark:text-gray-600 px-3">
+                    {displayed.length} réservation
+                    {displayed.length > 1 ? "s" : ""}
+                  </p>
+                  <div className="h-px flex-1 bg-gradient-to-l from-transparent via-gray-200 dark:via-gray-800 to-transparent" />
+                </div>
+              </>
             )}
           </div>
 
-          {/* Right sidebar (4 cols) */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Stats card */}
-            <div
-              className={`${GRAD} p-7 rounded-2xl relative overflow-hidden text-white shadow-lg shadow-indigo-200/40 dark:shadow-indigo-900/30`}
-            >
-              <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-              <div className="relative z-10">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/70">
-                  Aperçu hebdomadaire
-                </span>
-                <h4 className="text-3xl font-extrabold mt-2 leading-tight">
-                  {stats.weeklyRequests} nouvelle
-                  {stats.weeklyRequests > 1 ? "s" : ""} demande
-                  {stats.weeklyRequests > 1 ? "s" : ""}
-                </h4>
-                <p className="mt-3 text-white/80 text-sm leading-relaxed">
-                  Taux d'occupation ce mois :{" "}
-                  <span className="font-extrabold text-white">
-                    {stats.occupancyRate}%
-                  </span>
-                </p>
-                {stats.weeklyRevenue > 0 && (
-                  <p className="text-white/70 text-xs mt-1">
-                    Revenus estimés :{" "}
-                    <span className="font-bold text-white">
-                      {stats.weeklyRevenue.toLocaleString("fr-FR")} TND
-                    </span>
-                  </p>
-                )}
-                <div className="mt-6 flex items-center gap-2 text-sm font-bold">
+          {/* Sidebar */}
+          <div className="space-y-5 lg:sticky lg:top-6 fu d3">
+            {/* Quick actions */}
+            <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl rounded-3xl border border-white/50 dark:border-gray-800 p-5">
+              <p className="text-[9px] font-bold uppercase tracking-[.2em] text-gray-400 dark:text-gray-500 mb-4">
+                Actions rapides
+              </p>
+              <div className="space-y-2">
+                {[
+                  {
+                    href: "/fr/dashboard/owner",
+                    icon: <IoTrendingUpOutline />,
+                    bg: "bg-sky-50 dark:bg-sky-900/20 border-sky-100 dark:border-sky-800/30 text-sky-600 dark:text-sky-400",
+                    label: "Analytics",
+                    sub: "Revenus & stats",
+                  },
+                  {
+                    href: "/fr/dashboard/owner/messages",
+                    icon: <IoChatbubbleOutline />,
+                    bg: "bg-violet-50 dark:bg-violet-900/20 border-violet-100 dark:border-violet-800/30 text-violet-600 dark:text-violet-400",
+                    label: "Messages",
+                    sub: "Conversations",
+                  },
+                  {
+                    href: "/fr/dashboard/owner/listings",
+                    icon: <IoHomeOutline />,
+                    bg: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800/30 text-emerald-600 dark:text-emerald-400",
+                    label: "Mes biens",
+                    sub: "Gérer",
+                  },
+                ].map(({ href, icon, bg, label, sub }) => (
                   <Link
-                    href="/fr/dashboard/owner/analytics"
-                    className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+                    key={label}
+                    href={href}
+                    className="flex items-center justify-between p-3 rounded-xl hover:bg-white/50 dark:hover:bg-gray-800/50 transition-colors group"
                   >
-                    Voir les revenus
-                    <IoTrendingUpOutline className="text-lg" />
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-xl border flex items-center justify-center text-sm ${bg}`}
+                      >
+                        {icon}
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                          {label}
+                        </p>
+                        <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                          {sub}
+                        </p>
+                      </div>
+                    </div>
+                    <IoChevronForwardOutline className="text-gray-300 dark:text-gray-600 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 text-xs transition-colors" />
                   </Link>
-                </div>
+                ))}
               </div>
             </div>
 
-            {/* Concierge tips */}
-            <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-gray-100 dark:border-slate-800 shadow-sm">
-              <h5 className="font-extrabold text-gray-900 dark:text-white mb-5">
-                Conseils Conciergerie
-              </h5>
-              <div className="space-y-5">
+            {/* Tips */}
+            <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl rounded-3xl border border-white/50 dark:border-gray-800 p-5">
+              <p className="text-[9px] font-bold uppercase tracking-[.2em] text-gray-400 dark:text-gray-500 mb-4">
+                Conseils
+              </p>
+              <div className="space-y-3">
                 {[
                   {
-                    icon: <IoFlashOutline className="text-indigo-500" />,
-                    text: (
-                      <>
-                        Répondre en moins de 2h augmente vos chances de
-                        réservation de{" "}
-                        <span className="font-bold text-gray-900 dark:text-white">
-                          30%
-                        </span>
-                        .
-                      </>
+                    icon: (
+                      <IoFlashOutline className="text-amber-500 dark:text-amber-400" />
                     ),
+                    text: "Répondre en moins de 2h augmente vos réservations de 30%.",
                   },
                   {
-                    icon: <IoCameraOutline className="text-indigo-500" />,
-                    text: "Mettez à jour vos photos pour la saison estivale.",
+                    icon: (
+                      <IoCameraOutline className="text-sky-500 dark:text-sky-400" />
+                    ),
+                    text: "Mettez à jour vos photos pour la saison.",
                   },
                 ].map(({ icon, text }, i) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="w-9 h-9 rounded-full bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center flex-shrink-0">
+                  <div key={i} className="flex gap-2.5">
+                    <div className="w-7 h-7 rounded-lg bg-white/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700 flex items-center justify-center flex-shrink-0">
                       {icon}
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
                       {text}
                     </p>
                   </div>
@@ -730,32 +818,39 @@ export default function OwnerReservationsPage() {
               </div>
             </div>
 
-            {/* Add listing CTA */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-700 flex flex-col items-center justify-center text-center p-8 gap-4">
-              <div className="w-14 h-14 rounded-full bg-indigo-50 dark:bg-indigo-950/40 flex items-center justify-center">
-                <IoAddOutline className="text-indigo-500 text-2xl" />
-              </div>
-              <div>
-                <h4 className="font-extrabold text-gray-900 dark:text-white text-sm">
+            {/* CTA */}
+            <div className="relative overflow-hidden rounded-3xl border border-white/50 dark:border-gray-800">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600" />
+              <div
+                className="absolute inset-0 opacity-10"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+                }}
+              />
+              <div className="relative p-6 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center mx-auto mb-4">
+                  <IoAddOutline className="text-white text-2xl" />
+                </div>
+                <h4 className="text-sm font-bold text-white mb-1">
                   Ajouter un bien
                 </h4>
-                <p className="text-xs text-gray-400 dark:text-gray-600 mt-1">
+                <p className="text-xs text-white/60 mb-4">
                   Développez votre patrimoine
                 </p>
+                <Link
+                  href="/fr/dashboard/owner/listings/new"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-indigo-600 rounded-xl text-xs font-bold hover:bg-white/90 transition-colors shadow-sm"
+                >
+                  Commencer <IoArrowForwardOutline className="text-sm" />
+                </Link>
               </div>
-              <Link
-                href="/fr/dashboard/owner/listings/new"
-                className="px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full text-xs font-bold uppercase tracking-wider hover:opacity-80 transition-opacity"
-              >
-                Lancer
-              </Link>
             </div>
           </div>
         </div>
       </main>
 
       {/* Mobile nav */}
-      <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-t border-gray-100 dark:border-slate-800 z-50 rounded-t-[2rem] shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.08)]">
+      <nav className="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-gray-950/80 backdrop-blur-2xl border-t border-white/50 dark:border-gray-800 z-50 rounded-t-[2rem]">
         {[
           { icon: <IoSearchOutline />, label: "Explorer", href: "/fr/search" },
           {
@@ -774,10 +869,10 @@ export default function OwnerReservationsPage() {
           <Link
             key={label}
             href={href}
-            className={`flex flex-col items-center justify-center gap-0.5 px-3 py-2 rounded-2xl transition-colors ${
+            className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl transition-colors ${
               active
-                ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400"
-                : "text-gray-400 dark:text-gray-600"
+                ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                : "text-gray-400 dark:text-gray-500"
             }`}
           >
             <span className="text-xl">{icon}</span>

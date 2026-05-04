@@ -20,6 +20,7 @@ import {
   FaChevronCircleLeft,
   FaChevronCircleRight,
   FaChevronDown,
+  FaChevronRight,
 } from "react-icons/fa";
 import { MdOutlinePeopleAlt } from "react-icons/md";
 import { MdOutlineMapsHomeWork } from "react-icons/md";
@@ -31,10 +32,11 @@ import { RiSettings3Line } from "react-icons/ri";
 import { MdOutlineReportGmailerrorred } from "react-icons/md";
 import { TiUserAddOutline } from "react-icons/ti";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-
-// ✅ Importer le composant NotificationBell
 import NotificationBell from "@/components/ui/notifications/NotificationBell";
 import { TbMessageUser } from "react-icons/tb";
+import { IoMdCheckmarkCircleOutline } from "react-icons/io";
+import { MdOutlinePendingActions } from "react-icons/md";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Types
 interface Counters {
@@ -43,6 +45,7 @@ interface Counters {
   activeDisputes: number;
   unreadNotifications: number;
   pendingInvitations: number;
+  pendingListings: number;
 }
 
 // Couleurs aléatoires pour les initiales
@@ -72,6 +75,7 @@ const DEFAULT_COUNTERS: Counters = {
   activeDisputes: 0,
   unreadNotifications: 0,
   pendingInvitations: 0,
+  pendingListings: 0,
 };
 
 export default function AdminLayout({
@@ -96,6 +100,7 @@ export default function AdminLayout({
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [openSubMenu, setOpenSubMenu] = useState<string | null>(null);
 
   // Couleur aléatoire pour les initiales
   const avatarColor = React.useMemo(() => {
@@ -222,6 +227,22 @@ export default function AdminLayout({
       name: tLayout("properties"),
       href: `/${locale}/admin/properties`,
       icon: <MdOutlineMapsHomeWork size={18} />,
+      hasSubMenu: true,
+      subItems: [
+        {
+          name: "Toutes les propriétés",
+          href: `/${locale}/admin/properties`,
+          icon: <MdOutlineMapsHomeWork size={14} />,
+        },
+        {
+          name: "Validations en attente",
+          href: `/${locale}/admin/listings/validation`,
+          icon: <MdOutlinePendingActions size={14} />,
+          count: counters.pendingListings,
+          countColor: "bg-amber-500",
+        },
+       
+      ],
     },
     {
       name: tLayout("transactions"),
@@ -238,14 +259,14 @@ export default function AdminLayout({
     {
       name: "modération",
       href: `/${locale}/admin/moderation`,
-      icon: <TbMessageUser  size={18} />,
+      icon: <TbMessageUser size={18} />,
       count: counters.pendingReports,
       countColor: "bg-red-500",
     },
     {
       name: tLayout("disputes"),
       href: `/${locale}/admin/disputes`,
-      icon: <PiGavelBold  size={18} />,
+      icon: <PiGavelBold size={18} />,
       count: counters.activeDisputes,
       countColor: "bg-amber-500",
     },
@@ -267,6 +288,16 @@ export default function AdminLayout({
   const isActive = (href: string) => {
     if (href === `/${locale}/admin/dashboard`) return pathname === href;
     return pathname.startsWith(href);
+  };
+
+  // Vérifier si un sous-menu est actif
+  const isSubItemActive = (subItems: any[]) => {
+    return subItems.some(item => isActive(item.href));
+  };
+
+  // Basculer l'ouverture du sous-menu
+  const toggleSubMenu = (menuName: string) => {
+    setOpenSubMenu(openSubMenu === menuName ? null : menuName);
   };
 
   if (!mounted || !isLoaded) {
@@ -342,37 +373,110 @@ export default function AdminLayout({
           <ul className="space-y-1 px-2">
             {mainNavItems.map((item) => (
               <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative cursor-pointer ${
-                    isActive(item.href)
-                      ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
-                      : "text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
-                  }`}
-                >
-                  <span className="text-xl">{item.icon}</span>
-                  {isSidebarOpen && (
-                    <>
-                      <span className="font-medium text-sm">{item.name}</span>
-                      {item.count !== undefined && item.count > 0 && (
-                        <span
-                          className={`ml-auto ${item.countColor} text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center`}
-                        >
-                          {item.count > 99 ? "99+" : item.count}
-                        </span>
+                {item.hasSubMenu ? (
+                  <div>
+                    {/* Parent item avec bouton toggle */}
+                    <button
+                      onClick={() => toggleSubMenu(item.name)}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all relative cursor-pointer ${
+                        isActive(item.href) || isSubItemActive(item.subItems || [])
+                          ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                          : "text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{item.icon}</span>
+                        {isSidebarOpen && (
+                          <span className="font-medium text-sm">{item.name}</span>
+                        )}
+                        {!isSidebarOpen && item.count !== undefined && item.count > 0 && (
+                          <span
+                            className={`absolute -top-1 -right-1 ${item.countColor} text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center`}
+                          >
+                            {item.count > 9 ? "9+" : item.count}
+                          </span>
+                        )}
+                      </div>
+                      {isSidebarOpen && (
+                        <FaChevronRight
+                          className={`text-slate-400 text-xs transition-transform duration-200 ${
+                            openSubMenu === item.name ? "rotate-90" : ""
+                          }`}
+                        />
                       )}
-                    </>
-                  )}
-                  {!isSidebarOpen &&
-                    item.count !== undefined &&
-                    item.count > 0 && (
+                    </button>
+
+                    {/* Sous-menu animé */}
+                    <AnimatePresence>
+                      {isSidebarOpen && openSubMenu === item.name && (
+                        <motion.ul
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2, ease: "easeInOut" }}
+                          className="ml-7 mt-1 space-y-1 overflow-hidden"
+                        >
+                          {item.subItems?.map((subItem) => (
+                            <li key={subItem.href}>
+                              <Link
+                                href={subItem.href}
+                                className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg transition-all text-sm ${
+                                  isActive(subItem.href)
+                                    ? "bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300"
+                                    : "text-slate-600 dark:text-slate-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/10"
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="text-slate-400">
+                                    {subItem.icon}
+                                  </span>
+                                  <span>{subItem.name}</span>
+                                </div>
+                                {subItem.count !== undefined && subItem.count > 0 && (
+                                  <span
+                                    className={`${subItem.countColor} text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center`}
+                                  >
+                                    {subItem.count > 99 ? "99+" : subItem.count}
+                                  </span>
+                                )}
+                              </Link>
+                            </li>
+                          ))}
+                        </motion.ul>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative cursor-pointer ${
+                      isActive(item.href)
+                        ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
+                        : "text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
+                    }`}
+                  >
+                    <span className="text-xl">{item.icon}</span>
+                    {isSidebarOpen && (
+                      <>
+                        <span className="font-medium text-sm">{item.name}</span>
+                        {item.count !== undefined && item.count > 0 && (
+                          <span
+                            className={`ml-auto ${item.countColor} text-white text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center`}
+                          >
+                            {item.count > 99 ? "99+" : item.count}
+                          </span>
+                        )}
+                      </>
+                    )}
+                    {!isSidebarOpen && item.count !== undefined && item.count > 0 && (
                       <span
                         className={`absolute -top-1 -right-1 ${item.countColor} text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center`}
                       >
                         {item.count > 9 ? "9+" : item.count}
                       </span>
                     )}
-                </Link>
+                  </Link>
+                )}
               </li>
             ))}
           </ul>
@@ -521,7 +625,6 @@ export default function AdminLayout({
               <IoSearch size={20} />
             </button>
 
-            {/* 🔔 NotificationBell - Remplacer l'ancien système de notifications */}
             <NotificationBell />
 
             {/* Ligne verticale */}

@@ -110,7 +110,7 @@ export async function PATCH(
           },
         });
 
-        notificationType = "LISTING_APPROVED";
+        notificationType = "LISTING_ACTIVATED  ";
         notificationTitle = "✅ Annonce approuvée";
         notificationContent = `Félicitations ! Votre annonce "${listing.title}" a été validée et est maintenant en ligne.`;
 
