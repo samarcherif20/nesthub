@@ -1422,6 +1422,15 @@
   },
 
   "OwnerLayout": {
+    "roleSwitcher": {
+      "owner": "Propriétaire",
+      "tenant": "Locataire"
+    },
+     "duality": {
+      "title": "Et si la clé était de jouer sur les deux tableaux ?",
+      "description": "Louez un bien pour vos voyages et vivez l'expérience NESTHUB !",
+      "button": "Je découvre"
+    },
     "header": {
       "tenantSpace": "Espace Locataire",
       "ownerSpace": "Espace Propriétaire",

@@ -1,7 +1,11 @@
-// app/api/user/switch-role/route.ts
+// app/api/users/switch-role/route.ts - AMÉLIORÉ
+
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+
+// Pour stocker le rôle actif en session (alternative sans modifier la BDD)
+const activeRoleStore = new Map<string, string>();
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,47 +20,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rôle invalide" }, { status: 400 });
     }
 
-    // Récupérer l'utilisateur
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { id: true, role: true, email: true },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
     }
 
     // Vérifier que l'utilisateur a le droit de changer de rôle
     if (user.role !== "BOTH") {
-      return NextResponse.json({ 
-        error: "Vous n'avez pas le droit de changer de rôle. Votre compte n'est pas configuré en mode BOTH." 
-      }, { status: 403 });
+      return NextResponse.json(
+        {
+          error:
+            "Vous n'avez pas le droit de changer de rôle. Votre compte n'est pas configuré en mode BOTH.",
+        },
+        { status: 403 },
+      );
     }
 
-    // Mettre à jour le rôle actif (ajouter un champ `activeRole` si nécessaire)
-    // Pour l'instant, on modifie directement le rôle
-    // Mais attention : cela efface le mode BOTH !
-    
-    // ✅ Solution : Ajouter un champ `activeRole` dans le modèle User
-    // Option 1: Modifier Prisma pour ajouter activeRole
-    // Option 2: Utiliser la session pour stocker le rôle actif
-    
-    // Solution temporaire : stocker dans la session côté frontend
-    // Le rôle dans la DB reste BOTH
-    
-    return NextResponse.json({ 
-      success: true, 
+    // Stocker le rôle actif en mémoire (ou utiliser un cookie)
+    activeRoleStore.set(userId, targetRole);
+
+    // Créer une réponse avec cookie
+    const response = NextResponse.json({
+      success: true,
       activeRole: targetRole,
-      message: `Vous êtes maintenant en mode ${targetRole === "TENANT" ? "Locataire" : "Propriétaire"}`
+      message: `Vous êtes maintenant en mode ${targetRole === "TENANT" ? "Locataire" : "Propriétaire"}`,
     });
-    
+
+    // Option: set cookie pour persister le rôle actif
+    response.cookies.set("activeRole", targetRole, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 jours
+    });
+
+    return response;
   } catch (error) {
     console.error("Erreur changement de rôle:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-// GET - Récupérer le rôle actif
 export async function GET(req: NextRequest) {
   try {
     const { userId } = await auth();
@@ -70,19 +81,25 @@ export async function GET(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
     }
 
-    // Récupérer le rôle actif depuis le cookie/session
-    // Pour l'instant, on retourne le rôle par défaut
-    const activeRole = user.role === "BOTH" ? "TENANT" : user.role;
+    // Récupérer le rôle actif: d'abord du store, puis du cookie
+    let activeRole = activeRoleStore.get(userId);
 
-    return NextResponse.json({ 
+    if (!activeRole) {
+      const cookieRole = req.cookies.get("activeRole")?.value;
+      activeRole = cookieRole || (user.role === "BOTH" ? "TENANT" : user.role);
+    }
+
+    return NextResponse.json({
       userRole: user.role,
       activeRole,
-      canSwitch: user.role === "BOTH"
+      canSwitch: user.role === "BOTH",
     });
-    
   } catch (error) {
     console.error("Erreur récupération rôle:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

@@ -10,7 +10,7 @@ import { useTranslations } from "next-intl";
 
 // Icônes
 import { LuLayoutDashboard } from "react-icons/lu";
-import { IoPersonOutline } from "react-icons/io5";
+import { IoHomeOutline, IoPersonOutline } from "react-icons/io5";
 import { GoShieldLock } from "react-icons/go";
 import { IoSettingsOutline } from "react-icons/io5";
 import { RiLogoutCircleLine } from "react-icons/ri";
@@ -19,8 +19,12 @@ import {
   FaChevronCircleLeft,
   FaChevronCircleRight,
   FaChevronDown,
+  FaHouseUser,
 } from "react-icons/fa";
-import { MdOutlineHomeWork } from "react-icons/md";
+import {
+  MdOutlineHomeWork,
+  MdOutlineKeyboardDoubleArrowRight,
+} from "react-icons/md";
 import { MdOutlineCalendarMonth } from "react-icons/md";
 import { MdOutlineBookOnline } from "react-icons/md";
 import { MdOutlineChatBubble } from "react-icons/md";
@@ -28,6 +32,8 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { PiMicrosoftTeamsLogo } from "react-icons/pi";
 import { FloatingChat } from "@/components/ui/chat/FloatingChat";
 import NotificationBell from "@/components/ui/notifications/NotificationBell";
+import { GiDuality, GiDualityMask } from "react-icons/gi";
+import { TbHomeSearch } from "react-icons/tb";
 
 // Fonction pip pour les images Vercel Blob (avatar)
 const pipAvatar = (url: string) =>
@@ -136,11 +142,6 @@ export default function OwnerLayout({
 
   // Récupérer les données utilisateur et permissions
   useEffect(() => {
-    if (!mounted || !clerkUser) {
-      setLoading(false);
-      return;
-    }
-
     const fetchUserData = async () => {
       try {
         const [userRes, permissionsRes] = await Promise.all([
@@ -150,12 +151,16 @@ export default function OwnerLayout({
 
         if (userRes.ok) {
           const data = await userRes.json();
-          setAppUser(data.user || data);
+          // ✅ Correction ici : data.user (pas data.user || data)
+          setAppUser(data.user);
+          setDbRole(data.user?.role); // ← Stocke le rôle de la DB
+          console.log("🔍 Rôle DB (user.role):", data.user?.role);
         }
 
         if (permissionsRes.ok) {
           const permissionsData = await permissionsRes.json();
           setUserRole(permissionsData.role);
+          console.log("🔍 Rôle permissions:", permissionsData.role);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -166,6 +171,12 @@ export default function OwnerLayout({
 
     fetchUserData();
   }, [clerkUser, mounted]);
+
+  // Ajoute ce state
+  const [dbRole, setDbRole] = useState<string>("");
+
+  // Pour vérifier si l'utilisateur est en mode BOTH (Propriétaire + Locataire)
+  const isBothTenantOwner = dbRole === "BOTH";
 
   // Vérifier l'authentification
   useEffect(() => {
@@ -292,7 +303,7 @@ export default function OwnerLayout({
   };
 
   const getHeaderRoleLabel = () => {
-    if (userRole === "BOTH") return "Propriétaire + Co-hôte";
+    if (userRole === "BOTH") return "Propriétaire + Locataire";
     if (userRole === "CO_HOST") return "Co-hôte";
     return t("header.owner");
   };
@@ -300,7 +311,7 @@ export default function OwnerLayout({
   // Loader
   if (!mounted || !isLoaded || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f5f6fb] dark:bg-slate-950">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-900">
         <LoadingSpinner />
       </div>
     );
@@ -313,7 +324,7 @@ export default function OwnerLayout({
   const sidebarW = sidebarCollapsed ? "w-20" : "w-64";
 
   return (
-    <div className="flex h-screen bg-light dark:bg-slate-950 overflow-hidden">
+    <div className="flex h-screen bg-light dark:bg-slate-900/20erflow-hidden">
       {/* Overlay mobile */}
       {isSidebarOpen && (
         <div
@@ -423,19 +434,18 @@ export default function OwnerLayout({
                   <Link
                     href={item.href}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative cursor-pointer ${
+                      sidebarCollapsed ? "justify-center" : ""
+                    } ${
                       active
                         ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                         : "text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
                     }`}
                   >
-                    <Icon size={18} />
+                    <Icon size={18} className="flex-shrink-0" />
                     {!sidebarCollapsed && (
-                      <span className="font-medium text-sm">{item.name}</span>
-                    )}
-                    {sidebarCollapsed && (
-                      <div className="absolute left-full ml-2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none transition-opacity z-50">
+                      <span className="font-medium text-sm truncate">
                         {item.name}
-                      </div>
+                      </span>
                     )}
                   </Link>
                 </li>
@@ -443,9 +453,52 @@ export default function OwnerLayout({
             })}
           </ul>
         </nav>
+        {/* === CARTE MESH GRADIENT - Dark & White Mode === */}
+        {userRole !== "BOTH" && !sidebarCollapsed && (
+          <div className="px-3 mb-18">
+            <div className="group animate-float">
+              <div className="relative mesh-gradient-bg rounded-xl overflow-hidden shadow-lg border border-white/20 dark:border-white/10 transition-all duration-300 hover:shadow-xl">
+                {/* Image de fond - adaptée au mode */}
+                <div className="absolute inset-0 w-full h-full">
+                  <img
+                    src="https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=400&h=300&fit=crop"
+                    alt=""
+                    className="w-full h-full object-cover mix-blend-overlay opacity-50 dark:opacity-40 group-hover:scale-110 transition-transform duration-700"
+                  />
+                </div>
 
+                {/* Overlay adapté dark/white */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent dark:from-black/90 dark:via-black/40" />
+
+                {/* Contenu */}
+                <div className="relative p-4 text-center">
+                  {/* Icône */}
+                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white/20 dark:bg-white/10 backdrop-blur-sm flex items-center justify-center shadow-lg group-hover:scale-110 transition-all duration-300">
+                    <GiDualityMask className="w-5 h-5 text-white dark:text-white/90" />
+                  </div>
+
+                  <h4 className="headline-font font-bold text-white dark:text-white text-sm mb-1 drop-shadow-md">
+                    {t("duality.title")}
+                  </h4>
+
+                  <p className="text-[10px] text-white/80 dark:text-white/70 mb-3 leading-relaxed">
+                    {t("duality.description")}
+                  </p>
+
+                  <button
+                    onClick={() => router.push(`/${locale}/upgrade-role`)}
+                    className="w-full py-1.5 px-2 rounded-lg bg-white/95 dark:bg-white/10 backdrop-blur-sm text-indigo-600 dark:text-indigo-300 text-[9px] font-bold uppercase tracking-wider hover:bg-white dark:hover:bg-white/20 transition-all active:scale-95 shadow-md flex items-center justify-center gap-1.5 border border-white/20 dark:border-white/10"
+                  >
+                    <span>{t("duality.button")}</span>
+                    <MdOutlineKeyboardDoubleArrowRight className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Bottom section */}
-        <div className="border-t border-slate-200 dark:border-slate-800 pt-2 pb-4">
+        <div className=" mt-auto border-t border-slate-200 dark:border-slate-800 pt-2 pb-4">
           <ul className="space-y-1 px-2">
             <li>
               <button
@@ -500,7 +553,7 @@ export default function OwnerLayout({
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder={t("header.searchPlaceholder")}
-                  className="pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-lg text-sm w-64 xl:w-80 focus:ring-2 focus:ring-blue-300 focus:bg-white dark:focus:bg-slate-700 transition-all outline-none"
+                  className="  rounded-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none  text-sm w-64 xl:w-80 focus:ring-2 focus:ring-blue-300 focus:bg-white dark:focus:bg-slate-700 transition-all outline-none"
                 />
               </div>
               {searchQuery.length >= 2 && (
@@ -543,7 +596,38 @@ export default function OwnerLayout({
                 </div>
               )}
             </div>
+            {/* === ROLE SWITCHER (Propriétaire ↔ Locataire) === */}
+            {isBothTenantOwner && (
+              <div className="bg-gray-300/35 dark:bg-slate-800 backdrop-blur-sm p-0.5 rounded-full flex items-center gap-0.5 shadow-inner">
+                <button
+                  onClick={() => router.push(`/${locale}/dashboard/owner`)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 cursor-pointer ${
+                    !pathname?.includes("/dashboard/tenant")
+                      ? "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 text-white shadow-md"
+                      : "text-slate-600 dark:text-slate-400 hover:text-indigo-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <FaHouseUser className="w-3.5 h-3.5" />
+                    <span>{t("roleSwitcher.owner")}</span>
+                  </div>
+                </button>
 
+                <button
+                  onClick={() => router.push(`/${locale}/search`)}
+                  className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all duration-300 cursor-pointer ${
+                    pathname?.includes("/dashboard/tenant")
+                      ? "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 text-white shadow-md"
+                      : "text-slate-600 dark:text-slate-400 hover:text-indigo-200"
+                  }`}
+                >
+                  <div className="flex items-center gap-1.5">
+                    <TbHomeSearch className="w-3.5 h-3.5" />
+                    <span>{t("roleSwitcher.tenant")}</span>
+                  </div>
+                </button>
+              </div>
+            )}
             <button
               className="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
               onClick={() => setIsMobileSearchOpen(true)}

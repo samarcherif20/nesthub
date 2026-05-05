@@ -583,19 +583,19 @@
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
- .custom-scrollbar::-webkit-scrollbar {
-   width: 4px;
- }
- .custom-scrollbar::-webkit-scrollbar-track {
-   background: #f1f1f1;
-   border-radius: 10px;
- }
- .custom-scrollbar::-webkit-scrollbar-thumb {
-   background: #c7d2fe;
-   border-radius: 10px;
- }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #c7d2fe;
+  border-radius: 10px;
+}
 
- /* Animations pour les cercles sur la carte */
+/* Animations pour les cercles sur la carte */
 .animated-circle {
   transition: all 0.3s ease-in-out;
   transform-origin: center;
@@ -644,4 +644,54 @@
 
 .animated-circle.pulse-continuous {
   animation: continuousPulse 2s ease-in-out infinite;
+}
+/* Animations mesh gradient */
+@keyframes meshGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes pulse-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 5px rgba(255, 255, 255, 0.2);
+  }
+}
+
+.mesh-gradient-bg {
+  background: linear-gradient(-45deg, #1e90ff, #7c3aed, #00d1ff, #7c3aed);
+  background-size: 400% 400%;
+  animation: meshGradient 10s ease infinite;
+}
+
+.animate-float {
+  animation: float 4s ease-in-out infinite;
+}
+
+.animate-pulse-glow:hover {
+  animation: pulse-glow 2s infinite;
+}
+
+.headline-font {
+  font-family: "Plus Jakarta Sans", sans-serif;
 }
