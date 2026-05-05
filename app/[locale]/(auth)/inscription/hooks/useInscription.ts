@@ -6,19 +6,14 @@ import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { ValidationPatterns } from "@/lib/utils";
 
-// Helper function to get current locale from URL
 const getCurrentLocale = () => {
   if (typeof window === "undefined") return "fr";
-
   const pathname = window.location.pathname;
   const segments = pathname.split("/").filter(Boolean);
-
   const validLocales = ["fr", "en", "ar", "de", "es", "it"];
-
   if (segments[0] && validLocales.includes(segments[0])) {
     return segments[0];
   }
-
   return localStorage.getItem("preferred-language") || "fr";
 };
 
@@ -29,22 +24,31 @@ export function useInscription() {
   const { isLoaded: isUserLoaded, user } = useUser();
   const router = useRouter();
   const { theme } = useTheme();
+  const [governorate, setGovernorate] = useState("");
+  const [delegation, setDelegation] = useState("");
+  const [gender, setGender] = useState("");
+  // ════════════════════════════════════════════════════════════════════════════
+  // TOUS LES ÉTATS
+  // ════════════════════════════════════════════════════════════════════════════
 
   const [mounted, setMounted] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
   const [showWhatsappAlert, setShowWhatsappAlert] = useState(false);
   const [whatsappAlertMessage, setWhatsappAlertMessage] = useState("");
+
+  // Étape 2 - Identité
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [address, setAddress] = useState("");
   const [bio, setBio] = useState("");
   const [touchedStep2, setTouchedStep2] = useState({
     firstName: false,
     lastName: false,
     phoneNumber: false,
   });
+
+  // Étape 1 - Compte
   const [role, setRole] = useState<"landlord" | "tenant" | null>(null);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -65,28 +69,28 @@ export function useInscription() {
     confirmPassword: false,
   });
   const [acceptTerms, setAcceptTerms] = useState(false);
+
+  // Étape 4 - Documents
   const [cinRecto, setCinRecto] = useState<File | null>(null);
   const [cinVerso, setCinVerso] = useState<File | null>(null);
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null);
   const [dateNaissance, setDateNaissance] = useState("");
   const [cinNumber, setCinNumber] = useState("");
+  const [profession, setProfession] = useState("");
   const [isOcrLoading, setIsOcrLoading] = useState(false);
+
+  // Étape 3 - WhatsApp
   const [whatsappCode, setWhatsappCode] = useState("");
   const [isWhatsappLoading, setIsWhatsappLoading] = useState(false);
   const [whatsappError, setWhatsappError] = useState("");
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [phoneNumberResource, setPhoneNumberResource] = useState<any>(null);
-  const [phoneNumberResourceId, setPhoneNumberResourceId] = useState<
-    string | null
-  >(null);
+
+  // Modals & UI
   const [showOcrConfirm, setShowOcrConfirm] = useState(false);
   const [showCropper, setShowCropper] = useState(false);
   const [cropperSide, setCropperSide] = useState<"recto" | "verso">("recto");
   const [showWelcome, setShowWelcome] = useState(false);
 
-  // ============================================
-  // ÉTATS POUR LA VALIDATION D'UNICITÉ
-  // ============================================
+  // Validation d'unicité
   const [emailError, setEmailError] = useState<string>("");
   const [usernameError, setUsernameError] = useState<string>("");
   const [phoneError, setPhoneError] = useState<string>("");
@@ -94,30 +98,92 @@ export function useInscription() {
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isCheckingPhone, setIsCheckingPhone] = useState(false);
 
-  // ============================================
-  // FONCTIONS DE VÉRIFICATION D'UNICITÉ
-  // ============================================
+  // Upload CIN
+  const [isUploadingCIN, setIsUploadingCIN] = useState(false);
+  const [uploadCINError, setUploadCINError] = useState("");
 
-  // Vérifier si l'email existe déjà
+  // Utilisateur
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [phoneNumberResourceId, setPhoneNumberResourceId] = useState<
+    string | null
+  >(null);
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // FONCTION OCR 🆕
+  // ════════════════════════════════════════════════════════════════════════════
+
+  const handleOCR = useCallback(
+    async (file: File, side: "recto" | "verso") => {
+      try {
+        setIsOcrLoading(true);
+        console.log(`📄 OCR ${side} démarré pour:`, file.name);
+
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("side", side);
+
+        const response = await fetch("/api/ocr", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.warn(`⚠️ OCR ${side} échoué:`, data.error);
+          toast.warning(`OCR ${side} non disponible`, {
+            description: "Vous devrez remplir les champs manuellement.",
+          });
+          return;
+        }
+
+        console.log(`✅ OCR ${side} réussi:`, data);
+
+        // Appliquer les données extraites
+        if (side === "recto") {
+          if (data.firstName && !firstName) setFirstName(data.firstName);
+          if (data.lastName && !lastName) setLastName(data.lastName);
+          if (data.dateOfBirth && !dateNaissance)
+            setDateNaissance(data.dateOfBirth);
+          if (data.cinNumber && !cinNumber) setCinNumber(data.cinNumber);
+        } else if (side === "verso") {
+          if (data.profession && !profession) setProfession(data.profession);
+        }
+
+        toast.success(`OCR ${side} analysé!`, {
+          description: "Les données ont été extraites avec succès.",
+        });
+      } catch (error) {
+        console.error(`❌ Erreur OCR ${side}:`, error);
+        toast.error(`Erreur OCR ${side}`, {
+          description:
+            error instanceof Error
+              ? error.message
+              : "Veuillez remplir manuellement",
+        });
+      } finally {
+        setIsOcrLoading(false);
+      }
+    },
+    [firstName, lastName, dateNaissance, cinNumber, profession],
+  );
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // VALIDATION D'UNICITÉ
+  // ════════════════════════════════════════════════════════════════════════════
+
   const checkEmailExists = async (emailValue: string): Promise<boolean> => {
     if (!emailValue || !ValidationPatterns.isEmail(emailValue)) return false;
-
     try {
       const response = await fetch(
         `/api/users/by-email/${encodeURIComponent(emailValue)}`,
       );
-
-      if (response.status === 404) {
-        return false; // Email non trouvé, donc disponible
-      }
-
+      if (response.status === 404) return false;
       if (response.ok) {
         const userData = await response.json();
         const currentId = localStorage.getItem("currentUserId");
-        // Si c'est le même utilisateur (en mode édition), on autorise
         return userData.id !== currentId;
       }
-
       return false;
     } catch (error) {
       console.error("Erreur vérification email:", error);
@@ -125,28 +191,21 @@ export function useInscription() {
     }
   };
 
-  // Vérifier si le username existe déjà
   const checkUsernameExists = async (
     usernameValue: string,
   ): Promise<boolean> => {
     if (!usernameValue || !ValidationPatterns.isUsername(usernameValue))
       return false;
-
     try {
       const response = await fetch(
         `/api/users/by-username/${encodeURIComponent(usernameValue)}`,
       );
-
-      if (response.status === 404) {
-        return false;
-      }
-
+      if (response.status === 404) return false;
       if (response.ok) {
         const userData = await response.json();
         const currentId = localStorage.getItem("currentUserId");
         return userData.id !== currentId;
       }
-
       return false;
     } catch (error) {
       console.error("Erreur vérification username:", error);
@@ -154,25 +213,18 @@ export function useInscription() {
     }
   };
 
-  // Vérifier si le téléphone existe déjà
   const checkPhoneExists = async (phoneValue: string): Promise<boolean> => {
     if (!phoneValue) return false;
-
     try {
       const response = await fetch(
         `/api/users/by-phone/${encodeURIComponent(phoneValue)}`,
       );
-
-      if (response.status === 404) {
-        return false;
-      }
-
+      if (response.status === 404) return false;
       if (response.ok) {
         const userData = await response.json();
         const currentId = localStorage.getItem("currentUserId");
         return userData.id !== currentId;
       }
-
       return false;
     } catch (error) {
       console.error("Erreur vérification téléphone:", error);
@@ -180,9 +232,7 @@ export function useInscription() {
     }
   };
 
-  // Debounce simple
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
-  const debounce = (func: Function, delay: number) => {
+  const debounce = (func: (...args: any[]) => void, delay: number) => {
     let timeoutId: NodeJS.Timeout;
     return (...args: any[]) => {
       clearTimeout(timeoutId);
@@ -190,23 +240,19 @@ export function useInscription() {
     };
   };
 
-  // Validation email en temps réel
   const validateEmailUniqueness = useCallback(
     debounce(async (value: string) => {
       if (!value) {
         setEmailError("");
         return;
       }
-
       if (!ValidationPatterns.isEmail(value)) {
         setEmailError(t("errors.emailInvalid"));
         return;
       }
-
       setIsCheckingEmail(true);
       const exists = await checkEmailExists(value);
       setIsCheckingEmail(false);
-
       if (exists) {
         setEmailError(t("errors.emailAlreadyExists"));
       } else {
@@ -216,23 +262,19 @@ export function useInscription() {
     [t],
   );
 
-  // Validation username en temps réel
   const validateUsernameUniqueness = useCallback(
     debounce(async (value: string) => {
       if (!value) {
         setUsernameError("");
         return;
       }
-
       if (!ValidationPatterns.isUsername(value)) {
         setUsernameError(t("errors.usernameInvalid"));
         return;
       }
-
       setIsCheckingUsername(true);
       const exists = await checkUsernameExists(value);
       setIsCheckingUsername(false);
-
       if (exists) {
         setUsernameError(t("errors.usernameAlreadyExists"));
       } else {
@@ -242,27 +284,19 @@ export function useInscription() {
     [t],
   );
 
-  // ✅ Validation téléphone en temps réel (CORRIGÉE)
   const validatePhoneUniqueness = useCallback(
     debounce(async (value: string) => {
       if (!value) {
         setPhoneError("");
         return;
       }
-
       const formattedPhone = `+216${value}`;
-
-      //  NE PAS définir phoneError pour les erreurs de format
-      // Laisse ces erreurs être gérées par l'UI directement
       if (value.length < 8) {
-        //  Ne pas setPhoneError ici - on utilise une erreur séparée
         return;
       }
-
       setIsCheckingPhone(true);
       const exists = await checkPhoneExists(formattedPhone);
       setIsCheckingPhone(false);
-
       if (exists) {
         setPhoneError(t("errors.phoneAlreadyExists"));
       } else {
@@ -272,28 +306,12 @@ export function useInscription() {
     [t],
   );
 
-  // ============================================
-  // EFFETS POUR LA VALIDATION EN TEMPS RÉEL
-  // ============================================
-
-  useEffect(() => {
-    if (phoneNumber && phoneNumber.length >= 8) {
-      validatePhoneUniqueness(phoneNumber);
-    } else if (phoneNumber && phoneNumber.length < 8) {
-      //  Ne pas setPhoneError ici non plus - l'UI gère directement
-      // setPhoneError(t("errors.phoneTooShort")); // Supprimé
-    } else {
-      setPhoneError("");
-    }
-  }, [phoneNumber, validatePhoneUniqueness, t]);
-
-  // ============================================
-  // RESTE DU CODE (CONSERVÉ)
-  // ============================================
+  // ════════════════════════════════════════════════════════════════════════════
+  // EFFETS
+  // ════════════════════════════════════════════════════════════════════════════
 
   useEffect(() => {
     setMounted(true);
-
     const savedUserId = localStorage.getItem("currentUserId");
     if (savedUserId) {
       setCurrentUserId(savedUserId);
@@ -320,7 +338,6 @@ export function useInscription() {
     }
   }, []);
 
-  // Ajouter l'effet pour détecter quand l'utilisateur Clerk est créé
   useEffect(() => {
     if (isUserLoaded && user && user.id) {
       const tempId = localStorage.getItem("currentUserId");
@@ -344,9 +361,17 @@ export function useInscription() {
     }
   }, [isUserLoaded, user]);
 
-  // Remplace handleOCR par ceci
-  const [isUploadingCIN, setIsUploadingCIN] = useState(false);
-  const [uploadCINError, setUploadCINError] = useState("");
+  useEffect(() => {
+    if (phoneNumber && phoneNumber.length >= 8) {
+      validatePhoneUniqueness(phoneNumber);
+    } else {
+      setPhoneError("");
+    }
+  }, [phoneNumber, validatePhoneUniqueness]);
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // UPLOAD CIN
+  // ════════════════════════════════════════════════════════════════════════════
 
   const handleUploadCIN = async (): Promise<boolean> => {
     if (!cinRecto || !cinVerso || !profilePhoto) {
@@ -374,21 +399,22 @@ export function useInscription() {
         method: "POST",
         body: formData,
       });
+
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || "Erreur upload");
 
-      // Pré-remplir les champs avec ce que Vision a extrait
       if (data.extracted?.firstName) setFirstName(data.extracted.firstName);
       if (data.extracted?.lastName) setLastName(data.extracted.lastName);
       if (data.extracted?.dateOfBirth)
         setDateNaissance(data.extracted.dateOfBirth);
       if (data.extracted?.cinNumber) setCinNumber(data.extracted.cinNumber);
+      if (data.extracted?.profession) setProfession(data.extracted.profession);
 
-      toast.success("Documents uploadés !", {
+      toast.success("Documents analysés !", {
         description: data.ocrSuccess
-          ? `CIN détecté : ${data.cinNumber || "en attente validation"}`
-          : "Upload réussi, données à confirmer manuellement.",
+          ? `CIN n°${data.extracted?.cinNumber ?? "?"} — vérifiez avant de confirmer.`
+          : "Upload réussi. Remplissez manuellement.",
       });
 
       return true;
@@ -401,6 +427,10 @@ export function useInscription() {
       setIsUploadingCIN(false);
     }
   };
+
+  // ════════════════════════════════════════════════════════════════════════════
+  // WHATSAPP
+  // ════════════════════════════════════════════════════════════════════════════
 
   const handleSendWhatsApp = async () => {
     if (!phoneNumber) {
@@ -507,6 +537,10 @@ export function useInscription() {
     }
   };
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // VALIDATION
+  // ════════════════════════════════════════════════════════════════════════════
+
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -571,7 +605,6 @@ export function useInscription() {
       return false;
     }
 
-    // Validation des formats de base
     if (
       usernameErrorVal ||
       emailErrorVal ||
@@ -587,7 +620,6 @@ export function useInscription() {
       return false;
     }
 
-    // VALIDATION D'UNICITÉ EMAIL - au moment du clic
     setIsCheckingEmail(true);
     const emailExists = await checkEmailExists(email);
     setIsCheckingEmail(false);
@@ -600,7 +632,6 @@ export function useInscription() {
       setEmailError("");
     }
 
-    //  VALIDATION D'UNICITÉ USERNAME - au moment du clic
     setIsCheckingUsername(true);
     const usernameExists = await checkUsernameExists(username);
     setIsCheckingUsername(false);
@@ -619,141 +650,219 @@ export function useInscription() {
   const handleBlur = (field: keyof typeof touched) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
   };
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
 
-  console.log(" 1 - handleSubmit démarré");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  setTouched({
-    username: true,
-    email: true,
-    password: true,
-    confirmPassword: true,
-  });
+    console.log(" 1 - handleSubmit démarré");
 
-  console.log(" 2 - Validation du formulaire");
-  const isValid = await validateForm();
-  if (!isValid) {
-    console.log("Formulaire invalide, arrêt");
-    return;
-  }
-
-  console.log(" 3 - Formulaire valide");
-  setFormError("");
-  setIsLoading(true);
-
-  try {
-    console.log(" 4 - Vérification signUp");
-    if (!signUp) {
-      console.log(" 4b - signUp est undefined !");
-      throw new Error("Clerk non initialisé");
-    }
-
-    console.log(" 5 - Création Clerk avec:", { email, username });
-    const signUpAttempt = await signUp.create({
-      emailAddress: email,
-      password: password,
-      username: username,
+    setTouched({
+      username: true,
+      email: true,
+      password: true,
+      confirmPassword: true,
     });
 
-    console.log(" signUpAttempt complet:", {
-      id: signUpAttempt.id,
-      createdUserId: signUpAttempt.createdUserId,
-      status: signUpAttempt.status,
-    });
-
-    const temporaryClerkId = signUpAttempt.id;
-    if (!temporaryClerkId) {
-      throw new Error(
-        "Impossible de récupérer l'ID de la tentative d'inscription",
-      );
+    console.log(" 2 - Validation du formulaire");
+    const isValid = await validateForm();
+    if (!isValid) {
+      console.log("Formulaire invalide, arrêt");
+      return;
     }
 
-    const userIdToUse = temporaryClerkId;
-    const currentLocale = getCurrentLocale();
+    console.log(" 3 - Formulaire valide");
+    setFormError("");
+    setIsLoading(true);
 
-    // ✅ Déclarer et uploader la photo ici
-    let profilePictureUrl = null;
-    if (profilePhoto) {
-      try {
-        const formData = new FormData();
-        formData.append("file", profilePhoto);
-        formData.append("userId", userIdToUse);
-        formData.append("type", "profile");
-        
-        const uploadRes = await fetch("/api/users/upload-photo", {
-          method: "POST",
-          body: formData,
-        });
-        
-        if (uploadRes.ok) {
-          const uploadData = await uploadRes.json();
-          profilePictureUrl = uploadData.url;
-          console.log("✅ Photo uploadée:", profilePictureUrl);
-        }
-      } catch (err) {
-        console.error("Erreur upload photo:", err);
+    try {
+      console.log(" 4 - Vérification signUp");
+      if (!signUp) {
+        console.log(" 4b - signUp est undefined !");
+        throw new Error("Clerk non initialisé");
       }
+
+      console.log(" 5 - Création Clerk avec:", { email, username });
+      const signUpAttempt = await signUp.create({
+        emailAddress: email,
+        password: password,
+        username: username,
+      });
+
+      console.log(" signUpAttempt complet:", {
+        id: signUpAttempt.id,
+        createdUserId: signUpAttempt.createdUserId,
+        status: signUpAttempt.status,
+      });
+
+      const temporaryClerkId = signUpAttempt.id;
+      if (!temporaryClerkId) {
+        throw new Error(
+          "Impossible de récupérer l'ID de la tentative d'inscription",
+        );
+      }
+
+      const userIdToUse = temporaryClerkId;
+      const currentLocale = getCurrentLocale();
+
+      let profilePictureUrl = null;
+      if (profilePhoto) {
+        try {
+          const formData = new FormData();
+          formData.append("file", profilePhoto);
+          formData.append("userId", userIdToUse);
+          formData.append("type", "profile");
+
+          const uploadRes = await fetch("/api/users/upload-photo", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            profilePictureUrl = uploadData.url;
+            console.log("✅ Photo uploadée:", profilePictureUrl);
+          }
+        } catch (err) {
+          console.error("Erreur upload photo:", err);
+        }
+      }
+
+      const response = await fetch("/api/users/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: userIdToUse,
+          email,
+          username,
+          role,
+          preferredLocale: currentLocale,
+          profilePictureUrl,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erreur création");
+      }
+
+      setCurrentUserId(userIdToUse);
+      localStorage.setItem("currentUserId", userIdToUse);
+      localStorage.setItem("pendingEmail", email);
+      localStorage.setItem("pendingUsername", username);
+      localStorage.setItem("pendingPassword", password);
+      localStorage.setItem("pendingRole", role ?? "");
+      localStorage.setItem("preferred-language", currentLocale);
+
+      const verifyUrl = `${window.location.origin}/${currentLocale}/inscription/verify-catch`;
+      console.log("📧 Verification URL:", verifyUrl);
+
+      await signUp.prepareEmailAddressVerification({
+        strategy: "email_link",
+        redirectUrl: verifyUrl,
+      });
+
+      setAlertMessage(`Un lien de vérification a été envoyé à ${email}`);
+      setShowSuccessAlert(true);
+    } catch (error: any) {
+      console.error(" ERREUR DÉTAILLÉE:", error);
+      console.error(" Message:", error?.message);
+      console.error(" Errors:", error?.errors);
+
+      const errorMessage =
+        error?.errors?.[0]?.message || error?.message || t("required");
+      setFormError(errorMessage);
+    } finally {
+      setIsLoading(false);
     }
-
-    const response = await fetch("/api/users/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: userIdToUse,
-        email,
-        username,
-        role,
-        preferredLocale: currentLocale,
-        profilePictureUrl, // ✅ Maintenant défini
-      }),
-    });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error || "Erreur création");
-    }
-
-    setCurrentUserId(userIdToUse);
-    localStorage.setItem("currentUserId", userIdToUse);
-    localStorage.setItem("pendingEmail", email);
-    localStorage.setItem("pendingUsername", username);
-    localStorage.setItem("pendingPassword", password);
-    localStorage.setItem("pendingRole", role ?? "");
-    localStorage.setItem("preferred-language", currentLocale);
-
-    const verifyUrl = `${window.location.origin}/${currentLocale}/inscription/verify-catch`;
-    console.log("📧 Verification URL:", verifyUrl);
-
-    await signUp.prepareEmailAddressVerification({
-      strategy: "email_link",
-      redirectUrl: verifyUrl,
-    });
-
-    setAlertMessage(`Un lien de vérification a été envoyé à ${email}`);
-    setShowSuccessAlert(true);
-  } catch (error: any) {
-    console.error(" ERREUR DÉTAILLÉE:", error);
-    console.error(" Message:", error?.message);
-    console.error(" Errors:", error?.errors);
-
-    const errorMessage =
-      error?.errors?.[0]?.message || error?.message || t("required");
-    setFormError(errorMessage);
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
   const handleConfirmIdentity = async () => {
-    // 1. Upload CIN + Vision OCR
-    const uploadOk = await handleUploadCIN();
-    if (!uploadOk) return; // stoppe si l'upload a échoué
+    setIsUploadingCIN(true);
+    setUploadCINError("");
 
-    // 2. Complete profile (données texte)
     const tempId = currentUserId || localStorage.getItem("currentUserId");
+    let profilePictureUrl = null;
+    let rectoUrl = null;
+    let versoUrl = null;
+
     try {
+      let ocrData = null;
+      let cinDataComplete = null;
+
+      // Upload CIN (best effort - non bloquant)
+      if (cinRecto && cinVerso && profilePhoto && tempId) {
+        try {
+          const formData = new FormData();
+          formData.append("userId", tempId);
+          formData.append("cinRecto", cinRecto);
+          formData.append("cinVerso", cinVerso);
+          formData.append("profilePhoto", profilePhoto);
+
+          const res = await fetch("/api/registration/upload-cin", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+
+            profilePictureUrl = data.urls?.profilePhoto;
+            rectoUrl = data.urls?.cinRecto;
+            versoUrl = data.urls?.cinVerso;
+
+            console.log("📸 Photo URL récupérée:", profilePictureUrl);
+            console.log("📄 Recto URL:", rectoUrl);
+            console.log("📄 Verso URL:", versoUrl);
+
+            if (data.extracted) {
+              ocrData = data.extracted;
+
+              cinDataComplete = {
+                firstName: ocrData.firstName || null,
+                lastName: ocrData.lastName || null,
+                cinNumber: ocrData.cinNumber || null,
+                dateOfBirth: ocrData.dateOfBirth || null,
+                profession: ocrData.profession || null,
+                extractedAt: new Date().toISOString(),
+                documentType: "CIN",
+                rectoUrl: rectoUrl,
+                versoUrl: versoUrl,
+              };
+
+              if (data.extracted?.firstName)
+                setFirstName(data.extracted.firstName);
+              if (data.extracted?.lastName)
+                setLastName(data.extracted.lastName);
+              if (data.extracted?.dateOfBirth)
+                setDateNaissance(data.extracted.dateOfBirth);
+              if (data.extracted?.cinNumber)
+                setCinNumber(data.extracted.cinNumber);
+              if (data.extracted?.profession)
+                setProfession(data.extracted.profession);
+            }
+          } else {
+            console.warn("⚠️ Upload CIN échoué (non bloquant):", res.status);
+          }
+        } catch (uploadErr) {
+          console.warn("⚠️ Erreur upload CIN (non bloquant):", uploadErr);
+        }
+      }
+
+      // Construire l'objet cinData même sans OCR
+      const cinDataToSave = cinDataComplete || {
+        firstName: firstName || null,
+        lastName: lastName || null,
+        cinNumber: cinNumber || null,
+        dateOfBirth: dateNaissance || null,
+        profession: profession || null,
+        extractedAt: new Date().toISOString(),
+        documentType: "CIN",
+        rectoUrl: rectoUrl,
+        versoUrl: versoUrl,
+      };
+
+      // Complete profile avec TOUS les champs
       await fetch("/api/users/complete-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -763,25 +872,54 @@ const handleSubmit = async (e: React.FormEvent) => {
           lastName,
           dateNaissance,
           cinNumber,
-          address,
           bio,
+          profession,
           phoneNumber: `+216${phoneNumber}`,
+          governorate,
+          delegation,
+          gender, // ← gender doit exister dans le state
+          cinData: cinDataToSave,
+          profilePictureUrl,
         }),
       });
 
-      // Sync Clerk ID si nécessaire
-      if (isUserLoaded && user?.id && tempId && tempId !== user.id) {
-        await fetch("/api/users/update-clerk-id", {
+      // ✅ Créer une demande de vérification (API correcte)
+      if (rectoUrl && versoUrl) {
+        const verifyRes = await fetch("/api/verification-requests", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ oldClerkId: tempId, newClerkId: user.id }),
+          body: JSON.stringify({
+            documentFrontUrl: rectoUrl,
+            documentBackUrl: versoUrl,
+            extractedData: cinDataToSave,
+          }),
         });
-        localStorage.setItem("currentUserId", user.id);
-        setCurrentUserId(user.id);
+
+        if (verifyRes.ok) {
+          console.log("✅ Demande de vérification créée");
+        } else {
+          console.warn("⚠️ Erreur création demande vérification");
+        }
+      }
+
+      // Sync Clerk ID si nécessaire
+      if (isUserLoaded && user?.id && tempId && tempId !== user.id) {
+        try {
+          await fetch("/api/users/update-clerk-id", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ oldClerkId: tempId, newClerkId: user.id }),
+          });
+          localStorage.setItem("currentUserId", user.id);
+          setCurrentUserId(user.id);
+        } catch (syncErr) {
+          console.warn("⚠️ Sync Clerk ID échoué (non bloquant):", syncErr);
+        }
       }
     } catch (error) {
-      console.error("Erreur complete-profile:", error);
+      console.error("❌ Erreur handleConfirmIdentity:", error);
     } finally {
+      setIsUploadingCIN(false);
       setShowOcrConfirm(false);
       setShowWelcome(true);
     }
@@ -789,12 +927,11 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   const handleGoToCompleteProfile = async () => {
     setShowWelcome(false);
-    localStorage.removeItem("currentUserId");
     localStorage.removeItem("pendingEmail");
     localStorage.removeItem("pendingUsername");
     localStorage.removeItem("pendingPassword");
     localStorage.removeItem("pendingRole");
-    await signOut();
+
     const currentLocale = getCurrentLocale();
     router.push(`/${currentLocale}/complete-profile`);
   };
@@ -811,22 +948,26 @@ const handleSubmit = async (e: React.FormEvent) => {
     router.push(`/${currentLocale}/dashboard`);
   };
 
+  // ════════════════════════════════════════════════════════════════════════════
+  // RETURN
+  // ════════════════════════════════════════════════════════════════════════════
+
   return {
-    // meta
+    // Meta
     t,
     mounted,
     theme,
-    // step
+    // Step
     currentStep,
     setCurrentStep,
-    // alerts
+    // Alerts
     showSuccessAlert,
     setShowSuccessAlert,
     alertMessage,
     showWhatsappAlert,
     setShowWhatsappAlert,
     whatsappAlertMessage,
-    // modals
+    // Modals
     showOcrConfirm,
     setShowOcrConfirm,
     showCropper,
@@ -835,10 +976,10 @@ const handleSubmit = async (e: React.FormEvent) => {
     setCropperSide,
     showWelcome,
     setShowWelcome,
-    // form errors
+    // Form errors
     formError,
     setFormError,
-    // step 1
+    // Step 1
     role,
     setRole,
     username,
@@ -873,15 +1014,13 @@ const handleSubmit = async (e: React.FormEvent) => {
     isCheckingEmail,
     isCheckingUsername,
     isCheckingPhone,
-    // step 2
+    // Step 2
     firstName,
     setFirstName,
     lastName,
     setLastName,
     phoneNumber,
     setPhoneNumber,
-    address,
-    setAddress,
     bio,
     setBio,
     touchedStep2,
@@ -889,11 +1028,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     isWhatsappLoading,
     whatsappError,
     handleSendWhatsApp,
-    // step 3
+    // Step 3
     whatsappCode,
     setWhatsappCode,
     handleVerifyWhatsApp,
-    // step 4
+    // Step 4
     cinRecto,
     setCinRecto,
     cinVerso,
@@ -904,13 +1043,16 @@ const handleSubmit = async (e: React.FormEvent) => {
     setDateNaissance,
     cinNumber,
     setCinNumber,
+    profession,
+    setProfession,
     isOcrLoading,
+    handleOCR, // ✅ NOUVEAU!
     handleUploadCIN,
     handleConfirmIdentity,
-    // welcome
+    // Welcome
     handleGoToCompleteProfile,
     handleGoToDashboard,
-    // clerk user
+    // Clerk user
     isUserLoaded,
     user,
     setCurrentUserId,
@@ -919,5 +1061,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     setAcceptTerms,
     isUploadingCIN,
     uploadCINError,
+    governorate,
+    setGovernorate,
+    delegation,
+    setDelegation,
+    gender, // ← AJOUTE
+    setGender, // ← AJOUTE (si tu as la fonction)
   };
 }

@@ -4,18 +4,30 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ clerkId: string }> } // ← ICI : params est une Promise
+  { params }: { params: Promise<{ clerkId: string }> }, // ← ICI : params est une Promise
 ) {
   try {
     // ✅ Il faut attendre params
     const { clerkId } = await params;
-    
+
     console.log("🔍 API DB - Recherche pour clerkId:", clerkId);
-    
+
     const user = await prisma.user.findUnique({
       where: { clerkId },
       select: {
         id: true,
+        firstName: true,
+        lastName: true,
+        phoneNumber: true,
+        bio: true,
+        profession: true,
+        cinNumber: true,
+        dateOfBirth: true,
+        governorate: true,
+        delegation: true,
+        spokenLanguages: true,
+        gender: true,
+        profilePictureUrl: true,
         role: true,
         email: true,
         username: true,
@@ -24,10 +36,7 @@ export async function GET(
 
     if (!user) {
       console.log("❌ Utilisateur non trouvé pour clerkId:", clerkId);
-      return NextResponse.json(
-        { error: "User not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
     console.log("✅ Utilisateur trouvé:", user);
@@ -36,7 +45,7 @@ export async function GET(
     console.error("❌ Erreur API DB:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

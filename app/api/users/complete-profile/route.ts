@@ -1,3 +1,5 @@
+// app/api/users/complete-profile/route.ts
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -9,19 +11,20 @@ export async function POST(req: Request) {
       lastName,
       dateNaissance,
       cinNumber,
-      address,
+      profession,
       bio,
       phoneNumber,
       languages,
       gender,
       occupation,
+      governorate,
+      delegation,
+      cinData,
+      profilePictureUrl,
     } = await req.json();
 
     if (!userId) {
-      return NextResponse.json(
-        { error: "userId requis" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "userId requis" }, { status: 400 });
     }
 
     // Mettre à jour le user dans Prisma
@@ -33,8 +36,21 @@ export async function POST(req: Request) {
         phoneNumber: phoneNumber || undefined,
         bio: bio || undefined,
         spokenLanguages: languages || [],
-        status: "ACTIVE",
+        profession: profession || undefined,
+        cinNumber: cinNumber || undefined,
+        dateOfBirth: dateNaissance ? new Date(dateNaissance) : undefined,
+        governorate: governorate || undefined,
+        delegation: delegation || undefined,
+        cinData: cinData || undefined,
+        profilePictureUrl: profilePictureUrl || undefined,
+        isEmailVerified: true,
+        status: "PENDING_VALIDATION",
       },
+    });
+
+    console.log("✅ Utilisateur mis à jour:", {
+      id: updatedUser.id,
+      profilePictureUrl: updatedUser.profilePictureUrl,
     });
 
     // Créer ou mettre à jour la vérification d'identité
@@ -44,13 +60,13 @@ export async function POST(req: Request) {
         update: {
           submissionDate: new Date(),
           status: "PENDING",
-          adminComment: `CIN: ${cinNumber || "N/A"} | Né(e) le: ${dateNaissance || "N/A"} | Adresse: ${address || "N/A"} | Genre: ${gender || "N/A"} | Occupation: ${occupation || "N/A"}`,
+          adminComment: `CIN: ${cinNumber || "N/A"} | Né(e) le: ${dateNaissance || "N/A"}`,
         },
         create: {
           userId: updatedUser.id,
           submissionDate: new Date(),
           status: "PENDING",
-          adminComment: `CIN: ${cinNumber || "N/A"} | Né(e) le: ${dateNaissance || "N/A"} | Adresse: ${address || "N/A"} | Genre: ${gender || "N/A"} | Occupation: ${occupation || "N/A"}`,
+          adminComment: `CIN: ${cinNumber || "N/A"} | Né(e) le: ${dateNaissance || "N/A"}`,
         },
       });
     }
@@ -59,12 +75,11 @@ export async function POST(req: Request) {
       success: true,
       message: "Profil complété avec succès",
     });
-
   } catch (error: any) {
     console.error("❌ Erreur complete-profile:", error);
     return NextResponse.json(
       { error: error.message || "Erreur serveur" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

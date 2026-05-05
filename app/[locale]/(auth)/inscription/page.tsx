@@ -176,8 +176,6 @@ export default function InscriptionPage() {
     setLastName,
     phoneNumber,
     setPhoneNumber,
-    address,
-    setAddress,
     bio,
     setBio,
     touchedStep2,
@@ -197,6 +195,8 @@ export default function InscriptionPage() {
     setDateNaissance,
     cinNumber,
     setCinNumber,
+    profession,        // ← AJOUTER CETTE LIGNE
+    setProfession,
     // ← ajoute ces 3
     isUploadingCIN,
     uploadCINError, 
@@ -218,9 +218,16 @@ export default function InscriptionPage() {
     acceptTerms,
     setAcceptTerms,
     profilePhoto,
+    governorate,
+    setGovernorate,
+    delegation,
+    setDelegation,
   } = useInscription();
 
+  
+
   const router = useRouter();
+
 
   // États pour l'erreur générale avec timer
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -274,6 +281,44 @@ export default function InscriptionPage() {
       setShowGeneralError(true);
     }
   }, [whatsappError]);
+  
+  // ✅ AJOUTEZ CETTE FONCTION handleOCR
+const handleOCR = async (file: File, side: "recto" | "verso") => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("side", side);
+
+  try {
+    const response = await fetch("/api/ocr", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log("📦 Réponse OCR complète:", data);  // ← AJOUTEZ CETTE LIGNE
+
+    if (data.success && data.extracted) {
+      console.log("📝 Données extraites:", data.extracted);  // ← AJOUTEZ CETTE LIGNE
+      
+      if (data.extracted.firstName) setFirstName(data.extracted.firstName);
+      if (data.extracted.lastName) setLastName(data.extracted.lastName);
+      if (data.extracted.cinNumber) setCinNumber(data.extracted.cinNumber);
+      if (data.extracted.dateOfBirth) setDateNaissance(data.extracted.dateOfBirth);
+      if (data.extracted.profession) setProfession(data.extracted.profession);
+
+      toast.success("CIN détecté !", {
+        description: "Les informations ont été extraites automatiquement",
+      });
+    } else {
+      console.log("Aucune donnée OCR extraite ou erreur", data);
+    }
+  } catch (error) {
+    console.error("Erreur OCR:", error);
+    toast.error("Erreur OCR", {
+      description: "Impossible de lire la carte d'identité",
+    });
+  }
+};
 
   if (!mounted) {
     return (
@@ -555,7 +600,7 @@ export default function InscriptionPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-yellow-400 mt-1">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     {t("usernameInfo")}
                   </p>
                   {touched.username && validateUsername(username) && (
@@ -1004,27 +1049,363 @@ export default function InscriptionPage() {
                 </div>
 
                 {/* Adresse (optionnel) */}
-                <div className="space-y-1 sm:space-y-2">
-                  <div className="flex justify-between items-center">
+                                {/* === GOUVERNORAT ET DÉLÉGATION === */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {/* Gouvernorat */}
+                  <div className="space-y-1 sm:space-y-2">
                     <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {t("address")}
+                    Gouvernorat <span className="text-red-500">*</span>
                     </label>
-                    <span className="text-[8px] sm:text-[10px] text-yellow-500 dark:text-yellow-400 uppercase font-bold tracking-tighter">
-                      ( {t("optional")} )
-                    </span>
+                    <div className="relative">
+                      <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
+                        <MdOutlineLocationOn className="text-sm sm:text-base" />
+                      </span>
+                      <select
+  value={governorate}
+  onChange={(e) => {
+    setGovernorate(e.target.value);
+    setDelegation("");
+  }}
+  className={`w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl pl-9 sm:pl-10 pr-3 py-1.5 sm:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none ${
+    governorate === "" 
+      ? "text-gray-400 dark:text-gray-500"
+      : "text-slate-900 dark:text-white"
+  }`}
+>
+  {/* ✅ Option par défaut grisée */}
+  <option value="" disabled hidden className="text-gray-400">
+    Sélectionner un gouvernorat
+  </option>
+                        <option value="Ariana" className="text-slate-900">Ariana</option>
+                        <option value="Beja" className="text-slate-900">Béja</option>
+                        <option value="Ben Arous" className="text-slate-900">Ben Arous</option>
+                        <option value="Bizerte" className="text-slate-900">Bizerte</option>
+                        <option value="Gabes" className="text-slate-900">Gabès</option>
+                        <option value="Gafsa" className="text-slate-900">Gafsa</option>
+                        <option value="Jendouba" className="text-slate-900">Jendouba</option>
+                        <option value="Kairouan" className="text-slate-900">Kairouan</option>
+                        <option value="Kasserine" className="text-slate-900">Kasserine</option>
+                        <option value="Kebili"className="text-slate-900">Kébili</option>
+                        <option value="Kef" className="text-slate-900">Le Kef</option>
+                        <option value="Mahdia" className="text-slate-900">Mahdia</option>
+                        <option value="Manouba" className="text-slate-900">La Manouba</option>
+                        <option value="Medenine" className="text-slate-900">Médenine</option>
+                        <option value="Monastir" className="text-slate-900">Monastir</option>
+                        <option value="Nabeul" className="text-slate-900">Nabeul</option>
+                        <option value="Sfax" className="text-slate-900">Sfax</option>
+                        <option value="Sidi Bouzid" className="text-slate-900">Sidi Bouzid</option>
+                        <option value="Siliana" className="text-slate-900">Siliana</option>
+                        <option value="Sousse" className="text-slate-900">Sousse</option>
+                        <option value="Tataouine" className="text-slate-900">Tataouine</option>
+                        <option value="Tozeur" className="text-slate-900">Tozeur</option>
+                        <option value="Tunis" className="text-slate-900">Tunis</option>
+                        <option value="Zaghouan" className="text-slate-900">Zaghouan</option>
+                      </select>
+                    </div>
                   </div>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
-                      <MdOutlineLocationOn className="text-sm sm:text-base" />
-                    </span>
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder={t("addressPlaceholder")}
-                      className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl pl-9 sm:pl-10 pr-3 py-1.5 sm:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none dark:text-white"
-                    />
-                  </div>
+
+                  {/* Délégation - Apparaît seulement si un gouvernorat est sélectionné */}
+                  {governorate && (
+  <motion.div
+    initial={{ opacity: 0, y: -10 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.3 }}
+    className="space-y-1 sm:space-y-2"
+  >
+    <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
+      Délégation <span className="text-red-500">*</span>
+    </label>
+    <div className="relative">
+      <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
+        <MdOutlineLocationOn className="text-sm sm:text-base" />
+      </span>
+      <select
+        value={delegation}
+        onChange={(e) => setDelegation(e.target.value)}
+        className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl pl-9 sm:pl-10 pr-3 py-1.5 sm:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none dark:text-white"
+      >
+        <option value="" disabled hidden>Sélectionner une délégation</option>
+
+        {governorate === "Ariana" && (<>
+          <option value="Ariana Ville">Ariana Ville</option>
+          <option value="Ettadhamen">Ettadhamen</option>
+          <option value="Kalaat El Andalous">Kalaat El Andalous</option>
+          <option value="Mnihla">Mnihla</option>
+          <option value="Raoued">Raoued</option>
+          <option value="Sidi Thabet">Sidi Thabet</option>
+          <option value="La Soukra">La Soukra</option>
+        </>)}
+
+        {governorate === "Beja" && (<>
+          <option value="Béja Nord">Béja Nord</option>
+          <option value="Béja Sud">Béja Sud</option>
+          <option value="Amdoun">Amdoun</option>
+          <option value="Nefza">Nefza</option>
+          <option value="Téboursouk">Téboursouk</option>
+          <option value="Testour">Testour</option>
+          <option value="Thibar">Thibar</option>
+          <option value="Medjez El Bab">Medjez El Bab</option>
+        </>)}
+
+        {governorate === "Ben Arous" && (<>
+          <option value="Ben Arous Ville">Ben Arous Ville</option>
+          <option value="El Mourouj">El Mourouj</option>
+          <option value="Hammam Lif">Hammam Lif</option>
+          <option value="Hammam Chott">Hammam Chott</option>
+          <option value="Bou Mhel El Bassatine">Bou Mhel El Bassatine</option>
+          <option value="Ezzahra">Ezzahra</option>
+          <option value="Radès">Radès</option>
+          <option value="Mégrine">Mégrine</option>
+          <option value="Mornag">Mornag</option>
+        </>)}
+
+        {governorate === "Bizerte" && (<>
+          <option value="Bizerte Nord">Bizerte Nord</option>
+          <option value="Bizerte Sud">Bizerte Sud</option>
+          <option value="Menzel Bourguiba">Menzel Bourguiba</option>
+          <option value="Mateur">Mateur</option>
+          <option value="Sejnane">Sejnane</option>
+          <option value="Joumine">Joumine</option>
+          <option value="Ghezala">Ghezala</option>
+          <option value="Ras Jebel">Ras Jebel</option>
+          <option value="El Alia">El Alia</option>
+          <option value="Utique">Utique</option>
+        </>)}
+
+        {governorate === "Gabes" && (<>
+          <option value="Gabès Ville">Gabès Ville</option>
+          <option value="Gabès Médina">Gabès Médina</option>
+          <option value="Gabès Ouest">Gabès Ouest</option>
+          <option value="El Hamma">El Hamma</option>
+          <option value="Mareth">Mareth</option>
+          <option value="Matmata">Matmata</option>
+          <option value="Nouvelle Matmata">Nouvelle Matmata</option>
+          <option value="Menzel El Habib">Menzel El Habib</option>
+          <option value="Ghannouch">Ghannouch</option>
+        </>)}
+
+        {governorate === "Gafsa" && (<>
+          <option value="Gafsa Nord">Gafsa Nord</option>
+          <option value="Gafsa Sud">Gafsa Sud</option>
+          <option value="El Ksar">El Ksar</option>
+          <option value="Moulares">Moulares</option>
+          <option value="Metlaoui">Metlaoui</option>
+          <option value="Redeyef">Redeyef</option>
+          <option value="Snad">Snad</option>
+          <option value="Belkhir">Belkhir</option>
+        </>)}
+
+        {governorate === "Jendouba" && (<>
+          <option value="Jendouba">Jendouba</option>
+          <option value="Jendouba Nord">Jendouba Nord</option>
+          <option value="Bou Salem">Bou Salem</option>
+          <option value="Tabarka">Tabarka</option>
+          <option value="Ain Draham">Ain Draham</option>
+          <option value="Fernana">Fernana</option>
+          <option value="Ghardimaou">Ghardimaou</option>
+          <option value="Oued Meliz">Oued Meliz</option>
+        </>)}
+
+        {governorate === "Kairouan" && (<>
+          <option value="Kairouan Nord">Kairouan Nord</option>
+          <option value="Kairouan Sud">Kairouan Sud</option>
+          <option value="Sbikha">Sbikha</option>
+          <option value="Chebika">Chebika</option>
+          <option value="Hajeb El Ayoun">Hajeb El Ayoun</option>
+          <option value="Nasrallah">Nasrallah</option>
+          <option value="Oueslatia">Oueslatia</option>
+          <option value="Menzel Mhiri">Menzel Mhiri</option>
+          <option value="El Ala">El Ala</option>
+        </>)}
+
+        {governorate === "Kasserine" && (<>
+          <option value="Kasserine Nord">Kasserine Nord</option>
+          <option value="Kasserine Sud">Kasserine Sud</option>
+          <option value="Sbeitla">Sbeitla</option>
+          <option value="Thala">Thala</option>
+          <option value="Feriana">Feriana</option>
+          <option value="Foussana">Foussana</option>
+          <option value="Hassi El Ferid">Hassi El Ferid</option>
+          <option value="Majel Bel Abbès">Majel Bel Abbès</option>
+        </>)}
+
+        {governorate === "Kebili" && (<>
+          <option value="Kébili Nord">Kébili Nord</option>
+          <option value="Kébili Sud">Kébili Sud</option>
+          <option value="Douz Nord">Douz Nord</option>
+          <option value="Douz Sud">Douz Sud</option>
+          <option value="Souk Lahad">Souk Lahad</option>
+          <option value="Faouar">Faouar</option>
+        </>)}
+
+        {governorate === "Kef" && (<>
+          <option value="Le Kef Ouest">Le Kef Ouest</option>
+          <option value="Le Kef Est">Le Kef Est</option>
+          <option value="Nebeur">Nebeur</option>
+          <option value="Sakiet Sidi Youssef">Sakiet Sidi Youssef</option>
+          <option value="Tajerouine">Tajerouine</option>
+          <option value="Kalaat Senan">Kalaat Senan</option>
+          <option value="Dahmani">Dahmani</option>
+          <option value="Sers">Sers</option>
+        </>)}
+
+        {governorate === "Mahdia" && (<>
+          <option value="Mahdia Ville">Mahdia Ville</option>
+          <option value="Ksour Essef">Ksour Essef</option>
+          <option value="El Djem">El Djem</option>
+          <option value="Chebba">Chebba</option>
+          <option value="Melloulèche">Melloulèche</option>
+          <option value="Souassi">Souassi</option>
+          <option value="Boumerdes">Boumerdes</option>
+          <option value="Sidi Alouane">Sidi Alouane</option>
+        </>)}
+
+        {governorate === "Manouba" && (<>
+          <option value="Manouba Ville">Manouba Ville</option>
+          <option value="Oued Ellil">Oued Ellil</option>
+          <option value="Tebourba">Tebourba</option>
+          <option value="El Battan">El Battan</option>
+          <option value="Jedaida">Jedaida</option>
+          <option value="Douar Hicher">Douar Hicher</option>
+          <option value="Denden">Denden</option>
+        </>)}
+
+        {governorate === "Medenine" && (<>
+          <option value="Médenine Nord">Médenine Nord</option>
+          <option value="Médenine Sud">Médenine Sud</option>
+          <option value="Ben Gardane">Ben Gardane</option>
+          <option value="Zarzis">Zarzis</option>
+          <option value="Jerba Houmt Souk">Jerba Houmt Souk</option>
+          <option value="Jerba Midoun">Jerba Midoun</option>
+          <option value="Jerba Ajim">Jerba Ajim</option>
+          <option value="Beni Khedache">Beni Khedache</option>
+          <option value="Sidi Makhlouf">Sidi Makhlouf</option>
+        </>)}
+
+        {governorate === "Monastir" && (<>
+          <option value="Monastir Ville">Monastir Ville</option>
+          <option value="Moknine">Moknine</option>
+          <option value="Jemmal">Jemmal</option>
+          <option value="Ksar Hellal">Ksar Hellal</option>
+          <option value="Bembla">Bembla</option>
+          <option value="Sayada">Sayada</option>
+          <option value="Lamta">Lamta</option>
+          <option value="Téboulba">Téboulba</option>
+          <option value="Zeramdine">Zeramdine</option>
+        </>)}
+
+        {governorate === "Nabeul" && (<>
+          <option value="Hammamet">Hammamet</option>
+          <option value="Nabeul Ville">Nabeul Ville</option>
+          <option value="Dar Chaabane">Dar Chaabane</option>
+          <option value="Beni Khiar">Beni Khiar</option>
+          <option value="Korba">Korba</option>
+          <option value="Menzel Temime">Menzel Temime</option>
+          <option value="Takelsa">Takelsa</option>
+          <option value="Soliman">Soliman</option>
+          <option value="Bou Argoub">Bou Argoub</option>
+          <option value="Grombalia">Grombalia</option>
+          <option value="El Mida">El Mida</option>
+          <option value="Kelibia">Kélibia</option>
+          <option value="Haouaria">Haouaria</option>
+        </>)}
+
+        {governorate === "Sfax" && (<>
+          <option value="Sfax Ville">Sfax Ville</option>
+          <option value="Sakiet Ezzit">Sakiet Ezzit</option>
+          <option value="Sakiet Eddaier">Sakiet Eddaier</option>
+          <option value="Bir Ali Ben Khalifa">Bir Ali Ben Khalifa</option>
+          <option value="Chihia">Chihia</option>
+          <option value="El Ain">El Ain</option>
+          <option value="Agareb">Agareb</option>
+          <option value="Mahrès">Mahrès</option>
+          <option value="Ghraiba">Ghraiba</option>
+          <option value="Jebiniana">Jebiniana</option>
+          <option value="El Hencha">El Hencha</option>
+          <option value="Kerkennah">Kerkennah</option>
+        </>)}
+
+        {governorate === "Sidi Bouzid" && (<>
+          <option value="Sidi Bouzid Ouest">Sidi Bouzid Ouest</option>
+          <option value="Sidi Bouzid Est">Sidi Bouzid Est</option>
+          <option value="Jilma">Jilma</option>
+          <option value="Cebbala">Cebbala</option>
+          <option value="Bir El Hafey">Bir El Hafey</option>
+          <option value="Sidi Ali Ben Aoun">Sidi Ali Ben Aoun</option>
+          <option value="Menzel Bouzaiene">Menzel Bouzaiene</option>
+          <option value="Mezzouna">Mezzouna</option>
+          <option value="Ouled Haffouz">Ouled Haffouz</option>
+        </>)}
+
+        {governorate === "Siliana" && (<>
+          <option value="Siliana Nord">Siliana Nord</option>
+          <option value="Siliana Sud">Siliana Sud</option>
+          <option value="Bou Arada">Bou Arada</option>
+          <option value="Gaafour">Gaafour</option>
+          <option value="El Krib">El Krib</option>
+          <option value="Makthar">Makthar</option>
+          <option value="Rohia">Rohia</option>
+          <option value="Kesra">Kesra</option>
+          <option value="Bargou">Bargou</option>
+        </>)}
+
+        {governorate === "Sousse" && (<>
+          <option value="Sousse Ville">Sousse Ville</option>
+          <option value="Hammam Sousse">Hammam Sousse</option>
+          <option value="Msaken">Msaken</option>
+          <option value="Kalâa Kebira">Kalâa Kebira</option>
+          <option value="Kalâa Seghira">Kalâa Seghira</option>
+          <option value="Sidi Bou Ali">Sidi Bou Ali</option>
+          <option value="Enfidha">Enfidha</option>
+          <option value="Bouficha">Bouficha</option>
+          <option value="Kondar">Kondar</option>
+          <option value="Akouda">Akouda</option>
+        </>)}
+
+        {governorate === "Tataouine" && (<>
+          <option value="Tataouine Nord">Tataouine Nord</option>
+          <option value="Tataouine Sud">Tataouine Sud</option>
+          <option value="Ghomrassen">Ghomrassen</option>
+          <option value="Bir Lahmar">Bir Lahmar</option>
+          <option value="Remada">Remada</option>
+          <option value="Smar">Smar</option>
+        </>)}
+
+        {governorate === "Tozeur" && (<>
+          <option value="Tozeur Ville">Tozeur Ville</option>
+          <option value="Degache">Degache</option>
+          <option value="Tamerza">Tamerza</option>
+          <option value="Hazoua">Hazoua</option>
+          <option value="Nefta">Nefta</option>
+        </>)}
+
+        {governorate === "Tunis" && (<>
+          <option value="Tunis Centre">Tunis Centre</option>
+          <option value="Bab Souika">Bab Souika</option>
+          <option value="Carthage">Carthage</option>
+          <option value="La Marsa">La Marsa</option>
+          <option value="Le Bardo">Le Bardo</option>
+          <option value="El Menzah">El Menzah</option>
+          <option value="El Omrane">El Omrane</option>
+          <option value="Ettahrir">Ettahrir</option>
+          <option value="Cité El Khadra">Cité El Khadra</option>
+          <option value="El Kabaria">El Kabaria</option>
+          <option value="Sidi Hassine">Sidi Hassine</option>
+        </>)}
+
+        {governorate === "Zaghouan" && (<>
+          <option value="Zaghouan Ville">Zaghouan Ville</option>
+          <option value="Zriba">Zriba</option>
+          <option value="Bir Mcherga">Bir Mcherga</option>
+          <option value="El Fahs">El Fahs</option>
+          <option value="Nadhour">Nadhour</option>
+          <option value="Saouaf">Saouaf</option>
+        </>)}
+
+      </select>
+    </div>
+  </motion.div>
+)}
                 </div>
 
                 {/* Divider */}
@@ -1292,97 +1673,98 @@ export default function InscriptionPage() {
                     {/* Grille Recto/Verso */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                       {/* Recto CIN */}
-                      <div className="bg-gray-50 dark:bg-white/5 border-2 border-dashed border-slate-300 dark:border-slate-500 rounded-xl p-3 sm:p-4 flex flex-col items-center text-center group hover:border-sky-500 transition-all cursor-pointer">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                          <FaAddressCard className="text-sky-500 dark:text-sky-400 text-xl sm:text-2xl" />
-                        </div>
-                        <h3 className="font-bold text-sm sm:text-base mb-1 text-gray-900 dark:text-white">
-                          {t("documentsStep.cinFront")}
-                        </h3>
-                        <p className="text-[10px] sm:text-xs opacity-60 mb-2">
-                          {t("documentsStep.frontSide")}
-                        </p>
-                        <div className="flex flex-wrap justify-center gap-1 mb-2">
-                          <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
-                            {t("documentsStep.maxSize")}
-                          </span>
-                          <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
-                            {t("documentsStep.formats")}
-                          </span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*,application/pdf"
-                          className="hidden"
-                          id="cin-recto"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setCinRecto(file);
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor="cin-recto"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCropperSide("recto");
-                            setShowCropper(true);
-                          }}
-                          className="w-full py-1.5 sm:py-2 bg-sky-500 hover:bg-sky-400 text-white font-medium rounded-lg text-xs sm:text-sm transition-all cursor-pointer"
-                        >
-                          {cinRecto
-                            ? t("documentsStep.photoAdded")
-                            : t("documentsStep.chooseFile")}
-                        </label>
-                      </div>
+                      {/* Recto CIN */}
+<div className="bg-gray-50 dark:bg-white/5 border-2 border-dashed border-slate-300 dark:border-slate-500 rounded-xl p-3 sm:p-4 flex flex-col items-center text-center group hover:border-sky-500 transition-all cursor-pointer">
+  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+    <FaAddressCard className="text-sky-500 dark:text-sky-400 text-xl sm:text-2xl" />
+  </div>
+  <h3 className="font-bold text-sm sm:text-base mb-1 text-gray-900 dark:text-white">
+    {t("documentsStep.cinFront")}
+  </h3>
+  <p className="text-[10px] sm:text-xs opacity-60 mb-2">
+    {t("documentsStep.frontSide")}
+  </p>
+  <div className="flex flex-wrap justify-center gap-1 mb-2">
+    <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
+      {t("documentsStep.maxSize")}
+    </span>
+    <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
+      {t("documentsStep.formats")}
+    </span>
+  </div>
+  
+  <input
+    type="file"
+    accept="image/*,application/pdf"
+    className="hidden"
+    id="cin-recto"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        setCinRecto(file);
+        handleOCR(file, "recto");
+      }
+    }}
+  />
+  
+  <label
+    htmlFor="cin-recto"
+    className="w-full py-1.5 sm:py-2 bg-sky-500 hover:bg-sky-400 text-white font-medium rounded-lg text-xs sm:text-sm transition-all cursor-pointer text-center block"
+  >
+    {cinRecto ? (
+      <>✅ {t("documentsStep.photoAdded")}</>
+    ) : (
+      t("documentsStep.chooseFile")
+    )}
+  </label>
+</div>
 
                       {/* Verso CIN */}
-                      <div className="bg-gray-50 dark:bg-white/5 border-2 border-dashed border-slate-300 dark:border-slate-500 rounded-xl p-3 sm:p-4 flex flex-col items-center text-center group hover:border-sky-500 transition-all cursor-pointer">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                          <BsFillCreditCard2BackFill className="text-sky-500 dark:text-sky-400 text-xl sm:text-2xl" />
-                        </div>
-                        <h3 className="font-bold text-sm sm:text-base mb-1 text-gray-900 dark:text-white">
-                          {t("documentsStep.cinBack")}
-                        </h3>
-                        <p className="text-[10px] sm:text-xs opacity-60 mb-2">
-                          {t("documentsStep.backSide")}
-                        </p>
-                        <div className="flex flex-wrap justify-center gap-1 mb-2">
-                          <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
-                            {t("documentsStep.maxSize")}
-                          </span>
-                          <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
-                            {t("documentsStep.formats")}
-                          </span>
-                        </div>
-                        <input
-                          type="file"
-                          accept="image/*,application/pdf"
-                          className="hidden"
-                          id="cin-verso"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setCinVerso(file);
-                              handleOCR(file, "verso");
-                            }
-                          }}
-                        />
-                        <label
-                          htmlFor="cin-verso"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            setCropperSide("verso");
-                            setShowCropper(true);
-                          }}
-                          className="w-full py-1.5 sm:py-2 bg-sky-500 hover:bg-sky-400 text-white font-medium rounded-lg text-xs sm:text-sm transition-all cursor-pointer"
-                        >
-                          {cinVerso
-                            ? t("documentsStep.photoAdded")
-                            : t("documentsStep.chooseFile")}
-                        </label>
-                      </div>
+                    {/* Verso CIN */}
+<div className="bg-gray-50 dark:bg-white/5 border-2 border-dashed border-slate-300 dark:border-slate-500 rounded-xl p-3 sm:p-4 flex flex-col items-center text-center group hover:border-sky-500 transition-all cursor-pointer">
+  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+    <BsFillCreditCard2BackFill className="text-sky-500 dark:text-sky-400 text-xl sm:text-2xl" />
+  </div>
+  <h3 className="font-bold text-sm sm:text-base mb-1 text-gray-900 dark:text-white">
+    {t("documentsStep.cinBack")}
+  </h3>
+  <p className="text-[10px] sm:text-xs opacity-60 mb-2">
+    {t("documentsStep.backSide")}
+  </p>
+  <div className="flex flex-wrap justify-center gap-1 mb-2">
+    <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
+      {t("documentsStep.maxSize")}
+    </span>
+    <span className="px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-[8px] sm:text-[9px] font-bold uppercase rounded border border-blue-200 dark:border-blue-700">
+      {t("documentsStep.formats")}
+    </span>
+  </div>
+  
+  <input
+    type="file"
+    accept="image/*,application/pdf"
+    className="hidden"
+    id="cin-verso"
+    onChange={(e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        setCinVerso(file);
+        handleOCR(file, "verso");
+      }
+    }}
+  />
+  
+  <label
+    htmlFor="cin-verso"
+    className="w-full py-1.5 sm:py-2 bg-sky-500 hover:bg-sky-400 text-white font-medium rounded-lg text-xs sm:text-sm transition-all cursor-pointer text-center block"
+  >
+    {cinVerso ? (
+      <>✅ {t("documentsStep.photoAdded")}</>
+    ) : (
+      t("documentsStep.chooseFile")
+    )}
+  </label>
+</div>
                     </div>
 
                     {/* Notice OCR */}
@@ -1507,30 +1889,193 @@ export default function InscriptionPage() {
                   </button>
 
                   <button
-                    type="button"
-                    disabled={!cinRecto || !cinVerso || !profilePhoto}
-                    onClick={() => {
-                      if (!cinRecto || !cinVerso || !profilePhoto) {
-                        toast.error("Documents manquants", {
-                          description:
-                            "Veuillez uploader les 3 fichiers avant de continuer.",
-                        });
-                        return;
-                      }
-                      setShowOcrConfirm(true);
-                    }}
-                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed ..."
-                  >
-                    {t("documentsStep.finish")}
-                    <MdOutlineArrowForwardIos className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </button>
+  type="button"
+  disabled={!cinRecto || !cinVerso || !profilePhoto}
+  onClick={() => {
+    if (!cinRecto || !cinVerso || !profilePhoto) {
+      toast.error("Documents manquants", {
+        description: "Veuillez uploader les 3 fichiers avant de continuer.",
+      });
+      return;
+    }
+    setShowOcrConfirm(true);
+  }}
+  className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-xs sm:text-sm"
+>
+  {t("documentsStep.finish")}
+  <MdOutlineArrowForwardIos className="h-3 w-3 sm:h-4 sm:w-4" />
+</button>
                 </div>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
         {/* Modal confirmation OCR */}
-        {showOcrConfirm && (
+{/* Modal confirmation OCR */}
+{showOcrConfirm && (
+  <motion.div
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+  >
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9, y: 20 }}
+      animate={{ opacity: 1, scale: 1, y: 0 }}
+      className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-[#1E90FF]/20"
+    >
+      {/* Header */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 bg-[#1E90FF]/10 rounded-full flex items-center justify-center">
+          <FaCheckCircle className="text-indigo-700 text-xl" />
+        </div>
+        <div>
+          <h3 className="text-lg font-bold">{t("ocrConfirm.title")}</h3>
+          <p className="text-xs text-slate-500">
+            {t("ocrConfirm.description")}
+          </p>
+        </div>
+      </div>
+
+      {/* Info Banner */}
+      <div className="mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex gap-2">
+        <LuBadgeInfo className="text-blue-500 text-2xl mt-0.5" />
+        <p className="text-xs text-blue-700 dark:text-blue-300">
+          {t("ocrConfirm.infoBanner")}
+        </p>
+      </div>
+
+      {/* Champs OCR */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            {t("ocrConfirm.firstName")}
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={firstName}
+              readOnly
+              className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
+            />
+            {firstName && (
+              <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            {t("ocrConfirm.lastName")}
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={lastName}
+              readOnly
+              
+              className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
+            />
+            {lastName && (
+              <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            {t("ocrConfirm.birthDate")}
+          </label>
+          <div className="relative">
+            <input
+              type="date"
+              value={dateNaissance}
+              readOnly
+              
+              className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
+            />
+            {dateNaissance && (
+              <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            {t("ocrConfirm.cinNumber")}
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={cinNumber}
+              readOnly
+              
+              className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
+            />
+            {cinNumber && (
+              <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
+            )}
+          </div>
+        </div>
+
+        {/* ✅ NOUVEAU CHAMP: PROFESSION */}
+        <div className="col-span-2 space-y-1">
+          <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+            {t("ocrConfirm.profession")}
+            <span className="text-[10px] normal-case text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 rounded">
+              verso CIN
+            </span>
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={profession || ""}
+              readOnly
+              
+              placeholder="Ex : عامل  , طبيب .."
+              className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
+            />
+            {profession && (
+              <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Security Banner */}
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 mb-5">
+        <MdVerified className="text-emerald-500 text-xl shrink-0" />
+        <p className="text-xs text-emerald-700 dark:text-emerald-300">
+          {t("ocrConfirm.securityBanner")}
+        </p>
+      </div>
+
+      {/* Boutons */}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={handleConfirmIdentity}
+          disabled={isUploadingCIN}
+          className="flex-1 bg-blue-400 hover:bg-blue-300 text-black font-bold py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+        >
+          {isUploadingCIN ? (
+            <>
+              <Loader2 className="animate-spin h-4 w-4" />
+              Upload en cours... (10-20s)
+            </>
+          ) : (
+            <>
+              <MdVerified className="text-lg" />
+              {t("ocrConfirm.confirmIdentity")}
+            </>
+          )}
+        </button>
+      </div>
+    </motion.div>
+  </motion.div>
+)}
+        {/* Welcome Modal */}
+        {showWelcome && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1540,236 +2085,30 @@ export default function InscriptionPage() {
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-[#1E90FF]/20"
+              transition={{ type: "spring", damping: 20 }}
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 text-center border border-primary/20"
             >
-              {/* Header */}
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-[#1E90FF]/10 rounded-full flex items-center justify-center">
-                  <FaCheckCircle className="text-indigo-700 text-xl" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold">{t("ocrConfirm.title")}</h3>
-                  <p className="text-xs text-slate-500">
-                    {t("ocrConfirm.description")}
-                  </p>
-                </div>
+              <div className="w-20 h-20 mx-auto mb-4 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                <GiPartyPopper className="text-4xl text-green-600 dark:text-green-400" />
               </div>
-
-              {/* Info Banner */}
-              <div className="mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex gap-2">
-                <LuBadgeInfo className="text-blue-500 text-2xl mt-0.5" />
-                <p className="text-xs text-blue-700 dark:text-blue-300">
-                  {t("ocrConfirm.infoBanner")}
-                </p>
-              </div>
-
-              {/* Champs OCR */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.firstName")}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {firstName && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.lastName")}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {lastName && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.birthDate")}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={dateNaissance}
-                      onChange={(e) => setDateNaissance(e.target.value)}
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {dateNaissance && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.cinNumber")}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={cinNumber}
-                      onChange={(e) => setCinNumber(e.target.value)}
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {cinNumber && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Security Banner */}
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 mb-5">
-                <MdVerified className="text-emerald-500 text-xl shrink-0" />
-                <p className="text-xs text-emerald-700 dark:text-emerald-300">
-                  {t("ocrConfirm.securityBanner")}
-                </p>
-              </div>
-
-              {/* Boutons */}
+              <h3 className="text-xl font-bold mb-2">Bienvenue sur NestHub !</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
+                Votre profil a été créé avec succès. Vous pouvez maintenant compléter vos informations.
+              </p>
               <div className="flex gap-3">
                 <button
-                  type="button"
-                  onClick={handleConfirmIdentity}
-                  disabled={isUploadingCIN}
-                  className="flex-1 bg-blue-400 hover:bg-blue-300 text-black font-bold py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                  onClick={handleGoToDashboard}
+                  className="flex-1 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-sm"
                 >
-                  {isUploadingCIN ? (
-                    <>
-                      <Loader2 className="animate-spin h-4 w-4" />
-                      Upload en cours... (10-20s)
-                    </>
-                  ) : (
-                    <>
-                      <MdVerified className="text-lg" />
-                      {t("ocrConfirm.confirmIdentity")}
-                    </>
-                  )}
+                  Plus tard
+                </button>
+                <button
+                  onClick={handleGoToCompleteProfile}
+                  className="flex-1 py-2.5 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white font-bold rounded-xl hover:opacity-90 transition-all text-sm"
+                >
+                  Compléter mon profil
                 </button>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-
-        {/* Cropper Modal */}
-        {showCropper && (
-          <ImageCropper
-            side={cropperSide}
-            onClose={() => setShowCropper(false)}
-            onCropComplete={(croppedFile) => {
-              if (cropperSide === "recto") {
-                setCinRecto(croppedFile);
-              } else {
-                setCinVerso(croppedFile);
-              }
-            }}
-          />
-        )}
-
-        {/* Welcome Modal */}
-        {showWelcome && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ type: "spring", damping: 20 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-8 border border-primary/20 text-center"
-            >
-              {/* Confetti icon */}
-              <div className="flex justify-center mb-4">
-                <GiPartyPopper className="text-6xl" />
-              </div>
-              <h2 className="text-2xl font-black mb-2">
-                {t("welcomeModal.title")}
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-2">
-                {t("welcomeModal.message")}
-              </p>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-                {t("welcomeModal.submessage")}
-              </p>
-
-              {/* Trust badges */}
-              <div className="flex justify-center gap-4 mb-6">
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <MdMarkEmailRead className="text-green-600 dark:text-green-400 text-xl" />
-                  </div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {t("welcomeModal.emailVerified")}
-                  </span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                    <FaWhatsapp className="text-green-600 dark:text-green-400 text-xl" />
-                  </div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {t("welcomeModal.whatsappVerified")}
-                  </span>
-                </div>
-                <div className="flex flex-col items-center gap-1">
-                  <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
-                    <MdPendingActions className="text-yellow-600 dark:text-yellow-400 text-xl" />
-                  </div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                    {t("welcomeModal.cinPending")}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                onClick={async () => {
-                  setIsCompletingProfile(true);
-                  try {
-                    setShowWelcome(false);
-                    localStorage.setItem(
-                      "redirectAfterLogin",
-                      "/fr/complete-profile",
-                    );
-                    await router.push("/fr/complete-profile");
-                  } finally {
-                    setIsCompletingProfile(false);
-                  }
-                }}
-                disabled={isCompletingProfile}
-                className={`w-full py-3 bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-black font-bold rounded-xl transition-all duration-300 flex items-center justify-center gap-2 ${
-                  isCompletingProfile
-                    ? "opacity-70 cursor-not-allowed"
-                    : "hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.98]"
-                }`}
-              >
-                {isCompletingProfile ? (
-                  <>
-                    <Loader2 className="animate-spin h-4 w-4" />
-                    {t("welcomeModal.redirecting")}
-                  </>
-                ) : (
-                  <>
-                    {t("welcomeModal.completeProfile")}
-                    <MdOutlineArrowForwardIos className="h-4 w-4" />
-                  </>
-                )}
-              </button>
             </motion.div>
           </motion.div>
         )}

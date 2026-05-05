@@ -118,6 +118,8 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   if (pathname.startsWith("/api/")) {
     const publicApiRoutes = [
+      "/api/mobile-upload/upload",
+      "/api/mobile-upload/session",
       "/api/clerk/webhook/clerk",
       "/api/clerk/users-by-email",
       "/api/clerk/end-session",
@@ -195,6 +197,7 @@ export default clerkMiddleware(async (auth, req) => {
     const redirectUrl = req.cookies.get("redirectAfterLogin")?.value;
 
     const publicPaths = [
+      "/test-mobile-upload",
       "/",
       "/test",
       "/login",
@@ -209,15 +212,18 @@ export default clerkMiddleware(async (auth, req) => {
       "/verify-email-code",
       "/terms",
       "/privacy",
-      "/sso-callback", // Add this line
-      "/forgot-password", // Ajouter
-      "/reset-password", // Ajouter
+      "/sso-callback",
+      "/forgot-password",
+      "/reset-password",
       "/listings/[id]",
     ];
-    const isPublicPage = publicPaths.includes(pathWithoutLocale);
+
+    const isPublic =
+      publicPaths.includes(pathWithoutLocale) ||
+      pathWithoutLocale.startsWith("/mobile-upload");
 
     if (
-      isPublicPage &&
+      isPublic &&
       redirectUrl &&
       !pathWithoutLocale.includes("verify-catch")
     ) {
@@ -228,6 +234,7 @@ export default clerkMiddleware(async (auth, req) => {
     }
   } else {
     const publicPaths = [
+      "/test-mobile-upload",
       "/",
       "/test",
       "/login",
@@ -243,15 +250,19 @@ export default clerkMiddleware(async (auth, req) => {
       "/verify-email-code",
       "/terms",
       "/privacy",
-      "/sso-callback", // Add this line
-      "/forgot-password", // Ajouter
-      "/reset-password", // Ajouter
+      "/sso-callback",
+      "/forgot-password",
+      "/reset-password",
     ];
-    const isPublicPage = publicPaths.includes(pathWithoutLocale);
+
+    const isPublic =
+      publicPaths.includes(pathWithoutLocale) ||
+      pathWithoutLocale.startsWith("/mobile-upload");
+
     const isStaticAsset =
       pathname.includes("/_next") || pathname.includes("/favicon.ico");
 
-    if (!isPublicPage && !isStaticAsset && !pathname.startsWith("/api/")) {
+    if (!isPublic && !isStaticAsset && !pathname.startsWith("/api/")) {
       console.log("🔒 Page protégée, stockage de l'URL:", pathname);
 
       const redirectUrl = pathWithoutLocale + req.nextUrl.search;
@@ -333,6 +344,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Pages publiques
   // ========================================
   const publicPaths = [
+    "/test-mobile-upload",
     "/",
     "/test",
     "/login",
@@ -348,12 +360,16 @@ export default clerkMiddleware(async (auth, req) => {
     "/verify-email-code",
     "/terms",
     "/privacy",
-    "/sso-callback", // Add this line
-    "/forgot-password", // Ajouter
-    "/reset-password", // Ajouter
+    "/sso-callback",
+    "/forgot-password",
+    "/reset-password",
   ];
 
-  if (publicPaths.includes(pathWithoutLocale)) {
+  const isPublic =
+    publicPaths.includes(pathWithoutLocale) ||
+    pathWithoutLocale.startsWith("/mobile-upload");
+
+  if (isPublic) {
     return intlResponse;
   }
 

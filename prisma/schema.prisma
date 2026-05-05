@@ -41,8 +41,11 @@ model User {
   username             String?               @unique
   firstName            String?
   lastName             String?
+  dateOfBirth          DateTime?
+  governorate          String?
+  delegation           String?
+  gender               String?
   phoneNumber          String?               @unique
-  phoneVerified        Boolean               @default(false)
   phoneVerifiedAt      DateTime?
   profilePictureUrl    String?
   bio                  String?

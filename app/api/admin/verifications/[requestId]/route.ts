@@ -1,3 +1,5 @@
+// app/api/admin/verifications/[requestId]/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
@@ -137,10 +139,13 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       adminComment,
     };
 
+    // ============================================
+    // VALIDATION
+    // ============================================
     if (action === "VALIDATE") {
       newStatus = "VALIDATED";
       updateData = {
-        ...updateData, // ✅ Garde reviewedBy, reviewedAt, processedAt, adminComment
+        ...updateData,
         status: "VALIDATED",
         rejectionMotif: null,
       };
@@ -200,6 +205,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             targetId: requestId,
           },
         }),
+
+        // 🔔 NOTIFIER L'UTILISATEUR - VALIDATION
+        prisma.notification.create({
+          data: {
+            userId: verificationRequest.userId,
+            type: "SYSTEM_ALERT",
+            title: "✅ Vérification d'identité approuvée",
+            content:
+              "Félicitations ! Votre identité a été vérifiée avec succès. Votre compte est maintenant actif.",
+            isRead: false,
+          },
+        }),
       ]);
 
       return NextResponse.json({
@@ -208,6 +225,9 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       });
     }
 
+    // ============================================
+    // REJET
+    // ============================================
     if (action === "REJECT") {
       if (!rejectionMotif) {
         return NextResponse.json(
@@ -218,7 +238,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
       newStatus = "REJECTED";
       updateData = {
-        ...updateData, // ✅ Garde reviewedBy, reviewedAt, processedAt, adminComment
+        ...updateData,
         status: "REJECTED",
         rejectionMotif: rejectionMotif,
       };
@@ -263,6 +283,17 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
             targetType: "VERIFICATION_REQUEST",
             targetId: requestId,
             motif: rejectionMotif,
+          },
+        }),
+
+        // 🔔 NOTIFIER L'UTILISATEUR - REJET
+        prisma.notification.create({
+          data: {
+            userId: verificationRequest.userId,
+            type: "SYSTEM_ALERT",
+            title: "❌ Vérification d'identité refusée",
+            content: `Votre demande de vérification a été refusée. Raison: ${rejectionMotif}. Veuillez soumettre à nouveau des documents valides.`,
+            isRead: false,
           },
         }),
       ]);
