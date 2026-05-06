@@ -2,7 +2,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { uploadSessions } from "@/lib/upload-sessions";
-
+// ✅ AJOUTE CETTE ROUTE GET POUR TESTER
+export async function GET() {
+  return NextResponse.json({ 
+    message: "API upload fonctionne",
+    sessionsCount: uploadSessions.size 
+  });
+}
 export async function POST(request: NextRequest) {
   try {
     console.log("📸 Upload reçu");

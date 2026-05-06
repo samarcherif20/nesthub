@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 require("dotenv").config({ path: ".env.local" });
+process.env.NEXT_DISABLE_TURBOPACK = "1";
+
 const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
