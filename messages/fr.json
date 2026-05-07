@@ -954,7 +954,7 @@
     "identityTitle": "Vérification de l'identité",
     "identitySubtitle": "Étape 2 sur 4 : Identité réelle (Privée)",
     "privacyTitle": "Confidentialité garantie",
-    "privacyDescription": "Votre identité réelle est confidentielle et ne sera pas partagée publiquement.",
+    "privacyDescription": "Votre identité réelle ne sera pas partagée publiquement",
     "personalInfoTitle": "Informations Personnelles",
     "firstName": "Prénom réel",
     "firstNamePlaceholder": "ex: Mohamed",

@@ -54,6 +54,10 @@ model User {
   role                 UserRole              @default(TENANT)
   profession           String?
   availability         Json?
+  howFound             String?   // google, social, friend, ads, other
+  rib               String?
+  bankName          String?
+  accountHolder     String?
   status               AccountStatus         @default(PENDING_VALIDATION)
   isEmailVerified      Boolean               @default(false)
   isPhoneVerified      Boolean               @default(false)

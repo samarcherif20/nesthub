@@ -1,10 +1,11 @@
-// app/api/users/complete-profile/route.ts
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
+    const body = await req.json();
+    console.log("📦 Body reçu:", body);
+
     const {
       userId,
       firstName,
@@ -16,20 +17,33 @@ export async function POST(req: Request) {
       phoneNumber,
       languages,
       gender,
-      occupation,
       governorate,
       delegation,
-      cinData,
-      profilePictureUrl,
-    } = await req.json();
+      howFound,
+      rib,
+      bankName,
+      accountHolder,
+    } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "userId requis" }, { status: 400 });
     }
 
-    // Mettre à jour le user dans Prisma
-    const updatedUser = await prisma.user.update({
+    // Vérifier si l'utilisateur existe
+    const existingUser = await prisma.user.findFirst({
       where: { clerkId: userId },
+    });
+
+    if (!existingUser) {
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
+    }
+
+    // Mettre à jour l'utilisateur
+    const updatedUser = await prisma.user.update({
+      where: { id: existingUser.id },
       data: {
         firstName: firstName || undefined,
         lastName: lastName || undefined,
@@ -41,8 +55,11 @@ export async function POST(req: Request) {
         dateOfBirth: dateNaissance ? new Date(dateNaissance) : undefined,
         governorate: governorate || undefined,
         delegation: delegation || undefined,
-        cinData: cinData || undefined,
-        profilePictureUrl: profilePictureUrl || undefined,
+        gender: gender || undefined,
+        howFound: howFound || undefined,
+        rib: rib || undefined,
+        bankName: bankName || undefined,
+        accountHolder: accountHolder || undefined,
         isEmailVerified: true,
         status: "PENDING_VALIDATION",
       },
@@ -50,10 +67,10 @@ export async function POST(req: Request) {
 
     console.log("✅ Utilisateur mis à jour:", {
       id: updatedUser.id,
-      profilePictureUrl: updatedUser.profilePictureUrl,
+      role: updatedUser.role,
     });
 
-    // Créer ou mettre à jour la vérification d'identité
+    // Créer ou mettre à jour la vérification d'identité si CIN présent
     if (cinNumber || dateNaissance) {
       await prisma.identityVerification.upsert({
         where: { userId: updatedUser.id },
@@ -74,6 +91,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message: "Profil complété avec succès",
+      user: updatedUser,
     });
   } catch (error: any) {
     console.error("❌ Erreur complete-profile:", error);

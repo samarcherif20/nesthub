@@ -118,6 +118,7 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   if (pathname.startsWith("/api/")) {
     const publicApiRoutes = [
+      "/api/complete-profile",
       "/api/mobile-upload/upload",
       "/api/mobile-upload/session",
       "/api/clerk/webhook/clerk",
@@ -197,6 +198,8 @@ export default clerkMiddleware(async (auth, req) => {
     const redirectUrl = req.cookies.get("redirectAfterLogin")?.value;
 
     const publicPaths = [
+      "/complete-profile",
+
       "/test-mobile-upload",
       "/",
       "/test",
@@ -234,6 +237,8 @@ export default clerkMiddleware(async (auth, req) => {
     }
   } else {
     const publicPaths = [
+      "/complete-profile",
+
       "/test-mobile-upload",
       "/",
       "/test",
@@ -344,6 +349,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Pages publiques
   // ========================================
   const publicPaths = [
+    "/complete-profile",
     "/test-mobile-upload",
     "/",
     "/test",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
@@ -14,8 +14,17 @@ import {
   UserPlus,
   Badge,
   Smartphone,
-  RefreshCw, // ← Remplace Sync
-  Camera, // ← Remplace Style (pour l'icône du verso CIN)
+  RefreshCw,
+  Camera,
+  ShieldCheck,
+  CloudUpload,
+  Sparkles,
+  CircleDashed,
+  QrCode,
+  X,
+  FlipHorizontal,
+  User,
+  IdCard,
 } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { RiLockPasswordLine } from "react-icons/ri";
@@ -32,6 +41,7 @@ import {
   MdMarkEmailRead,
   MdPendingActions,
   MdOutlineSecurity,
+  MdSecurity,
 } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { MdOutlineHomeWork } from "react-icons/md";
@@ -210,9 +220,8 @@ export default function InscriptionPage() {
     setDateNaissance,
     cinNumber,
     setCinNumber,
-    profession, // ← AJOUTER CETTE LIGNE
+    profession,
     setProfession,
-    // ← ajoute ces 3
     isUploadingCIN,
     uploadCINError,
     handleUploadCIN,
@@ -248,6 +257,12 @@ export default function InscriptionPage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showQRCode, setShowQRCode] = useState(false);
+  const [isMobileUploading, setIsMobileUploading] = useState(false);
+  
+  const totalDone = [cinRecto, cinVerso, profilePhoto].filter(Boolean).length;
+  const docsDone = !!(cinRecto && cinVerso);
+  
   // Timer pour masquer l'erreur après 5 secondes
   useEffect(() => {
     if (generalError) {
@@ -309,10 +324,10 @@ export default function InscriptionPage() {
       });
 
       const data = await response.json();
-      console.log("📦 Réponse OCR complète:", data); // ← AJOUTEZ CETTE LIGNE
+      console.log("📦 Réponse OCR complète:", data);
 
       if (data.success && data.extracted) {
-        console.log("📝 Données extraites:", data.extracted); // ← AJOUTEZ CETTE LIGNE
+        console.log("📝 Données extraites:", data.extracted);
 
         if (data.extracted.firstName) setFirstName(data.extracted.firstName);
         if (data.extracted.lastName) setLastName(data.extracted.lastName);
@@ -334,13 +349,13 @@ export default function InscriptionPage() {
       });
     }
   };
+  
   // Convertir base64 en File objet
   const base64ToFile = (
     base64: string,
     filename: string,
     mimeType: string,
   ): File => {
-    // Enlever le préfixe "data:image/jpeg;base64," s'il existe
     const base64Data = base64.includes(",") ? base64.split(",")[1] : base64;
     const byteCharacters = atob(base64Data);
     const byteNumbers = new Array(byteCharacters.length);
@@ -350,19 +365,20 @@ export default function InscriptionPage() {
     const byteArray = new Uint8Array(byteNumbers);
     return new File([byteArray], filename, { type: mimeType });
   };
+  
   const handleMobileSync = useCallback(async () => {
+    setIsMobileUploading(true);
     try {
       const res = await fetch("/api/mobile-upload/session", { method: "POST" });
       const data = await res.json();
-      const currentSessionId = data.sessionId; // ← Stocke l'ID localement
+      const currentSessionId = data.sessionId;
 
       if (currentSessionId) {
         setSessionId(currentSessionId);
         setQrUrl(data.qrUrl);
+        setShowQRCode(true);
 
-        // Démarrer le polling - utilise l'ID stocké
         const interval = setInterval(async () => {
-          // ✅ Utilise currentSessionId, PAS data.sessionId qui peut changer
           const sessionRes = await fetch(
             `/api/mobile-upload/session?sessionId=${currentSessionId}`,
           );
@@ -382,7 +398,6 @@ export default function InscriptionPage() {
             if (count === 3) {
               clearInterval(interval);
 
-              // Convertir les fichiers
               const files = sessionData.files;
 
               if (files.recto?.data) {
@@ -418,6 +433,7 @@ export default function InscriptionPage() {
                 description: "Les 3 documents ont été téléchargés",
               });
 
+              setShowQRCode(false);
               setShowOcrConfirm(true);
             }
           }
@@ -428,6 +444,8 @@ export default function InscriptionPage() {
       toast.error("Erreur", {
         description: "Impossible de créer la session mobile",
       });
+    } finally {
+      setIsMobileUploading(false);
     }
   }, [
     router,
@@ -437,7 +455,273 @@ export default function InscriptionPage() {
     handleOCR,
     setShowOcrConfirm,
   ]);
+  
+  // ============================================================
+  // COMPOSANTS POUR ÉTAPE 4
+  // ============================================================
 
+  function useObjectUrl(file: File | null): string | null {
+    const [url, setUrl] = useState<string | null>(null);
+    const prevUrl = useRef<string | null>(null);
+    useEffect(() => {
+      if (prevUrl.current) URL.revokeObjectURL(prevUrl.current);
+      if (file) {
+        const next = URL.createObjectURL(file);
+        prevUrl.current = next;
+        setUrl(next);
+      } else {
+        prevUrl.current = null;
+        setUrl(null);
+      }
+      return () => {
+        if (prevUrl.current) URL.revokeObjectURL(prevUrl.current);
+      };
+    }, [file]);
+    return url;
+  }
+
+  interface IDCardProps {
+    side: "recto" | "verso";
+    file: File | null;
+    onFile: (f: File) => void;
+    onRemove: () => void;
+  }
+
+  function IDCard({ side, file, onFile, onRemove }: IDCardProps) {
+    const preview = useObjectUrl(file);
+    const [drag, setDrag] = useState(false);
+    const id = `id-${side}`;
+    const isRecto = side === "recto";
+
+    const handleFile = (f: File) => {
+      if (!f.type.startsWith("image/")) {
+        toast.error("Format non supporté", {
+          description: "Veuillez choisir une image",
+        });
+        return;
+      }
+      if (f.size > 10 * 1024 * 1024) {
+        toast.error("Fichier trop volumineux", { description: "Max 10MB" });
+        return;
+      }
+      onFile(f);
+    };
+
+    return (
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <div
+              className={`w-4 h-4 rounded-md flex items-center justify-center ${
+                isRecto
+                  ? "bg-blue-500/20 text-blue-500"
+                  : "bg-purple-500/20 text-purple-500"
+              }`}
+            >
+              <FlipHorizontal className="w-2.5 h-2.5" />
+            </div>
+            <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              {isRecto ? "Face avant" : "Face arrière"}
+            </span>
+          </div>
+          {file && (
+            <motion.button
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-red-500/30 text-slate-500 hover:text-red-500 flex items-center justify-center transition-all"
+            >
+              <X className="w-2.5 h-2.5" />
+            </motion.button>
+          )}
+        </div>
+
+        <motion.div
+          animate={drag ? { scale: 1.02 } : { scale: 1 }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDrag(true);
+          }}
+          onDragLeave={() => setDrag(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDrag(false);
+            const f = e.dataTransfer.files[0];
+            if (f) handleFile(f);
+          }}
+          onClick={() => document.getElementById(id)?.click()}
+          className={`
+          relative group cursor-pointer overflow-hidden
+          rounded-xl transition-all duration-300  border-2 border-dashed
+          ${
+            file
+              ? "border-blue-500/40 bg-blue-500/5 dark:border-indigo-500/40 dark:bg-indigo-500/5"
+              : drag
+                ? "border-blue-400 bg-blue-500/10 shadow-lg shadow-blue-500/10"
+                : "border-slate-200 dark:border-slate-700/80 bg-slate-50 dark:bg-slate-800/60 hover:border-slate-400 dark:hover:border-slate-600"
+          }
+        `}
+          style={{ aspectRatio: "2.5/ 1" }}
+        >
+          {preview ? (
+            <>
+              <img
+                src={preview}
+                alt={side}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 backdrop-blur-md text-emerald-400 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-500/30"
+              >
+                <CheckCircle className="w-2.5 h-2.5" />
+                OK
+              </motion.div>
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
+                <CloudUpload className="w-5 h-5 text-white/80" />
+                <span className="text-white text-[10px] font-semibold">
+                  Remplacer
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
+              <div
+                className={`relative flex items-center justify-center w-10 h-7 rounded-md border-2 border-dashed transition-colors ${
+                  drag
+                    ? "border-blue-400 text-blue-400"
+                    : "border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-600 group-hover:border-slate-400 dark:group-hover:border-slate-500"
+                }`}
+              >
+                {isRecto ? (
+                  <div className="flex flex-col gap-0.5 items-start w-6">
+                    <div className="h-0.5 w-4 rounded bg-current opacity-60" />
+                    <div className="h-0.5 w-3 rounded bg-current opacity-40" />
+                    <div className="h-0.5 w-5 rounded bg-current opacity-40" />
+                      <IdCard className="w-6 h-6 text-current" />
+
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-0.5 items-center w-6">
+                    <div className="h-0.5 w-6 rounded bg-current opacity-60" />
+                    <div className="h-0.5 w-4 rounded bg-current opacity-40" />
+                    <div className="h-0.5 w-5 rounded bg-current opacity-40" />
+                    <div className="h-0.5 w-3 rounded bg-current opacity-40" />
+                  </div>
+                )}
+              </div>
+              <p className="text-[12px] text-slate-500 text-center group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-400 transition-colors leading-snug">
+                <span className="text-blue-500 font-semibold">Cliquer</span> ou
+                glisser
+                <br />
+                <span className="text-[11px] text-slate-400 dark:text-slate-600">
+                  JPG · PNG · 10MB
+                </span>
+              </p>
+            </div>
+          )}
+        </motion.div>
+
+        <input
+          id={id}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+            e.target.value = "";
+          }}
+        />
+      </div>
+    );
+  }
+
+  function AvatarPicker({
+    file,
+    onFile,
+    onRemove,
+  }: {
+    file: File | null;
+    onFile: (f: File) => void;
+    onRemove: () => void;
+  }) {
+    const preview = useObjectUrl(file);
+    return (
+      <div className="flex items-center gap-4">
+        <div className="relative flex-shrink-0">
+          <motion.div
+            whileTap={{ scale: 0.95 }}
+            onClick={() => document.getElementById("profile-pick")?.click()}
+            className="w-14 h-14 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden cursor-pointer hover:border-blue-500/60 transition-colors group"
+          >
+            {preview ? (
+              <img
+                src={preview}
+                alt="profil"
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="w-6 h-6 text-slate-400 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
+            )}
+          </motion.div>
+          <label
+            htmlFor="profile-pick"
+            className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center cursor-pointer border-2 border-white dark:border-slate-900 hover:scale-110 transition-transform shadow-lg"
+          >
+            <Camera className="w-2.5 h-2.5 text-white" />
+          </label>
+          <input
+            id="profile-pick"
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) onFile(f);
+              e.target.value = "";
+            }}
+          />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+            Photo de profil
+          </p>
+          <p className="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
+            Optionnelle · visible sur votre compte
+          </p>
+          {file && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-1.5 mt-1"
+            >
+              <CheckCircle className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium truncate">
+                {file.name}
+              </span>
+            </motion.div>
+          )}
+        </div>
+        {file && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={onRemove}
+            className="flex-shrink-0 w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-500/20 text-slate-400 dark:text-slate-600 hover:text-red-500 flex items-center justify-center transition-all"
+          >
+            <X className="w-3.5 h-3.5" />
+          </motion.button>
+        )}
+      </div>
+    );
+  }
+  
   if (!mounted) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
@@ -449,8 +733,24 @@ export default function InscriptionPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-background-light dark:bg-background-dark flex items-center justify-center p-3 sm:p-4 md:p-6">
-      <div className="w-full max-w-[min(100%,480px)] sm:max-w-130 md:max-w-140 lg:max-w-[600px] mx-auto">
+    <div className="min-h-screen w-full bg-white dark:bg-slate-900 flex items-center justify-center p-3 sm:p-4 md:p-6 relative overflow-hidden">
+      {/* ── Arrière-plan ciel bleu avec coupure diagonale écarlate ── */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute -top-24 left-[-6rem] h-72 w-72 rounded-full bg-white blur-3xl dark:bg-blue-500/10" />
+        <div className="absolute top-8 right-16 h-56 w-56 rounded-full bg-sky-200/50 blur-3xl dark:bg-purple-500/10" />
+        <div className="absolute -bottom-24 left-[-6rem] h-72 w-72 rounded-full bg-sky-200/50 blur-3xl dark:bg-purple-500/10" />
+        <div className="absolute bottom-8 right-16 h-56 w-56 rounded-full bg-white/70 blur-3xl dark:bg-blue-500/10" />
+
+        {/* Ligne inclinée blanche */}
+        <div className="absolute inset-x-0 bottom-[41.5%] h-px rotate-[-5deg] bg-white/40 dark:bg-white/10" />
+
+        <div
+          className="absolute inset-x-0 bottom-0 h-[44%] bg-gradient-to-r from-blue-500 via-sky-500 to-purple-500 shadow-[0_-18px_50px_rgba(59,130,246,0.22)] dark:from-[#172554] dark:via-[#1d4ed8] dark:to-[#581c87] dark:shadow-[0_-18px_50px_rgba(37,99,235,0.18)]"
+          style={{ clipPath: "polygon(0 32%, 100% 0, 100% 100%, 0 100%)" }}
+        />
+      </div>
+      
+      <div className="w-full max-w-[min(100%,800px)] sm:max-w-3xl md:max-w-4xl lg:max-w-[900px] mx-auto">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-4 sm:mb-6 justify-center">
           <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14">
@@ -465,10 +765,10 @@ export default function InscriptionPage() {
             N E S T H U B
           </h2>
         </div>
-
+        
         {/* Stepper avec dégradé NestHub */}
         <div className="mb-8">
-          <div className="flex items-start justify-between px-2 gap-2">
+          <div className="flex items-start justify-between px-2 gap-3">
             {/* Étape 1 - Informations de connexion */}
             <div className="flex flex-col items-center gap-1 min-w-20">
               <span
@@ -585,7 +885,7 @@ export default function InscriptionPage() {
             </div>
           </div>
         </div>
-
+        
         {/* Alertes */}
         <AnimatePresence>
           {showSuccessAlert && (
@@ -608,7 +908,7 @@ export default function InscriptionPage() {
             />
           )}
         </AnimatePresence>
-
+        
         {/* Message d'erreur général - style comme le login */}
         {showGeneralError && generalError && (
           <motion.div
@@ -631,7 +931,7 @@ export default function InscriptionPage() {
             </button>
           </motion.div>
         )}
-
+        
         <AnimatePresence mode="wait">
           {/* ÉTAPE 1 : COMPTE (EMAIL) */}
           {currentStep === 1 && !pendingVerification && (
@@ -651,37 +951,53 @@ export default function InscriptionPage() {
                   {t("step1Description")}
                 </p>
               </div>
-
-              {/* Sélection du rôle */}
-              <div className="mb-3 sm:mb-4">
-                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">
+              
+              {/* Sélection du rôle - Version avec bordure dégradée */}
+              <div className="mb-6 sm:mb-8">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500 dark:text-blue-400 mb-3">
                   {t("chooseRole")} <span className="text-red-500">*</span>
                 </p>
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <button
                     type="button"
                     onClick={() => setRole("landlord")}
-                    className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out cursor-pointer ${
-                      role === "landlord"
-                        ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-black border-transparent shadow-lg shadow-blue-500/30"
-                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:text-black hover:border-transparent hover:shadow-lg hover:shadow-blue-500/20"
-                    } active:bg-linear-to-r active:from-blue-500 active:via-purple-500 active:to-indigo-500 active:text-black active:border-transparent active:shadow-lg active:shadow-blue-500/30 active:scale-[0.98]`}
+                    className={`
+        group flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl
+        transition-all duration-300 active:scale-[0.98] cursor-pointer
+        ${
+          role === "landlord"
+            ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-md shadow-blue-500/30"
+            : "bg-gray-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:shadow-md border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600"
+        }
+      `}
                   >
-                    <MdOutlineHomeWork className="text-sm sm:text-base" />
-                    {t("roleLandlord")}
+                    <MdOutlineHomeWork
+                      className={`text-base sm:text-lg transition-transform group-hover:scale-110 ${role === "landlord" ? "text-white" : "text-gray-500 dark:text-gray-400"}`}
+                    />
+                    <span className="text-sm font-semibold">
+                      {t("roleLandlord")}
+                    </span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setRole("tenant")}
-                    className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2.5 rounded-lg border text-xs sm:text-sm font-semibold transition-all duration-300 ease-in-out cursor-pointer ${
-                      role === "tenant"
-                        ? "bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 text-black border-transparent shadow-lg shadow-blue-500/30"
-                        : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:text-black hover:border-transparent hover:shadow-lg hover:shadow-blue-500/20"
-                    } active:bg-linear-to-r active:from-blue-500 active:via-purple-500 active:to-indigo-500 active:text-black active:border-transparent active:shadow-lg active:shadow-blue-500/30 active:scale-[0.98]`}
+                    className={`
+        group flex items-center justify-center gap-2.5 px-5 py-3 rounded-xl
+        transition-all duration-300 active:scale-[0.98] cursor-pointer
+        ${
+          role === "tenant"
+            ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 text-white shadow-md shadow-blue-500/30"
+            : "bg-gray-50 dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:shadow-md border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600"
+        }
+      `}
                   >
-                    <TbMapPinSearch className="text-xs sm:text-sm" />
-                    {t("roleTenant")}
+                    <TbMapPinSearch
+                      className={`text-base sm:text-lg transition-transform group-hover:scale-110 ${role === "tenant" ? "text-white" : "text-gray-500 dark:text-gray-400"}`}
+                    />
+                    <span className="text-sm font-semibold">
+                      {t("roleTenant")}
+                    </span>
                   </button>
                 </div>
               </div>
@@ -958,6 +1274,7 @@ export default function InscriptionPage() {
               </p>
             </motion.div>
           )}
+          
           {/* ÉTAPE 2 : IDENTITÉ (prénom, nom, téléphone) */}
           {currentStep === 2 && (
             <motion.div
@@ -966,28 +1283,26 @@ export default function InscriptionPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm  overflow-y-auto"
+              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm overflow-y-auto"
             >
-              {/* En-tête */}
-              <div className="mb-3 sm:mb-4 md:mb-5">
-                <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
-                  {t("identityTitle")}
-                </h1>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  {t("identitySubtitle")}
-                </p>
-              </div>
-
-              {/* Notice de confidentialité */}
-              <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-3 sm:p-4 flex items-start gap-2 sm:gap-3 mb-4 sm:mb-5">
-                <RiUserFollowFill className="text-purple-600 dark:text-purple-400 text-base sm:text-lg mt-0.5 shrink-0" />
-                <div>
-                  <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white">
-                    {t("privacyTitle")}
-                  </h3>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">
-                    {t("privacyDescription")}
+              {/* En-tête avec badge de confidentialité */}
+              <div className="mb-3 sm:mb-4 md:mb-5 flex flex-wrap items-start justify-between gap-3">
+                <div className="flex-1">
+                  <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
+                    {t("identityTitle")}
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                    {t("identitySubtitle")}
                   </p>
+                </div>
+                
+                {/* Badge Confidentialité */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 shadow-sm">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                    Confidentialité garantie 
+                    <p className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider"  >Votre identité réelle ne sera pas partagée publiquement</p>
+                  </span>
                 </div>
               </div>
 
@@ -1781,6 +2096,7 @@ export default function InscriptionPage() {
               </div>
             </motion.div>
           )}
+          
           {/* ÉTAPE 3 : CODE WHATSAPP */}
           {currentStep === 3 && (
             <motion.div
@@ -1924,6 +2240,7 @@ export default function InscriptionPage() {
               </div>
             </motion.div>
           )}
+          
           {/* ÉTAPE 4 : DOCUMENTS D'IDENTITÉ AVEC OPTIONS */}
           {currentStep === 4 && (
             <motion.div
@@ -1932,291 +2249,229 @@ export default function InscriptionPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm max-h-[85vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl backdrop-blur-sm overflow-hidden"
             >
-              {/* En-tête */}
-              <div className="mb-4 sm:mb-5">
-                <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
-                  {t("documentsStep.title")}
-                </h1>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                  {t("documentsStep.subtitle")}
+              {/* Header with QR trigger */}
+              <div className="px-5 pt-5 pb-3 flex items-start justify-between border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+<h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
+                      {t("documentsStep.title")}
+                    </h1>
+                  </div>
+ <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">                    {t("documentsStep.subtitle")}
+                  </p>
+                </div>
+
+                {/* Mobile QR trigger */}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleMobileSync}
+                  className="flex items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-[11px] font-semibold px-3 py-1.5 rounded-xl transition-all"
+                >
+                  <QrCode className="w-3.5 h-3.5  text-xs sm:text-sm" />
+                  <p className="text-xs sm:text-sm">Mobile</p>
+                </motion.button>
+              </div>
+
+              {/* Progress chips */}
+              <div className="px-5 pt-4 pb-2">
+                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3 border border-slate-100 dark:border-slate-700/40">
+                  {[
+                    { label: "CIN Recto", done: !!cinRecto },
+                    { label: "CIN Verso", done: !!cinVerso },
+                    { label: "Photo", done: !!profilePhoto },
+                  ].map(({ label, done }) => (
+                    <div
+                      key={label}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 ${
+                        done
+                          ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+                          : "text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-700/50"
+                      }`}
+                    >
+                      {done ? (
+                        <CheckCircle className="w-3 h-3" />
+                      ) : (
+                        <CircleDashed className="w-3 h-3" />
+                      )}
+                      {label}
+                    </div>
+                  ))}
+                  <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60 mx-0.5" />
+                  <div className="text-[10px] font-bold text-slate-500 whitespace-nowrap px-1">
+                    {totalDone}
+                    <span className="text-slate-300 dark:text-slate-700">
+                      /3
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CIN Cards - Horizontal layout */}
+              <div className="px-10 pb-2">
+                <div className="flex gap-3">
+                  {/* Recto CIN */}
+                  <IDCard
+                    side="recto"
+                    file={cinRecto}
+                    onFile={(file) => {
+                      setCinRecto(file);
+                      handleOCR(file, "recto");
+                    }}
+                    onRemove={() => setCinRecto(null)}
+                  />
+
+                  {/* Verso CIN */}
+                  <IDCard
+                    side="verso"
+                    file={cinVerso}
+                    onFile={(file) => {
+                      setCinVerso(file);
+                      handleOCR(file, "verso");
+                    }}
+                    onRemove={() => setCinVerso(null)}
+                  />
+                </div>
+              </div>
+
+              {/* Divider optionnel */}
+              <div className="mx-5 my-3 flex items-center gap-3">
+                <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+                <span className="text-[12px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
+                  Photo de profile
+                </span>
+                <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
+              </div>
+
+              {/* Avatar Picker */}
+              <div className="mx-5 mb-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/40 rounded-2xl p-3.5">
+                <AvatarPicker
+                  file={profilePhoto}
+                  onFile={setProfilePhoto}
+                  onRemove={() => setProfilePhoto(null)}
+                />
+              </div>
+
+              {/* Security notice */}
+              <div className="mx-5 mb-4 flex items-center gap-2.5 bg-amber-300/20 dark:bg-amber-800/30 rounded-2xl px-3.5 py-3 border border-amber-100 dark:border-amber-700/30">
+                <MdSecurity className="w-3.5 h-3.5 text-orange-400 dark:text-orange-600 flex-shrink-0" />
+                <p className="text-xs sm:text-sm text-orange-500 dark:text-orange-600 leading-relaxed">
+                  Chiffrés AES-256 · utilisés uniquement pour la vérification ·
+                  supprimés après validation
                 </p>
               </div>
 
-              {/* OPTION 1 : SYNC MOBILE AVEC QR CODE */}
-              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl p-4 sm:p-5 mb-6">
-                <div className="flex flex-col md:flex-row items-center gap-6">
-                  <div className="flex-1 text-center md:text-left">
-                    <div className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold mb-2">
-                      <Smartphone className="w-4 h-4" />
-                      <span className="text-xs uppercase tracking-wider">
-                        Option recommandée
-                      </span>
-                    </div>
-                    <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                      Continuer sur mobile
-                    </h2>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
-                      Pour une meilleure qualité de photo et un processus plus
-                      rapide, scannez ce code QR avec votre téléphone.
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleMobileSync}
-                      className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:opacity-90 transition-all shadow-md"
-                    >
-                      <RefreshCw className="w-4 h-4" />
-                      Synchronisation en direct
-                    </button>
-                  </div>
-                  <div className="flex-shrink-0">
-                    <div className="bg-white p-3 rounded-xl shadow-sm border border-blue-200 dark:border-blue-800">
-                      {/* QR Code dynamique */}
-                      {sessionId && qrUrl ? (
-                        <QRCodeSVG value={qrUrl} size={120} />
-                      ) : (
-                        <div className="w-[120px] h-[120px] bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
-                          <Loader2 className="w-6 h-6 text-gray-400 animate-spin" />
-                        </div>
-                      )}
-                    </div>
-                    {uploadProgress > 0 && uploadProgress < 3 && (
-                      <div className="mt-3 text-center">
-                        <p className="text-xs text-gray-500">
-                          Progression: {uploadProgress}/3
-                        </p>
-                        <div className="w-full h-1.5 bg-gray-200 rounded-full mt-1 overflow-hidden">
-                          <div
-                            className="h-full bg-green-500 transition-all duration-300"
-                            style={{ width: `${(uploadProgress / 3) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {uploadProgress === 3 && (
-                      <div className="mt-3 flex items-center justify-center gap-2 text-green-600 text-xs">
-                        <CheckCircle className="w-4 h-4" />
-                        <span>Tous les reçus !</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {/* Actions */}
+              <div className="px-5 pb-5 flex gap-2.5">
+                <motion.button
+                  whileTap={{ scale: 0.96 }}
+                  type="button"
+                  onClick={() => setCurrentStep(3)}
+                  className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 text-xs font-semibold transition-all flex-1"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  Retour
+                </motion.button>
 
-              {/* Séparateur */}
-              <div className="relative mb-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="px-3 bg-white dark:bg-slate-900 text-[10px] text-gray-400 uppercase tracking-wider">
-                    ou téléchargement manuel
-                  </span>
-                </div>
-              </div>
-
-              {/* OPTION 2 : TÉLÉCHARGEMENT MANUEL */}
-              <div className="space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Recto CIN */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      CIN RECTO (Recto)
-                    </label>
-                    <div
-                      className={`relative group h-40 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center p-4 ${
-                        cinRecto
-                          ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                          : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
-                      }`}
-                      onClick={() =>
-                        document.getElementById("cin-recto-manual")?.click()
-                      }
-                    >
-                      {cinRecto ? (
-                        <>
-                          <img
-                            src={URL.createObjectURL(cinRecto)}
-                            alt="Recto"
-                            className="w-full h-full object-contain rounded-lg"
-                            onLoad={(e) =>
-                              URL.revokeObjectURL(e.currentTarget.src)
-                            }
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-                            <span className="text-white text-sm font-semibold">
-                              Changer
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <Badge className="w-10 h-10 text-gray-400 group-hover:text-blue-500 mb-2" />
-                          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center">
-                            Cliquez pour uploader le recto
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-1">
-                            JPG, PNG - Max 5MB
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id="cin-recto-manual"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setCinRecto(file);
-                          handleOCR(file, "recto");
-                        }
+                <motion.button
+                  whileTap={docsDone ? { scale: 0.97 } : {}}
+                  type="button"
+                  disabled={!docsDone}
+                  onClick={() => setShowOcrConfirm(true)}
+                  className={`
+          relative flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold transition-all duration-300 overflow-hidden
+          ${
+            docsDone
+              ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:brightness-110"
+              : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700/50"
+          }
+        `}
+                >
+                  {docsDone && (
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0"
+                      animate={{ x: ["-100%", "100%"] }}
+                      transition={{
+                        repeat: Infinity,
+                        duration: 2,
+                        ease: "linear",
+                        repeatDelay: 1,
                       }}
                     />
-                  </div>
-
-                  {/* Verso CIN */}
-                  <div className="space-y-2">
-                    <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      CIN VERSO (Verso)
-                    </label>
-                    <div
-                      className={`relative group h-40 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center p-4 ${
-                        cinVerso
-                          ? "border-green-500 bg-green-50 dark:bg-green-950/20"
-                          : "border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
-                      }`}
-                      onClick={() =>
-                        document.getElementById("cin-verso-manual")?.click()
-                      }
-                    >
-                      {cinVerso ? (
-                        <>
-                          <img
-                            src={URL.createObjectURL(cinVerso)}
-                            alt="Verso"
-                            className="w-full h-full object-contain rounded-lg"
-                            onLoad={(e) =>
-                              URL.revokeObjectURL(e.currentTarget.src)
-                            }
-                          />
-                          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
-                            <span className="text-white text-sm font-semibold">
-                              Changer
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <FaIdCard className="w-10 h-10 text-gray-400 group-hover:text-blue-500 mb-2" />
-                          <p className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center">
-                            Cliquez pour uploader le verso
-                          </p>
-                          <p className="text-[10px] text-gray-400 mt-1">
-                            JPG, PNG - Max 5MB
-                          </p>
-                        </>
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id="cin-verso-manual"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setCinVerso(file);
-                          handleOCR(file, "verso");
-                        }
-                      }}
-                    />
-                  </div>
-                </div>
-
-                {/* Photo de profil */}
-                <div className="bg-gray-50 dark:bg-white/5 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
-                  <div className="flex flex-col items-center">
-                    <div className="relative group">
-                      <div className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800/50 flex items-center justify-center overflow-hidden">
-                        {profilePhoto ? (
-                          <img
-                            src={URL.createObjectURL(profilePhoto)}
-                            alt="Profile"
-                            className="w-full h-full object-cover"
-                            onLoad={(e) =>
-                              URL.revokeObjectURL(e.currentTarget.src)
-                            }
-                          />
-                        ) : (
-                          <UserPlus className="w-8 h-8 text-gray-400" />
-                        )}
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        id="profile-photo-manual"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) setProfilePhoto(file);
-                        }}
-                      />
-                      <label
-                        htmlFor="profile-photo-manual"
-                        className="absolute -bottom-1 -right-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center shadow-lg border-2 border-white dark:border-slate-900 cursor-pointer hover:scale-110 transition-transform"
-                      >
-                        <Camera className="w-3 h-3" />
-                      </label>
-                    </div>
-                    <p className="mt-2 text-xs text-gray-500">
-                      Photo de profil (Optionnelle)
-                    </p>
-                  </div>
-                </div>
-
-                {/* Info sécurité */}
-                <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-xl p-3 flex items-start gap-3">
-                  <MdOutlineSecurity className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
-                    <p className="font-semibold text-gray-900 dark:text-white mb-0.5">
-                      Confidentiel &amp; Sécurisé
-                    </p>
-                    <p>
-                      Vos documents sont chiffrés et stockés de manière
-                      sécurisée. Ils seront uniquement utilisés à des fins de
-                      vérification.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentStep(3)}
-                    className="flex-1 py-2.5 rounded-lg border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
-                  >
-                    <ArrowLeft className="w-4 h-4" />
-                    Retour
-                  </button>
-                  <button
-                    type="button"
-                    disabled={!cinRecto || !cinVerso}
-                    onClick={() => setShowOcrConfirm(true)}
-                    className="flex-1 py-2.5 rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 text-white font-semibold text-sm hover:opacity-90 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    Continuer
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
+                  )}
+                  {docsDone ? (
+                    <>
+                      <Sparkles className="w-3.5 h-3.5" />
+                      Valider les documents
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </>
+                  ) : (
+                    <>
+                      <CloudUpload className="w-3.5 h-3.5" />
+                      Recto + Verso requis
+                    </>
+                  )}
+                </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Modal confirmation OCR */}
+        
+        {/* Modal QR Code */}
+        {showQRCode && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowQRCode(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-4">
+                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+                  <Smartphone className="w-8 h-8 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Scan QR code</h3>
+                <p className="text-xs text-slate-500 mt-1">Ouvrez l'appareil photo de votre téléphone</p>
+              </div>
+
+              <div className="bg-white p-4 rounded-xl inline-block mx-auto mb-4">
+                {qrUrl ? (
+                  <QRCodeSVG value={qrUrl} size={180} />
+                ) : (
+                  <div className="w-[180px] h-[180px] flex items-center justify-center">
+                    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                  </div>
+                )}
+              </div>
+
+              {uploadProgress > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs text-slate-500">Progression: {uploadProgress}/3</p>
+                  <div className="w-full h-1.5 bg-slate-200 rounded-full mt-1 overflow-hidden">
+                    <div className="h-full bg-green-500 transition-all" style={{ width: `${(uploadProgress / 3) * 100}%` }} />
+                  </div>
+                </div>
+              )}
+
+              <button
+                onClick={() => setShowQRCode(false)}
+                className="mt-4 w-full py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
+              >
+                Fermer
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+        
         {/* Modal confirmation OCR */}
         {showOcrConfirm && (
           <motion.div
@@ -2376,6 +2631,7 @@ export default function InscriptionPage() {
             </motion.div>
           </motion.div>
         )}
+        
         {/* Welcome Modal */}
         {showWelcome && (
           <motion.div
@@ -2467,8 +2723,9 @@ export default function InscriptionPage() {
             </motion.div>
           </motion.div>
         )}
+        
         {/* Footer */}
-        <div className="mt-4 sm:mt-6 pt-3 text-[10px] text-slate-400 dark:text-slate-600 flex flex-wrap justify-center gap-3 sm:gap-4 border-t border-slate-100 dark:border-slate-800/50">
+        <footer className="relative z-20 mt- sm:mt-6 pt-3 text-[10px] text-gray-200 dark:text-slate-600 flex flex-wrap justify-center gap-3 sm:gap-4 ">
           <Link
             href="/fr/terms"
             className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
@@ -2487,21 +2744,21 @@ export default function InscriptionPage() {
           >
             {t("help")}
           </Link>
-          <span className="text-slate-400 dark:text-slate-700">
+          <span className="text-gray-200 dark:text-slate-700">
             © 2026 NESTHUB
           </span>
-        </div>
-
+        </footer>
+        
         {/* Security Message */}
-        <p className="mt-3 text-center text-[10px] text-slate-400 dark:text-slate-600 max-w-xs mx-auto">
+        <p className="relative z-20 mt-3 text-center text-[10px] text-gray-200 dark:text-slate-600 max-w-xs mx-auto">
           {t("securityMessage")}
         </p>
       </div>
-
+      
       {/* Decoration Gradients */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
-        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full"></div>
-        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[100px] rounded-full"></div>
+        <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[100px] rounded-full" />
       </div>
     </div>
   );
