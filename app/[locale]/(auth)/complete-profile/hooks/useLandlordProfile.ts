@@ -93,7 +93,7 @@ export function useLandlordProfile(userData: any) {
 
       if (response.ok) {
         toast.success("Profil propriétaire enregistré !");
-        router.push("/fr/dashboard");
+        router.push("/fr/dashboard/owner");
       } else {
         const error = await response.json();
         toast.error("Erreur", { description: error.error });

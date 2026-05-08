@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
-import { getAuth } from "@clerk/nextjs/server"; // ← AJOUTEZ CETTE LIGNE
+import { getAuth } from "@clerk/nextjs/server";
 
 export const maxDuration = 60;
 
@@ -64,7 +64,23 @@ async function callGoogleVision(base64Image: string): Promise<string> {
   return data.responses?.[0]?.fullTextAnnotation?.text ?? "";
 }
 
-// ─── Parser RECTO CIN tunisienne (VERSION COMPLÈTE) ──────────────────────────────
+// ─── Mois arabes vers numéro ─────────────────────────────────────────────────
+const arabicMonths: Record<string, string> = {
+  جانفي: "01",
+  فيفري: "02",
+  مارس: "03",
+  افريل: "04",
+  ماي: "05",
+  جوان: "06",
+  جويلية: "07",
+  اوت: "08",
+  سبتمبر: "09",
+  اكتوبر: "10",
+  نوفمبر: "11",
+  ديسمبر: "12",
+};
+
+// ─── Parser RECTO CIN tunisienne (ARABE) ──────────────────────────────────────
 function parseRecto(text: string): {
   cinNumber?: string;
   lastName?: string;
@@ -78,82 +94,92 @@ function parseRecto(text: string): {
 
   console.log("📝 Parsing recto, lignes reçues:", lines);
 
-  // ✅ Déclaration UNIQUE des variables
   let cinNumber: string | undefined;
   let lastName: string | undefined;
   let firstName: string | undefined;
   let dateOfBirth: string | undefined;
 
-  // 1. Numéro CIN
+  // 1. Numéro CIN (8 chiffres)
   const cinMatch = text.match(/\b(\d{8})\b/);
   if (cinMatch) {
     cinNumber = cinMatch[1];
-    console.log("  ✅ CIN trouvé sur recto:", cinNumber);
+    console.log("  ✅ CIN trouvé:", cinNumber);
   }
 
-  // 2. Date de naissance (PAS de let devant !)
-  const dateMatch = text.match(/\b(\d{2})[\/\.\-](\d{2})[\/\.\-](\d{4})\b/);
+  // 2. Date de naissance (arabe)
+  const dateMatch = text.match(
+    /(\d{1,2})\s+(جانفي|فيفري|مارس|افريل|ماي|جوان|جويلية|اوت|سبتمبر|اكتوبر|نوفمبر|ديسمبر)\s+(\d{4})/,
+  );
   if (dateMatch) {
-    const [, day, month, year] = dateMatch;
-    dateOfBirth = `${year}-${month}-${day}`;
-    console.log("  → Date trouvée:", dateOfBirth);
+    const day = dateMatch[1].padStart(2, "0");
+    const month = arabicMonths[dateMatch[2]];
+    const year = dateMatch[3];
+    if (month) {
+      dateOfBirth = `${year}-${month}-${day}`;
+      console.log("  ✅ Date naissance:", dateOfBirth);
+    }
   }
 
-  // 3. Chercher les noms
+  // 3. Chercher NOM (اللقب) et PRÉNOM (الاسم) en ARABE
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
-    const lineUpper = line.toUpperCase();
 
-    if (lineUpper.includes("NOM")) {
-      const nomMatch = line.match(
-        /NOM\s*:?\s*([A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ][A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ\s\-']+)/i,
-      );
-      if (nomMatch) {
-        lastName = nomMatch[1].trim();
-        console.log("  → Nom trouvé (pattern):", lastName);
-      } else if (
-        lines[i + 1] &&
-        !lines[i + 1].toUpperCase().includes("PRENOM")
+    // Chercher "اللقب" (Nom de famille)
+    if (line.includes("اللقب")) {
+      let nameValue = line.replace("اللقب", "").trim();
+      if (
+        nameValue &&
+        nameValue.length > 0 &&
+        nameValue !== "الجمهورية التونسية"
       ) {
-        lastName = lines[i + 1].replace(/[^A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ\s\-']/g, "").trim();
-        console.log("  → Nom trouvé (ligne suivante):", lastName);
+        lastName = nameValue;
+        console.log("  ✅ Nom trouvé (اللقب):", lastName);
+      } else if (lines[i + 1] && !lines[i + 1].includes("الاسم")) {
+        lastName = lines[i + 1];
+        console.log("  ✅ Nom trouvé (ligne suivante):", lastName);
       }
     }
 
-    if (lineUpper.includes("PRENOM")) {
-      const prenomMatch = line.match(
-        /PRENOM\s*:?\s*([A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ][A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ\s\-']+)/i,
-      );
-      if (prenomMatch) {
-        firstName = prenomMatch[1].trim();
-        console.log("  → Prénom trouvé (pattern):", firstName);
+    // Chercher "الاسم" (Prénom)
+    if (line.includes("الاسم")) {
+      let nameValue = line.replace("الاسم", "").trim();
+      if (
+        nameValue &&
+        nameValue.length > 0 &&
+        nameValue !== "الجمهورية التونسية"
+      ) {
+        firstName = nameValue;
+        console.log("  ✅ Prénom trouvé (الاسم):", firstName);
       } else if (lines[i + 1]) {
-        firstName = lines[i + 1]
-          .replace(/[^A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ\s\-']/g, "")
-          .trim();
-        console.log("  → Prénom trouvé (ligne suivante):", firstName);
+        firstName = lines[i + 1];
+        console.log("  ✅ Prénom trouvé (ligne suivante):", firstName);
       }
     }
   }
 
-  // 4. Fallback
+  // 4. Fallback : prendre les lignes qui ressemblent à des noms
   if (!lastName || !firstName) {
-    const upperLines = lines.filter(
+    const nameCandidates = lines.filter(
       (l) =>
         l.length >= 3 &&
         l.length <= 30 &&
-        /^[A-ZÀÂÇÉÈÊËÎÏÔÙÛÜ]{2,}/.test(l) &&
-        !l.match(
-          /^(REPUBLIQUE|TUNISIE|CARTE|NATIONALE|IDENTITE|IDENTITY|DATE|SEXE|NOM|PRENOM)/i,
-        ),
+        /[\u0600-\u06FF]/.test(l) && // Contient des caractères arabes
+        !l.includes("الجمهورية") &&
+        !l.includes("بطاقة") &&
+        !l.includes("التعريف") &&
+        !l.includes("الولادة") &&
+        !l.includes("مكانها") &&
+        !l.includes("اللقب") &&
+        !l.includes("الاسم") &&
+        !l.match(/^\d+$/),
     );
 
-    if (!lastName && upperLines[0]) {
-      lastName = upperLines[0];
+    if (!lastName && nameCandidates[0]) {
+      lastName = nameCandidates[0];
       console.log("  → Nom trouvé (fallback):", lastName);
     }
-    if (!firstName && upperLines[1]) {
-      firstName = upperLines[1];
+    if (!firstName && nameCandidates[1]) {
+      firstName = nameCandidates[1];
       console.log("  → Prénom trouvé (fallback):", firstName);
     }
   }
@@ -161,7 +187,7 @@ function parseRecto(text: string): {
   return { cinNumber, lastName, firstName, dateOfBirth };
 }
 
-// ─── Parser VERSO CIN tunisienne (CORRIGÉ) ───────────────────────────────────────
+// ─── Parser VERSO CIN tunisienne ──────────────────────────────────────────────
 function parseVerso(text: string): { profession?: string; cinNumber?: string } {
   const lines = text
     .split("\n")
@@ -180,10 +206,10 @@ function parseVerso(text: string): { profession?: string; cinNumber?: string } {
     console.log("  → Numéro CIN trouvé sur verso:", cinNumber);
   }
 
+  // Chercher la profession en arabe "المهنة"
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Chercher "المهنة" (profession en arabe)
     if (line.includes("المهنة")) {
       console.log("🔍 Trouvé 'المهنة' à la ligne", i);
 
@@ -223,12 +249,28 @@ function parseVerso(text: string): { profession?: string; cinNumber?: string } {
   return { profession, cinNumber };
 }
 
+// ─── Nettoyage des noms (garde arabe et latin) ───────────────────────────────
+function cleanName(name: string | undefined): string | null {
+  if (!name) return null;
+  // Garde les lettres arabes, françaises, espaces, tirets
+  let cleaned = name
+    .replace(/[0-9]/g, "")
+    .replace(/[^\p{L}\s\-']/gu, "")
+    .trim()
+    .substring(0, 50);
+
+  // Éviter les valeurs non valides
+  if (cleaned.length < 2) return null;
+  if (cleaned === "الجمهورية التونسية") return null;
+  if (cleaned === "بطاقة التعريف الوطنية") return null;
+
+  return cleaned;
+}
+
 // ─── Route principale ─────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
     console.log("📮 POST /api/registration/upload-cin reçu");
-
-    const formData = await request.formData();
 
     // ✅ Récupérer userId depuis Clerk
     const { userId } = getAuth(request);
@@ -236,6 +278,8 @@ export async function POST(request: NextRequest) {
     if (!userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
+
+    const formData = await request.formData();
 
     const cinRectoFile = formData.get("cinRecto") as File | null;
     const cinVersoFile = formData.get("cinVerso") as File | null;
@@ -296,61 +340,31 @@ export async function POST(request: NextRequest) {
       ocrSuccess = false;
     }
 
-    // ── Étape 3 : Parser les données avec nettoyage ─────────────────────────
+    // ── Étape 3 : Parser les données ────────────────────────────────────────
     const rectoData = parseRecto(rectoText);
     const versoData = parseVerso(versoText);
 
-    // ✅ Priorité au numéro CIN du verso (plus fiable)
-    const finalCinNumber = rectoData.cinNumber;
+    // Priorité au numéro CIN du recto
+    const finalCinNumber = rectoData.cinNumber || versoData.cinNumber;
 
-    // ✅ Fonctions de nettoyage
-    const cleanName = (name: string | undefined) => {
-      if (!name) return null;
-      // \p{L} = TOUTES les lettres (latin, arabe, cyrillique, grec, etc.)
-      // \s = espaces
-      // \-' = tirets et apostrophes
-      return name
-        .replace(/[0-9]/g, "")
-        .replace(/[^\p{L}\s\-']/gu, "")
-        .trim();
-    };
-
-    const cleanCinNumber = (cin: string | undefined) => {
-      if (!cin) return null;
-      const match = cin.match(/\d{8}/);
-      return match ? match[0] : null;
-    };
-
+    // Nettoyage
     const extracted = {
       firstName: cleanName(rectoData.firstName),
       lastName: cleanName(rectoData.lastName),
       dateOfBirth: rectoData.dateOfBirth ?? null,
-      cinNumber: cleanCinNumber(finalCinNumber),
+      cinNumber: finalCinNumber
+        ? (finalCinNumber.match(/\d{8}/)?.[0] ?? null)
+        : null,
       profession: versoData.profession ?? null,
     };
-    const cinDataComplete = {
-      firstName: extracted.firstName,
-      lastName: extracted.lastName,
-      cinNumber: extracted.cinNumber,
-      dateOfBirth: extracted.dateOfBirth,
-      profession: extracted.profession,
-      extractedAt: new Date().toISOString(),
-      documentType: "CIN",
-      rectoUrl: cinRectoUrl,
-      versoUrl: cinVersoUrl,
-    };
-
-    console.log("✅ Extraction terminée:", extracted);
-    console.log("📦 cinData complet:", cinDataComplete);
 
     console.log("✅ Extraction terminée:", extracted);
 
+    // ── Étape 4 : Retourner la réponse ──────────────────────────────────────
     return NextResponse.json({
       success: true,
       ocrSuccess,
       extracted,
-      cinData: cinDataComplete,
-      cinNumber: extracted.cinNumber,
       urls: {
         cinRecto: cinRectoUrl,
         cinVerso: cinVersoUrl,

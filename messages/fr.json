@@ -1192,7 +1192,7 @@
   },
 
   "VerificationDetail": {
-    "verifications":"VÉRIFICATIONS",
+    "verifications": "VÉRIFICATIONS",
     "alreadyValidated": "Cette demande a déjà été validée",
     "alreadyRejected": "Cette demande a déjà été rejetée",
     "validated": "Validée",
@@ -1426,7 +1426,7 @@
       "owner": "Propriétaire",
       "tenant": "Locataire"
     },
-     "duality": {
+    "duality": {
       "title": "Et si la clé était de jouer sur les deux tableaux ?",
       "description": "Louez un bien pour vos voyages et vivez l'expérience NESTHUB !",
       "button": "Je découvre"
@@ -3288,7 +3288,7 @@
     "pdfFormat": "Format PDF imprimable",
     "percentageOfTotal": "Soit"
   },
-  
+
   "Moderation": {
     "title": "Modération des Conversations",
     "description": "Surveillez, signalez et résolvez les interactions utilisateurs",
@@ -3394,7 +3394,7 @@
       "actionDone": "Action effectuée avec succès"
     }
   },
-  
+
   "Disputes": {
     "title": "Gestion des Litiges",
     "description": "Examinez et résolvez les litiges signalés sur la plateforme.",
@@ -3462,9 +3462,7 @@
     "noDisputes": "Aucun litige trouvé",
     "selectDispute": "Sélectionnez un litige pour voir les détails",
     "enlargedEvidence": "Preuve agrandie"
-  }
-,
-  
+  },
   "Settings": {
     "title": "Paramètres de l'Application",
     "description": "Configurez les variables globales, les protocoles de sécurité et la logique métier de la plateforme.",
@@ -3504,6 +3502,80 @@
     "saveError": "Erreur lors de la sauvegarde",
     "connectionError": "Erreur de connexion",
     "resetSuccess": "Paramètres réinitialisés"
+  },
+  "CompleteProfile": {
+    "loading": {
+      "message": "Chargement de votre profil..."
+    },
+    "title": "Compléter mon profil",
+    "subtitle": "Remplissez vos informations pour activer votre compte",
+    "save": "Enregistrer",
+    "saved": "Enregistré",
+    "progress": "Progression",
+    "steps": "Étapes du profil",
+    "personalInfo": "Informations personnelles",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "birthDate": "Date de naissance",
+    "cin": "CIN",
+    "phone": "Téléphone",
+    "profession": "Profession",
+    "gender": "Genre",
+    "genderRequired": "(obligatoire)",
+    "genderSelect": "Veuillez sélectionner votre genre",
+    "man": "Homme",
+    "woman": "Femme",
+    "other": "Autre",
+    "address": "Adresse",
+    "governorate": "Gouvernorat",
+    "delegation": "Délégation",
+    "notProvided": "Non renseigné",
+    "bankInfo": "Coordonnées bancaires",
+    "rib": "RIB / IBAN",
+    "bankName": "Banque",
+    "accountHolder": "Titulaire",
+    "required": "Requis",
+    "profilePhoto": "Photo de profil",
+    "photoHint": "JPG, PNG • Max 5 Mo",
+    "bio": "Biographie",
+    "bioPlaceholder": "Parlez-nous de vous...",
+    "howFound": "Comment nous avez-vous connu ?",
+    "howFoundPlaceholder": "Sélectionner...",
+    "howFoundGoogle": "Google",
+    "howFoundSocial": "Réseaux sociaux",
+    "howFoundFriend": "Recommandation",
+    "howFoundAds": "Publicité",
+    "howFoundOther": "Autre",
+    "languages": "Langues parlées",
+    "searchLanguage": "Rechercher une langue...",
+    "atLeastOne": "Au moins une langue requise",
+    "allSelected": "Toutes les langues sont sélectionnées",
+    "missingFields": "Veuillez remplir tous les champs obligatoires :",
+    "missingFieldsTitle": "Champs manquants",
+    "photoUpdated": "Photo de profil mise à jour !",
+    "uploadError": "Erreur lors de l'upload",
+    "saveError": "Erreur",
+    "saveErrorDesc": "Impossible d'enregistrer le profil",
+    "step1": "Informations",
+    "step2": "Photo",
+    "step3": "Adresse",
+    "step4": "Biographie",
+    "step5": "Source",
+    "step6": "Langues",
+    "step7": "Bancaire",
+    "clickToSelect": "Cliquez pour ajouter vos langues",
+    "languageFrench": "Français",
+    "languageEnglish": "Anglais",
+    "languageArabic": "Arabe",
+    "languageGerman": "Allemand",
+    "languageSpanish": "Espagnol",
+    "languageItalian": "Italien",
+    "languageChinese": "Chinois",
+    "languageRussian": "Russe",
+    "languagePortuguese": "Portugais",
+    "languageDutch": "Néerlandais",
+    "languageTurkish": "Turc",
+    "languageJapanese": "Japonais"
   }
 }
-

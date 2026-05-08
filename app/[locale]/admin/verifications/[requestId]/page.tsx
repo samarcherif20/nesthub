@@ -389,63 +389,63 @@ export default function VerificationDetailPage() {
                 </div>
               </div>
 
-              {/* ── identity details ─────────────────────────────────────── */}
-              <section className="space-y-3">
-                <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <span className="w-8 h-px bg-slate-200 dark:bg-slate-700" />
-                  {t("identityDetails")}
-                </h3>
+             {/* ── identity details ─────────────────────────────────────── */}
+<section className="space-y-3">
+  <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+    <span className="w-8 h-px bg-slate-200 dark:bg-slate-700" />
+    {t("identityDetails")}
+  </h3>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-0.5">
-                    <label className="text-xs font-medium text-slate-500 uppercase">{t("firstName")}</label>
-                    <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm">
-                      {extractedData?.firstName || requestUser?.firstName || "-"}
-                    </div>
-                  </div>
+  <div className="grid grid-cols-2 gap-3">
+    {/* ✅ Prénom - prend le cinData.firstName (arabe) */}
+    <div className="space-y-0.5">
+      <label className="text-xs font-medium text-slate-500 uppercase">{t("firstName")}</label>
+      <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm font-arabic">
+        {request?.cinData?.firstName || "-"}
+      </div>
+    </div>
 
-                  <div className="space-y-0.5">
-                    <label className="text-xs font-medium text-slate-500 uppercase">{t("lastName")}</label>
-                    <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm">
-                      {extractedData?.lastName || requestUser?.lastName || "-"}
-                    </div>
-                  </div>
+    {/* ✅ Nom - prend le cinData.lastName (arabe) */}
+    <div className="space-y-0.5">
+      <label className="text-xs font-medium text-slate-500 uppercase">{t("lastName")}</label>
+      <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm font-arabic">
+        {request?.cinData?.lastName || "-"}
+      </div>
+    </div>
 
-                  <div className="space-y-0.5">
-                    <label className="text-xs font-medium text-slate-500 uppercase">{t("phone")}</label>
-                    <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm flex items-center justify-between">
-                      {requestUser?.phoneNumber || "-"}
-                      {requestUser?.isIdentityVerified && (
-                        <svg className="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
+    {/* Téléphone - inchangé */}
+    <div className="space-y-0.5">
+      <label className="text-xs font-medium text-slate-500 uppercase">{t("phone")}</label>
+      <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm flex items-center justify-between">
+        {requestUser?.phoneNumber || "-"}
+      </div>
+    </div>
 
-                  <div className="space-y-0.5">
-                    <label className="text-xs font-medium text-slate-500 uppercase">{t("email")}</label>
-                    <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm">
-                      {requestUser?.email}
-                    </div>
-                  </div>
+    {/* Email - inchangé */}
+    <div className="space-y-0.5">
+      <label className="text-xs font-medium text-slate-500 uppercase">{t("email")}</label>
+      <div className="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm">
+        {requestUser?.email}
+      </div>
+    </div>
 
-                  <div className="space-y-0.5 col-span-2">
-                    <label className="text-xs font-medium text-slate-500 uppercase">{t("cinNumber")}</label>
-                    <div className="px-4 py-2 bg-white dark:bg-slate-800 border-2 border-indigo-500/20 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm flex items-center gap-3">
-                      <svg className="w-4 h-4 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
-                      </svg>
-                      <input
-                        className="bg-transparent border-none focus:ring-0 w-full p-0 text-slate-900 dark:text-white outline-none text-sm"
-                        type="text"
-                        value={extractedData?.cinNumber || ""}
-                        readOnly
-                      />
-                    </div>
-                  </div>
-                </div>
-              </section>
+    {/* N° CIN - inchangé */}
+    <div className="space-y-0.5 col-span-2">
+      <label className="text-xs font-medium text-slate-500 uppercase">{t("cinNumber")}</label>
+      <div className="px-4 py-2 bg-white dark:bg-slate-800 border-2 border-indigo-500/20 rounded-lg text-slate-900 dark:text-slate-100 font-medium text-sm flex items-center gap-3">
+        <svg className="w-4 h-4 text-indigo-500" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />
+        </svg>
+        <input
+          className="bg-transparent border-none focus:ring-0 w-full p-0 text-slate-900 dark:text-white outline-none text-sm"
+          type="text"
+          value={request?.cinData?.cinNumber || extractedData?.cinNumber || ""}
+          readOnly
+        />
+      </div>
+    </div>
+  </div>
+</section>
 
               {/* ── internal note ────────────────────────────────────────── */}
               <section className="space-y-1.5">

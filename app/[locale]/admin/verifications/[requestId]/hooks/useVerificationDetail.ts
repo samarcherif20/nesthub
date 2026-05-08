@@ -22,6 +22,16 @@ interface VerificationRequest {
   documentFrontUrl: string;
   documentBackUrl?: string;
   extractedData?: ExtractedData;
+  cinData?: {           // ← AJOUTER
+    firstName?: string;
+    lastName?: string;
+    cinNumber?: string;
+    dateOfBirth?: string;
+    profession?: string;
+    extractedAt?: string;
+    rectoUrl?: string;
+    versoUrl?: string;
+  };
   adminComment?: string;
   rejectionMotif?: string;
   createdAt: string;

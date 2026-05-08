@@ -1,5 +1,3 @@
-// app/api/admin/verifications/[requestId]/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
@@ -20,10 +18,13 @@ interface CinExtractedData {
   firstName?: string;
   lastName?: string;
   dateOfBirth?: string;
+  profession?: string;
   [key: string]: unknown;
 }
 
+// ============================================
 // GET - Détail d'une demande
+// ============================================
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { userId } = getAuth(request);
@@ -50,7 +51,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       where: { id: requestId },
       include: {
         user: {
-          include: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phoneNumber: true,
+            profilePictureUrl: true,
+            createdAt: true,
+            role: true,
+            isIdentityVerified: true,
+            cinData: true,        // ✅ AJOUTÉ - données arabes du CIN
             stats: true,
           },
         },
@@ -75,14 +86,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    return NextResponse.json(verificationRequest);
+    // ✅ Transformer la réponse pour inclure cinData au niveau supérieur
+    const response = {
+      ...verificationRequest,
+      cinData: verificationRequest.user?.cinData,
+    };
+
+    return NextResponse.json(response);
   } catch (error) {
     console.error("Error fetching verification:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
+// ============================================
 // PATCH - Traiter une demande
+// ============================================
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { userId } = getAuth(request);
@@ -206,7 +225,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           },
         }),
 
-        // 🔔 NOTIFIER L'UTILISATEUR - VALIDATION
+        // 🔔 NOTIFICATION - VALIDATION
         prisma.notification.create({
           data: {
             userId: verificationRequest.userId,
@@ -286,7 +305,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           },
         }),
 
-        // 🔔 NOTIFIER L'UTILISATEUR - REJET
+        // 🔔 NOTIFICATION - REJET
         prisma.notification.create({
           data: {
             userId: verificationRequest.userId,

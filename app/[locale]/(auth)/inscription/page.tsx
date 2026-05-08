@@ -57,7 +57,11 @@ import {
   FaIdCard,
 } from "react-icons/fa";
 import { FaAddressCard } from "react-icons/fa";
-import { BsFillCreditCard2BackFill } from "react-icons/bs";
+import {
+  BsFillCreditCard2BackFill,
+  BsFillPersonVcardFill,
+  BsFillPostcardFill,
+} from "react-icons/bs";
 import { GiPartyPopper } from "react-icons/gi";
 import { IoChevronBackSharp } from "react-icons/io5";
 import { LuBadgeInfo } from "react-icons/lu";
@@ -69,6 +73,7 @@ import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
+import { AiTwotoneIdcard } from "react-icons/ai";
 
 // ── Alert components ──
 const SuccessAlert = ({
@@ -246,6 +251,8 @@ export default function InscriptionPage() {
     setGovernorate,
     delegation,
     setDelegation,
+    cinData, // ← AJOUTEZ CETTE LIGNE
+    setCinData
   } = useInscription();
 
   const router = useRouter();
@@ -259,10 +266,10 @@ export default function InscriptionPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showQRCode, setShowQRCode] = useState(false);
   const [isMobileUploading, setIsMobileUploading] = useState(false);
-  
+
   const totalDone = [cinRecto, cinVerso, profilePhoto].filter(Boolean).length;
   const docsDone = !!(cinRecto && cinVerso);
-  
+
   // Timer pour masquer l'erreur après 5 secondes
   useEffect(() => {
     if (generalError) {
@@ -311,45 +318,51 @@ export default function InscriptionPage() {
     }
   }, [whatsappError]);
 
-  // ✅ AJOUTEZ CETTE FONCTION handleOCR
-  const handleOCR = async (file: File, side: "recto" | "verso") => {
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("side", side);
+// ✅ FONCTION handleOCR CORRIGÉE - retourne les données extraites
+const handleOCR = async (file: File, side: "recto" | "verso") => {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("side", side);
 
-    try {
-      const response = await fetch("/api/ocr", {
-        method: "POST",
-        body: formData,
+  try {
+    const response = await fetch("/api/ocr", {
+      method: "POST",
+      body: formData,
+    });
+
+    const data = await response.json();
+    console.log("📦 Réponse OCR complète:", data);
+
+    if (data.success && data.extracted) {
+      console.log("📝 Données extraites:", data.extracted);
+
+      // ✅ MODIFICATION 1: Ne plus écraser les noms français ici
+      // On garde cette logique uniquement pour les champs techniques
+      // if (data.extracted.firstName) setFirstName(data.extracted.firstName);
+      // if (data.extracted.lastName) setLastName(data.extracted.lastName);
+      
+      if (data.extracted.cinNumber) setCinNumber(data.extracted.cinNumber);
+      if (data.extracted.dateOfBirth) setDateNaissance(data.extracted.dateOfBirth);
+      if (data.extracted.profession) setProfession(data.extracted.profession);
+
+      toast.success("CIN détecté !", {
+        description: "Les informations ont été extraites automatiquement",
       });
-
-      const data = await response.json();
-      console.log("📦 Réponse OCR complète:", data);
-
-      if (data.success && data.extracted) {
-        console.log("📝 Données extraites:", data.extracted);
-
-        if (data.extracted.firstName) setFirstName(data.extracted.firstName);
-        if (data.extracted.lastName) setLastName(data.extracted.lastName);
-        if (data.extracted.cinNumber) setCinNumber(data.extracted.cinNumber);
-        if (data.extracted.dateOfBirth)
-          setDateNaissance(data.extracted.dateOfBirth);
-        if (data.extracted.profession) setProfession(data.extracted.profession);
-
-        toast.success("CIN détecté !", {
-          description: "Les informations ont été extraites automatiquement",
-        });
-      } else {
-        console.log("Aucune donnée OCR extraite ou erreur", data);
-      }
-    } catch (error) {
-      console.error("Erreur OCR:", error);
-      toast.error("Erreur OCR", {
-        description: "Impossible de lire la carte d'identité",
-      });
+      
+      // ✅ MODIFICATION 2: Retourner les données extraites
+      return data.extracted;
+    } else {
+      console.log("Aucune donnée OCR extraite ou erreur", data);
+      return null;
     }
-  };
-  
+  } catch (error) {
+    console.error("Erreur OCR:", error);
+    toast.error("Erreur OCR", {
+      description: "Impossible de lire la carte d'identité",
+    });
+    return null;
+  }
+};
   // Convertir base64 en File objet
   const base64ToFile = (
     base64: string,
@@ -365,23 +378,56 @@ export default function InscriptionPage() {
     const byteArray = new Uint8Array(byteNumbers);
     return new File([byteArray], filename, { type: mimeType });
   };
-  
-  const handleMobileSync = useCallback(async () => {
-    setIsMobileUploading(true);
-    try {
-      const res = await fetch("/api/mobile-upload/session", { method: "POST" });
-      const data = await res.json();
-      const currentSessionId = data.sessionId;
 
-      if (currentSessionId) {
-        setSessionId(currentSessionId);
-        setQrUrl(data.qrUrl);
-        setShowQRCode(true);
+const handleMobileSync = useCallback(async () => {
+  setIsMobileUploading(true);
 
-        const interval = setInterval(async () => {
+  // Référence pour cleanup
+  let interval: NodeJS.Timeout | null = null;
+  let timeout: NodeJS.Timeout | null = null;
+
+  try {
+    const res = await fetch("/api/mobile-upload/session", { method: "POST" });
+    const data = await res.json();
+    const currentSessionId = data.sessionId;
+
+    if (currentSessionId) {
+      setSessionId(currentSessionId);
+      setQrUrl(data.qrUrl);
+      setShowQRCode(true);
+
+      timeout = setTimeout(
+        () => {
+          if (interval) {
+            clearInterval(interval);
+            interval = null;
+          }
+          setShowQRCode(false);
+          toast.info("Session expirée", {
+            description: "Veuillez réessayer l'upload mobile",
+          });
+        },
+        16 * 60 * 1000,
+      );
+
+      interval = setInterval(async () => {
+        if (!interval) return;
+
+        try {
           const sessionRes = await fetch(
             `/api/mobile-upload/session?sessionId=${currentSessionId}`,
           );
+
+          if (sessionRes.status === 404) {
+            if (interval) clearInterval(interval);
+            if (timeout) clearTimeout(timeout);
+            setShowQRCode(false);
+            toast.info("Session expirée", {
+              description: "Veuillez réessayer l'upload mobile",
+            });
+            return;
+          }
+
           const sessionData = await sessionRes.json();
 
           console.log("📊 Session pollée:", currentSessionId);
@@ -396,9 +442,14 @@ export default function InscriptionPage() {
             console.log(`📊 Progression: ${count}/3`);
 
             if (count === 3) {
-              clearInterval(interval);
+              // Nettoyer les timers
+              if (interval) clearInterval(interval);
+              if (timeout) clearTimeout(timeout);
 
               const files = sessionData.files;
+              
+              let rectoData = null;
+              let versoData = null;
 
               if (files.recto?.data) {
                 const rectoFile = base64ToFile(
@@ -407,7 +458,7 @@ export default function InscriptionPage() {
                   files.recto.type,
                 );
                 setCinRecto(rectoFile);
-                await handleOCR(rectoFile, "recto");
+                rectoData = await handleOCR(rectoFile, "recto");
               }
 
               if (files.verso?.data) {
@@ -417,7 +468,7 @@ export default function InscriptionPage() {
                   files.verso.type,
                 );
                 setCinVerso(versoFile);
-                await handleOCR(versoFile, "verso");
+                versoData = await handleOCR(versoFile, "verso");
               }
 
               if (files.selfie?.data) {
@@ -429,33 +480,60 @@ export default function InscriptionPage() {
                 setProfilePhoto(selfieFile);
               }
 
+              const newCinData = {
+                firstName: rectoData?.firstName || null,
+                lastName: rectoData?.lastName || null,
+                cinNumber: rectoData?.cinNumber || versoData?.cinNumber || null,
+                dateOfBirth: rectoData?.dateOfBirth || null,
+                profession: versoData?.profession || null,
+                extractedAt: new Date().toISOString(),
+                documentType: "CIN",
+                rectoUrl: files.recto?.name,
+                versoUrl: files.verso?.name,
+              };
+              console.log("🔍 newCinData créé:", newCinData);
+              console.log("🔍 rectoData:", rectoData);
+              console.log("🔍 versoData:", versoData);
+              
+              if (setCinData) {
+                setCinData(newCinData);
+                console.log("📦 setCinData appelé avec:", newCinData);
+              }
+
               toast.success("Documents reçus !", {
                 description: "Les 3 documents ont été téléchargés",
               });
 
               setShowQRCode(false);
-              setShowOcrConfirm(true);
+              
+              // ✅ ATTENDRE QUE LE STATE SOIT MIS À JOUR
+              setTimeout(() => {
+                setShowOcrConfirm(true);
+              }, 100);
             }
           }
-        }, 2000);
-      }
-    } catch (error) {
-      console.error("Erreur création session mobile:", error);
-      toast.error("Erreur", {
-        description: "Impossible de créer la session mobile",
-      });
-    } finally {
-      setIsMobileUploading(false);
+        } catch (error) {
+          console.error("Erreur polling session:", error);
+          if (interval) clearInterval(interval);
+          if (timeout) clearTimeout(timeout);
+          setShowQRCode(false);
+        }
+      }, 2000);
     }
-  }, [
-    router,
-    setCinRecto,
-    setCinVerso,
-    setProfilePhoto,
-    handleOCR,
-    setShowOcrConfirm,
-  ]);
-  
+  } catch (error) {
+    console.error("Erreur création session mobile:", error);
+    toast.error("Erreur", {
+      description: "Impossible de créer la session mobile",
+    });
+  } finally {
+    setIsMobileUploading(false);
+  }
+
+  return () => {
+    if (interval) clearInterval(interval);
+    if (timeout) clearTimeout(timeout);
+  };
+}, [setCinRecto, setCinVerso, setProfilePhoto, handleOCR, setShowOcrConfirm, setCinData]);
   // ============================================================
   // COMPOSANTS POUR ÉTAPE 4
   // ============================================================
@@ -592,27 +670,16 @@ export default function InscriptionPage() {
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
               <div
-                className={`relative flex items-center justify-center w-10 h-7 rounded-md border-2 border-dashed transition-colors ${
+                className={`relative flex items-center justify-center w-10 h-7  transition-colors ${
                   drag
                     ? "border-blue-400 text-blue-400"
                     : "border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-600 group-hover:border-slate-400 dark:group-hover:border-slate-500"
                 }`}
               >
                 {isRecto ? (
-                  <div className="flex flex-col gap-0.5 items-start w-6">
-                    <div className="h-0.5 w-4 rounded bg-current opacity-60" />
-                    <div className="h-0.5 w-3 rounded bg-current opacity-40" />
-                    <div className="h-0.5 w-5 rounded bg-current opacity-40" />
-                      <IdCard className="w-6 h-6 text-current" />
-
-                  </div>
+                  <BsFillPersonVcardFill className="w-15 h-15 text-current" />
                 ) : (
-                  <div className="flex flex-col gap-0.5 items-center w-6">
-                    <div className="h-0.5 w-6 rounded bg-current opacity-60" />
-                    <div className="h-0.5 w-4 rounded bg-current opacity-40" />
-                    <div className="h-0.5 w-5 rounded bg-current opacity-40" />
-                    <div className="h-0.5 w-3 rounded bg-current opacity-40" />
-                  </div>
+                  <BsFillPostcardFill className="w-15 h-15 text-current" />
                 )}
               </div>
               <p className="text-[12px] text-slate-500 text-center group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-400 transition-colors leading-snug">
@@ -721,7 +788,7 @@ export default function InscriptionPage() {
       </div>
     );
   }
-  
+
   if (!mounted) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
@@ -749,7 +816,7 @@ export default function InscriptionPage() {
           style={{ clipPath: "polygon(0 32%, 100% 0, 100% 100%, 0 100%)" }}
         />
       </div>
-      
+
       <div className="w-full max-w-[min(100%,800px)] sm:max-w-3xl md:max-w-4xl lg:max-w-[900px] mx-auto">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-4 sm:mb-6 justify-center">
@@ -765,7 +832,7 @@ export default function InscriptionPage() {
             N E S T H U B
           </h2>
         </div>
-        
+
         {/* Stepper avec dégradé NestHub */}
         <div className="mb-8">
           <div className="flex items-start justify-between px-2 gap-3">
@@ -885,7 +952,7 @@ export default function InscriptionPage() {
             </div>
           </div>
         </div>
-        
+
         {/* Alertes */}
         <AnimatePresence>
           {showSuccessAlert && (
@@ -908,7 +975,7 @@ export default function InscriptionPage() {
             />
           )}
         </AnimatePresence>
-        
+
         {/* Message d'erreur général - style comme le login */}
         {showGeneralError && generalError && (
           <motion.div
@@ -931,7 +998,7 @@ export default function InscriptionPage() {
             </button>
           </motion.div>
         )}
-        
+
         <AnimatePresence mode="wait">
           {/* ÉTAPE 1 : COMPTE (EMAIL) */}
           {currentStep === 1 && !pendingVerification && (
@@ -951,7 +1018,7 @@ export default function InscriptionPage() {
                   {t("step1Description")}
                 </p>
               </div>
-              
+
               {/* Sélection du rôle - Version avec bordure dégradée */}
               <div className="mb-6 sm:mb-8">
                 <p className="text-[11px] font-bold uppercase tracking-widest text-blue-500 dark:text-blue-400 mb-3">
@@ -1274,7 +1341,7 @@ export default function InscriptionPage() {
               </p>
             </motion.div>
           )}
-          
+
           {/* ÉTAPE 2 : IDENTITÉ (prénom, nom, téléphone) */}
           {currentStep === 2 && (
             <motion.div
@@ -1295,13 +1362,15 @@ export default function InscriptionPage() {
                     {t("identitySubtitle")}
                   </p>
                 </div>
-                
+
                 {/* Badge Confidentialité */}
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 shadow-sm">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-                    Confidentialité garantie 
-                    <p className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider"  >Votre identité réelle ne sera pas partagée publiquement</p>
+                    Confidentialité garantie
+                    <p className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Votre identité réelle ne sera pas partagée publiquement
+                    </p>
                   </span>
                 </div>
               </div>
@@ -2044,21 +2113,22 @@ export default function InscriptionPage() {
                   </div>
                 </div>
 
-                {/* Footer Actions */}
-                <div className="pt-3 sm:pt-4 flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-between border-t border-slate-200 dark:border-slate-700">
+                {/* Footer Actions - ÉTAPE 2 */}
+                <div className="pt-3 sm:pt-4 flex gap-3 sm:gap-4 items-center justify-between border-t border-slate-200 dark:border-slate-700">
+                  {/* Bouton Retour */}
                   <button
                     type="button"
                     onClick={() => setCurrentStep(1)}
-                    className="order-2 sm:order-1 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-blue-400 text-black dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-[0.98]"
+                    className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-blue-400 text-black dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-[0.98]"
                   >
                     <IoChevronBackSharp className="text-sm sm:text-base" />
                     {t("back")}
                   </button>
 
+                  {/* Bouton Continuer */}
                   <button
                     type="button"
                     onClick={() => {
-                      // Validation des champs obligatoires
                       if (!firstName.trim()) {
                         setTouchedStep2({ ...touchedStep2, firstName: true });
                         return;
@@ -2078,7 +2148,7 @@ export default function InscriptionPage() {
                       handleSendWhatsApp();
                     }}
                     disabled={isWhatsappLoading}
-                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isWhatsappLoading ? (
                       <>
@@ -2096,7 +2166,7 @@ export default function InscriptionPage() {
               </div>
             </motion.div>
           )}
-          
+
           {/* ÉTAPE 3 : CODE WHATSAPP */}
           {currentStep === 3 && (
             <motion.div
@@ -2208,21 +2278,24 @@ export default function InscriptionPage() {
                 </div>
 
                 {/* Footer Actions */}
-                <div className="pt-3 sm:pt-4 flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-between border-t border-slate-200 dark:border-slate-700">
+                {/* Footer Actions - ÉTAPE 3 */}
+                <div className="pt-3 sm:pt-4 flex gap-3 sm:gap-4 items-center justify-between border-t border-slate-200 dark:border-slate-700">
+                  {/* Bouton Retour */}
                   <button
                     type="button"
                     onClick={() => setCurrentStep(2)}
-                    className="order-2 sm:order-1 flex items-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-blue-400 text-black dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-[0.98]"
+                    className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-4 sm:px-6 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl transition-all duration-300 ease-in-out cursor-pointer border border-blue-400 text-black dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-950/30 active:scale-[0.98]"
                   >
                     <IoChevronBackSharp className="text-sm sm:text-base" />
                     {t("whatsappStep.back")}
                   </button>
 
+                  {/* Bouton Resend Code */}
                   <button
                     type="button"
                     onClick={handleSendWhatsApp}
                     disabled={isWhatsappLoading}
-                    className="order-1 sm:order-2 w-full sm:w-auto px-6 sm:px-10 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] flex items-center justify-center gap-2 text-xs sm:text-sm group cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isWhatsappLoading ? (
                       <>
@@ -2240,7 +2313,7 @@ export default function InscriptionPage() {
               </div>
             </motion.div>
           )}
-          
+
           {/* ÉTAPE 4 : DOCUMENTS D'IDENTITÉ AVEC OPTIONS */}
           {currentStep === 4 && (
             <motion.div
@@ -2255,11 +2328,13 @@ export default function InscriptionPage() {
               <div className="px-5 pt-5 pb-3 flex items-start justify-between border-b border-slate-100 dark:border-slate-800">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-<h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
+                    <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
                       {t("documentsStep.title")}
                     </h1>
                   </div>
- <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">                    {t("documentsStep.subtitle")}
+                  <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+                    {" "}
+                    {t("documentsStep.subtitle")}
                   </p>
                 </div>
 
@@ -2371,8 +2446,9 @@ export default function InscriptionPage() {
                   onClick={() => setCurrentStep(3)}
                   className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 text-xs font-semibold transition-all flex-1"
                 >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  Retour
+                  <IoChevronBackSharp className="w-3.5 h-3.5" />
+                                      {t("back")}
+
                 </motion.button>
 
                 <motion.button
@@ -2381,13 +2457,13 @@ export default function InscriptionPage() {
                   disabled={!docsDone}
                   onClick={() => setShowOcrConfirm(true)}
                   className={`
-          relative flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold transition-all duration-300 overflow-hidden
-          ${
-            docsDone
-              ? "bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 text-white shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:brightness-110"
-              : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700/50"
-          }
-        `}
+    relative flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold transition-all duration-300 overflow-hidden
+    ${
+      docsDone
+        ? "bg-blue-400 text-black shadow-md shadow-blue-500/25 hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:shadow-lg hover:shadow-blue-500/30"
+        : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700/50"
+    }
+  `}
                 >
                   {docsDone && (
                     <motion.div
@@ -2418,62 +2494,155 @@ export default function InscriptionPage() {
             </motion.div>
           )}
         </AnimatePresence>
-        
-        {/* Modal QR Code */}
+
+        {/* Modal QR Code - Version Bottom Sheet */}
         {showQRCode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
             onClick={() => setShowQRCode(false)}
           >
+            {/* backdrop */}
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
+
             <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white dark:bg-slate-900 rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", stiffness: 340, damping: 28 }}
               onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-sm mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
             >
-              <div className="mb-4">
-                <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                  <Smartphone className="w-8 h-8 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Scan QR code</h3>
-                <p className="text-xs text-slate-500 mt-1">Ouvrez l'appareil photo de votre téléphone</p>
+              {/* Gradient top accent */}
+              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
+
+              {/* Handle (visible seulement sur mobile) */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
               </div>
 
-              <div className="bg-white p-4 rounded-xl inline-block mx-auto mb-4">
-                {qrUrl ? (
-                  <QRCodeSVG value={qrUrl} size={180} />
-                ) : (
-                  <div className="w-[180px] h-[180px] flex items-center justify-center">
-                    <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+              {/* Header */}
+              <div className="px-6 pt-4 pb-5 flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+                      <Smartphone className="w-3.5 h-3.5 text-white" />
+                    </div>
+                    <h3 className="text-slate-900 dark:text-white font-bold text-sm">
+                      Upload via mobile
+                    </h3>
                   </div>
-                )}
+                  <p className="text-slate-500 text-[11px] ml-9">
+                    Scannez pour continuer sur votre téléphone
+                  </p>
+                </div>
+                <button
+                  onClick={() => setShowQRCode(false)}
+                  className="mt-0.5 w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
               </div>
 
-              {uploadProgress > 0 && (
-                <div className="mt-3">
-                  <p className="text-xs text-slate-500">Progression: {uploadProgress}/3</p>
-                  <div className="w-full h-1.5 bg-slate-200 rounded-full mt-1 overflow-hidden">
-                    <div className="h-full bg-green-500 transition-all" style={{ width: `${(uploadProgress / 3) * 100}%` }} />
+              {/* QR + instructions */}
+              <div className="px-6 pb-6 flex gap-5 items-center">
+                {/* QR */}
+                <div className="relative flex-shrink-0">
+                  <div className="bg-white p-3 rounded-2xl shadow-2xl">
+                    {qrUrl ? (
+                      <QRCodeSVG value={qrUrl} size={130} level="M" />
+                    ) : (
+                      <div className="w-[130px] h-[130px] flex items-center justify-center">
+                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                      </div>
+                    )}
                   </div>
+                  {/* Corner accents */}
+                  {[
+                    "top-0 left-0 border-t-2 border-l-2 rounded-tl-md",
+                    "top-0 right-0 border-t-2 border-r-2 rounded-tr-md",
+                    "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-md",
+                    "bottom-0 right-0 border-b-2 border-r-2 rounded-br-md",
+                  ].map((cls, i) => (
+                    <div
+                      key={i}
+                      className={`absolute w-4 h-4 border-blue-400 ${cls}`}
+                      style={{ margin: "-2px" }}
+                    />
+                  ))}
                 </div>
-              )}
 
-              <button
-                onClick={() => setShowQRCode(false)}
-                className="mt-4 w-full py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition-colors"
-              >
-                Fermer
-              </button>
+                {/* Steps */}
+                <div className="flex-1 space-y-3">
+                  {[
+                    {
+                      icon: <QrCode className="w-3.5 h-3.5" />,
+                      text: "Scannez le QR code",
+                    },
+                    {
+                      icon: <Camera className="w-3.5 h-3.5" />,
+                      text: "Photographiez votre CIN",
+                    },
+                    {
+                      icon: <RefreshCw className="w-3.5 h-3.5" />,
+                      text: "Sync automatique ici",
+                    },
+                  ].map(({ icon, text }, i) => (
+                    <div key={i} className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center flex-shrink-0">
+                        {icon}
+                      </div>
+                      <span className="text-slate-600 dark:text-slate-400 text-[11px] leading-tight">
+                        {text}
+                      </span>
+                    </div>
+                  ))}
+
+                  {/* Barre de progression si upload en cours */}
+                  {uploadProgress > 0 && (
+                    <div className="mt-2">
+                      <p className="text-[10px] text-slate-500 mb-1">
+                        Progression: {uploadProgress}/3
+                      </p>
+                      <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-500 transition-all duration-300"
+                          style={{ width: `${(uploadProgress / 3) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={handleMobileSync}
+                    className="flex items-center gap-1.5 text-[10px] text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors mt-1"
+                  >
+                    <RefreshCw className="w-3 h-3" />
+                    Actualiser
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom bar */}
+              <div className="flex items-center gap-2 px-6 py-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-700/50">
+                <ShieldCheck className="w-3 h-3 text-slate-500 dark:text-slate-600" />
+                <span className="text-[10px] text-slate-500 dark:text-slate-600">
+                  Session chiffrée · expire dans 15 min
+                </span>
+              </div>
             </motion.div>
           </motion.div>
         )}
-        
         {/* Modal confirmation OCR */}
         {showOcrConfirm && (
+            <>
+
+              {console.log("🔍🔍🔍 DEBUG MODAL OCR - cinData:", cinData)}
+    {console.log("🔍 cinData?.firstName:", cinData?.firstName)}
+    {console.log("🔍 cinData?.lastName:", cinData?.lastName)}
+
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -2506,20 +2675,20 @@ export default function InscriptionPage() {
                 </p>
               </div>
 
-              {/* Champs OCR */}
+              {/* Champs OCR - Afficher les données ARABES du CIN */}
               <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.firstName")}
+                    Prénom (CIN)
                   </label>
                   <div className="relative">
                     <input
                       type="text"
-                      value={firstName}
+                      value={cinData?.firstName || ""}
                       readOnly
                       className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
                     />
-                    {firstName && (
+                    {cinData?.firstName && (
                       <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
                     )}
                   </div>
@@ -2527,16 +2696,16 @@ export default function InscriptionPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.lastName")}
+                    Nom (CIN)
                   </label>
                   <div className="relative">
                     <input
                       type="text"
-                      value={lastName}
+                      value={cinData?.lastName || ""}
                       readOnly
                       className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
                     />
-                    {lastName && (
+                    {cinData?.lastName && (
                       <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
                     )}
                   </div>
@@ -2544,16 +2713,16 @@ export default function InscriptionPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.birthDate")}
+                    Date de naissance
                   </label>
                   <div className="relative">
                     <input
                       type="date"
-                      value={dateNaissance}
+                      value={cinData?.dateOfBirth || dateNaissance || ""}
                       readOnly
                       className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
                     />
-                    {dateNaissance && (
+                    {(cinData?.dateOfBirth || dateNaissance) && (
                       <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
                     )}
                   </div>
@@ -2561,25 +2730,25 @@ export default function InscriptionPage() {
 
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.cinNumber")}
+                    N° CIN
                   </label>
                   <div className="relative">
                     <input
                       type="text"
-                      value={cinNumber}
+                      value={cinData?.cinNumber || cinNumber || ""}
                       readOnly
                       className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
                     />
-                    {cinNumber && (
+                    {(cinData?.cinNumber || cinNumber) && (
                       <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
                     )}
                   </div>
                 </div>
 
-                {/* ✅ NOUVEAU CHAMP: PROFESSION */}
+                {/* Profession */}
                 <div className="col-span-2 space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    {t("ocrConfirm.profession")}
+                    Profession (CIN)
                     <span className="text-[10px] normal-case text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 rounded">
                       verso CIN
                     </span>
@@ -2587,12 +2756,12 @@ export default function InscriptionPage() {
                   <div className="relative">
                     <input
                       type="text"
-                      value={profession || ""}
+                      value={cinData?.profession || profession || ""}
                       readOnly
-                      placeholder="Ex : عامل  , طبيب .."
+                      placeholder="Ex : تلميذة , طبيب .."
                       className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
                     />
-                    {profession && (
+                    {(cinData?.profession || profession) && (
                       <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
                     )}
                   </div>
@@ -2613,7 +2782,7 @@ export default function InscriptionPage() {
                   type="button"
                   onClick={handleConfirmIdentity}
                   disabled={isUploadingCIN}
-                  className="flex-1 bg-blue-400 hover:bg-blue-300 text-black font-bold py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-1 bg-blue-400 hover:bg-blue-500 text-black font-bold py-2.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/30 disabled:opacity-50"
                 >
                   {isUploadingCIN ? (
                     <>
@@ -2630,8 +2799,10 @@ export default function InscriptionPage() {
               </div>
             </motion.div>
           </motion.div>
+            </>
+
         )}
-        
+
         {/* Welcome Modal */}
         {showWelcome && (
           <motion.div
@@ -2723,7 +2894,7 @@ export default function InscriptionPage() {
             </motion.div>
           </motion.div>
         )}
-        
+
         {/* Footer */}
         <footer className="relative z-20 mt- sm:mt-6 pt-3 text-[10px] text-gray-200 dark:text-slate-600 flex flex-wrap justify-center gap-3 sm:gap-4 ">
           <Link
@@ -2748,13 +2919,13 @@ export default function InscriptionPage() {
             © 2026 NESTHUB
           </span>
         </footer>
-        
+
         {/* Security Message */}
         <p className="relative z-20 mt-3 text-center text-[10px] text-gray-200 dark:text-slate-600 max-w-xs mx-auto">
           {t("securityMessage")}
         </p>
       </div>
-      
+
       {/* Decoration Gradients */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full" />

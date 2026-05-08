@@ -1,35 +1,106 @@
-// app/[locale]/(auth)/inscription/verify-catch/page.tsx
 "use client";
 
 import { useTranslations } from "next-intl";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 import { useVerifyCatch } from "./hooks/useVerifyCatch";
 
 export default function VerifyCatchPage() {
   const t = useTranslations("VerifyCatch");
-  
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+
   useVerifyCatch();
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-white via-blue-50 to-blue-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center transition-colors duration-300">
-      <div className="text-center px-4">
-        {/* Animated spinner container */}
-        <div className="relative w-16 h-16 mx-auto mb-6">
-          <div className="absolute inset-0 rounded-full bg-linear-to-r from-blue-500 via-purple-500 to-indigo-500 animate-ping opacity-75 dark:opacity-50"></div>
-          <div className="relative flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 shadow-lg shadow-blue-500/30 dark:shadow-purple-500/20">
-            <LoadingSpinner className="animate-spin h-8 w-8 text-white" />
-          </div>
+    <div
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6"
+      style={{
+        background: isDark
+          ? "radial-gradient(circle at 50% 50%, #1a1c2c 0%, #050505 100%)"
+          : "radial-gradient(circle at 50% 50%, #ede9fe 0%, #f8f7ff 100%)",
+      }}
+    >
+      <style>
+        {`
+          @keyframes spinLoader { to { transform: rotate(360deg) } }
+          @keyframes pulseGlow {
+            0%,100% { box-shadow: 0 0 20px rgba(113,42,226,.3) }
+            50% { box-shadow: 0 0 50px rgba(0,92,171,.6) }
+          }
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(16px) }
+            to { opacity: 1; transform: translateY(0) }
+          }
+        `}
+      </style>
+
+      {/* Logo avec spinner */}
+      <div className="relative w-24 h-24">
+        {/* Cercle de bordure externe */}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            border: `3px solid ${isDark ? "rgba(255,255,255,.06)" : "rgba(0,0,0,.06)"}`,
+          }}
+        />
+        
+        {/* Spinner rotatif */}
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            border: `3px solid transparent`,
+            borderTopColor: "#005cab",
+            borderRightColor: "rgba(113,42,226,.3)",
+            animation: "spinLoader 1s cubic-bezier(.4,0,.2,1) infinite",
+          }}
+        />
+        
+        {/* Logo - PLUS DE CERCLE BLANC, le logo remplit tout */}
+        <div
+          className="absolute inset-0 rounded-full flex items-center justify-center overflow-hidden"
+          style={{
+            animation: "pulseGlow 2s ease-in-out infinite",
+          }}
+        >
+          <Image
+            src="/logo/logo.png"
+            alt="Logo"
+            fill
+            className="object-cover scale-110"
+            sizes="100px"
+          />
         </div>
-        
-        {/* Title */}
-        <h2 className="text-xl sm:text-2xl font-bold bg-linear-to-r from-blue-600 via-purple-600 to-indigo-600 dark:from-blue-400 dark:via-purple-400 dark:to-indigo-400 bg-clip-text text-transparent mb-2">
+      </div>
+
+      <div
+        className="flex flex-col items-center gap-2"
+        style={{ animation: "fadeInUp .5s ease both .2s" }}
+      >
+        <p
+          className={`text-sm font-semibold tracking-[.15em] uppercase ${isDark ? "text-white/70" : "text-gray-700"}`}
+        >
           {t("title")}
-        </h2>
-        
-        {/* Description */}
-        <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mx-auto">
+        </p>
+        <p
+          className={`text-[10px] tracking-[.3em] uppercase ${isDark ? "text-white/25" : "text-gray-400"}`}
+        >
           {t("description")}
         </p>
+      </div>
+
+      <div className="flex gap-2 mt-2">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-1.5 h-1.5 rounded-full"
+            style={{
+              background: "#712ae2",
+              animation: `pulseGlow 1.4s ease-in-out ${i * 0.2}s infinite`,
+              opacity: 0.6,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
