@@ -1,7 +1,7 @@
 // app/[locale]/(auth)/login/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";  // ← ajoutez useRef
 import Link from "next/link";
 import Image from "next/image";
 import { useTranslations, useLocale } from "next-intl";
@@ -61,8 +61,7 @@ export default function LoginPage() {
   // États pour le bandeau d'erreur général
   const [showGeneralError, setShowGeneralError] = useState(false);
   const [generalErrorMessage, setGeneralErrorMessage] = useState<string>("");
-  const [generalErrorTimer, setGeneralErrorTimer] =
-    useState<NodeJS.Timeout | null>(null);
+  const generalErrorTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const t = useTranslations("Login");
   const locale = useLocale();
@@ -74,7 +73,13 @@ export default function LoginPage() {
     handleAppleLogin,
     handleFacebookLogin,
   } = useAuth();
-
+useEffect(() => {
+  return () => {
+    if (generalErrorTimerRef.current) {
+      clearTimeout(generalErrorTimerRef.current);
+    }
+  };
+}, []);
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -118,9 +123,9 @@ export default function LoginPage() {
   // Fonction pour afficher le bandeau d'erreur général
   const showGeneralErrorBanner = (message: string) => {
     // Nettoyer le timer existant
-    if (generalErrorTimer) {
-      clearTimeout(generalErrorTimer);
-    }
+  if (generalErrorTimerRef.current) {
+  clearTimeout(generalErrorTimerRef.current);
+}
     setGeneralErrorMessage(message);
     setShowGeneralError(true);
 
@@ -129,14 +134,13 @@ export default function LoginPage() {
       setShowGeneralError(false);
       setGeneralErrorMessage("");
     }, 5000);
-    setGeneralErrorTimer(timer);
-  };
+generalErrorTimerRef.current = timer;  };
 
   // Fonction pour fermer manuellement le bandeau d'erreur
   const closeGeneralError = () => {
-    if (generalErrorTimer) {
-      clearTimeout(generalErrorTimer);
-    }
+   if (generalErrorTimerRef.current) {
+  clearTimeout(generalErrorTimerRef.current);
+}
     setShowGeneralError(false);
     setGeneralErrorMessage("");
   };

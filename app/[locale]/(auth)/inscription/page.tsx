@@ -252,7 +252,7 @@ export default function InscriptionPage() {
     delegation,
     setDelegation,
     cinData, // ← AJOUTEZ CETTE LIGNE
-    setCinData
+    setCinData,
   } = useInscription();
 
   const router = useRouter();
@@ -318,51 +318,53 @@ export default function InscriptionPage() {
     }
   }, [whatsappError]);
 
-// ✅ FONCTION handleOCR CORRIGÉE - retourne les données extraites
-const handleOCR = async (file: File, side: "recto" | "verso") => {
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("side", side);
+  // ✅ FONCTION handleOCR CORRIGÉE - retourne les données extraites
+  const handleOCR = async (file: File, side: "recto" | "verso") => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("side", side);
 
-  try {
-    const response = await fetch("/api/ocr", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await response.json();
-    console.log("📦 Réponse OCR complète:", data);
-
-    if (data.success && data.extracted) {
-      console.log("📝 Données extraites:", data.extracted);
-
-      // ✅ MODIFICATION 1: Ne plus écraser les noms français ici
-      // On garde cette logique uniquement pour les champs techniques
-      // if (data.extracted.firstName) setFirstName(data.extracted.firstName);
-      // if (data.extracted.lastName) setLastName(data.extracted.lastName);
-      
-      if (data.extracted.cinNumber) setCinNumber(data.extracted.cinNumber);
-      if (data.extracted.dateOfBirth) setDateNaissance(data.extracted.dateOfBirth);
-      if (data.extracted.profession) setProfession(data.extracted.profession);
-
-      toast.success("CIN détecté !", {
-        description: "Les informations ont été extraites automatiquement",
+    try {
+      const response = await fetch("/api/ocr", {
+        method: "POST",
+        body: formData,
+        credentials: "include", // ✅ AJOUTER CETTE LIGNE
       });
-      
-      // ✅ MODIFICATION 2: Retourner les données extraites
-      return data.extracted;
-    } else {
-      console.log("Aucune donnée OCR extraite ou erreur", data);
+
+      const data = await response.json();
+      console.log("📦 Réponse OCR complète:", data);
+
+      if (data.success && data.extracted) {
+        console.log("📝 Données extraites:", data.extracted);
+
+        // ✅ MODIFICATION 1: Ne plus écraser les noms français ici
+        // On garde cette logique uniquement pour les champs techniques
+        // if (data.extracted.firstName) setFirstName(data.extracted.firstName);
+        // if (data.extracted.lastName) setLastName(data.extracted.lastName);
+
+        if (data.extracted.cinNumber) setCinNumber(data.extracted.cinNumber);
+        if (data.extracted.dateOfBirth)
+          setDateNaissance(data.extracted.dateOfBirth);
+        if (data.extracted.profession) setProfession(data.extracted.profession);
+
+        toast.success(t("ocrDetected"), {
+          description: t("ocrDetectedDescription"),
+        });
+
+        // ✅ MODIFICATION 2: Retourner les données extraites
+        return data.extracted;
+      } else {
+        console.log("Aucune donnée OCR extraite ou erreur", data);
+        return null;
+      }
+    } catch (error) {
+      console.error("Erreur OCR:", error);
+      toast.error(t("ocrError"), {
+        description: t("ocrErrorDescription"),
+      });
       return null;
     }
-  } catch (error) {
-    console.error("Erreur OCR:", error);
-    toast.error("Erreur OCR", {
-      description: "Impossible de lire la carte d'identité",
-    });
-    return null;
-  }
-};
+  };
   // Convertir base64 en File objet
   const base64ToFile = (
     base64: string,
@@ -378,162 +380,198 @@ const handleOCR = async (file: File, side: "recto" | "verso") => {
     const byteArray = new Uint8Array(byteNumbers);
     return new File([byteArray], filename, { type: mimeType });
   };
+  const handleMobileSync = useCallback(async () => {
+    setIsMobileUploading(true);
 
-const handleMobileSync = useCallback(async () => {
-  setIsMobileUploading(true);
+    let interval: NodeJS.Timeout | null = null;
+    let timeout: NodeJS.Timeout | null = null;
 
-  // Référence pour cleanup
-  let interval: NodeJS.Timeout | null = null;
-  let timeout: NodeJS.Timeout | null = null;
+    try {
+      const res = await fetch("/api/mobile-upload/session", { method: "POST" });
+      const data = await res.json();
+      const currentSessionId = data.sessionId;
 
-  try {
-    const res = await fetch("/api/mobile-upload/session", { method: "POST" });
-    const data = await res.json();
-    const currentSessionId = data.sessionId;
+      if (currentSessionId) {
+        setSessionId(currentSessionId);
+        setQrUrl(data.qrUrl);
+        setShowQRCode(true);
 
-    if (currentSessionId) {
-      setSessionId(currentSessionId);
-      setQrUrl(data.qrUrl);
-      setShowQRCode(true);
-
-      timeout = setTimeout(
-        () => {
-          if (interval) {
-            clearInterval(interval);
-            interval = null;
-          }
-          setShowQRCode(false);
-          toast.info("Session expirée", {
-            description: "Veuillez réessayer l'upload mobile",
-          });
-        },
-        16 * 60 * 1000,
-      );
-
-      interval = setInterval(async () => {
-        if (!interval) return;
-
-        try {
-          const sessionRes = await fetch(
-            `/api/mobile-upload/session?sessionId=${currentSessionId}`,
-          );
-
-          if (sessionRes.status === 404) {
-            if (interval) clearInterval(interval);
-            if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(
+          () => {
+            if (interval) {
+              clearInterval(interval);
+              interval = null;
+            }
             setShowQRCode(false);
             toast.info("Session expirée", {
               description: "Veuillez réessayer l'upload mobile",
             });
-            return;
-          }
+          },
+          16 * 60 * 1000,
+        );
 
-          const sessionData = await sessionRes.json();
+        interval = setInterval(async () => {
+          if (!interval) return;
 
-          console.log("📊 Session pollée:", currentSessionId);
-          console.log("📊 Files reçus:", sessionData.files);
+          try {
+            const sessionRes = await fetch(
+              `/api/mobile-upload/session?sessionId=${currentSessionId}`,
+            );
 
-          if (sessionData.files) {
-            const count = Object.values(sessionData.files).filter(
-              (f: any) => f?.data,
-            ).length;
-            setUploadProgress(count);
-
-            console.log(`📊 Progression: ${count}/3`);
-
-            if (count === 3) {
-              // Nettoyer les timers
+            if (sessionRes.status === 404) {
               if (interval) clearInterval(interval);
               if (timeout) clearTimeout(timeout);
-
-              const files = sessionData.files;
-              
-              let rectoData = null;
-              let versoData = null;
-
-              if (files.recto?.data) {
-                const rectoFile = base64ToFile(
-                  files.recto.data,
-                  files.recto.name || "recto.jpg",
-                  files.recto.type,
-                );
-                setCinRecto(rectoFile);
-                rectoData = await handleOCR(rectoFile, "recto");
-              }
-
-              if (files.verso?.data) {
-                const versoFile = base64ToFile(
-                  files.verso.data,
-                  files.verso.name || "verso.jpg",
-                  files.verso.type,
-                );
-                setCinVerso(versoFile);
-                versoData = await handleOCR(versoFile, "verso");
-              }
-
-              if (files.selfie?.data) {
-                const selfieFile = base64ToFile(
-                  files.selfie.data,
-                  files.selfie.name || "selfie.jpg",
-                  files.selfie.type,
-                );
-                setProfilePhoto(selfieFile);
-              }
-
-              const newCinData = {
-                firstName: rectoData?.firstName || null,
-                lastName: rectoData?.lastName || null,
-                cinNumber: rectoData?.cinNumber || versoData?.cinNumber || null,
-                dateOfBirth: rectoData?.dateOfBirth || null,
-                profession: versoData?.profession || null,
-                extractedAt: new Date().toISOString(),
-                documentType: "CIN",
-                rectoUrl: files.recto?.name,
-                versoUrl: files.verso?.name,
-              };
-              console.log("🔍 newCinData créé:", newCinData);
-              console.log("🔍 rectoData:", rectoData);
-              console.log("🔍 versoData:", versoData);
-              
-              if (setCinData) {
-                setCinData(newCinData);
-                console.log("📦 setCinData appelé avec:", newCinData);
-              }
-
-              toast.success("Documents reçus !", {
-                description: "Les 3 documents ont été téléchargés",
-              });
-
               setShowQRCode(false);
-              
-              // ✅ ATTENDRE QUE LE STATE SOIT MIS À JOUR
-              setTimeout(() => {
-                setShowOcrConfirm(true);
-              }, 100);
+              toast.info("Session expirée", {
+                description: "Veuillez réessayer l'upload mobile",
+              });
+              return;
             }
-          }
-        } catch (error) {
-          console.error("Erreur polling session:", error);
-          if (interval) clearInterval(interval);
-          if (timeout) clearTimeout(timeout);
-          setShowQRCode(false);
-        }
-      }, 2000);
-    }
-  } catch (error) {
-    console.error("Erreur création session mobile:", error);
-    toast.error("Erreur", {
-      description: "Impossible de créer la session mobile",
-    });
-  } finally {
-    setIsMobileUploading(false);
-  }
 
-  return () => {
-    if (interval) clearInterval(interval);
-    if (timeout) clearTimeout(timeout);
-  };
-}, [setCinRecto, setCinVerso, setProfilePhoto, handleOCR, setShowOcrConfirm, setCinData]);
+            const sessionData = await sessionRes.json();
+
+            console.log("📊 Session pollée:", currentSessionId);
+            console.log("📊 Files reçus:", sessionData.files);
+
+            if (sessionData.files) {
+              const count = Object.values(sessionData.files).filter(
+                (f: any) => f?.data,
+              ).length;
+              setUploadProgress(count);
+
+              console.log(`📊 Progression: ${count}/3`);
+
+              if (count === 3) {
+                if (interval) clearInterval(interval);
+                if (timeout) clearTimeout(timeout);
+
+                const files = sessionData.files;
+
+                let rectoData = null;
+                let versoData = null;
+
+                // 1. Traiter le recto
+                if (files.recto?.data) {
+                  const rectoFile = base64ToFile(
+                    files.recto.data,
+                    files.recto.name || "recto.jpg",
+                    files.recto.type,
+                  );
+                  setCinRecto(rectoFile);
+                  rectoData = await handleOCR(rectoFile, "recto");
+                  console.log("📄 rectoData reçu:", rectoData);
+                }
+
+                // 2. Traiter le verso
+                if (files.verso?.data) {
+                  const versoFile = base64ToFile(
+                    files.verso.data,
+                    files.verso.name || "verso.jpg",
+                    files.verso.type,
+                  );
+                  setCinVerso(versoFile);
+                  versoData = await handleOCR(versoFile, "verso");
+                  console.log("📄 versoData reçu:", versoData);
+                }
+
+                // 3. Traiter la photo
+                if (files.selfie?.data) {
+                  const selfieFile = base64ToFile(
+                    files.selfie.data,
+                    files.selfie.name || "selfie.jpg",
+                    files.selfie.type,
+                  );
+                  setProfilePhoto(selfieFile);
+                }
+
+                // 4. ✅ VÉRIFIER que les données OCR sont valides
+                if (!rectoData && !versoData) {
+                  console.error("❌ Aucune donnée OCR extraite");
+                  toast.error("Erreur OCR", {
+                    description:
+                      "Impossible de lire les documents. Veuillez réessayer.",
+                  });
+                  setShowQRCode(false);
+                  return;
+                }
+
+                // 5. Créer cinData avec les données extraites
+                const newCinData = {
+                  firstName: rectoData?.firstName || null,
+                  lastName: rectoData?.lastName || null,
+                  cinNumber:
+                    rectoData?.cinNumber || versoData?.cinNumber || null,
+                  dateOfBirth: rectoData?.dateOfBirth || null,
+                  profession: versoData?.profession || null,
+                  extractedAt: new Date().toISOString(),
+                  documentType: "CIN",
+                  rectoUrl: files.recto?.name,
+                  versoUrl: files.verso?.name,
+                };
+
+                console.log("🔍 newCinData créé:", newCinData);
+
+                // 6. ✅ METTRE À JOUR CINDATA
+                if (setCinData) {
+                  setCinData(newCinData);
+                  console.log("📦 setCinData appelé avec:", newCinData);
+                }
+
+                // 7. ✅ UPLOADER LES FICHIERS VERS LE SERVEUR
+                console.log("📤 Upload des documents vers le serveur...");
+                const uploadSuccess = await handleUploadCIN();
+
+                if (uploadSuccess) {
+                  console.log("✅ Upload réussi");
+                } else {
+                  console.warn("⚠️ Upload partiel ou échoué");
+                }
+
+                toast.success(t("documentsReceived"), {
+                  description: t("documentsReceivedDescription"),
+                });
+
+                setShowQRCode(false);
+
+                // 8. Ouvrir le modal OCR après un court délai
+                setTimeout(() => {
+                  setShowOcrConfirm(true);
+                }, 100);
+              }
+            }
+          } catch (error) {
+            console.error("Erreur polling session:", error);
+            if (interval) clearInterval(interval);
+            if (timeout) clearTimeout(timeout);
+            setShowQRCode(false);
+            toast.error(t("error"), {
+              description: t("uploadErrorDescription"),
+            });
+          }
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Erreur création session mobile:", error);
+      toast.error("Erreur", {
+        description: "Impossible de créer la session mobile",
+      });
+    } finally {
+      setIsMobileUploading(false);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [
+    setCinRecto,
+    setCinVerso,
+    setProfilePhoto,
+    handleOCR,
+    handleUploadCIN,
+    setShowOcrConfirm,
+    setCinData,
+  ]);
   // ============================================================
   // COMPOSANTS POUR ÉTAPE 4
   // ============================================================
@@ -573,13 +611,15 @@ const handleMobileSync = useCallback(async () => {
 
     const handleFile = (f: File) => {
       if (!f.type.startsWith("image/")) {
-        toast.error("Format non supporté", {
-          description: "Veuillez choisir une image",
+        toast.error(t("errors.formatNotSupported"), {
+          description: t("errors.chooseImage"),
         });
         return;
       }
       if (f.size > 10 * 1024 * 1024) {
-        toast.error("Fichier trop volumineux", { description: "Max 10MB" });
+        toast.error(t("errors.fileTooLarge"), {
+          description: t("errors.maxSize10MB"),
+        });
         return;
       }
       onFile(f);
@@ -599,7 +639,7 @@ const handleMobileSync = useCallback(async () => {
               <FlipHorizontal className="w-2.5 h-2.5" />
             </div>
             <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-              {isRecto ? "Face avant" : "Face arrière"}
+              {isRecto ? t("idCardFront") : t("idCardBack")}{" "}
             </span>
           </div>
           {file && (
@@ -663,7 +703,7 @@ const handleMobileSync = useCallback(async () => {
               <div className="absolute inset-0 bg-black/50 backdrop-blur-[1px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5">
                 <CloudUpload className="w-5 h-5 text-white/80" />
                 <span className="text-white text-[10px] font-semibold">
-                  Remplacer
+                  {t("replace")}
                 </span>
               </div>
             </>
@@ -683,11 +723,13 @@ const handleMobileSync = useCallback(async () => {
                 )}
               </div>
               <p className="text-[12px] text-slate-500 text-center group-hover:text-slate-600 dark:text-slate-500 dark:group-hover:text-slate-400 transition-colors leading-snug">
-                <span className="text-blue-500 font-semibold">Cliquer</span> ou
-                glisser
+                <span className="text-blue-500 font-semibold">
+                  {t("click")}
+                </span>{" "}
+                {t("orDrag")}
                 <br />
                 <span className="text-[11px] text-slate-400 dark:text-slate-600">
-                  JPG · PNG · 10MB
+                  {t("acceptedFormats")}
                 </span>
               </p>
             </div>
@@ -757,10 +799,10 @@ const handleMobileSync = useCallback(async () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-            Photo de profil
+            {t("profilePhoto")}
           </p>
           <p className="text-[10px] text-slate-400 dark:text-slate-600 mt-0.5">
-            Optionnelle · visible sur votre compte
+            {t("profilePhotoOptional")}
           </p>
           {file && (
             <motion.div
@@ -1367,9 +1409,9 @@ const handleMobileSync = useCallback(async () => {
                 <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 shadow-sm">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-                    Confidentialité garantie
+                    {t("privacyGuaranteed")}
                     <p className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Votre identité réelle ne sera pas partagée publiquement
+                      {t("privacyGuaranteedDescription")}
                     </p>
                   </span>
                 </div>
@@ -1556,7 +1598,7 @@ const handleMobileSync = useCallback(async () => {
                   {/* Gouvernorat */}
                   <div className="space-y-1 sm:space-y-2">
                     <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
-                      Gouvernorat <span className="text-red-500">*</span>
+                      {t("governorate")} <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
@@ -1568,98 +1610,169 @@ const handleMobileSync = useCallback(async () => {
                           setGovernorate(e.target.value);
                           setDelegation("");
                         }}
-                        className={`w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl pl-9 sm:pl-10 pr-3 py-1.5 sm:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none ${
+                        className={`w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl pl-9 sm:pl-10 pr-3 py-1.5 sm:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none ${
                           governorate === ""
                             ? "text-gray-400 dark:text-gray-500"
-                            : "text-slate-900 dark:text-white"
+                            : "text-slate-900 dark:text-slate-200"
                         }`}
                       >
-                        {/* ✅ Option par défaut grisée */}
                         <option
                           value=""
                           disabled
                           hidden
-                          className="text-gray-400"
+                          className="text-gray-400 dark:text-gray-500"
                         >
-                          Sélectionner un gouvernorat
+                          {t("selectGovernorate")}
                         </option>
-                        <option value="Ariana" className="text-slate-900">
+                        <option
+                          value="Ariana"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Ariana
                         </option>
-                        <option value="Beja" className="text-slate-900">
+                        <option
+                          value="Beja"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Béja
                         </option>
-                        <option value="Ben Arous" className="text-slate-900">
+                        <option
+                          value="Ben Arous"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Ben Arous
                         </option>
-                        <option value="Bizerte" className="text-slate-900">
+                        <option
+                          value="Bizerte"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Bizerte
                         </option>
-                        <option value="Gabes" className="text-slate-900">
+                        <option
+                          value="Gabes"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Gabès
                         </option>
-                        <option value="Gafsa" className="text-slate-900">
+                        <option
+                          value="Gafsa"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Gafsa
                         </option>
-                        <option value="Jendouba" className="text-slate-900">
+                        <option
+                          value="Jendouba"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Jendouba
                         </option>
-                        <option value="Kairouan" className="text-slate-900">
+                        <option
+                          value="Kairouan"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Kairouan
                         </option>
-                        <option value="Kasserine" className="text-slate-900">
+                        <option
+                          value="Kasserine"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Kasserine
                         </option>
-                        <option value="Kebili" className="text-slate-900">
+                        <option
+                          value="Kebili"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Kébili
                         </option>
-                        <option value="Kef" className="text-slate-900">
+                        <option
+                          value="Kef"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Le Kef
                         </option>
-                        <option value="Mahdia" className="text-slate-900">
+                        <option
+                          value="Mahdia"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Mahdia
                         </option>
-                        <option value="Manouba" className="text-slate-900">
+                        <option
+                          value="Manouba"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           La Manouba
                         </option>
-                        <option value="Medenine" className="text-slate-900">
+                        <option
+                          value="Medenine"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Médenine
                         </option>
-                        <option value="Monastir" className="text-slate-900">
+                        <option
+                          value="Monastir"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Monastir
                         </option>
-                        <option value="Nabeul" className="text-slate-900">
+                        <option
+                          value="Nabeul"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Nabeul
                         </option>
-                        <option value="Sfax" className="text-slate-900">
+                        <option
+                          value="Sfax"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Sfax
                         </option>
-                        <option value="Sidi Bouzid" className="text-slate-900">
+                        <option
+                          value="Sidi Bouzid"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Sidi Bouzid
                         </option>
-                        <option value="Siliana" className="text-slate-900">
+                        <option
+                          value="Siliana"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Siliana
                         </option>
-                        <option value="Sousse" className="text-slate-900">
+                        <option
+                          value="Sousse"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Sousse
                         </option>
-                        <option value="Tataouine" className="text-slate-900">
+                        <option
+                          value="Tataouine"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Tataouine
                         </option>
-                        <option value="Tozeur" className="text-slate-900">
+                        <option
+                          value="Tozeur"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Tozeur
                         </option>
-                        <option value="Tunis" className="text-slate-900">
+                        <option
+                          value="Tunis"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Tunis
                         </option>
-                        <option value="Zaghouan" className="text-slate-900">
+                        <option
+                          value="Zaghouan"
+                          className="text-slate-900 dark:text-slate-200"
+                        >
                           Zaghouan
                         </option>
                       </select>
                     </div>
                   </div>
 
-                  {/* Délégation - Apparaît seulement si un gouvernorat est sélectionné */}
+                  {/* Délégation */}
                   {governorate && (
                     <motion.div
                       initial={{ opacity: 0, y: -10 }}
@@ -1668,7 +1781,8 @@ const handleMobileSync = useCallback(async () => {
                       className="space-y-1 sm:space-y-2"
                     >
                       <label className="block text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-300">
-                        Délégation <span className="text-red-500">*</span>
+                        {t("delegation")}{" "}
+                        <span className="text-red-500">*</span>
                       </label>
                       <div className="relative">
                         <span className="absolute inset-y-0 left-3 flex items-center text-slate-400">
@@ -1677,36 +1791,112 @@ const handleMobileSync = useCallback(async () => {
                         <select
                           value={delegation}
                           onChange={(e) => setDelegation(e.target.value)}
-                          className="w-full bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl pl-9 sm:pl-10 pr-3 py-1.5 sm:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none dark:text-white"
+                          className="w-full bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl pl-9 sm:pl-10 pr-3 py-1.5 sm:py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none text-slate-900 dark:text-slate-200"
                         >
-                          <option value="" disabled hidden>
-                            Sélectionner une délégation
+                          <option
+                            value=""
+                            disabled
+                            hidden
+                            className="text-gray-400 dark:text-gray-500"
+                          >
+                            {t("selectDelegation")}{" "}
                           </option>
 
                           {governorate === "Ariana" && (
                             <>
-                              <option value="Ariana Ville">Ariana Ville</option>
-                              <option value="Ettadhamen">Ettadhamen</option>
-                              <option value="Kalaat El Andalous">
+                              <option
+                                value="Ariana Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ariana Ville
+                              </option>
+                              <option
+                                value="Ettadhamen"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ettadhamen
+                              </option>
+                              <option
+                                value="Kalaat El Andalous"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Kalaat El Andalous
                               </option>
-                              <option value="Mnihla">Mnihla</option>
-                              <option value="Raoued">Raoued</option>
-                              <option value="Sidi Thabet">Sidi Thabet</option>
-                              <option value="La Soukra">La Soukra</option>
+                              <option
+                                value="Mnihla"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mnihla
+                              </option>
+                              <option
+                                value="Raoued"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Raoued
+                              </option>
+                              <option
+                                value="Sidi Thabet"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sidi Thabet
+                              </option>
+                              <option
+                                value="La Soukra"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                La Soukra
+                              </option>
                             </>
                           )}
 
                           {governorate === "Beja" && (
                             <>
-                              <option value="Béja Nord">Béja Nord</option>
-                              <option value="Béja Sud">Béja Sud</option>
-                              <option value="Amdoun">Amdoun</option>
-                              <option value="Nefza">Nefza</option>
-                              <option value="Téboursouk">Téboursouk</option>
-                              <option value="Testour">Testour</option>
-                              <option value="Thibar">Thibar</option>
-                              <option value="Medjez El Bab">
+                              <option
+                                value="Béja Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Béja Nord
+                              </option>
+                              <option
+                                value="Béja Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Béja Sud
+                              </option>
+                              <option
+                                value="Amdoun"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Amdoun
+                              </option>
+                              <option
+                                value="Nefza"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Nefza
+                              </option>
+                              <option
+                                value="Téboursouk"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Téboursouk
+                              </option>
+                              <option
+                                value="Testour"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Testour
+                              </option>
+                              <option
+                                value="Thibar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Thibar
+                              </option>
+                              <option
+                                value="Medjez El Bab"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Medjez El Bab
                               </option>
                             </>
@@ -1714,194 +1904,713 @@ const handleMobileSync = useCallback(async () => {
 
                           {governorate === "Ben Arous" && (
                             <>
-                              <option value="Ben Arous Ville">
+                              <option
+                                value="Ben Arous Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Ben Arous Ville
                               </option>
-                              <option value="El Mourouj">El Mourouj</option>
-                              <option value="Hammam Lif">Hammam Lif</option>
-                              <option value="Hammam Chott">Hammam Chott</option>
-                              <option value="Bou Mhel El Bassatine">
+                              <option
+                                value="El Mourouj"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Mourouj
+                              </option>
+                              <option
+                                value="Hammam Lif"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Hammam Lif
+                              </option>
+                              <option
+                                value="Hammam Chott"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Hammam Chott
+                              </option>
+                              <option
+                                value="Bou Mhel El Bassatine"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Bou Mhel El Bassatine
                               </option>
-                              <option value="Ezzahra">Ezzahra</option>
-                              <option value="Radès">Radès</option>
-                              <option value="Mégrine">Mégrine</option>
-                              <option value="Mornag">Mornag</option>
+                              <option
+                                value="Ezzahra"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ezzahra
+                              </option>
+                              <option
+                                value="Radès"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Radès
+                              </option>
+                              <option
+                                value="Mégrine"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mégrine
+                              </option>
+                              <option
+                                value="Mornag"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mornag
+                              </option>
                             </>
                           )}
 
                           {governorate === "Bizerte" && (
                             <>
-                              <option value="Bizerte Nord">Bizerte Nord</option>
-                              <option value="Bizerte Sud">Bizerte Sud</option>
-                              <option value="Menzel Bourguiba">
+                              <option
+                                value="Bizerte Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bizerte Nord
+                              </option>
+                              <option
+                                value="Bizerte Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bizerte Sud
+                              </option>
+                              <option
+                                value="Menzel Bourguiba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Menzel Bourguiba
                               </option>
-                              <option value="Mateur">Mateur</option>
-                              <option value="Sejnane">Sejnane</option>
-                              <option value="Joumine">Joumine</option>
-                              <option value="Ghezala">Ghezala</option>
-                              <option value="Ras Jebel">Ras Jebel</option>
-                              <option value="El Alia">El Alia</option>
-                              <option value="Utique">Utique</option>
+                              <option
+                                value="Mateur"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mateur
+                              </option>
+                              <option
+                                value="Sejnane"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sejnane
+                              </option>
+                              <option
+                                value="Joumine"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Joumine
+                              </option>
+                              <option
+                                value="Ghezala"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ghezala
+                              </option>
+                              <option
+                                value="Ras Jebel"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ras Jebel
+                              </option>
+                              <option
+                                value="El Alia"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Alia
+                              </option>
+                              <option
+                                value="Utique"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Utique
+                              </option>
                             </>
                           )}
 
                           {governorate === "Gabes" && (
                             <>
-                              <option value="Gabès Ville">Gabès Ville</option>
-                              <option value="Gabès Médina">Gabès Médina</option>
-                              <option value="Gabès Ouest">Gabès Ouest</option>
-                              <option value="El Hamma">El Hamma</option>
-                              <option value="Mareth">Mareth</option>
-                              <option value="Matmata">Matmata</option>
-                              <option value="Nouvelle Matmata">
+                              <option
+                                value="Gabès Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Gabès Ville
+                              </option>
+                              <option
+                                value="Gabès Médina"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Gabès Médina
+                              </option>
+                              <option
+                                value="Gabès Ouest"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Gabès Ouest
+                              </option>
+                              <option
+                                value="El Hamma"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Hamma
+                              </option>
+                              <option
+                                value="Mareth"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mareth
+                              </option>
+                              <option
+                                value="Matmata"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Matmata
+                              </option>
+                              <option
+                                value="Nouvelle Matmata"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Nouvelle Matmata
                               </option>
-                              <option value="Menzel El Habib">
+                              <option
+                                value="Menzel El Habib"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Menzel El Habib
                               </option>
-                              <option value="Ghannouch">Ghannouch</option>
+                              <option
+                                value="Ghannouch"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ghannouch
+                              </option>
                             </>
                           )}
 
                           {governorate === "Gafsa" && (
                             <>
-                              <option value="Gafsa Nord">Gafsa Nord</option>
-                              <option value="Gafsa Sud">Gafsa Sud</option>
-                              <option value="El Ksar">El Ksar</option>
-                              <option value="Moulares">Moulares</option>
-                              <option value="Metlaoui">Metlaoui</option>
-                              <option value="Redeyef">Redeyef</option>
-                              <option value="Snad">Snad</option>
-                              <option value="Belkhir">Belkhir</option>
+                              <option
+                                value="Gafsa Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Gafsa Nord
+                              </option>
+                              <option
+                                value="Gafsa Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Gafsa Sud
+                              </option>
+                              <option
+                                value="El Ksar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Ksar
+                              </option>
+                              <option
+                                value="Moulares"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Moulares
+                              </option>
+                              <option
+                                value="Metlaoui"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Metlaoui
+                              </option>
+                              <option
+                                value="Redeyef"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Redeyef
+                              </option>
+                              <option
+                                value="Snad"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Snad
+                              </option>
+                              <option
+                                value="Belkhir"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Belkhir
+                              </option>
+                              <option
+                                value="Sened"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sened
+                              </option>
+                              <option
+                                value="El Guettar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Guettar
+                              </option>
                             </>
                           )}
 
                           {governorate === "Jendouba" && (
                             <>
-                              <option value="Jendouba">Jendouba</option>
-                              <option value="Jendouba Nord">
+                              <option
+                                value="Jendouba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Jendouba
+                              </option>
+                              <option
+                                value="Jendouba Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Jendouba Nord
                               </option>
-                              <option value="Bou Salem">Bou Salem</option>
-                              <option value="Tabarka">Tabarka</option>
-                              <option value="Ain Draham">Ain Draham</option>
-                              <option value="Fernana">Fernana</option>
-                              <option value="Ghardimaou">Ghardimaou</option>
-                              <option value="Oued Meliz">Oued Meliz</option>
+                              <option
+                                value="Bou Salem"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bou Salem
+                              </option>
+                              <option
+                                value="Tabarka"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Tabarka
+                              </option>
+                              <option
+                                value="Ain Draham"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ain Draham
+                              </option>
+                              <option
+                                value="Fernana"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Fernana
+                              </option>
+                              <option
+                                value="Ghardimaou"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ghardimaou
+                              </option>
+                              <option
+                                value="Oued Meliz"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Oued Meliz
+                              </option>
                             </>
                           )}
 
                           {governorate === "Kairouan" && (
                             <>
-                              <option value="Kairouan Nord">
+                              <option
+                                value="Kairouan Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Kairouan Nord
                               </option>
-                              <option value="Kairouan Sud">Kairouan Sud</option>
-                              <option value="Sbikha">Sbikha</option>
-                              <option value="Chebika">Chebika</option>
-                              <option value="Hajeb El Ayoun">
+                              <option
+                                value="Kairouan Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kairouan Sud
+                              </option>
+                              <option
+                                value="Sbikha"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sbikha
+                              </option>
+                              <option
+                                value="Chebika"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Chebika
+                              </option>
+                              <option
+                                value="Hajeb El Ayoun"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Hajeb El Ayoun
                               </option>
-                              <option value="Nasrallah">Nasrallah</option>
-                              <option value="Oueslatia">Oueslatia</option>
-                              <option value="Menzel Mhiri">Menzel Mhiri</option>
-                              <option value="El Ala">El Ala</option>
+                              <option
+                                value="Nasrallah"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Nasrallah
+                              </option>
+                              <option
+                                value="Oueslatia"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Oueslatia
+                              </option>
+                              <option
+                                value="Menzel Mhiri"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Menzel Mhiri
+                              </option>
+                              <option
+                                value="El Ala"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Ala
+                              </option>
+                              <option
+                                value="Bou Hajla"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bou Hajla
+                              </option>
                             </>
                           )}
 
                           {governorate === "Kasserine" && (
                             <>
-                              <option value="Kasserine Nord">
+                              <option
+                                value="Kasserine Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Kasserine Nord
                               </option>
-                              <option value="Kasserine Sud">
+                              <option
+                                value="Kasserine Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Kasserine Sud
                               </option>
-                              <option value="Sbeitla">Sbeitla</option>
-                              <option value="Thala">Thala</option>
-                              <option value="Feriana">Feriana</option>
-                              <option value="Foussana">Foussana</option>
-                              <option value="Hassi El Ferid">
+                              <option
+                                value="Sbeitla"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sbeitla
+                              </option>
+                              <option
+                                value="Thala"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Thala
+                              </option>
+                              <option
+                                value="Feriana"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Feriana
+                              </option>
+                              <option
+                                value="Foussana"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Foussana
+                              </option>
+                              <option
+                                value="Hassi El Ferid"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Hassi El Ferid
                               </option>
-                              <option value="Majel Bel Abbès">
+                              <option
+                                value="Majel Bel Abbès"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Majel Bel Abbès
+                              </option>
+                              <option
+                                value="El Ayoun"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Ayoun
+                              </option>
+                              <option
+                                value="Jedeliane"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Jedeliane
                               </option>
                             </>
                           )}
 
                           {governorate === "Kebili" && (
                             <>
-                              <option value="Kébili Nord">Kébili Nord</option>
-                              <option value="Kébili Sud">Kébili Sud</option>
-                              <option value="Douz Nord">Douz Nord</option>
-                              <option value="Douz Sud">Douz Sud</option>
-                              <option value="Souk Lahad">Souk Lahad</option>
-                              <option value="Faouar">Faouar</option>
+                              <option
+                                value="Kébili Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kébili Nord
+                              </option>
+                              <option
+                                value="Kébili Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kébili Sud
+                              </option>
+                              <option
+                                value="Douz Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Douz Nord
+                              </option>
+                              <option
+                                value="Douz Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Douz Sud
+                              </option>
+                              <option
+                                value="Souk Lahad"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Souk Lahad
+                              </option>
+                              <option
+                                value="Faouar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Faouar
+                              </option>
                             </>
                           )}
 
                           {governorate === "Kef" && (
                             <>
-                              <option value="Le Kef Ouest">Le Kef Ouest</option>
-                              <option value="Le Kef Est">Le Kef Est</option>
-                              <option value="Nebeur">Nebeur</option>
-                              <option value="Sakiet Sidi Youssef">
+                              <option
+                                value="Le Kef Ouest"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Le Kef Ouest
+                              </option>
+                              <option
+                                value="Le Kef Est"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Le Kef Est
+                              </option>
+                              <option
+                                value="Nebeur"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Nebeur
+                              </option>
+                              <option
+                                value="Sakiet Sidi Youssef"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Sakiet Sidi Youssef
                               </option>
-                              <option value="Tajerouine">Tajerouine</option>
-                              <option value="Kalaat Senan">Kalaat Senan</option>
-                              <option value="Dahmani">Dahmani</option>
-                              <option value="Sers">Sers</option>
+                              <option
+                                value="Tajerouine"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Tajerouine
+                              </option>
+                              <option
+                                value="Kalaat Senan"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kalaat Senan
+                              </option>
+                              <option
+                                value="Dahmani"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Dahmani
+                              </option>
+                              <option
+                                value="Sers"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sers
+                              </option>
+                              <option
+                                value="Touiref"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Touiref
+                              </option>
                             </>
                           )}
 
                           {governorate === "Mahdia" && (
                             <>
-                              <option value="Mahdia Ville">Mahdia Ville</option>
-                              <option value="Ksour Essef">Ksour Essef</option>
-                              <option value="El Djem">El Djem</option>
-                              <option value="Chebba">Chebba</option>
-                              <option value="Melloulèche">Melloulèche</option>
-                              <option value="Souassi">Souassi</option>
-                              <option value="Boumerdes">Boumerdes</option>
-                              <option value="Sidi Alouane">Sidi Alouane</option>
+                              <option
+                                value="Mahdia Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mahdia Ville
+                              </option>
+                              <option
+                                value="Ksour Essef"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ksour Essef
+                              </option>
+                              <option
+                                value="El Djem"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Djem
+                              </option>
+                              <option
+                                value="Chebba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Chebba
+                              </option>
+                              <option
+                                value="Melloulèche"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Melloulèche
+                              </option>
+                              <option
+                                value="Souassi"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Souassi
+                              </option>
+                              <option
+                                value="Boumerdes"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Boumerdes
+                              </option>
+                              <option
+                                value="Sidi Alouane"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sidi Alouane
+                              </option>
+                              <option
+                                value="Chorbane"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Chorbane
+                              </option>
+                              <option
+                                value="Hebira"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Hebira
+                              </option>
                             </>
                           )}
 
                           {governorate === "Manouba" && (
                             <>
-                              <option value="Manouba Ville">
+                              <option
+                                value="Manouba Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Manouba Ville
                               </option>
-                              <option value="Oued Ellil">Oued Ellil</option>
-                              <option value="Tebourba">Tebourba</option>
-                              <option value="El Battan">El Battan</option>
-                              <option value="Jedaida">Jedaida</option>
-                              <option value="Douar Hicher">Douar Hicher</option>
-                              <option value="Denden">Denden</option>
+                              <option
+                                value="Oued Ellil"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Oued Ellil
+                              </option>
+                              <option
+                                value="Tebourba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Tebourba
+                              </option>
+                              <option
+                                value="El Battan"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Battan
+                              </option>
+                              <option
+                                value="Jedaida"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Jedaida
+                              </option>
+                              <option
+                                value="Douar Hicher"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Douar Hicher
+                              </option>
+                              <option
+                                value="Denden"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Denden
+                              </option>
+                              <option
+                                value="Mornaguia"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mornaguia
+                              </option>
+                              <option
+                                value="Borj El Amri"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Borj El Amri
+                              </option>
                             </>
                           )}
 
                           {governorate === "Medenine" && (
                             <>
-                              <option value="Médenine Nord">
+                              <option
+                                value="Médenine Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Médenine Nord
                               </option>
-                              <option value="Médenine Sud">Médenine Sud</option>
-                              <option value="Ben Gardane">Ben Gardane</option>
-                              <option value="Zarzis">Zarzis</option>
-                              <option value="Jerba Houmt Souk">
+                              <option
+                                value="Médenine Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Médenine Sud
+                              </option>
+                              <option
+                                value="Ben Gardane"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ben Gardane
+                              </option>
+                              <option
+                                value="Zarzis"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Zarzis
+                              </option>
+                              <option
+                                value="Jerba Houmt Souk"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Jerba Houmt Souk
                               </option>
-                              <option value="Jerba Midoun">Jerba Midoun</option>
-                              <option value="Jerba Ajim">Jerba Ajim</option>
-                              <option value="Beni Khedache">
+                              <option
+                                value="Jerba Midoun"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Jerba Midoun
+                              </option>
+                              <option
+                                value="Jerba Ajim"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Jerba Ajim
+                              </option>
+                              <option
+                                value="Beni Khedache"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Beni Khedache
                               </option>
-                              <option value="Sidi Makhlouf">
+                              <option
+                                value="Sidi Makhlouf"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Sidi Makhlouf
                               </option>
                             </>
@@ -1909,80 +2618,289 @@ const handleMobileSync = useCallback(async () => {
 
                           {governorate === "Monastir" && (
                             <>
-                              <option value="Monastir Ville">
+                              <option
+                                value="Monastir Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Monastir Ville
                               </option>
-                              <option value="Moknine">Moknine</option>
-                              <option value="Jemmal">Jemmal</option>
-                              <option value="Ksar Hellal">Ksar Hellal</option>
-                              <option value="Bembla">Bembla</option>
-                              <option value="Sayada">Sayada</option>
-                              <option value="Lamta">Lamta</option>
-                              <option value="Téboulba">Téboulba</option>
-                              <option value="Zeramdine">Zeramdine</option>
+                              <option
+                                value="Moknine"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Moknine
+                              </option>
+                              <option
+                                value="Jemmal"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Jemmal
+                              </option>
+                              <option
+                                value="Ksar Hellal"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ksar Hellal
+                              </option>
+                              <option
+                                value="Bembla"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bembla
+                              </option>
+                              <option
+                                value="Sayada"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sayada
+                              </option>
+                              <option
+                                value="Lamta"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Lamta
+                              </option>
+                              <option
+                                value="Téboulba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Téboulba
+                              </option>
+                              <option
+                                value="Zeramdine"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Zeramdine
+                              </option>
+                              <option
+                                value="Beni Hassen"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Beni Hassen
+                              </option>
                             </>
                           )}
 
                           {governorate === "Nabeul" && (
                             <>
-                              <option value="Hammamet">Hammamet</option>
-                              <option value="Nabeul Ville">Nabeul Ville</option>
-                              <option value="Dar Chaabane">Dar Chaabane</option>
-                              <option value="Beni Khiar">Beni Khiar</option>
-                              <option value="Korba">Korba</option>
-                              <option value="Menzel Temime">
+                              <option
+                                value="Hammamet"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Hammamet
+                              </option>
+                              <option
+                                value="Nabeul Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Nabeul Ville
+                              </option>
+                              <option
+                                value="Dar Chaabane"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Dar Chaabane
+                              </option>
+                              <option
+                                value="Beni Khiar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Beni Khiar
+                              </option>
+                              <option
+                                value="Korba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Korba
+                              </option>
+                              <option
+                                value="Menzel Temime"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Menzel Temime
                               </option>
-                              <option value="Takelsa">Takelsa</option>
-                              <option value="Soliman">Soliman</option>
-                              <option value="Bou Argoub">Bou Argoub</option>
-                              <option value="Grombalia">Grombalia</option>
-                              <option value="El Mida">El Mida</option>
-                              <option value="Kelibia">Kélibia</option>
-                              <option value="Haouaria">Haouaria</option>
+                              <option
+                                value="Takelsa"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Takelsa
+                              </option>
+                              <option
+                                value="Soliman"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Soliman
+                              </option>
+                              <option
+                                value="Bou Argoub"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bou Argoub
+                              </option>
+                              <option
+                                value="Grombalia"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Grombalia
+                              </option>
+                              <option
+                                value="El Mida"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Mida
+                              </option>
+                              <option
+                                value="Kelibia"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kélibia
+                              </option>
+                              <option
+                                value="Haouaria"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Haouaria
+                              </option>
+                              <option
+                                value="Menzel Bouzelfa"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Menzel Bouzelfa
+                              </option>
                             </>
                           )}
 
                           {governorate === "Sfax" && (
                             <>
-                              <option value="Sfax Ville">Sfax Ville</option>
-                              <option value="Sakiet Ezzit">Sakiet Ezzit</option>
-                              <option value="Sakiet Eddaier">
+                              <option
+                                value="Sfax Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sfax Ville
+                              </option>
+                              <option
+                                value="Sakiet Ezzit"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sakiet Ezzit
+                              </option>
+                              <option
+                                value="Sakiet Eddaier"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Sakiet Eddaier
                               </option>
-                              <option value="Bir Ali Ben Khalifa">
+                              <option
+                                value="Bir Ali Ben Khalifa"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Bir Ali Ben Khalifa
                               </option>
-                              <option value="Chihia">Chihia</option>
-                              <option value="El Ain">El Ain</option>
-                              <option value="Agareb">Agareb</option>
-                              <option value="Mahrès">Mahrès</option>
-                              <option value="Ghraiba">Ghraiba</option>
-                              <option value="Jebiniana">Jebiniana</option>
-                              <option value="El Hencha">El Hencha</option>
-                              <option value="Kerkennah">Kerkennah</option>
+                              <option
+                                value="Chihia"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Chihia
+                              </option>
+                              <option
+                                value="El Ain"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Ain
+                              </option>
+                              <option
+                                value="Agareb"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Agareb
+                              </option>
+                              <option
+                                value="Mahrès"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mahrès
+                              </option>
+                              <option
+                                value="Ghraiba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ghraiba
+                              </option>
+                              <option
+                                value="Jebiniana"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Jebiniana
+                              </option>
+                              <option
+                                value="El Hencha"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Hencha
+                              </option>
+                              <option
+                                value="Kerkennah"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kerkennah
+                              </option>
                             </>
                           )}
 
                           {governorate === "Sidi Bouzid" && (
                             <>
-                              <option value="Sidi Bouzid Ouest">
+                              <option
+                                value="Sidi Bouzid Ouest"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Sidi Bouzid Ouest
                               </option>
-                              <option value="Sidi Bouzid Est">
+                              <option
+                                value="Sidi Bouzid Est"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Sidi Bouzid Est
                               </option>
-                              <option value="Jilma">Jilma</option>
-                              <option value="Cebbala">Cebbala</option>
-                              <option value="Bir El Hafey">Bir El Hafey</option>
-                              <option value="Sidi Ali Ben Aoun">
+                              <option
+                                value="Jilma"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Jilma
+                              </option>
+                              <option
+                                value="Cebbala"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Cebbala
+                              </option>
+                              <option
+                                value="Bir El Hafey"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bir El Hafey
+                              </option>
+                              <option
+                                value="Sidi Ali Ben Aoun"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Sidi Ali Ben Aoun
                               </option>
-                              <option value="Menzel Bouzaiene">
+                              <option
+                                value="Menzel Bouzaiene"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Menzel Bouzaiene
                               </option>
-                              <option value="Mezzouna">Mezzouna</option>
-                              <option value="Ouled Haffouz">
+                              <option
+                                value="Mezzouna"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Mezzouna
+                              </option>
+                              <option
+                                value="Ouled Haffouz"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Ouled Haffouz
                               </option>
                             </>
@@ -1990,90 +2908,325 @@ const handleMobileSync = useCallback(async () => {
 
                           {governorate === "Siliana" && (
                             <>
-                              <option value="Siliana Nord">Siliana Nord</option>
-                              <option value="Siliana Sud">Siliana Sud</option>
-                              <option value="Bou Arada">Bou Arada</option>
-                              <option value="Gaafour">Gaafour</option>
-                              <option value="El Krib">El Krib</option>
-                              <option value="Makthar">Makthar</option>
-                              <option value="Rohia">Rohia</option>
-                              <option value="Kesra">Kesra</option>
-                              <option value="Bargou">Bargou</option>
+                              <option
+                                value="Siliana Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Siliana Nord
+                              </option>
+                              <option
+                                value="Siliana Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Siliana Sud
+                              </option>
+                              <option
+                                value="Bou Arada"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bou Arada
+                              </option>
+                              <option
+                                value="Gaafour"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Gaafour
+                              </option>
+                              <option
+                                value="El Krib"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Krib
+                              </option>
+                              <option
+                                value="Makthar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Makthar
+                              </option>
+                              <option
+                                value="Rohia"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Rohia
+                              </option>
+                              <option
+                                value="Kesra"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kesra
+                              </option>
+                              <option
+                                value="Bargou"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bargou
+                              </option>
+                              <option
+                                value="El Aroussa"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Aroussa
+                              </option>
                             </>
                           )}
 
                           {governorate === "Sousse" && (
                             <>
-                              <option value="Sousse Ville">Sousse Ville</option>
-                              <option value="Hammam Sousse">
+                              <option
+                                value="Sousse Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sousse Ville
+                              </option>
+                              <option
+                                value="Hammam Sousse"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Hammam Sousse
                               </option>
-                              <option value="Msaken">Msaken</option>
-                              <option value="Kalâa Kebira">Kalâa Kebira</option>
-                              <option value="Kalâa Seghira">
+                              <option
+                                value="Msaken"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Msaken
+                              </option>
+                              <option
+                                value="Kalâa Kebira"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kalâa Kebira
+                              </option>
+                              <option
+                                value="Kalâa Seghira"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Kalâa Seghira
                               </option>
-                              <option value="Sidi Bou Ali">Sidi Bou Ali</option>
-                              <option value="Enfidha">Enfidha</option>
-                              <option value="Bouficha">Bouficha</option>
-                              <option value="Kondar">Kondar</option>
-                              <option value="Akouda">Akouda</option>
+                              <option
+                                value="Sidi Bou Ali"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sidi Bou Ali
+                              </option>
+                              <option
+                                value="Enfidha"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Enfidha
+                              </option>
+                              <option
+                                value="Bouficha"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bouficha
+                              </option>
+                              <option
+                                value="Kondar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Kondar
+                              </option>
+                              <option
+                                value="Akouda"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Akouda
+                              </option>
                             </>
                           )}
 
                           {governorate === "Tataouine" && (
                             <>
-                              <option value="Tataouine Nord">
+                              <option
+                                value="Tataouine Nord"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Tataouine Nord
                               </option>
-                              <option value="Tataouine Sud">
+                              <option
+                                value="Tataouine Sud"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Tataouine Sud
                               </option>
-                              <option value="Ghomrassen">Ghomrassen</option>
-                              <option value="Bir Lahmar">Bir Lahmar</option>
-                              <option value="Remada">Remada</option>
-                              <option value="Smar">Smar</option>
+                              <option
+                                value="Ghomrassen"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ghomrassen
+                              </option>
+                              <option
+                                value="Bir Lahmar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bir Lahmar
+                              </option>
+                              <option
+                                value="Remada"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Remada
+                              </option>
+                              <option
+                                value="Smar"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Smar
+                              </option>
+                              <option
+                                value="Dehiba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Dehiba
+                              </option>
                             </>
                           )}
 
                           {governorate === "Tozeur" && (
                             <>
-                              <option value="Tozeur Ville">Tozeur Ville</option>
-                              <option value="Degache">Degache</option>
-                              <option value="Tamerza">Tamerza</option>
-                              <option value="Hazoua">Hazoua</option>
-                              <option value="Nefta">Nefta</option>
+                              <option
+                                value="Tozeur Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Tozeur Ville
+                              </option>
+                              <option
+                                value="Degache"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Degache
+                              </option>
+                              <option
+                                value="Tamerza"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Tamerza
+                              </option>
+                              <option
+                                value="Hazoua"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Hazoua
+                              </option>
+                              <option
+                                value="Nefta"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Nefta
+                              </option>
                             </>
                           )}
 
                           {governorate === "Tunis" && (
                             <>
-                              <option value="Tunis Centre">Tunis Centre</option>
-                              <option value="Bab Souika">Bab Souika</option>
-                              <option value="Carthage">Carthage</option>
-                              <option value="La Marsa">La Marsa</option>
-                              <option value="Le Bardo">Le Bardo</option>
-                              <option value="El Menzah">El Menzah</option>
-                              <option value="El Omrane">El Omrane</option>
-                              <option value="Ettahrir">Ettahrir</option>
-                              <option value="Cité El Khadra">
+                              <option
+                                value="Tunis Centre"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Tunis Centre
+                              </option>
+                              <option
+                                value="Bab Souika"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bab Souika
+                              </option>
+                              <option
+                                value="Carthage"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Carthage
+                              </option>
+                              <option
+                                value="La Marsa"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                La Marsa
+                              </option>
+                              <option
+                                value="Le Bardo"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Le Bardo
+                              </option>
+                              <option
+                                value="El Menzah"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Menzah
+                              </option>
+                              <option
+                                value="El Omrane"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Omrane
+                              </option>
+                              <option
+                                value="Ettahrir"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Ettahrir
+                              </option>
+                              <option
+                                value="Cité El Khadra"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Cité El Khadra
                               </option>
-                              <option value="El Kabaria">El Kabaria</option>
-                              <option value="Sidi Hassine">Sidi Hassine</option>
+                              <option
+                                value="El Kabaria"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Kabaria
+                              </option>
+                              <option
+                                value="Sidi Hassine"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Sidi Hassine
+                              </option>
                             </>
                           )}
 
                           {governorate === "Zaghouan" && (
                             <>
-                              <option value="Zaghouan Ville">
+                              <option
+                                value="Zaghouan Ville"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
                                 Zaghouan Ville
                               </option>
-                              <option value="Zriba">Zriba</option>
-                              <option value="Bir Mcherga">Bir Mcherga</option>
-                              <option value="El Fahs">El Fahs</option>
-                              <option value="Nadhour">Nadhour</option>
-                              <option value="Saouaf">Saouaf</option>
+                              <option
+                                value="Zriba"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Zriba
+                              </option>
+                              <option
+                                value="Bir Mcherga"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Bir Mcherga
+                              </option>
+                              <option
+                                value="El Fahs"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                El Fahs
+                              </option>
+                              <option
+                                value="Nadhour"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Nadhour
+                              </option>
+                              <option
+                                value="Saouaf"
+                                className="text-slate-900 dark:text-slate-200"
+                              >
+                                Saouaf
+                              </option>
                             </>
                           )}
                         </select>
@@ -2081,7 +3234,6 @@ const handleMobileSync = useCallback(async () => {
                     </motion.div>
                   )}
                 </div>
-
                 {/* Divider */}
                 <div className="h-px bg-slate-200 dark:bg-slate-700 w-full"></div>
 
@@ -2346,7 +3498,7 @@ const handleMobileSync = useCallback(async () => {
                   className="flex items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-[11px] font-semibold px-3 py-1.5 rounded-xl transition-all"
                 >
                   <QrCode className="w-3.5 h-3.5  text-xs sm:text-sm" />
-                  <p className="text-xs sm:text-sm">Mobile</p>
+                  <p className="text-xs sm:text-sm">{t("mobileUpload")}</p>
                 </motion.button>
               </div>
 
@@ -2354,9 +3506,9 @@ const handleMobileSync = useCallback(async () => {
               <div className="px-5 pt-4 pb-2">
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3 border border-slate-100 dark:border-slate-700/40">
                   {[
-                    { label: "CIN Recto", done: !!cinRecto },
-                    { label: "CIN Verso", done: !!cinVerso },
-                    { label: "Photo", done: !!profilePhoto },
+                    { label: t("cinFront"), done: !!cinRecto },
+                    { label: t("cinBack"), done: !!cinVerso },
+                    { label: t("photo"), done: !!profilePhoto },
                   ].map(({ label, done }) => (
                     <div
                       key={label}
@@ -2385,8 +3537,10 @@ const handleMobileSync = useCallback(async () => {
               </div>
 
               {/* CIN Cards - Horizontal layout */}
-              <div className="px-10 pb-2">
-                <div className="flex gap-3">
+              <div className="px-10 pb-2 relative">
+                <div
+                  className={`flex gap-3 ${isMobileUploading ? "opacity-60 pointer-events-none" : ""}`}
+                >
                   {/* Recto CIN */}
                   <IDCard
                     side="recto"
@@ -2409,13 +3563,25 @@ const handleMobileSync = useCallback(async () => {
                     onRemove={() => setCinVerso(null)}
                   />
                 </div>
+
+                {/* Overlay de chargement pendant l'upload mobile */}
+                {isMobileUploading && showQRCode && (
+                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl p-3 flex items-center gap-2 shadow-lg">
+                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+                      <span className="text-xs font-medium">
+                        {t("uploadInProgress")} {uploadProgress}/3
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Divider optionnel */}
               <div className="mx-5 my-3 flex items-center gap-3">
                 <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
                 <span className="text-[12px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
-                  Photo de profile
+                  {t("profilePhotoTitle")}
                 </span>
                 <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
               </div>
@@ -2429,13 +3595,17 @@ const handleMobileSync = useCallback(async () => {
                 />
               </div>
 
-              {/* Security notice */}
-              <div className="mx-5 mb-4 flex items-center gap-2.5 bg-amber-300/20 dark:bg-amber-800/30 rounded-2xl px-3.5 py-3 border border-amber-100 dark:border-amber-700/30">
-                <MdSecurity className="w-3.5 h-3.5 text-orange-400 dark:text-orange-600 flex-shrink-0" />
-                <p className="text-xs sm:text-sm text-orange-500 dark:text-orange-600 leading-relaxed">
-                  Chiffrés AES-256 · utilisés uniquement pour la vérification ·
-                  supprimés après validation
-                </p>
+              {/* Security notice - style comme étape 2 */}
+              <div className="mx-5 mb-4 flex items-center gap-2.5 bg-amber-50 dark:bg-amber-950/30 rounded-2xl px-3.5 py-3 border border-amber-200 dark:border-amber-800/50 shadow-sm">
+                <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                <div>
+                  <p className="text-[10px] font-bold text-amber-700 dark:text-amber-300 uppercase tracking-wider">
+                    {t("dataProtection")}
+                  </p>
+                  <p className="text-[9px] font-bold text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    {t("dataProtectionDescription")}
+                  </p>
+                </div>
               </div>
 
               {/* Actions */}
@@ -2447,15 +3617,20 @@ const handleMobileSync = useCallback(async () => {
                   className="flex items-center justify-center gap-1.5 px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 text-xs font-semibold transition-all flex-1"
                 >
                   <IoChevronBackSharp className="w-3.5 h-3.5" />
-                                      {t("back")}
-
+                  {t("back")}
                 </motion.button>
 
                 <motion.button
                   whileTap={docsDone ? { scale: 0.97 } : {}}
                   type="button"
                   disabled={!docsDone}
-                  onClick={() => setShowOcrConfirm(true)}
+                  onClick={async () => {
+                    const success = await handleUploadCIN();
+                    if (success) {
+                      // Le modal s'ouvre automatiquement dans handleUploadCIN
+                      console.log("✅ Upload réussi, modal va s'ouvrir");
+                    }
+                  }}
                   className={`
     relative flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold transition-all duration-300 overflow-hidden
     ${
@@ -2479,14 +3654,18 @@ const handleMobileSync = useCallback(async () => {
                   )}
                   {docsDone ? (
                     <>
-                      <Sparkles className="w-3.5 h-3.5" />
-                      Valider les documents
-                      <ArrowRight className="w-3.5 h-3.5" />
+                      <Loader2
+                        className={`w-3.5 h-3.5 ${isUploadingCIN ? "animate-spin" : ""}`}
+                      />
+                      {isUploadingCIN ? t("analyzing") : t("analyzeDocuments")}
+                      {!isUploadingCIN && (
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      )}
                     </>
                   ) : (
                     <>
                       <CloudUpload className="w-3.5 h-3.5" />
-                      Recto + Verso requis
+                      {t("bothSidesRequired")}{" "}
                     </>
                   )}
                 </motion.button>
@@ -2531,11 +3710,11 @@ const handleMobileSync = useCallback(async () => {
                       <Smartphone className="w-3.5 h-3.5 text-white" />
                     </div>
                     <h3 className="text-slate-900 dark:text-white font-bold text-sm">
-                      Upload via mobile
+                      {t("uploadViaMobile")}
                     </h3>
                   </div>
                   <p className="text-slate-500 text-[11px] ml-9">
-                    Scannez pour continuer sur votre téléphone
+                    {t("scanToContinue")}
                   </p>
                 </div>
                 <button
@@ -2579,15 +3758,15 @@ const handleMobileSync = useCallback(async () => {
                   {[
                     {
                       icon: <QrCode className="w-3.5 h-3.5" />,
-                      text: "Scannez le QR code",
+                      text: t("qrStep1"),
                     },
                     {
                       icon: <Camera className="w-3.5 h-3.5" />,
-                      text: "Photographiez votre CIN",
+                      text: t("qrStep2"),
                     },
                     {
                       icon: <RefreshCw className="w-3.5 h-3.5" />,
-                      text: "Sync automatique ici",
+                      text: t("qrStep3"),
                     },
                   ].map(({ icon, text }, i) => (
                     <div key={i} className="flex items-center gap-2.5">
@@ -2604,7 +3783,7 @@ const handleMobileSync = useCallback(async () => {
                   {uploadProgress > 0 && (
                     <div className="mt-2">
                       <p className="text-[10px] text-slate-500 mb-1">
-                        Progression: {uploadProgress}/3
+                        {t("progress")}: {uploadProgress}/3
                       </p>
                       <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                         <div
@@ -2620,7 +3799,7 @@ const handleMobileSync = useCallback(async () => {
                     className="flex items-center gap-1.5 text-[10px] text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors mt-1"
                   >
                     <RefreshCw className="w-3 h-3" />
-                    Actualiser
+                    {t("refresh")}
                   </button>
                 </div>
               </div>
@@ -2629,20 +3808,14 @@ const handleMobileSync = useCallback(async () => {
               <div className="flex items-center gap-2 px-6 py-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-700/50">
                 <ShieldCheck className="w-3 h-3 text-slate-500 dark:text-slate-600" />
                 <span className="text-[10px] text-slate-500 dark:text-slate-600">
-                  Session chiffrée · expire dans 15 min
+                  {t("sessionEncrypted")}
                 </span>
               </div>
             </motion.div>
           </motion.div>
         )}
-        {/* Modal confirmation OCR */}
+        {/* Modal confirmation OCR - VERSION QUI MARCHE */}
         {showOcrConfirm && (
-            <>
-
-              {console.log("🔍🔍🔍 DEBUG MODAL OCR - cinData:", cinData)}
-    {console.log("🔍 cinData?.firstName:", cinData?.firstName)}
-    {console.log("🔍 cinData?.lastName:", cinData?.lastName)}
-
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -2675,96 +3848,80 @@ const handleMobileSync = useCallback(async () => {
                 </p>
               </div>
 
-              {/* Champs OCR - Afficher les données ARABES du CIN */}
+              {/* Champs OCR - AVEC GESTION DIRECTE */}
               <div className="grid grid-cols-2 gap-4 mb-6">
+                {/* Prénom */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Prénom (CIN)
+                    {t("ocrConfirm.firstNameLabel")}
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={cinData?.firstName || ""}
-                      readOnly
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {cinData?.firstName && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={(() => {
+                      const val = cinData?.firstName;
+                      console.log("🎯 RENDU PRÉNOM:", val);
+                      return val || "";
+                    })()}
+                    readOnly
+                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-arabic"
+                  />
                 </div>
 
+                {/* Nom */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Nom (CIN)
+                    {t("ocrConfirm.lastNameLabel")}
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={cinData?.lastName || ""}
-                      readOnly
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {cinData?.lastName && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={cinData?.lastName || ""}
+                    readOnly
+                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-arabic"
+                  />
                 </div>
 
+                {/* Date de naissance */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    Date de naissance
+                    {t("ocrConfirm.dateOfBirthLabel")}
                   </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={cinData?.dateOfBirth || dateNaissance || ""}
-                      readOnly
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {(cinData?.dateOfBirth || dateNaissance) && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={cinData?.dateOfBirth || ""}
+                    readOnly
+                    placeholder={t("dateFormatPlaceholder")}
+                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                  />
                 </div>
 
+                {/* N° CIN */}
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    N° CIN
+                    {t("ocrConfirm.cinNumberLabel")}
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={cinData?.cinNumber || cinNumber || ""}
-                      readOnly
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {(cinData?.cinNumber || cinNumber) && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={cinData?.cinNumber || ""}
+                    readOnly
+                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                  />
                 </div>
 
                 {/* Profession */}
                 <div className="col-span-2 space-y-1">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    Profession (CIN)
+                    {t("ocrConfirm.professionLabel")}
                     <span className="text-[10px] normal-case text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 rounded">
-                      verso CIN
+                      {t("ocrConfirm.versoBadge")}
                     </span>
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      value={cinData?.profession || profession || ""}
-                      readOnly
-                      placeholder="Ex : تلميذة , طبيب .."
-                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-[#1E90FF] outline-none"
-                    />
-                    {(cinData?.profession || profession) && (
-                      <FaCheckCircle className="absolute right-3 top-2.5 text-emerald-500 text-sm" />
-                    )}
-                  </div>
+                  <input
+                    type="text"
+                    value={cinData?.profession || ""}
+                    readOnly
+                    placeholder={t("ocrConfirm.professionPlaceholder")}
+                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-arabic"
+                  />
                 </div>
               </div>
 
@@ -2787,22 +3944,19 @@ const handleMobileSync = useCallback(async () => {
                   {isUploadingCIN ? (
                     <>
                       <Loader2 className="animate-spin h-4 w-4" />
-                      Upload en cours... (10-20s)
+                      {t("sending")}...
                     </>
                   ) : (
                     <>
                       <MdVerified className="text-lg" />
-                      {t("ocrConfirm.confirmIdentity")}
+                      {t("ocrConfirm.confirmButton")}
                     </>
                   )}
                 </button>
               </div>
             </motion.div>
           </motion.div>
-            </>
-
         )}
-
         {/* Welcome Modal */}
         {showWelcome && (
           <motion.div

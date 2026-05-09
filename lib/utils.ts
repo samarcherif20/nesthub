@@ -92,24 +92,32 @@ export const ValidationPatterns = {
 // GESTION DES ERREURS DE LOGIN
 // ============================================
 
-// Codes d'erreur Clerk pour le login
+// Codes d'erreur Clerk pour le login (COMPLET)
 export const ClerkLoginErrorCodes = {
   // Identifiants
   IDENTIFIER_NOT_FOUND: "form_identifier_not_found",
   IDENTIFIER_EXISTS: "form_identifier_exists",
+  IDENTIFIER_INVALID: "form_identifier_invalid",
+  PARAM_FORMAT_INVALID: "form_param_format_invalid",
   
   // Mot de passe
   PASSWORD_INCORRECT: "form_password_incorrect",
   PASSWORD_PWNED: "form_password_pwned",
   PASSWORD_LENGTH_TOO_SHORT: "form_password_length_too_short",
+  PASSWORD_VALIDATION_FAILED: "form_password_validation_failed",
+  PASSWORD_MISMATCH: "form_password_mismatch",
   
-  // 2FA
+  // 2FA / Code
   CODE_INCORRECT: "form_code_incorrect",
   CODE_EXPIRED: "form_code_expired",
+  CODE_INVALID: "form_code_invalid",
+  CODE_NOT_FOUND: "form_code_not_found",
   VERIFICATION_FAILED: "verification_failed",
   
   // Session
   SESSION_EXISTS: "session_exists",
+  SESSION_EXPIRED: "session_expired",
+  SESSION_INCOMPLETE: "session_incomplete",
   
   // Rate limiting
   TOO_MANY_ATTEMPTS: "too_many_requests",
@@ -118,6 +126,18 @@ export const ClerkLoginErrorCodes = {
   // Compte
   USER_LOCKED: "user_locked",
   USER_SUSPENDED: "user_suspended",
+  USER_DISABLED: "user_disabled",
+  USER_UNAUTHORIZED: "user_unauthorized",
+  USER_NOT_FOUND: "user_not_found",
+  USER_VERIFICATION_FAILED: "user_verification_failed",
+  
+  // OAuth
+  OAUTH_ACCESS_DENIED: "oauth_access_denied",
+  OAUTH_CALLBACK_ERROR: "oauth_callback_error",
+  
+  // Général
+  UNKNOWN_ERROR: "unknown_error",
+  UNEXPECTED_ERROR: "unexpected_error",
 } as const;
 
 export type ClerkLoginErrorCode = typeof ClerkLoginErrorCodes[keyof typeof ClerkLoginErrorCodes];
@@ -133,7 +153,11 @@ export function getClerkErrorMessage(
   // Si ce n'est pas une erreur Clerk
   if (!isClerkAPIError(error)) {
     if (isStandardError(error)) {
-      return error.message;
+      // Si c'est déjà un message en français, on le garde
+      if (error.message && (error.message.includes('Veuillez') || error.message.includes('réessayer'))) {
+        return error.message;
+      }
+      return error.message || t("error");
     }
     return t("error");
   }
@@ -143,8 +167,8 @@ export function getClerkErrorMessage(
   
   // Log pour débogage (seulement en dev)
   if (process.env.NODE_ENV === 'development') {
-    console.log(` [LOGIN ERROR] Code: ${code}`);
-    console.log(` [LOGIN ERROR] Message: ${clerkError.message}`);
+    console.log(`📋 [LOGIN ERROR] Code: ${code}`);
+    console.log(`📋 [LOGIN ERROR] Message: ${clerkError.message}`);
   }
 
   // Mapping des codes d'erreur vers les clés de traduction
@@ -158,6 +182,12 @@ export function getClerkErrorMessage(
     case ClerkLoginErrorCodes.IDENTIFIER_EXISTS:
       return t("emailAlreadyExists");
     
+    case ClerkLoginErrorCodes.IDENTIFIER_INVALID:
+    case ClerkLoginErrorCodes.PARAM_FORMAT_INVALID:
+      if (clerkError.message?.includes("email")) return t("emailInvalid");
+      if (clerkError.message?.includes("username")) return t("usernameInvalid");
+      return t("identifierInvalid");
+
     // ===== ERREURS DE MOT DE PASSE =====
     case ClerkLoginErrorCodes.PASSWORD_INCORRECT:
       return t("incorrectPassword");
@@ -168,12 +198,24 @@ export function getClerkErrorMessage(
     case ClerkLoginErrorCodes.PASSWORD_LENGTH_TOO_SHORT:
       return t("passwordTooShort");
     
-    // ===== ERREURS 2FA =====
+    case ClerkLoginErrorCodes.PASSWORD_VALIDATION_FAILED:
+      return t("passwordInvalid");
+    
+    case ClerkLoginErrorCodes.PASSWORD_MISMATCH:
+      return t("passwordMismatch");
+    
+    // ===== ERREURS 2FA / CODE =====
     case ClerkLoginErrorCodes.CODE_INCORRECT:
       return t("incorrectCode");
     
     case ClerkLoginErrorCodes.CODE_EXPIRED:
       return t("codeExpired");
+    
+    case ClerkLoginErrorCodes.CODE_INVALID:
+      return t("codeInvalid");
+    
+    case ClerkLoginErrorCodes.CODE_NOT_FOUND:
+      return t("codeNotFound");
     
     case ClerkLoginErrorCodes.VERIFICATION_FAILED:
       return t("verificationFailed");
@@ -181,6 +223,12 @@ export function getClerkErrorMessage(
     // ===== ERREURS DE SESSION =====
     case ClerkLoginErrorCodes.SESSION_EXISTS:
       return t("sessionExists");
+    
+    case ClerkLoginErrorCodes.SESSION_EXPIRED:
+      return t("sessionExpired");
+    
+    case ClerkLoginErrorCodes.SESSION_INCOMPLETE:
+      return t("sessionIncomplete");
     
     // ===== TROP DE TENTATIVES =====
     case ClerkLoginErrorCodes.TOO_MANY_ATTEMPTS:
@@ -193,6 +241,23 @@ export function getClerkErrorMessage(
     
     case ClerkLoginErrorCodes.USER_SUSPENDED:
       return t("accountSuspended");
+    
+    case ClerkLoginErrorCodes.USER_DISABLED:
+    case ClerkLoginErrorCodes.USER_UNAUTHORIZED:
+      return t("accountDisabled");
+    
+    case ClerkLoginErrorCodes.USER_NOT_FOUND:
+      return t("userNotFound");
+    
+    case ClerkLoginErrorCodes.USER_VERIFICATION_FAILED:
+      return t("verificationFailed");
+    
+    // ===== ERREURS OAUTH =====
+    case ClerkLoginErrorCodes.OAUTH_ACCESS_DENIED:
+      return t("oauthAccessDenied");
+    
+    case ClerkLoginErrorCodes.OAUTH_CALLBACK_ERROR:
+      return t("oauthCallbackError");
     
     // ===== CAS PAR DÉFAUT =====
     default:
@@ -240,6 +305,11 @@ export function isRateLimitError(error: unknown): boolean {
   return code === ClerkLoginErrorCodes.TOO_MANY_ATTEMPTS || 
          code === ClerkLoginErrorCodes.RATE_LIMIT_EXCEEDED;
 }
+
+// ============================================
+// FONCTIONS UTILITAIRES
+// ============================================
+
 export function maskEmail(email: string): string {
   if (!email || !email.includes('@')) return email;
   
@@ -260,33 +330,34 @@ export function maskEmail(email: string): string {
   
   return `${maskedLocal}@${domain}`;
 }
+
 // ============================================
 // LOGGER POUR LE LOGIN
 // ============================================
 export const logger = {
   info: (message: string, data?: unknown) => {
-    console.log(` [INFO] ${message}`, data !== undefined ? data : '');
+    console.log(`ℹ️ [INFO] ${message}`, data !== undefined ? data : '');
   },
   
   success: (message: string, data?: unknown) => {
-    console.log(` [SUCCESS] ${message}`, data !== undefined ? data : '');
+    console.log(`✅ [SUCCESS] ${message}`, data !== undefined ? data : '');
   },
   
   warning: (message: string, data?: unknown) => {
-    console.log(` [WARNING] ${message}`, data !== undefined ? data : '');
+    console.log(`⚠️ [WARNING] ${message}`, data !== undefined ? data : '');
   },
   
   error: (message: string, error?: unknown) => {
-    console.error(` [ERROR] ${message}`, error !== undefined ? error : '');
+    console.error(`❌ [ERROR] ${message}`, error !== undefined ? error : '');
   },
   
   auth: (message: string, data?: unknown) => {
-    console.log(` [AUTH] ${message}`, data !== undefined ? data : '');
+    console.log(`🔐 [AUTH] ${message}`, data !== undefined ? data : '');
   },
   
   debug: (message: string, data?: unknown) => {
     if (process.env.NODE_ENV === 'development') {
-      console.log(` [DEBUG] ${message}`, data !== undefined ? data : '');
+      console.log(`🐛 [DEBUG] ${message}`, data !== undefined ? data : '');
     }
   }
 };

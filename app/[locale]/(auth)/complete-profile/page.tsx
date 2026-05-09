@@ -323,16 +323,17 @@ if (isProfileLoading) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-white dark:bg-slate-950">
-      {/* Background decorations - dark mode aware */}
-      <div className="absolute inset-0 bg-white dark:from-slate-950 dark:via-[#0f172a] dark:to-[#111827]" />
-      <div className="absolute -top-24 left-[-6rem] h-72 w-72 rounded-full bg-white/70 dark:bg-blue-500/10 blur-3xl" />
-      <div className="absolute top-8 right-16 h-56 w-56 rounded-full bg-sky-200/50 dark:bg-purple-500/10 blur-3xl" />
-      <div
-        className="absolute inset-x-0 bottom-0 h-[44%] bg-gradient-to-r from-blue-500 via-sky-500 to-purple-500 dark:from-[#172554] dark:via-[#1d4ed8] dark:to-[#581c87] shadow-[0_-18px_50px_rgba(59,130,246,0.22)] dark:shadow-[0_-18px_50px_rgba(37,99,235,0.18)]"
-        style={{ clipPath: "polygon(0 32%, 100% 0, 100% 100%, 0 100%)" }}
-      />
-      <div className="absolute inset-x-0 bottom-[41.5%] h-px rotate-[-5deg] bg-white/40 dark:bg-white/10" />
-
+     {/* Background decorations - dark mode aware */}
+<div className="absolute inset-0 bg-gradient-to-b from-white to-slate-50 dark:from-slate-950 dark:to-slate-900" />
+<div className="absolute -top-24 left-[-6rem] h-72 w-72 rounded-full bg-blue-100/50 dark:bg-blue-500/10 blur-3xl" />
+<div className="absolute top-8 right-16 h-56 w-56 rounded-full bg-indigo-100/50 dark:bg-purple-500/10 blur-3xl" />
+<div className="absolute -bottom-24 left-[-6rem] h-72 w-72 rounded-full bg-sky-100/50 dark:bg-sky-500/10 blur-3xl" />
+<div className="absolute bottom-8 right-16 h-56 w-56 rounded-full bg-purple-100/50 dark:bg-indigo-500/10 blur-3xl" />
+<div
+  className="absolute inset-x-0 bottom-0 h-[44%] bg-gradient-to-r from-blue-500 via-sky-500 to-purple-500 dark:from-[#172554] dark:via-[#1d4ed8] dark:to-[#581c87] shadow-[0_-18px_50px_rgba(59,130,246,0.22)] dark:shadow-[0_-18px_50px_rgba(37,99,235,0.18)]"
+  style={{ clipPath: "polygon(0 32%, 100% 0, 100% 100%, 0 100%)" }}
+/>
+<div className="absolute inset-x-0 bottom-[41.5%] h-px rotate-[-5deg] bg-white/60 dark:bg-white/5" />
       <div className="relative z-10 flex h-full flex-col px-12 py-7">
         {/* Header */}
         <div className="mb-5 flex flex-shrink-0 items-center justify-between">

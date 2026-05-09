@@ -23,10 +23,18 @@ interface RoleCheckResult {
   isValid: boolean;
   errorMessage?: string;
   dbRole?: string;
+  selectedRole?: string;
+  requiresRoleChoice?: boolean;
 }
 
 interface DbUser {
+  id: string;
   role: string;
+  status: string;
+  suspendedUntil?: string | null;
+  isEmailVerified: boolean;
+  deletedAt?: string | null;
+  failedLoginAttempts: number;
 }
 
 export function useAuth() {
@@ -34,6 +42,10 @@ export function useAuth() {
   const { signOut } = useClerk();
   const router = useRouter();
   const t = useTranslations("Login");
+
+  // ============================================
+  // FONCTIONS UTILITAIRES
+  // ============================================
 
   const getClerkUserId = async (
     identifier: string,
@@ -58,6 +70,113 @@ export function useAuth() {
     }
   };
 
+  const getDbUserId = async (clerkUserId: string): Promise<string | null> => {
+    const response = await fetch(`/api/users/by-clerk-id/${clerkUserId}`);
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.id;
+  };
+
+  const incrementFailedLoginAttempts = async (
+    userId: string,
+  ): Promise<void> => {
+    await fetch("/api/users/increment-login-attempts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+  };
+
+  const resetFailedLoginAttempts = async (userId: string): Promise<void> => {
+    await fetch("/api/users/reset-login-attempts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+  };
+
+  const updateLastLogin = async (userId: string): Promise<void> => {
+    await fetch("/api/users/update-last-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+  };
+
+  // ============================================
+  // VÉRIFICATION DU COMPTE (STATUT, EMAIL, TENTATIVES)
+  // ============================================
+
+  const checkAccountAccess = (
+    dbUser: DbUser,
+  ): {
+    canLogin: boolean;
+    errorMessage?: string;
+  } => {
+    // 1. Vérifier si le compte est supprimé
+    if (dbUser.deletedAt) {
+      return { canLogin: false, errorMessage: t("accountDeleted") };
+    }
+
+    // 2. Vérifier le statut du compte
+    const status = dbUser.status;
+
+    switch (status) {
+      case "ACTIVE":
+        break;
+      case "TEMPORARILY_SUSPENDED":
+        if (
+          dbUser.suspendedUntil &&
+          new Date(dbUser.suspendedUntil) > new Date()
+        ) {
+          const date = new Date(dbUser.suspendedUntil).toLocaleDateString(
+            "fr-FR",
+          );
+          return {
+            canLogin: false,
+            errorMessage: t("accountTemporarilySuspended", { date }),
+          };
+        }
+        break;
+      case "PERMANENTLY_BANNED":
+        return { canLogin: false, errorMessage: t("accountPermanentlyBanned") };
+      case "PENDING_VALIDATION":
+        break;
+      case "SECURITY_LOCKED":
+        return { canLogin: false, errorMessage: t("accountSecurityLocked") };
+      case "INACTIVE":
+        return { canLogin: false, errorMessage: t("accountInactive") };
+      case "REJECTED":
+        return { canLogin: false, errorMessage: t("accountRejected") };
+      case "ANUALLY_BLOCKED":
+        return { canLogin: false, errorMessage: t("accountAnnuallyBlocked") };
+      case "MANUALLY_BLOCKED":
+        return { canLogin: false, errorMessage: t("accountManuallyBlocked") };
+      default:
+        return { canLogin: false, errorMessage: t("accountStatusUnknown") };
+    }
+
+    // 3. Vérifier si l'email est vérifié
+    if (!dbUser.isEmailVerified) {
+      return { canLogin: false, errorMessage: t("emailNotVerified") };
+    }
+
+    // 4. Vérifier les tentatives de connexion
+    const MAX_ATTEMPTS = 5;
+    if (dbUser.failedLoginAttempts >= MAX_ATTEMPTS) {
+      return {
+        canLogin: false,
+        errorMessage: t("accountLockedTooManyAttempts"),
+      };
+    }
+
+    return { canLogin: true };
+  };
+
+  // ============================================
+  // VÉRIFICATION DU RÔLE
+  // ============================================
+
   const checkUserRole = async (
     identifier: string,
     type: IdentifierType,
@@ -77,12 +196,33 @@ export function useAuth() {
 
       const dbUser = (await response.json()) as DbUser;
       logger.auth("Rôle dans la DB:", dbUser.role);
-      logger.auth("Rôle sélectionné:", selectedRole);
+      logger.auth("Statut dans la DB:", dbUser.status);
 
+      // ✅ VÉRIFIER LE STATUT DU COMPTE D'ABORD
+      const statusCheck = checkAccountAccess(dbUser);
+      if (!statusCheck.canLogin) {
+        return { isValid: false, errorMessage: statusCheck.errorMessage };
+      }
+
+      // Admin peut toujours se connecter
       if (dbUser.role === "ADMIN") {
         return { isValid: true, dbRole: "ADMIN" };
       }
 
+      // ===== GESTION DU RÔLE BOTH =====
+      if (dbUser.role === "BOTH") {
+        if (!selectedRole) {
+          return {
+            isValid: false,
+            errorMessage: t("profileTypeRequiredForBoth"),
+            dbRole: "BOTH",
+            requiresRoleChoice: true,
+          };
+        }
+        return { isValid: true, dbRole: "BOTH", selectedRole };
+      }
+
+      // ===== LOGIQUE NORMALE POUR TENANT OU PROPERTY_OWNER =====
       if (!selectedRole) {
         return {
           isValid: false,
@@ -114,6 +254,10 @@ export function useAuth() {
     }
   };
 
+  // ============================================
+  // GESTION 2FA
+  // ============================================
+
   const handleSecondFactor = async (
     result: SignInResource,
     identifier: string,
@@ -142,7 +286,7 @@ export function useAuth() {
         const locale = pathname.split("/")[1] || "fr";
         router.push(`/${locale}/verify-email-code`);
       } else {
-        console.error(" email_code non disponible. Stratégies:", strategies);
+        console.error("email_code non disponible. Stratégies:", strategies);
         throw new Error(t("verificationFailed"));
       }
     } catch (error) {
@@ -150,6 +294,10 @@ export function useAuth() {
       throw error;
     }
   };
+
+  // ============================================
+  // OAUTH
+  // ============================================
 
   const handleGoogleLogin = async (): Promise<void> => {
     try {
@@ -193,6 +341,10 @@ export function useAuth() {
     }
   };
 
+  // ============================================
+  // SUBMIT PRINCIPAL
+  // ============================================
+
   const handleSubmit = async ({
     identifier,
     password,
@@ -203,12 +355,12 @@ export function useAuth() {
     try {
       if (!signIn) throw new Error("SignIn not initialized");
 
-      //  FIX 1: Clear any existing session before signing in
+      // Clear any existing session before signing in
       try {
         await signOut();
         await new Promise((resolve) => setTimeout(resolve, 200));
       } catch (_) {
-        // ignore — no session to clear
+        // ignore
       }
 
       logger.auth("Tentative de connexion:", {
@@ -218,7 +370,6 @@ export function useAuth() {
         rememberMe,
       });
 
-      // Get locale from current path
       const locale = window.location.pathname.split("/")[1] || "fr";
 
       const result = await signIn.create({ identifier, password });
@@ -233,17 +384,40 @@ export function useAuth() {
       const roleCheck = await checkUserRole(identifier, identifierType, role);
 
       if (!roleCheck.isValid) {
-        logger.warning("Rôle incorrect, annulation de la session");
+        logger.warning("Échec vérification:", roleCheck.errorMessage);
 
-        if (result.status === "complete" && result.createdSessionId) {
-          await fetch("/api/clerk/end-session", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId: result.createdSessionId }),
-          });
+        // ⭐ CORRECTION : Pour BOTH, on ne détruit PAS la session
+        if (!roleCheck.requiresRoleChoice) {
+          if (result.status === "complete" && result.createdSessionId) {
+            await fetch("/api/clerk/end-session", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ sessionId: result.createdSessionId }),
+            });
+          }
+          await signOut({ redirectUrl: window.location.href });
         }
 
-        await signOut({ redirectUrl: window.location.href });
+        // Cas spécial BOTH : redirection vers page de choix
+        if (roleCheck.requiresRoleChoice) {
+          console.log(
+            "🔄 Redirection vers choose-role pour l'utilisateur BOTH",
+          );
+          sessionStorage.setItem("pendingLoginEmail", identifier);
+          sessionStorage.setItem("pendingLoginPassword", password);
+
+          // ⭐ Conserver l'ID de session pour choose-role
+          if (result.createdSessionId) {
+            sessionStorage.setItem("clerkSessionId", result.createdSessionId);
+          }
+
+          const locale = window.location.pathname.split("/")[1] || "fr";
+
+          // ⭐ Utiliser window.location.href pour une redirection complète
+          window.location.href = `/${locale}/choose-role`;
+          return;
+        }
+
         throw new Error(roleCheck.errorMessage);
       }
 
@@ -253,6 +427,22 @@ export function useAuth() {
         if (setActive) {
           await setActive({ session: result.createdSessionId });
           await new Promise((resolve) => setTimeout(resolve, 100));
+
+          // Mettre à jour lastLogin et réinitialiser les tentatives
+          try {
+            const clerkUserId = await getClerkUserId(
+              identifier,
+              identifierType,
+            );
+            const dbUserId = await getDbUserId(clerkUserId);
+            if (dbUserId) {
+              await resetFailedLoginAttempts(dbUserId);
+              await updateLastLogin(dbUserId);
+            }
+          } catch (updateError) {
+            logger.warning("Erreur mise à jour lastLogin:", updateError);
+          }
+
           const storedRedirect = localStorage.getItem("redirectAfterLogin");
           if (storedRedirect) {
             localStorage.removeItem("redirectAfterLogin");
@@ -260,7 +450,7 @@ export function useAuth() {
             router.push(storedRedirect);
             return;
           }
-          //  FIX 2: Role-based redirect with proper locale and path
+
           const getRedirectUrl = async (): Promise<string> => {
             try {
               const response = await fetch("/api/get-redirect-url");
@@ -271,16 +461,15 @@ export function useAuth() {
                     ? data.url
                     : `/${locale}${data.url}`;
 
-                  //  Don't use cookie redirect if it points to wrong role area
                   const isAdminUrl = cleanUrl.includes("/admin");
                   const isAdmin = roleCheck.dbRole === "ADMIN";
 
                   if (isAdminUrl && !isAdmin) {
-                    // Non-admin trying to go to admin area — ignore cookie
+                    // ignore
                   } else if (!isAdminUrl && isAdmin) {
-                    // Admin trying to go to non-admin area — ignore cookie
+                    // ignore
                   } else {
-                    console.log(" URL de redirection trouvée:", cleanUrl);
+                    console.log("📍 URL de redirection trouvée:", cleanUrl);
                     return cleanUrl;
                   }
                 }
@@ -289,7 +478,6 @@ export function useAuth() {
               console.error("Erreur récupération URL:", error);
             }
 
-            //  FIX 3: Fallback with proper locale prefix
             if (roleCheck.dbRole === "ADMIN") {
               return `/${locale}/admin/dashboard`;
             } else if (roleCheck.dbRole === "PROPERTY_OWNER") {
@@ -300,7 +488,7 @@ export function useAuth() {
           };
 
           const redirectUrl = await getRedirectUrl();
-          console.log(" Redirection vers:", redirectUrl);
+          console.log("🚀 Redirection vers:", redirectUrl);
           router.push(redirectUrl);
         }
       } else if (result.status === "needs_second_factor") {
@@ -317,6 +505,38 @@ export function useAuth() {
     } catch (error: unknown) {
       logger.error("Erreur:", error);
 
+      if (isClerkAPIError(error)) {
+        const clerkError = error.errors?.[0];
+        if (clerkError?.code === "form_password_incorrect") {
+          try {
+            const clerkUserId = await getClerkUserId(
+              identifier,
+              identifierType,
+            );
+            const dbUserId = await getDbUserId(clerkUserId);
+            if (dbUserId) {
+              await incrementFailedLoginAttempts(dbUserId);
+
+              const userResponse = await fetch(
+                `/api/users/by-clerk-id/${clerkUserId}`,
+              );
+              const dbUser = await userResponse.json();
+              const remaining = 5 - dbUser.failedLoginAttempts;
+
+              if (remaining <= 0) {
+                throw new Error(t("accountLockedTooManyAttempts"));
+              } else {
+                throw new Error(
+                  t("incorrectPasswordWithAttempts", { remaining }),
+                );
+              }
+            }
+          } catch (attemptError) {
+            throw attemptError;
+          }
+        }
+      }
+
       if (isStandardError(error)) {
         throw error;
       } else if (isClerkAPIError(error)) {
@@ -331,7 +551,6 @@ export function useAuth() {
       }
     }
   };
-
   return {
     handleSubmit,
     handleGoogleLogin,

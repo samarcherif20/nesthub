@@ -455,94 +455,106 @@ export function useInscription() {
       setPhoneError("");
     }
   }, [phoneNumber, validatePhoneUniqueness]);
-
+// Ajoute ce useEffect pour surveiller les changements de cinData
+useEffect(() => {
+  if (cinData && Object.keys(cinData).length > 0) {
+    console.log("🔄 cinData CHANGÉ dans le modal:", cinData);
+    // Force un petit délai pour que React ait le temps de re-rendre
+    setTimeout(() => {
+      console.log("✅ Modal devrait maintenant afficher:", cinData.firstName, cinData.lastName);
+    }, 100);
+  }
+}, [cinData]);
   // ════════════════════════════════════════════════════════════════════════════
   // UPLOAD CIN (CORRIGÉ - NE PAS ÉCRASER LES NOMS FRANÇAIS)
   // ════════════════════════════════════════════════════════════════════════════
 
-  const handleUploadCIN = async (): Promise<boolean> => {
-    if (!cinRecto || !cinVerso || !profilePhoto) {
-      setUploadCINError("Veuillez uploader les 3 fichiers");
-      return false;
-    }
+ const handleUploadCIN = async (): Promise<boolean> => {
+  if (!cinRecto || !cinVerso || !profilePhoto) {
+    setUploadCINError("Veuillez uploader les 3 fichiers");
+    return false;
+  }
 
-    const userId = currentUserId || localStorage.getItem("currentUserId");
-    if (!userId) {
-      setUploadCINError("ID utilisateur introuvable");
-      return false;
-    }
+  const userId = currentUserId || localStorage.getItem("currentUserId");
+  if (!userId) {
+    setUploadCINError("ID utilisateur introuvable");
+    return false;
+  }
 
-    setIsUploadingCIN(true);
-    setUploadCINError("");
+  setIsUploadingCIN(true);
+  setUploadCINError("");
 
-    try {
-      const formData = new FormData();
-      formData.append("userId", userId);
-      formData.append("cinRecto", cinRecto);
-      formData.append("cinVerso", cinVerso);
-      formData.append("profilePhoto", profilePhoto);
+  try {
+    const formData = new FormData();
+    formData.append("userId", userId);
+    formData.append("cinRecto", cinRecto);
+    formData.append("cinVerso", cinVerso);
+    formData.append("profilePhoto", profilePhoto);
 
-      const res = await fetch("/api/registration/upload-cin", {
-        method: "POST",
-        body: formData,
-      });
+    const res = await fetch("/api/registration/upload-cin", {
+      method: "POST",
+      body: formData,
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (!res.ok) throw new Error(data.error || "Erreur upload");
+    if (!res.ok) throw new Error(data.error || "Erreur upload");
 
-      // Sauvegarder les URLs
-      if (data.urls?.profilePhoto) setProfilePictureUrl(data.urls.profilePhoto);
-      if (data.urls?.cinRecto) setCinRectoUrl(data.urls.cinRecto);
-      if (data.urls?.cinVerso) setCinVersoUrl(data.urls.cinVerso);
+    // Sauvegarder les URLs
+    if (data.urls?.profilePhoto) setProfilePictureUrl(data.urls.profilePhoto);
+    if (data.urls?.cinRecto) setCinRectoUrl(data.urls.cinRecto);
+    if (data.urls?.cinVerso) setCinVersoUrl(data.urls.cinVerso);
 
-      // ✅ AJOUTER CECI - Créer et mettre à jour cinData IMMÉDIATEMENT
-      if (data.extracted) {
-        const newCinData = {
-          firstName: data.extracted.firstName || null,
-          lastName: data.extracted.lastName || null,
-          cinNumber: data.extracted.cinNumber || null,
-          dateOfBirth: data.extracted.dateOfBirth || null,
-          profession: data.extracted.profession || null,
-          extractedAt: new Date().toISOString(),
-          documentType: "CIN",
-          rectoUrl: data.urls?.cinRecto || null,
-          versoUrl: data.urls?.cinVerso || null,
-        };
+    // ✅ CRÉER et METTRE À JOUR cinData
+    if (data.extracted) {
+      const newCinData = {
+        firstName: data.extracted.firstName || null,
+        lastName: data.extracted.lastName || null,
+        cinNumber: data.extracted.cinNumber || null,
+        dateOfBirth: data.extracted.dateOfBirth || null,
+        profession: data.extracted.profession || null,
+        extractedAt: new Date().toISOString(),
+        documentType: "CIN",
+        rectoUrl: data.urls?.cinRecto || null,
+        versoUrl: data.urls?.cinVerso || null,
+      };
 
-        // ✅ Met à jour cinData pour le modal OCR
-        setCinData(newCinData);
-        console.log("📦 cinData mis à jour dans handleUploadCIN:", newCinData);
+      // ✅ Met à jour cinData
+      setCinData(newCinData);
+      console.log("📦 cinData mis à jour:", newCinData);
 
-        // ✅ Mettre à jour les champs techniques (sans écraser les noms français)
-        if (data.extracted.dateOfBirth && !dateNaissance) {
-          setDateNaissance(data.extracted.dateOfBirth);
-        }
-        if (data.extracted.cinNumber && !cinNumber) {
-          setCinNumber(data.extracted.cinNumber);
-        }
-        if (data.extracted.profession && !profession) {
-          setProfession(data.extracted.profession);
-        }
+      // ✅ OUVRE LE MODAL ICI !!! (C'est ce qui manquait)
+      setShowOcrConfirm(true);
+      console.log("🔓 Modal OCR ouvert avec les données");
+
+      // Met à jour les champs techniques
+      if (data.extracted.dateOfBirth && !dateNaissance) {
+        setDateNaissance(data.extracted.dateOfBirth);
       }
-
-      toast.success("Documents analysés !", {
-        description: data.ocrSuccess
-          ? `CIN n°${data.extracted?.cinNumber ?? "?"} — vérifiez avant de confirmer.`
-          : "Upload réussi. Remplissez manuellement.",
-      });
-
-      return true;
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Erreur inconnue";
-      setUploadCINError(msg);
-      toast.error("Erreur upload", { description: msg });
-      return false;
-    } finally {
-      setIsUploadingCIN(false);
+      if (data.extracted.cinNumber && !cinNumber) {
+        setCinNumber(data.extracted.cinNumber);
+      }
+      if (data.extracted.profession && !profession) {
+        setProfession(data.extracted.profession);
+      }
     }
-  };
 
+    toast.success("Documents analysés !", {
+      description: data.extracted
+        ? `CIN n°${data.extracted.cinNumber ?? "?"} — vérifiez avant de confirmer.`
+        : "Upload réussi. Remplissez manuellement.",
+    });
+
+    return true;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Erreur inconnue";
+    setUploadCINError(msg);
+    toast.error("Erreur upload", { description: msg });
+    return false;
+  } finally {
+    setIsUploadingCIN(false);
+  }
+};
   // ════════════════════════════════════════════════════════════════════════════
   // WHATSAPP
   // ════════════════════════════════════════════════════════════════════════════
@@ -893,188 +905,137 @@ export function useInscription() {
   // HANDLE CONFIRM IDENTITY (CORRIGÉ)
   // ════════════════════════════════════════════════════════════════════════════
 
-  const handleConfirmIdentity = async () => {
-    setIsUploadingCIN(true);
-    setUploadCINError("");
+ const handleConfirmIdentity = async () => {
+  // ✅ Vérifier que les données OCR sont disponibles
+  if (!cinData || !cinData.firstName) {
+    toast.error("Données OCR manquantes", {
+      description: "Veuillez d'abord analyser vos documents.",
+    });
+    return;
+  }
 
-    const tempId = currentUserId || localStorage.getItem("currentUserId");
-    let uploadedProfilePictureUrl = profilePictureUrl;
-    let uploadedRectoUrl = cinRectoUrl;
-    let uploadedVersoUrl = cinVersoUrl;
+  setIsUploadingCIN(true);
+  setUploadCINError("");
 
-    try {
-      let ocrData = null;
-      let cinDataComplete = null;
+  const tempId = currentUserId || localStorage.getItem("currentUserId");
 
-      // Sauvegarder les valeurs FRANÇAISES actuelles
-      const userFirstName = firstName;
-      const userLastName = lastName;
+  try {
+    // ✅ Les URLs sont déjà dans cinData (créées pendant handleUploadCIN)
+    const uploadedProfilePictureUrl = cinData.profilePictureUrl || profilePictureUrl;
+    const uploadedRectoUrl = cinData.rectoUrl || cinRectoUrl;
+    const uploadedVersoUrl = cinData.versoUrl || cinVersoUrl;
 
-      if (cinRecto && cinVerso && profilePhoto && tempId) {
-        try {
-          const formData = new FormData();
-          formData.append("userId", tempId);
-          formData.append("cinRecto", cinRecto);
-          formData.append("cinVerso", cinVerso);
-          formData.append("profilePhoto", profilePhoto);
+    // ✅ Préparer les données à envoyer
+    const cinDataToSave = {
+      firstName: cinData.firstName,      // 'سمر'
+      lastName: cinData.lastName,        // 'الشريف'
+      cinNumber: cinData.cinNumber || cinNumber,
+      dateOfBirth: cinData.dateOfBirth || dateNaissance,
+      profession: cinData.profession || profession,
+      extractedAt: new Date().toISOString(),
+      documentType: "CIN",
+      rectoUrl: uploadedRectoUrl,
+      versoUrl: uploadedVersoUrl,
+    };
 
-          const res = await fetch("/api/registration/upload-cin", {
-            method: "POST",
-            body: formData,
-          });
+    console.log("📦 Envoi des données au serveur:", {
+      firstNameFrancais: firstName,      // 'samar'
+      lastNameFrancais: lastName,        // 'cherif'
+      cinDataArabe: cinDataToSave,       // {firstName: 'سمر', lastName: 'الشريف'}
+    });
 
-          if (res.ok) {
-            const data = await res.json();
+    // ✅ Envoi au serveur avec les valeurs FRANÇAISES + ARABES
+    const completeProfileRes = await fetch("/api/users/complete-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: tempId,
+        firstName: firstName || "",        // 'samar' (français)
+        lastName: lastName || "",          // 'cherif' (français)
+        dateNaissance: dateNaissance || cinData?.dateOfBirth || "",
+        cinNumber: cinNumber || cinData?.cinNumber || "",
+        bio: bio || "",
+        profession: profession || cinData?.profession || "",
+        phoneNumber: `+216${phoneNumber}`,
+        governorate: governorate || "",
+        delegation: delegation || "",
+        gender: gender || "Non spécifié",
+        howFound: "inscription",
+        cinRectoUrl: uploadedRectoUrl || "",
+        cinVersoUrl: uploadedVersoUrl || "",
+        profilePictureUrl: uploadedProfilePictureUrl || "",
+        cinData: cinDataToSave,  // ✅ Données arabes du CIN
+      }),
+    });
 
-            uploadedProfilePictureUrl = data.urls?.profilePhoto;
-            uploadedRectoUrl = data.urls?.cinRecto;
-            uploadedVersoUrl = data.urls?.cinVerso;
-
-            setProfilePictureUrl(uploadedProfilePictureUrl);
-            setCinRectoUrl(uploadedRectoUrl);
-            setCinVersoUrl(uploadedVersoUrl);
-
-            console.log("📸 Photo URL:", uploadedProfilePictureUrl);
-            console.log("📄 Recto URL:", uploadedRectoUrl);
-            console.log("📄 Verso URL:", uploadedVersoUrl);
-
-            if (data.extracted) {
-              ocrData = data.extracted;
-
-              // ✅ CRÉER cinDataComplete avec les données ARABES
-              cinDataComplete = {
-                firstName: ocrData.firstName || null,
-                lastName: ocrData.lastName || null,
-                cinNumber: ocrData.cinNumber || cinNumber || null,
-                dateOfBirth: ocrData.dateOfBirth || dateNaissance || null,
-                profession: ocrData.profession || profession || null,
-                extractedAt: new Date().toISOString(),
-                documentType: "CIN",
-                rectoUrl: uploadedRectoUrl,
-                versoUrl: uploadedVersoUrl,
-              };
-
-              // ✅ METTRE À JOUR cinData (pour le modal OCR)
-              setCinData(cinDataComplete);
-              console.log("📦 cinData mis à jour:", cinDataComplete);
-
-              // ✅ Mettre à jour les champs techniques (sans écraser les noms français)
-              if (ocrData.dateOfBirth && !dateNaissance) {
-                setDateNaissance(ocrData.dateOfBirth);
-              }
-              if (ocrData.cinNumber && !cinNumber) {
-                setCinNumber(ocrData.cinNumber);
-              }
-              if (ocrData.profession && !profession) {
-                setProfession(ocrData.profession);
-              }
-            }
-          } else {
-            console.warn("⚠️ Upload CIN échoué (non bloquant):", res.status);
-          }
-        } catch (uploadErr) {
-          console.warn("⚠️ Erreur upload CIN (non bloquant):", uploadErr);
-        }
-      }
-
-      // ✅ Pour cinDataToSave, on utilise les données ARABES du CIN
-      const cinDataToSave = cinDataComplete || {
-        firstName: null,
-        lastName: null,
-        cinNumber: cinNumber || null,
-        dateOfBirth: dateNaissance || null,
-        profession: profession || null,
-        extractedAt: new Date().toISOString(),
-        documentType: "CIN",
-        rectoUrl: uploadedRectoUrl,
-        versoUrl: uploadedVersoUrl,
-      };
-
-      // ✅ Envoi au serveur avec les valeurs FRANÇAISES
-      const completeProfileRes = await fetch("/api/users/complete-profile", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: tempId,
-          firstName: userFirstName || "",
-          lastName: userLastName || "",
-          dateNaissance: dateNaissance || "",
-          cinNumber: cinNumber || "",
-          bio: bio || "",
-          profession: profession || "",
-          phoneNumber: `+216${phoneNumber}`,
-          governorate: governorate || "",
-          delegation: delegation || "",
-          gender: gender || "Non spécifié",
-          howFound: "inscription",
-          cinRectoUrl: uploadedRectoUrl || "",
-          cinVersoUrl: uploadedVersoUrl || "",
-          profilePictureUrl: uploadedProfilePictureUrl || "",
-          cinData: cinDataToSave,
-        }),
-      });
-
-      if (!completeProfileRes.ok) {
-        const errorData = await completeProfileRes.json();
-        console.error("❌ Erreur complete-profile:", errorData);
-        throw new Error(errorData.error || "Erreur lors de l'enregistrement");
-      }
-
-      const completeProfileData = await completeProfileRes.json();
-      console.log("✅ Complete-profile réussi:", completeProfileData);
-
-      // ✅ RESET du formulaire après succès
-      resetForm();
-
-      if (isUserLoaded && user?.id && tempId && tempId !== user.id) {
-        try {
-          await fetch("/api/users/update-clerk-id", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ oldClerkId: tempId, newClerkId: user.id }),
-          });
-          localStorage.setItem("currentUserId", user.id);
-          setCurrentUserId(user.id);
-        } catch (syncErr) {
-          console.warn("⚠️ Sync Clerk ID échoué (non bloquant):", syncErr);
-        }
-      }
-
-      toast.success(
-        completeProfileData.message || "Profil complété avec succès !",
-      );
-    } catch (error) {
-      console.error("❌ Erreur handleConfirmIdentity:", error);
-    } finally {
-      setIsUploadingCIN(false);
-      setShowOcrConfirm(false);
-      setShowWelcome(true);
+    if (!completeProfileRes.ok) {
+      const errorData = await completeProfileRes.json();
+      console.error("❌ Erreur complete-profile:", errorData);
+      throw new Error(errorData.error || "Erreur lors de l'enregistrement");
     }
-  };
 
-  const handleGoToCompleteProfile = async () => {
-    setShowWelcome(false);
-    localStorage.removeItem("pendingEmail");
-    localStorage.removeItem("pendingUsername");
-    localStorage.removeItem("pendingPassword");
-    localStorage.removeItem("pendingRole");
+    const completeProfileData = await completeProfileRes.json();
+    console.log("✅ Complete-profile réussi:", completeProfileData);
 
-    const currentLocale = getCurrentLocale();
-    router.push(`/${currentLocale}/complete-profile`);
-  };
+    // ✅ Mise à jour Clerk ID si nécessaire
+    if (isUserLoaded && user?.id && tempId && tempId !== user.id) {
+      try {
+        await fetch("/api/users/update-clerk-id", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ oldClerkId: tempId, newClerkId: user.id }),
+        });
+        localStorage.setItem("currentUserId", user.id);
+        setCurrentUserId(user.id);
+      } catch (syncErr) {
+        console.warn("⚠️ Sync Clerk ID échoué (non bloquant):", syncErr);
+      }
+    }
 
-  const handleGoToDashboard = async () => {
-    setShowWelcome(false);
-    localStorage.removeItem("currentUserId");
-    localStorage.removeItem("pendingEmail");
-    localStorage.removeItem("pendingUsername");
-    localStorage.removeItem("pendingPassword");
-    localStorage.removeItem("pendingRole");
-    await signOut();
-    const currentLocale = getCurrentLocale();
-    router.push(`/${currentLocale}/dashboard`);
-  };
+    toast.success(completeProfileData.message || "Profil complété avec succès !");
+    
+    // ✅ Fermer le modal et montrer le welcome
+    setShowOcrConfirm(false);
+    setShowWelcome(true);
+    
+   
 
+  } catch (error) {
+    console.error("❌ Erreur handleConfirmIdentity:", error);
+    toast.error("Erreur lors de la confirmation", {
+      description: error instanceof Error ? error.message : "Veuillez réessayer",
+    });
+    setUploadCINError(error instanceof Error ? error.message : "Erreur inconnue");
+  } finally {
+    setIsUploadingCIN(false);
+  }
+};
+// ════════════════════════════════════════════════════════════════════════════
+// HANDLE GO TO COMPLETE PROFILE & DASHBOARD
+// ════════════════════════════════════════════════════════════════════════════
+
+const handleGoToCompleteProfile = async () => {
+  setShowWelcome(false);
+  localStorage.removeItem("pendingEmail");
+  localStorage.removeItem("pendingUsername");
+  localStorage.removeItem("pendingPassword");
+  localStorage.removeItem("pendingRole");
+
+  const currentLocale = getCurrentLocale();
+  router.push(`/${currentLocale}/complete-profile`);
+};
+
+const handleGoToDashboard = async () => {
+  setShowWelcome(false);
+  localStorage.removeItem("currentUserId");
+  localStorage.removeItem("pendingEmail");
+  localStorage.removeItem("pendingUsername");
+  localStorage.removeItem("pendingPassword");
+  localStorage.removeItem("pendingRole");
+  await signOut();
+  const currentLocale = getCurrentLocale();
+  router.push(`/${currentLocale}/dashboard`);
+};
   // ════════════════════════════════════════════════════════════════════════════
   // RETURN
   // ════════════════════════════════════════════════════════════════════════════
