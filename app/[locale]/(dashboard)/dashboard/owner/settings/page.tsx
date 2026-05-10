@@ -65,7 +65,7 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
     <button
       onClick={onToggle}
       className={`w-12 h-6 rounded-full relative transition-colors duration-300 flex-shrink-0 ${
-        on ? "bg-indigo-600" : "bg-slate-300 dark:bg-slate-600"
+        on ? "bg-indigo-600 dark:bg-indigo-500" : "bg-slate-300 dark:bg-slate-600"
       }`}
     >
       <div
@@ -108,6 +108,8 @@ function SectionHeader({
 
 export default function SettingsPage() {
   const t = useTranslations("settings");
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
 
   const {
     loading,
@@ -128,7 +130,7 @@ export default function SettingsPage() {
     passwordsMatch,
     isPasswordValid,
     getStrengthLabel,
-    exportUserData, // <-- AJOUTEZ CETTE LIGNE
+    exportUserData,
     isExporting,
   } = useSettings();
 
@@ -208,40 +210,37 @@ export default function SettingsPage() {
     }
   };
 
-  // Afficher le loading centré dans le contenu principal
+  // Loading state avec spinner centré comme les autres pages
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col overflow-y-auto bg-background-light dark:bg-background-dark">
-        <div className="bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
-          <div className="px-6 lg:px-10 py-7">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {t("page_title")}
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-xl">
-              {t("page_description")}
-            </p>
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
+      <div className="fixed inset-0 flex items-center justify-center bg-slate-50/20 dark:bg-slate-900/0 z-50">
+        <LoadingSpinner
+          variant="spinner"
+          size="lg"
+          color="primary"
+          text="Chargement des paramètres..."
+          speed="normal"
+        />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-background-light dark:bg-background-dark">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50/20 dark:bg-slate-900/0">
       {/* Alert Notification */}
       {alert && (
-        <Alert
-          type={alert.type}
-          message={alert.message}
-          onClose={() => setAlert(null)}
-        />
+        <div className="fixed top-20 right-6 z-50 max-w-sm">
+          <Alert
+            type={alert.type}
+            message={alert.message}
+            onClose={() => setAlert(null)}
+            autoClose={5000}
+          />
+        </div>
       )}
 
       {/* ── PAGE HEADER ──────────────────────────────────────────── */}
-      <div className="bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
+      <div className="bg-white dark:bg-slate-900/0 border-b border-slate-100 dark:border-slate-800">
         <div className="px-6 lg:px-10 py-7">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
             {t("page_title")}
@@ -308,7 +307,7 @@ export default function SettingsPage() {
                         </label>
                         <div className="relative">
                           <RiLockPasswordLine
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
                             size={14}
                           />
                           <input
@@ -334,7 +333,7 @@ export default function SettingsPage() {
                                 showCurrent: !p.showCurrent,
                               }))
                             }
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                           >
                             {passwordForm.showCurrent ? (
                               <RiEyeOffLine size={15} />
@@ -351,7 +350,7 @@ export default function SettingsPage() {
                         </label>
                         <div className="relative">
                           <RiLockPasswordLine
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
                             size={14}
                           />
                           <input
@@ -376,7 +375,7 @@ export default function SettingsPage() {
                                 showNew: !p.showNew,
                               }))
                             }
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                           >
                             {passwordForm.showNew ? (
                               <RiEyeOffLine size={15} />
@@ -414,7 +413,7 @@ export default function SettingsPage() {
                         </label>
                         <div className="relative">
                           <RiLockPasswordLine
-                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
                             size={14}
                           />
                           <input
@@ -431,9 +430,9 @@ export default function SettingsPage() {
                             required
                             className={`w-full pl-8 pr-9 py-2.5 text-sm bg-white dark:bg-slate-800 border rounded-xl outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400 ${
                               passwordForm.confirmPassword && !passwordsMatch
-                                ? "border-red-400"
+                                ? "border-red-400 dark:border-red-500"
                                 : passwordForm.confirmPassword && passwordsMatch
-                                  ? "border-emerald-400"
+                                  ? "border-emerald-400 dark:border-emerald-500"
                                   : "border-slate-200 dark:border-slate-700"
                             }`}
                             placeholder={t("password_confirm_placeholder")}
@@ -446,7 +445,7 @@ export default function SettingsPage() {
                                 showConfirm: !p.showConfirm,
                               }))
                             }
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-indigo-600 transition-colors"
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                           >
                             {passwordForm.showConfirm ? (
                               <RiEyeOffLine size={15} />
@@ -456,7 +455,7 @@ export default function SettingsPage() {
                           </button>
                         </div>
                         {passwordForm.confirmPassword && !passwordsMatch && (
-                          <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                          <p className="text-xs text-red-500 dark:text-red-400 mt-1 flex items-center gap-1">
                             <RiCloseLine size={13} /> {t("password_mismatch")}
                           </p>
                         )}
@@ -534,7 +533,7 @@ export default function SettingsPage() {
                                 }`}
                               >
                                 <DevIcon
-                                  className={`text-xl ${s.isCurrent ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400"}`}
+                                  className={`text-xl ${s.isCurrent ? "text-indigo-600 dark:text-indigo-400" : "text-slate-400 dark:text-slate-500"}`}
                                 />
                               </div>
                               <div>
@@ -551,7 +550,7 @@ export default function SettingsPage() {
                                 <div className="flex items-center gap-2 mt-0.5">
                                   <RiMapPinLine
                                     size={10}
-                                    className="text-slate-400"
+                                    className="text-slate-400 dark:text-slate-500"
                                   />
                                   <span className="text-[10px] text-slate-400 dark:text-slate-500">
                                     {s.location || t("location_unknown")} ·{" "}

@@ -4,6 +4,10 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { RxCalendar } from "react-icons/rx";
+
 import {
   X,
   Lock,
@@ -20,6 +24,9 @@ import {
   RefreshCw,
   Info,
   ChevronRight,
+  TrendingUp,
+  HelpCircle,
+  Plus,
 } from "lucide-react";
 import { useCalendar } from "./hooks/useCalendar";
 import { SimpleCalendar } from "@/components/ui/SimpleCalendar";
@@ -86,7 +93,9 @@ function ListingCard({
       }`}
     >
       <div
-        className={`w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-slate-700 ${!selected ? "grayscale group-hover:grayscale-0 transition-all" : ""}`}
+        className={`w-11 h-11 rounded-xl overflow-hidden shrink-0 border border-slate-100 dark:border-slate-700 ${
+          !selected ? "grayscale group-hover:grayscale-0 transition-all" : ""
+        }`}
       >
         {photo?.url ? (
           <img
@@ -112,6 +121,41 @@ function ListingCard({
   );
 }
 
+// COMPOSANT EMPTY STATE - STYLE LISTINGS (sans motion)
+function EmptyCalendarState({ t, locale }: { t: any; locale: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
+      <div className="relative mb-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-sky-500/20 to-purple-500/20 rounded-full blur-2xl animate-pulse" />
+        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center shadow-lg">
+          <RxCalendar size={48} className="text-sky-500 dark:text-sky-400" />
+        </div>
+      </div>
+      <h3 className="text-2xl font-headline font-bold bg-gradient-to-r from-sky-600 to-purple-600 dark:from-sky-400 dark:to-purple-400 bg-clip-text text-transparent mb-3">
+        {t("emptyState.title")}
+      </h3>
+      <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 leading-relaxed">
+        {t("emptyState.description")}
+      </p>
+      <Link
+        href={`/${locale}/dashboard/owner/listings/create`}
+        className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
+      >
+        <Plus size={18} className="group-hover:rotate-12 transition-transform duration-300" />
+        {t("emptyState.button")}
+        <TrendingUp size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+      </Link>
+      <Link
+        href={`/${locale}/help`}
+        className="mt-6 text-xs text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors flex items-center gap-1 justify-center"
+      >
+        <HelpCircle size={12} />
+        {t("emptyState.helpLink")}
+      </Link>
+    </div>
+  );
+}
+
 export default function OwnerCalendarPage() {
   const t = useTranslations("OwnerCalendar");
   const { resolvedTheme } = useTheme();
@@ -127,7 +171,7 @@ export default function OwnerCalendarPage() {
     type: "success" | "error" | "info" | "warning";
     message: string;
   } | null>(null);
-  const [isRefreshing, setIsRefreshing] = React.useState(false); // ← AJOUTER CETTE LIGNE
+  const [isRefreshing, setIsRefreshing] = React.useState(false);
 
   const {
     listings,
@@ -153,6 +197,8 @@ export default function OwnerCalendarPage() {
     fetchAvailability,
   } = useCalendar();
 
+  const locale = "fr";
+
   React.useEffect(() => {
     setMounted(true);
     setIsDark(resolvedTheme === "dark");
@@ -170,7 +216,6 @@ export default function OwnerCalendarPage() {
     setTimeout(() => setAlert(null), 5000);
   };
 
-  // ← AJOUTER UNE FONCTION POUR LE REFRESH
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -180,52 +225,6 @@ export default function OwnerCalendarPage() {
       showAlert("error", t("alerts.refreshFailed"));
     } finally {
       setIsRefreshing(false);
-    }
-  };
-
-  // ... (toutes les autres fonctions restent identiques)
-  const quickBlock = async (date: Date) => {
-    setActionLoading(true);
-    try {
-      await blockDates("", [date]);
-      showAlert(
-        "success",
-        `${t("alerts.dateBlocked")} - ${date.toLocaleDateString("fr-FR")}`,
-      );
-    } catch {
-      showAlert("error", t("alerts.cannotBlock"));
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const quickUnblock = async (date: Date) => {
-    setActionLoading(true);
-    try {
-      await unblockDates([date]);
-      showAlert(
-        "success",
-        `${t("alerts.dateUnblocked")} - ${date.toLocaleDateString("fr-FR")}`,
-      );
-    } catch {
-      showAlert("error", t("alerts.cannotUnblock"));
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const quickPrice = async (date: Date, price: number) => {
-    setActionLoading(true);
-    try {
-      await setPriceForDates(price, [date]);
-      showAlert(
-        "success",
-        `${t("alerts.specialPriceApplied")} - ${price} TND pour le ${date.toLocaleDateString("fr-FR")}`,
-      );
-    } catch {
-      showAlert("error", t("alerts.cannotApplyPrice"));
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -318,14 +317,14 @@ export default function OwnerCalendarPage() {
 
   if (!mounted || loadingListings) {
     return (
-      <div className="flex-1 flex items-center justify-center min-h-screen bg-slate-50/20 dark:bg-slate-950">
+      <div className="flex-1 flex items-center justify-center h-full">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-slate-50/20 dark:bg-slate-950">
+    <div className="flex-1 flex h-full overflow-hidden">
       {/* Alert */}
       {alert && (
         <div className="fixed top-20 right-6 z-[999] w-full max-w-sm animate-in slide-in-from-top-2 fade-in duration-300">
@@ -338,8 +337,8 @@ export default function OwnerCalendarPage() {
         </div>
       )}
 
-      {/* LEFT SIDEBAR */}
-      <aside className="w-64 shrink-0 flex flex-col bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 overflow-y-auto">
+      {/* LEFT SIDEBAR - TOUJOURS VISIBLE */}
+      <aside className="w-64 shrink-0 flex flex-col bg-white dark:bg-slate-900/0 border-r border-slate-200 dark:border-slate-800 h-full overflow-y-auto">
         <div className="px-4 pt-5 pb-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-1 mb-3">
             {t("sidebar.myProperties")}
@@ -393,13 +392,11 @@ export default function OwnerCalendarPage() {
             </div>
           </div>
         )}
-
-        
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="shrink-0 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 shadow-sm">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <div className="shrink-0 bg-white dark:bg-slate-900/0 border-b border-slate-200 dark:border-slate-800 px-5 py-3.5 shadow-sm">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -413,16 +410,18 @@ export default function OwnerCalendarPage() {
                       {selectedListing.title}
                     </span>
                   </>
-                ) : (
+                ) : listings.length > 0 ? (
                   t("page.selectProperty")
+                ) : (
+                  t("page.noProperties")
                 )}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={handleRefresh} // ← UTILISER LA NOUVELLE FONCTION
-                disabled={isRefreshing || loadingCal}
-                className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-sky-600 transition-colors disabled:opacity-50"
+                onClick={handleRefresh}
+                disabled={isRefreshing || loadingCal || !selectedListing}
+                className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-500 hover:text-sky-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <RefreshCw
                   size={14}
@@ -433,35 +432,81 @@ export default function OwnerCalendarPage() {
           </div>
         </div>
 
-        {!selectedListing ? (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <CalendarDays
-                size={48}
-                className="text-slate-300 dark:text-slate-600 mx-auto mb-4"
-              />
-              <p className="text-slate-400">{t("page.selectProperty")}</p>
-            </div>
+       {/* CONTENU PRINCIPAL - EMPTY STATE OU CALENDRIER */}
+<div className="flex-1 overflow-auto p-5">
+  {listings.length === 0 ? (
+    <div className="h-full flex items-center justify-center">
+      <EmptyCalendarState t={t} locale={locale} />
+    </div>
+  ) : !selectedListing ? (
+    <div className="h-full flex items-center justify-center">
+      <div className="text-center max-w-md mx-auto">
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.5, type: "spring", stiffness: 300 }}
+          className="relative mb-6"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full blur-2xl animate-pulse" />
+          <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 flex items-center justify-center shadow-lg">
+            <CalendarDays size={48} className="text-amber-500 dark:text-amber-400" />
           </div>
-        ) : (
-          <div className="flex-1 overflow-auto p-5">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md p-4">
-              <SimpleCalendar
-                days={days}
-                currentDate={currentDate}
-                onDateChange={setCurrentDate}
-                onDateClick={handleDayClick}
-                onDateMouseEnter={handleDayMouseEnter}
-                selectedDates={selectedDates}
-                isDark={isDark}
-              />
-            </div>
-          </div>
-        )}
-      </main>
+        </motion.div>
 
-      {/* RIGHT SIDEBAR - Actions groupées */}
-      <aside className="w-80 shrink-0 flex flex-col bg-white dark:bg-slate-950 border-l border-slate-200 dark:border-slate-800 overflow-y-auto">
+        <motion.h3
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-2xl font-headline font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent mb-3"
+        >
+          {t("noProperty.title")}
+        </motion.h3>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 leading-relaxed"
+        >
+          {t("noProperty.description")}
+        </motion.p>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <button
+            onClick={() => {
+              const firstListing = listings[0];
+              if (firstListing) setSelectedListing(firstListing);
+            }}
+            className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
+          >
+            <Home size={18} className="group-hover:rotate-12 transition-transform duration-300" />
+            {t("noProperty.button")}
+            <TrendingUp size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+          </button>
+        </motion.div>
+      </div>
+    </div>
+  ) : (
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md p-4">
+      <SimpleCalendar
+        days={days}
+        currentDate={currentDate}
+        onDateChange={setCurrentDate}
+        onDateClick={handleDayClick}
+        onDateMouseEnter={handleDayMouseEnter}
+        selectedDates={selectedDates}
+        isDark={isDark}
+      />
+    </div>
+  )}
+</div>
+</div>
+      {/* RIGHT SIDEBAR - Actions groupées (désactivées si pas de sélection) */}
+      <aside className="w-80 shrink-0 flex flex-col bg-white dark:bg-slate-900/0 border-l border-slate-200 dark:border-slate-800 h-full overflow-y-auto">
         <div className="p-5 space-y-5">
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
@@ -473,7 +518,7 @@ export default function OwnerCalendarPage() {
                   setShowBlockPanel(!showBlockPanel);
                   setShowPricePanel(false);
                 }}
-                disabled={selectedDates.length === 0}
+                disabled={selectedDates.length === 0 || !selectedListing}
                 className="w-full flex items-center justify-between p-3.5 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-100 transition-all disabled:opacity-40"
               >
                 <div className="flex items-center gap-3">
@@ -521,7 +566,7 @@ export default function OwnerCalendarPage() {
 
               <button
                 onClick={doUnblock}
-                disabled={selectedDates.length === 0}
+                disabled={selectedDates.length === 0 || !selectedListing}
                 className="w-full flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 transition-all disabled:opacity-40"
               >
                 <div className="flex items-center gap-3">
@@ -544,7 +589,7 @@ export default function OwnerCalendarPage() {
                   setShowPricePanel(!showPricePanel);
                   setShowBlockPanel(false);
                 }}
-                disabled={selectedDates.length === 0}
+                disabled={selectedDates.length === 0 || !selectedListing}
                 className="w-full flex items-center justify-between p-3.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 transition-all disabled:opacity-40"
               >
                 <div className="flex items-center gap-3">
@@ -649,7 +694,7 @@ export default function OwnerCalendarPage() {
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-sky-200 dark:border-sky-800">
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-sky-200 dark:border-sky-800 mt-55">
             <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
               <Sparkles size={14} className="text-sky-500" />
               {t("aiTip.title")}
@@ -663,15 +708,7 @@ export default function OwnerCalendarPage() {
             </p>
           </div>
         </div>
-        <div className="mx-3  mb-25  p-4 rounded-2xl bg-gradient-to-br from-sky-500 to-purple-600 text-white shadow-lg mb">
-          <p className="font-bold text-sm">{t("sidebar.upgradeToPro")}</p>
-          <p className="text-[10px] opacity-80 mt-0.5">
-            {t("sidebar.manageMoreProperties")}
-          </p>
-          <button className="mt-3 bg-white text-sky-700 text-[11px] font-black py-1.5 px-4 rounded-full w-full hover:bg-sky-50">
-            {t("actions.upgrade")}
-          </button>
-        </div>
+        
       </aside>
     </div>
   );

@@ -880,9 +880,9 @@ export default function CreateListingPage({
   };
 
   return (
-    <div className="h-full flex flex-col bg-slate-50/20 dark:bg-slate-950 overflow-hidden">
+    <div className="h-full flex flex-col  overflow-hidden">
       {/* Header */}
-      <div className="flex-shrink-0 bg-white dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800">
         <div className="max-w-6xl mx-auto py-4 px-6">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-2">
             <Link
@@ -1979,7 +1979,7 @@ export default function CreateListingPage({
       </div>
 
       {/* Navigation bas */}
-      <div className="flex-shrink-0 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-4">
+      <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-800 py-4">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between">
           <button
             type="button"

@@ -139,7 +139,7 @@ export default function TeamManagementUI() {
   if (loading) return <LoadingSpinner fullScreen variant="spinner" size="lg" color="primary" text={t("loading.message")} speed="normal" />;
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-white dark:bg-slate-950 min-h-screen transition-colors">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-white dark:bg-slate-900/0 min-h-screen transition-colors">
       
 
       {alert && (
@@ -150,72 +150,71 @@ export default function TeamManagementUI() {
 
       <div className="px-5 lg:px-8 py-8 w-full">
 
-        {/* ══════════════════════════════════════════════════════════════════
-            HERO — Cinematic image with integrated stats
-        ══════════════════════════════════════════════════════════════════ */}
-        <section className="relative rounded-3xl overflow-hidden mb-8 group shadow-2xl shadow-violet-500/10 dark:shadow-violet-950/20">
-          {/* Image — fills the entire section */}
-          <img
-            alt="Team Collaboration"
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3s] ease-out group-hover:scale-[1.04]"
-            src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&h=500&fit=crop"
-          />
+ {/* ══════════════════════════════════════════════════════════════════
+    HERO — Cinematic image with integrated stats
+══════════════════════════════════════════════════════════════════ */}
+<section className="relative rounded-3xl overflow-hidden mb-8 group shadow-2xl shadow-violet-500/10 dark:shadow-violet-950/20">
+  {/* Image — fills the entire section */}
+  <img
+    alt="Team Collaboration"
+    className="absolute inset-0 w-full h-full object-cover transition-transform duration-[3s] ease-out group-hover:scale-[1.04]"
+    src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1400&h=500&fit=crop"
+  />
 
-          {/* Cinematic overlays — no hard lines, just smooth gradients */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
-          <div className="absolute inset-0 bg-gradient-to-r from-violet-950/70 via-transparent to-indigo-950/50" />
+  {/* Cinematic overlays — no hard lines, just smooth gradients */}
+<div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/80" />
+<div className="absolute inset-0 bg-gradient-to-r from-indigo-950/70 via-transparent to-indigo-950/50 dark:from-indigo-950/70 dark:via-transparent dark:to-indigo-950/50" />
+  {/* Content */}
+  <div className="relative z-10 px-7 sm:px-10 pt-10 pb-6">
+    {/* Badge — blanc transparent en clair, indigo transparent en sombre */}
+    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/20 dark:bg-indigo-500/20 backdrop-blur-md rounded-full text-[9px] font-semibold uppercase tracking-[.2em] text-white/90 dark:text-indigo-300 mb-5 border border-white/20 dark:border-indigo-500/20">
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+      {t("hero.badge")}
+    </div>
 
-          {/* Content */}
-          <div className="relative z-10 px-7 sm:px-10 pt-10 pb-6">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-md rounded-full text-[9px] font-semibold uppercase tracking-[.2em] text-white/80 mb-5 border border-white/10">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              {t("hero.badge")}
-            </div>
+    {/* Title + description */}
+    <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
+      <div className="max-w-xl">
+        <h2 className="text-white dark:text-white text-3xl sm:text-4xl font-bold tracking-tight leading-[1.1] mb-3">
+          {t("hero.title")}
+        </h2>
+        <p className="text-white/70 dark:text-indigo-200/70 text-sm leading-relaxed max-w-md">
+          {t("hero.description")}
+        </p>
+      </div>
 
-            {/* Title + description */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-8">
-              <div className="max-w-xl">
-                <h2 className="text-white text-3xl sm:text-4xl font-bold tracking-tight leading-[1.1] mb-3">
-                  {t("hero.title")}
-                </h2>
-                <p className="text-white/50 text-sm leading-relaxed max-w-md">
-                  {t("hero.description")}
-                </p>
-              </div>
+      {/* CTA — glass button avec adaptation clair/sombre */}
+      <button
+        onClick={() => setShowInviteModal(true)}
+        className="flex items-center gap-2.5 px-6 py-3 bg-white/10 dark:bg-indigo-500/10 hover:bg-white/20 dark:hover:bg-indigo-500/20 backdrop-blur-md text-white dark:text-indigo-300 rounded-2xl text-sm font-semibold border border-white/20 dark:border-indigo-500/20 hover:border-white/30 dark:hover:border-indigo-500/30 shadow-lg active:scale-[.97] transition-all flex-shrink-0 group/btn"
+      >
+        <div className="w-7 h-7 rounded-xl bg-white/20 dark:bg-indigo-500/20 flex items-center justify-center">
+          <UserPlus size={13} className="text-white dark:text-indigo-400" />
+        </div>
+        {t("hero.button")}
+        <ChevronRight size={14} className="text-white/50 dark:text-indigo-400/50 group-hover/btn:translate-x-0.5 transition-transform" />
+      </button>
+    </div>
 
-              {/* CTA — glass button */}
-              <button
-                onClick={() => setShowInviteModal(true)}
-                className="flex items-center gap-2.5 px-6 py-3 bg-indigo-500/[0.08] hover:bg-indigo-500/[0.14] backdrop-blur-md text-indigo-400 rounded-2xl text-sm font-semibold border border-indigo-500/[0.12] hover:border-indigo-500/[0.2] shadow-lg active:scale-[.97] transition-all flex-shrink-0 group/btn"
-              >
-                <div className="w-7 h-7 rounded-xl bg-indigo-500/15 flex items-center justify-center">
-                  <UserPlus size={13} className="text-indigo-500" />
-                </div>
-                {t("hero.button")}
-                <ChevronRight size={14} className="text-indigo-500/50 group-hover/btn:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
-
-            {/* Stats strip — glass, integrated */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {[
-                { val: totalMembers, label: t("stats.activeMembers"), icon: <Users size={14} /> },
-                { val: totalInvitations, label: t("stats.pendingInvitations"), icon: <Mail size={14} /> },
-                { val: totalListings, label: t("stats.properties"), icon: <Building2 size={14} /> },
-                { val: `${activeRate}%`, label: t("analytics.activityRate"), icon: <Trophy size={14} /> },
-              ].map(({ val, label, icon }) => (
-                <div key={label} className="bg-indigo-500/[0.08] hover:bg-indigo-500/[0.12] backdrop-blur-md rounded-2xl border border-indigo-500/[0.08] px-4 py-3.5 transition-colors">
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className="text-indigo-500/30">{icon}</span>
-                    <span className="text-[8px] text-indigo-500/30 uppercase tracking-widest">{label}</span>
-                  </div>
-                  <p className="text-2xl font-bold text-indigo-400 leading-none">{val}</p>
-                </div>
-              ))}
-            </div>
+    {/* Stats strip — glass, integrated */}
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+      {[
+        { val: totalMembers, label: t("stats.activeMembers"), icon: <Users size={14} /> },
+        { val: totalInvitations, label: t("stats.pendingInvitations"), icon: <Mail size={14} /> },
+        { val: totalListings, label: t("stats.properties"), icon: <Building2 size={14} /> },
+        { val: `${activeRate}%`, label: t("analytics.activityRate"), icon: <Trophy size={14} /> },
+      ].map(({ val, label, icon }) => (
+        <div key={label} className="bg-white/10 dark:bg-indigo-500/10 hover:bg-white/15 dark:hover:bg-indigo-500/15 backdrop-blur-md rounded-2xl border border-white/15 dark:border-indigo-500/15 px-4 py-3.5 transition-colors">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="text-white/40 dark:text-indigo-400/40">{icon}</span>
+            <span className="text-[8px] text-white/40 dark:text-indigo-400/40 uppercase tracking-widest">{label}</span>
           </div>
-        </section>
+          <p className="text-2xl font-bold text-white dark:text-indigo-300 leading-none">{val}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>
 
         {/* ══════════════════════════════════════════════════════════════════
             MAIN GRID
@@ -226,25 +225,36 @@ export default function TeamManagementUI() {
           <div className="space-y-5 min-w-0">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
-                <Sparkles size={14} className="text-violet-500 dark:text-violet-400" />
-                <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-gray-400 dark:text-gray-500">
+                <p className="text-[12px] font-semibold uppercase tracking-[.2em] text-gray-400 dark:text-gray-500">
                   Membres actifs · {totalMembers}
                 </p>
               </div>
             </div>
 
-            {teamMembers.length === 0 ? (
-              <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl rounded-3xl border-2 border-dashed border-violet-200/60 dark:border-violet-700/40 py-16 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-violet-50 dark:bg-violet-900/30 flex items-center justify-center mx-auto mb-4">
-                  <LuUserX size={24} className="text-violet-400 dark:text-violet-600" />
-                </div>
-                <h3 className="text-base font-semibold text-gray-700 dark:text-gray-300 mb-1">{t("empty.title")}</h3>
-                <p className="text-sm text-gray-400 dark:text-gray-500 max-w-sm mx-auto mb-5">{t("empty.description")}</p>
-                <button onClick={() => setShowInviteModal(true)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 shadow-md shadow-violet-500/20 dark:shadow-violet-900/30">
-                  <UserPlus size={16} /> {t("empty.button")}
-                </button>
-              </div>
+
+{teamMembers.length === 0 ? (
+  <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl rounded-2xl border border-sky-100 dark:border-sky-900/40 py-12 text-center">
+    <div className="relative mb-4">
+      <div className="absolute inset-0 bg-gradient-to-r from-sky-500/20 to-purple-500/20 rounded-full blur-2xl animate-pulse" />
+      <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center shadow-lg mx-auto">
+        <LuUserX size={32} className="text-sky-500 dark:text-sky-400" />
+      </div>
+    </div>
+    <h3 className="text-lg font-bold bg-gradient-to-r from-sky-600 to-purple-600 dark:from-sky-400 dark:to-purple-400 bg-clip-text text-transparent mb-2">
+      {t("empty.title")}
+    </h3>
+    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto mb-5 leading-relaxed">
+      {t("empty.description")}
+    </p>
+    <button
+      onClick={() => setShowInviteModal(true)}
+      className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white rounded-lg text-sm font-semibold shadow-md shadow-sky-500/25 transition-all duration-300 hover:scale-105 active:scale-95"
+    >
+      <UserPlus size={14} />
+      {t("empty.button")}
+    </button>
+  </div>
+
             ) : (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

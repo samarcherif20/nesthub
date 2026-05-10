@@ -79,8 +79,6 @@ interface RoleData {
   cta: string;
 }
 
-
-
 // ═══════════════════════════════════════════════════
 // MOUSE TILT HOOK
 // ═══════════════════════════════════════════════════
@@ -149,7 +147,7 @@ function Aurora({ activeRole }: { activeRole: Role | null }) {
 }
 
 // ═══════════════════════════════════════════════════
-// HEADER AVEC DÉGRADÉ SKY/PURPLE
+// HEADER AVEC DÉGRADÉ TRÈS CLAIR ET CONTENU HARMONISÉ
 // ═══════════════════════════════════════════════════
 function Header({
   user,
@@ -181,38 +179,35 @@ function Header({
     return user?.name?.charAt(0).toUpperCase() || "U";
   };
 
-  // Couleurs du header selon le scroll et le thème
+  // Style du header : dégradé TRÈS CLAIR
   const getHeaderStyle = () => {
     if (scrolled) {
-      // Style quand on scroll
       return {
         background: isDark 
-          ? "rgba(15, 23, 42, 0.92)"  // slate-900 presque opaque
-          : "rgba(255, 255, 255, 0.92)", // blanc presque opaque
+          ? "rgba(15, 23, 42, 0.92)"
+          : "rgba(255, 255, 255, 0.92)",
         border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
         boxShadow: isDark
           ? "0 4px 24px -4px rgba(0,0,0,0.4)"
           : "0 4px 24px -4px rgba(0,0,0,0.08)",
       };
     } else {
-      // Style en haut de page - dégradé transparent
+      // Dégradé TRÈS CLAIR (blanc → bleu très pâle → violet très pâle)
       return {
-        background: "linear-gradient(135deg, rgba(14,165,233,0.88), rgba(139,92,246,0.88), rgba(168,85,247,0.88))",
-        border: "1px solid rgba(255,255,255,0.25)",
-        boxShadow: "0 8px 32px -8px rgba(0,0,0,0.2)",
+        background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(220,240,255,0.92), rgba(240,230,255,0.92))",
+        // Bordure avec LE MÊME DÉGRADÉ (plus visible)
+        border: "1px solid rgba(200, 215, 240, 0.6)",
+        boxShadow: "0 4px 24px -4px rgba(0,0,0,0.06)",
       };
     }
   };
 
-  // Couleur du texte selon le scroll
-  const textColor = scrolled 
-    ? (isDark ? "text-white" : "text-gray-800")
-    : "text-white";
-  
-  // Couleur du sous-titre
-  const subtitleColor = scrolled
-    ? (isDark ? "text-gray-400" : "text-gray-500")
-    : "text-white/70";
+  // Couleur du texte selon le scroll et le thème
+  const textColor = scrolled
+    ? isDark
+      ? "text-white"
+      : "text-gray-800"
+    : "text-gray-700"; // Changé: texte gris foncé pour contraster avec fond clair
 
   const headerStyle = getHeaderStyle();
 
@@ -232,36 +227,38 @@ function Header({
           border: headerStyle.border,
         }}
       >
-        {/* Logo avec ton image */}
+        {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="relative w-8 h-8 shrink-0">
-                      <Image
-                        src="/logo/logo.png"
-                        alt="NestHub Logo"
-                        fill
-                        className="object-contain scale-[5.75] translate-y-2.75 ml-2.5"
-                      />
-                    </div>
+            <Image
+              src="/logo/logo.png"
+              alt="NestHub Logo"
+              fill
+              className="object-contain scale-[5.75] translate-y-2.75 ml-2.5"
+            />
+          </div>
           <div className="flex flex-col">
-            <span 
-className={`ml-4 mt-1.5 font-black text-2xl tracking-tight transition-colors duration-300 bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent`}              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            <span
+              className="ml-4 mt-1.5 font-black text-2xl tracking-tight transition-colors duration-300 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               N E S T H U B
             </span>
-           
           </div>
         </div>
 
-        {/* Right section */}
+        {/* Right section - CONTENU HARMONISÉ avec le fond clair */}
         <div className="flex items-center gap-3">
-
           {user && (
             <>
-              <div 
+              <div
                 className={`flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl transition-all duration-300
-                  ${scrolled 
-                    ? (isDark ? "bg-slate-800/50 border-slate-700" : "bg-gray-100/80 border-gray-200")
-                    : "bg-white/20 backdrop-blur-sm border-white/30"
+                  ${
+                    scrolled
+                      ? isDark
+                        ? "bg-slate-800/50 border-slate-700"
+                        : "bg-gray-100/80 border-gray-200"
+                      : "bg-white/60 backdrop-blur-sm border-white/80 shadow-sm"
                   } border`}
               >
                 <div className="relative w-8 h-8">
@@ -269,26 +266,40 @@ className={`ml-4 mt-1.5 font-black text-2xl tracking-tight transition-colors dur
                     <img
                       src={getAvatarUrl()!}
                       alt={user.name}
-                      className="w-full h-full rounded-lg object-cover ring-2 ring-white/20"
+                      className="w-full h-full rounded-lg object-cover ring-2 ring-blue-300/50"
                       onError={() => setAvatarError(true)}
                     />
                   ) : (
-                    <div className={`w-full h-full rounded-lg flex items-center justify-center text-white font-bold ${
-                      scrolled && !isDark ? "bg-gradient-to-r from-sky-500 to-purple-500" : "bg-white/20"
-                    }`}>
+                    <div
+                      className={`w-full h-full rounded-lg flex items-center justify-center font-bold ${
+                        scrolled && !isDark
+                          ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                          : "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                      }`}
+                    >
                       {getInitial()}
                     </div>
                   )}
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-white shadow-sm" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-sm" />
                 </div>
                 <div className="hidden sm:block leading-tight">
-                  <p className={`text-[10px] font-semibold transition-colors duration-300 ${
-                    scrolled ? (isDark ? "text-gray-400" : "text-gray-500") : "text-white/70"
-                  }`}>
-                    Connecté
+                  <p
+                    className={`text-[10px] font-semibold transition-colors duration-300 ${
+                      scrolled
+                        ? isDark
+                          ? "text-gray-400"
+                          : "text-gray-500"
+                        : "text-gray-500"
+                    }`}
+                  >
+                   {t("connected")}
                   </p>
-                  <p className={`text-[13px] font-bold transition-colors duration-300 ${textColor}`}>
-                    {user.name.length > 15 ? user.name.slice(0, 12) + "..." : user.name}
+                  <p
+                    className={`text-[13px] font-bold transition-colors duration-300 ${textColor}`}
+                  >
+                    {user.name.length > 15
+                      ? user.name.slice(0, 12) + "..."
+                      : user.name}
                   </p>
                 </div>
               </div>
@@ -296,15 +307,16 @@ className={`ml-4 mt-1.5 font-black text-2xl tracking-tight transition-colors dur
               <button
                 onClick={onLogout}
                 className={`flex items-center gap-1.5 text-[12px] font-semibold transition-all duration-300 px-3 py-2 rounded-xl
-                  ${scrolled
-                    ? (isDark 
-                      ? "text-gray-300 hover:text-red-400 hover:bg-red-500/10" 
-                      : "text-gray-600 hover:text-red-500 hover:bg-red-50")
-                    : "text-white/80 hover:text-white hover:bg-white/20"
+                  ${
+                    scrolled
+                      ? isDark
+                        ? "text-gray-300 hover:text-red-400 hover:bg-red-500/10"
+                        : "text-gray-600 hover:text-red-500 hover:bg-red-50"
+                      : "text-gray-600 hover:text-red-500 hover:bg-white/50"
                   }`}
               >
                 <RiLogoutBoxLine className="text-base" />
-                <span className="hidden sm:inline">Déconnexion</span>
+                <span className="hidden sm:inline">{t("logout")}</span>
               </button>
             </>
           )}
@@ -738,17 +750,17 @@ function RoleCard({
 }
 
 // ═══════════════════════════════════════════════════
-// MODAL DE DÉCONNEXION (identique au layout)
+// MODAL DE DÉCONNEXION
 // ═══════════════════════════════════════════════════
 function LogoutModal({
   onClose,
   onConfirm,
-  t,
 }: {
   onClose: () => void;
   onConfirm: () => void;
-  t: any;
 }) {
+  const t = useTranslations("ChooseRole");
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-2xl p-6 text-center border border-slate-200 dark:border-slate-800">
@@ -779,7 +791,6 @@ function LogoutModal({
     </div>
   );
 }
-
 // ═══════════════════════════════════════════════════
 // TRANSITION SCREEN
 // ═══════════════════════════════════════════════════
@@ -1219,11 +1230,6 @@ export default function ChooseRolePage() {
         <LogoutModal
           onClose={handleCloseLogoutModal}
           onConfirm={handleLogout}
-          t={{
-            logoutConfirm: t("logoutConfirm"),
-            logoutMessage: t("logoutMessage"),
-            cancel: t("cancel"),
-          }}
         />
       )}
     </div>

@@ -168,55 +168,72 @@ export function useSettings() {
       setProfile((prev) => ({ ...prev, preferredLocale: currentLocale }));
     }
   };
+// Changer le mot de passe
+const changePassword = async () => {
+  if (!isPasswordValid) {
+    toast.error("Le mot de passe n'est pas assez fort");
+    return;
+  }
 
-  // Changer le mot de passe
-  const changePassword = async () => {
-    if (!isPasswordValid) return;
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    toast.error("Les mots de passe ne correspondent pas");
+    return;
+  }
 
-    setPasswordForm((prev) => ({ ...prev, isSubmitting: true }));
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const response = await fetch("/api/users/change-password", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword: passwordForm.currentPassword,
-          newPassword: passwordForm.newPassword,
-        }),
-      });
+  setPasswordForm((prev) => ({ ...prev, isSubmitting: true }));
+  
+  try {
+    const token = await getToken({ template: "my-app-template" });
+    
+    const response = await fetch("/api/users/change-password", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      }),
+    });
 
-      if (response.ok) {
-        setPasswordForm((prev) => ({ ...prev, success: true }));
-        toast.success("Mot de passe mis à jour avec succès !");
-        setTimeout(() => {
-          setPasswordForm({
-            currentPassword: "",
-            newPassword: "",
-            confirmPassword: "",
-            showCurrent: false,
-            showNew: false,
-            showConfirm: false,
-            strength: 1,
-            isSubmitting: false,
-            success: false,
-            open: false,
-          });
-        }, 3000);
-      } else {
-        const error = await response.json();
-        toast.error(error.message || "Erreur lors de la mise à jour");
+    const data = await response.json();
+
+    if (response.ok) {
+      setPasswordForm((prev) => ({ ...prev, success: true }));
+      toast.success("Mot de passe mis à jour avec succès !");
+      
+      // Réinitialiser le formulaire après succès
+      setTimeout(() => {
+        setPasswordForm({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+          showCurrent: false,
+          showNew: false,
+          showConfirm: false,
+          strength: 1,
+          isSubmitting: false,
+          success: false,
+          open: false,
+        });
+      }, 3000);
+    } else {
+      // Afficher l'erreur retournée par l'API
+      toast.error(data.error || "Erreur lors de la mise à jour");
+      
+      // Si l'API renvoie un message spécifique
+      if (data.isOAuthUser) {
+        toast.error("Ce compte utilise Google/Facebook. Pas de mot de passe à modifier.");
       }
-    } catch (error) {
-      console.error("Erreur changement mot de passe:", error);
-      toast.error("Erreur lors de la mise à jour");
-    } finally {
-      setPasswordForm((prev) => ({ ...prev, isSubmitting: false }));
     }
-  };
-
+  } catch (error) {
+    console.error("Erreur changement mot de passe:", error);
+    toast.error("Erreur de connexion. Veuillez réessayer.");
+  } finally {
+    setPasswordForm((prev) => ({ ...prev, isSubmitting: false }));
+  }
+};
   // Basculer mode vacances
   const toggleVacationMode = async () => {
     try {

@@ -1,4 +1,3 @@
-// app/[locale]/(dashboard)/owner/profile/page.tsx
 "use client";
 
 import React from "react";
@@ -17,6 +16,15 @@ import {
   Edit2,
   Save,
   X as XIcon,
+  Loader2,
+  Home,
+  Calendar,
+  TrendingUp,
+  DollarSign,
+  Star,
+  HomeIcon,
+  Key,
+  Briefcase,
 } from "lucide-react";
 import {
   RiUserLine,
@@ -34,8 +42,6 @@ import {
   RiVerifiedBadgeLine,
   RiUserHeartLine,
 } from "react-icons/ri";
-import { GoShieldCheck } from "react-icons/go";
-import { BsPersonCheck, BsPatchCheckFill } from "react-icons/bs";
 import { MdOutlineVerified } from "react-icons/md";
 import { TbLanguage } from "react-icons/tb";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -49,17 +55,7 @@ const block3d =
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.04),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.25),0_8px_16px_-4px_rgba(0,0,0,0.30)]";
 
-function Field({
-  label,
-  icon: Icon,
-  children,
-  badge,
-}: {
-  label: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-  badge?: React.ReactNode;
-}) {
+function Field({ label, icon: Icon, children, badge }: any) {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -88,10 +84,6 @@ function TrustBar({ score }: { score: number }) {
     { label: "Expert", threshold: 70 },
     { label: "Superhôte", threshold: 90 },
   ];
-  const current = milestones.reduce(
-    (prev, m) => (score >= m.threshold ? m : prev),
-    milestones[0],
-  );
   return (
     <div>
       <div className="overflow-hidden h-2 bg-slate-200 dark:bg-slate-700 rounded-full mb-2">
@@ -116,6 +108,39 @@ function TrustBar({ score }: { score: number }) {
   );
 }
 
+function getUserTypeLabel(userType: string) {
+  switch (userType) {
+    case "owner":
+      return (
+        <span className="flex items-center gap-1.5">
+          <HomeIcon size={12} className="text-sky-600 dark:text-sky-400" />
+          <span className="text-slate-700 dark:text-slate-300">Propriétaire</span>
+        </span>
+      );
+    case "tenant":
+      return (
+        <span className="flex items-center gap-1.5">
+          <Key size={12} className="text-emerald-600 dark:text-emerald-400" />
+          <span className="text-slate-700 dark:text-slate-300">Locataire</span>
+        </span>
+      );
+    case "professional":
+      return (
+        <span className="flex items-center gap-1.5">
+          <Briefcase size={12} className="text-purple-600 dark:text-purple-400" />
+          <span className="text-slate-700 dark:text-slate-300">Professionnel</span>
+        </span>
+      );
+    default:
+      return (
+        <span className="flex items-center gap-1.5">
+          <User size={12} className="text-slate-500 dark:text-slate-400" />
+          <span className="text-slate-500 dark:text-slate-400">Utilisateur</span>
+        </span>
+      );
+  }
+}
+
 export default function ProfilePage() {
   const t = useTranslations("Profile");
   const {
@@ -133,7 +158,6 @@ export default function ProfilePage() {
     profilePictureUrl,
     availability,
     trustScore,
-    memberSince,
     positiveReviews,
     idVerified,
     idVerifiedDate,
@@ -142,11 +166,24 @@ export default function ProfilePage() {
     bioLength,
     bioMaxLength,
     trustLevel,
-    uploadingPicture,
     showLanguageInput,
     newLanguage,
     fileInputRef,
     commonLanguages,
+    sendingReminder,
+    reminderSent,
+    waitTimeRemaining,
+    editingSlot,
+    tempHours,
+    uploadingPicture,
+    totalProperties,
+    totalBookings,
+    totalReviews,
+    totalEarnings,
+    responseRate,
+    responseTime,
+    completionRate,
+    badges,
     setFirstName,
     setLastName,
     setBio,
@@ -161,15 +198,25 @@ export default function ProfilePage() {
     handleSave,
     handleEdit,
     handleCancel,
+    sendVerificationReminder,
+    updateAvailabilitySlot,
+    toggleAvailabilityDay,
+    startEditSlot,
+    cancelEditSlot,
+    setEditingSlot,
+    setTempHours,
   } = useProfile();
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-background-light  dark:bg-background-dark gap-4">
-        <LoadingSpinner />
-        <p className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">
-          {t("loading.message")}
-        </p>
+      <div className="fixed inset-0 flex items-center justify-center bg-slate-50/20 dark:bg-slate-900/0 z-50">
+        <LoadingSpinner
+          variant="spinner"
+          size="lg"
+          color="primary"
+          text="Chargement du profil..."
+          speed="normal"
+        />
       </div>
     );
   }
@@ -182,19 +229,16 @@ export default function ProfilePage() {
     }`;
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-background-light  dark:bg-background-dark">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50/20 dark:bg-slate-900/0">
       {/* PAGE HEADER */}
-      <div className="bg-white dark:bg-slate-950 border-b border-slate-100 dark:border-slate-800">
+      <div className="bg-white dark:bg-slate-900/0 border-b border-slate-100 dark:border-slate-800">
         <div className="px-6 lg:px-10 py-7">
-          <div>
-            <div className="flex items-center gap-2 mb-2"></div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {t("page.title")}
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
-              {t("page.description")}
-            </p>
-          </div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+            {t("page.title")}
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
+            {t("page.description")}
+          </p>
         </div>
       </div>
 
@@ -233,7 +277,11 @@ export default function ProfilePage() {
                     <div className="w-28 h-28 rounded-2xl overflow-hidden border-2 border-slate-100 dark:border-slate-700 shadow-xl group-hover:scale-[1.02] transition-transform duration-300">
                       {profilePictureUrl ? (
                         <img
-                          src={pipAvatar(profilePictureUrl)}
+                          src={
+                            profilePictureUrl.startsWith("blob:")
+                              ? profilePictureUrl
+                              : pipAvatar(profilePictureUrl)
+                          }
                           alt="Profil"
                           className="w-full h-full object-cover"
                         />
@@ -256,8 +304,12 @@ export default function ProfilePage() {
                       onChange={handleProfilePictureChange}
                       className="hidden"
                     />
+                    {uploadingPicture && (
+                      <div className="absolute inset-0 bg-black/50 dark:bg-black/70 rounded-2xl flex items-center justify-center">
+                        <Loader2 className="w-8 h-8 text-white animate-spin" />
+                      </div>
+                    )}
                   </div>
-
                   <div className="flex-1 text-center sm:text-left">
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                       {t("avatar.title")}
@@ -293,7 +345,6 @@ export default function ProfilePage() {
                       onChange={(e) => setFirstName(e.target.value)}
                       disabled={!isEditing}
                       className={inputBase(!isEditing)}
-                      placeholder={t("fields.firstName")}
                     />
                   </Field>
 
@@ -304,7 +355,6 @@ export default function ProfilePage() {
                       onChange={(e) => setLastName(e.target.value)}
                       disabled={!isEditing}
                       className={inputBase(!isEditing)}
-                      placeholder={t("fields.lastName")}
                     />
                   </Field>
 
@@ -317,14 +367,9 @@ export default function ProfilePage() {
                       </span>
                     }
                   >
-                    <select
-                      disabled
-                      className={`${inputBase(true)} appearance-none`}
-                    >
-                      <option value="tenant">Locataire</option>
-                      <option value="owner">Propriétaire</option>
-                      <option value="professional">Professionnel</option>
-                    </select>
+                    <div className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
+                      {getUserTypeLabel(userType)}
+                    </div>
                   </Field>
 
                   <Field
@@ -361,7 +406,6 @@ export default function ProfilePage() {
                       onChange={(e) => setProfession(e.target.value)}
                       disabled={!isEditing}
                       className={inputBase(!isEditing)}
-                      placeholder={t("fields.profession")}
                     />
                   </Field>
                 </div>
@@ -384,7 +428,6 @@ export default function ProfilePage() {
                       }
                       disabled={!isEditing}
                       rows={4}
-                      placeholder={t("fields.bioPlaceholder")}
                       className={`${inputBase(!isEditing)} resize-none`}
                     />
                   </Field>
@@ -476,44 +519,139 @@ export default function ProfilePage() {
                       </p>
                     </div>
                   </div>
+                  {isEditing && (
+                    <span className="text-[9px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">
+                      Cliquez pour modifier
+                    </span>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {availability.map((slot, idx) => (
+                  {availability.map((slot) => (
                     <div
                       key={slot.day}
                       onClick={() => {
-                        if (!isEditing) return;
-                        const n = [...availability];
-                        n[idx].enabled = !n[idx].enabled;
-                        setAvailability(n);
+                        if (isEditing) {
+                          toggleAvailabilityDay(slot.day);
+                        }
                       }}
-                      className={`p-4 rounded-2xl border-2 transition-all ${isEditing ? "cursor-pointer" : ""} ${
+                      className={`group relative p-4 rounded-2xl border-2 transition-all cursor-pointer ${
                         slot.enabled
-                          ? `bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-800/40 ${isEditing ? "hover:bg-emerald-100 dark:hover:bg-emerald-900/25" : ""}`
+                          ? `bg-emerald-50 dark:bg-emerald-900/15 border-emerald-200 dark:border-emerald-800/40`
                           : "bg-slate-50 dark:bg-slate-800/40 border-transparent opacity-45"
                       } ${card3d}`}
                     >
-                      <span className="block text-[9px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                        {slot.day}
-                      </span>
-                      <span className="block font-bold text-sm text-slate-900 dark:text-white">
-                        {slot.hours}
-                      </span>
-                      {slot.enabled && (
-                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                          {slot.day}
+                        </span>
+                        {isEditing && (
+                          <div
+                            className={`w-5 h-5 rounded-full flex items-center justify-center transition-colors ${
+                              slot.enabled
+                                ? "bg-emerald-500 dark:bg-emerald-600 text-white shadow-sm"
+                                : "bg-slate-300 dark:bg-slate-600 text-slate-500 dark:text-slate-400"
+                            }`}
+                          >
+                            {slot.enabled ? (
+                              <CheckCircle size={10} />
+                            ) : (
+                              <X size={10} />
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {isEditing && editingSlot === slot.day ? (
+                        <div
+                          className="flex items-center gap-1 mt-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <select
+                            value={tempHours}
+                            onChange={(e) => setTempHours(e.target.value)}
+                            className="flex-1 px-2 py-1 text-xs rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
+                          >
+                            <option value="09:00 - 19:00">09:00 - 19:00 (Journée)</option>
+                            <option value="10:00 - 15:00">10:00 - 15:00 (Matinée)</option>
+                            <option value="08:00 - 12:00">08:00 - 12:00 (Matin)</option>
+                            <option value="14:00 - 20:00">14:00 - 20:00 (Après-midi)</option>
+                            <option value="Sur rendez-vous">Sur rendez-vous</option>
+                            <option value="Fermé">Fermé</option>
+                          </select>
+                          <button
+                            onClick={() =>
+                              updateAvailabilitySlot(slot.day, tempHours)
+                            }
+                            className="p-1 rounded bg-emerald-500 dark:bg-emerald-600 text-white hover:bg-emerald-600 dark:hover:bg-emerald-700"
+                          >
+                            <CheckCircle size={12} />
+                          </button>
+                          <button
+                            onClick={cancelEditSlot}
+                            className="p-1 rounded bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600"
+                          >
+                            <X size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <span className="block font-bold text-sm text-slate-900 dark:text-white">
+                            {slot.hours}
+                          </span>
+                          {isEditing && slot.enabled && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                startEditSlot(slot.day, slot.hours);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-emerald-100 dark:hover:bg-emerald-800/40"
+                            >
+                              <Edit2
+                                size={12}
+                                className="text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400"
+                              />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                      {slot.enabled && !isEditing && (
+                        <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
                       )}
                     </div>
                   ))}
                 </div>
+
+                {isEditing && (
+                  <div className="flex gap-3 mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 flex items-center justify-center gap-2"
+                    >
+                      {saving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Save size={16} />
+                      )}
+                      {t("actions.save")}
+                    </button>
+                    <button
+                      onClick={handleCancel}
+                      className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      {t("actions.cancel")}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           {/* RIGHT SIDEBAR */}
           <aside className="lg:col-span-4 space-y-6">
-            {/* TRUST SCORE */}
-            <div className="bg-gradient-to-br from-sky-500 via-purple-600 to-violet-600 p-px rounded-3xl shadow-xl shadow-indigo-200/40 dark:shadow-indigo-900/50">
+            {/* TRUST SCORE CARD */}
+            <div className="bg-gradient-to-br from-sky-500 via-purple-600 to-violet-600 p-px rounded-3xl shadow-xl">
               <div className="bg-white dark:bg-slate-900 rounded-[calc(1.5rem-1px)] p-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
@@ -530,7 +668,6 @@ export default function ProfilePage() {
                     <RiAwardLine className="text-indigo-600 dark:text-indigo-400 text-2xl" />
                   </div>
                 </div>
-
                 <div className="flex items-baseline gap-1 mb-4">
                   <span className="text-4xl font-bold text-indigo-600 dark:text-indigo-400">
                     {trustScore}
@@ -539,15 +676,10 @@ export default function ProfilePage() {
                     /100
                   </span>
                 </div>
-
                 <TrustBar score={trustScore} />
-
                 <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 space-y-3">
                   {[
-                    {
-                      ok: idVerified,
-                      label: t("trust.idVerified"),
-                    },
+                    { ok: idVerified, label: t("trust.idVerified") },
                     {
                       ok: true,
                       label: t("trust.positiveReviews", {
@@ -556,12 +688,14 @@ export default function ProfilePage() {
                     },
                     {
                       ok: true,
-                      label: t("trust.memberSince", { date: memberSince }),
+                      label: t("trust.memberSince", {
+                        date: new Date().getFullYear().toString(),
+                      }),
                     },
                   ].map(({ ok, label }) => (
                     <div key={label} className="flex items-center gap-2.5">
                       <div
-                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${ok ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"}`}
+                        className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${ok ? "bg-emerald-500 dark:bg-emerald-600" : "bg-slate-200 dark:bg-slate-700"}`}
                       >
                         {ok ? (
                           <RiCheckboxCircleLine
@@ -569,7 +703,7 @@ export default function ProfilePage() {
                             size={12}
                           />
                         ) : (
-                          <RiCloseLine className="text-slate-400" size={12} />
+                          <RiCloseLine className="text-slate-400 dark:text-slate-500" size={12} />
                         )}
                       </div>
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
@@ -621,10 +755,9 @@ export default function ProfilePage() {
                         : t("verification.pending")}
                     </span>
                   </div>
-
                   <div className="flex items-center gap-3">
                     <div className="w-11 h-8 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center">
-                      <RiIdCardLine className="text-slate-400 text-lg" />
+                      <RiIdCardLine className="text-slate-400 dark:text-slate-500 text-lg" />
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-slate-900 dark:text-white">
@@ -646,16 +779,158 @@ export default function ProfilePage() {
                 </p>
 
                 <button
-                  className={`w-full py-3 rounded-xl text-sm font-semibold transition-all active:scale-95 border-2 ${
-                    idVerified
-                      ? "border-emerald-500 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 hover:text-white dark:hover:text-white"
-                      : "bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white border-transparent shadow-sm shadow-indigo-200 dark:shadow-indigo-900/40"
+                  onClick={sendVerificationReminder}
+                  disabled={sendingReminder || reminderSent}
+                  className={`w-full py-3 rounded-xl text-sm font-semibold transition-all border-2 ${
+                    reminderSent
+                      ? "border-emerald-500 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 cursor-not-allowed"
+                      : idVerified
+                        ? "border-emerald-500 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 dark:hover:bg-emerald-600 hover:text-white"
+                        : "bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white border-transparent shadow-sm"
                   }`}
                 >
-                  {idVerified
-                    ? t("verification.update")
-                    : t("verification.start")}
+                  {sendingReminder ? (
+                    <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                  ) : reminderSent ? (
+                    "Rappel envoyé ✓"
+                  ) : idVerified ? (
+                    t("verification.update")
+                  ) : (
+                    t("verification.start")
+                  )}
                 </button>
+
+                {waitTimeRemaining !== null && (
+                  <div className="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                      <p className="text-xs text-amber-700 dark:text-amber-400">
+                        Vous avez déjà envoyé un rappel récemment. Veuillez
+                        patienter {waitTimeRemaining} heures.
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {reminderSent && !idVerified && !waitTimeRemaining && (
+                  <div className="mt-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                      <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                        Un rappel a été envoyé à l'administrateur. Vous serez
+                        notifié une fois votre identité vérifiée.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* STATISTIQUES CARD */}
+            <div
+              className={`bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden ${block3d}`}
+            >
+              <div className="h-1 bg-gradient-to-r from-indigo-500 to-purple-600" />
+              <div className="p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
+                    <TrendingUp size={14} className="text-indigo-600 dark:text-indigo-400" />
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Statistiques
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-center">
+                    <Home size={16} className="text-sky-500 dark:text-sky-400 mx-auto mb-1" />
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {totalProperties}
+                    </p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400">
+                      Propriétés
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-center">
+                    <Calendar
+                      size={16}
+                      className="text-emerald-500 dark:text-emerald-400 mx-auto mb-1"
+                    />
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {totalBookings}
+                    </p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400">
+                      Réservations
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-center">
+                    <Star
+                      size={16}
+                      className="text-amber-500 dark:text-amber-400 mx-auto mb-1"
+                    />
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {totalReviews}
+                    </p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400">
+                      Avis reçus
+                    </p>
+                  </div>
+                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-center">
+                    <DollarSign
+                      size={16}
+                      className="text-indigo-500 dark:text-indigo-400 mx-auto mb-1"
+                    />
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {totalEarnings.toLocaleString()} TND
+                    </p>
+                    <p className="text-[9px] text-slate-500 dark:text-slate-400">
+                      Gains totaux
+                    </p>
+                  </div>
+                </div>
+
+                {/* Badges */}
+                {badges.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1.5 justify-center">
+                    {badges.map((badge) => (
+                      <span
+                        key={badge}
+                        className="text-[8px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                      >
+                        {badge === "SUPERHOST" && "⭐ Superhôte"}
+                        {badge === "EXPERT" && "🎯 Expert"}
+                        {badge === "RELIABLE" && "✅ Fiable"}
+                        {badge === "VERIFIED" && "🔒 Vérifié"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Taux de réponse
+                    </span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      {responseRate}%
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs mt-2">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Temps de réponse
+                    </span>
+                    <span className="font-semibold text-slate-900 dark:text-white">
+                      {responseTime}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs mt-2">
+                    <span className="text-slate-500 dark:text-slate-400">
+                      Complétion profil
+                    </span>
+                    <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                      {completionRate}%
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           </aside>

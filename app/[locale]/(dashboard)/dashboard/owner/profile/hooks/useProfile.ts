@@ -1,4 +1,3 @@
-// app/[locale]/(dashboard)/owner/profile/hooks/useProfile.ts
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -30,6 +29,13 @@ interface UserProfile {
   idVerifiedDate: string;
   emailVerified: boolean;
   phoneVerified: boolean;
+  stats?: {
+    totalBookings: number;
+    totalListings: number;
+    totalReviews: number;
+    totalEarned: number;
+    responseRate: number;
+  };
 }
 
 const defaultAvailability: AvailabilitySlot[] = [
@@ -49,9 +55,8 @@ export function useProfile() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState(false); // Mode édition
+  const [isEditing, setIsEditing] = useState(false);
 
-  // Original data for cancel
   const [originalData, setOriginalData] = useState<{
     firstName: string;
     lastName: string;
@@ -62,7 +67,6 @@ export function useProfile() {
     availability: AvailabilitySlot[];
   } | null>(null);
 
-  // Profile form state
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -75,25 +79,105 @@ export function useProfile() {
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
   const [availability, setAvailability] = useState<AvailabilitySlot[]>(defaultAvailability);
 
-  // Trust score state
-  const [trustScore, setTrustScore] = useState(94);
-  const [memberSince, setMemberSince] = useState("2023");
-  const [positiveReviews, setPositiveReviews] = useState(12);
-  const [idVerified, setIdVerified] = useState(true);
-  const [idVerifiedDate, setIdVerifiedDate] = useState("12 Mars 2023");
-  const [emailVerified, setEmailVerified] = useState(true);
-  const [phoneVerified, setPhoneVerified] = useState(true);
+  // 📊 STATISTIQUES DYNAMIQUES (viennent de l'API /api/users/stats)
+  const [totalProperties, setTotalProperties] = useState(0);
+  const [totalBookings, setTotalBookings] = useState(0);
+  const [totalReviews, setTotalReviews] = useState(0);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [responseRate, setResponseRate] = useState(0);
+  const [responseTime, setResponseTime] = useState("--");
+  const [completionRate, setCompletionRate] = useState(0);
+  const [badges, setBadges] = useState<string[]>([]);
 
-  // UI state
+  // Trust score state
+  const [trustScore, setTrustScore] = useState(0);
+  const [positiveReviews, setPositiveReviews] = useState(0);
+  const [idVerified, setIdVerified] = useState(false);
+  const [idVerifiedDate, setIdVerifiedDate] = useState("");
+  const [emailVerified, setEmailVerified] = useState(false);
+  const [phoneVerified, setPhoneVerified] = useState(false);
+
+  const [sendingReminder, setSendingReminder] = useState(false);
+  const [reminderSent, setReminderSent] = useState(false);
+  const [waitTimeRemaining, setWaitTimeRemaining] = useState<number | null>(null);
+
+  const [editingSlot, setEditingSlot] = useState<string | null>(null);
+  const [tempHours, setTempHours] = useState("");
+
   const [showLanguageInput, setShowLanguageInput] = useState(false);
   const [newLanguage, setNewLanguage] = useState("");
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const bioMaxLength = 300;
   const bioLength = bio.length;
 
-  // Enable edit mode
+  const sendVerificationReminder = useCallback(async () => {
+    setSendingReminder(true);
+    const toastId = toast.loading("Envoi du rappel...");
+
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      
+      const response = await fetch("/api/admin/verification-reminder", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userId: clerkUser?.id,
+          message: "L'utilisateur demande une vérification de son identité",
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success("Rappel envoyé à l'administrateur !", { id: toastId });
+        setReminderSent(true);
+        setWaitTimeRemaining(null);
+      } else if (response.status === 429) {
+        const waitTime = data.waitTime || 24;
+        setWaitTimeRemaining(waitTime);
+        toast.error(`Veuillez patienter ${waitTime} heures avant d'envoyer un nouveau rappel`, { id: toastId });
+      } else {
+        throw new Error(data.error || "Failed to send reminder");
+      }
+    } catch (error) {
+      console.error("Error sending reminder:", error);
+      toast.error("Erreur lors de l'envoi du rappel", { id: toastId });
+    } finally {
+      setSendingReminder(false);
+    }
+  }, [clerkUser?.id, getToken]);
+
+  const updateAvailabilitySlot = useCallback((day: string, hours: string) => {
+    setAvailability(prev => prev.map(slot => 
+      slot.day === day ? { ...slot, hours, enabled: true } : slot
+    ));
+    setEditingSlot(null);
+    setTempHours("");
+    toast.success(`Disponibilité mise à jour pour ${day}`);
+  }, []);
+
+  const toggleAvailabilityDay = useCallback((day: string) => {
+    setAvailability(prev => prev.map(slot =>
+      slot.day === day ? { ...slot, enabled: !slot.enabled } : slot
+    ));
+  }, []);
+
+  const startEditSlot = useCallback((day: string, currentHours: string) => {
+    setEditingSlot(day);
+    setTempHours(currentHours);
+  }, []);
+
+  const cancelEditSlot = useCallback(() => {
+    setEditingSlot(null);
+    setTempHours("");
+  }, []);
+
   const handleEdit = useCallback(() => {
     setOriginalData({
       firstName,
@@ -108,7 +192,6 @@ export function useProfile() {
     toast.info("Mode édition activé", { duration: 2000 });
   }, [firstName, lastName, userType, bio, profession, languages, availability]);
 
-  // Cancel edit mode
   const handleCancel = useCallback(() => {
     if (originalData) {
       setFirstName(originalData.firstName);
@@ -150,22 +233,24 @@ export function useProfile() {
         return;
       }
       setProfilePictureFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfilePictureUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      const localPreview = URL.createObjectURL(file);
+      setPreviewUrl(localPreview);
+      setProfilePictureUrl(localPreview);
     }
   }, []);
 
   const removeProfilePicture = useCallback(() => {
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
     setProfilePictureFile(null);
-    setProfilePictureUrl(clerkUser?.imageUrl || null);
+    setProfilePictureUrl(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
     toast.info("Photo de profil supprimée");
-  }, [clerkUser?.imageUrl]);
+  }, [previewUrl]);
 
   const uploadProfilePicture = useCallback(async () => {
     if (!profilePictureFile) return;
@@ -230,6 +315,10 @@ export function useProfile() {
         toast.success("Profil mis à jour avec succès !", { id: toastId });
         setIsEditing(false);
         setOriginalData(null);
+        setPreviewUrl(null);
+        // Recharger les données après sauvegarde
+        await fetchUserData();
+        await fetchUserStats();
       } else {
         const error = await response.json();
         throw new Error(error.error || "Save failed");
@@ -242,56 +331,80 @@ export function useProfile() {
     }
   }, [firstName, lastName, phone, userType, bio, profession, languages, availability, profilePictureFile, getToken, uploadProfilePicture]);
 
-  // Load user data
+  // 📊 Récupérer les statistiques depuis l'API existante /api/users/stats
+  const fetchUserStats = useCallback(async () => {
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const response = await fetch("/api/users/stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const stats = data.stats;
+        
+        setTotalProperties(stats.totalListings || 0);
+        setTotalBookings(stats.totalBookings || 0);
+        setTotalReviews(stats.totalReviews || 0);
+        setResponseRate(stats.responseRate || 0);
+        setResponseTime(stats.responseTime || "--");
+        setCompletionRate(stats.completionRate || 0);
+        setBadges(stats.badges || []);
+        setTrustScore(stats.reliabilityScore || 0);
+        
+        // Calculer les gains totaux approximatifs (à adapter selon ta logique)
+        const estimatedEarnings = stats.totalBookings * 50; // Exemple
+        setTotalEarnings(estimatedEarnings);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  }, [getToken]);
+
+  const fetchUserData = useCallback(async () => {
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const response = await fetch("/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const user = data.user as UserProfile;
+
+        setFirstName(user.firstName || "");
+        setLastName(user.lastName || "");
+        setEmail(user.email || "");
+        setPhone(user.phone || "");
+        setUserType(user.userType || "owner");
+        setBio(user.bio || "");
+        setProfession(user.profession || "");
+        setLanguages(user.languages || ["Français", "Arabe"]);
+        setProfilePictureUrl(user.profilePictureUrl || null);
+        setAvailability(user.availability || defaultAvailability);
+        setIdVerified(user.idVerified ?? false);
+        setIdVerifiedDate(user.idVerifiedDate || "");
+        setEmailVerified(user.emailVerified ?? false);
+        setPhoneVerified(user.phoneVerified ?? false);
+        setPositiveReviews(user.positiveReviews || 0);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  }, [getToken]);
+
   useEffect(() => {
     if (!isUserLoaded || !clerkUser) return;
 
-    const fetchUserData = async () => {
+    const loadAllData = async () => {
       setLoading(true);
-      const toastId = toast.loading("Chargement du profil...");
-      
-      try {
-        const token = await getToken({ template: "my-app-template" });
-        const response = await fetch("/api/users/profile", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          const user = data.user as UserProfile;
-
-          setFirstName(user.firstName || clerkUser.firstName || "");
-          setLastName(user.lastName || clerkUser.lastName || "");
-          setEmail(user.email || clerkUser.emailAddresses[0]?.emailAddress || "");
-          setPhone(user.phone || "");
-          setUserType(user.userType || "owner");
-          setBio(user.bio || "");
-          setProfession(user.profession || "");
-          setLanguages(user.languages || ["Français", "Arabe"]);
-          setProfilePictureUrl(user.profilePictureUrl || clerkUser.imageUrl || null);
-          setAvailability(user.availability || defaultAvailability);
-          setTrustScore(user.trustScore || 94);
-          setMemberSince(user.memberSince || "2023");
-          setPositiveReviews(user.positiveReviews || 12);
-          setIdVerified(user.idVerified ?? true);
-          setIdVerifiedDate(user.idVerifiedDate || "12 Mars 2023");
-          setEmailVerified(user.emailVerified ?? true);
-          setPhoneVerified(user.phoneVerified ?? true);
-          
-          toast.success("Profil chargé", { id: toastId });
-        } else {
-          throw new Error("Failed to load profile");
-        }
-      } catch (error) {
-        console.error("Error loading user data:", error);
-        toast.error("Erreur lors du chargement du profil", { id: toastId });
-      } finally {
-        setLoading(false);
-      }
+      await fetchUserData();
+      await fetchUserStats();
+      setLoading(false);
     };
 
-    fetchUserData();
-  }, [clerkUser, getToken, isUserLoaded]);
+    loadAllData();
+  }, [clerkUser, getToken, isUserLoaded, fetchUserData, fetchUserStats]);
 
   const trustLevel = (() => {
     if (trustScore >= 90) return { label: "Superhôte", color: "text-amber-600 dark:text-amber-400" };
@@ -301,7 +414,6 @@ export function useProfile() {
   })();
 
   return {
-    // State
     loading,
     saving,
     isEditing,
@@ -316,7 +428,6 @@ export function useProfile() {
     profilePictureUrl,
     availability,
     trustScore,
-    memberSince,
     positiveReviews,
     idVerified,
     idVerifiedDate,
@@ -330,8 +441,20 @@ export function useProfile() {
     newLanguage,
     fileInputRef,
     commonLanguages,
-    
-    // Actions
+    sendingReminder,
+    reminderSent,
+    waitTimeRemaining,
+    editingSlot,
+    tempHours,
+    // 📊 STATISTIQUES DYNAMIQUES
+    totalProperties,
+    totalBookings,
+    totalReviews,
+    totalEarnings,
+    responseRate,
+    responseTime,
+    completionRate,
+    badges,
     setFirstName,
     setLastName,
     setUserType,
@@ -347,5 +470,12 @@ export function useProfile() {
     handleSave,
     handleEdit,
     handleCancel,
+    sendVerificationReminder,
+    updateAvailabilitySlot,
+    toggleAvailabilityDay,
+    startEditSlot,
+    cancelEditSlot,
+    setEditingSlot,
+    setTempHours,
   };
 }
