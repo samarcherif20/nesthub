@@ -4,18 +4,25 @@ import { getAuth } from "@clerk/nextjs/server";
 import { put, del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 
-// GET - Afficher l'image (déjà existant, fonctionne)
+// GET - Afficher l'image
 export async function GET(req: NextRequest) {
   try {
-    const { userId: clerkId } = getAuth(req);
     const blobUrl = req.nextUrl.searchParams.get("url");
-
-    if (!clerkId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
-    }
 
     if (!blobUrl) {
       return NextResponse.json({ error: "URL manquante" }, { status: 400 });
+    }
+
+    // ✅ Vérifier si c'est une image uploadée depuis le mobile (inscription)
+    const isMobileUpload = blobUrl.includes("mobile-uploads/");
+
+    // Pour les uploads mobiles, permettre l'accès sans authentification
+    // Pour les avatars normaux, vérifier l'authentification Clerk
+    if (!isMobileUpload) {
+      const { userId: clerkId } = getAuth(req);
+      if (!clerkId) {
+        return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      }
     }
 
     const response = await fetch(blobUrl, {

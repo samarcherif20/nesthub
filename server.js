@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 require("dotenv").config({ path: ".env.local" });
 process.env.NEXT_DISABLE_TURBOPACK = "1";
+const hostname = "0.0.0.0"; // ✅ ADD THIS LINE - allows network access
 
 const { createServer } = require("http");
 const { parse } = require("url");
@@ -11,7 +12,7 @@ const OpenAI = require("openai");
 
 const prisma = new PrismaClient();
 const dev = process.env.NODE_ENV !== "production";
-const app = next({ dev });
+const app = next({ dev, hostname });
 const handle = app.getRequestHandler();
 
 // Stockage temporaire des utilisateurs connectés
@@ -449,9 +450,10 @@ app.prepare().then(async () => {
     });
   });
 
-  httpServer.listen(3000, (err) => {
+  httpServer.listen(3000, hostname, (err) => {
+    // ← Ajoute hostname ici
     if (err) throw err;
-    console.log("🚀 Serveur prêt sur http://localhost:3000");
+    console.log(`🚀 Serveur prêt sur http://${hostname}:3000`);
     console.log("🔌 Socket.io actif sur /api/socket");
     console.log("🤖 GitHub AI (GPT-4o-mini) prêt à l'emploi");
     console.log("✅ Tous les modèles IA préchargés et prêts à l'emploi");

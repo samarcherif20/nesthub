@@ -1,15 +1,36 @@
-// app/api/mobile-upload/session/route.ts
-
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { uploadSessions } from "@/lib/upload-sessions";
+import { networkInterfaces } from 'os';
 
-export async function POST() {
+// ✅ Augmenter la durée de session à 60 minutes
+const SESSION_DURATION = 60 * 60 * 1000; // 60 minutes
+
+function getLocalIpAddress(): string {
+  const nets = networkInterfaces();
+  
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      // Skip internal (non-public) and non-IPv4 addresses
+      if (net.family === 'IPv4' && !net.internal) {
+        return net.address;
+      }
+    }
+  }
+  
+  return 'localhost';
+}
+
+export async function POST(request: NextRequest) {
   const sessionId = randomUUID();
-  const expiresAt = Date.now() + 10 * 60 * 1000;
+  const expiresAt = Date.now() + SESSION_DURATION;
 
-  console.log("🆕 Création nouvelle session:", sessionId);
-  console.log("📊 Sessions existantes avant création:", uploadSessions.size);
+  // Nettoyer les sessions expirées
+  for (const [id, session] of uploadSessions.entries()) {
+    if (session.expiresAt < Date.now()) {
+      uploadSessions.delete(id);
+    }
+  }
 
   uploadSessions.set(sessionId, {
     id: sessionId,
@@ -19,20 +40,19 @@ export async function POST() {
     createdAt: new Date().toISOString(),
   });
 
-  console.log("📊 Sessions après création:", uploadSessions.size);
-  console.log("🔑 Clés des sessions:", Array.from(uploadSessions.keys()));
-
-  setTimeout(
-    () => {
-      console.log("⏰ Expiration session:", sessionId);
-      uploadSessions.delete(sessionId);
-    },
-    10 * 60 * 1000,
-  );
+  // ✅ Auto-détecter l'IP locale
+  const localIp = getLocalIpAddress();
+  const baseUrl = `http://${localIp}:3000`;
+  const qrUrl = `${baseUrl}/mobile-upload/${sessionId}`;
+  
+  console.log("🔗 Session créée:", sessionId);
+  console.log("📱 QR URL:", qrUrl);
+  console.log("⏰ Expire à:", new Date(expiresAt).toLocaleTimeString());
+  console.log("💡 Assurez-vous que votre téléphone est sur le même WiFi");
 
   return NextResponse.json({
     sessionId,
-    qrUrl: `http://192.168.1.18:3000/mobile-upload/${sessionId}`,
+    qrUrl,
     expiresAt,
   });
 }
@@ -40,22 +60,20 @@ export async function POST() {
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("sessionId");
 
-  console.log("🔍 Vérification session:", sessionId);
-  console.log("📊 Sessions disponibles:", Array.from(uploadSessions.keys()));
-  console.log("📊 Nombre de sessions:", uploadSessions.size);
-
   if (!sessionId) {
-    console.log("❌ Pas de sessionId fourni");
     return NextResponse.json({ error: "sessionId requis" }, { status: 400 });
   }
 
   const session = uploadSessions.get(sessionId);
 
   if (!session) {
-    console.log("❌ Session non trouvée:", sessionId);
     return NextResponse.json({ error: "Session expirée" }, { status: 404 });
   }
 
-  console.log("✅ Session trouvée:", sessionId);
+  if (session.expiresAt < Date.now()) {
+    uploadSessions.delete(sessionId);
+    return NextResponse.json({ error: "Session expirée" }, { status: 410 });
+  }
+
   return NextResponse.json(session);
 }

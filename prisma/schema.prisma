@@ -79,6 +79,8 @@ model User {
   stripeCustomerId String? @unique
   stripeAccountId  String? @unique // Pour Stripe Connect (versements propriétaires)
   // Relations Admin
+  riskScore            Int?     @default(50)  // ← AJOUTÉ
+
   writtenNotes         AdminNote[]           @relation("AuthorUser")
   adminNotes           AdminNote[]           @relation("TargetUser")
   auditLogs            AuditLog[]
@@ -419,7 +421,10 @@ model UserStats {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+trustLabel        String?               // "Très fiable" | "Fiable" | "Neutre" | "Prudence" | "Risqué"
+trustBadge        String?               // "green" | "blue" | "gray" | "orange" | "red"
+scamFlags         String[]  @default([])
+lastScoredAt      DateTime? 
   @@index([userId])
   @@index([reliabilityScore])
   @@index([fraudScore])
@@ -684,7 +689,12 @@ model Listing {
   favorites      Favorite[]
   searchAlerts   SearchAlert[]          @relation("AlertListing")
   listingReports ListingReport[]
-
+trustScore     Int?                  // 0-100
+trustLabel     String?               // "Excellente" | "Fiable" | "Correcte" | "Incomplète" | "Suspecte"
+trustBadge     String?               // "green" | "blue" | "gray" | "orange" | "red"
+scamProbability   Int?               // 0-100
+scamFlags       String[]  @default([])
+lastScoredAt    DateTime?    
   // Relations pour les co-propriétaires et historique
   historyEntries     ListingHistory[] // Pour ListingHistory
   teamMembers        TeamMember[] // Pour TeamMember

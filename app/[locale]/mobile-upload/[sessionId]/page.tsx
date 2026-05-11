@@ -683,86 +683,123 @@ export default function MobileUploadPage() {
     if (currentStepIndex !== 0) goToStep(0);
   }, [currentStepIndex, goToStep]);
 
-  const handleUploadAll = useCallback(async () => {
-    const toUpload = Object.entries(documents).filter(
-      ([, doc]) => doc.status === "captured" && doc.file,
-    ) as [DocumentType, DocumentState][];
+const handleUploadAll = useCallback(async () => {
+  try {
+    const sessionCheck = await fetch(
+      `/api/mobile-upload/session?sessionId=${sessionId}`,
+    );
+    if (!sessionCheck.ok) {
+      alert("La session a expiré. Veuillez re-scanner le QR code.");
+      router.push("/");
+      return;
+    }
+  } catch (error) {
+    console.error("Session check failed:", error);
+    alert("Erreur de connexion. Veuillez réessayer.");
+    return;
+  }
+  const toUpload = Object.entries(documents).filter(
+    ([, doc]) => doc.status === "captured" && doc.file,
+  ) as [DocumentType, DocumentState][];
 
-    if (toUpload.length === 0) return;
+  if (toUpload.length === 0) return;
 
-    setUploading(true);
-    setUploadProgress(0);
+  setUploading(true);
+  setUploadProgress(0);
 
-    let successCount = 0;
+  let successCount = 0;
+  const errors: string[] = [];
 
-    for (let i = 0; i < toUpload.length; i++) {
-      const [type, doc] = toUpload[i];
+  for (let i = 0; i < toUpload.length; i++) {
+    const [type, doc] = toUpload[i];
 
-      setDocuments((prev) => ({
-        ...prev,
-        [type]: { ...prev[type], status: "uploading" },
-      }));
+    setDocuments((prev) => ({
+      ...prev,
+      [type]: { ...prev[type], status: "uploading" },
+    }));
 
-      const formData = new FormData();
-      formData.append("sessionId", sessionId);
-      formData.append("type", type);
-      formData.append("file", doc.file!);
+    const formData = new FormData();
+    formData.append("sessionId", sessionId);
+    formData.append("type", type);
+    
+    // ✅ CORRECTION: Forcer le bon type MIME
+    let fileToUpload = doc.file!;
+    if (fileToUpload.type === 'application/octet-stream') {
+      console.log("⚠️ Correction du type MIME pour:", type);
+      const buffer = await fileToUpload.arrayBuffer();
+      fileToUpload = new File([buffer], fileToUpload.name.replace('.octet-stream', '.jpg'), {
+        type: 'image/jpeg'
+      });
+    }
+    formData.append("file", fileToUpload);
 
+    try {
+      const res = await fetch("/api/mobile-upload/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      let responseData;
       try {
-        const res = await fetch("/api/mobile-upload/upload", {
-          method: "POST",
-          body: formData,
-        });
+        responseData = await res.json();
+      } catch (e) {
+        console.error("Failed to parse JSON:", e);
+        responseData = {
+          error: "Réponse invalide du serveur",
+          success: false,
+        };
+      }
 
-        // ✅ Lire la réponse correctement
-        let responseData;
-        const textResponse = await res.text();
+      console.log(`Upload ${type}:`, {
+        status: res.status,
+        data: responseData,
+      });
 
-        try {
-          responseData = JSON.parse(textResponse);
-        } catch (e) {
-          console.error("Response n'est pas du JSON:", textResponse);
-          responseData = { error: "Réponse invalide du serveur" };
-        }
-
-        console.log("Response status:", res.status);
-        console.log("Response data:", responseData);
-
-        if (res.ok && responseData.success) {
-          successCount++;
-          setDocuments((prev) => ({
-            ...prev,
-            [type]: { ...prev[type], status: "uploaded" },
-          }));
-        } else {
-          console.error("Upload failed:", responseData);
-          setDocuments((prev) => ({
-            ...prev,
-            [type]: {
-              ...prev[type],
-              status: "error",
-              errorMessage: responseData.error || "Erreur lors de l'envoi",
-            },
-          }));
-        }
-      } catch (error) {
-        console.error("Network error:", error);
+      if (res.ok && responseData.success) {
+        successCount++;
+        setDocuments((prev) => ({
+          ...prev,
+          [type]: { ...prev[type], status: "uploaded" },
+        }));
+      } else {
+        const errorMsg = responseData.error || "Erreur lors de l'envoi";
+        errors.push(`${type}: ${errorMsg}`);
         setDocuments((prev) => ({
           ...prev,
           [type]: {
             ...prev[type],
             status: "error",
-            errorMessage: "Erreur de connexion",
+            errorMessage: errorMsg,
           },
         }));
       }
-
-      setUploadProgress(Math.round(((i + 1) / toUpload.length) * 100));
+    } catch (error) {
+      console.error(`Network error for ${type}:`, error);
+      errors.push(`${type}: Erreur de connexion`);
+      setDocuments((prev) => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          status: "error",
+          errorMessage: "Erreur de connexion au serveur",
+        },
+      }));
     }
 
-    setUploading(false);
-    if (successCount === 3) setAllUploaded(true);
-  }, [documents, sessionId]);
+    setUploadProgress(Math.round(((i + 1) / toUpload.length) * 100));
+  }
+
+  setUploading(false);
+
+  if (successCount === 3) {
+    setAllUploaded(true);
+    setTimeout(() => {
+      router.push("/dashboard/owner/profile");
+    }, 2000);
+  } else if (errors.length > 0) {
+    console.error("Upload errors:", errors);
+  }
+}, [documents, sessionId, router]);
 
   const uploadedCount = Object.values(documents).filter(
     (d) => d.status === "uploaded",

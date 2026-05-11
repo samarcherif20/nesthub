@@ -74,6 +74,7 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { AiTwotoneIdcard } from "react-icons/ai";
+// Ajoute cette fonction près du début du fichier, après les imports
 
 // ── Alert components ──
 const SuccessAlert = ({
@@ -152,7 +153,11 @@ const WhatsAppAlert = ({
     </motion.div>
   </motion.div>
 );
-
+const pipAvatar = (url: string) => {
+  if (!url) return "";
+  if (url.startsWith("blob:")) return url;
+  return `/api/users/avatar?url=${encodeURIComponent(url)}`;
+};
 export default function InscriptionPage() {
   const {
     t,
@@ -251,8 +256,25 @@ export default function InscriptionPage() {
     setGovernorate,
     delegation,
     setDelegation,
-    cinData, // ← AJOUTEZ CETTE LIGNE
+    cinData,
     setCinData,
+    sessionId,
+    setSessionId,
+    qrUrl,
+    setQrUrl,
+    uploadProgress,
+    setUploadProgress,
+    showQRCode,
+    setShowQRCode,
+    isMobileUploading,
+    setIsMobileUploading,
+    // ✅ AJOUTE CES 3 LIGNES
+    cinRectoUrl,
+    setCinRectoUrl,
+    cinVersoUrl,
+    setCinVersoUrl,
+    profilePictureUrl,
+    setProfilePictureUrl,
   } = useInscription();
 
   const router = useRouter();
@@ -261,11 +283,6 @@ export default function InscriptionPage() {
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [showGeneralError, setShowGeneralError] = useState(false);
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const [qrUrl, setQrUrl] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [showQRCode, setShowQRCode] = useState(false);
-  const [isMobileUploading, setIsMobileUploading] = useState(false);
 
   const totalDone = [cinRecto, cinVerso, profilePhoto].filter(Boolean).length;
   const docsDone = !!(cinRecto && cinVerso);
@@ -382,6 +399,7 @@ export default function InscriptionPage() {
   };
   const handleMobileSync = useCallback(async () => {
     setIsMobileUploading(true);
+    setUploadProgress(0);
 
     let interval: NodeJS.Timeout | null = null;
     let timeout: NodeJS.Timeout | null = null;
@@ -395,220 +413,168 @@ export default function InscriptionPage() {
         setSessionId(currentSessionId);
         setQrUrl(data.qrUrl);
         setShowQRCode(true);
+        setUploadProgress(0);
 
-        timeout = setTimeout(
-          () => {
-            if (interval) {
-              clearInterval(interval);
-              interval = null;
-            }
-            setShowQRCode(false);
-            toast.info("Session expirée", {
-              description: "Veuillez réessayer l'upload mobile",
-            });
-          },
-          16 * 60 * 1000,
-        );
+        // Timeout après 10 minutes
+        timeout = setTimeout(() => {
+          if (interval) clearInterval(interval);
+          setShowQRCode(false);
+          setIsMobileUploading(false);
+          toast.info("Session expirée", {
+            description: "Veuillez réessayer l'upload mobile",
+          });
+        }, 600000);
 
+        // Polling toutes les 2 secondes
         interval = setInterval(async () => {
-          if (!interval) return;
-
           try {
             const sessionRes = await fetch(
               `/api/mobile-upload/session?sessionId=${currentSessionId}`,
             );
 
-            if (sessionRes.status === 404) {
+            if (sessionRes.status === 404 || sessionRes.status === 410) {
               if (interval) clearInterval(interval);
               if (timeout) clearTimeout(timeout);
               setShowQRCode(false);
-              toast.info("Session expirée", {
-                description: "Veuillez réessayer l'upload mobile",
-              });
+              setIsMobileUploading(false);
+              toast.info("Session expirée");
               return;
             }
 
             const sessionData = await sessionRes.json();
 
-            console.log("📊 Session pollée:", currentSessionId);
-            console.log("📊 Files reçus:", sessionData.files);
+            // Compter les fichiers reçus
+            const filesCount = Object.keys(sessionData.files || {}).length;
+            setUploadProgress(filesCount);
 
-            if (sessionData.files) {
-              const count = Object.values(sessionData.files).filter(
-                (f: any) => f?.data,
-              ).length;
-              setUploadProgress(count);
+            console.log(`📊 Progression: ${filesCount}/3`);
 
-              console.log(`📊 Progression: ${count}/3`);
+            // ⚠️ IMPORTANT: Quand tous les fichiers sont reçus
+            if (filesCount === 3) {
+              if (interval) clearInterval(interval);
+              if (timeout) clearTimeout(timeout);
 
-              if (count === 3) {
-                if (interval) clearInterval(interval);
-                if (timeout) clearTimeout(timeout);
+              const files = sessionData.files;
 
-                const files = sessionData.files;
-
-                let rectoData = null;
-                let versoData = null;
-
-                // 1. Traiter le recto
-                if (files.recto?.data) {
-                  const rectoFile = base64ToFile(
-                    files.recto.data,
-                    files.recto.name || "recto.jpg",
-                    files.recto.type,
-                  );
-                  setCinRecto(rectoFile);
-                  rectoData = await handleOCR(rectoFile, "recto");
-                  console.log("📄 rectoData reçu:", rectoData);
-                }
-
-                // 2. Traiter le verso
-                if (files.verso?.data) {
-                  const versoFile = base64ToFile(
-                    files.verso.data,
-                    files.verso.name || "verso.jpg",
-                    files.verso.type,
-                  );
-                  setCinVerso(versoFile);
-                  versoData = await handleOCR(versoFile, "verso");
-                  console.log("📄 versoData reçu:", versoData);
-                }
-
-                // 3. Traiter la photo
-                if (files.selfie?.data) {
-                  const selfieFile = base64ToFile(
-                    files.selfie.data,
-                    files.selfie.name || "selfie.jpg",
-                    files.selfie.type,
-                  );
-                  setProfilePhoto(selfieFile);
-                }
-
-                // 4. ✅ VÉRIFIER que les données OCR sont valides
-                if (!rectoData && !versoData) {
-                  console.error("❌ Aucune donnée OCR extraite");
-                  toast.error("Erreur OCR", {
-                    description:
-                      "Impossible de lire les documents. Veuillez réessayer.",
-                  });
-                  setShowQRCode(false);
-                  return;
-                }
-
-                // 5. Créer cinData avec les données extraites
-                const newCinData = {
-                  firstName: rectoData?.firstName || null,
-                  lastName: rectoData?.lastName || null,
-                  cinNumber:
-                    rectoData?.cinNumber || versoData?.cinNumber || null,
-                  dateOfBirth: rectoData?.dateOfBirth || null,
-                  profession: versoData?.profession || null,
-                  extractedAt: new Date().toISOString(),
-                  documentType: "CIN",
-                  rectoUrl: files.recto?.name,
-                  versoUrl: files.verso?.name,
-                };
-
-                console.log("🔍 newCinData créé:", newCinData);
-
-                // 6. ✅ METTRE À JOUR CINDATA
-                if (setCinData) {
-                  setCinData(newCinData);
-                  console.log("📦 setCinData appelé avec:", newCinData);
-                }
-
-                // 7. ✅ UPLOADER LES FICHIERS VERS LE SERVEUR
-                console.log("📤 Upload des documents vers le serveur...");
-                const uploadSuccess = await handleUploadCIN();
-
-                if (uploadSuccess) {
-                  console.log("✅ Upload réussi");
-                } else {
-                  console.warn("⚠️ Upload partiel ou échoué");
-                }
-
-                toast.success(t("documentsReceived"), {
-                  description: t("documentsReceivedDescription"),
-                });
-
-                setShowQRCode(false);
-
-                // 8. Ouvrir le modal OCR après un court délai
-                setTimeout(() => {
-                  setShowOcrConfirm(true);
-                }, 100);
+              // ✅ Récupérer les URLs des fichiers (déjà sur Vercel Blob)
+              if (files.recto?.url) {
+                console.log("📸 Recto URL reçue:", files.recto.url);
+                console.log(
+                  "📸 Recto URL proxifiée:",
+                  pipAvatar(files.recto.url),
+                );
+                setCinRecto(new File([], files.recto.name || "recto.jpg"));
+                setCinRectoUrl(files.recto.url);
               }
+
+              if (files.verso?.url) {
+                console.log("📸 Verso URL reçue:", files.verso.url);
+                setCinVerso(new File([], files.verso.name || "verso.jpg"));
+                setCinVersoUrl(files.verso.url);
+              }
+
+              if (files.selfie?.url) {
+                console.log("📸 Selfie URL reçue:", files.selfie.url);
+                setProfilePhoto(
+                  new File([], files.selfie.name || "selfie.jpg"),
+                );
+                setProfilePictureUrl(files.selfie.url);
+              }
+
+              // ✅ Fermer le modal QR
+              setShowQRCode(false);
+              setIsMobileUploading(false);
+
+              // ✅ Notifier l'utilisateur
+              toast.success("3 documents reçus du mobile !", {
+                description:
+                  "Cliquez sur 'Analyser les documents' pour finaliser",
+              });
+
+              // ⚠️ NE PAS appeler handleUploadCIN ici ⚠️
+              // L'utilisateur doit cliquer sur le bouton "Analyser les documents"
             }
           } catch (error) {
-            console.error("Erreur polling session:", error);
+            console.error("Erreur polling:", error);
             if (interval) clearInterval(interval);
             if (timeout) clearTimeout(timeout);
             setShowQRCode(false);
-            toast.error(t("error"), {
-              description: t("uploadErrorDescription"),
-            });
+            setIsMobileUploading(false);
+            toast.error("Erreur de connexion");
           }
         }, 2000);
       }
     } catch (error) {
-      console.error("Erreur création session mobile:", error);
+      console.error("Erreur création session:", error);
       toast.error("Erreur", {
         description: "Impossible de créer la session mobile",
       });
-    } finally {
       setIsMobileUploading(false);
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-      if (timeout) clearTimeout(timeout);
-    };
   }, [
     setCinRecto,
     setCinVerso,
     setProfilePhoto,
-    handleOCR,
-    handleUploadCIN,
-    setShowOcrConfirm,
-    setCinData,
+    setCinRectoUrl,
+    setCinVersoUrl,
+    setProfilePictureUrl,
   ]);
   // ============================================================
   // COMPOSANTS POUR ÉTAPE 4
   // ============================================================
-
-  function useObjectUrl(file: File | null): string | null {
+  // ✅ CORRIGÉ :
+  function useObjectUrl(
+    file: File | null,
+    fileUrl?: string | null,
+  ): string | null {
     const [url, setUrl] = useState<string | null>(null);
     const prevUrl = useRef<string | null>(null);
+
     useEffect(() => {
-      if (prevUrl.current) URL.revokeObjectURL(prevUrl.current);
-      if (file) {
+      if (prevUrl.current) {
+        URL.revokeObjectURL(prevUrl.current);
+        prevUrl.current = null;
+      }
+
+      // Ne créer un blob que si on a un fichier ET pas d'URL
+      if (file && !fileUrl) {
         const next = URL.createObjectURL(file);
         prevUrl.current = next;
         setUrl(next);
       } else {
-        prevUrl.current = null;
         setUrl(null);
       }
+
       return () => {
-        if (prevUrl.current) URL.revokeObjectURL(prevUrl.current);
+        if (prevUrl.current) {
+          URL.revokeObjectURL(prevUrl.current);
+          prevUrl.current = null;
+        }
       };
-    }, [file]);
+    }, [file, fileUrl]);
+
     return url;
   }
 
   interface IDCardProps {
     side: "recto" | "verso";
     file: File | null;
+    fileUrl?: string | null;
     onFile: (f: File) => void;
     onRemove: () => void;
   }
 
-  function IDCard({ side, file, onFile, onRemove }: IDCardProps) {
-    const preview = useObjectUrl(file);
+  function IDCard({ side, file, fileUrl, onFile, onRemove }: IDCardProps) {
+    const preview = useObjectUrl(file, fileUrl); // ← Passe fileUrl
     const [drag, setDrag] = useState(false);
     const id = `id-${side}`;
     const isRecto = side === "recto";
 
+    // Utiliser preview si disponible, sinon fileUrl
+    const imageSrc = fileUrl ? pipAvatar(fileUrl) : preview;
+
+    console.log(`📸 ${side} - fileUrl:`, fileUrl);
+    console.log(`📸 ${side} - imageSrc:`, imageSrc);
     const handleFile = (f: File) => {
       if (!f.type.startsWith("image/")) {
         toast.error(t("errors.formatNotSupported"), {
@@ -673,9 +639,9 @@ export default function InscriptionPage() {
           onClick={() => document.getElementById(id)?.click()}
           className={`
           relative group cursor-pointer overflow-hidden
-          rounded-xl transition-all duration-300  border-2 border-dashed
+          rounded-xl transition-all duration-300 border-2 border-dashed
           ${
-            file
+            imageSrc
               ? "border-blue-500/40 bg-blue-500/5 dark:border-indigo-500/40 dark:bg-indigo-500/5"
               : drag
                 ? "border-blue-400 bg-blue-500/10 shadow-lg shadow-blue-500/10"
@@ -684,10 +650,10 @@ export default function InscriptionPage() {
         `}
           style={{ aspectRatio: "2.5/ 1" }}
         >
-          {preview ? (
+          {imageSrc ? (
             <>
               <img
-                src={preview}
+                src={imageSrc}
                 alt={side}
                 className="absolute inset-0 w-full h-full object-cover"
               />
@@ -710,7 +676,7 @@ export default function InscriptionPage() {
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-3">
               <div
-                className={`relative flex items-center justify-center w-10 h-7  transition-colors ${
+                className={`relative flex items-center justify-center w-10 h-7 transition-colors ${
                   drag
                     ? "border-blue-400 text-blue-400"
                     : "border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-600 group-hover:border-slate-400 dark:group-hover:border-slate-500"
@@ -753,14 +719,21 @@ export default function InscriptionPage() {
 
   function AvatarPicker({
     file,
+    fileUrl,
     onFile,
     onRemove,
   }: {
     file: File | null;
+    fileUrl?: string | null;
     onFile: (f: File) => void;
     onRemove: () => void;
   }) {
-    const preview = useObjectUrl(file);
+    const preview = useObjectUrl(file, fileUrl); // ← Passe fileUrl
+    const imageSrc = fileUrl ? pipAvatar(fileUrl) : preview;
+
+    console.log(`📸 Avatar - fileUrl:`, fileUrl);
+    console.log(`📸 Avatar - imageSrc:`, imageSrc);
+
     return (
       <div className="flex items-center gap-4">
         <div className="relative flex-shrink-0">
@@ -769,9 +742,9 @@ export default function InscriptionPage() {
             onClick={() => document.getElementById("profile-pick")?.click()}
             className="w-14 h-14 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden cursor-pointer hover:border-blue-500/60 transition-colors group"
           >
-            {preview ? (
+            {imageSrc ? (
               <img
-                src={preview}
+                src={imageSrc}
                 alt="profil"
                 className="w-full h-full object-cover"
               />
@@ -830,7 +803,6 @@ export default function InscriptionPage() {
       </div>
     );
   }
-
   if (!mounted) {
     return (
       <div className="flex h-screen w-full overflow-hidden bg-background-light dark:bg-background-dark">
@@ -3545,22 +3517,30 @@ export default function InscriptionPage() {
                   <IDCard
                     side="recto"
                     file={cinRecto}
+                    fileUrl={cinRectoUrl} // ← Assure-toi que c'est défini
                     onFile={(file) => {
                       setCinRecto(file);
                       handleOCR(file, "recto");
                     }}
-                    onRemove={() => setCinRecto(null)}
+                    onRemove={() => {
+                      setCinRecto(null);
+                      setCinRectoUrl(null);
+                    }}
                   />
 
                   {/* Verso CIN */}
                   <IDCard
                     side="verso"
                     file={cinVerso}
+                    fileUrl={cinVersoUrl}
                     onFile={(file) => {
                       setCinVerso(file);
                       handleOCR(file, "verso");
                     }}
-                    onRemove={() => setCinVerso(null)}
+                    onRemove={() => {
+                      setCinVerso(null);
+                      setCinVersoUrl(null);
+                    }}
                   />
                 </div>
 
@@ -3590,8 +3570,12 @@ export default function InscriptionPage() {
               <div className="mx-5 mb-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/40 rounded-2xl p-3.5">
                 <AvatarPicker
                   file={profilePhoto}
+                  fileUrl={profilePictureUrl}
                   onFile={setProfilePhoto}
-                  onRemove={() => setProfilePhoto(null)}
+                  onRemove={() => {
+                    setProfilePhoto(null);
+                    setProfilePictureUrl(null);
+                  }}
                 />
               </div>
 
@@ -3780,17 +3764,38 @@ export default function InscriptionPage() {
                   ))}
 
                   {/* Barre de progression si upload en cours */}
+                  {/* Barre de progression si upload en cours */}
                   {uploadProgress > 0 && (
                     <div className="mt-2">
-                      <p className="text-[10px] text-slate-500 mb-1">
-                        {t("progress")}: {uploadProgress}/3
-                      </p>
+                      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
+                        <span>{t("progress")}</span>
+                        <span className="font-mono font-bold">
+                          {uploadProgress === 3 ? (
+                            <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" /> Terminé !
+                            </span>
+                          ) : (
+                            `${uploadProgress}/3`
+                          )}
+                        </span>
+                      </div>
                       <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-green-500 transition-all duration-300"
-                          style={{ width: `${(uploadProgress / 3) * 100}%` }}
+                        <motion.div
+                          className="h-full bg-gradient-to-r from-blue-500 to-green-500"
+                          initial={{ width: "0%" }}
+                          animate={{ width: `${(uploadProgress / 3) * 100}%` }}
+                          transition={{ duration: 0.3, ease: "easeOut" }}
                         />
                       </div>
+                      {uploadProgress === 3 && (
+                        <motion.p
+                          initial={{ opacity: 0, y: 5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-[10px] text-green-600 dark:text-green-400 text-center mt-1 font-medium"
+                        >
+                          ✓ Documents reçus - Fermeture automatique...
+                        </motion.p>
+                      )}
                     </div>
                   )}
 
