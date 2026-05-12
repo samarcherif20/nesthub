@@ -97,7 +97,8 @@ model User {
   verificationActions  VerificationAction[]  @relation("AdminVerificationActions")
   otpCodes             OtpCode[]
   identityVerification IdentityVerification?
-   
+  notificationPreferences Json?   // Stocke les préférences de l'utilisateur
+
   // ============================================
   // RELATIONS SPRINT 2
   // ============================================

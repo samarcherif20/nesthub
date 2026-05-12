@@ -1,4 +1,3 @@
-// app/api/users/profile/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +13,7 @@ interface AvailabilitySlot {
 interface UpdateProfileBody {
   firstName: string;
   lastName: string;
+  username: string;
   phone: string;
   userType: UserType;
   bio: string;
@@ -119,9 +119,10 @@ export async function GET(req: NextRequest) {
         clerkId: user.clerkId,
         firstName: user.firstName,
         lastName: user.lastName,
+        username: user.username,
         email: user.email,
         phone: user.phoneNumber || "",
-        phoneVerified: user.phoneVerified,
+        phoneVerified: user.isPhoneVerified,
         userType: mapRoleToUserType(user.role),
         bio: user.bio || "",
         profession: user.profession || null,
@@ -153,9 +154,12 @@ export async function PUT(req: NextRequest) {
     }
 
     const body: UpdateProfileBody = await req.json();
+    console.log("📥 [API] Données reçues:", JSON.stringify(body, null, 2));
+
     const {
       firstName,
       lastName,
+      username,
       phone,
       userType,
       bio,
@@ -166,11 +170,30 @@ export async function PUT(req: NextRequest) {
 
     const role = mapUserTypeToRole(userType);
 
+    // Vérifier si le username est déjà pris par un autre utilisateur
+    if (username) {
+      const existingUser = await prisma.user.findFirst({
+        where: {
+          username,
+          NOT: { clerkId },
+        },
+      });
+      if (existingUser) {
+        return NextResponse.json(
+          { error: "Ce nom d'utilisateur est déjà pris" },
+          { status: 400 },
+        );
+      }
+    }
+
+    console.log("📦 [API] Availability à sauvegarder:", availability);
+
     const updatedUser = await prisma.user.update({
       where: { clerkId },
       data: {
         firstName,
         lastName,
+        username,
         phoneNumber: phone,
         role,
         bio,
@@ -180,12 +203,16 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    console.log("✅ [API] Utilisateur mis à jour:", updatedUser.id);
+    console.log("📦 [API] Availability sauvegardée:", updatedUser.availability);
+
     return NextResponse.json({
       success: true,
       user: {
         id: updatedUser.id,
         firstName: updatedUser.firstName,
         lastName: updatedUser.lastName,
+        username: updatedUser.username,
         phone: updatedUser.phoneNumber,
         userType: mapRoleToUserType(updatedUser.role),
         bio: updatedUser.bio,
@@ -195,7 +222,7 @@ export async function PUT(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("[users/profile] PUT Erreur:", error);
+    console.error("❌ [API] Erreur sauvegarde:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

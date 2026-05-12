@@ -14,6 +14,7 @@ interface UserProfile {
   id: string;
   firstName: string;
   lastName: string;
+  username: string;
   email: string;
   phone: string;
   userType: "tenant" | "owner" | "professional";
@@ -29,13 +30,6 @@ interface UserProfile {
   idVerifiedDate: string;
   emailVerified: boolean;
   phoneVerified: boolean;
-  stats?: {
-    totalBookings: number;
-    totalListings: number;
-    totalReviews: number;
-    totalEarned: number;
-    responseRate: number;
-  };
 }
 
 const defaultAvailability: AvailabilitySlot[] = [
@@ -57,18 +51,13 @@ export function useProfile() {
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const [originalData, setOriginalData] = useState<{
-    firstName: string;
-    lastName: string;
-    userType: "tenant" | "owner" | "professional";
-    bio: string;
-    profession: string;
-    languages: string[];
-    availability: AvailabilitySlot[];
-  } | null>(null);
+  const [originalData, setOriginalData] = useState<any>(null);
+  const [originalUsername, setOriginalUsername] = useState("");
+  const [userId, setUserId] = useState("");
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [userType, setUserType] = useState<"tenant" | "owner" | "professional">("owner");
@@ -79,7 +68,12 @@ export function useProfile() {
   const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
   const [availability, setAvailability] = useState<AvailabilitySlot[]>(defaultAvailability);
 
-  // 📊 STATISTIQUES DYNAMIQUES (viennent de l'API /api/users/stats)
+  // ✅ États pour la validation du username
+  const [usernameError, setUsernameError] = useState("");
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false);
+  const [usernameTouched, setUsernameTouched] = useState(false);
+
+  // Statistiques
   const [totalProperties, setTotalProperties] = useState(0);
   const [totalBookings, setTotalBookings] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
@@ -89,7 +83,7 @@ export function useProfile() {
   const [completionRate, setCompletionRate] = useState(0);
   const [badges, setBadges] = useState<string[]>([]);
 
-  // Trust score state
+  // Trust score
   const [trustScore, setTrustScore] = useState(0);
   const [positiveReviews, setPositiveReviews] = useState(0);
   const [idVerified, setIdVerified] = useState(false);
@@ -103,15 +97,328 @@ export function useProfile() {
 
   const [editingSlot, setEditingSlot] = useState<string | null>(null);
   const [tempHours, setTempHours] = useState("");
-
   const [showLanguageInput, setShowLanguageInput] = useState(false);
   const [newLanguage, setNewLanguage] = useState("");
   const [uploadingPicture, setUploadingPicture] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   const bioMaxLength = 300;
   const bioLength = bio.length;
+
+  // ✅ Fonction pour vérifier l'unicité du username
+  const checkUsernameUniqueness = useCallback(async (usernameValue: string) => {
+    // Ne pas vérifier si le username n'a pas changé
+    if (usernameValue === originalUsername) {
+      setUsernameError("");
+      return true;
+    }
+    
+    // Validation de base
+    if (usernameValue.length < 3) {
+      setUsernameError("Le nom d'utilisateur doit contenir au moins 3 caractères");
+      return false;
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameValue)) {
+      setUsernameError("Utilisez uniquement des lettres, chiffres et underscores");
+      return false;
+    }
+    
+    setIsCheckingUsername(true);
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const response = await fetch(`/api/users/by-username/${encodeURIComponent(usernameValue)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (response.status === 404) {
+        setUsernameError("");
+        return true;
+      }
+      
+      if (response.ok) {
+        const user = await response.json();
+        if (user.id !== userId) {
+          setUsernameError("Ce nom d'utilisateur est déjà pris");
+          return false;
+        }
+      }
+      setUsernameError("");
+      return true;
+    } catch (error) {
+      console.error("Erreur vérification username:", error);
+      return true;
+    } finally {
+      setIsCheckingUsername(false);
+    }
+  }, [getToken, originalUsername, userId]);
+
+  // ✅ Verrouillage du clavier pour le debounce
+  useEffect(() => {
+    if (!usernameTouched) return;
+    const timer = setTimeout(() => {
+      if (username) {
+        checkUsernameUniqueness(username);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [username, usernameTouched, checkUsernameUniqueness]);
+
+  // Récupérer les données utilisateur
+  const fetchUserData = useCallback(async () => {
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const response = await fetch("/api/users/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const user = data.user as UserProfile;
+
+        setFirstName(user.firstName || "");
+        setLastName(user.lastName || "");
+        setUsername(user.username || "");
+        setOriginalUsername(user.username || "");
+        setUserId(user.id || "");
+        setEmail(user.email || "");
+        setPhone(user.phone || "");
+        setUserType(user.userType || "owner");
+        setBio(user.bio || "");
+        setProfession(user.profession || "");
+        setLanguages(user.languages || ["Français", "Arabe"]);
+        setProfilePictureUrl(user.profilePictureUrl || null);
+        setAvailability(user.availability || defaultAvailability);
+        setIdVerified(user.idVerified ?? false);
+        setIdVerifiedDate(user.idVerifiedDate || "");
+        setEmailVerified(user.emailVerified ?? false);
+        setPhoneVerified(user.phoneVerified ?? false);
+        setPositiveReviews(user.positiveReviews || 0);
+        setTrustScore(user.trustScore || 50);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+    }
+  }, [getToken]);
+
+  // Récupérer les statistiques
+  const fetchUserStats = useCallback(async () => {
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const response = await fetch("/api/users/stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const stats = data.stats;
+        
+        setTotalProperties(stats.totalListings || 0);
+        setTotalBookings(stats.totalBookings || 0);
+        setTotalReviews(stats.totalReviews || 0);
+        setResponseRate(stats.responseRate || 0);
+        setResponseTime(stats.responseTime || "--");
+        setCompletionRate(stats.completionRate || 0);
+        setBadges(stats.badges || []);
+        setTotalEarnings(stats.totalEarned || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+    }
+  }, [getToken]);
+
+  // Upload photo de profil
+  const uploadProfilePicture = useCallback(async () => {
+    if (!profilePictureFile) return;
+    setUploadingPicture(true);
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const formData = new FormData();
+      formData.append("file", profilePictureFile);
+
+      const response = await fetch("/api/users/avatar", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setProfilePictureUrl(data.profilePictureUrl);
+        toast.success("Photo de profil mise à jour avec succès !");
+        return true;
+      } else {
+        throw new Error("Upload failed");
+      }
+    } catch (error) {
+      console.error("Error uploading picture:", error);
+      toast.error("Échec du téléchargement de la photo");
+      return false;
+    } finally {
+      setUploadingPicture(false);
+    }
+  }, [profilePictureFile, getToken]);
+
+  // Sauvegarder le profil
+  const handleSave = useCallback(async () => {
+    // ✅ Vérifier que le username est valide avant d'envoyer
+    const isUsernameValid = await checkUsernameUniqueness(username);
+    if (!isUsernameValid) {
+      toast.error("Veuillez corriger le nom d'utilisateur");
+      return;
+    }
+    
+    setSaving(true);
+    const toastId = toast.loading("Enregistrement en cours...");
+    
+    try {
+      const token = await getToken({ template: "my-app-template" });
+
+      const response = await fetch("/api/users/profile", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          username,
+          phone,
+          userType,
+          bio,
+          profession,
+          languages,
+          availability,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        if (profilePictureFile) {
+          await uploadProfilePicture();
+        }
+        
+        toast.success("Profil mis à jour avec succès !", { id: toastId });
+        setIsEditing(false);
+        setOriginalData(null);
+        setOriginalUsername(username);
+        setUsernameTouched(false);
+        
+        // Recharger les données
+        await fetchUserData();
+        await fetchUserStats();
+      } else {
+        throw new Error(data.error || "Save failed");
+      }
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast.error(error instanceof Error ? error.message : "Échec de l'enregistrement", { id: toastId });
+    } finally {
+      setSaving(false);
+    }
+  }, [firstName, lastName, username, phone, userType, bio, profession, languages, availability, profilePictureFile, getToken, uploadProfilePicture, fetchUserData, fetchUserStats, checkUsernameUniqueness]);
+
+  const handleEdit = useCallback(() => {
+    setOriginalData({
+      firstName,
+      lastName,
+      username,
+      userType,
+      bio,
+      profession,
+      languages: [...languages],
+      availability: [...availability],
+    });
+    setOriginalUsername(username);
+    setIsEditing(true);
+    toast.info("Mode édition activé", { duration: 2000 });
+  }, [firstName, lastName, username, userType, bio, profession, languages, availability]);
+
+  const handleCancel = useCallback(() => {
+    if (originalData) {
+      setFirstName(originalData.firstName);
+      setLastName(originalData.lastName);
+      setUsername(originalData.username);
+      setOriginalUsername(originalData.username);
+      setUserType(originalData.userType);
+      setBio(originalData.bio);
+      setProfession(originalData.profession);
+      setLanguages([...originalData.languages]);
+      setAvailability([...originalData.availability]);
+    }
+    setIsEditing(false);
+    setOriginalData(null);
+    setUsernameError("");
+    setUsernameTouched(false);
+    toast.info("Modifications annulées", { duration: 2000 });
+  }, [originalData]);
+
+  const addLanguage = useCallback((lang: string) => {
+    if (lang && !languages.includes(lang)) {
+      setLanguages(prev => [...prev, lang]);
+      toast.success(`Langue "${lang}" ajoutée`);
+    }
+    setNewLanguage("");
+    setShowLanguageInput(false);
+  }, [languages]);
+
+  const removeLanguage = useCallback((lang: string) => {
+    setLanguages(prev => prev.filter(l => l !== lang));
+    toast.info(`Langue "${lang}" supprimée`);
+  }, []);
+
+  const handleProfilePictureChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image trop volumineuse. Taille maximale : 5 Mo.");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        toast.error("Veuillez sélectionner un fichier image (JPG, PNG).");
+        return;
+      }
+      setProfilePictureFile(file);
+      const localPreview = URL.createObjectURL(file);
+      setProfilePictureUrl(localPreview);
+    }
+  }, []);
+
+  const removeProfilePicture = useCallback(() => {
+    setProfilePictureFile(null);
+    setProfilePictureUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+    toast.info("Photo de profil supprimée");
+  }, []);
+
+  const updateAvailabilitySlot = useCallback((day: string, hours: string) => {
+    setAvailability(prev => prev.map(slot => 
+      slot.day === day ? { ...slot, hours, enabled: true } : slot
+    ));
+    setEditingSlot(null);
+    setTempHours("");
+    toast.success(`Disponibilité mise à jour pour ${day}`);
+  }, []);
+
+  const toggleAvailabilityDay = useCallback((day: string) => {
+    setAvailability(prev => prev.map(slot =>
+      slot.day === day ? { ...slot, enabled: !slot.enabled } : slot
+    ));
+  }, []);
+
+  const startEditSlot = useCallback((day: string, currentHours: string) => {
+    setEditingSlot(day);
+    setTempHours(currentHours);
+  }, []);
+
+  const cancelEditSlot = useCallback(() => {
+    setEditingSlot(null);
+    setTempHours("");
+  }, []);
 
   const sendVerificationReminder = useCallback(async () => {
     setSendingReminder(true);
@@ -153,246 +460,6 @@ export function useProfile() {
     }
   }, [clerkUser?.id, getToken]);
 
-  const updateAvailabilitySlot = useCallback((day: string, hours: string) => {
-    setAvailability(prev => prev.map(slot => 
-      slot.day === day ? { ...slot, hours, enabled: true } : slot
-    ));
-    setEditingSlot(null);
-    setTempHours("");
-    toast.success(`Disponibilité mise à jour pour ${day}`);
-  }, []);
-
-  const toggleAvailabilityDay = useCallback((day: string) => {
-    setAvailability(prev => prev.map(slot =>
-      slot.day === day ? { ...slot, enabled: !slot.enabled } : slot
-    ));
-  }, []);
-
-  const startEditSlot = useCallback((day: string, currentHours: string) => {
-    setEditingSlot(day);
-    setTempHours(currentHours);
-  }, []);
-
-  const cancelEditSlot = useCallback(() => {
-    setEditingSlot(null);
-    setTempHours("");
-  }, []);
-
-  const handleEdit = useCallback(() => {
-    setOriginalData({
-      firstName,
-      lastName,
-      userType,
-      bio,
-      profession,
-      languages: [...languages],
-      availability: [...availability],
-    });
-    setIsEditing(true);
-    toast.info("Mode édition activé", { duration: 2000 });
-  }, [firstName, lastName, userType, bio, profession, languages, availability]);
-
-  const handleCancel = useCallback(() => {
-    if (originalData) {
-      setFirstName(originalData.firstName);
-      setLastName(originalData.lastName);
-      setUserType(originalData.userType);
-      setBio(originalData.bio);
-      setProfession(originalData.profession);
-      setLanguages([...originalData.languages]);
-      setAvailability([...originalData.availability]);
-    }
-    setIsEditing(false);
-    setOriginalData(null);
-    toast.info("Modifications annulées", { duration: 2000 });
-  }, [originalData]);
-
-  const addLanguage = useCallback((lang: string) => {
-    if (lang && !languages.includes(lang)) {
-      setLanguages(prev => [...prev, lang]);
-      toast.success(`Langue "${lang}" ajoutée`);
-    }
-    setNewLanguage("");
-    setShowLanguageInput(false);
-  }, [languages]);
-
-  const removeLanguage = useCallback((lang: string) => {
-    setLanguages(prev => prev.filter(l => l !== lang));
-    toast.info(`Langue "${lang}" supprimée`);
-  }, []);
-
-  const handleProfilePictureChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image trop volumineuse. Taille maximale : 5 Mo.");
-        return;
-      }
-      if (!file.type.startsWith("image/")) {
-        toast.error("Veuillez sélectionner un fichier image (JPG, PNG).");
-        return;
-      }
-      setProfilePictureFile(file);
-      const localPreview = URL.createObjectURL(file);
-      setPreviewUrl(localPreview);
-      setProfilePictureUrl(localPreview);
-    }
-  }, []);
-
-  const removeProfilePicture = useCallback(() => {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-    }
-    setProfilePictureFile(null);
-    setProfilePictureUrl(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-    toast.info("Photo de profil supprimée");
-  }, [previewUrl]);
-
-  const uploadProfilePicture = useCallback(async () => {
-    if (!profilePictureFile) return;
-    setUploadingPicture(true);
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const formData = new FormData();
-      formData.append("file", profilePictureFile);
-
-      const response = await fetch("/api/users/avatar", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProfilePictureUrl(data.profilePictureUrl);
-        toast.success("Photo de profil mise à jour avec succès !");
-        return true;
-      } else {
-        throw new Error("Upload failed");
-      }
-    } catch (error) {
-      console.error("Error uploading picture:", error);
-      toast.error("Échec du téléchargement de la photo");
-      return false;
-    } finally {
-      setUploadingPicture(false);
-    }
-  }, [profilePictureFile, getToken]);
-
-  const handleSave = useCallback(async () => {
-    setSaving(true);
-    const toastId = toast.loading("Enregistrement en cours...");
-    
-    try {
-      const token = await getToken({ template: "my-app-template" });
-
-      const response = await fetch("/api/users/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          phone,
-          userType,
-          bio,
-          profession,
-          languages,
-          availability,
-        }),
-      });
-
-      if (response.ok) {
-        if (profilePictureFile) {
-          await uploadProfilePicture();
-        }
-        toast.success("Profil mis à jour avec succès !", { id: toastId });
-        setIsEditing(false);
-        setOriginalData(null);
-        setPreviewUrl(null);
-        // Recharger les données après sauvegarde
-        await fetchUserData();
-        await fetchUserStats();
-      } else {
-        const error = await response.json();
-        throw new Error(error.error || "Save failed");
-      }
-    } catch (error) {
-      console.error("Error saving profile:", error);
-      toast.error("Échec de l'enregistrement du profil", { id: toastId });
-    } finally {
-      setSaving(false);
-    }
-  }, [firstName, lastName, phone, userType, bio, profession, languages, availability, profilePictureFile, getToken, uploadProfilePicture]);
-
-  // 📊 Récupérer les statistiques depuis l'API existante /api/users/stats
-  const fetchUserStats = useCallback(async () => {
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const response = await fetch("/api/users/stats", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const stats = data.stats;
-        
-        setTotalProperties(stats.totalListings || 0);
-        setTotalBookings(stats.totalBookings || 0);
-        setTotalReviews(stats.totalReviews || 0);
-        setResponseRate(stats.responseRate || 0);
-        setResponseTime(stats.responseTime || "--");
-        setCompletionRate(stats.completionRate || 0);
-        setBadges(stats.badges || []);
-        setTrustScore(stats.reliabilityScore || 0);
-        
-        // Calculer les gains totaux approximatifs (à adapter selon ta logique)
-        const estimatedEarnings = stats.totalBookings * 50; // Exemple
-        setTotalEarnings(estimatedEarnings);
-      }
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
-  }, [getToken]);
-
-  const fetchUserData = useCallback(async () => {
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const response = await fetch("/api/users/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const user = data.user as UserProfile;
-
-        setFirstName(user.firstName || "");
-        setLastName(user.lastName || "");
-        setEmail(user.email || "");
-        setPhone(user.phone || "");
-        setUserType(user.userType || "owner");
-        setBio(user.bio || "");
-        setProfession(user.profession || "");
-        setLanguages(user.languages || ["Français", "Arabe"]);
-        setProfilePictureUrl(user.profilePictureUrl || null);
-        setAvailability(user.availability || defaultAvailability);
-        setIdVerified(user.idVerified ?? false);
-        setIdVerifiedDate(user.idVerifiedDate || "");
-        setEmailVerified(user.emailVerified ?? false);
-        setPhoneVerified(user.phoneVerified ?? false);
-        setPositiveReviews(user.positiveReviews || 0);
-      }
-    } catch (error) {
-      console.error("Error loading user data:", error);
-    }
-  }, [getToken]);
-
   useEffect(() => {
     if (!isUserLoaded || !clerkUser) return;
 
@@ -419,6 +486,7 @@ export function useProfile() {
     isEditing,
     firstName,
     lastName,
+    username,
     email,
     phone,
     userType,
@@ -446,7 +514,11 @@ export function useProfile() {
     waitTimeRemaining,
     editingSlot,
     tempHours,
-    // 📊 STATISTIQUES DYNAMIQUES
+    // ✅ Nouveaux états pour la validation
+    usernameError,
+    isCheckingUsername,
+    usernameTouched,
+    // Statistiques
     totalProperties,
     totalBookings,
     totalReviews,
@@ -455,8 +527,11 @@ export function useProfile() {
     responseTime,
     completionRate,
     badges,
+    // Setters
     setFirstName,
     setLastName,
+    setUsername,
+    setUsernameTouched,
     setUserType,
     setBio,
     setProfession,

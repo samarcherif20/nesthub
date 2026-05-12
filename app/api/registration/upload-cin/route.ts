@@ -4,30 +4,59 @@ import { getAuth } from "@clerk/nextjs/server";
 
 export const maxDuration = 60;
 
+// Helper pour détecter le vrai type MIME d'un fichier
+async function detectAndFixImageFile(file: File): Promise<{ buffer: Buffer; mimeType: string; extension: string }> {
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  
+  // Détection JPEG: FF D8 FF
+  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
+    return { buffer, mimeType: 'image/jpeg', extension: 'jpg' };
+  }
+  // Détection PNG: 89 50 4E 47
+  else if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
+    return { buffer, mimeType: 'image/png', extension: 'png' };
+  }
+  // Détection WEBP
+  else if (buffer[0] === 0x52 && buffer[1] === 0x49 && buffer[2] === 0x46 && buffer[3] === 0x46) {
+    if (buffer.length > 12 && buffer[8] === 0x57 && buffer[9] === 0x45 && buffer[10] === 0x42 && buffer[11] === 0x50) {
+      return { buffer, mimeType: 'image/webp', extension: 'webp' };
+    }
+    return { buffer, mimeType: 'image/jpeg', extension: 'jpg' };
+  }
+  // Default to JPEG
+  else {
+    console.log("⚠️ Type non détecté, fallback à JPEG");
+    return { buffer, mimeType: 'image/jpeg', extension: 'jpg' };
+  }
+}
+
 // ─── Upload vers Vercel Blob ──────────────────────────────────────────────────
 async function uploadToVercelBlob(
   file: File,
   userId: string,
   label: string,
 ): Promise<string> {
-  const extension = file.type.split("/")[1] || "jpg";
+  // Détecter le vrai type du fichier
+  const { buffer, mimeType, extension } = await detectAndFixImageFile(file);
+  
   const filename = `nesthub/users/${userId}/cin/${label}_${Date.now()}.${extension}`;
 
-  console.log(`📤 Upload Blob: ${filename}`);
+  console.log(`📤 Upload Blob: ${filename} (type: ${mimeType})`);
 
-  const blob = await put(filename, file, {
+  const blob = await put(filename, buffer, {
     access: "private",
-    token: process.env.BLOB_READ_WRITE_TOKEN,
+    contentType: mimeType,
   });
 
   console.log(`✅ Blob URL: ${blob.url}`);
   return blob.url;
 }
 
-// ─── Convertir File en base64 pour Google Vision ─────────────────────────────
+// ─── Convertir en base64 pour Google Vision ─────────────────────────────────
 async function fileToBase64(file: File): Promise<string> {
-  const bytes = await file.arrayBuffer();
-  return Buffer.from(bytes).toString("base64");
+  const { buffer } = await detectAndFixImageFile(file);
+  return buffer.toString("base64");
 }
 
 // ─── Google Vision OCR ────────────────────────────────────────────────────────
@@ -47,7 +76,7 @@ async function callGoogleVision(base64Image: string): Promise<string> {
         requests: [
           {
             image: { content: base64Image },
-            features: [{ type: "TEXT_DETECTION", maxResults: 1 }],
+            features: [{ type: "TEXT_DETECTION" }],
           },
         ],
       }),
@@ -92,7 +121,7 @@ function parseRecto(text: string): {
     .map((l) => l.trim())
     .filter(Boolean);
 
-  console.log("📝 Parsing recto, lignes reçues:", lines);
+  console.log("📝 Parsing recto, lignes reçues:", lines.length);
 
   let cinNumber: string | undefined;
   let lastName: string | undefined;
@@ -157,33 +186,6 @@ function parseRecto(text: string): {
     }
   }
 
-  // 4. Fallback : prendre les lignes qui ressemblent à des noms
-  if (!lastName || !firstName) {
-    const nameCandidates = lines.filter(
-      (l) =>
-        l.length >= 3 &&
-        l.length <= 30 &&
-        /[\u0600-\u06FF]/.test(l) && // Contient des caractères arabes
-        !l.includes("الجمهورية") &&
-        !l.includes("بطاقة") &&
-        !l.includes("التعريف") &&
-        !l.includes("الولادة") &&
-        !l.includes("مكانها") &&
-        !l.includes("اللقب") &&
-        !l.includes("الاسم") &&
-        !l.match(/^\d+$/),
-    );
-
-    if (!lastName && nameCandidates[0]) {
-      lastName = nameCandidates[0];
-      console.log("  → Nom trouvé (fallback):", lastName);
-    }
-    if (!firstName && nameCandidates[1]) {
-      firstName = nameCandidates[1];
-      console.log("  → Prénom trouvé (fallback):", firstName);
-    }
-  }
-
   return { cinNumber, lastName, firstName, dateOfBirth };
 }
 
@@ -197,7 +199,7 @@ function parseVerso(text: string): { profession?: string; cinNumber?: string } {
   let profession: string | undefined;
   let cinNumber: string | undefined;
 
-  console.log("📝 Parsing verso, lignes reçues:", lines);
+  console.log("📝 Parsing verso, lignes reçues:", lines.length);
 
   // Chercher le numéro CIN (8 chiffres) sur le verso
   const cinMatch = text.match(/\b(\d{8})\b/);
@@ -249,17 +251,15 @@ function parseVerso(text: string): { profession?: string; cinNumber?: string } {
   return { profession, cinNumber };
 }
 
-// ─── Nettoyage des noms (garde arabe et latin) ───────────────────────────────
+// ─── Nettoyage des noms ──────────────────────────────────────────────────────
 function cleanName(name: string | undefined): string | null {
   if (!name) return null;
-  // Garde les lettres arabes, françaises, espaces, tirets
   let cleaned = name
     .replace(/[0-9]/g, "")
     .replace(/[^\p{L}\s\-']/gu, "")
     .trim()
     .substring(0, 50);
 
-  // Éviter les valeurs non valides
   if (cleaned.length < 2) return null;
   if (cleaned === "الجمهورية التونسية") return null;
   if (cleaned === "بطاقة التعريف الوطنية") return null;
@@ -272,7 +272,6 @@ export async function POST(request: NextRequest) {
   try {
     console.log("📮 POST /api/registration/upload-cin reçu");
 
-    // ✅ Récupérer userId depuis Clerk
     const { userId } = getAuth(request);
 
     if (!userId) {
@@ -288,10 +287,7 @@ export async function POST(request: NextRequest) {
     if (!cinRectoFile || !cinVersoFile || !profileFile) {
       console.error("❌ Fichiers manquants");
       return NextResponse.json(
-        {
-          error:
-            "Les 3 fichiers sont requis : cinRecto, cinVerso, profilePhoto",
-        },
+        { error: "Les 3 fichiers sont requis" },
         { status: 400 },
       );
     }
@@ -307,7 +303,7 @@ export async function POST(request: NextRequest) {
 
     console.log("✅ Tous les fichiers uploadés sur Blob");
 
-    // ── Étape 2 : Google Vision OCR (en parallèle) ─────────────────────────
+    // ── Étape 2 : Google Vision OCR ─────────────────────────────────────────
     console.log("🔍 Début OCR Google Vision...");
 
     let rectoText = "";
@@ -325,14 +321,15 @@ export async function POST(request: NextRequest) {
         callGoogleVision(versoBase64),
       ]);
 
-      console.log(
-        "📄 Recto OCR (premiers 200 chars):",
-        rectoText.substring(0, 200),
-      );
-      console.log(
-        "📄 Verso OCR (premiers 200 chars):",
-        versoText.substring(0, 200),
-      );
+      console.log(`📄 Recto OCR: ${rectoText.length} caractères`);
+      console.log(`📄 Verso OCR: ${versoText.length} caractères`);
+      
+      if (rectoText.length > 10) {
+        console.log("📄 Extrait Recto:", rectoText.substring(0, 300));
+      }
+      if (versoText.length > 10) {
+        console.log("📄 Extrait Verso:", versoText.substring(0, 300));
+      }
 
       ocrSuccess = rectoText.length > 10;
     } catch (ocrError) {
@@ -344,23 +341,18 @@ export async function POST(request: NextRequest) {
     const rectoData = parseRecto(rectoText);
     const versoData = parseVerso(versoText);
 
-    // Priorité au numéro CIN du recto
     const finalCinNumber = rectoData.cinNumber || versoData.cinNumber;
 
-    // Nettoyage
     const extracted = {
       firstName: cleanName(rectoData.firstName),
       lastName: cleanName(rectoData.lastName),
       dateOfBirth: rectoData.dateOfBirth ?? null,
-      cinNumber: finalCinNumber
-        ? (finalCinNumber.match(/\d{8}/)?.[0] ?? null)
-        : null,
+      cinNumber: finalCinNumber ? (finalCinNumber.match(/\d{8}/)?.[0] ?? null) : null,
       profession: versoData.profession ?? null,
     };
 
     console.log("✅ Extraction terminée:", extracted);
 
-    // ── Étape 4 : Retourner la réponse ──────────────────────────────────────
     return NextResponse.json({
       success: true,
       ocrSuccess,
@@ -374,9 +366,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("❌ Erreur upload-cin:", error);
     return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Erreur interne",
-      },
+      { error: error instanceof Error ? error.message : "Erreur interne" },
       { status: 500 },
     );
   }

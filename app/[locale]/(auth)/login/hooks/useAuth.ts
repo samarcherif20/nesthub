@@ -35,6 +35,8 @@ interface DbUser {
   isEmailVerified: boolean;
   deletedAt?: string | null;
   failedLoginAttempts: number;
+  lockedAt?: string | null;  // ← AJOUTE CETTE LIGNE
+  updatedAt?: string;        // ← AJOUTE CETTE LIGNE (optionnel)
 }
 
 export function useAuth() {
@@ -107,152 +109,206 @@ export function useAuth() {
   // VÉRIFICATION DU COMPTE (STATUT, EMAIL, TENTATIVES)
   // ============================================
 
-  const checkAccountAccess = (
-    dbUser: DbUser,
-  ): {
-    canLogin: boolean;
-    errorMessage?: string;
-  } => {
-    // 1. Vérifier si le compte est supprimé
-    if (dbUser.deletedAt) {
-      return { canLogin: false, errorMessage: t("accountDeleted") };
-    }
+const checkAccountAccess = async (
+  dbUser: DbUser,
+  clerkUserId: string,
+): Promise<{
+  canLogin: boolean;
+  errorMessage?: string;
+}> => {
+  // 1. Vérifier si le compte est supprimé
+  if (dbUser.deletedAt) {
+    return { canLogin: false, errorMessage: t("accountDeleted") };
+  }
 
-    // 2. Vérifier le statut du compte
-    const status = dbUser.status;
+  // 2. Vérifier le statut du compte
+  const status = dbUser.status;
 
-    switch (status) {
-      case "ACTIVE":
-        break;
-      case "TEMPORARILY_SUSPENDED":
-        if (
-          dbUser.suspendedUntil &&
-          new Date(dbUser.suspendedUntil) > new Date()
-        ) {
-          const date = new Date(dbUser.suspendedUntil).toLocaleDateString(
-            "fr-FR",
-          );
+  switch (status) {
+    case "ACTIVE":
+      break;
+    case "TEMPORARILY_SUSPENDED":
+      if (
+        dbUser.suspendedUntil &&
+        new Date(dbUser.suspendedUntil) > new Date()
+      ) {
+        const date = new Date(dbUser.suspendedUntil).toLocaleDateString(
+          "fr-FR",
+        );
+        return {
+          canLogin: false,
+          errorMessage: t("accountTemporarilySuspended", { date }),
+        };
+      }
+      break;
+    case "PERMANENTLY_BANNED":
+      return { canLogin: false, errorMessage: t("accountPermanentlyBanned") };
+    case "PENDING_VALIDATION":
+      break;
+    case "SECURITY_LOCKED": {
+      // ✅ VÉRIFIER SI 15 MINUTES SONT PASSÉES
+      const lockTime = dbUser.lockedAt || dbUser.updatedAt;
+      if (lockTime) {
+        const lockDate = new Date(lockTime);
+        const now = new Date();
+        const minutesPassed = (now.getTime() - lockDate.getTime()) / (1000 * 60);
+        
+        if (minutesPassed >= 15) {
+          // Déverrouiller automatiquement
+          await fetch("/api/users/unlock-account", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ clerkUserId }),
+          });
+          
+          // Recharger l'utilisateur
+          const updatedResponse = await fetch(`/api/users/by-clerk-id/${clerkUserId}`);
+          const updatedUser = await updatedResponse.json() as DbUser;
+          return checkAccountAccess(updatedUser, clerkUserId);
+        } else {
+          const remainingMinutes = Math.ceil(15 - minutesPassed);
           return {
             canLogin: false,
-            errorMessage: t("accountTemporarilySuspended", { date }),
+            errorMessage: t("accountSecurityLockedWithTime", { minutes: remainingMinutes })
           };
         }
-        break;
-      case "PERMANENTLY_BANNED":
-        return { canLogin: false, errorMessage: t("accountPermanentlyBanned") };
-      case "PENDING_VALIDATION":
-        break;
-      case "SECURITY_LOCKED":
-        return { canLogin: false, errorMessage: t("accountSecurityLocked") };
-      case "INACTIVE":
-        return { canLogin: false, errorMessage: t("accountInactive") };
-      case "REJECTED":
-        return { canLogin: false, errorMessage: t("accountRejected") };
-      case "ANUALLY_BLOCKED":
-        return { canLogin: false, errorMessage: t("accountAnnuallyBlocked") };
-      case "MANUALLY_BLOCKED":
-        return { canLogin: false, errorMessage: t("accountManuallyBlocked") };
-      default:
-        return { canLogin: false, errorMessage: t("accountStatusUnknown") };
+      }
+      return { canLogin: false, errorMessage: t("accountSecurityLocked") };
     }
+    case "INACTIVE":
+      return { canLogin: false, errorMessage: t("accountInactive") };
+    case "REJECTED":
+      return { canLogin: false, errorMessage: t("accountRejected") };
+    case "ANUALLY_BLOCKED":
+      return { canLogin: false, errorMessage: t("accountAnnuallyBlocked") };
+    case "MANUALLY_BLOCKED":
+      return { canLogin: false, errorMessage: t("accountManuallyBlocked") };
+    default:
+      return { canLogin: false, errorMessage: t("accountStatusUnknown") };
+  }
 
-    // 3. Vérifier si l'email est vérifié
-    if (!dbUser.isEmailVerified) {
-      return { canLogin: false, errorMessage: t("emailNotVerified") };
+  // 3. Vérifier si l'email est vérifié
+  if (!dbUser.isEmailVerified) {
+    return { canLogin: false, errorMessage: t("emailNotVerified") };
+  }
+
+  // 4. Vérifier les tentatives de connexion
+  const MAX_ATTEMPTS = 5;
+  if (dbUser.failedLoginAttempts >= MAX_ATTEMPTS) {
+    // ✅ VÉRIFIER AUSSI ICI SI 15 MINUTES SONT PASSÉES
+    const lockTime = dbUser.lockedAt || dbUser.updatedAt;
+    if (lockTime) {
+      const lockDate = new Date(lockTime);
+      const now = new Date();
+      const minutesPassed = (now.getTime() - lockDate.getTime()) / (1000 * 60);
+      
+      if (minutesPassed >= 15) {
+        await fetch("/api/users/unlock-account", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clerkUserId }),
+        });
+        
+        const updatedResponse = await fetch(`/api/users/by-clerk-id/${clerkUserId}`);
+        const updatedUser = await updatedResponse.json() as DbUser;
+        return checkAccountAccess(updatedUser, clerkUserId);
+      } else {
+        const remainingMinutes = Math.ceil(15 - minutesPassed);
+        return {
+          canLogin: false,
+          errorMessage: t("accountLockedTooManyAttemptsWithTime", { minutes: remainingMinutes })
+        };
+      }
     }
+    return {
+      canLogin: false,
+      errorMessage: t("accountLockedTooManyAttempts"),
+    };
+  }
 
-    // 4. Vérifier les tentatives de connexion
-    const MAX_ATTEMPTS = 5;
-    if (dbUser.failedLoginAttempts >= MAX_ATTEMPTS) {
-      return {
-        canLogin: false,
-        errorMessage: t("accountLockedTooManyAttempts"),
-      };
-    }
-
-    return { canLogin: true };
-  };
+  return { canLogin: true };
+};
 
   // ============================================
   // VÉRIFICATION DU RÔLE
   // ============================================
 
-  const checkUserRole = async (
-    identifier: string,
-    type: IdentifierType,
-    selectedRole: string | null,
-  ): Promise<RoleCheckResult> => {
-    try {
-      logger.auth("Vérification du rôle pour:", { identifier, type });
+const checkUserRole = async (
+  identifier: string,
+  type: IdentifierType,
+  selectedRole: string | null,
+): Promise<RoleCheckResult> => {
+  try {
+    logger.auth("Vérification du rôle pour:", { identifier, type });
 
-      const clerkUserId = await getClerkUserId(identifier, type);
-      logger.success("ID Clerk trouvé:", clerkUserId);
+    const clerkUserId = await getClerkUserId(identifier, type);
+    logger.success("ID Clerk trouvé:", clerkUserId);
 
-      const response = await fetch(`/api/users/by-clerk-id/${clerkUserId}`);
+    const response = await fetch(`/api/users/by-clerk-id/${clerkUserId}`);
 
-      if (!response.ok) {
-        return { isValid: false, errorMessage: t("userNotFoundInDB") };
-      }
+    if (!response.ok) {
+      return { isValid: false, errorMessage: t("userNotFoundInDB") };
+    }
 
-      const dbUser = (await response.json()) as DbUser;
-      logger.auth("Rôle dans la DB:", dbUser.role);
-      logger.auth("Statut dans la DB:", dbUser.status);
+    const dbUser = (await response.json()) as DbUser;
+    logger.auth("Rôle dans la DB:", dbUser.role);
+    logger.auth("Statut dans la DB:", dbUser.status);
 
-      // ✅ VÉRIFIER LE STATUT DU COMPTE D'ABORD
-      const statusCheck = checkAccountAccess(dbUser);
-      if (!statusCheck.canLogin) {
-        return { isValid: false, errorMessage: statusCheck.errorMessage };
-      }
+    // ✅ SEULE MODIFICATION ICI : ajouter await et passer clerkUserId
+    const statusCheck = await checkAccountAccess(dbUser, clerkUserId);
+    if (!statusCheck.canLogin) {
+      return { isValid: false, errorMessage: statusCheck.errorMessage };
+    }
 
-      // Admin peut toujours se connecter
-      if (dbUser.role === "ADMIN") {
-        return { isValid: true, dbRole: "ADMIN" };
-      }
+    // Admin peut toujours se connecter
+    if (dbUser.role === "ADMIN") {
+      return { isValid: true, dbRole: "ADMIN" };
+    }
 
-      // ===== GESTION DU RÔLE BOTH =====
-      if (dbUser.role === "BOTH") {
-        if (!selectedRole) {
-          return {
-            isValid: false,
-            errorMessage: t("profileTypeRequiredForBoth"),
-            dbRole: "BOTH",
-            requiresRoleChoice: true,
-          };
-        }
-        return { isValid: true, dbRole: "BOTH", selectedRole };
-      }
-
-      // ===== LOGIQUE NORMALE POUR TENANT OU PROPERTY_OWNER =====
+    // ===== GESTION DU RÔLE BOTH =====
+    if (dbUser.role === "BOTH") {
       if (!selectedRole) {
         return {
           isValid: false,
-          errorMessage: t("profileTypeRequired"),
-          dbRole: dbUser.role,
+          errorMessage: t("profileTypeRequiredForBoth"),
+          dbRole: "BOTH",
+          requiresRoleChoice: true,
         };
       }
-
-      const roleMapping: Record<string, "renter" | "owner"> = {
-        TENANT: "renter",
-        PROPERTY_OWNER: "owner",
-      };
-
-      const expectedRole = roleMapping[dbUser.role];
-
-      if (expectedRole !== selectedRole) {
-        const errorMessage =
-          dbUser.role === "PROPERTY_OWNER"
-            ? t("wrongRoleRenter")
-            : t("wrongRoleOwner");
-
-        return { isValid: false, errorMessage, dbRole: dbUser.role };
-      }
-
-      return { isValid: true, dbRole: dbUser.role };
-    } catch (error) {
-      logger.error("Erreur vérification rôle:", error);
-      return { isValid: false, errorMessage: t("error") };
+      return { isValid: true, dbRole: "BOTH", selectedRole };
     }
-  };
+
+    // ===== LOGIQUE NORMALE POUR TENANT OU PROPERTY_OWNER =====
+    if (!selectedRole) {
+      return {
+        isValid: false,
+        errorMessage: t("profileTypeRequired"),
+        dbRole: dbUser.role,
+      };
+    }
+
+    const roleMapping: Record<string, "renter" | "owner"> = {
+      TENANT: "renter",
+      PROPERTY_OWNER: "owner",
+    };
+
+    const expectedRole = roleMapping[dbUser.role];
+
+    if (expectedRole !== selectedRole) {
+      const errorMessage =
+        dbUser.role === "PROPERTY_OWNER"
+          ? t("wrongRoleRenter")
+          : t("wrongRoleOwner");
+
+      return { isValid: false, errorMessage, dbRole: dbUser.role };
+    }
+
+    return { isValid: true, dbRole: dbUser.role };
+  } catch (error) {
+    logger.error("Erreur vérification rôle:", error);
+    return { isValid: false, errorMessage: t("error") };
+  }
+};
 
   // ============================================
   // GESTION 2FA

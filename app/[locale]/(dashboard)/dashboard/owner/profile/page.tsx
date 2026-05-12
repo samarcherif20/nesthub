@@ -25,6 +25,7 @@ import {
   HomeIcon,
   Key,
   Briefcase,
+  AlertCircle,
 } from "lucide-react";
 import {
   RiUserLine,
@@ -114,21 +115,21 @@ function getUserTypeLabel(userType: string) {
       return (
         <span className="flex items-center gap-1.5">
           <HomeIcon size={12} className="text-sky-600 dark:text-sky-400" />
-          <span className="text-slate-700 dark:text-slate-300">Propriétaire</span>
+          <span className="text-slate-700 dark:text-slate-300">Property Owner</span>
         </span>
       );
     case "tenant":
       return (
         <span className="flex items-center gap-1.5">
           <Key size={12} className="text-emerald-600 dark:text-emerald-400" />
-          <span className="text-slate-700 dark:text-slate-300">Locataire</span>
+          <span className="text-slate-700 dark:text-slate-300">Tenant</span>
         </span>
       );
     case "professional":
       return (
         <span className="flex items-center gap-1.5">
           <Briefcase size={12} className="text-purple-600 dark:text-purple-400" />
-          <span className="text-slate-700 dark:text-slate-300">Professionnel</span>
+          <span className="text-slate-700 dark:text-slate-300">Both</span>
         </span>
       );
     default:
@@ -149,6 +150,7 @@ export default function ProfilePage() {
     isEditing,
     firstName,
     lastName,
+    username,
     email,
     phone,
     userType,
@@ -184,8 +186,14 @@ export default function ProfilePage() {
     responseTime,
     completionRate,
     badges,
+    // ✅ Nouveaux champs pour validation username
+    usernameError,
+    isCheckingUsername,
+    usernameTouched,
     setFirstName,
     setLastName,
+    setUsername,
+    setUsernameTouched,
     setBio,
     setProfession,
     setAvailability,
@@ -336,8 +344,46 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* FORM GRID */}
+                {/* FORM GRID - USERNAME EN PREMIER */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {/* ✅ USERNAME EN PREMIER (prend toute la ligne si tu veux, ici première position) */}
+                  <div className="sm:col-span-2">
+                    <Field label={t("fields.username") || "Nom d'utilisateur"} icon={RiUserLine}>
+                      <div>
+                        <input
+                          type="text"
+                          value={username || ""}
+                          onChange={(e) => {
+                            setUsername(e.target.value);
+                            setUsernameTouched(true);
+                          }}
+                          onBlur={() => {
+                            setUsernameTouched(true);
+                          }}
+                          disabled={!isEditing}
+                          className={`${inputBase(!isEditing)} ${usernameError ? "border-red-500 focus:border-red-500" : ""}`}
+                          placeholder="nom_utilisateur"
+                        />
+                        {isCheckingUsername && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <Loader2 className="w-3 h-3 animate-spin text-slate-400" />
+                            <span className="text-[10px] text-slate-400">Vérification...</span>
+                          </div>
+                        )}
+                        {usernameError && (
+                          <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
+                            <AlertCircle size={10} /> {usernameError}
+                          </p>
+                        )}
+                        {!usernameError && username && usernameTouched && !isCheckingUsername && isEditing && (
+                          <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1">
+                            <CheckCircle size={10} /> Nom d'utilisateur disponible
+                          </p>
+                        )}
+                      </div>
+                    </Field>
+                  </div>
+
                   <Field label={t("fields.firstName")} icon={RiUserLine}>
                     <input
                       type="text"
@@ -888,7 +934,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Badges */}
                 {badges.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5 justify-center">
                     {badges.map((badge) => (

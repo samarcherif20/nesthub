@@ -1,79 +1,137 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { uploadSessions } from "@/lib/upload-sessions";
-import { networkInterfaces } from 'os';
+import { networkInterfaces } from "os";
 
-// ✅ Augmenter la durée de session à 60 minutes
-const SESSION_DURATION = 60 * 60 * 1000; // 60 minutes
+const SESSION_DURATION = 60 * 60 * 1000;
+
+// Stockage global des sessions (accessible depuis l'extérieur)
+declare global {
+  // eslint-disable-next-line no-var
+  var __uploadSessions: Map<string, any> | undefined;
+}
+
+// Utiliser un stockage global pour partager entre les APIs
+const getUploadSessions = () => {
+  if (!global.__uploadSessions) {
+    global.__uploadSessions = new Map();
+  }
+  return global.__uploadSessions;
+};
 
 function getLocalIpAddress(): string {
   const nets = networkInterfaces();
-  
+
+  console.log("🔍 Detecting network interfaces...");
+
   for (const name of Object.keys(nets)) {
-    for (const net of nets[name]) {
-      // Skip internal (non-public) and non-IPv4 addresses
-      if (net.family === 'IPv4' && !net.internal) {
-        return net.address;
+    const interfaces = nets[name];
+    if (!interfaces || !Array.isArray(interfaces)) continue;
+
+    for (const net of interfaces) {
+      if (net.family === "IPv4" && !net.internal) {
+        const ip = net.address;
+        console.log(`📡 Found: ${ip} on ${name}`);
+
+        if (ip === "192.168.1.18") {
+          console.log(`✅ Using WiFi IP: ${ip}`);
+          return ip;
+        }
+
+        if (
+          ip.startsWith("192.168.1.") ||
+          ip.startsWith("192.168.0.") ||
+          ip.startsWith("10.0.0.")
+        ) {
+          console.log(`✅ Using local network IP: ${ip}`);
+          return ip;
+        }
       }
     }
   }
-  
-  return 'localhost';
+
+  console.error("❌ No valid IP found, using localhost");
+  return "localhost";
 }
 
 export async function POST(request: NextRequest) {
-  const sessionId = randomUUID();
-  const expiresAt = Date.now() + SESSION_DURATION;
-
-  // Nettoyer les sessions expirées
-  for (const [id, session] of uploadSessions.entries()) {
-    if (session.expiresAt < Date.now()) {
-      uploadSessions.delete(id);
+  try {
+    const uploadSessions = getUploadSessions();
+    
+    // Nettoyer les sessions expirées
+    for (const [id, session] of uploadSessions.entries()) {
+      if (session.expiresAt < Date.now()) {
+        uploadSessions.delete(id);
+      }
     }
+
+    const sessionId = randomUUID();
+    const expiresAt = Date.now() + SESSION_DURATION;
+
+    uploadSessions.set(sessionId, {
+      id: sessionId,
+      expiresAt,
+      files: {},
+      status: "waiting",
+      createdAt: new Date().toISOString(),
+    });
+
+    const localIp = getLocalIpAddress();
+    const port = process.env.PORT || 3000;
+    const baseUrl = `http://${localIp}:${port}`;
+    const qrUrl = `${baseUrl}/mobile-upload/${sessionId}`;
+
+    console.log("\n🔗 ========== MOBILE UPLOAD SESSION ==========");
+    console.log(`📱 Session ID: ${sessionId}`);
+    console.log(`🌐 QR URL: ${qrUrl}`);
+    console.log(`💻 Server IP: ${localIp}`);
+    console.log(`⏰ Expires: ${new Date(expiresAt).toLocaleTimeString()}`);
+    console.log(`📦 Total sessions: ${uploadSessions.size}`);
+    console.log("=============================================\n");
+
+    return NextResponse.json({
+      sessionId,
+      qrUrl,
+      expiresAt,
+      localIp,
+    });
+  } catch (error) {
+    console.error("❌ Error creating session:", error);
+    return NextResponse.json(
+      { error: "Failed to create session" },
+      { status: 500 }
+    );
   }
-
-  uploadSessions.set(sessionId, {
-    id: sessionId,
-    expiresAt,
-    files: {},
-    status: "waiting",
-    createdAt: new Date().toISOString(),
-  });
-
-  // ✅ Auto-détecter l'IP locale
-  const localIp = getLocalIpAddress();
-  const baseUrl = `http://${localIp}:3000`;
-  const qrUrl = `${baseUrl}/mobile-upload/${sessionId}`;
-  
-  console.log("🔗 Session créée:", sessionId);
-  console.log("📱 QR URL:", qrUrl);
-  console.log("⏰ Expire à:", new Date(expiresAt).toLocaleTimeString());
-  console.log("💡 Assurez-vous que votre téléphone est sur le même WiFi");
-
-  return NextResponse.json({
-    sessionId,
-    qrUrl,
-    expiresAt,
-  });
 }
 
 export async function GET(request: NextRequest) {
-  const sessionId = request.nextUrl.searchParams.get("sessionId");
+  try {
+    const uploadSessions = getUploadSessions();
+    const sessionId = request.nextUrl.searchParams.get("sessionId");
 
-  if (!sessionId) {
-    return NextResponse.json({ error: "sessionId requis" }, { status: 400 });
+    if (!sessionId) {
+      return NextResponse.json({ error: "sessionId requis" }, { status: 400 });
+    }
+
+    const session = uploadSessions.get(sessionId);
+
+    if (!session) {
+      return NextResponse.json({ error: "Session expirée" }, { status: 404 });
+    }
+
+    if (session.expiresAt < Date.now()) {
+      uploadSessions.delete(sessionId);
+      return NextResponse.json({ error: "Session expirée" }, { status: 410 });
+    }
+
+    return NextResponse.json(session);
+  } catch (error) {
+    console.error("❌ Error getting session:", error);
+    return NextResponse.json(
+      { error: "Failed to get session" },
+      { status: 500 }
+    );
   }
-
-  const session = uploadSessions.get(sessionId);
-
-  if (!session) {
-    return NextResponse.json({ error: "Session expirée" }, { status: 404 });
-  }
-
-  if (session.expiresAt < Date.now()) {
-    uploadSessions.delete(sessionId);
-    return NextResponse.json({ error: "Session expirée" }, { status: 410 });
-  }
-
-  return NextResponse.json(session);
 }
+
+// Exporter une fonction pour que l'API upload puisse accéder au stockage
+export { getUploadSessions };

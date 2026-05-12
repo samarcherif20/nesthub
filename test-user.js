@@ -4,7 +4,7 @@ require('dotenv').config({ path: '.env.local' });
 const { updateUserRiskScore } = require('./lib/risk-scoring/ai-risk-scoring');
 
 // 👇 COLLE L'ID QUE TU AS COPIÉ ICI
-const userId = "6259d267-d266-4b46-8a2b-28b9a25bc466"; 
+const userId = "3435dc94-f452-43ee-987f-5642e6f1539d"; 
 
 async function run() {
   console.log(`🚀 Lancement du scoring IA pour l'utilisateur: ${userId}`);
