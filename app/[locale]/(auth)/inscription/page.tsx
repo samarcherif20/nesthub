@@ -398,127 +398,122 @@ export default function InscriptionPage() {
     return new File([byteArray], filename, { type: mimeType });
   };
   const handleMobileSync = useCallback(async () => {
-    setIsMobileUploading(true);
-    setUploadProgress(0);
+  setIsMobileUploading(true);
+  setUploadProgress(0);
 
-    let interval: NodeJS.Timeout | null = null;
-    let timeout: NodeJS.Timeout | null = null;
+  const userId = currentUserId || localStorage.getItem("currentUserId");
+  if (!userId) {
+    toast.error("Erreur", { description: "Utilisateur non trouvé" });
+    setIsMobileUploading(false);
+    return;
+  }
 
-    try {
-      const res = await fetch("/api/mobile-upload/session", { method: "POST" });
-      const data = await res.json();
-      const currentSessionId = data.sessionId;
+  let interval: NodeJS.Timeout | null = null;
+  let timeout: NodeJS.Timeout | null = null;
 
-      if (currentSessionId) {
-        setSessionId(currentSessionId);
-        setQrUrl(data.qrUrl);
-        setShowQRCode(true);
-        setUploadProgress(0);
+  try {
+    const res = await fetch("/api/mobile-upload/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
 
-        // Timeout après 10 minutes
-        timeout = setTimeout(() => {
-          if (interval) clearInterval(interval);
-          setShowQRCode(false);
-          setIsMobileUploading(false);
-          toast.info("Session expirée", {
-            description: "Veuillez réessayer l'upload mobile",
-          });
-        }, 600000);
+    const data = await res.json();
+    const currentSessionId = data.sessionId;
 
-        // Polling toutes les 2 secondes
-        interval = setInterval(async () => {
-          try {
-            const sessionRes = await fetch(
-              `/api/mobile-upload/session?sessionId=${currentSessionId}`,
-            );
+    if (currentSessionId) {
+      setSessionId(currentSessionId);
+      setQrUrl(data.qrUrl);
+      setShowQRCode(true);
+      setUploadProgress(0);
 
-            if (sessionRes.status === 404 || sessionRes.status === 410) {
-              if (interval) clearInterval(interval);
-              if (timeout) clearTimeout(timeout);
-              setShowQRCode(false);
-              setIsMobileUploading(false);
-              toast.info("Session expirée");
-              return;
-            }
+      timeout = setTimeout(() => {
+        if (interval) clearInterval(interval);
+        setShowQRCode(false);
+        setIsMobileUploading(false);
+        toast.info("Session expirée");
+      }, 600000);
 
-            const sessionData = await sessionRes.json();
+      interval = setInterval(async () => {
+        try {
+          const sessionRes = await fetch(
+            `/api/mobile-upload/session?sessionId=${currentSessionId}`,
+          );
 
-            // Compter les fichiers reçus
-            const filesCount = Object.keys(sessionData.files || {}).length;
-            setUploadProgress(filesCount);
-
-            console.log(`📊 Progression: ${filesCount}/3`);
-
-            // ⚠️ IMPORTANT: Quand tous les fichiers sont reçus
-            if (filesCount === 3) {
-              if (interval) clearInterval(interval);
-              if (timeout) clearTimeout(timeout);
-
-              const files = sessionData.files;
-
-              // ✅ Récupérer les URLs des fichiers (déjà sur Vercel Blob)
-              if (files.recto?.url) {
-                console.log("📸 Recto URL reçue:", files.recto.url);
-                console.log(
-                  "📸 Recto URL proxifiée:",
-                  pipAvatar(files.recto.url),
-                );
-                setCinRecto(new File([], files.recto.name || "recto.jpg"));
-                setCinRectoUrl(files.recto.url);
-              }
-
-              if (files.verso?.url) {
-                console.log("📸 Verso URL reçue:", files.verso.url);
-                setCinVerso(new File([], files.verso.name || "verso.jpg"));
-                setCinVersoUrl(files.verso.url);
-              }
-
-              if (files.selfie?.url) {
-                console.log("📸 Selfie URL reçue:", files.selfie.url);
-                setProfilePhoto(
-                  new File([], files.selfie.name || "selfie.jpg"),
-                );
-                setProfilePictureUrl(files.selfie.url);
-              }
-
-              // ✅ Fermer le modal QR
-              setShowQRCode(false);
-              setIsMobileUploading(false);
-
-              // ✅ Notifier l'utilisateur
-              toast.success("3 documents reçus du mobile !", {
-                description:
-                  "Cliquez sur 'Analyser les documents' pour finaliser",
-              });
-
-              // ⚠️ NE PAS appeler handleUploadCIN ici ⚠️
-              // L'utilisateur doit cliquer sur le bouton "Analyser les documents"
-            }
-          } catch (error) {
-            console.error("Erreur polling:", error);
+          if (sessionRes.status === 404 || sessionRes.status === 410) {
             if (interval) clearInterval(interval);
             if (timeout) clearTimeout(timeout);
             setShowQRCode(false);
             setIsMobileUploading(false);
-            toast.error("Erreur de connexion");
+            toast.info("Session expirée");
+            return;
           }
-        }, 2000);
-      }
-    } catch (error) {
-      console.error("Erreur création session:", error);
-      toast.error("Erreur", {
-        description: "Impossible de créer la session mobile",
-      });
-      setIsMobileUploading(false);
+
+          const sessionData = await sessionRes.json();
+          const filesCount = Object.keys(sessionData.files || {}).length;
+          setUploadProgress(filesCount);
+
+          if (filesCount === 3) {
+            if (interval) clearInterval(interval);
+            if (timeout) clearTimeout(timeout);
+
+            const files = sessionData.files;
+
+            // ✅ Convertir base64 en File objets
+            const base64ToFile = (base64: string, filename: string, mimeType: string): File => {
+              const byteCharacters = atob(base64);
+              const byteNumbers = new Array(byteCharacters.length);
+              for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+              }
+              const byteArray = new Uint8Array(byteNumbers);
+              return new File([byteArray], filename, { type: mimeType });
+            };
+
+            if (files.recto?.data) {
+              const file = base64ToFile(files.recto.data, "recto.jpg", files.recto.type);
+              setCinRecto(file);
+              setCinRectoUrl(null); // Pas d'URL car pas encore uploadé
+            }
+            if (files.verso?.data) {
+              const file = base64ToFile(files.verso.data, "verso.jpg", files.verso.type);
+              setCinVerso(file);
+              setCinVersoUrl(null);
+            }
+            if (files.selfie?.data) {
+              const file = base64ToFile(files.selfie.data, "selfie.jpg", files.selfie.type);
+              setProfilePhoto(file);
+              setProfilePictureUrl(null);
+            }
+
+            setShowQRCode(false);
+            setIsMobileUploading(false);
+
+            toast.success("3 documents reçus du mobile !", {
+              description: "Cliquez sur 'Analyser les documents' pour finaliser",
+            });
+          }
+        } catch (error) {
+          console.error("Erreur polling:", error);
+        }
+      }, 2000);
     }
-  }, [
-    setCinRecto,
-    setCinVerso,
-    setProfilePhoto,
-    setCinRectoUrl,
-    setCinVersoUrl,
-    setProfilePictureUrl,
-  ]);
+  } catch (error) {
+    console.error("Erreur création session:", error);
+    toast.error("Erreur", {
+      description: "Impossible de créer la session mobile",
+    });
+    setIsMobileUploading(false);
+  }
+}, [
+  currentUserId,
+  setCinRecto,
+  setCinVerso,
+  setProfilePhoto,
+  setCinRectoUrl,
+  setCinVersoUrl,
+  setProfilePictureUrl,
+]);
   // ============================================================
   // COMPOSANTS POUR ÉTAPE 4
   // ============================================================

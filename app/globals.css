@@ -695,3 +695,15 @@
 .headline-font {
   font-family: "Plus Jakarta Sans", sans-serif;
 }
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-bounce-marker {
+  animation: bounce 1s ease-in-out infinite;
+}

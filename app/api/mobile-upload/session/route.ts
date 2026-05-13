@@ -2,15 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { networkInterfaces } from "os";
 
-const SESSION_DURATION = 60 * 60 * 1000;
+const SESSION_DURATION = 60 * 60 * 1000; // 60 minutes
 
-// Stockage global des sessions (accessible depuis l'extérieur)
+// Stockage global des sessions
 declare global {
   // eslint-disable-next-line no-var
   var __uploadSessions: Map<string, any> | undefined;
 }
 
-// Utiliser un stockage global pour partager entre les APIs
 const getUploadSessions = () => {
   if (!global.__uploadSessions) {
     global.__uploadSessions = new Map();
@@ -133,5 +132,4 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Exporter une fonction pour que l'API upload puisse accéder au stockage
 export { getUploadSessions };

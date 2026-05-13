@@ -1,53 +1,61 @@
-// app/[locale]/favorites/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import {
-  IoHeart,
-  IoStar,
-  IoLocationOutline,
-  IoCheckmarkCircle,
-  IoGitCompare,
-  IoGridOutline,
-  IoListOutline,
-  IoBedOutline,
-  IoWaterOutline,
-  IoTrashOutline,
-  IoShareOutline,
-  IoHeartDislikeOutline,
-  IoCloseOutline,
-} from "react-icons/io5";
-import { FaHome, FaCity } from "react-icons/fa";
-import { MdOutlineVilla } from "react-icons/md";
-import { TbBuildingCommunity } from "react-icons/tb";
-import { GiModernCity } from "react-icons/gi";
+  ArrowRight,
+  Ban,
+  Bath,
+  BedDouble,
+  Building2,
+  Compass,
+  Crown,
+  Grid2x2,
+  Heart,
+  Home,
+  List,
+  MapPin,
+  ShieldCheck,
+  Share2,
+  Sparkles,
+  Star,
+  Trash2,
+  Users,
+} from "lucide-react";
 import { useFavorites } from "./hooks/useFavorites";
 import AlertBanner from "@/components/ui/Alert";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
+import { IoHeartDislikeOutline } from "react-icons/io5";
 
-const FALLBACK_IMAGE = "/images/placeholder.jpg";
-
-const gradientButton = `
-  bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 
-  hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600
+const GRADIENT_BUTTON = `
+  bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 
+  hover:from-sky-600 hover:via-indigo-600 hover:to-purple-700
   text-white shadow-md hover:shadow-lg 
   transition-all duration-300
 `;
 
-const gradientText =
-  "bg-gradient-to-r from-indigo-600 via-sky-500 to-purple-600 bg-clip-text text-transparent";
+const GRADIENT_TEXT = "bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent";
 
-const categories = [
-  { id: "all", name: "Tous", icon: FaHome },
-  { id: "villa", name: "Villas", icon: MdOutlineVilla },
-  { id: "appartement", name: "Appartements", icon: TbBuildingCommunity },
-  { id: "maison", name: "Maisons", icon: FaHome },
-  { id: "studio", name: "Studios", icon: FaCity },
-  { id: "duplex", name: "Duplex", icon: GiModernCity },
+const CATEGORIES = [
+  { id: "all", label: "Tous", icon: Compass },
+  { id: "VILLA", label: "Villas de luxe", icon: Home },
+  { id: "HOUSE", label: "Dars & maisons", icon: Building2 },
+  { id: "APARTMENT", label: "Appartements", icon: Building2 },
 ];
+
+// Crossed-out heart icon component
+function HeartOffIcon() {
+  return (
+    <div className="relative">
+      <Heart className="h-20 w-20 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="h-24 w-0.5 bg-rose-400 rounded-full rotate-45 origin-center" />
+      </div>
+    </div>
+  );
+}
 
 export default function FavoritesPage() {
   const t = useTranslations("FavoritesPage");
@@ -62,56 +70,36 @@ export default function FavoritesPage() {
     clearAllFavorites,
   } = useFavorites();
 
-  const [isMounted, setIsMounted] = useState(false);
-  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
+  const [mounted, setMounted] = useState(false);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [sortBy, setSortBy] = useState("relevance");
+  const [sortBy, setSortBy] = useState("featured");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [alert, setAlert] = useState<{
     type: "success" | "error" | "info" | "warning";
     message: string;
   } | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
+  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    setIsMounted(true);
+    setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!alert) return;
+    const timer = setTimeout(() => setAlert(null), 2600);
+    return () => clearTimeout(timer);
+  }, [alert]);
 
   const showAlert = (
     type: "success" | "error" | "info" | "warning",
     message: string,
   ) => {
     setAlert({ type, message });
-    setTimeout(() => setAlert(null), 3000);
   };
 
-  const handleImageError = (listingId: string) => {
-    setImgErrors((prev) => ({ ...prev, [listingId]: true }));
-  };
-
-  const handleRemoveFavorite = (id: string, title: string) => {
-    removeFavorite(id);
-    showAlert("success", `${title} ${t("alerts.removed")}`);
-  };
-
-  const handleClearAllFavorites = () => {
-    clearAllFavorites();
-    setShowClearModal(false);
-    showAlert("info", t("alerts.allRemoved"));
-    setTimeout(() => window.location.reload(), 1000);
-  };
-
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: t("share.title"),
-        text: t("share.text"),
-        url: window.location.href,
-      });
-    } catch {
-      navigator.clipboard.writeText(window.location.href);
-      showAlert("success", t("share.copied"));
-    }
+  const handleImageError = (id: string) => {
+    setImgErrors(prev => ({ ...prev, [id]: true }));
   };
 
   const getFilteredFavorites = () => {
@@ -124,11 +112,11 @@ export default function FavoritesPage() {
     const sorted = [...filtered];
     switch (sortBy) {
       case "price_asc":
-        return sorted.sort((a, b) => a.price - b.price);
+        return sorted.sort((a, b) => (a.price || a.pricePerNight || 0) - (b.price || b.pricePerNight || 0));
       case "price_desc":
-        return sorted.sort((a, b) => b.price - a.price);
+        return sorted.sort((a, b) => (b.price || b.pricePerNight || 0) - (a.price || a.pricePerNight || 0));
       case "rating":
-        return sorted.sort((a, b) => b.rating - a.rating);
+        return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       default:
         return sorted;
     }
@@ -138,7 +126,37 @@ export default function FavoritesPage() {
   const hasFavorites = favorites.length > 0;
   const canCompare = favorites.length >= 2;
 
-  if (!isMounted || loading) {
+  const handleRemoveFavorite = (id: string, title: string) => {
+    removeFavorite(id);
+    showAlert("success", `« ${title} » retiré des favoris`);
+  };
+
+  const handleClearAllFavorites = () => {
+    clearAllFavorites();
+    setShowClearModal(false);
+    showAlert("info", "Tous les favoris ont été supprimés");
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showAlert("success", "Lien copié dans le presse-papiers !");
+    } catch {
+      showAlert("error", "Partage non disponible");
+    }
+  };
+
+  const handleToggleCompare = (id: string, title: string) => {
+    toggleCompare(id);
+    showAlert(
+      "info",
+      selectedForCompare.includes(id)
+        ? `« ${title} » retiré de la comparaison`
+        : `« ${title} » ajouté à la comparaison`
+    );
+  };
+
+  if (!mounted || loading) {
     return (
       <LoadingSpinner
         fullScreen={true}
@@ -152,9 +170,9 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       {alert && (
-        <div className="fixed top-20 right-8 z-[60] animate-in slide-in-from-top-2 fade-in duration-300">
+        <div className="fixed top-24 right-8 z-[60] animate-in slide-in-from-top-2 fade-in duration-300">
           <AlertBanner
             type={alert.type}
             message={alert.message}
@@ -167,291 +185,324 @@ export default function FavoritesPage() {
 
       {/* Clear All Modal */}
       {showClearModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <IoTrashOutline className="text-3xl text-red-500" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                {t("modal.title")}
-              </h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">
-                {t("modal.message")}
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowClearModal(false)}
-                  className="flex-1 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition"
-                >
-                  {t("modal.cancel")}
-                </button>
-                <button
-                  onClick={handleClearAllFavorites}
-                  className="flex-1 px-4 py-2 rounded-xl bg-red-500 text-white font-semibold hover:bg-red-600 transition"
-                >
-                  {t("modal.confirm")}
-                </button>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl dark:bg-slate-900">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-rose-100 text-rose-500 dark:bg-rose-500/10">
+              <Trash2 className="h-7 w-7" />
+            </div>
+            <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+              Vider tous les favoris ?
+            </h3>
+            <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              Cette action est irréversible. Tous vos logements sauvegardés seront définitivement supprimés.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowClearModal(false)}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600 transition-all hover:bg-slate-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-white/5"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={handleClearAllFavorites}
+                className="flex-1 rounded-xl bg-gradient-to-r from-rose-500 to-rose-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-rose-500/20 transition-all hover:scale-[1.02]"
+              >
+                Supprimer tout
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <main className="pt-6 pb-16 max-w-7xl mx-auto px-6">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <main className="mx-auto max-w-7xl px-4 py-8 md:px-6 md:py-10">
+        {/* Header */}
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white">
-              {t("title")}
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70 dark:text-indigo-300">
+              <Heart className="h-3.5 w-3.5 fill-indigo-600 text-indigo-600 dark:fill-indigo-300 dark:text-indigo-300" />
+              Collection personnelle
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-6xl">
+              Vos <span className={GRADIENT_TEXT}>favoris</span>
             </h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1 text-sm">
-              {sortedFavorites.length}{" "}
-              {t("count", { count: sortedFavorites.length })}
-              {favorites.length !== sortedFavorites.length &&
-                ` (${t("total", { total: favorites.length })})`}
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
+              Retrouvez ici tous les logements que vous avez aimés. Comparez-les, partagez-les, et passez à la réservation en un clic.
             </p>
+            <div className="mt-4 flex flex-wrap items-center gap-4 text-sm">
+              <div className="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-bold shadow-sm backdrop-blur-md dark:bg-slate-900/70">
+                <span className="text-slate-400">Total</span>
+                <span className="text-indigo-600 dark:text-indigo-300">{favorites.length} logements</span>
+              </div>
+              {compareCount > 0 && (
+                <div className="flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5 text-xs font-bold shadow-sm backdrop-blur-md dark:bg-slate-900/70">
+                  <span className="text-slate-400">En comparaison</span>
+                  <span className="text-indigo-600 dark:text-indigo-300">{compareCount}</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/80 text-slate-600 shadow-sm backdrop-blur-md transition-all hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-200"
+            >
+              <Share2 className="h-4 w-4" />
+            </button>
             {hasFavorites && (
-              <>
-                <button
-                  onClick={handleShare}
-                  className="p-2 rounded-full bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 transition shadow-sm"
-                  title={t("share.title")}
-                >
-                  <IoShareOutline className="text-xl text-slate-600 dark:text-slate-400" />
-                </button>
-                <button
-                  onClick={() => setShowClearModal(true)}
-                  className="p-2 rounded-full bg-white dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-900/20 transition shadow-sm"
-                  title={t("clearAll")}
-                >
-                  <IoTrashOutline className="text-xl text-slate-600 dark:text-slate-400 hover:text-red-500 transition" />
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={() => setShowClearModal(true)}
+                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/80 text-slate-600 shadow-sm backdrop-blur-md transition-all hover:border-rose-200 hover:text-rose-500 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-200"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
             )}
 
-            <div className="flex gap-1 bg-white dark:bg-slate-800 rounded-xl p-1 shadow-sm">
+            <div className="flex rounded-xl bg-white/80 p-1 shadow-sm backdrop-blur-md dark:bg-slate-900/80">
               <button
+                type="button"
                 onClick={() => setViewMode("grid")}
-                className={`p-2 rounded-lg transition ${
+                className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm transition-all ${
                   viewMode === "grid"
-                    ? gradientButton
-                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    ? GRADIENT_BUTTON
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                 }`}
               >
-                <IoGridOutline className="text-lg" />
+                <Grid2x2 className="h-4 w-4" />
               </button>
               <button
+                type="button"
                 onClick={() => setViewMode("list")}
-                className={`p-2 rounded-lg transition ${
+                className={`flex h-9 w-9 items-center justify-center rounded-lg text-sm transition-all ${
                   viewMode === "list"
-                    ? gradientButton
-                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                    ? GRADIENT_BUTTON
+                    : "text-slate-500 hover:text-slate-700 dark:text-slate-400"
                 }`}
               >
-                <IoListOutline className="text-lg" />
+                <List className="h-4 w-4" />
               </button>
             </div>
 
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-sm bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="h-11 rounded-full border border-white/70 bg-white/80 px-4 text-sm font-semibold text-slate-700 shadow-sm backdrop-blur-md outline-none dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-200"
             >
-              <option value="relevance">{t("sort.relevance")}</option>
-              <option value="price_asc">{t("sort.priceAsc")}</option>
-              <option value="price_desc">{t("sort.priceDesc")}</option>
-              <option value="rating">{t("sort.rating")}</option>
+              <option value="featured">Mis en avant</option>
+              <option value="price_asc">Prix croissant</option>
+              <option value="price_desc">Prix décroissant</option>
+              <option value="rating">Mieux notés</option>
             </select>
           </div>
         </div>
 
-        {/* Categories Filter */}
+        {/* Categories */}
         {hasFavorites && (
-          <div className="flex items-center justify-center gap-6 overflow-x-auto no-scrollbar py-4 mb-6 flex-wrap">
-            {categories.map((cat) => {
-              const Icon = cat.icon;
-              const isActive = selectedCategory === cat.id;
-              const countData = categoryCounts.find((c) => c.id === cat.id);
-              const count = countData?.count || 0;
+          <div className="mb-8 overflow-x-auto pb-1">
+            <div className="flex items-center gap-2">
+              {CATEGORIES.map((cat) => {
+                const active = selectedCategory === cat.id;
+                const Icon = cat.icon;
+                const countData = categoryCounts.find((c) => c.id === cat.id);
+                const count = countData?.count || 0;
 
-              return (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`flex flex-col items-center gap-1 min-w-fit pb-1 transition-all ${
-                    isActive
-                      ? "border-b-2 border-indigo-500 dark:border-indigo-400"
-                      : "opacity-60 hover:opacity-100"
-                  }`}
-                >
-                  <Icon
-                    className={`text-xl transition-colors ${
-                      isActive
-                        ? "text-indigo-600 dark:text-indigo-400"
-                        : "text-slate-600 dark:text-slate-400"
-                    }`}
-                  />
-                  <span
-                    className={`text-xs transition-colors ${
-                      isActive
-                        ? "font-semibold text-indigo-600 dark:text-indigo-400"
-                        : "text-slate-600 dark:text-slate-400"
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`flex shrink-0 items-center gap-2 rounded-full border-2 px-4 py-2.5 text-sm font-bold transition-all ${
+                      active
+                        ? "border-transparent bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20"
+                        : "border-white/70 bg-white/80 text-slate-600 shadow-sm backdrop-blur-md hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-400"
                     }`}
                   >
-                    {t(`categories.${cat.id}`)}
-                  </span>
-                  {count > 0 && (
-                    <span className={`text-[10px] text-slate-400`}>
-                      ({count})
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+                    <Icon className={`h-4 w-4 ${active ? "text-white" : "text-slate-400"}`} />
+                    {cat.label}
+                    {count > 0 && (
+                      <span className={`ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${active ? "bg-white/20 text-white" : "bg-slate-100 text-slate-500 dark:bg-white/5"}`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
 
-        {/* Empty State */}
-        {!hasFavorites ? (
-          <div className="text-center py-16">
-            <IoHeartDislikeOutline className="text-6xl text-indigo-300 dark:text-indigo-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-              {t("empty.title")}
+       {/* Empty State with Crossed-out Heart Icon - Simple */}
+{!hasFavorites ? (
+  <div className="flex flex-col items-center justify-center py-24 text-center">
+    <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-600/10 backdrop-blur-sm mx-auto animate-pulse">
+<IoHeartDislikeOutline className="h-14 w-14 text-slate-400" />    </div>
+    <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">
+      Aucun favori pour le moment
+    </h2>
+    <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+      Explorez les plus belles demeures de Tunisie et sauvegardez celles qui vous inspirent.
+      Elles apparaîtront ici, prêtes à être comparées ou réservées.
+    </p>
+    <Link
+      href="/fr/search"
+      className={`mt-8 inline-flex items-center gap-2 rounded-full ${GRADIENT_BUTTON} px-7 py-3.5 text-sm font-bold shadow-xl shadow-indigo-500/25 transition-all hover:scale-[1.02]`}
+    >
+      <Sparkles className="h-4 w-4" /> Découvrir des logements
+    </Link>
+  </div>
+) : sortedFavorites.length === 0 ? (
+  <div className="flex flex-col items-center justify-center py-20 text-center">
+    <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-600/10 backdrop-blur-sm mx-auto animate-pulse">
+      <HeartOffIcon />
+    </div>
+    <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">
+      Aucun résultat dans cette catégorie
+    </h3>
+    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+      Essayez une autre catégorie pour voir vos favoris.
+    </p>
+    <button
+      type="button"
+      onClick={() => setSelectedCategory("all")}
+      className={`mt-6 rounded-full ${GRADIENT_BUTTON} px-6 py-3 text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02]`}
+    >
+      Voir tous les favoris
+    </button>
+  </div>
+) : sortedFavorites.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <HeartOffIcon />
+            <h3 className="mt-6 text-2xl font-extrabold text-slate-900 dark:text-white">
+              Aucun résultat dans cette catégorie
             </h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-md mx-auto text-sm">
-              {t("empty.message")}
-            </p>
-            <Link
-              href="/fr/search"
-              className={`inline-flex items-center gap-2 px-6 py-3 rounded-full font-semibold transition ${gradientButton}`}
-            >
-              <IoHeart className="text-base" />
-              {t("empty.button")}
-            </Link>
-          </div>
-        ) : sortedFavorites.length === 0 ? (
-          <div className="text-center py-16">
-            <IoHeartDislikeOutline className="text-5xl text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-              {t("empty.noResults")}
-            </h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
-              {t("empty.noResultsHint", {
-                category: t(`categories.${selectedCategory}`),
-              })}
+            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+              Essayez une autre catégorie pour voir vos favoris.
             </p>
             <button
+              type="button"
               onClick={() => setSelectedCategory("all")}
-              className={`inline-block px-5 py-2 rounded-full text-sm font-semibold transition ${gradientButton}`}
+              className={`mt-6 rounded-full ${GRADIENT_BUTTON} px-6 py-3 text-sm font-bold shadow-lg shadow-indigo-500/20`}
             >
-              {t("empty.viewAll")}
+              Voir tous les favoris
             </button>
           </div>
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {sortedFavorites.map((listing) => {
-              const imageUrl = imgErrors[listing.id]
-                ? FALLBACK_IMAGE
-                : listing.image;
               const displayPrice = listing.price || listing.pricePerNight || 0;
+              const imageUrl = imgErrors[listing.id] ? "/images/placeholder.jpg" : (listing.image || "/images/placeholder.jpg");
+              const isInCompare = selectedForCompare.includes(listing.id);
 
               return (
                 <div
                   key={listing.id}
-                  className="group bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                  className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all hover:scale-[1.01] hover:shadow-[0_26px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900/80"
                 >
-                  <Link href={`/fr/listings/${listing.id}`}>
-                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
-                      <img
-                        alt={listing.title}
-                        className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                        src={imageUrl}
-                        onError={() => handleImageError(listing.id)}
-                      />
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handleRemoveFavorite(listing.id, listing.title);
-                        }}
-                        className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center text-red-500 shadow-sm hover:scale-110 transition-all"
-                      >
-                        <IoHeart className="text-lg" />
-                      </button>
+                  <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
+                    <img
+                      src={imageUrl}
+                      alt={listing.title}
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-102"
+                      onError={() => handleImageError(listing.id)}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent" />
+
+                    <div className="absolute left-4 top-4 flex flex-wrap gap-2">
                       {listing.isVerified && (
-                        <div className="absolute bottom-3 left-3">
-                          <span className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm px-2 py-1 rounded-lg text-indigo-600 dark:text-indigo-400 text-[10px] font-bold flex items-center gap-1">
-                            <IoCheckmarkCircle className="text-xs" />
-                            {t("badges.verified")}
-                          </span>
-                        </div>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm">
+                          <ShieldCheck className="h-3 w-3" /> Vérifié
+                        </span>
+                      )}
+                      {listing.collection && (
+                        <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md">
+                          {listing.collection}
+                        </span>
                       )}
                     </div>
-                  </Link>
-                  <div className="p-4">
-                    <Link href={`/fr/listings/${listing.id}`}>
-                      <h3 className="font-bold text-slate-900 dark:text-white text-base hover:text-indigo-600 dark:hover:text-indigo-400 transition line-clamp-1">
-                        {listing.title}
-                      </h3>
-                    </Link>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-1 flex items-center gap-1">
-                      <IoLocationOutline className="text-xs" />
-                      {listing.location}
-                    </p>
-                    <div className="flex items-center gap-1 mt-2">
-                      <IoStar className="text-amber-400 text-sm" />
-                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                        {listing.rating || 4.5}
-                      </span>
-                      <span className="text-xs text-slate-400">
-                        ({listing.reviewCount || 0} {t("reviews")})
-                      </span>
-                    </div>
-                    <div className="flex gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <IoBedOutline className="text-xs" /> {listing.bedrooms}{" "}
-                        {t("details.beds")}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <IoWaterOutline className="text-xs" />{" "}
-                        {listing.bathrooms} {t("details.baths")}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="flex items-baseline gap-1">
-                        <span
-                          className={`text-xl font-extrabold ${gradientText}`}
-                        >
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFavorite(listing.id, listing.title)}
+                      className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-lg backdrop-blur-md transition-all hover:scale-110 dark:bg-slate-900/90"
+                    >
+                      <Heart className="h-5 w-5 fill-rose-500" />
+                    </button>
+
+                    <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+                      <div>
+                        <h3 className="text-xl font-extrabold tracking-tight text-white">
+                          {listing.title}
+                        </h3>
+                        <p className="mt-1 inline-flex items-center gap-1 text-xs text-white/80">
+                          <MapPin className="h-3.5 w-3.5" /> {listing.location}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-white/92 px-4 py-3 text-right shadow-lg backdrop-blur-md dark:bg-slate-900/92">
+                        <p className="text-xl font-extrabold text-slate-900 dark:text-white">
                           {displayPrice.toLocaleString()}
+                        </p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                          TND / nuit
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                        <span className="inline-flex items-center gap-1">
+                          <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {listing.rating || 4.5}
                         </span>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">
-                          TND
+                        <span className="inline-flex items-center gap-1">
+                          <BedDouble className="h-3.5 w-3.5" /> {listing.bedrooms} ch.
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          <Users className="h-3.5 w-3.5" /> {listing.maxGuests} pers.
                         </span>
                       </div>
+                      <div className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                        Score {listing.trustScore || 95}/100
+                      </div>
+                    </div>
+
+                    {listing.amenities && listing.amenities.length > 0 && (
+                      <div className="mb-4 flex flex-wrap gap-2">
+                        {listing.amenities.slice(0, 4).map((a: string) => (
+                          <span
+                            key={a}
+                            className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400"
+                          >
+                            {a}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
                       {canCompare && (
                         <button
-                          onClick={() => {
-                            toggleCompare(listing.id);
-                            showAlert(
-                              "info",
-                              selectedForCompare.includes(listing.id)
-                                ? `${listing.title} ${t("alerts.removedFromCompare")}`
-                                : `${listing.title} ${t("alerts.addedToCompare")}`,
-                            );
-                          }}
-                          className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all ${
-                            selectedForCompare.includes(listing.id)
-                              ? gradientButton
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                          type="button"
+                          onClick={() => handleToggleCompare(listing.id, listing.title)}
+                          className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold transition-all ${
+                            isInCompare
+                              ? GRADIENT_BUTTON
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
                           }`}
                         >
-                          <IoGitCompare className="text-xs inline mr-1" />
-                          {t("buttons.compare")}
+                          {isInCompare ? "✓ Comparé" : "+ Comparer"}
                         </button>
                       )}
+                      <Link
+                        href={`/fr/listings/${listing.id}`}
+                        className="inline-flex items-center gap-1 text-xs font-bold text-indigo-600 transition-all hover:gap-2 dark:text-indigo-300"
+                      >
+                        Voir la fiche <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
                     </div>
                   </div>
                 </div>
@@ -461,99 +512,102 @@ export default function FavoritesPage() {
         ) : (
           <div className="space-y-3">
             {sortedFavorites.map((listing) => {
-              const imageUrl = imgErrors[listing.id]
-                ? FALLBACK_IMAGE
-                : listing.image;
               const displayPrice = listing.price || listing.pricePerNight || 0;
+              const imageUrl = imgErrors[listing.id] ? "/images/placeholder.jpg" : (listing.image || "/images/placeholder.jpg");
+              const isInCompare = selectedForCompare.includes(listing.id);
 
               return (
                 <div
                   key={listing.id}
-                  className="bg-white dark:bg-slate-900 rounded-xl shadow-sm hover:shadow-md transition p-3 flex gap-3"
+                  className="overflow-hidden rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-md transition-all hover:scale-[1.005] hover:shadow-[0_20px_60px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80"
                 >
-                  <Link
-                    href={`/fr/listings/${listing.id}`}
-                    className="relative w-24 h-24 flex-shrink-0"
-                  >
-                    <img
-                      src={imageUrl}
-                      alt={listing.title}
-                      className="w-full h-full object-cover rounded-lg"
-                      onError={() => handleImageError(listing.id)}
-                    />
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleRemoveFavorite(listing.id, listing.title);
-                      }}
-                      className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-white shadow-md flex items-center justify-center text-red-500 hover:scale-110 transition"
-                    >
-                      <IoHeart className="text-xs" />
-                    </button>
-                  </Link>
-                  <div className="flex-1 min-w-0">
-                    <Link href={`/fr/listings/${listing.id}`}>
-                      <h3 className="font-semibold text-slate-900 dark:text-white text-sm hover:text-indigo-600 transition line-clamp-1">
-                        {listing.title}
-                      </h3>
-                    </Link>
-                    <p className="text-slate-500 dark:text-slate-400 text-xs mt-0.5 flex items-center gap-1">
-                      <IoLocationOutline className="text-xs" />
-                      {listing.location}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <div className="flex items-center gap-0.5">
-                        <IoStar className="text-amber-400 text-xs" />
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          {listing.rating || 4.5}
-                        </span>
-                      </div>
-                      <span className="text-xs text-slate-400">
-                        {listing.reviewCount || 0} {t("reviews")}
-                      </span>
-                      <div className="flex gap-2 text-xs text-slate-500">
-                        <span className="flex items-center gap-0.5">
-                          <IoBedOutline className="text-xs" />{" "}
-                          {listing.bedrooms}
-                        </span>
-                        <span className="flex items-center gap-0.5">
-                          <IoWaterOutline className="text-xs" />{" "}
-                          {listing.bathrooms}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between mt-2">
-                      <div className="flex items-baseline gap-1">
-                        <span
-                          className={`text-base font-extrabold ${gradientText}`}
-                        >
-                          {displayPrice.toLocaleString()}
-                        </span>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">
-                          TND
-                        </span>
-                      </div>
-                      {canCompare && (
-                        <button
-                          onClick={() => {
-                            toggleCompare(listing.id);
-                            showAlert(
-                              "info",
-                              selectedForCompare.includes(listing.id)
-                                ? `${listing.title} ${t("alerts.removedFromCompare")}`
-                                : `${listing.title} ${t("alerts.addedToCompare")}`,
-                            );
-                          }}
-                          className={`px-2 py-0.5 rounded-lg text-[9px] font-semibold transition-all ${
-                            selectedForCompare.includes(listing.id)
-                              ? gradientButton
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
-                          }`}
-                        >
-                          <IoGitCompare className="text-[10px] inline mr-0.5" />
-                          {t("buttons.compare")}
-                        </button>
+                  <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+                    <div className="relative h-48 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
+                      <img
+                        src={imageUrl}
+                        alt={listing.title}
+                        className="h-full w-full object-cover transition-transform duration-500 hover:scale-102"
+                        onError={() => handleImageError(listing.id)}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFavorite(listing.id, listing.title)}
+                        className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-lg backdrop-blur-md dark:bg-slate-900/90"
+                      >
+                        <Heart className="h-4 w-4 fill-rose-500" />
+                      </button>
+                      {listing.collection && (
+                        <div className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-[9px] font-bold text-slate-800 shadow-md backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
+                          {listing.collection}
+                        </div>
                       )}
+                    </div>
+
+                    <div className="flex flex-col justify-between">
+                      <div>
+                        <div className="mb-2 flex flex-wrap items-center gap-2">
+                          {listing.isVerified && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-0.5 text-[10px] font-bold text-white">
+                              <ShieldCheck className="h-3 w-3" /> Vérifié
+                            </span>
+                          )}
+                          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
+                            Score {listing.trustScore || 95}/100
+                          </span>
+                        </div>
+                        <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                          {listing.title}
+                        </h3>
+                        <p className="mt-1.5 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                          <MapPin className="h-3.5 w-3.5" /> {listing.location}
+                        </p>
+                        <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                          <span className="inline-flex items-center gap-1">
+                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {listing.rating || 4.5} ({listing.reviewCount || 0})
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <BedDouble className="h-3.5 w-3.5" /> {listing.bedrooms} ch.
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Bath className="h-3.5 w-3.5" /> {listing.bathrooms} sdb
+                          </span>
+                          <span className="inline-flex items-center gap-1">
+                            <Users className="h-3.5 w-3.5" /> {listing.maxGuests} pers.
+                          </span>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-end justify-between gap-4">
+                        <div>
+                          <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
+                            {displayPrice.toLocaleString()} TND
+                          </p>
+                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                            / nuit
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {canCompare && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCompare(listing.id, listing.title)}
+                              className={`rounded-full px-3.5 py-1.5 text-[10px] font-bold transition-all ${
+                                isInCompare
+                                  ? GRADIENT_BUTTON
+                                  : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+                              }`}
+                            >
+                              {isInCompare ? "✓ Comparé" : "+ Comparer"}
+                            </button>
+                          )}
+                          <Link
+                            href={`/fr/listings/${listing.id}`}
+                            className={`inline-flex items-center gap-2 rounded-full ${GRADIENT_BUTTON} px-5 py-2 text-xs font-bold shadow-md shadow-indigo-500/15 transition-all hover:scale-[1.02]`}
+                          >
+                            Réserver <ArrowRight className="h-3.5 w-3.5" />
+                          </Link>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -561,21 +615,22 @@ export default function FavoritesPage() {
             })}
           </div>
         )}
-      </main>
 
-      {/* Floating Compare Button */}
-      {compareCount > 1 && (
-        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 animate-in slide-in-from-bottom-5 fade-in duration-300">
-          <Link href="/fr/favorites/compare">
-            <button
-              className={`px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-2xl hover:scale-105 transition-all ${gradientButton}`}
-            >
-              <IoGitCompare className="text-base" />
-              {t("buttons.compareCount", { count: compareCount })}
-            </button>
-          </Link>
-        </div>
-      )}
+        {/* Floating Compare Button */}
+        {compareCount > 1 && (
+          <div className="fixed bottom-8 left-1/2 z-40 -translate-x-1/2 animate-in slide-in-from-bottom-5 fade-in duration-300">
+            <Link href="/fr/favorites/compare">
+              <button
+                className={`inline-flex items-center gap-2 rounded-full ${GRADIENT_BUTTON} px-7 py-4 text-sm font-bold shadow-2xl shadow-indigo-500/30 transition-all hover:scale-[1.03]`}
+              >
+                <Crown className="h-4 w-4" />
+                Comparer {compareCount} logements
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            </Link>
+          </div>
+        )}
+      </main>
     </div>
   );
 }

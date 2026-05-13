@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob";
 
-// Stockage global des sessions (partagé avec l'API session)
 declare global {
-  // eslint-disable-next-line no-var
   var __uploadSessions: Map<string, any> | undefined;
 }
 
@@ -15,15 +12,12 @@ const getUploadSessions = () => {
 };
 
 async function detectImageType(buffer: Buffer): Promise<{ mimeType: string; extension: string }> {
-  // JPEG: FF D8 FF
   if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
     return { mimeType: 'image/jpeg', extension: 'jpg' };
   }
-  // PNG: 89 50 4E 47
   else if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
     return { mimeType: 'image/png', extension: 'png' };
   }
-  // Default to JPEG
   else {
     console.log("⚠️ Type non détecté, fallback à JPEG");
     return { mimeType: 'image/jpeg', extension: 'jpg' };
@@ -57,12 +51,8 @@ export async function POST(request: NextRequest) {
 
     if (!session) {
       console.log("❌ Session non trouvée:", sessionId);
-      console.log(`📦 Sessions disponibles: ${uploadSessions.size}`);
       return NextResponse.json(
-        {
-          error: "Session expirée. Veuillez re-scanner le QR code.",
-          success: false,
-        },
+        { error: "Session expirée", success: false },
         { status: 404 },
       );
     }
@@ -81,25 +71,18 @@ export async function POST(request: NextRequest) {
     
     console.log(`📸 Type détecté: ${mimeType} (${extension}) pour ${type}`);
 
-    const timestamp = Date.now();
-    
-    // ✅ CORRECTION: Utiliser "private" au lieu de "public"
-    const blob = await put(
-      `mobile-uploads/${sessionId}/${type}-${timestamp}.${extension}`,
-      buffer,
-      {
-        access: "private", // ← Changé de "public" à "private"
-        addRandomSuffix: true,
-        contentType: mimeType,
-      },
-    );
+    // ✅ STOCKER EN MÉMOIRE (base64) - PAS D'UPLOAD VERCEL BLOB
+    const base64Data = buffer.toString("base64");
 
     if (!session.files) session.files = {};
+    
+    // Stocker les données en base64 dans la session
     session.files[type] = {
-      url: blob.url,
+      data: base64Data,
       name: file.name,
       type: mimeType,
       size: buffer.length,
+      extension: extension,
       uploadedAt: new Date().toISOString(),
     };
 
@@ -107,18 +90,16 @@ export async function POST(request: NextRequest) {
 
     if (filesCount === 3) {
       session.status = "completed";
-      console.log("🎉 Tous les 3 fichiers reçus!");
+      console.log("🎉 Tous les 3 fichiers reçus en mémoire!");
     }
 
     uploadSessions.set(sessionId, session);
 
-    console.log(`✅ Upload réussi: ${type} (${filesCount}/3) - URL: ${blob.url}`);
+    console.log(`✅ Stockage mémoire réussi: ${type} (${filesCount}/3)`);
 
     return NextResponse.json({
       success: true,
       type,
-      url: blob.url,
-      mimeType,
       filesReceived: filesCount,
       totalExpected: 3,
     });

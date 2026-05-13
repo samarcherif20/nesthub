@@ -474,19 +474,110 @@ export function useInscription() {
       }, 100);
     }
   }, [cinData]);
-  // ════════════════════════════════════════════════════════════════════════════
-  // UPLOAD CIN (CORRIGÉ - NE PAS ÉCRASER LES NOMS FRANÇAIS)
-  // ════════════════════════════════════════════════════════════════════════════
-
   const handleUploadCIN = async (): Promise<boolean> => {
-    if (!cinRecto || !cinVerso || !profilePhoto) {
-      setUploadCINError("Veuillez uploader les 3 fichiers");
-      return false;
-    }
-
     const userId = currentUserId || localStorage.getItem("currentUserId");
     if (!userId) {
       setUploadCINError("ID utilisateur introuvable");
+      toast.error("Erreur", { description: "ID utilisateur non trouvé" });
+      return false;
+    }
+
+    // ✅ CAS 1: UPLOAD MOBILE (on a déjà les URLs)
+    if (cinRectoUrl && cinVersoUrl && profilePictureUrl) {
+      console.log("📱 Upload mobile détecté - conversion des URLs en fichiers");
+      setIsUploadingCIN(true);
+      setUploadCINError("");
+
+      try {
+        // Convertir les URLs en fichiers (comme si on les uploadait depuis le desktop)
+        const urlToFile = async (
+          url: string,
+          filename: string,
+        ): Promise<File> => {
+          const response = await fetch(url);
+          const blob = await response.blob();
+          return new File([blob], filename, { type: blob.type });
+        };
+
+        const [rectoFile, versoFile, profileFile] = await Promise.all([
+          urlToFile(cinRectoUrl, "recto.jpg"),
+          urlToFile(cinVersoUrl, "verso.jpg"),
+          urlToFile(profilePictureUrl, "selfie.jpg"),
+        ]);
+
+        // ✅ APPELER LA MÊME API que l'upload desktop !
+        const formData = new FormData();
+        formData.append("userId", userId);
+        formData.append("cinRecto", rectoFile);
+        formData.append("cinVerso", versoFile);
+        formData.append("profilePhoto", profileFile);
+
+        const res = await fetch("/api/registration/upload-cin", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.error || "Erreur upload");
+
+        // Sauvegarder les URLs (inchangées)
+        if (data.urls?.profilePhoto)
+          setProfilePictureUrl(data.urls.profilePhoto);
+        if (data.urls?.cinRecto) setCinRectoUrl(data.urls.cinRecto);
+        if (data.urls?.cinVerso) setCinVersoUrl(data.urls.cinVerso);
+
+        // Créer et mettre à jour cinData
+        if (data.extracted) {
+          const newCinData = {
+            firstName: data.extracted.firstName || null,
+            lastName: data.extracted.lastName || null,
+            cinNumber: data.extracted.cinNumber || null,
+            dateOfBirth: data.extracted.dateOfBirth || null,
+            profession: data.extracted.profession || null,
+            extractedAt: new Date().toISOString(),
+            documentType: "CIN",
+            rectoUrl: data.urls?.cinRecto || cinRectoUrl,
+            versoUrl: data.urls?.cinVerso || cinVersoUrl,
+          };
+
+          setCinData(newCinData);
+          setShowOcrConfirm(true);
+
+          if (data.extracted.dateOfBirth && !dateNaissance) {
+            setDateNaissance(data.extracted.dateOfBirth);
+          }
+          if (data.extracted.cinNumber && !cinNumber) {
+            setCinNumber(data.extracted.cinNumber);
+          }
+          if (data.extracted.profession && !profession) {
+            setProfession(data.extracted.profession);
+          }
+        }
+
+        toast.success("Documents analysés !", {
+          description: data.extracted
+            ? `CIN n°${data.extracted.cinNumber ?? "?"} — vérifiez avant de confirmer.`
+            : "Upload réussi. Remplissez manuellement.",
+        });
+
+        return true;
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : "Erreur inconnue";
+        setUploadCINError(msg);
+        toast.error("Erreur analyse", { description: msg });
+        return false;
+      } finally {
+        setIsUploadingCIN(false);
+      }
+    }
+
+    // ✅ CAS 2: UPLOAD DESKTOP (upload normal des fichiers)
+    if (!cinRecto || !cinVerso || !profilePhoto) {
+      setUploadCINError("Veuillez uploader les 3 fichiers");
+      toast.error("Erreur", {
+        description: "Veuillez uploader les 3 fichiers",
+      });
       return false;
     }
 
@@ -509,12 +600,10 @@ export function useInscription() {
 
       if (!res.ok) throw new Error(data.error || "Erreur upload");
 
-      // Sauvegarder les URLs
       if (data.urls?.profilePhoto) setProfilePictureUrl(data.urls.profilePhoto);
       if (data.urls?.cinRecto) setCinRectoUrl(data.urls.cinRecto);
       if (data.urls?.cinVerso) setCinVersoUrl(data.urls.cinVerso);
 
-      // ✅ CRÉER et METTRE À JOUR cinData
       if (data.extracted) {
         const newCinData = {
           firstName: data.extracted.firstName || null,
@@ -528,15 +617,9 @@ export function useInscription() {
           versoUrl: data.urls?.cinVerso || null,
         };
 
-        // ✅ Met à jour cinData
         setCinData(newCinData);
-        console.log("📦 cinData mis à jour:", newCinData);
-
-        // ✅ OUVRE LE MODAL ICI !!! (C'est ce qui manquait)
         setShowOcrConfirm(true);
-        console.log("🔓 Modal OCR ouvert avec les données");
 
-        // Met à jour les champs techniques
         if (data.extracted.dateOfBirth && !dateNaissance) {
           setDateNaissance(data.extracted.dateOfBirth);
         }
@@ -548,12 +631,7 @@ export function useInscription() {
         }
       }
 
-      toast.success("Documents analysés !", {
-        description: data.extracted
-          ? `CIN n°${data.extracted.cinNumber ?? "?"} — vérifiez avant de confirmer.`
-          : "Upload réussi. Remplissez manuellement.",
-      });
-
+      toast.success("Documents analysés !");
       return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erreur inconnue";
@@ -953,7 +1031,14 @@ export function useInscription() {
         lastNameFrancais: lastName, // 'cherif'
         cinDataArabe: cinDataToSave, // {firstName: 'سمر', lastName: 'الشريف'}
       });
-
+      // Juste avant le fetch, ajoute :
+      console.log("🔍 Vérification cinData avant envoi:", {
+        firstNameArabe: cinData.firstName,
+        lastNameArabe: cinData.lastName,
+        cinNumber: cinData.cinNumber,
+        dateOfBirth: cinData.dateOfBirth,
+        profession: cinData.profession,
+      });
       // ✅ Envoi au serveur avec les valeurs FRANÇAISES + ARABES
       const completeProfileRes = await fetch("/api/users/complete-profile", {
         method: "POST",

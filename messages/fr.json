@@ -1386,9 +1386,13 @@
   },
 
   "SSOCallback": {
-    "connecting": "Connexion en cours, veuillez patienter...",
-    "pleaseWait": "Vérification de vos informations",
-    "redirecting": "Redirection en cours..."
+     "title": "CONNEXION SÉCURISÉE",
+    "subtitle": "VERIFICATION SSO",
+    "connecting": "Connexion en cours",
+    "pleaseWait": "Veuillez patienter...",
+    "secureConnection": "Connexion chiffrée • SSO",
+    "errorTitle": "Échec de la connexion",
+    "redirectingMessage": "Redirection en cours..."
   },
 
   "ForgotPassword": {

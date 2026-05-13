@@ -77,6 +77,7 @@ import {
   MdOutlineSafetyCheck,
 } from "react-icons/md";
 import { useListingTest as useListing } from "@/hooks/useListingTest";
+import { TenantHeader } from "@/components/ui/header/TenantHeader";
 
 // ✅ Import dynamique de ListingMap avec SSR désactivé
 const ListingMap = dynamic(() => import("@/components/ui/maps/ListingMap"), {
@@ -763,7 +764,7 @@ export default function ListingDetailPage() {
           onClose={() => setToast(null)}
         />
       )}
-
+<TenantHeader></TenantHeader>
       {/* Info Request Modal */}
       {showInfoModal && sentInfoRequest && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">

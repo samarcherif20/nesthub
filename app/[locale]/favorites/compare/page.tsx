@@ -1,4 +1,3 @@
-// app/[locale]/favorites/compare/page.tsx
 "use client";
 
 import Link from "next/link";
@@ -20,6 +19,25 @@ import {
   IoBarChartOutline,
 } from "react-icons/io5";
 import { MdOutlineSquareFoot } from "react-icons/md";
+import { 
+  ChartColumn, 
+  Crown, 
+  ArrowRight, 
+  Ban, 
+  Bath, 
+  ShieldCheck,
+  Maximize2,
+  Heart,
+  Link2,
+  Copy,
+  Sparkles,
+  Star,
+  BedDouble,
+  Users,
+  MapPin,
+  X,
+  CheckCircle2,
+} from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import AlertBanner from "@/components/ui/Alert";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
@@ -30,218 +48,32 @@ import {
 } from "./hooks/useCompare";
 
 const gradientButton = `
-  bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500 
-  hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600
+  bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 
+  hover:from-sky-600 hover:via-indigo-600 hover:to-purple-700
   text-white shadow-md hover:shadow-lg 
   transition-all duration-300
 `;
 
-const gradientText = "bg-gradient-to-r from-indigo-600 via-sky-500 to-purple-600 bg-clip-text text-transparent";
+const gradientText = "bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent";
+
+const AMENITIES_COMPARE = ["WiFi", "Piscine", "Parking", "Climatisation", "Cuisine équipée", "Vue mer", "TV", "Jardin", "Jacuzzi", "Salle de sport"];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function ScoreBar({ value, max = 100 }: { value: number; max?: number }) {
-  const pct = Math.round((value / max) * 100);
+function ScorePill({ score }: { score: number }) {
   return (
-    <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-      <div
-        className="h-full rounded-full bg-indigo-500 transition-all duration-700"
-        style={{ width: `${pct}%` }}
-      />
+    <div className="flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-bold backdrop-blur-md dark:bg-slate-900/90">
+      <div className={`h-2 w-2 rounded-full ${score >= 90 ? "bg-emerald-500" : score >= 80 ? "bg-amber-500" : "bg-rose-500"}`} />
+      <span className="text-slate-800 dark:text-white">{score}/100</span>
     </div>
   );
 }
 
 function CheckCell({ has }: { has: boolean }) {
   return has ? (
-    <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center flex-shrink-0">
-      <IoCheckmarkCircle className="text-emerald-600 dark:text-emerald-400 text-sm" />
-    </div>
+    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
   ) : (
-    <div className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-950/40 flex items-center justify-center flex-shrink-0">
-      <IoCloseOutline className="text-red-500 text-sm" />
-    </div>
-  );
-}
-
-function ListingCard({
-  listing,
-  isBest,
-  score,
-  imageSrc,
-  onRemove,
-  onImageError,
-  isRemoving,
-  allAmenities,
-  characteristicsHeight,
-  formatAmenityName: formatName,
-  t,
-}: {
-  listing: any;
-  isBest: boolean;
-  score: number;
-  imageSrc: string;
-  onRemove: () => void;
-  onImageError: () => void;
-  isRemoving: boolean;
-  allAmenities: string[];
-  characteristicsHeight: number;
-  formatAmenityName: (amenity: string) => string;
-  t: any;
-}) {
-  return (
-    <div
-      className={`flex flex-col rounded-xl overflow-hidden transition-all duration-300 ${
-        isRemoving ? "opacity-0 scale-95" : "opacity-100 scale-100"
-      } ${
-        isBest
-          ? "ring-2 ring-indigo-500 shadow-xl shadow-indigo-100 dark:shadow-indigo-900/20"
-          : "border border-slate-200 dark:border-slate-700 shadow-sm"
-      } bg-white dark:bg-slate-900`}
-    >
-      {/* Card hero */}
-      <div className="relative flex-shrink-0">
-        <img
-          src={imageSrc}
-          alt={listing.title}
-          className="w-full h-40 object-cover"
-          onError={onImageError}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-
-        {isBest && (
-          <div className="absolute top-3 left-3 flex items-center gap-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg">
-            <IoSparklesOutline className="text-xs" />
-            {t("bestChoice")}
-          </div>
-        )}
-
-        {listing.isVerified && !isBest && (
-          <div className="absolute top-3 left-3 bg-white/90 dark:bg-slate-800/90 backdrop-blur text-indigo-600 dark:text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-            <IoCheckmarkCircle className="text-xs" />
-            {t("verified")}
-          </div>
-        )}
-
-        <button
-          onClick={onRemove}
-          className="absolute top-3 right-3 w-7 h-7 bg-white/90 dark:bg-slate-800/90 backdrop-blur rounded-full flex items-center justify-center text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition"
-          title={t("remove")}
-        >
-          <IoCloseOutline className="text-base" />
-        </button>
-
-        <div className="absolute bottom-0 left-0 right-0 p-3">
-          <Link href={`/fr/listings/${listing.id}`}>
-            <h3 className="text-white font-bold text-sm leading-snug hover:underline line-clamp-2">
-              {listing.title}
-            </h3>
-          </Link>
-          <p className="text-white/70 text-[11px] mt-0.5">{listing.type}</p>
-        </div>
-      </div>
-
-      {/* Data rows */}
-      <div className="flex flex-col divide-y divide-slate-100 dark:divide-slate-800 px-3 flex-1">
-        <div className="flex items-center h-12 gap-1">
-          <span className={`text-xl font-extrabold ${gradientText}`}>
-            {listing.pricePerNight.toLocaleString("fr-FR")}
-          </span>
-          <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500">
-            TND/nuit
-          </span>
-        </div>
-
-        <div className="flex items-center h-12 gap-1.5">
-          <span
-            className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${
-              listing.rating >= 4.8
-                ? "bg-emerald-100 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400"
-                : listing.rating >= 4.5
-                  ? "bg-indigo-100 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400"
-                  : "bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"
-            }`}
-          >
-            <IoStar className="text-[10px]" />
-            {listing.rating}
-          </span>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500">
-            ({listing.reviewCount} {t("reviews")})
-          </span>
-        </div>
-
-        <div className="flex flex-col justify-center h-12 gap-1">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">
-              {t("score")}
-            </span>
-            <span className="text-[11px] font-bold text-indigo-600 dark:text-indigo-400">
-              {score}/100
-            </span>
-          </div>
-          <ScoreBar value={score} />
-        </div>
-
-        {/* Caractéristiques */}
-        <div
-          className="flex flex-col"
-          style={{ minHeight: `${characteristicsHeight}px` }}
-        >
-          <div className="flex flex-wrap items-center h-12 gap-3 text-xs text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1">
-              <IoBedOutline className="text-indigo-500 text-sm" />
-              {listing.bedrooms} {t("beds", { count: listing.bedrooms })}
-            </span>
-            <span className="flex items-center gap-1">
-              <IoPeopleOutline className="text-indigo-500 text-sm" />
-              {listing.maxGuests} {t("guests", { count: listing.maxGuests })}
-            </span>
-            {listing.surfaceArea > 0 && (
-              <span className="flex items-center gap-1">
-                <MdOutlineSquareFoot className="text-indigo-500 text-sm" />
-                {listing.surfaceArea} m²
-              </span>
-            )}
-          </div>
-
-          {allAmenities.map((amenity) => {
-            const has = listing.amenities.includes(amenity);
-            return (
-              <div
-                key={amenity}
-                className="flex items-center justify-between h-12 gap-2"
-              >
-                <span className="text-xs text-slate-600 dark:text-slate-400">
-                  {formatName(amenity)}
-                </span>
-                <CheckCell has={has} />
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center h-12 gap-1.5">
-          <IoLocationOutline className="text-purple-500 text-sm flex-shrink-0" />
-          <span className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-            {listing.location}
-          </span>
-        </div>
-
-        <div className="flex items-center h-12">
-          <Link href={`/fr/listings/${listing.id}`} className="w-full">
-            <button
-              className={`w-full h-8 rounded-full text-xs font-bold transition-all active:scale-95 ${
-                isBest
-                  ? gradientButton
-                  : "border border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30"
-              }`}
-            >
-              {t("viewDetails")}
-            </button>
-          </Link>
-        </div>
-      </div>
-    </div>
+    <Ban className="h-4 w-4 text-slate-300 dark:text-slate-600" />
   );
 }
 
@@ -273,6 +105,10 @@ export default function ComparePage() {
     setAlert,
   } = useCompare();
 
+  const remove = (id: string, title: string) => {
+    removeFromCompare(id, title);
+  };
+
   if (!mounted || loading) {
     return (
       <LoadingSpinner
@@ -285,37 +121,40 @@ export default function ComparePage() {
       />
     );
   }
-
-  if (listings.length === 0) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900">
-        <TenantHeader />
-        <main className="pt-24 pb-32 flex items-center justify-center px-6">
-          <div className="text-center max-w-md">
-            <div className="w-20 h-20 rounded-2xl bg-indigo-100 dark:bg-indigo-950/40 flex items-center justify-center mx-auto mb-6">
-              <IoBarChartOutline className="text-4xl text-indigo-500" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">
-              {t("empty.title")}
-            </h2>
-            <p className="text-slate-500 dark:text-slate-400 mb-8 leading-relaxed">
-              {t("empty.message")}
-            </p>
-            <Link
-              href="/fr/favorites"
-              className={`inline-flex items-center gap-2 px-8 py-3 rounded-full font-semibold transition shadow-lg ${gradientButton}`}
-            >
-              {t("empty.button")}
-              <IoChevronForwardOutline />
-            </Link>
+if (listings.length === 0) {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+      <TenantHeader />
+      <main className="pt-16 pb-32 flex items-center justify-center px-6">
+        <div className="text-center max-w-md">
+          {/* Centered icon with pulse animation - transparent rounded box */}
+          <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-600/10 backdrop-blur-sm mx-auto animate-pulse">
+            <Maximize2 className="h-12 w-12 text-sky-500" />
           </div>
-        </main>
-      </div>
-    );
-  }
+          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Aucun logement à comparer</h2>
+          <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+            Retournez dans vos favoris et sélectionnez au moins 2 logements pour les comparer ici.
+          </p>
+          <Link
+            href="/fr/favorites"
+            className={`mt-8 inline-flex items-center gap-2 rounded-full ${gradientButton} px-7 py-3.5 text-sm font-bold shadow-xl shadow-indigo-500/25 transition-all hover:scale-[1.02]`}
+          >
+            <Heart className="h-4 w-4" /> Voir mes favoris <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </main>
+    </div>
+  );
+}
+  const sorted = [...listings].sort((a, b) => {
+    if (sortKey === "price") return a.pricePerNight - b.pricePerNight;
+    if (sortKey === "beds") return b.bedrooms - a.bedrooms;
+    if (sortKey === "guests") return b.maxGuests - a.maxGuests;
+    return b.rating - a.rating || b.trustScore - a.trustScore;
+  });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900">
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       <TenantHeader />
 
       {alert && (
@@ -328,268 +167,336 @@ export default function ComparePage() {
         </div>
       )}
 
-      <main className="pt-6 pb-16 px-4 md:px-6 max-w-7xl mx-auto">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mb-6">
-          <Link href="/fr" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-            {t("breadcrumb.home")}
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
+        {/* Breadcrumb - UPPERCASE, selected black, hover indigo, reduced margin */}
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-6">
+          <Link href="/fr/search" className="text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition">
+            ACCUEIL
           </Link>
-          <IoChevronForwardOutline className="text-[10px]" />
-          <Link href="/fr/favorites" className="hover:text-indigo-600 dark:hover:text-indigo-400 transition">
-            {t("breadcrumb.favorites")}
+          <IoChevronForwardOutline className="text-[10px] text-slate-400" />
+          <Link href="/fr/favorites" className="text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition">
+            FAVORIS
           </Link>
-          <IoChevronForwardOutline className="text-[10px]" />
-          <span className="text-indigo-600 dark:text-indigo-400 font-semibold uppercase tracking-wider">
-            {t("breadcrumb.compare")}
+          <IoChevronForwardOutline className="text-[10px] text-slate-400" />
+          <span className="text-slate-900 dark:text-white">
+            COMPARAISON
           </span>
-        </nav>
+        </div>
 
         {/* Header */}
-        <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              {t("title")}{" "}
-              <span className={gradientText}>
-                {t("highlight")}
-              </span>
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70 dark:text-indigo-300">
+              <ChartColumn className="h-3.5 w-3.5" />
+              COMPARAISON INTELLIGENTE
+            </div>
+            <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-6xl">
+              Comparer <span className={gradientText}>vos sélections</span>
             </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {listings.length} {t("count", { count: listings.length })} · {t("subtitle")}
+            <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
+              Analysez chaque détail côte à côte, identifiez le meilleur rapport qualité-prix et prenez une décision éclairée en quelques secondes.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <select
-              value={sortKey}
-              onChange={(e) => setSortKey(e.target.value as any)}
-              className="px-3 py-2 text-xs font-medium bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-400"
-            >
-              <option value="rating">{t("sort.rating")}</option>
-              <option value="price">{t("sort.price")}</option>
-              <option value="beds">{t("sort.beds")}</option>
-              <option value="guests">{t("sort.guests")}</option>
-            </select>
-
+          <div className="flex flex-wrap items-center gap-2">
             <div className="relative">
               <button
+                type="button"
                 onClick={() => setShowShareMenu((p) => !p)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition"
+                className="flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2.5 text-xs font-bold text-slate-700 shadow-sm backdrop-blur-md transition-all hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-200"
               >
-                <IoShareOutline className="text-sm" />
-                {t("share")}
+                <Link2 className="h-3.5 w-3.5" /> PARTAGER
               </button>
               {showShareMenu && (
-                <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-30 overflow-hidden">
+                <div className="absolute right-0 top-full z-30 mt-2 w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-white/10 dark:bg-slate-900">
                   <button
+                    type="button"
                     onClick={copyLink}
-                    className="flex items-center gap-2 w-full px-4 py-3 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition"
+                    className="flex w-full items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-semibold text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/5"
                   >
-                    <IoCopyOutline className="text-indigo-500" />
-                    {t("copyLink")}
+                    <Copy className="h-3.5 w-3.5 text-indigo-500" /> COPIER LE LIEN
                   </button>
                 </div>
               )}
             </div>
-
             <button
+              type="button"
               onClick={clearAll}
-              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 transition"
+              className="flex items-center gap-2 rounded-full border border-white/70 bg-white/80 px-4 py-2.5 text-xs font-bold text-rose-600 shadow-sm backdrop-blur-md transition-all hover:bg-rose-50 dark:border-white/10 dark:bg-slate-900/80 dark:text-rose-400 dark:hover:bg-rose-500/10"
             >
-              <IoTrashOutline className="text-sm" />
-              {t("clearAll")}
+              <IoTrashOutline className="h-3.5 w-3.5" /> VIDER
             </button>
           </div>
         </div>
 
-        {/* Summary metrics cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        {/* Metrics row */}
+        <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: t("metrics.listings"), value: listings.length, unit: "" },
-            { label: t("metrics.avgRating"), value: avgRating, unit: "/5" },
-            {
-              label: t("metrics.avgPrice"),
-              value: avgPrice.toLocaleString("fr-FR"),
-              unit: "TND/nuit",
-            },
-            { label: t("metrics.avgBeds"), value: avgBeds, unit: t("metrics.bedsUnit") },
-          ].map(({ label, value, unit }) => (
-            <div
-              key={label}
-              className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-4 py-3 shadow-sm"
-            >
-              <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
-                {label}
-              </p>
-              <p className="text-xl font-extrabold text-slate-900 dark:text-white">
-                {value}{" "}
-                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500">
-                  {unit}
-                </span>
-              </p>
+            { label: "LOGEMENTS COMPARÉS", value: String(listings.length), icon: ChartColumn, grad: "from-sky-500 to-indigo-600" },
+            { label: "NOTE MOYENNE", value: `${avgRating}/5`, icon: Star, grad: "from-amber-400 to-orange-500" },
+            { label: "PRIX MOYEN", value: `${avgPrice.toLocaleString()} TND`, icon: Crown, grad: "from-purple-500 to-pink-500" },
+            { label: "CHAMBRES MOY.", value: String(avgBeds), icon: BedDouble, grad: "from-emerald-500 to-teal-600" },
+          ].map(({ label, value, icon: Icon, grad }) => (
+            <div key={label} className="overflow-hidden rounded-2xl border border-white/70 bg-white/80 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+              <div className="flex items-center gap-3 p-4">
+                <div className={`flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br ${grad} text-white shadow-md`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">{label}</p>
+                  <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{value}</p>
+                </div>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Main comparison table */}
-        <div className="overflow-x-auto rounded-xl">
-          <div
-            className="grid gap-3"
-            style={{
-              gridTemplateColumns: `180px repeat(${listings.length}, minmax(240px, 1fr)) 120px`,
-              minWidth: `${180 + listings.length * 240 + 120}px`,
-            }}
-          >
-            {/* Labels column */}
-            <div className="flex flex-col">
-              <div className="h-[168px]" />
+        {/* Sort pill */}
+        <div className="mb-6 flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">TRIER PAR</span>
+          {[
+            { key: "rating", label: "Mieux notés" },
+            { key: "price", label: "Prix" },
+            { key: "beds", label: "Chambres" },
+            { key: "guests", label: "Capacité" },
+          ].map(({ key, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setSortKey(key as any)}
+              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
+                sortKey === key
+                  ? "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-md shadow-indigo-500/15"
+                  : "bg-white/70 text-slate-600 hover:bg-white dark:bg-slate-900/70 dark:text-slate-300"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
 
-              <div className="flex items-center h-12 px-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-t border-slate-100 dark:border-slate-800">
-                {t("labels.price")}
-              </div>
+        {/* Cards grid */}
+        <div className="mb-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {sorted.map((listing, idx) => {
+            const isBest = idx === 0 && sorted.length > 1;
+            const score = computeScore(listing);
+            const imgSrc = imageErrors[listing.id]
+              ? "https://placehold.co/600x400/e2e8f0/6366f1?text=NestHub"
+              : listing.image;
+            const isRemoving = removingId === listing.id;
 
-              <div className="flex items-center h-12 px-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-t border-slate-100 dark:border-slate-800">
-                {t("labels.rating")}
-              </div>
-
-              <div className="flex items-center h-12 px-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-t border-slate-100 dark:border-slate-800">
-                {t("labels.score")}
-              </div>
-
+            return (
               <div
-                className="flex items-center px-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-t border-slate-100 dark:border-slate-800"
-                style={{ height: `${characteristicsHeight}px` }}
+                key={listing.id}
+                className={`overflow-hidden rounded-3xl border transition-all duration-300 ${
+                  isRemoving ? "scale-95 opacity-0" : "scale-100 opacity-100"
+                } ${
+                  isBest
+                    ? "border-transparent bg-gradient-to-br from-sky-50 to-indigo-50 shadow-[0_24px_70px_rgba(79,70,229,0.18)] ring-2 ring-indigo-500/30 dark:from-sky-950/30 dark:to-indigo-950/30 dark:shadow-[0_24px_70px_rgba(79,70,229,0.12)]"
+                    : "border-white/70 bg-white/85 shadow-[0_16px_45px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80"
+                }`}
               >
-                {t("labels.features")}
-              </div>
+                <div className="relative h-56 overflow-hidden bg-slate-100 dark:bg-slate-800">
+                  <img src={imgSrc} alt={listing.title} className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/15 to-transparent" />
 
-              <div className="flex items-center h-12 px-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-t border-slate-100 dark:border-slate-800">
-                {t("labels.location")}
-              </div>
+                  <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                    {isBest && (
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-indigo-600/95 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white shadow-lg backdrop-blur-sm">
+                        <Crown className="h-3.5 w-3.5" /> MEILLEUR CHOIX
+                      </span>
+                    )}
+                    {listing.isVerified && !isBest && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white">
+                        <ShieldCheck className="h-3 w-3" /> VÉRIFIÉ
+                      </span>
+                    )}
+                    <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                      {listing.collection || "SÉLECTION"}
+                    </span>
+                  </div>
 
-              <div className="flex items-center h-12 px-2 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-t border-slate-100 dark:border-slate-800">
-                {t("labels.action")}
-              </div>
-            </div>
+                  <button
+                    type="button"
+                    onClick={() => remove(listing.id, listing.title)}
+                    className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-rose-500 shadow-lg backdrop-blur-md transition-all hover:scale-110 dark:bg-slate-900/90"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
 
-            {/* Listing columns */}
-            {listings.map((listing) => {
-              const isBest = bestListing?.id === listing.id;
-              const score = computeScore(listing);
-              const imgSrc = imageErrors[listing.id]
-                ? "https://placehold.co/600x400/e2e8f0/6366f1?text=NestHub"
-                : listing.image;
-
-              return (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  isBest={isBest}
-                  score={score}
-                  imageSrc={imgSrc}
-                  onRemove={() => removeFromCompare(listing.id, listing.title)}
-                  onImageError={() => handleImageError(listing.id)}
-                  isRemoving={removingId === listing.id}
-                  allAmenities={allAmenities}
-                  characteristicsHeight={characteristicsHeight}
-                  formatAmenityName={formatAmenityName}
-                  t={t}
-                />
-              );
-            })}
-
-            {/* Add more column */}
-            <div className="flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 min-h-[500px] p-4">
-              <Link
-                href="/fr/favorites"
-                className="w-full flex flex-col items-center gap-3"
-              >
-                <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
-                  <IoAddOutline className="text-2xl text-indigo-500" />
+                  <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+                    <div>
+                      <h3 className="text-xl font-extrabold tracking-tight text-white">{listing.title}</h3>
+                      <p className="mt-1 inline-flex items-center gap-1 text-xs text-white/80">
+                        <MapPin className="h-3.5 w-3.5" /> {listing.location}
+                      </p>
+                    </div>
+                    <div className="rounded-xl bg-white/90 px-4 py-2.5 text-right shadow-lg backdrop-blur-md dark:bg-slate-900/90">
+                      <p className="text-lg font-extrabold text-slate-900 dark:text-white">{listing.pricePerNight.toLocaleString()}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">TND / NUIT</p>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs font-bold text-indigo-500 text-center">
-                  {t("add")}
-                </span>
-                <span className="text-[11px] text-slate-400 dark:text-slate-500 text-center leading-relaxed">
-                  {t("addHint")}
-                </span>
-              </Link>
+
+                <div className="p-5">
+                  {/* Stats row */}
+                  <div className="mb-4 grid grid-cols-4 gap-2">
+                    {[
+                      [Star, `${listing.rating}`],
+                      [BedDouble, `${listing.bedrooms} ch.`],
+                      [Bath, `${listing.bathrooms} sdb`],
+                      [Users, `${listing.maxGuests} pers.`],
+                    ].map(([Icon, label]) => (
+                      <div key={String(label)} className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-2 py-2.5 dark:bg-white/5">
+                        <Icon className="h-3.5 w-3.5 text-slate-400" />
+                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300">{String(label)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Score */}
+                  <div className="mb-4 flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">SCORE NESTHUB</span>
+                    <ScorePill score={score} />
+                  </div>
+                  <div className="mb-5 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 transition-all duration-700" style={{ width: `${score}%` }} />
+                  </div>
+
+                  {/* Amenities */}
+                  <div className="space-y-0 divide-y divide-slate-100 dark:divide-white/5">
+                    {AMENITIES_COMPARE.map((amenity) => {
+                      const has = listing.amenities?.includes(amenity);
+                      return (
+                        <div key={amenity} className="flex items-center justify-between py-2.5">
+                          <span className="text-xs text-slate-600 dark:text-slate-300">{amenity}</span>
+                          <CheckCell has={has} />
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <Link href={`/fr/listings/${listing.id}`}>
+                    <button className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-bold transition-all ${
+                      isBest
+                        ? `${gradientButton} shadow-lg shadow-indigo-500/20 hover:scale-[1.01]`
+                        : "border-2 border-indigo-300 bg-white text-indigo-600 hover:bg-indigo-50 dark:border-indigo-700 dark:bg-transparent dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+                    }`}>
+                      {isBest ? <Crown className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
+                      {isBest ? "RÉSERVER LE MEILLEUR CHOIX" : "VOIR LA FICHE"}
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Add more card */}
+          <div className="flex flex-col items-center justify-center gap-4 rounded-3xl border-2 border-dashed border-slate-300 bg-slate-50/50 p-10 text-center dark:border-white/10 dark:bg-slate-900/50">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-indigo-500 shadow-md dark:bg-slate-800">
+              <Maximize2 className="h-7 w-7" />
             </div>
+            <p className="text-sm font-bold text-slate-600 dark:text-slate-200">AJOUTER UN LOGEMENT</p>
+            <p className="max-w-[180px] text-xs leading-relaxed text-slate-400 dark:text-slate-500">
+              Retournez dans vos favoris et ajoutez jusqu'à 4 biens à comparer.
+            </p>
+            <Link href="/fr/favorites">
+              <button className={`mt-2 rounded-full ${gradientButton} px-5 py-2.5 text-xs font-bold shadow-md shadow-indigo-500/15 transition-all hover:scale-[1.02]`}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Heart className="h-3.5 w-3.5" /> VOIR LES FAVORIS
+                </span>
+              </button>
+            </Link>
           </div>
         </div>
 
-        {/* Bottom insight section */}
-        {bestListing && (
-          <div className="mt-8 grid md:grid-cols-2 gap-5">
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/40 flex items-center justify-center flex-shrink-0">
-                  <IoDiamondOutline className="text-xl text-indigo-500" />
+        {/* Best choice panel */}
+        {bestListing && sorted.length > 1 && (
+          <div className="mb-8 grid gap-5 lg:grid-cols-2">
+            <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_16px_45px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/85 md:p-8">
+              <div className="mb-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-md">
+                  <IoDiamondOutline className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white text-base">
-                    {t("expertChoice.title")}
-                  </h3>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">
-                    {t("expertChoice.subtitle")}
-                  </p>
+                  <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">CHOIX DE L'EXPERT</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Basé sur le score, les avis et les équipements</p>
                 </div>
               </div>
 
-              <div className="bg-indigo-50 dark:bg-indigo-950/20 rounded-xl p-4 mb-4">
-                <p className="text-sm font-bold text-indigo-700 dark:text-indigo-300 mb-1">
-                  {bestListing.title}
-                </p>
-                <p className="text-xs text-indigo-500 dark:text-indigo-400 flex items-center gap-1">
-                  <IoLocationOutline className="text-sm" />
-                  {bestListing.location}
-                </p>
-                <div className="flex items-center gap-3 mt-2 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <IoStar className="text-amber-400" />
-                    {bestListing.rating}/5
-                  </span>
-                  <span>·</span>
-                  <span>
-                    {bestListing.pricePerNight.toLocaleString("fr-FR")} TND/nuit
-                  </span>
-                  <span>·</span>
-                  <span>{bestListing.reviewCount} {t("reviews")}</span>
+              <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5 dark:border-indigo-500/20 dark:bg-indigo-500/5">
+                <div className="flex items-start gap-4">
+                  <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200 dark:bg-slate-800">
+                    <img src={bestListing.image} alt={bestListing.title} className="h-full w-full object-cover" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-extrabold text-slate-900 dark:text-white">{bestListing.title}</p>
+                    <p className="mt-1 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400"><MapPin className="h-3.5 w-3.5" /> {bestListing.location}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-600 dark:text-slate-300">
+                      <span className="inline-flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" /> {bestListing.rating}</span>
+                      <span>·</span>
+                      <span>{bestListing.pricePerNight.toLocaleString()} TND/nuit</span>
+                      <span>·</span>
+                      <span>{bestListing.reviewCount} avis</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <Link href={`/fr/listings/${bestListing.id}`}>
-                <button className={`w-full py-2.5 rounded-xl text-xs font-bold transition shadow-md ${gradientButton}`}>
-                  {t("expertChoice.book")}
+                <button className={`mt-5 flex w-full items-center justify-center gap-2 rounded-2xl py-3.5 text-sm font-bold transition-all ${gradientButton}`}>
+                  <Crown className="h-4 w-4" /> RÉSERVER CE LOGEMENT
                 </button>
               </Link>
             </div>
 
-            <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm">
-              <div className="flex items-start gap-1 mb-3">
-                {[...Array(5)].map((_, i) => (
-                  <IoStar key={i} className="text-amber-400 text-sm" />
-                ))}
+            <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_16px_45px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/85 md:p-8">
+              <div className="mb-4 flex items-center gap-1">
+                {[1,2,3,4,5].map((i) => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
               </div>
-              <p className="text-sm text-slate-600 dark:text-slate-400 italic leading-relaxed mb-4">
-                {t("testimonial.text")}
+              <p className="text-sm leading-relaxed italic text-slate-600 dark:text-slate-300">
+                "La fonction de comparaison NestHub m'a fait gagner des heures. J'ai pu identifier le bien parfait pour ma famille en quelques minutes seulement, avec tous les critères côte à côte. Un outil indispensable."
               </p>
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
+              <div className="mt-5 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-sm font-bold text-white">
                   SM
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                    {t("testimonial.author")}
-                  </p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">
-                    {t("testimonial.role")}
-                  </p>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">SAMI MANSOUR</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500">VOYAGEUR VÉRIFIÉ · DEPUIS 2023</p>
                 </div>
               </div>
             </div>
           </div>
         )}
-      </main>
+
+        {/* Bottom insight */}
+        {sorted.length > 0 && (
+          <div className="rounded-3xl border border-white/70 bg-white/85 p-5 text-center shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 md:p-8">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-indigo-500/20 dark:bg-slate-900/70 dark:text-indigo-300">
+              <Sparkles className="h-3.5 w-3.5" /> DÉCISION ÉCLAIRÉE
+            </div>
+            <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white md:text-3xl">
+              {listings.length} logements comparés · <span className={gradientText}>1 DÉCISION PARFAITE</span>
+            </h3>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              Tous les critères sont alignés pour que vous puissiez comparer objectivement et choisir le logement qui correspond le mieux à vos attentes.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              <Link href="/fr/search">
+                <button className={`rounded-full ${gradientButton} px-6 py-3 text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.02]`}>
+                  <span className="inline-flex items-center gap-2"><ArrowRight className="h-4 w-4" /> EXPLORER D'AUTRES BIENS</span>
+                </button>
+              </Link>
+              <Link href="/fr/favorites">
+                <button className="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-700 shadow-sm transition-all hover:border-indigo-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-200">
+                  <span className="inline-flex items-center gap-2"><Heart className="h-4 w-4" /> RETOUR AUX FAVORIS</span>
+                </button>
+              </Link>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,330 +1,404 @@
-// components/ui/headers/TenantHeader.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import {
-  IoPersonOutline,
-  IoGridOutline,
-  IoSettingsOutline,
-  IoWalletOutline,
-  IoStarOutline,
-  IoHomeOutline,
-  IoCalendarOutline,
-  IoSearchOutline,
-  IoChevronDownOutline,
-  IoShieldCheckmarkOutline,
-  IoHelpCircleOutline,
-  IoChatbubbleEllipsesOutline,
-  IoSunnyOutline,
-  IoMoonOutline,
-  IoCloseOutline,
-} from "react-icons/io5";
+  Search,
+  Heart,
+  MessageCircle,
+  CalendarDays,
+  User,
+  LogOut,
+  Settings,
+  Wallet,
+  Star,
+  Grid3X3,
+  Home,
+  Sun,
+  Moon,
+  Bell,
+  ChevronDown,
+  Menu,
+  X,
+  ShieldCheck,
+  Sparkles,
+  Compass,
+} from "lucide-react";
 import { ChatDrawer } from "../chat/ChatDrawer";
 import NotificationBell from "../notifications/NotificationBell";
 import { useTheme } from "next-themes";
-import { RiLogoutCircleLine } from "react-icons/ri";
-import SearchBar from "../SearchBar";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types ───────────────────────────────────────────────────────────
 interface TenantHeaderProps {
   onChatDrawerOpen?: () => void;
   isChatDrawerOpen?: boolean;
   onChatDrawerClose?: () => void;
 }
 
-// ─── Nav items ────────────────────────────────────────────────────────────────
+// ─── Nav Items ───────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  {
-    name: "explorer",
-    href: "/search",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-        <circle cx="11" cy="11" r="8" />
-        <path d="m21 21-4.35-4.35" />
-      </svg>
-    ),
-  },
-  {
-    name: "favorites",
-    href: "/favorites",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-      </svg>
-    ),
-  },
-  {
-    name: "messages",
-    href: "/messages",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
-    ),
-  },
-  {
-    name: "reservations",
-    href: "/reservations",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-      </svg>
-    ),
-  },
+  { label: "Explorer", href: "/search", icon: Search },
+  { label: "Favorites", href: "/favorites", icon: Heart },
+  { label: "Messages", href: "/messages", icon: MessageCircle },
+  { label: "Reservations", href: "/reservations", icon: CalendarDays },
 ];
-
-// ─── Logout Modal ─────────────────────────────────────────────────────────────
-function LogoutModal({
+// ─── Circular Orbit Component (Mobile Only - TOP LEFT) ─────────────────────────
+function CircularOrbitMenu({
   isOpen,
-  onClose,
-  onConfirm,
-  t,
+  onToggle,
+  onNavigate,
+  activeTab,
+  favoritesCount,
+  unreadCount,
+  themePreset,
 }: {
   isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  t: any;
+  onToggle: () => void;
+  onNavigate: (href: string) => void;
+  activeTab: string;
+  favoritesCount: number;
+  unreadCount: number;
+  themePreset: { accentColor: string };
 }) {
-  useEffect(() => {
-    const h = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) onClose();
-    };
-    document.addEventListener("keydown", h);
-    return () => document.removeEventListener("keydown", h);
-  }, [isOpen, onClose]);
+  const menuItems = [
+    { id: "explorer", label: "Explore", icon: <Compass className="w-5 h-5" />, angle: -25, href: "/search" },
+    { id: "favorites", label: `Saved (${favoritesCount})`, icon: <Heart className="w-5 h-5" />, angle: 20, href: "/favorites" },
+    { id: "messages", label: `Inbox (${unreadCount})`, icon: <MessageCircle className="w-5 h-5" />, angle: 65, href: "/messages" },
+    { id: "reservations", label: "Bookings", icon: <CalendarDays className="w-5 h-5" />, angle: 110, href: "/reservations" },
+  ];
 
-  if (!isOpen) return null;
+  const getPositionStyles = (angle: number) => {
+    if (!isOpen) return { transform: "translate(0px, 0px)", opacity: 0, pointerEvents: "none" as const };
+    const radius = 85;
+    const radians = (angle * Math.PI) / 180;
+    const x = radius * Math.cos(radians);
+    const y = radius * Math.sin(radians);
+    return {
+      transform: `translate(${x}px, ${y}px)`,
+      opacity: 1,
+      pointerEvents: "auto" as const,
+    };
+  };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-auto overflow-hidden border border-gray-200 dark:border-gray-800 animate-in zoom-in-95 fade-in duration-200">
-        <div className="p-6">
-          <div className="flex items-center justify-center mb-4">
-            <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-900/25 flex items-center justify-center border border-rose-200 dark:border-rose-800/40">
-              <RiLogoutCircleLine className="text-rose-500 text-2xl" />
-            </div>
-          </div>
-          <h3 className="text-lg font-extrabold text-center text-gray-900 dark:text-white mb-1.5">
-            {t("logout.title")}
-          </h3>
-          <p className="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
-            {t("logout.message")}
-          </p>
-          <div className="flex gap-3">
+    <div className="fixed top-8 left-8 z-[100]">
+      <div className="relative flex items-center justify-center">
+        {menuItems.map((item, idx) => {
+          const isActive = activeTab === item.id;
+          return (
             <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              key={item.id}
+              onClick={() => {
+                onNavigate(item.href);
+                onToggle();
+              }}
+              className={`absolute w-12 h-12 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all duration-350 transform group ${
+                isActive
+                  ? "text-white"
+                  : "bg-white/90 dark:bg-gray-900/80 backdrop-blur-sm text-gray-700 dark:text-gray-200 border border-violet-200/30 dark:border-violet-800/30"
+              }`}
+              style={{
+                ...getPositionStyles(item.angle),
+                backgroundColor: isActive ? '#8b5cf6' : undefined,
+                transitionDelay: isOpen ? `${idx * 40}ms` : "0ms",
+              }}
             >
-              {t("logout.cancel")}
+              {item.icon}
+              <span className="absolute bottom-full mb-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-black px-2 py-1 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                {item.label}
+              </span>
             </button>
-            <button
-              onClick={onConfirm}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-rose-500 hover:bg-rose-600 text-white transition-colors shadow-sm shadow-rose-500/20"
-            >
-              {t("logout.confirm")}
-            </button>
-          </div>
-        </div>
+          );
+        })}
+
+        {/* Core trigger button - matching your theme gradient */}
+        <button
+          onClick={onToggle}
+          className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-105 active:scale-95 transition-all relative z-10"
+          style={{
+            background: `linear-gradient(135deg, #8b5cf6, #6366f1, #06b6d4)`,
+          }}
+        >
+          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {unreadCount > 0 && !isOpen && (
+            <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[8px] font-black rounded-full flex items-center justify-center animate-bounce">
+              {unreadCount > 9 ? "9+" : unreadCount}
+            </span>
+          )}
+        </button>
       </div>
     </div>
   );
 }
 
-// ─── UserMenu ─────────────────────────────────────────────────────────────────
+// ─── User Menu Dropdown ──────────────────────────────────────────────
 function UserMenu({
   user,
-  isOpen,
   onClose,
   onLogout,
   t,
 }: {
   user: any;
-  isOpen: boolean;
   onClose: () => void;
   onLogout: () => void;
   t: any;
 }) {
   const { setTheme, theme } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
+  const [dark, setDark] = useState(theme === "dark");
 
   useEffect(() => {
     const h = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) onClose();
     };
-    if (isOpen) document.addEventListener("mousedown", h);
+    document.addEventListener("mousedown", h);
     return () => document.removeEventListener("mousedown", h);
-  }, [isOpen, onClose]);
+  }, [onClose]);
 
-  const items = [
-    { label: t("menu.profile"), href: "/profile", icon: <IoPersonOutline /> },
-    { label: t("menu.dashboard"), href: "/dashboard", icon: <IoGridOutline /> },
-    { label: t("menu.reservations"), href: "/reservations", icon: <IoCalendarOutline /> },
-    { label: t("menu.wallet"), href: "/wallet", icon: <IoWalletOutline /> },
-    { label: t("menu.reviews"), href: "/reviews", icon: <IoStarOutline /> },
-    { label: t("menu.settings"), href: "/settings", icon: <IoSettingsOutline /> },
-    { divider: true },
-    { label: t("menu.becomeHost"), href: "/become-host", icon: <IoHomeOutline />, highlight: true },
-    { label: t("menu.help"), href: "/help", icon: <IoHelpCircleOutline /> },
-    { divider: true },
-    {
-      label: t("menu.theme"),
-      icon: theme === "dark" ? <IoSunnyOutline /> : <IoMoonOutline />,
-      onClick: () => setTheme(theme === "dark" ? "light" : "dark"),
-      sub: theme === "dark" ? "Passer en clair" : "Passer en sombre",
-    },
-    { divider: true },
-    { label: t("menu.logout"), icon: <RiLogoutCircleLine />, danger: true, onClick: onLogout },
+  const menuItems = [
+    { label: t("menu.profile") || "Profile", icon: User, href: "/profile" },
+    { label: t("menu.dashboard") || "Dashboard", icon: Grid3X3, href: "/dashboard" },
+    { label: t("menu.reservations") || "Reservations", icon: CalendarDays, href: "/reservations" },
+    { label: t("menu.wallet") || "Wallet", icon: Wallet, href: "/wallet" },
+    { label: t("menu.reviews") || "Reviews", icon: Star, href: "/reviews" },
+    { label: t("menu.settings") || "Settings", icon: Settings, href: "/settings" },
   ];
 
-  if (!isOpen) return null;
-
   return (
-    <div ref={ref} className="absolute right-0 top-full mt-3 w-[300px] z-[60]">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-        {/* User header */}
-        <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-lg flex-shrink-0 overflow-hidden shadow-md shadow-violet-500/15">
-              {user?.imageUrl ? (
-                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                user?.username?.charAt(0) || "U"
-              )}
+    <div
+      ref={ref}
+      className="absolute right-0 top-[calc(100%+12px)] w-80 animate-in fade-in zoom-in-95 duration-200 z-[60]"
+    >
+      <div className="bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-3xl shadow-2xl shadow-black/10 border border-white/20 dark:border-gray-700/50 overflow-hidden">
+        <div className="relative p-5 pb-4 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-sky-500/10" />
+          <div className="relative flex items-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[2px] shadow-lg shadow-violet-500/20 flex-shrink-0">
+              <div className="w-full h-full rounded-[14px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                {user?.imageUrl ? (
+                  <Image
+                    src={user.imageUrl}
+                    alt="Avatar"
+                    width={56}
+                    height={56}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-xl font-bold bg-gradient-to-br from-violet-500 to-indigo-600 bg-clip-text text-transparent">
+                    {user?.username?.charAt(0) || "U"}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-extrabold text-gray-900 dark:text-white text-sm truncate">
-                {user?.username}
+            <div className="min-w-0">
+              <p className="font-bold text-gray-900 dark:text-white text-sm truncate">
+                {user?.username || "User"}
               </p>
-              <p className="text-[11px] text-gray-400 dark:text-gray-500 truncate mt-0.5">
-                {user?.emailAddresses[0]?.emailAddress}
+              <p className="text-xs text-gray-400 truncate">
+                {user?.emailAddresses[0]?.emailAddress || "user@email.com"}
               </p>
-              <div className="flex items-center gap-1.5 mt-1">
-                <IoShieldCheckmarkOutline className="text-emerald-500 text-[11px]" />
-                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
-                  {t("verifiedTenant")}
+              <div className="flex items-center gap-1 mt-1">
+                <ShieldCheck className="w-3 h-3 text-emerald-500" />
+                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  {t("verifiedTenant") || "Verified Tenant"}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Menu items */}
-        <div className="py-1.5 max-h-[420px] overflow-y-auto">
-          {items.map((item, idx) => {
-            if ("divider" in item && item.divider) {
-              return <div key={`d-${idx}`} className="h-px bg-gray-100 dark:bg-gray-800 mx-3 my-1" />;
-            }
+        <div className="px-2 pb-2">
+          {menuItems.map((item) => (
+            <Link
+              key={item.label}
+              href={`/fr${item.href}`}
+              onClick={onClose}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-300 transition-all duration-150 group"
+            >
+              <item.icon className="w-4 h-4 text-gray-400 group-hover:text-violet-500 transition-colors" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </div>
 
-            const cls = `flex items-center gap-3 w-full px-4 py-2.5 text-[13px] font-semibold transition-colors text-left rounded-lg mx-1.5 ${
-              (item as any).danger
-                ? "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/15"
-                : (item as any).highlight
-                  ? "text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/15"
-                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/80"
-            }`;
-
-            const style = { width: "calc(100% - 12px)" };
-
-            if ((item as any).onClick) {
-              return (
-                <button
-                  key={(item as any).label}
-                  onClick={() => {
-                    (item as any).onClick?.();
-                    if (!(item as any).sub) onClose();
-                  }}
-                  className={cls}
-                  style={style}
-                >
-                  <span className="text-base opacity-70">{(item as any).icon}</span>
-                  <span className="flex-1">{(item as any).label}</span>
-                  {(item as any).sub && (
-                    <span className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">
-                      {(item as any).sub}
-                    </span>
-                  )}
-                </button>
-              );
-            }
-
-            return (
-              <Link
-                key={(item as any).label}
-                href={`/fr${(item as any).href}`}
-                onClick={onClose}
-                className={cls}
-                style={style}
-              >
-                <span className="text-base opacity-70">{(item as any).icon}</span>
-                <span className="flex-1">{(item as any).label}</span>
-              </Link>
-            );
-          })}
+        <div className="px-2 pb-2 border-t border-gray-100 dark:border-gray-800 pt-2">
+          <button
+            onClick={() => {
+              const newTheme = theme === "dark" ? "light" : "dark";
+              setTheme(newTheme);
+              setDark(newTheme === "dark");
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+          >
+            {dark ? (
+              <Sun className="w-4 h-4 text-amber-500" />
+            ) : (
+              <Moon className="w-4 h-4 text-indigo-500" />
+            )}
+            <span>{dark ? "Light Mode" : "Dark Mode"}</span>
+          </button>
+          <button
+            onClick={() => {
+              onLogout();
+              onClose();
+            }}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all group"
+          >
+            <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            <span>{t("menu.logout") || "Sign Out"}</span>
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-// ─── Icon button ──────────────────────────────────────────────────────────────
-function HeaderIconButton({
-  children,
-  onClick,
-  badge,
-  className = "",
+// ─── Mobile Menu ─────────────────────────────────────────────────────
+function MobileMenu({
+  isOpen,
+  onClose,
+  isSignedIn,
+  user,
+  onNavigate,
+  onLogout,
+  onLogin,
+  t,
 }: {
-  children: React.ReactNode;
-  onClick?: () => void;
-  badge?: number;
-  className?: string;
+  isOpen: boolean;
+  onClose: () => void;
+  isSignedIn?: boolean;
+  user?: any;
+  onNavigate: (href: string) => void;
+  onLogout: () => void;
+  onLogin: () => void;
+  t: any;
 }) {
+  if (!isOpen) return null;
+
   return (
-    <button
-      onClick={onClick}
-      className={`relative w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-105 active:scale-95 bg-gray-100/80 dark:bg-white/[0.06] hover:bg-gray-200/80 dark:hover:bg-white/[0.1] border border-gray-200/60 dark:border-white/[0.08] text-gray-600 dark:text-gray-300 ${className}`}
-    >
-      {children}
-      {badge !== undefined && badge > 0 && (
-        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 flex items-center justify-center text-[9px] font-extrabold text-white bg-gradient-to-r from-rose-500 to-red-500 rounded-full px-1 shadow-sm shadow-rose-500/30">
-          {badge > 9 ? "9+" : badge}
-        </span>
-      )}
-    </button>
+    <div className="fixed inset-0 z-[100] md:hidden">
+      <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute top-20 left-4 right-4 animate-in slide-in-from-top-4 fade-in duration-300">
+        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 overflow-hidden">
+          {isSignedIn && (
+            <div className="p-5 pb-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[2px]">
+                  <div className="w-full h-full rounded-[14px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                    {user?.imageUrl ? (
+                      <Image
+                        src={user.imageUrl}
+                        alt="Avatar"
+                        width={48}
+                        height={48}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-lg font-bold bg-gradient-to-br from-violet-500 to-indigo-600 bg-clip-text text-transparent">
+                        {user?.username?.charAt(0) || "U"}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <p className="font-bold text-gray-900 dark:text-white text-sm">
+                    {user?.username || "User"}
+                  </p>
+                  <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                    <ShieldCheck className="w-3 h-3" /> Verified Tenant
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="p-3">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.label}
+                onClick={() => {
+                  onNavigate(item.href);
+                  onClose();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-all"
+              >
+                <item.icon className="w-5 h-5 text-gray-400" />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="p-3 pt-0 border-t border-gray-100 dark:border-gray-800 mt-1">
+            {isSignedIn ? (
+              <button
+                onClick={() => {
+                  onLogout();
+                  onClose();
+                }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>{t("menu.logout") || "Sign Out"}</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  onLogin();
+                  onClose();
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl text-sm font-bold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-lg shadow-violet-500/25"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{t("login") || "Sign In"}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-// ─── Main header ──────────────────────────────────────────────────────────────
+// ─── Main TenantHeader ───────────────────────────────────────────────
 export function TenantHeader({}: TenantHeaderProps) {
   const t = useTranslations("TenantHeader");
   const { isSignedIn, user, signOut } = useUser();
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, resolvedTheme } = useTheme();
 
-  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const [favorites, setFavorites] = useState<string[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
-  const [mounted, setMounted] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [orbitOpen, setOrbitOpen] = useState(false);
   const [localMessengerOpen, setLocalMessengerOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Check if mobile view
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     setMounted(true);
     const saved = localStorage.getItem("favorites");
-    if (saved) setFavorites(JSON.parse(saved));
+    if (saved) setFavoritesCount(JSON.parse(saved).length);
     const updateFavs = () => {
       const s = localStorage.getItem("favorites");
-      if (s) setFavorites(JSON.parse(s));
+      if (s) setFavoritesCount(JSON.parse(s).length);
     };
     window.addEventListener("favorites-updated", updateFavs);
     return () => window.removeEventListener("favorites-updated", updateFavs);
@@ -338,10 +412,22 @@ export function TenantHeader({}: TenantHeaderProps) {
   }, []);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const handleNavigate = useCallback(
+    (href: string) => {
+      router.push(`/fr${href}`);
+    },
+    [router]
+  );
+
+  const handleLogout = async () => {
+    await signOut();
+    router.push("/fr/login");
+  };
 
   const isActive = (href: string) => {
     const fullHref = `/fr${href}`;
@@ -350,210 +436,210 @@ export function TenantHeader({}: TenantHeaderProps) {
       : pathname.startsWith(fullHref);
   };
 
-  const getBadge = (item: (typeof NAV_ITEMS)[0]) =>
-    item.href === "/favorites" ? favorites.length : item.href === "/messages" ? unreadCount : 0;
-
-  const handleLogout = async () => {
-    await signOut();
-    router.push("/fr/login");
+  const getBadge = (href: string) => {
+    if (href === "/favorites") return favoritesCount;
+    if (href === "/messages") return unreadCount;
+    return 0;
   };
 
-  const currentTheme = mounted ? resolvedTheme || theme : "light";
-  const isDark = currentTheme === "dark";
+  // Theme preset for orbit menu
+  const themePreset = { accentColor: "#8b5cf6" };
 
   if (!mounted) {
     return (
       <>
-        <div className="fixed top-0 w-full z-50 h-16 lg:h-20 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800" />
-        <div className="h-16 lg:h-20" />
-        <ChatDrawer isOpen={false} onClose={() => {}} userRole="TENANT" />
+        <div className="fixed top-0 w-full z-50 h-20 bg-white dark:bg-gray-900" />
+        <div className="h-20" />
       </>
     );
   }
 
   return (
     <>
-      <header
-        className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-white/85 dark:bg-gray-950/85 backdrop-blur-2xl shadow-sm"
-            : "bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl"
-        }`}
-        style={{
-          borderBottom: `1px solid ${
-            scrolled
-              ? isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"
-              : isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)"
-          }`,
-        }}
-      >
-        {/* Top accent gradient line */}
-        <div
-          className="absolute top-0 left-0 right-0 h-[2px]"
-          style={{
-            background: "linear-gradient(90deg, transparent 0%, #38bdf8 20%, #6366f1 40%, #8b5cf6 60%, #a855f7 80%, transparent 100%)",
-            opacity: scrolled ? 0.8 : 1,
-            transition: "opacity .3s",
-          }}
-        />
+      {/* ── Desktop Floating Pill Header (hidden on mobile) ── */}
+      {!isMobile && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-3 px-3 md:px-6">
+          <header
+            className={`
+              relative w-full max-w-7xl rounded-[20px] transition-all duration-500 ease-out
+              ${
+                scrolled
+                  ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl shadow-lg shadow-black/5 border border-white/30 dark:border-gray-700/30 scale-[0.98]"
+                  : "bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-md shadow-black/5 border border-white/20 dark:border-gray-700/20"
+              }
+            `}
+          >
+{/* Top glow */}
+<div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[3px] rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-70" />
 
-        <div className="px-4 sm:px-6 lg:px-8 w-full">
-          <div className="flex items-center justify-between h-16 lg:h-20 gap-4 lg:gap-6 w-full">
-
-            {/* ── Logo — YOUR ORIGINAL preserved ── */}
-            <Link
-              href="/fr/search"
-              className="flex items-center gap-2 flex-shrink-0 select-none"
-            >
-              <img
-                src="/logo/logo.png"
-                alt="NESTHUB"
-                className="h-23 w-auto object-contain scale-140 mt-6.5"
-              />
-              <span
-                className="text-xl font-bold -ml-9 mt-0.4"
-                style={{
-                  background: "linear-gradient(90deg, #38bdf8 0%, #6366f1 35%, #8b5cf6 65%, #a855f7 100%)",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                  transform: "scaleY(2)",
-                }}
-              >
-                N E S T H U B
-              </span>
-            </Link>
-
-            {/* ── Search bar — desktop ── */}
-            <div className="hidden lg:flex flex-1 justify-center max-w-2xl">
-              <div className="w-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-gray-50/80 dark:bg-gray-900/80 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md hover:shadow-indigo-500/5 focus-within:border-indigo-400 dark:focus-within:border-indigo-600 focus-within:shadow-lg focus-within:shadow-indigo-500/10 transition-all duration-200 overflow-hidden">
-                <SearchBar />
-              </div>
-            </div>
-
-            {/* ── Navigation — desktop ── */}
-            <nav className="hidden md:flex items-center gap-0.5 flex-shrink-0">
-              {NAV_ITEMS.map((item) => {
-                const active = isActive(item.href);
-                const badge = getBadge(item);
-                return (
-                  <Link
-                    key={item.name}
-                    href={`/fr${item.href}`}
-                    className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-bold transition-all duration-200 ${
-                      active
-                        ? "bg-indigo-50 dark:bg-indigo-900/25 text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-white/[0.04]"
-                    }`}
-                  >
-                    <span className={active ? "opacity-100" : "opacity-60"}>
-                      {item.icon}
-                    </span>
-                    <span className="hidden lg:inline">{t(`nav.${item.name}`)}</span>
-                    {badge > 0 && (
-                      <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center text-[9px] font-extrabold text-white bg-gradient-to-r from-rose-500 to-red-500 rounded-full px-1 shadow-sm shadow-rose-500/30">
-                        {badge > 9 ? "9+" : badge}
-                      </span>
-                    )}
-                    {active && (
-                      <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-indigo-500" />
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
-
-            {/* ── Right actions ── */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Mobile search */}
-              <HeaderIconButton
-                onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
-                className="lg:hidden"
-              >
-                {isMobileSearchOpen ? (
-                  <IoCloseOutline className="text-lg" />
-                ) : (
-                  <IoSearchOutline className="text-lg" />
-                )}
-              </HeaderIconButton>
-
-              {/* Messenger */}
-              <HeaderIconButton onClick={() => setLocalMessengerOpen(true)} badge={unreadCount}>
-                <IoChatbubbleEllipsesOutline className="text-lg" />
-              </HeaderIconButton>
-
-              {/* Notifications */}
-              <NotificationBell />
-
-              {/* Separator */}
-              <div className="hidden md:block w-px h-6 bg-gray-200 dark:bg-gray-800 mx-0.5" />
-
-              {/* User / Login */}
-              {isSignedIn ? (
-                <div className="relative flex-shrink-0">
-                  <button
-                    onClick={() => setIsUserMenuOpen((p) => !p)}
-                    className={`flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-2xl transition-all duration-200 border ${
-                      isUserMenuOpen
-                        ? "bg-gray-100 dark:bg-white/[0.08] border-gray-200 dark:border-white/[0.12]"
-                        : "bg-transparent border-transparent hover:bg-gray-100/60 dark:hover:bg-white/[0.04] hover:border-gray-200/60 dark:hover:border-white/[0.06]"
-                    }`}
-                  >
-                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-xs sm:text-sm overflow-hidden shadow-sm shadow-violet-500/15">
-                      {user?.imageUrl ? (
-                        <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        user?.username?.charAt(0) || "U"
-                      )}
-                    </div>
-                    <div className="hidden sm:flex flex-col text-left leading-none">
-                      <span className="text-xs font-bold text-gray-800 dark:text-white truncate max-w-[80px]">
-                        {user?.username}
-                      </span>
-                      <span className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">
-                        {t("role")}
-                      </span>
-                    </div>
-                    <IoChevronDownOutline
-                      className={`text-[10px] text-gray-400 dark:text-gray-500 transition-transform duration-200 ${
-                        isUserMenuOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  <UserMenu
-                    user={user}
-                    isOpen={isUserMenuOpen}
-                    onClose={() => setIsUserMenuOpen(false)}
-                    onLogout={() => {
-                      setIsUserMenuOpen(false);
-                      setShowLogoutModal(true);
-                    }}
-                    t={t}
+{/* Bottom glow when scrolled */}
+{scrolled && (
+  <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
+)}
+            <div className="flex items-center justify-between h-14 md:h-16 px-3 md:px-5">
+              {/* Logo - with fill and scale to show bigger */}
+              <Link href="/fr/search" className="flex items-center gap-2 group flex-shrink-0">
+                <div className="relative w-10 h-10 md:w-12 md:h-12 scale-380 mt-5">
+                  <Image
+                    src="/logo/logo.png"
+                    alt="NESTHUB"
+                    fill
+                    className="object-contain"
+                    priority
                   />
                 </div>
-              ) : (
-                <Link
-                  href="/fr/login"
-                  className="flex-shrink-0 text-sm font-extrabold text-white px-5 py-2 rounded-xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[.97] transition-all"
+                <span className="hidden sm:block text-base md:text-2xl font-extrabold tracking-tight">
+                  <span className="bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-600 bg-clip-text text-transparent">
+                    N E S T H U B 
+                  </span>
+                </span>
+              </Link>
+
+              {/* Desktop Nav */}
+              <nav className="hidden md:flex items-center gap-1">
+                {NAV_ITEMS.map((item) => {
+                  const active = isActive(item.href);
+                  const badge = getBadge(item.href);
+
+                  return (
+                    <button
+                      key={item.href}
+                      onClick={() => handleNavigate(item.href)}
+                      className={`
+                        relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200
+                        ${
+                          active
+                            ? "bg-violet-100/80 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300"
+                            : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-white/5"
+                        }
+                      `}
+                    >
+                      <item.icon
+                        className={`w-4 h-4 ${active ? "text-violet-600 dark:text-violet-400" : ""}`}
+                        strokeWidth={active ? 2.5 : 2}
+                      />
+                      <span>{item.label}</span>
+                      {badge > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center text-[9px] font-bold text-white bg-gradient-to-r from-rose-500 to-pink-500 rounded-full px-1 shadow-sm shadow-rose-500/30">
+                          {badge > 9 ? "9+" : badge}
+                        </span>
+                      )}
+                      {active && (
+                        <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-4 h-0.5 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500" />
+                      )}
+                    </button>
+                  );
+                })}
+              </nav>
+
+              {/* Right Actions */}
+              <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
+                {/* Messenger */}
+                <button
+                  onClick={() => setLocalMessengerOpen(true)}
+                  className="relative w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-all duration-200 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
                 >
-                  {t("login")}
-                </Link>
-              )}
+                  <MessageCircle className="w-[18px] h-[18px]" strokeWidth={2} />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center text-[9px] font-bold text-white bg-gradient-to-r from-rose-500 to-pink-500 rounded-full px-1 shadow-sm shadow-rose-500/30">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
+                </button>
+
+                {/* Notifications - YOUR ORIGINAL COMPONENT */}
+                <NotificationBell />
+
+                {/* Separator */}
+                <div className="hidden md:block w-px h-5 bg-gray-200 dark:bg-gray-700" />
+
+                {/* User Menu with Username */}
+                {isSignedIn ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(!userMenuOpen);
+                        setNotifOpen(false);
+                      }}
+                      className={`
+                        flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl transition-all duration-200
+                        ${
+                          userMenuOpen
+                            ? "bg-violet-100 dark:bg-violet-500/15"
+                            : "hover:bg-gray-100 dark:hover:bg-white/5"
+                        }
+                      `}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[1.5px] shadow-sm shadow-violet-500/15">
+                        <div className="w-full h-full rounded-[7px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
+                          {user?.imageUrl ? (
+                            <Image
+                              src={user.imageUrl}
+                              alt="Avatar"
+                              width={32}
+                              height={32}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-xs font-bold bg-gradient-to-br from-violet-500 to-indigo-600 bg-clip-text text-transparent">
+                              {user?.username?.charAt(0) || "U"}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      {/* Username beside avatar */}
+                      <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+                        {user?.username || "User"}
+                      </span>
+                      <ChevronDown
+                        className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${
+                          userMenuOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+
+                    {userMenuOpen && (
+                      <UserMenu
+                        user={user}
+                        onClose={() => setUserMenuOpen(false)}
+                        onLogout={() => {
+                          setUserMenuOpen(false);
+                          setShowLogoutModal(true);
+                        }}
+                        t={t}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <Link
+                    href="/fr/login"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-600 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.97] transition-all duration-200 shadow-md shadow-violet-500/15"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">{t("login") || "Sign In"}</span>
+                  </Link>
+                )}
+              </div>
             </div>
-          </div>
+          </header>
         </div>
+      )}
 
-        {/* ── Mobile search panel ── */}
-        {isMobileSearchOpen && (
-          <div className="lg:hidden border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-950 px-4 py-3 shadow-lg">
-            <SearchBar onResultClick={() => setIsMobileSearchOpen(false)} />
-          </div>
-        )}
-      </header>
+      {/* ── Mobile Circular Orbit Menu (replaces header completely) ── */}
+      {isMobile && (
+        <CircularOrbitMenu
+          isOpen={orbitOpen}
+          onToggle={() => setOrbitOpen(!orbitOpen)}
+          onNavigate={handleNavigate}
+          activeTab={pathname.includes("/search") ? "explorer" : pathname.includes("/favorites") ? "favorites" : pathname.includes("/messages") ? "messages" : "reservations"}
+          favoritesCount={favoritesCount}
+          unreadCount={unreadCount}
+          themePreset={themePreset}
+        />
+      )}
 
-      {/* Spacer */}
-      <div className="h-16 lg:h-20" />
+      {/* ── Desktop Spacer (only needed when header is visible) ── */}
+      {!isMobile && <div className="h-20 md:h-24" />}
 
       {/* Drawers & Modals */}
       <ChatDrawer
@@ -561,12 +647,52 @@ export function TenantHeader({}: TenantHeaderProps) {
         onClose={() => setLocalMessengerOpen(false)}
         userRole="TENANT"
       />
-      <LogoutModal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        onConfirm={handleLogout}
+
+      {/* Mobile Menu (for when orbit is closed maybe? But orbit replaces it) */}
+      <MobileMenu
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        isSignedIn={isSignedIn}
+        user={user}
+        onNavigate={handleNavigate}
+        onLogout={handleLogout}
+        onLogin={() => router.push("/fr/login")}
         t={t}
       />
+
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowLogoutModal(false)} />
+          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-auto overflow-hidden border border-gray-200 dark:border-gray-800 p-6">
+            <div className="flex items-center justify-center mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-900/25 flex items-center justify-center">
+                <LogOut className="text-rose-500 text-2xl" />
+              </div>
+            </div>
+            <h3 className="text-lg font-extrabold text-center text-gray-900 dark:text-white mb-1.5">
+              Sign Out?
+            </h3>
+            <p className="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
+              Are you sure you want to sign out?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-200 dark:border-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-rose-500 text-white"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
