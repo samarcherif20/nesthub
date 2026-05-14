@@ -707,3 +707,29 @@
 .animate-bounce-marker {
   animation: bounce 1s ease-in-out infinite;
 }
+/* Stripe Elements Dark Mode */
+.StripeElement {
+  background: transparent !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 14px !important;
+  padding: 12px 14px !important;
+  padding-left: 42px !important; /* ← Augmente cet espace pour l'icône */
+  color: #1e293b !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+
+.dark .StripeElement {
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  color: #ffffff !important;
+}
+
+.StripeElement--focus {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1) !important;
+}
+
+.StripeElement--invalid {
+  border-color: #ef4444 !important;
+}

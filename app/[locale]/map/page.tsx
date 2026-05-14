@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
@@ -10,17 +10,16 @@ import {
   IoHeart,
   IoBedOutline,
   IoWaterOutline,
-  IoLocationOutline,
   IoCheckmarkCircle,
   IoArrowBackOutline,
   IoLocationSharp,
   IoHomeOutline,
   IoEyeOutline,
   IoSearchOutline,
-  IoFilterOutline,
   IoCloseOutline,
+  IoLocation,
 } from "react-icons/io5";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaGoogle } from "react-icons/fa";
 import {
   Crown,
   ShieldCheck,
@@ -41,26 +40,27 @@ import { useMapData } from "./hooks/useMapData";
 // Fix Leaflet default icon issue
 import L from "leaflet";
 
-// Fix for default markers
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+  iconRetinaUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+  iconUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
 });
 
-// Dynamically import Leaflet components with no SSR
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
-  { ssr: false }
+  { ssr: false },
 );
 const TileLayer = dynamic(
   () => import("react-leaflet").then((mod) => mod.TileLayer),
-  { ssr: false }
+  { ssr: false },
 );
 const Marker = dynamic(
   () => import("react-leaflet").then((mod) => mod.Marker),
-  { ssr: false }
+  { ssr: false },
 );
 const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
   ssr: false,
@@ -86,6 +86,8 @@ const getImageUrl = (url: string | null | undefined): string => {
 
 export default function MapPage() {
   const t = useTranslations("MapPage");
+  const mapRef = useRef<any>(null);
+
   const {
     filteredListings,
     loading,
@@ -102,6 +104,9 @@ export default function MapPage() {
     updateMinRating,
     resetFilters,
     handleImageError,
+    getUserLocation,
+    openInGoogleMaps,
+    getDirections,
     totalListings,
     filteredCount,
     favoritesCount,
@@ -116,7 +121,7 @@ export default function MapPage() {
 
   const showAlert = (
     type: "success" | "error" | "info" | "warning",
-    message: string
+    message: string,
   ) => {
     setAlert({ type, message });
     setTimeout(() => setAlert(null), 3000);
@@ -165,8 +170,9 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* ═══════ MAP ═══════ */}
+      {/* MAP */}
       <MapContainer
+        ref={mapRef}
         center={center}
         zoom={8}
         style={{ height: "100%", width: "100%" }}
@@ -187,65 +193,110 @@ export default function MapPage() {
                 setSelectedId(selectedId === listing.id ? null : listing.id);
               },
             }}
-          >
-           
-          </Marker>
+          />
         ))}
       </MapContainer>
 
-      {/* ═══════ ZOOM CONTROLS ═══════ */}
+      {/* ZOOM CONTROLS + MY LOCATION + GOOGLE MAPS */}
       <div className="absolute right-6 bottom-24 z-20 flex flex-col gap-2">
         <button
           type="button"
           onClick={() => {
-            const map = document.querySelector(".leaflet-container") as any;
-            if (map && map._leaflet_id) {
-              const leafletMap = (window as any).L?.map?.(map);
-              if (leafletMap) leafletMap.zoomIn();
+            if (mapRef.current) {
+              mapRef.current.zoomIn();
             }
           }}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 4v16m8-8H4"
+            />
           </svg>
         </button>
         <button
           type="button"
           onClick={() => {
-            const map = document.querySelector(".leaflet-container") as any;
-            if (map && map._leaflet_id) {
-              const leafletMap = (window as any).L?.map?.(map);
-              if (leafletMap) leafletMap.zoomOut();
+            if (mapRef.current) {
+              mapRef.current.zoomOut();
             }
           }}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M20 12H4"
+            />
           </svg>
         </button>
+
+        {/* ✅ BOUTON MA POSITION */}
+        <button
+          type="button"
+          onClick={() => getUserLocation(mapRef.current)}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
+          title="Ma position"
+        >
+          <IoLocation className="h-5 w-5" />
+        </button>
+
         <button
           type="button"
           onClick={() => setSidebarOpen((p) => !p)}
           className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
         >
           {sidebarOpen ? (
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 5l7 7-7 7M5 5l7 7-7 7"
+              />
             </svg>
           ) : (
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
             </svg>
           )}
         </button>
       </div>
 
-      {/* ═══════ SIDEBAR ═══════ */}
+      {/* SIDEBAR - (garder ton code existant, inchangé) */}
       {sidebarOpen && (
         <div className="absolute left-4 top-4 bottom-4 z-20 flex w-[400px] flex-col overflow-hidden rounded-3xl border border-white/70 bg-white/82 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-transform duration-300 dark:border-white/10 dark:bg-slate-950/82">
-          {/* Header */}
+          {/* ... ton code existant du sidebar ... */}
           <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-purple-50 p-4 dark:border-white/10 dark:from-slate-900 dark:to-purple-900/50">
             <Link
               href="/fr/search"
@@ -257,6 +308,7 @@ export default function MapPage() {
               </span>
             </Link>
 
+            {/* Search input */}
             <div className="relative">
               <IoSearchOutline className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -277,6 +329,7 @@ export default function MapPage() {
               )}
             </div>
 
+            {/* Filters button */}
             <button
               type="button"
               onClick={() => setShowFilters((p) => !p)}
@@ -293,8 +346,10 @@ export default function MapPage() {
               )}
             </button>
 
+            {/* Filters panel */}
             {showFilters && (
               <div className="mt-3 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-800">
+                {/* Price range */}
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                     Prix max — {filters.priceRange[1]} TND
@@ -315,6 +370,7 @@ export default function MapPage() {
                   />
                 </div>
 
+                {/* Type select */}
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                     Type de bien
@@ -333,10 +389,13 @@ export default function MapPage() {
                   </select>
                 </div>
 
+                {/* Rating select */}
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
                     Note minimum —{" "}
-                    {filters.minRating > 0 ? `${filters.minRating}+ ⭐` : "Toutes"}
+                    {filters.minRating > 0
+                      ? `${filters.minRating}+ ⭐`
+                      : "Toutes"}
                   </label>
                   <select
                     value={filters.minRating}
@@ -349,6 +408,7 @@ export default function MapPage() {
                   </select>
                 </div>
 
+                {/* Buttons */}
                 <div className="flex gap-2">
                   <button
                     type="button"
@@ -367,11 +427,9 @@ export default function MapPage() {
                 </div>
               </div>
             )}
-
-            
           </div>
 
-          {/* Listings */}
+          {/* Listings list */}
           <div className="flex-1 overflow-y-auto px-3 py-3">
             {filteredCount === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -428,7 +486,9 @@ export default function MapPage() {
                             </h3>
                             <button
                               type="button"
-                              onClick={(e) => handleToggleFavorite(listing.id, e)}
+                              onClick={(e) =>
+                                handleToggleFavorite(listing.id, e)
+                              }
                               className="flex-shrink-0 transition-transform duration-200 hover:scale-110"
                             >
                               {favorites.includes(listing.id) ? (
@@ -446,19 +506,25 @@ export default function MapPage() {
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                              <IoBedOutline className="text-xs" /> {listing.bedrooms}
+                              <IoBedOutline className="text-xs" />{" "}
+                              {listing.bedrooms}
                             </span>
                             <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                              <IoWaterOutline className="text-xs" /> {listing.bathrooms}
+                              <IoWaterOutline className="text-xs" />{" "}
+                              {listing.bathrooms}
                             </span>
                             <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
                               <FaStar className="text-yellow-500 text-xs" />
                               {listing.rating || 4.5}
                             </span>
                           </div>
-                          <p className={`font-bold text-sm mt-1 ${gradientText}`}>
+                          <p
+                            className={`font-bold text-sm mt-1 ${gradientText}`}
+                          >
                             {listing.pricePerNight} TND{" "}
-                            <span className="text-xs text-slate-400">{t("perNight")}</span>
+                            <span className="text-xs text-slate-400">
+                              {t("perNight")}
+                            </span>
                           </p>
                         </div>
                       </div>
@@ -477,7 +543,8 @@ export default function MapPage() {
                 {filteredCount} / {totalListings}
               </span>
               <span className="flex items-center gap-1">
-                <IoHeart className="h-3 w-3 fill-rose-500 text-rose-500" /> {favoritesCount}
+                <IoHeart className="h-3 w-3 fill-rose-500 text-rose-500" />{" "}
+                {favoritesCount}
               </span>
               <Link href="/fr/search">
                 <button className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
@@ -489,20 +556,22 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* ═══════ FLOATING COUNTER ═══════ */}
+      {/* FLOATING COUNTER */}
       <div className="absolute bottom-6 left-1/2 z-20 -translate-x-1/2">
         <div className="flex items-center gap-4 rounded-full border border-white/70 bg-white/85 px-5 py-3 shadow-[0_12px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/85">
           <span className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
-            <IoHomeOutline className="h-4 w-4 text-indigo-500" /> {filteredCount} résultats
+            <IoHomeOutline className="h-4 w-4 text-indigo-500" />{" "}
+            {filteredCount} résultats
           </span>
           <span className="h-5 w-px bg-slate-200 dark:bg-white/10" />
           <span className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
-            <IoHeart className="h-4 w-4 fill-rose-500 text-rose-500" /> {favoritesCount} favoris
+            <IoHeart className="h-4 w-4 fill-rose-500 text-rose-500" />{" "}
+            {favoritesCount} favoris
           </span>
         </div>
       </div>
 
-      {/* ═══════ DETAIL CARD ═══════ */}
+      {/* DETAIL CARD - AJOUT DES BOUTONS GOOGLE MAPS */}
       {selectedListing && (
         <div className="absolute right-6 top-24 z-20 w-[380px] overflow-hidden rounded-3xl border border-white/70 bg-white/92 shadow-[0_28px_80px_rgba(15,23,42,0.18)] backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-slate-950/92">
           <div className="relative h-52 overflow-hidden">
@@ -530,24 +599,24 @@ export default function MapPage() {
                   <ShieldCheck className="inline h-3 w-3" /> Vérifié
                 </span>
               )}
-              {(selectedListing as any).collection && (
-                <span className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold text-white backdrop-blur-md">
-                  {(selectedListing as any).collection}
-                </span>
-              )}
             </div>
             <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
               <div>
-                <h3 className="text-2xl font-extrabold text-white">{selectedListing.title}</h3>
+                <h3 className="text-2xl font-extrabold text-white">
+                  {selectedListing.title}
+                </h3>
                 <p className="mt-1 flex items-center gap-1 text-sm text-white/80">
-                  <MapPin className="h-3.5 w-3.5" /> {selectedListing.governorate}, {selectedListing.delegation}
+                  <MapPin className="h-3.5 w-3.5" />{" "}
+                  {selectedListing.governorate}, {selectedListing.delegation}
                 </p>
               </div>
               <div className="rounded-2xl bg-white/90 px-5 py-3 text-right shadow-lg backdrop-blur-md dark:bg-slate-900/90">
                 <p className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  {selectedListing.pricePerNight}
+                  {selectedListing.pricePerNight} TND
                 </p>
-                <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">TND / nuit</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">
+                  / nuit
+                </p>
               </div>
             </div>
           </div>
@@ -560,7 +629,9 @@ export default function MapPage() {
               <div className="ml-auto h-2 max-w-[120px] flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                 <div
                   className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600"
-                  style={{ width: `${(selectedListing as any).trustScore || 90}%` }}
+                  style={{
+                    width: `${(selectedListing as any).trustScore || 90}%`,
+                  }}
                 />
               </div>
             </div>
@@ -569,14 +640,32 @@ export default function MapPage() {
                 [FaStar, `${selectedListing.rating || 4.5}`],
                 [BedDouble, `${selectedListing.bedrooms} ch.`],
                 [Bath, `${selectedListing.bathrooms} sdb`],
-                [Users, `${selectedListing.maxGuests} pers.`],
+                [Users, `${selectedListing.maxGuests || 2} pers.`],
               ].map(([Icon, label]) => (
-                <div key={String(label)} className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-2 py-3 dark:bg-white/5">
+                <div
+                  key={String(label)}
+                  className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-2 py-3 dark:bg-white/5"
+                >
                   <Icon className="h-3.5 w-3.5 text-slate-400" />
-                  <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-300">{String(label)}</span>
+                  <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-300">
+                    {String(label)}
+                  </span>
                 </div>
               ))}
             </div>
+
+            {/* ✅ BOUTONS GOOGLE MAPS AJOUTÉS */}
+            <div className="flex gap-2 mb-3">
+              <button
+                type="button"
+                onClick={() => openInGoogleMaps(selectedListing)}
+                className="flex-1 rounded-xl bg-red-500 hover:bg-red-700 text-white py-2.5 text-xs font-bold shadow-md transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
+              >
+                <FaGoogle className="h-3.5 w-3.5" />
+                Ouvrir dans Google Maps
+              </button>
+            </div>
+
             <div className="flex gap-2">
               <button
                 type="button"
@@ -593,17 +682,19 @@ export default function MapPage() {
                   ) : (
                     <IoHeartOutline className="h-3.5 w-3.5" />
                   )}
-                  {favorites.includes(selectedListing.id) ? "Favori" : "Sauvegarder"}
+                  {favorites.includes(selectedListing.id)
+                    ? "Favori"
+                    : "Sauvegarder"}
                 </span>
               </button>
               <Link
                 href={`/fr/listings/${selectedListing.id}`}
                 className={`flex-1 rounded-xl ${gradientButton} py-3 text-xs font-bold shadow-md shadow-blue-500/15 transition-all hover:scale-[1.01]`}
               >
-                <button className="flex items-center justify-center gap-1.5 w-full text-center">
-  <ArrowRight className="h-3.5 w-3.5" /> 
-  Voir la fiche
-</button>
+                <span className="flex items-center justify-center gap-1.5 w-full text-center">
+                  <ArrowRight className="h-3.5 w-3.5" />
+                  Voir la fiche
+                </span>
               </Link>
             </div>
           </div>
@@ -641,17 +732,17 @@ export default function MapPage() {
           border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb {
-          background: #ef4444;
+          background: #8b5cf6; /* violet */
           border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #dc2626;
+          background: #7c3aed; /* violet foncé */
+        }
+        .dark ::-webkit-scrollbar-thumb {
+          background: #8b5cf6;
         }
         .dark ::-webkit-scrollbar-track {
           background: #1e293b;
-        }
-        .dark ::-webkit-scrollbar-thumb {
-          background: #ef4444;
         }
       `}</style>
     </div>

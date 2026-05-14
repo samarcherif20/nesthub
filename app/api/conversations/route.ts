@@ -110,15 +110,13 @@ export async function GET(req: NextRequest) {
         }
 
         // Construire le nom complet
-        const otherUserName =
-          otherUser.firstName && otherUser.lastName
-            ? `${otherUser.firstName} ${otherUser.lastName}`
-            : otherUser.username || "Utilisateur";
+        const otherUsername = otherUser.username || "Utilisateur";
 
         // Construire la location à partir de governorate et delegation
-        const location = [conv.listing.governorate, conv.listing.delegation]
-          .filter(Boolean)
-          .join(", ") || "Emplacement non spécifié";
+        const location =
+          [conv.listing.governorate, conv.listing.delegation]
+            .filter(Boolean)
+            .join(", ") || "Emplacement non spécifié";
 
         return {
           id: conv.id,
@@ -135,27 +133,31 @@ export async function GET(req: NextRequest) {
           },
           otherUser: {
             id: otherUser.id,
-            name: otherUserName,
+            username: otherUsername,
             image: otherUser.profilePictureUrl,
             isOnline: false,
             isVerified: false,
           },
-          infoRequest: conv.infoRequest ? {
-            id: conv.infoRequest.id,
-            checkIn: conv.infoRequest.checkIn.toISOString(),
-            checkOut: conv.infoRequest.checkOut.toISOString(),
-            guests: conv.infoRequest.guests,
-            status: conv.infoRequest.status,
-            expiresAt: conv.infoRequest.expiresAt?.toISOString(),
-          } : null,
+          infoRequest: conv.infoRequest
+            ? {
+                id: conv.infoRequest.id,
+                checkIn: conv.infoRequest.checkIn.toISOString(),
+                checkOut: conv.infoRequest.checkOut.toISOString(),
+                guests: conv.infoRequest.guests,
+                status: conv.infoRequest.status,
+                expiresAt: conv.infoRequest.expiresAt?.toISOString(),
+              }
+            : null,
           // ✅ AJOUT : Inclure l'offre dans la réponse
-          offer: activeOffer ? {
-            id: activeOffer.id,
-            status: activeOffer.status,
-            totalPrice: activeOffer.totalPrice,
-            createdAt: activeOffer.createdAt.toISOString(),
-            expiresAt: activeOffer.expiresAt?.toISOString(),
-          } : null,
+          offer: activeOffer
+            ? {
+                id: activeOffer.id,
+                status: activeOffer.status,
+                totalPrice: activeOffer.totalPrice,
+                createdAt: activeOffer.createdAt.toISOString(),
+                expiresAt: activeOffer.expiresAt?.toISOString(),
+              }
+            : null,
           lastMessage: lastMessage?.content || null,
           lastMessageAt: conv.lastMessageAt,
           unreadCount,

@@ -19,6 +19,7 @@ export interface Listing {
   bathrooms: number;
   rating?: number;
   reviewCount?: number;
+  maxGuests?: number;
 }
 
 export interface FilterState {
@@ -35,6 +36,7 @@ export function useMapData() {
   const [favorites, setFavorites] = useState<string[]>([]);
   const [L, setL] = useState<any>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     searchTerm: "",
     priceRange: [0, 5000],
@@ -89,7 +91,6 @@ export function useMapData() {
           .filter((l: any) => l.latitude && l.longitude)
           .map((l: any) => {
             const firstPhoto = l.photos?.[0]?.url || l.image || "";
-
             return {
               id: l.id,
               title: l.title,
@@ -107,6 +108,7 @@ export function useMapData() {
               bathrooms: l.bathrooms || 1,
               rating: l.rating || 4.5,
               reviewCount: l.reviewCount || 0,
+              maxGuests: l.maxGuests || 2,
             };
           });
 
@@ -191,8 +193,41 @@ export function useMapData() {
     setImageErrors((prev) => ({ ...prev, [id]: true }));
   };
 
+  // ✅ NOUVELLE FONCTION : Récupérer la position de l'utilisateur
+  const getUserLocation = useCallback((mapInstance: any) => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation({ lat: latitude, lng: longitude });
+          if (mapInstance) {
+            mapInstance.setView([latitude, longitude], 14);
+          }
+        },
+        (error) => {
+          console.error("Erreur géolocalisation:", error);
+        }
+      );
+    }
+  }, []);
+
+  // ✅ NOUVELLE FONCTION : Ouvrir dans Google Maps
+  const openInGoogleMaps = (listing: Listing) => {
+    const url = `https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}`;
+    window.open(url, "_blank");
+  };
+
+  // ✅ NOUVELLE FONCTION : Itinéraire depuis position utilisateur
+  const getDirections = (listing: Listing) => {
+    if (userLocation) {
+      const url = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${listing.latitude},${listing.longitude}`;
+      window.open(url, "_blank");
+    } else {
+      openInGoogleMaps(listing);
+    }
+  };
+
   return {
-    // Données
     listings,
     filteredListings,
     loading,
@@ -201,7 +236,7 @@ export function useMapData() {
     imageErrors,
     filters,
     showFilters,
-    // Setters
+    userLocation,
     setShowFilters,
     toggleFavorite,
     updateSearchTerm,
@@ -210,7 +245,9 @@ export function useMapData() {
     updateMinRating,
     resetFilters,
     handleImageError,
-    // Statistiques
+    getUserLocation,
+    openInGoogleMaps,
+    getDirections,
     totalListings: listings.length,
     filteredCount: filteredListings.length,
     favoritesCount: favorites.length,

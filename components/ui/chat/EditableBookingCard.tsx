@@ -1,4 +1,3 @@
-// components/ui/chat/EditableBookingCard.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -43,8 +42,8 @@ interface EditableBookingCardProps {
   initialGuests: number;
   onUpdate: (updatedInfoRequest: any) => void;
   onSendSystemMessage: (message: string) => void;
-  isOfferAccepted?: boolean; // ✅ AJOUT : Indique si une offre a été acceptée
-  offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED"; // ✅ AJOUT
+  isOfferAccepted?: boolean;
+  offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
 }
 
 function fmtDate(dateStr: string) {
@@ -57,6 +56,12 @@ function fmtDate(dateStr: string) {
 }
 
 function formatDateForInput(dateStr: string) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toISOString().split("T")[0];
+}
+
+// ✅ FONCTION POUR NORMALISER LES DATES AVANT ENVOI
+function normalizeDateForAPI(dateStr: string): string {
   if (!dateStr) return "";
   return new Date(dateStr).toISOString().split("T")[0];
 }
@@ -77,7 +82,7 @@ export function EditableBookingCard({
   initialGuests,
   onUpdate,
   onSendSystemMessage,
-  isOfferAccepted = false, // ✅ DÉFAUT: false
+  isOfferAccepted = false,
   offerStatus,
 }: EditableBookingCardProps) {
   const [checkIn, setCheckIn] = useState(initialCheckIn);
@@ -96,7 +101,6 @@ export function EditableBookingCard({
 
   const listingImageUrl = listing.image ? pipListingImage(listing.image) : null;
 
-  // ✅ Vérifier si les modifications sont bloquées (offre acceptée)
   const isLocked = isOfferAccepted || offerStatus === "ACCEPTED";
 
   const hasChanges = () => {
@@ -110,8 +114,13 @@ export function EditableBookingCard({
   const validateDates = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
+    
+    // ✅ NORMALISER LES DATES AVANT COMPARAISON
+    const normalizedCheckIn = normalizeDateForAPI(checkIn);
+    const normalizedCheckOut = normalizeDateForAPI(checkOut);
+    
+    const checkInDate = new Date(normalizedCheckIn);
+    const checkOutDate = new Date(normalizedCheckOut);
 
     if (checkInDate < today) {
       setError("La date d'arrivée ne peut pas être dans le passé");
@@ -143,10 +152,18 @@ export function EditableBookingCard({
     setError(null);
 
     try {
+      // ✅ ENVOYER LES DATES AU FORMAT YYYY-MM-DD UNIFORMÉMENT
+      const formattedCheckIn = normalizeDateForAPI(checkIn);
+      const formattedCheckOut = normalizeDateForAPI(checkOut);
+
       const response = await fetch(`/api/info-requests/${infoRequestId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ checkIn, checkOut, guests }),
+        body: JSON.stringify({ 
+          checkIn: formattedCheckIn, 
+          checkOut: formattedCheckOut, 
+          guests 
+        }),
       });
 
       if (!response.ok) {
@@ -180,7 +197,7 @@ export function EditableBookingCard({
 
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
-      {/* Header blanc avec bordure */}
+      {/* Header */}
       <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -205,7 +222,6 @@ export function EditableBookingCard({
               Modifier
             </button>
           )}
-          {/* ✅ Badge si offre acceptée */}
           {isLocked && (
             <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/40">
               <IoCheckmarkCircleOutline className="text-emerald-600 dark:text-emerald-400 text-xs" />
@@ -269,7 +285,7 @@ export function EditableBookingCard({
           </div>
         </div>
 
-        {/* Dates - avec style verrouillé si isLocked */}
+        {/* Dates */}
         <div className={`rounded-xl p-4 space-y-3 ${
           isLocked 
             ? "bg-slate-50 dark:bg-slate-800/30" 
@@ -308,7 +324,7 @@ export function EditableBookingCard({
                   type="date"
                   value={formatDateForInput(checkOut)}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  min={checkIn || new Date().toISOString().split("T")[0]}
+                  min={checkIn ? formatDateForInput(checkIn) : new Date().toISOString().split("T")[0]}
                   className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
                   disabled={isLocked}
                 />

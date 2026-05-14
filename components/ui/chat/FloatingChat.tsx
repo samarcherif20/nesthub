@@ -6,12 +6,45 @@ import { useUser } from "@clerk/nextjs";
 import { MessageSquare, X } from "lucide-react";
 import { ChatBox } from "./ChatBox";
 
+// ─── pip helper ───────────────────────────────────────────────────────────────
+const pipAvatar = (url: string) => `/api/users/avatar?url=${encodeURIComponent(url)}`;
+
 interface Conversation {
   id: string;
   listing: { id: string; title: string };
-  otherUser: { id: string; name: string; image?: string };
+  otherUser: {
+    id: string;
+    username: string;
+    image?: string;
+  };
   lastMessage?: string;
   unreadCount: number;
+}
+
+// Composant Avatar avec PIP
+function Avatar({ src, name, size = 40 }: { src?: string; name: string; size?: number }) {
+  const [err, setErr] = useState(false);
+  const url = src ? pipAvatar(src) : null;
+  const safeName = name || "?";
+  const firstChar = safeName.charAt(0).toUpperCase();
+
+  return (
+    <div
+      className="relative flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center font-bold text-white"
+      style={{
+        width: size,
+        height: size,
+        background: !url || err ? "linear-gradient(135deg, #0ea5e9, #6366f1, #a855f7)" : "#e2e8f0",
+        fontSize: size * 0.36,
+      }}
+    >
+      {url && !err ? (
+        <img src={url} alt={safeName} className="w-full h-full object-cover" onError={() => setErr(true)} />
+      ) : (
+        firstChar
+      )}
+    </div>
+  );
 }
 
 // Composant ConversationList intégré
@@ -24,7 +57,16 @@ function ConversationList({
   onSelect: (conv: Conversation) => void;
   selectedId?: string;
 }) {
-  if (conversations.length === 0) {
+  // Filtrer les conversations invalides
+  const safeConversations = conversations.filter((conv) => {
+    if (!conv) return false;
+    if (!conv.otherUser) return false;
+    if (!conv.otherUser.id) return false;
+    if (typeof conv.otherUser.username !== 'string') return false;
+    return true;
+  });
+
+  if (safeConversations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-slate-400">
         <MessageSquare className="w-12 h-12 mb-3 opacity-50" />
@@ -36,46 +78,40 @@ function ConversationList({
 
   return (
     <div className="h-full overflow-y-auto">
-      {conversations.map((conv) => (
-        <button
-          key={conv.id}
-          onClick={() => onSelect(conv)}
-          className={`w-full p-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 ${
-            selectedId === conv.id ? "bg-indigo-50 dark:bg-indigo-900/20" : ""
-          }`}
-        >
-          <div className="flex gap-3">
-            {/* Avatar */}
-            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-slate-100 flex-shrink-0">
-              {conv.otherUser.image ? (
-                <img src={conv.otherUser.image} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <div className="flex items-center justify-center w-full h-full font-bold text-slate-600">
-                  {conv.otherUser.name.charAt(0).toUpperCase()}
-                </div>
-              )}
-            </div>
+      {safeConversations.map((conv) => {
+        const username = conv.otherUser.username || "?";
+        
+        return (
+          <button
+            key={conv.id}
+            onClick={() => onSelect(conv)}
+            className={`w-full p-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 ${
+              selectedId === conv.id ? "bg-indigo-50 dark:bg-indigo-900/20" : ""
+            }`}
+          >
+            <div className="flex gap-3">
+              <Avatar src={conv.otherUser.image} name={username} size={40} />
 
-            {/* Contenu */}
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start">
-                <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-                  {conv.otherUser.name}
-                </p>
-                {conv.unreadCount > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center">
-                    {conv.unreadCount}
-                  </span>
+              <div className="flex-1 min-w-0">
+                <div className="flex justify-between items-start">
+                  <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+                    {username}
+                  </p>
+                  {conv.unreadCount > 0 && (
+                    <span className="w-5 h-5 rounded-full bg-indigo-500 text-white text-xs font-bold flex items-center justify-center">
+                      {conv.unreadCount}
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 truncate">{conv.listing.title}</p>
+                {conv.lastMessage && (
+                  <p className="text-xs text-slate-400 truncate mt-1">{conv.lastMessage}</p>
                 )}
               </div>
-              <p className="text-xs text-slate-500 truncate">{conv.listing.title}</p>
-              {conv.lastMessage && (
-                <p className="text-xs text-slate-400 truncate mt-1">{conv.lastMessage}</p>
-              )}
             </div>
-          </div>
-        </button>
-      ))}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -96,10 +132,20 @@ export function FloatingChat() {
       try {
         const res = await fetch("/api/conversations");
         const data = await res.json();
-        setConversations(data);
+        
+        // Filtrer les conversations invalides
+        const validData = data.filter((c: Conversation) => {
+          if (!c) return false;
+          if (!c.otherUser) return false;
+          if (!c.otherUser.id) return false;
+          if (typeof c.otherUser.username !== 'string') return false;
+          return true;
+        });
+        
+        setConversations(validData);
         
         // Calculer le total des messages non lus
-        const unread = data.reduce((acc: number, conv: Conversation) => acc + (conv.unreadCount || 0), 0);
+        const unread = validData.reduce((acc: number, conv: Conversation) => acc + (conv.unreadCount || 0), 0);
         setTotalUnread(unread);
       } catch (error) {
         console.error("Error loading conversations:", error);
@@ -163,21 +209,13 @@ export function FloatingChat() {
                   ← Retour
                 </button>
                 <div className="flex items-center gap-2">
-                  <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-100">
-                    {selectedConv.otherUser.image ? (
-                      <img src={selectedConv.otherUser.image} alt="" className="object-cover" />
-                    ) : (
-                      <div className="flex items-center justify-center w-full h-full font-bold text-sm">
-                        {selectedConv.otherUser.name.charAt(0).toUpperCase()}
-                      </div>
-                    )}
-                  </div>
+                  <Avatar src={selectedConv.otherUser.image} name={selectedConv.otherUser.username || "?"} size={32} />
                   <div>
-                    <p className="font-medium text-sm">{selectedConv.otherUser.name}</p>
+                    <p className="font-medium text-sm">{selectedConv.otherUser.username || "Utilisateur"}</p>
                     <p className="text-xs text-slate-500">{selectedConv.listing.title}</p>
                   </div>
                 </div>
-                <div className="w-8" /> {/* Espace pour équilibrer */}
+                <div className="w-8" />
               </>
             ) : (
               <>
@@ -202,7 +240,7 @@ export function FloatingChat() {
               <ChatBox
                 conversationId={selectedConv.id}
                 recipientId={selectedConv.otherUser.id}
-                recipientName={selectedConv.otherUser.name}
+                recipientName={selectedConv.otherUser.username || "Utilisateur"}
                 recipientImage={selectedConv.otherUser.image}
                 listingTitle={selectedConv.listing.title}
               />

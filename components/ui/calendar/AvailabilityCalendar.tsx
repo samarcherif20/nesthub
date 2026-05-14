@@ -8,7 +8,8 @@ interface AvailabilityCalendarProps {
     | Record<string, { available: boolean; price?: number }>
     | { date: string; isAvailable: boolean }[];
   blockedDates?: { startDate: string; endDate: string; reason?: string }[] | string[];
-  pendingDates?: string[]; // ✅ AJOUT : dates en attente de paiement
+  pendingDates?: string[];
+  pricingRules?: { startDate: string; endDate: string; fixedPrice: number }[];
   selectedStart?: string;
   selectedEnd?: string;
   onSelectRange?: (start: string, end: string) => void;
@@ -17,7 +18,8 @@ interface AvailabilityCalendarProps {
 export default function AvailabilityCalendar({
   availability = [],
   blockedDates = [],
-  pendingDates = [], // ✅ AJOUT
+  pendingDates = [],
+  pricingRules = [],
   selectedStart,
   selectedEnd,
   onSelectRange,
@@ -25,6 +27,7 @@ export default function AvailabilityCalendar({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [tempStart, setTempStart] = useState<string | null>(null);
   const [tempEnd, setTempEnd] = useState<string | null>(null);
+  const [specialPrices, setSpecialPrices] = useState<Map<string, number>>(new Map());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -40,6 +43,21 @@ export default function AvailabilityCalendar({
 
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+
+  // Récupérer les prix spéciaux
+  const getPricingRulesMap = () => {
+    if (!pricingRules || pricingRules.length === 0) return new Map<string, number>();
+    const map = new Map<string, number>();
+    pricingRules.forEach((rule) => {
+      const start = new Date(rule.startDate);
+      const end = new Date(rule.endDate);
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split("T")[0];
+        map.set(dateStr, rule.fixedPrice);
+      }
+    });
+    return map;
+  };
 
   const getAvailabilityMap = () => {
     if (!availability) return {};
@@ -77,7 +95,6 @@ export default function AvailabilityCalendar({
     return set;
   };
 
-  // ✅ AJOUT : Set des dates en attente
   const getPendingSet = () => {
     if (!pendingDates) return new Set<string>();
     return new Set(pendingDates.map(d => d.split("T")[0]));
@@ -86,6 +103,7 @@ export default function AvailabilityCalendar({
   const availabilityMap = getAvailabilityMap();
   const blockedSet = getBlockedSet();
   const pendingSet = getPendingSet();
+  const pricingMap = getPricingRulesMap();
 
   const isBlocked = (day: number) => {
     const date = new Date(year, month, day);
@@ -93,17 +111,28 @@ export default function AvailabilityCalendar({
     return blockedSet.has(dateStr);
   };
 
-  // ✅ AJOUT : Vérifier si une date est en attente de paiement
   const isPending = (day: number) => {
     const date = new Date(year, month, day);
     const dateStr = date.toISOString().split("T")[0];
     return pendingSet.has(dateStr);
   };
 
+  const hasSpecialPrice = (day: number) => {
+    const date = new Date(year, month, day);
+    const dateStr = date.toISOString().split("T")[0];
+    return pricingMap.has(dateStr);
+  };
+
+  const getSpecialPrice = (day: number) => {
+    const date = new Date(year, month, day);
+    const dateStr = date.toISOString().split("T")[0];
+    return pricingMap.get(dateStr);
+  };
+
   const isDateAvailable = (day: number) => {
     const dateStr = new Date(year, month, day).toISOString().split("T")[0];
     if (isBlocked(day)) return false;
-    if (isPending(day)) return false; // Les dates en attente ne sont pas disponibles
+    if (isPending(day)) return false;
     if (availabilityMap[dateStr] !== undefined) {
       return availabilityMap[dateStr];
     }
@@ -169,6 +198,7 @@ export default function AvailabilityCalendar({
     const past = isPast(day);
     const blocked = isBlocked(day);
     const pending = isPending(day);
+    const special = hasSpecialPrice(day);
     const available = isDateAvailable(day);
     const selected = isSelected(day);
     const inRange = isInRange(day);
@@ -182,12 +212,14 @@ export default function AvailabilityCalendar({
     if (inRange && !blocked && !pending)
       return "bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 font-semibold cursor-pointer";
 
-    // ✅ Style pour les dates en attente de paiement (orange/amber)
     if (pending)
       return "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-semibold cursor-not-allowed border border-amber-200 dark:border-amber-800";
 
     if (blocked)
       return "bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-semibold cursor-not-allowed line-through";
+
+    if (special)
+      return "bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 font-semibold cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800";
 
     if (available)
       return "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 font-semibold cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/50";
@@ -236,23 +268,31 @@ export default function AvailabilityCalendar({
             (tempStart || selectedStart) ===
             new Date(year, month, day).toISOString().split("T")[0];
           const pending = isPending(day);
+          const special = hasSpecialPrice(day);
+          const specialPrice = getSpecialPrice(day);
+          const blocked = isBlocked(day);
 
           return (
             <button
               key={day}
               onClick={() => handleDateClick(day)}
-              disabled={isPast(day) || isBlocked(day) || isPending(day)}
+              disabled={isPast(day) || blocked || pending}
               className={`
-                aspect-square flex items-center justify-center rounded-xl text-sm font-medium transition-all duration-200
+                aspect-square flex flex-col items-center justify-center rounded-xl text-sm font-medium transition-all duration-200
                 relative
                 ${getDayStyle(day)}
               `}
             >
-              {day}
+              <span>{day}</span>
+              {special && !blocked && !pending && (
+                <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 mt-0.5">
+                  {specialPrice} TND
+                </span>
+              )}
               {pending && !isPast(day) && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-500" />
               )}
-              {isStart && !isPast(day) && !isBlocked(day) && !pending && (
+              {isStart && !isPast(day) && !blocked && !pending && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sky-500 dark:bg-sky-400" />
               )}
             </button>
@@ -260,7 +300,7 @@ export default function AvailabilityCalendar({
         })}
       </div>
 
-      {/* Légende mise à jour */}
+      {/* Légende complète */}
       <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-gray-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-emerald-500" />
@@ -271,7 +311,7 @@ export default function AvailabilityCalendar({
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            Réservé
+            Réservé / Indisponible
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -281,13 +321,17 @@ export default function AvailabilityCalendar({
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-purple-500" />
+          <span className="text-xs text-gray-600 dark:text-gray-400">
+            Prix spécial
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-sky-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
             Sélectionné
           </span>
         </div>
-        
-        
       </div>
     </div>
   );

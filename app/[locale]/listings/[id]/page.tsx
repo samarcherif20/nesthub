@@ -492,7 +492,9 @@ export default function ListingDetailPage() {
   const [showAllDistances, setShowAllDistances] = useState(false);
   const slideshowInterval = useRef<NodeJS.Timeout | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<number, boolean>>({});
-
+  const [pricingRules, setPricingRules] = useState<
+    { startDate: string; endDate: string; fixedPrice: number }[]
+  >([]);
   const showToast = useCallback(
     (message: string, type: "success" | "error" | "info" = "info") =>
       setToast({ message, type }),
@@ -541,7 +543,23 @@ export default function ListingDetailPage() {
       window.open(url, "_blank");
     }
   };
-
+  const fetchPricingRules = useCallback(async () => {
+    if (!listing?.id) return;
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      const res = await fetch(
+        `/api/listings/availability?listingId=${listing.id}&year=${year}&month=${month}`,
+      );
+      const data = await res.json();
+      if (data.pricingRules) {
+        setPricingRules(data.pricingRules);
+      }
+    } catch (error) {
+      console.error("Error fetching pricing rules:", error);
+    }
+  }, [listing?.id]);
   const handleCalendarSelect = useCallback(
     (start: string, end: string) => {
       setCheckIn(start);
@@ -652,7 +670,9 @@ export default function ListingDetailPage() {
       if (slideshowInterval.current) clearInterval(slideshowInterval.current);
     };
   }, []);
-
+  useEffect(() => {
+    fetchPricingRules();
+  }, [fetchPricingRules]);
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!showAllPhotos) return;
@@ -764,7 +784,7 @@ export default function ListingDetailPage() {
           onClose={() => setToast(null)}
         />
       )}
-<TenantHeader></TenantHeader>
+      <TenantHeader></TenantHeader>
       {/* Info Request Modal */}
       {showInfoModal && sentInfoRequest && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -1254,6 +1274,7 @@ export default function ListingDetailPage() {
                   availability={listing.availability}
                   blockedDates={listing.blockedDates}
                   pendingDates={listing.pendingDates}
+                  pricingRules={pricingRules}
                   selectedStart={checkIn}
                   selectedEnd={checkOut}
                   onSelectRange={handleCalendarSelect}

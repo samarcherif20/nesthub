@@ -154,6 +154,8 @@ export function useSearch() {
       amenities: string[];
       price: [number, number];
       destination: string;
+      checkIn?: string; // ← AJOUTE
+      checkOut?: string; // ← AJOUTE
       guests: number;
       sort: string;
     }) => {
@@ -163,9 +165,13 @@ export function useSearch() {
         urlParams.set("page", params.page.toString());
         urlParams.set("pageSize", itemsPerPage.toString());
 
-        // Destination (gouvernorat)
         if (params.destination.trim() !== "") {
-          urlParams.set("governorate", params.destination);
+          // Utilise le nouveau paramètre searchLocation
+          urlParams.set("searchLocation", params.destination.trim());
+        }
+        if (params.checkIn && params.checkOut) {
+          urlParams.set("checkIn", params.checkIn);
+          urlParams.set("checkOut", params.checkOut);
         }
 
         // Catégorie
@@ -268,7 +274,7 @@ export function useSearch() {
     [getImageUrl],
   );
 
-  // Effet déclenché à chaque changement de filtre
+  // Chargement initial uniquement (1 seule fois au montage)
   useEffect(() => {
     fetchListings({
       page: currentPage,
@@ -279,16 +285,8 @@ export function useSearch() {
       guests: searchGuests,
       sort: sortBy,
     });
-  }, [
-    currentPage,
-    selectedCategory,
-    selectedAmenities,
-    priceRange,
-    searchDestination,
-    searchGuests,
-    sortBy,
-    fetchListings,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // ← Tableau de dépendances VIDE !
 
   const selectCategory = useCallback((categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -312,6 +310,8 @@ export function useSearch() {
       amenities: selectedAmenities,
       price: priceRange,
       destination: searchDestination,
+      checkIn: searchDates.checkIn || undefined,
+      checkOut: searchDates.checkOut || undefined,
       guests: searchGuests,
       sort: sortBy,
     });
@@ -320,18 +320,18 @@ export function useSearch() {
     selectedAmenities,
     priceRange,
     searchDestination,
+    searchDates, 
     searchGuests,
     sortBy,
     fetchListings,
   ]);
-
   const resetFilters = useCallback(() => {
     setSelectedCategory("all");
     setSelectedAmenities([]);
     setPriceRange([0, 5000]);
     setSortBy("relevance");
     setSearchDestination("");
-    setSearchDates({ checkIn: "", checkOut: "" });
+    setSearchDates({ checkIn: "", checkOut: "" }); // ← déjà présent
     setSearchGuests(1);
     setCurrentPage(1);
     fetchListings({
@@ -340,6 +340,8 @@ export function useSearch() {
       amenities: [],
       price: [0, 5000],
       destination: "",
+      checkIn: "", // ← AJOUTE
+      checkOut: "", // ← AJOUTE
       guests: 1,
       sort: "relevance",
     });

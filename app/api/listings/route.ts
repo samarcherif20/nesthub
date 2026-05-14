@@ -126,7 +126,13 @@ export async function GET(request: NextRequest) {
       ? parseInt(searchParams.get("minRooms")!)
       : undefined;
     const governorate = searchParams.get("governorate") || undefined;
-
+    const delegation = searchParams.get("delegation") || undefined;
+    const searchLocation = searchParams.get("searchLocation") || undefined;
+    const checkIn = searchParams.get("checkIn") || undefined;
+    const checkOut = searchParams.get("checkOut") || undefined;
+    const guests = searchParams.get("guests")
+      ? parseInt(searchParams.get("guests")!)
+      : undefined;
     // 🔥 VÉRIFIER SI L'UTILISATEUR EST ADMIN
     let isAdmin = false;
     let userDb = null;
@@ -186,13 +192,63 @@ export async function GET(request: NextRequest) {
     if (type && type !== "ALL") {
       where.type = type;
     }
-    if (governorate) {
-      where.governorate = governorate;
+    // Recherche par gouvernorat OU délégation
+    // Recherche par gouvernorat OU délégation
+    if (searchLocation) {
+      if (!where.AND) where.AND = [];
+      where.AND.push({
+        OR: [
+          { governorate: { contains: searchLocation, mode: "insensitive" } },
+          { delegation: { contains: searchLocation, mode: "insensitive" } },
+        ],
+      });
+    } else {
+      if (governorate) {
+        where.governorate = governorate;
+      }
+      if (delegation) {
+        where.delegation = delegation;
+      }
     }
     if (minRooms) {
       where.rooms = { gte: minRooms };
     }
+    // 🔥 FILTRE VOYAGEURS
+    if (guests && guests > 0) {
+      where.maxGuests = { gte: guests };
+    }
 
+    // 🔥 FILTRE DISPONIBILITÉ (DATES)
+    if (checkIn && checkOut) {
+      const checkInDate = new Date(checkIn);
+      const checkOutDate = new Date(checkOut);
+
+      where.NOT = {
+        OR: [
+          {
+            bookings: {
+              some: {
+                status: { in: ["CONFIRMED", "ACCEPTED", "PAID"] },
+                AND: [
+                  { checkIn: { lt: checkOutDate } },
+                  { checkOut: { gt: checkInDate } },
+                ],
+              },
+            },
+          },
+          {
+            blockedDates: {
+              some: {
+                AND: [
+                  { startDate: { lt: checkOutDate } },
+                  { endDate: { gt: checkInDate } },
+                ],
+              },
+            },
+          },
+        ],
+      };
+    }
     // Filtre par prix
     if (minPrice !== undefined || maxPrice !== undefined) {
       const min = minPrice !== undefined ? minPrice : 0;

@@ -15,6 +15,11 @@ export interface FavoriteListing {
   isVerified: boolean;
   bedrooms: number;
   bathrooms: number;
+  maxGuests?: number; // ← AJOUTE
+  trustScore?: number; // ← AJOUTE
+  collection?: string; // ← AJOUTE
+  amenities?: string[]; // ← AJOUTE
+  pricePerNight?: number; // ← AJOUTE
 }
 
 export interface CategoryCount {
@@ -164,6 +169,8 @@ export function useFavorites() {
               .replace(/^, /, "")
               .replace(/, $/, "") || "Emplacement non spécifié",
           price: listing.pricePerNight || listing.price || 0,
+          pricePerNight: listing.pricePerNight || listing.price || 0, // ← AJOUTE CETTE LIGNE
+
           rating: listing.rating || 4.5,
           reviewCount: listing.reviewCount || 0,
           image: getImageUrl(photoUrl),
@@ -172,6 +179,10 @@ export function useFavorites() {
           isVerified: listing.owner?.isIdentityVerified || false,
           bedrooms: listing.bedrooms || listing.rooms || 1,
           bathrooms: listing.bathrooms || 1,
+          maxGuests: listing.maxGuests || 2, // ← AJOUTE
+          trustScore: listing.trustScore || 95, // ← AJOUTE
+          collection: listing.collection || null, // ← AJOUTE
+          amenities: listing.equipment || listing.amenities || [], // ← AJOUTE
         };
       });
 

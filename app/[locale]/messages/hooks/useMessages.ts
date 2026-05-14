@@ -21,7 +21,7 @@ export interface Conversation {
   };
   otherUser: {
     id: string;
-    name: string;
+    username: string;  // ← CHANGER name → username
     image?: string;
     isOnline?: boolean;
     isVerified?: boolean;
@@ -142,10 +142,13 @@ export function useMessages() {
   // Sélection manuelle d'une conversation (quand l'utilisateur clique)
   const handleSelectConv = useCallback(
     (conv: Conversation) => {
-      setSelectedConv(conv);
-      if (isMobileView) {
-        setShowChat(true);
-      }
+       if (!conv.otherUser.username) {
+      console.warn("Utilisateur sans username:", conv.otherUser);
+    }
+    setSelectedConv(conv);
+    if (isMobileView) {
+      setShowChat(true);
+    }
       
       // ✅ Mettre à jour l'URL sans recharger la page (optionnel)
       if (typeof window !== "undefined") {
@@ -193,7 +196,7 @@ export function useMessages() {
   // Filtrer les conversations
   const filteredBySearch = conversations.filter(
     (c) =>
-      c.otherUser.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.otherUser.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.listing.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
@@ -222,5 +225,6 @@ export function useMessages() {
     handleUpdateInfoRequest,
     handleSendSystemMessage,
     loadConversations,
+
   };
 }

@@ -9,10 +9,7 @@ export async function PATCH(
 ) {
   try {
     const { userId } = await auth();
-    // ⚠️ CRUCIAL: await params avant de l'utiliser
     const { id } = await params;
-
-    console.log("ID reçu:", id); // Debug
 
     if (!userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -21,9 +18,6 @@ export async function PATCH(
     const body = await request.json();
     const { checkIn, checkOut, guests } = body;
 
-    console.log("Données reçues:", { checkIn, checkOut, guests }); // Debug
-
-    // Récupérer l'utilisateur
     const user = await prisma.user.findUnique({
       where: { clerkId: userId },
     });
@@ -35,12 +29,16 @@ export async function PATCH(
       );
     }
 
-    // Récupérer l'infoRequest
+    // Récupérer l'infoRequest avec la conversation et l'offre
     const infoRequest = await prisma.infoRequest.findUnique({
       where: { id },
       include: {
         listing: true,
         tenant: true,
+        conversation: {
+          select: { id: true }
+        },
+        offer: true,  // ← AJOUTER L'OFFRE
       },
     });
 
@@ -56,15 +54,42 @@ export async function PATCH(
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
-    // Vérifier que la demande est encore en attente
-    if (infoRequest.status !== "PENDING") {
+    // ✅ NOUVELLE CONDITION: Vérifier si une réservation existe déjà
+    let existingBooking = null;
+    if (infoRequest.offerId) {
+      existingBooking = await prisma.booking.findFirst({
+        where: {
+          offerId: infoRequest.offerId,
+          status: { notIn: ["CANCELLED", "REJECTED"] }
+        }
+      });
+    }
+
+    // ✅ Si une réservation existe, on ne peut plus modifier
+    if (existingBooking) {
+      return NextResponse.json(
+        { error: "Une réservation a déjà été effectuée, les dates ne peuvent plus être modifiées" },
+        { status: 400 },
+      );
+    }
+
+    // ✅ Sinon, on autorise la modification (même si l'offre est acceptée)
+    // Seules les demandes rejetées ou expirées ne peuvent pas être modifiées
+    if (infoRequest.status === "REJECTED" || infoRequest.status === "EXPIRED") {
       return NextResponse.json(
         { error: "Cette demande ne peut plus être modifiée" },
         { status: 400 },
       );
     }
 
-    // Validation des dates
+    // Normalisation des dates
+    const normalizeDate = (dateStr: string): Date => {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return new Date(`${dateStr}T00:00:00.000Z`);
+      }
+      return new Date(dateStr);
+    };
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -72,8 +97,14 @@ export async function PATCH(
     let checkOutDate = infoRequest.checkOut;
     let guestsCount = infoRequest.guests;
 
-    if (checkIn) {
-      checkInDate = new Date(checkIn);
+    if (checkIn !== undefined) {
+      checkInDate = normalizeDate(checkIn);
+      if (isNaN(checkInDate.getTime())) {
+        return NextResponse.json(
+          { error: `Date d'arrivée invalide: ${checkIn}` },
+          { status: 400 },
+        );
+      }
       if (checkInDate < today) {
         return NextResponse.json(
           { error: "La date d'arrivée ne peut pas être dans le passé" },
@@ -82,8 +113,14 @@ export async function PATCH(
       }
     }
 
-    if (checkOut) {
-      checkOutDate = new Date(checkOut);
+    if (checkOut !== undefined) {
+      checkOutDate = normalizeDate(checkOut);
+      if (isNaN(checkOutDate.getTime())) {
+        return NextResponse.json(
+          { error: `Date de départ invalide: ${checkOut}` },
+          { status: 400 },
+        );
+      }
       if (checkOutDate <= checkInDate) {
         return NextResponse.json(
           { error: "La date de départ doit être après la date d'arrivée" },
@@ -123,14 +160,18 @@ export async function PATCH(
         listing: true,
         tenant: true,
         owner: true,
+        conversation: {
+          select: { id: true }
+        }
       },
     });
 
-    console.log("InfoRequest mis à jour:", updatedInfoRequest.id); // Debug
-
     return NextResponse.json({
       success: true,
-      infoRequest: updatedInfoRequest,
+      infoRequest: {
+        ...updatedInfoRequest,
+        conversationId: updatedInfoRequest.conversation?.id,
+      },
     });
   } catch (error) {
     console.error("Erreur modification demande:", error);

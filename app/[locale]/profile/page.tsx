@@ -1,9 +1,8 @@
-// app/[locale]/profile/[userId]/page.tsx
+// app/[locale]/profile/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import {
@@ -21,12 +20,14 @@ import {
   IoLanguageOutline,
   IoPawOutline,
   IoBriefcaseOutline,
+  IoCreateOutline,
   IoStar,
   IoStarHalf,
   IoStarOutline,
-  IoFlagOutline,
-  IoShareOutline,
-  IoCheckmarkDoneOutline,
+  IoLogOutOutline,
+  IoSettingsOutline,
+  IoNotificationsOutline,
+  IoHelpCircleOutline,
 } from "react-icons/io5";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -59,11 +60,13 @@ function Stars({ rating }: { rating: number }) {
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface PublicUserProfile {
+interface UserProfile {
   id: string;
   firstName: string;
   lastName: string;
+  email: string;
   username?: string;
+  phoneNumber?: string;
   profilePictureUrl?: string;
   bio?: string;
   governorate?: string;
@@ -77,14 +80,14 @@ interface PublicUserProfile {
   isIdentityVerified: boolean;
 }
 
-interface PublicUserStats {
+interface UserStats {
   reliabilityScore: number;
   totalBookings: number;
   totalReviews: number;
   averageRating: number;
 }
 
-interface UserListing {
+interface FavoriteListing {
   id: string;
   title: string;
   location: string;
@@ -99,7 +102,7 @@ interface UserListing {
 
 // ─── Property Card ────────────────────────────────────────────────────────────
 function PropertyCard({ listing, isFavorite, onToggleFavorite }: { 
-  listing: UserListing; 
+  listing: FavoriteListing; 
   isFavorite: boolean; 
   onToggleFavorite: (id: string) => void;
 }) {
@@ -108,143 +111,116 @@ function PropertyCard({ listing, isFavorite, onToggleFavorite }: {
   const price = listing.pricePerMonth || listing.pricePerNight;
 
   return (
-    <Link href={`/fr/listings/${listing.id}`} className="block group">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800">
-        <div className="relative h-48 overflow-hidden">
-          {imageUrl && !imgErr ? (
-            <img
-              src={imageUrl}
-              alt={listing.title}
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-              onError={() => setImgErr(true)}
-            />
+    <div className="min-w-[280px] md:min-w-[320px] bg-white dark:bg-gray-900 rounded-2xl overflow-hidden group shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 dark:border-gray-800">
+      <div className="relative h-48 overflow-hidden">
+        {imageUrl && !imgErr ? (
+          <img
+            src={imageUrl}
+            alt={listing.title}
+            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+            onError={() => setImgErr(true)}
+          />
+        ) : (
+          <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center">
+            <IoHeartOutline className="text-white/40 text-4xl" />
+          </div>
+        )}
+        <button
+          onClick={() => onToggleFavorite(listing.id)}
+          className="absolute top-3 right-3 bg-white/90 backdrop-blur-md p-2 rounded-full shadow-sm hover:scale-110 transition-transform"
+        >
+          {isFavorite ? (
+            <IoHeart className="text-rose-500 text-base" />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-indigo-400 to-purple-600 flex items-center justify-center">
-              <IoHeartOutline className="text-white/40 text-4xl" />
-            </div>
+            <IoHeartOutline className="text-slate-600 text-base" />
           )}
-          <button
-            onClick={(e) => { e.preventDefault(); onToggleFavorite(listing.id); }}
-            className="absolute top-3 right-3 bg-white/90 backdrop-blur-md p-2 rounded-full shadow-sm hover:scale-110 transition-transform"
-          >
-            {isFavorite ? (
-              <IoHeart className="text-rose-500 text-base" />
-            ) : (
-              <IoHeartOutline className="text-slate-600 text-base" />
-            )}
-          </button>
-          <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full">
-            <span className="text-white text-xs font-bold">
-              {listing.pricePerMonth ? `${price.toLocaleString()} DT / Mois` : `${price.toLocaleString()} DT / Nuit`}
-            </span>
-          </div>
-          {listing.rating && (
-            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full flex items-center gap-1">
-              <IoStar className="text-amber-400 text-xs fill-amber-400" />
-              <span className="text-xs font-bold text-gray-900">{listing.rating}</span>
-            </div>
-          )}
+        </button>
+        <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full">
+          <span className="text-white text-xs font-bold">
+            {listing.pricePerMonth ? `${price.toLocaleString()} DT / Mois` : `${price.toLocaleString()} DT / Nuit`}
+          </span>
         </div>
-        <div className="p-4 space-y-1.5">
-          <h3 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors line-clamp-1">
-            {listing.title}
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-            <IoLocationOutline className="text-xs" /> {listing.location}
-          </p>
-          <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
-            <span className="flex items-center gap-1"><IoBedOutline className="text-xs" /> {listing.bedrooms} lits</span>
-            <span className="flex items-center gap-1"><IoBoatOutline className="text-xs" /> {listing.bathrooms} sdb</span>
-            <span className="flex items-center gap-1"><IoSquareOutline className="text-xs" /> {listing.surfaceArea} m²</span>
+        {listing.rating && (
+          <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-md px-2 py-1 rounded-full flex items-center gap-1">
+            <IoStar className="text-amber-400 text-xs fill-amber-400" />
+            <span className="text-xs font-bold text-gray-900">{listing.rating}</span>
           </div>
+        )}
+      </div>
+      <div className="p-4 space-y-1.5">
+        <h3 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-indigo-600 transition-colors line-clamp-1">
+          {listing.title}
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+          <IoLocationOutline className="text-xs" /> {listing.location}
+        </p>
+        <div className="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
+          <span className="flex items-center gap-1"><IoBedOutline className="text-xs" /> {listing.bedrooms} lits</span>
+          <span className="flex items-center gap-1"><IoBoatOutline className="text-xs" /> {listing.bathrooms} sdb</span>
+          <span className="flex items-center gap-1"><IoSquareOutline className="text-xs" /> {listing.surfaceArea} m²</span>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
-export default function PublicProfilePage() {
+export default function ProfilePage() {
   const { getToken } = useAuth();
-  const { userId } = useParams();
-  const router = useRouter();
+  const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [profile, setProfile] = useState<PublicUserProfile | null>(null);
-  const [stats, setStats] = useState<PublicUserStats | null>(null);
-  const [listings, setListings] = useState<UserListing[]>([]);
-  const [favorites, setFavorites] = useState<string[]>([]);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [stats, setStats] = useState<UserStats | null>(null);
+  const [favorites, setFavorites] = useState<FavoriteListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [avatarErr, setAvatarErr] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => setMounted(true), []);
 
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
-
-  // Fetch public profile data
+  // Fetch profile data
   const fetchProfile = useCallback(async () => {
     setLoading(true);
     try {
       const token = await getToken({ template: "my-app-template" });
       
-      // Fetch user profile
-      const profileRes = await fetch(`/api/users/${userId}`, {
+      const profileRes = await fetch("/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!profileRes.ok) {
-        router.push("/404");
-        return;
+      if (profileRes.ok) {
+        const data = await profileRes.json();
+        setProfile(data.user || data);
       }
-      const data = await profileRes.json();
-      setProfile(data.user || data);
 
-      // Fetch user stats
-      const statsRes = await fetch(`/api/users/${userId}/stats`, {
+      const statsRes = await fetch("/api/users/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (statsRes.ok) {
-        const statsData = await statsRes.json();
-        setStats(statsData.stats || statsData);
+        const data = await statsRes.json();
+        setStats(data.stats || data);
       }
 
-      // Fetch user listings
-      const listingsRes = await fetch(`/api/users/${userId}/listings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (listingsRes.ok) {
-        const listingsData = await listingsRes.json();
-        setListings(listingsData.listings || []);
-      }
-
-      // Fetch current user's favorites for comparison
       const favRes = await fetch("/api/favorites", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (favRes.ok) {
-        const favData = await favRes.json();
-        setFavorites(favData.favorites?.map((f: any) => f.id) || []);
+        const data = await favRes.json();
+        setFavorites(data.favorites || []);
       }
     } catch (error) {
       console.error("Error fetching profile:", error);
-      router.push("/404");
     } finally {
       setLoading(false);
     }
-  }, [getToken, userId, router]);
+  }, [getToken]);
 
   useEffect(() => {
-    if (userId) fetchProfile();
-  }, [userId, fetchProfile]);
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleToggleFavorite = async (listingId: string) => {
     try {
       const token = await getToken({ template: "my-app-template" });
-      const isFav = favorites.includes(listingId);
+      const isFav = favorites.some(f => f.id === listingId);
       
       const res = await fetch("/api/favorites/toggle", {
         method: "POST",
@@ -257,32 +233,15 @@ export default function PublicProfilePage() {
       
       if (res.ok) {
         if (isFav) {
-          setFavorites(prev => prev.filter(id => id !== listingId));
+          setFavorites(prev => prev.filter(f => f.id !== listingId));
         } else {
-          setFavorites(prev => [...prev, listingId]);
+          const newFav = await res.json();
+          setFavorites(prev => [...prev, newFav.listing]);
         }
-        setToast(isFav ? "Retiré des favoris" : "Ajouté aux favoris");
       }
     } catch (error) {
       console.error("Error toggling favorite:", error);
     }
-  };
-
-  const handleShare = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setToast("Lien du profil copié !");
-    } catch {
-      setToast("Impossible de copier le lien");
-    }
-  };
-
-  const handleContact = () => {
-    router.push(`/fr/messages?userId=${userId}`);
-  };
-
-  const handleReport = () => {
-    setToast("Signalement envoyé à notre équipe");
   };
 
   if (!mounted || loading) {
@@ -296,13 +255,11 @@ export default function PublicProfilePage() {
     );
   }
 
-  if (!profile) return null;
-
-  const fullName = `${profile.firstName} ${profile.lastName}`;
-  const initials = `${profile.firstName?.[0] || ""}${profile.lastName?.[0] || ""}`;
-  const memberSince = fmtDate(profile.createdAt);
-  const location = [profile.governorate, profile.delegation].filter(Boolean).join(", ") || "Tunisie";
-  const languages = profile.spokenLanguages?.length ? profile.spokenLanguages.join(", ") : "Français, Anglais";
+  const fullName = profile ? `${profile.firstName} ${profile.lastName}` : "Utilisateur";
+  const initials = profile ? `${profile.firstName?.[0] || ""}${profile.lastName?.[0] || ""}` : "U";
+  const memberSince = profile ? fmtDate(profile.createdAt) : "";
+  const location = [profile?.governorate, profile?.delegation].filter(Boolean).join(", ") || "Tunisie";
+  const languages = profile?.spokenLanguages?.length ? profile.spokenLanguages.join(", ") : "Français, Anglais";
   const reliabilityScore = stats?.reliabilityScore ?? 85;
   const averageRating = stats?.averageRating ?? 4.8;
 
@@ -310,13 +267,6 @@ export default function PublicProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900 transition-colors">
       <TenantHeader />
       
-      {/* Toast */}
-      {toast && (
-        <div className="fixed top-20 left-1/2 z-50 -translate-x-1/2 bg-slate-900/90 text-white px-5 py-3 rounded-full text-sm font-medium shadow-xl backdrop-blur-sm animate-in fade-in slide-in-from-top-4">
-          {toast}
-        </div>
-      )}
-
       <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
         
         {/* Hero Profile Section */}
@@ -328,7 +278,7 @@ export default function PublicProfilePage() {
             {/* Avatar */}
             <div className="relative">
               <div className="w-28 h-28 md:w-36 md:h-36 rounded-full border-4 border-white dark:border-gray-800 shadow-xl overflow-hidden bg-gradient-to-br from-indigo-400 to-purple-600">
-                {profile.profilePictureUrl && !avatarErr ? (
+                {profile?.profilePictureUrl && !avatarErr ? (
                   <img
                     src={pipAvatar(profile.profilePictureUrl)}
                     alt={fullName}
@@ -341,11 +291,9 @@ export default function PublicProfilePage() {
                   </div>
                 )}
               </div>
-              {profile.isIdentityVerified && (
-                <div className="absolute bottom-1 right-1 bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-md">
-                  <IoCheckmarkCircle className="text-sm" />
-                </div>
-              )}
+              <div className="absolute bottom-1 right-1 bg-emerald-500 text-white w-8 h-8 rounded-full flex items-center justify-center border-4 border-white dark:border-gray-800 shadow-md">
+                <IoCheckmarkCircle className="text-sm" />
+              </div>
             </div>
 
             {/* Info */}
@@ -353,7 +301,7 @@ export default function PublicProfilePage() {
               <div className="flex items-center justify-center md:justify-start gap-3 flex-wrap">
                 <h1 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white">{fullName}</h1>
                 <span className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-[10px] uppercase tracking-wider font-bold px-3 py-1 rounded-full">
-                  {profile.role === "TENANT" ? "Locataire" : profile.role === "PROPERTY_OWNER" ? "Propriétaire" : "Membre"}
+                  {profile?.role === "TENANT" ? "Locataire" : profile?.role === "PROPERTY_OWNER" ? "Propriétaire" : "Membre"}
                 </span>
               </div>
               <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm text-slate-500 dark:text-slate-400 mt-2">
@@ -363,30 +311,13 @@ export default function PublicProfilePage() {
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex gap-3">
-              <button
-                onClick={handleShare}
-                className="px-4 py-2.5 rounded-full text-sm font-semibold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 transition-all flex items-center gap-2"
-              >
-                <IoShareOutline className="text-sm" />
-                Partager
+            {/* Edit Button */}
+            <Link href="/fr/profile/edit">
+              <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 flex items-center gap-2">
+                <IoCreateOutline className="text-base" />
+                Modifier le profil
               </button>
-              <button
-                onClick={handleContact}
-                className="px-5 py-2.5 rounded-full text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 flex items-center gap-2"
-              >
-                <IoChatbubbleOutline className="text-sm" />
-                Contacter
-              </button>
-              <button
-                onClick={handleReport}
-                className="p-2.5 rounded-full text-slate-500 hover:text-rose-500 hover:bg-rose-50 transition-all"
-                title="Signaler"
-              >
-                <IoFlagOutline className="text-sm" />
-              </button>
-            </div>
+            </Link>
           </div>
         </div>
 
@@ -399,41 +330,46 @@ export default function PublicProfilePage() {
             <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-gray-800">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                 <span className="w-1 h-6 bg-indigo-600 rounded-full" />
-                À propos de {profile.firstName}
+                À propos de moi
               </h2>
               <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                {profile.bio || `${profile.firstName} est un membre actif de la communauté NestHub, passionné par les voyages et les rencontres.`}
+                {profile?.bio || "Je suis un voyageur passionné à la recherche de logements de qualité. Respectueux des lieux et communicatif, je prends soin de chaque propriété comme si elle était la mienne. Je suis particulièrement intéressé par les espaces lumineux et bien situés."}
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Profession</p>
-                  <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><IoBriefcaseOutline className="text-sm text-indigo-500" /> {profile.profession || "Non renseigné"}</p>
+                  <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><IoBriefcaseOutline className="text-sm text-indigo-500" /> {profile?.profession || "Architecte Designer"}</p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Langues</p>
                   <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><IoLanguageOutline className="text-sm text-indigo-500" /> {languages}</p>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700">
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Membre depuis</p>
-                  <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><IoCalendarOutline className="text-sm text-indigo-500" /> {memberSince}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Animal</p>
+                  <p className="font-semibold text-gray-900 dark:text-white flex items-center gap-2"><IoPawOutline className="text-sm text-indigo-500" /> Accepté (1 petit chien)</p>
                 </div>
               </div>
             </div>
 
-            {/* Listings Section */}
-            {listings.length > 0 && (
+            {/* Favorite Properties Carousel */}
+            {favorites.length > 0 && (
               <section className="space-y-4">
-                <div>
-                  <p className="text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider">Ses biens</p>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Annonces actives</h2>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-indigo-600 dark:text-indigo-400 text-xs font-bold uppercase tracking-wider">Ma collection</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Propriétés favorites</h2>
+                  </div>
+                  <Link href="/fr/favorites" className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                    Voir tout <IoHeartOutline className="text-xs" />
+                  </Link>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  {listings.map((listing) => (
+                <div className="flex gap-5 overflow-x-auto pb-4 hide-scrollbar">
+                  {favorites.slice(0, 6).map((listing) => (
                     <PropertyCard
                       key={listing.id}
                       listing={listing}
-                      isFavorite={favorites.includes(listing.id)}
+                      isFavorite={true}
                       onToggleFavorite={handleToggleFavorite}
                     />
                   ))}
@@ -442,7 +378,7 @@ export default function PublicProfilePage() {
             )}
           </div>
 
-          {/* Right Column - Stats & Verification */}
+          {/* Right Column - Verified Info & Stats */}
           <div className="lg:col-span-4 space-y-6">
             {/* Stats Cards */}
             <div className="grid grid-cols-2 gap-3">
@@ -467,7 +403,7 @@ export default function PublicProfilePage() {
                 <div className="h-full bg-indigo-600 rounded-full transition-all duration-700" style={{ width: `${reliabilityScore}%` }} />
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-3">
-                Score de confiance basé sur l'activité
+                Basé sur vos interactions et réservations
               </p>
             </div>
 
@@ -477,52 +413,67 @@ export default function PublicProfilePage() {
               <ul className="space-y-4">
                 <li className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${profile.isEmailVerified ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600" : "bg-gray-100 dark:bg-gray-800 text-gray-400"}`}>
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center">
                       <IoCheckmarkCircle className="text-sm" />
                     </div>
                     <span className="font-medium text-gray-700 dark:text-gray-300">Email</span>
                   </div>
-                  <span className={`text-xs font-bold ${profile.isEmailVerified ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`}>
-                    {profile.isEmailVerified ? "VÉRIFIÉ" : "NON VÉRIFIÉ"}
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    {profile?.isEmailVerified ? "VÉRIFIÉ" : "EN ATTENTE"}
                   </span>
                 </li>
                 <li className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${profile.isPhoneVerified ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600" : "bg-gray-100 dark:bg-gray-800 text-gray-400"}`}>
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center">
                       <IoCheckmarkCircle className="text-sm" />
                     </div>
                     <span className="font-medium text-gray-700 dark:text-gray-300">Téléphone</span>
                   </div>
-                  <span className={`text-xs font-bold ${profile.isPhoneVerified ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`}>
-                    {profile.isPhoneVerified ? "VÉRIFIÉ" : "NON VÉRIFIÉ"}
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    {profile?.isPhoneVerified ? "VÉRIFIÉ" : "EN ATTENTE"}
                   </span>
                 </li>
                 <li className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${profile.isIdentityVerified ? "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600" : "bg-gray-100 dark:bg-gray-800 text-gray-400"}`}>
+                    <div className="w-8 h-8 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 flex items-center justify-center">
                       <IoCheckmarkCircle className="text-sm" />
                     </div>
                     <span className="font-medium text-gray-700 dark:text-gray-300">Identité</span>
                   </div>
-                  <span className={`text-xs font-bold ${profile.isIdentityVerified ? "text-emerald-600 dark:text-emerald-400" : "text-gray-400"}`}>
-                    {profile.isIdentityVerified ? "VÉRIFIÉ" : "NON VÉRIFIÉ"}
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    {profile?.isIdentityVerified ? "VÉRIFIÉ" : "EN ATTENTE"}
                   </span>
                 </li>
               </ul>
-              {profile.isIdentityVerified && (
-                <div className="mt-5 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/30">
-                  <p className="text-xs text-emerald-800 dark:text-emerald-300 font-medium flex items-center gap-1">
-                    <IoCheckmarkDoneOutline className="text-sm" />
-                    Profil vérifié par NestHub
-                  </p>
-                </div>
-              )}
+              <div className="mt-5 p-3 rounded-xl bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/30">
+                <p className="text-xs text-indigo-800 dark:text-indigo-300 font-medium flex items-center gap-1">
+                  <IoInformationCircleOutline className="text-sm" />
+                  Votre badge vérifié augmente votre taux de réponse des propriétaires de 45%.
+                </p>
+              </div>
+            </div>
+
+            {/* Contact Support */}
+            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-5 text-white shadow-lg">
+              <div className="flex items-center gap-3 mb-3">
+                <IoChatbubbleOutline className="text-white/80 text-xl" />
+                <h3 className="font-bold">Besoin d'aide ?</h3>
+              </div>
+              <p className="text-xs text-white/80 mb-4">Notre équipe est disponible 24h/24 pour vous assister.</p>
+              <button className="w-full bg-white/20 hover:bg-white/30 rounded-xl py-2 text-sm font-semibold transition-all">
+                Contacter le support
+              </button>
             </div>
           </div>
         </div>
         
         <div className="h-8" />
       </main>
+
+      <style>{`
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }

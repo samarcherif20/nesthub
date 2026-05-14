@@ -1,9 +1,9 @@
-// app/fr/payment/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Elements,
   PaymentElement,
@@ -11,32 +11,31 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { getStripe } from "@/lib/stripe-client";
+import { useTheme } from "next-themes";
 import {
-  IoArrowBackOutline,
-  IoCardOutline,
   IoLockClosedOutline,
   IoShieldCheckmarkOutline,
   IoLocationOutline,
-  IoPeopleOutline,
   IoReceiptOutline,
-  IoInformationCircleOutline,
   IoCheckmarkCircleOutline,
   IoAlertCircleOutline,
   IoHomeOutline,
-  IoChevronForwardOutline,
-  IoMoonOutline,
   IoCloseOutline,
-  IoTimeOutline,
   IoLogInOutline,
   IoLogOutOutline,
   IoSparklesOutline,
-  IoRibbonOutline,
   IoStarSharp,
   IoFlashOutline,
-  IoCallOutline,
-  IoChatbubbleOutline,
-  IoMailOutline,
   IoWalletOutline,
+  IoChevronDownOutline,
+  IoTrophyOutline,
+  IoDiamondOutline,
+  IoGlobeOutline,
+  IoTimeOutline,
+  IoCallOutline,
+  IoCardOutline,
+  IoPersonOutline,
+  IoChevronForwardSharp,
 } from "react-icons/io5";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -44,25 +43,14 @@ import LoadingSpinner from "@/components/ui/LoadingSpinner";
 const pipListing = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
 
-function fmtDate(d: string) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
 function fmtShort(d: string) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-  });
+  return new Date(d).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
+
 function fmtDay(d: string) {
-  if (!d) return "";
   return new Date(d).toLocaleDateString("fr-FR", { weekday: "long" });
 }
+
 function fmtPrice(n: number) {
   return n.toLocaleString("fr-FR");
 }
@@ -90,105 +78,221 @@ interface BookingData {
   reference?: string;
 }
 
-// ─── Mesh Background ──────────────────────────────────────────────────────────
-function MeshBackground() {
+const gradientButton = `
+  bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 
+  hover:from-sky-600 hover:via-indigo-600 hover:to-purple-700
+  text-white shadow-md hover:shadow-lg 
+  transition-all duration-300
+`;
+
+const gradientText =
+  "bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent";
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AURORA BACKGROUND
+// ═══════════════════════════════════════════════════════════════════════════════
+function AuroraBackground() {
   return (
-    <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
-      <div
-        className="absolute -top-[40%] -right-[20%] w-[80vw] h-[80vw] rounded-full opacity-[0.07] dark:opacity-[0.04] blur-[120px]"
+    <div className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
+      <div className="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950" />
+
+      <motion.div
+        className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-[120px]"
         style={{
-          background:
-            "radial-gradient(circle, #6366f1 0%, #8b5cf6 40%, #0ea5e9 100%)",
-          animation: "meshFloat 25s ease-in-out infinite",
+          background: "radial-gradient(circle, #0ea5e9, #6366f1, transparent)",
+          top: "-10%",
+          right: "-5%",
         }}
-      />
-      <div
-        className="absolute -bottom-[30%] -left-[20%] w-[70vw] h-[70vw] rounded-full opacity-[0.06] dark:opacity-[0.03] blur-[100px]"
-        style={{
-          background:
-            "radial-gradient(circle, #7c3aed 0%, #6366f1 50%, #a78bfa 100%)",
-          animation: "meshFloat 20s ease-in-out infinite reverse",
+        animate={{
+          x: [0, 40, -20, 0],
+          y: [0, -30, 20, 0],
+          scale: [1, 1.1, 0.95, 1],
         }}
+        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
       />
-      <div
-        className="absolute top-[20%] left-[30%] w-[50vw] h-[50vw] rounded-full opacity-[0.04] dark:opacity-[0.02] blur-[80px]"
+      <motion.div
+        className="absolute w-[500px] h-[500px] rounded-full opacity-15 blur-[100px]"
         style={{
-          background:
-            "radial-gradient(circle, #0ea5e9 0%, #8b5cf6 60%, #6366f1 100%)",
-          animation: "meshFloat 30s ease-in-out infinite 2s",
+          background: "radial-gradient(circle, #8b5cf6, #a855f7, transparent)",
+          bottom: "-15%",
+          left: "-10%",
         }}
+        animate={{
+          x: [0, -30, 40, 0],
+          y: [0, 40, -20, 0],
+          scale: [1, 0.9, 1.1, 1],
+        }}
+        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
       />
-      {/* Noise grain */}
-      <div
-        className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
+      <motion.div
+        className="absolute w-[400px] h-[400px] rounded-full opacity-10 blur-[80px]"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-          backgroundSize: "128px 128px",
+          background: "radial-gradient(circle, #6366f1, #0ea5e9, transparent)",
+          top: "40%",
+          left: "30%",
+        }}
+        animate={{
+          x: [0, 50, -30, 0],
+          y: [0, -40, 30, 0],
+        }}
+        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      <div
+        className="absolute inset-0 opacity-[0.02] dark:opacity-[0.015]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.03) 1px, transparent 1px)",
+          backgroundSize: "60px 60px",
         }}
       />
     </div>
   );
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
-function Toast({
-  message,
-  type,
-  onClose,
+// ═══════════════════════════════════════════════════════════════════════════════
+// 3D CREDIT CARD PREVIEW - avec clic pour retourner
+// ═══════════════════════════════════════════════════════════════════════════════
+function CreditCardPreview({
+  number,
+  name,
+  expiry,
+  cvc,
+  flipped,
+  onClick,
 }: {
-  message: string;
-  type: "success" | "error" | "info";
-  onClose: () => void;
+  number: string;
+  name: string;
+  expiry: string;
+  cvc: string;
+  flipped: boolean;
+  onClick?: () => void;
 }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 4000);
-    return () => clearTimeout(t);
-  }, [onClose]);
+  const displayNumber = number || "•••• •••• •••• ••••";
+  const displayName = name || "VOTRE NOM";
+  const displayExpiry = expiry || "••/••";
 
   return (
-    <div className="fixed top-20 right-4 z-[80] max-w-sm fade-up">
-      <div
-        className={`flex items-center gap-2.5 pl-4 pr-3 py-3 rounded-2xl text-sm font-bold shadow-xl backdrop-blur-xl border ${
-          type === "success"
-            ? "bg-emerald-50/90 dark:bg-emerald-900/80 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800 shadow-emerald-500/10"
-            : type === "error"
-              ? "bg-rose-50/90 dark:bg-rose-900/80 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800 shadow-rose-500/10"
-              : "bg-sky-50/90 dark:bg-sky-900/80 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800 shadow-sky-500/10"
-        }`}
+    <div 
+      className="perspective-[1200px] w-full max-w-[380px] mx-auto cursor-pointer"
+      onClick={onClick}
+    >
+      <motion.div
+        className="relative w-full aspect-[1.586/1]"
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+        style={{ transformStyle: "preserve-3d" }}
       >
-        {type === "success" ? (
-          <IoCheckmarkCircleOutline className="text-lg flex-shrink-0" />
-        ) : type === "error" ? (
-          <IoAlertCircleOutline className="text-lg flex-shrink-0" />
-        ) : (
-          <IoInformationCircleOutline className="text-lg flex-shrink-0" />
-        )}
-        <span className="flex-1">{message}</span>
-        <button
-          onClick={onClose}
-          className="ml-1 p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
+        {/* FRONT */}
+        <div
+          className="absolute inset-0 rounded-3xl overflow-hidden"
+          style={{ backfaceVisibility: "hidden" }}
         >
-          <IoCloseOutline className="text-sm" />
-        </button>
-      </div>
+          <div className="w-full h-full bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 rounded-3xl overflow-hidden border border-white/20 shadow-xl">
+            
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-500/10" />
+
+            <div className="absolute top-4 right-4 flex opacity-30 z-30">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-400 to-amber-500 shadow-lg" />
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg -ml-5" />
+            </div>
+
+            <div className="absolute top-20 left-5 z-10">
+              <div className="w-12 h-8 rounded-md bg-gradient-to-br from-amber-300 via-amber-400 to-amber-500 shadow-xl">
+                <div className="w-full h-full rounded-md border border-amber-600/40 p-0.5">
+                  <div className="w-full h-[45%] border-b border-amber-600/40" />
+                  <div className="flex justify-center mt-0.5">
+                    <div className="w-3.5 h-2.5 rounded-sm border border-amber-600/40" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute top-24 left-14 z-20 text-white/70">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M6 18C10 14 10 10 6 6" />
+                <path d="M10 18C14 14 14 10 10 6" />
+                <path d="M14 18C18 14 18 10 14 6" />
+              </svg>
+            </div>
+
+            <div className="absolute bottom-20 left-6 right-6">
+              <p className="text-white font-mono text-lg sm:text-xl tracking-[0.2em] font-bold drop-shadow-lg">
+                {displayNumber}
+              </p>
+            </div>
+
+            <div className="absolute bottom-6 left-6">
+              <p className="text-[8px] text-white/50 uppercase tracking-[0.15em] mb-1">
+                Titulaire
+              </p>
+              <p className="text-white/90 text-xs sm:text-sm font-bold tracking-wider uppercase drop-shadow-sm">
+                {displayName}
+              </p>
+            </div>
+
+            <div className="absolute bottom-6 right-6 text-right">
+              <p className="text-[8px] text-white/50 uppercase tracking-[0.15em] mb-1">
+                Expire
+              </p>
+              <p className="text-white/90 text-xs sm:text-sm font-bold tracking-wider font-mono drop-shadow-sm">
+                {displayExpiry}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* BACK */}
+        <div
+          className="absolute inset-0 rounded-3xl overflow-hidden"
+          style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
+        >
+          <div className="w-full h-full bg-gradient-to-br from-slate-800 via-slate-700 to-slate-800 rounded-3xl overflow-hidden border border-white/20">
+            <div className="absolute top-8 left-0 right-0 h-12 bg-black/60" />
+            <div className="absolute top-28 left-6 right-6">
+              <div className="bg-white/95 rounded-md h-9 flex items-center justify-end px-4 shadow-inner">
+                <p className="text-slate-800 font-mono text-sm font-bold tracking-widest">{cvc || "•••"}</p>
+              </div>
+              <p className="text-[8px] text-white/50 uppercase tracking-[0.15em] mt-2 text-right">Code de sécurité</p>
+            </div>
+            <div className="absolute bottom-8 left-6 right-6">
+              <p className="text-[7px] text-white/30 leading-relaxed text-center">Cette carte est la propriété de l'établissement bancaire émetteur.</p>
+            </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-black/10 pointer-events-none" />
+          </div>
+        </div>
+      </motion.div>
     </div>
   );
 }
 
-// ─── Stripe form ──────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════════
+// STRIPE PAYMENT FORM - adapté au dark/light mode
+// ═══════════════════════════════════════════════════════════════════════════════
 function StripePaymentForm({
   booking,
   onSuccess,
   onError,
   isProcessing,
   setIsProcessing,
+  agreed,
+  setAgreed,
 }: any) {
   const stripe = useStripe();
   const elements = useElements();
+  const [isStripeReady, setIsStripeReady] = useState(false);
+
+  useEffect(() => {
+    if (stripe && elements) {
+      setIsStripeReady(true);
+    }
+  }, [stripe, elements]);
+
+  const canSubmit = agreed && stripe && elements && isStripeReady;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe || !elements || !canSubmit) return;
     setIsProcessing(true);
     try {
       const { error } = await stripe.confirmPayment({
@@ -198,8 +302,11 @@ function StripePaymentForm({
         },
         redirect: "if_required",
       });
-      if (error) onError(error.message);
-      else onSuccess();
+      if (error) {
+        onError(error.message);
+      } else {
+        onSuccess();
+      }
     } catch (err: any) {
       onError(err.message);
     } finally {
@@ -208,37 +315,224 @@ function StripePaymentForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <PaymentElement />
-      <button
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="stripe-payment-element min-h-[280px]">
+        {!isStripeReady ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="w-8 h-8 rounded-full border-2 border-sky-500/30 border-t-sky-500 animate-spin mb-3" />
+            <p className="text-xs text-slate-400">Chargement du formulaire de paiement...</p>
+          </div>
+        ) : (
+          <PaymentElement />
+        )}
+      </div>
+
+      <div className="space-y-2.5 pt-2">
+        {[
+          { label: `${fmtPrice(booking.pricePerNight)} TND × ${booking.nights} nuits`, value: booking.pricePerNight * booking.nights },
+          { label: "Frais de ménage", value: booking.cleaningFee },
+          { label: "Frais de service", value: booking.serviceFee, accent: true },
+        ].map((item) => (
+          <div key={item.label} className="flex justify-between text-sm">
+            <span className="text-slate-500 dark:text-white/30">{item.label}</span>
+            <span className={`font-bold ${item.accent ? "text-sky-600 dark:text-sky-400" : "text-slate-700 dark:text-white/70"}`}>
+              {fmtPrice(item.value)} TND
+            </span>
+          </div>
+        ))}
+
+        <div className="pt-3 mt-1 border-t border-dashed border-slate-200 dark:border-white/[0.06]">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-white/30">
+              Total à payer
+            </span>
+            <span className="text-xl font-black text-slate-900 dark:text-white">
+              {fmtPrice(booking.totalPrice)}{" "}
+              <span className="text-sm text-slate-500 dark:text-white/40">TND</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <label className="flex items-start gap-3 cursor-pointer group">
+        <div className="relative mt-0.5">
+          <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="peer sr-only" />
+          <div className="w-5 h-5 rounded-lg border border-slate-300 dark:border-white/[0.12] bg-slate-100 dark:bg-white/[0.04] peer-checked:bg-sky-500 peer-checked:border-sky-500 transition-all flex items-center justify-center">
+            {agreed && <IoCheckmarkCircleOutline className="text-white text-sm" />}
+          </div>
+        </div>
+        <span className="text-[11px] text-slate-500 dark:text-white/30 leading-relaxed group-hover:text-slate-600 dark:group-hover:text-white/40 transition-colors">
+          J'accepte les conditions générales et la politique de confidentialité
+        </span>
+      </label>
+
+      <motion.button
         type="submit"
-        disabled={!stripe || isProcessing}
-        className="group relative w-full py-4 rounded-2xl text-base font-extrabold flex items-center justify-center gap-3 bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white transition-all shadow-lg shadow-violet-500/25 hover:shadow-xl hover:shadow-violet-500/30 active:scale-[.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 overflow-hidden"
+        disabled={!canSubmit || isProcessing}
+        whileHover={canSubmit && !isProcessing ? { scale: 1.01, y: -1 } : {}}
+        whileTap={canSubmit && !isProcessing ? { scale: 0.98 } : {}}
+        className={`relative w-full py-4 rounded-2xl text-base font-extrabold flex items-center justify-center gap-3 transition-all disabled:opacity-30 disabled:cursor-not-allowed overflow-hidden group ${gradientButton}`}
       >
-        {/* Shimmer */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity -skew-x-12 group-hover:animate-[shimmer_1.5s_ease]" />
         {isProcessing ? (
-          <>
-            <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-            Traitement en cours…
-          </>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 flex items-center gap-3">
+            <motion.div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+            <span>Traitement sécurisé…</span>
+          </motion.div>
         ) : (
           <>
             <IoLockClosedOutline className="text-lg relative z-10" />
-            <span className="relative z-10">
-              Payer {fmtPrice(booking.totalPrice)} TND
-            </span>
+            <span className="relative z-10">Payer {fmtPrice(booking.totalPrice)} TND</span>
           </>
         )}
-      </button>
+      </motion.button>
+
+      <div className="flex items-center justify-center gap-2 text-[10px] text-slate-400 dark:text-white/20 font-medium">
+        <IoShieldCheckmarkOutline className="text-xs" />
+        <span>Chiffrement SSL 256-bit · Données jamais stockées</span>
+      </div>
     </form>
   );
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════════════════════════════
+function Toast({ message, type, onClose }: any) {
+  useEffect(() => {
+    const t = setTimeout(onClose, 4000);
+    return () => clearTimeout(t);
+  }, [onClose]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -30, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -30, scale: 0.9 }}
+      className="fixed top-24 left-1/2 -translate-x-1/2 z-[100]"
+    >
+      <div className={`flex items-center gap-3 pl-5 pr-4 py-3.5 rounded-2xl text-sm font-bold shadow-2xl backdrop-blur-2xl border ${
+        type === "success" ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20" :
+        type === "error" ? "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20" :
+        "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/20"
+      }`}>
+        {type === "success" ? <IoCheckmarkCircleOutline className="text-lg" /> : type === "error" ? <IoAlertCircleOutline className="text-lg" /> : <IoSparklesOutline className="text-lg" />}
+        <span>{message}</span>
+        <button onClick={onClose} className="ml-2 p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"><IoCloseOutline className="text-sm" /></button>
+      </div>
+    </motion.div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// SUCCESS SCREEN
+// ═══════════════════════════════════════════════════════════════════════════════
+function SuccessScreen({ booking, onRedirect }: { booking: BookingData; onRedirect: () => void }) {
+  useEffect(() => {
+    const timer = setTimeout(() => onRedirect(), 3000);
+    return () => clearTimeout(timer);
+  }, [onRedirect]);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex items-center justify-center px-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.85, y: 40 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 150, damping: 20 }}
+        className="relative w-full max-w-md"
+      >
+        <div className="absolute -inset-10 bg-gradient-to-r from-sky-500/20 via-indigo-500/20 to-purple-500/20 rounded-[40px] blur-3xl" />
+
+        <div className="relative bg-white/70 dark:bg-white/[0.03] backdrop-blur-2xl border border-white/50 dark:border-white/[0.08] rounded-[32px] p-8 overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-sky-500 to-transparent" />
+
+          <div className="flex justify-center mb-8">
+            <div className="relative">
+              {[0, 0.2, 0.4].map((delay, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute inset-0 rounded-full border border-emerald-500/30"
+                  initial={{ scale: 1, opacity: 0.5 }}
+                  animate={{ scale: 2.5, opacity: 0 }}
+                  transition={{ duration: 2, repeat: Infinity, delay }}
+                />
+              ))}
+              <motion.div
+                initial={{ scale: 0, rotate: -90 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200, damping: 12, delay: 0.2 }}
+                className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center shadow-2xl shadow-emerald-500/30"
+              >
+                <IoCheckmarkCircleOutline className="text-4xl text-white" />
+              </motion.div>
+            </div>
+          </div>
+
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2">Paiement confirmé !</h1>
+            <p className="text-slate-500 dark:text-white/40 text-sm">Votre réservation a été enregistrée avec succès</p>
+          </div>
+
+          <div className="bg-white/50 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] rounded-2xl p-5 mb-6">
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-slate-200 dark:border-white/[0.06]">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <IoReceiptOutline className="text-emerald-500" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-900 dark:text-white">Récapitulatif</p>
+                <p className="text-[10px] text-slate-400 dark:text-white/30 font-mono">{booking.reference || "RES-" + booking.id.slice(0, 8)}</p>
+              </div>
+              <div className="ml-auto">
+                <span className="text-lg font-black text-emerald-500">{fmtPrice(booking.totalPrice)} TND</span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { label: "Propriété", value: booking.listing.title },
+                { label: "Dates", value: `${fmtShort(booking.checkIn)} → ${fmtShort(booking.checkOut)}` },
+                { label: "Voyageurs", value: `${booking.guests} personnes` },
+                { label: "Durée", value: `${booking.nights} nuits` },
+              ].map((item) => (
+                <div key={item.label} className="flex justify-between text-xs">
+                  <span className="text-slate-500 dark:text-white/30">{item.label}</span>
+                  <span className="text-slate-700 dark:text-white/80 font-semibold">{item.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-3">
+            <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-white/20 border-t-sky-500 animate-spin" />
+            <span className="text-xs text-slate-400 dark:text-white/30 font-medium">Redirection en cours…</span>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// LOADING SCREEN
+// ═══════════════════════════════════════════════════════════════════════════════
+function LoadingScreen() {
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-4">
+        <LoadingSpinner variant="spinner" size="lg" color="primary" speed="normal" />
+        <p className="text-sm text-slate-500 dark:text-slate-400">Préparation du paiement sécurisé...</p>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// MAIN PAGE
+// ═══════════════════════════════════════════════════════════════════════════════
 export default function PaymentPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   const offerId = searchParams.get("offerId");
   const conversationId = searchParams.get("conversationId");
@@ -247,18 +541,17 @@ export default function PaymentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-  } | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [imgErr, setImgErr] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [showCardBack, setShowCardBack] = useState(false);
 
-  const showToast = useCallback(
-    (message: string, type: "success" | "error" | "info" = "info") =>
-      setToast({ message, type }),
-    []
-  );
+  const showToast = useCallback((message: string, type: "success" | "error" | "info" = "info") => setToast({ message, type }), []);
+
+  const handleCardClick = () => {
+    setShowCardBack(!showCardBack);
+  };
 
   useEffect(() => {
     const fetchOffer = async () => {
@@ -279,9 +572,7 @@ export default function PaymentPage() {
             guests: offer.guests,
             pricePerNight: offer.pricePerNight,
             cleaningFee: offer.cleaningFee ?? 85,
-            serviceFee:
-              offer.serviceFee ??
-              Math.round(offer.pricePerNight * offer.nights * 0.05),
+            serviceFee: offer.serviceFee ?? Math.round(offer.pricePerNight * offer.nights * 0.05),
             totalPrice: offer.totalPrice,
             reference: offer.reference,
             listing: {
@@ -294,14 +585,11 @@ export default function PaymentPage() {
               type: offer.listing.type,
             },
           });
-          const paymentRes = await fetch(
-            "/api/payments/create-payment-intent",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ offerId, conversationId }),
-            }
-          );
+          const paymentRes = await fetch("/api/payments/create-payment-intent", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ offerId, conversationId }),
+          });
           const paymentData = await paymentRes.json();
           if (paymentRes.ok) setClientSecret(paymentData.clientSecret);
           else showToast(paymentData.error || "Erreur de paiement", "error");
@@ -320,619 +608,323 @@ export default function PaymentPage() {
   const handleSuccess = () => {
     setIsSuccess(true);
     showToast("Paiement effectué avec succès !", "success");
-    setTimeout(
-      () => router.push(`/fr/payment/success?offerId=${offerId}`),
-      2500
-    );
   };
   const handleError = (error: string) => showToast(error, "error");
+  const handleSuccessRedirect = () => router.push(`/fr/payment/success?offerId=${offerId}`);
 
-  // ─── Loading ────────────────────────────────────────────────────────────────
-  if (isLoading) {
-    return (
-      <LoadingSpinner
-        fullScreen
-        variant="spinner"
-        size="lg"
-        color="primary"
-        text="Chargement de votre page de paiement"
-        speed="normal"
-      />
-    );
-  }
+  if (isLoading) return <LoadingScreen />;
+  if (isSuccess) return <SuccessScreen booking={booking!} onRedirect={handleSuccessRedirect} />;
+  if (!booking) return <NoBookingFound />;
 
-  // ─── Success ────────────────────────────────────────────────────────────────
-  if (isSuccess) {
-    return (
-      <div className="min-h-screen bg-[#f6f5ff] dark:bg-[#0a0a1a] flex items-center justify-center px-4">
-        <MeshBackground />
-        <style>{`
-          @keyframes confettiBurst {
-            0% { opacity:0; transform:scale(.5) rotate(0deg) }
-            50% { opacity:1; transform:scale(1.1) rotate(5deg) }
-            100% { opacity:1; transform:scale(1) rotate(0deg) }
-          }
-          @keyframes checkDraw {
-            0% { stroke-dashoffset: 50 }
-            100% { stroke-dashoffset: 0 }
-          }
-          @keyframes ringPulse {
-            0% { transform:scale(1); opacity:.3 }
-            100% { transform:scale(1.8); opacity:0 }
-          }
-        `}</style>
-        <div
-          className="text-center max-w-sm"
-          style={{ animation: "confettiBurst .6s ease both" }}
-        >
-          {/* Animated check */}
-          <div className="relative w-24 h-24 mx-auto mb-8">
-            {/* Pulsing rings */}
-            <div
-              className="absolute inset-0 rounded-3xl bg-emerald-400/20"
-              style={{
-                animation: "ringPulse 1.5s ease-out infinite",
-              }}
-            />
-            <div
-              className="absolute inset-0 rounded-3xl bg-emerald-400/15"
-              style={{
-                animation: "ringPulse 1.5s ease-out .3s infinite",
-              }}
-            />
-            <div className="relative w-24 h-24 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-3xl flex items-center justify-center shadow-xl shadow-emerald-500/30">
-              <svg
-                viewBox="0 0 24 24"
-                className="w-10 h-10"
-                fill="none"
-                stroke="white"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline
-                  points="20 6 9 17 4 12"
-                  style={{
-                    strokeDasharray: 50,
-                    animation: "checkDraw .5s ease .3s both",
-                  }}
-                />
-              </svg>
-            </div>
-          </div>
+  const listingImageUrl = booking.listing.image ? pipListing(booking.listing.image) : null;
 
-          <h1 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-2">
-            Paiement confirmé !
-          </h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mb-1">
-            Votre réservation a été validée avec succès.
-          </p>
-         
-
-          <div className="flex items-center justify-center gap-2 text-xs text-gray-400 dark:text-gray-500 font-medium">
-            <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600 border-t-indigo-500 animate-spin" />
-            Redirection …
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── No booking ─────────────────────────────────────────────────────────────
-  if (!booking) {
-    return (
-      <div className="min-h-screen bg-[#f6f5ff] dark:bg-[#0a0a1a] flex items-center justify-center px-4">
-        <MeshBackground />
-        <div className="text-center">
-          <div className="w-16 h-16 bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-2xl flex items-center justify-center mx-auto mb-4 border border-gray-200 dark:border-gray-800 shadow-sm">
-            <IoReceiptOutline className="text-3xl text-gray-400 dark:text-gray-500" />
-          </div>
-          <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-            Aucune réservation trouvée
-          </h1>
-          <p className="text-sm text-gray-400 dark:text-gray-500 mb-4">
-            Vérifiez le lien ou retournez à vos messages.
-          </p>
-          <Link
-            href="/fr/messages"
-            className="text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1"
-          >
-            Retour aux messages{" "}
-            <IoChevronForwardOutline className="text-xs" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const listingImageUrl = booking.listing.image
-    ? pipListing(booking.listing.image)
-    : null;
-  const nightsTotal = booking.pricePerNight * booking.nights;
+  // Configuration Stripe avec support du dark mode via useTheme
+  const stripeOptions = {
+    clientSecret: clientSecret,
+    appearance: {
+      theme: 'stripe',
+      variables: {
+        colorPrimary: '#0ea5e9',
+        colorBackground: 'transparent',
+        colorText: isDark ? '#ffffff' : '#1e293b',
+        colorTextSecondary: isDark ? '#94a3b8' : '#64748b',
+        colorDanger: '#ef4444',
+        borderRadius: '14px',
+        fontFamily: 'Inter, system-ui, sans-serif',
+      },
+      rules: {
+        '.Input': {
+          backgroundColor: 'transparent',
+          border: isDark ? '1px solid rgba(255,255,255,0.2)' : '1px solid #e2e8f0',
+          borderRadius: '14px',
+          padding: '12px 14px',
+          color: isDark ? '#ffffff' : '#1e293b',
+          fontSize: '14px',
+          fontWeight: '500',
+        },
+        '.Input:focus': {
+          border: '1px solid #0ea5e9',
+          boxShadow: '0 0 0 3px rgba(14,165,233,0.1)',
+        },
+        '.Label': {
+          fontSize: '11px',
+          fontWeight: '700',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          color: isDark ? '#94a3b8' : '#64748b',
+          marginBottom: '6px',
+        },
+      },
+    },
+  };
 
   return (
-    <div className="min-h-screen bg-[#f6f5ff] dark:bg-[#0a0a1a] text-gray-900 dark:text-white transition-colors">
-      <MeshBackground />
-
-      <style>{`
-        @keyframes meshFloat {
-          0%,100%{transform:translate(0,0) scale(1)}
-          25%{transform:translate(5%,-3%) scale(1.05)}
-          50%{transform:translate(-3%,5%) scale(.95)}
-          75%{transform:translate(3%,2%) scale(1.02)}
-        }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes shimmer { 0%{transform:translateX(-150%)} 100%{transform:translateX(150%)} }
-        .fade-up { animation: fadeUp .55s cubic-bezier(.22,1,.36,1) both }
-        .d1{animation-delay:.06s}.d2{animation-delay:.12s}.d3{animation-delay:.18s}
-        .d4{animation-delay:.24s}.d5{animation-delay:.3s}.d6{animation-delay:.36s}
-      `}</style>
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
-
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+      <AuroraBackground />
       <TenantHeader />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 pt-8 pb-24">
-        {/* Back */}
-        <button
-          onClick={() => router.back()}
-          className="group flex items-center gap-2.5 text-sm font-semibold text-gray-400 dark:text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors mb-8 fade-up"
-        >
-          <div className="w-8 h-8 rounded-xl bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/50 dark:border-gray-800 flex items-center justify-center group-hover:border-indigo-300 dark:group-hover:border-indigo-700 group-hover:shadow-md group-hover:shadow-indigo-500/5 transition-all">
-            <IoArrowBackOutline className="text-sm" />
-          </div>
-          Retour
-        </button>
+      <style jsx global>{`
+        .stripe-payment-element {
+          width: 100%;
+          min-height: 280px;
+        }
+        .stripe-payment-element iframe {
+          width: 100% !important;
+          min-height: 280px !important;
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-8px); }
+        }
+        .float-anim {
+          animation: float 6s ease-in-out infinite;
+        }
+      `}</style>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* ═══ LEFT ═══════════════════════════════════════════════════════ */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Header */}
-            <div className="fade-up d1">
-              <div className="flex items-center gap-3 mb-2">
-                
-                <div>
-                  <h1 className="text-4xl sm:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">
-                    Finaliser votre{" "}
-                    <span className="bg-gradient-to-r from-sky-500 via-violet-600 to-purple-600 bg-clip-text text-transparent">
-                      paiement !
-                    </span>
-                  </h1>
-                </div>
+      <AnimatePresence>
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      </AnimatePresence>
+
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-6">
+          <Link href="/fr" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition">ACCUEIL</Link>
+          <IoChevronForwardSharp className="text-[10px] text-slate-400 -rotate-90" />
+          <Link href="/fr/messages" className="text-slate-500 dark:text-slate-400 hover:text-sky-600 dark:hover:text-sky-400 transition">MESSAGES</Link>
+          <IoChevronForwardSharp className="text-[10px] text-slate-400 -rotate-90" />
+          <span className="text-slate-900 dark:text-white font-extrabold">PAIEMENT</span>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+          {/* LEFT COLUMN */}
+          <div className="space-y-6 lg:sticky lg:top-8">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 dark:bg-slate-900/70 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-sky-600 dark:text-sky-300 shadow-sm backdrop-blur-md">
+                <IoSparklesOutline className="h-3.5 w-3.5" /> Paiement sécurisé
               </div>
-              <p className="text-sm text-gray-400 dark:text-gray-500 ">
-                Paiement sécurisé par Stripe · Carte bancaire acceptée
+              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mt-3">
+                Finaliser votre{" "}
+                <span className={gradientText}>réservation</span>
+              </h1>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Carte bancaire · Visa · Mastercard · American Express
               </p>
             </div>
 
-            {/* Steps indicator */}
-            <div className="flex items-center gap-0 fade-up d1">
+            {/* 3D Card Preview */}
+            <div className="float-anim">
+              <CreditCardPreview
+                number="•••• •••• •••• ••••"
+                name="VOTRE NOM"
+                expiry="••/••"
+                cvc="•••"
+                flipped={showCardBack}
+                onClick={handleCardClick}
+              />
+            </div>
+
+            {/* Steps */}
+            <div className="flex items-center gap-3">
               {[
-                { label: "Offre acceptée", done: true },
+                { label: "Offre", done: true },
                 { label: "Paiement", active: true },
-                { label: "Confirmation", done: false },
-              ].map((step, i) => (
-                <div key={i} className="flex items-center flex-1 last:flex-initial">
+                { label: "Confirmé", done: false },
+              ].map((s, i) => (
+                <div key={i} className="flex items-center gap-3 flex-1 last:flex-initial">
                   <div className="flex items-center gap-2">
-                    <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold border-2 transition-all ${
-                        step.done
-                          ? "bg-emerald-500 border-emerald-500 text-white"
-                          : step.active
-                            ? "bg-gradient-to-br from-indigo-500 to-violet-600 border-indigo-500 text-white shadow-md shadow-indigo-500/20"
-                            : "bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-600"
-                      }`}
-                    >
-                      {step.done ? (
-                        <IoCheckmarkCircleOutline className="text-sm" />
-                      ) : (
-                        i + 1
-                      )}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-extrabold transition-all duration-300 ${s.done ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/25" : s.active ? "bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30" : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-500 border border-slate-200 dark:border-slate-700"}`}>
+                      {s.done ? (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : i + 1}
                     </div>
-                    <span
-                      className={`text-xs font-bold hidden sm:block ${
-                        step.done
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : step.active
-                            ? "text-indigo-600 dark:text-indigo-400"
-                            : "text-gray-400 dark:text-gray-600"
-                      }`}
-                    >
-                      {step.label}
+                    <span className={`text-xs font-semibold hidden sm:block ${s.done ? "text-emerald-600 dark:text-emerald-400" : s.active ? "text-slate-800 dark:text-white font-bold" : "text-slate-400 dark:text-slate-500"}`}>
+                      {s.label}
                     </span>
                   </div>
                   {i < 2 && (
-                    <div
-                      className={`flex-1 h-px mx-3 ${
-                        step.done
-                          ? "bg-emerald-300 dark:bg-emerald-700"
-                          : "bg-gray-200 dark:bg-gray-800"
-                      }`}
-                    />
+                    <div className={`flex-1 h-px ${s.done ? "bg-gradient-to-r from-emerald-400 to-teal-400 dark:from-emerald-600 dark:to-teal-600" : "bg-gradient-to-r from-slate-300 to-slate-300 dark:from-slate-700 dark:to-slate-700"}`} />
                   )}
                 </div>
               ))}
             </div>
 
-            {/* Payment card */}
-            <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/50 dark:border-gray-800 rounded-3xl overflow-hidden shadow-lg shadow-indigo-500/5 fade-up d2">
-              {/* Card header */}
-              <div className="px-6 py-4 border-b border-gray-100/80 dark:border-gray-800 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center border border-indigo-100 dark:border-indigo-800/30">
-                    <IoCardOutline className="text-indigo-600 dark:text-indigo-400 text-base" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-gray-900 dark:text-white">
-                      Carte bancaire
-                    </h3>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                      Visa, Mastercard, American Express
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {["Visa", "MC", "Amex"].map((c) => (
-                    <div
-                      key={c}
-                      className="h-6 px-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center"
-                    >
-                      <span className="text-[9px] font-extrabold text-gray-500 dark:text-gray-400 tracking-wider">
-                        {c}
-                      </span>
+            {/* Property mini card */}
+            <div className="relative bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden">
+              <div className="flex gap-4 p-4">
+                <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
+                  {listingImageUrl && !imgErr ? (
+                    <img src={listingImageUrl} alt={booking.listing.title} className="w-full h-full object-cover" onError={() => setImgErr(true)} />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-sky-500/20 to-indigo-500/20 flex items-center justify-center">
+                      <IoHomeOutline className="text-3xl text-slate-400" />
                     </div>
-                  ))}
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[8px] font-extrabold uppercase tracking-widest text-sky-600 dark:text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full">
+                      {booking.listing.type || "Villa"}
+                    </span>
+                    <span className="flex items-center gap-0.5 text-[10px] font-bold text-amber-500">
+                      <IoStarSharp className="text-[9px]" />
+                      {booking.listing.rating || 4.9}
+                    </span>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">{booking.listing.title}</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                    <IoLocationOutline className="text-[10px]" />
+                    {booking.listing.location}
+                  </p>
                 </div>
               </div>
 
-              {/* Stripe form */}
-              <div className="p-6">
-                {clientSecret ? (
-                  <Elements
-                    stripe={getStripe()}
-                    options={{
-                      clientSecret,
-                      appearance: {
-                        theme: "stripe",
-                        variables: {
-                          colorPrimary: "#6366f1",
-                          borderRadius: "14px",
-                          fontFamily: "inherit",
-                          colorBackground: "transparent",
-                        },
-                        rules: {
-                          ".Input": {
-                            border: "1.5px solid #e5e7eb",
-                            boxShadow: "none",
-                            padding: "12px 14px",
-                            backgroundColor: "rgba(255,255,255,0.6)",
-                          },
-                          ".Input:focus": {
-                            border: "1.5px solid #818cf8",
-                            boxShadow: "0 0 0 4px rgba(99,102,241,0.08)",
-                          },
-                          ".Label": {
-                            fontWeight: "700",
-                            fontSize: "12px",
-                            marginBottom: "6px",
-                            textTransform: "uppercase",
-                            letterSpacing: "0.05em",
-                            color: "#9ca3af",
-                          },
-                        },
-                      },
-                    }}
-                  >
-                    <StripePaymentForm
-                      booking={booking}
-                      onSuccess={handleSuccess}
-                      onError={handleError}
-                      isProcessing={isProcessing}
-                      setIsProcessing={setIsProcessing}
-                    />
-                  </Elements>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16 gap-4">
-                    <div className="relative">
-                      <div className="w-10 h-10 rounded-full border-2 border-indigo-200 dark:border-indigo-800 border-t-indigo-500 animate-spin" />
-                    </div>
-                    <p className="text-xs font-semibold text-gray-400 dark:text-gray-500">
-                      Initialisation du paiement sécurisé…
-                    </p>
+              <div className="grid grid-cols-3 border-t border-slate-200 dark:border-slate-700">
+                {[
+                  { icon: <IoLogInOutline />, label: "Arrivée", value: fmtShort(booking.checkIn), day: fmtDay(booking.checkIn) },
+                  { icon: <IoTimeOutline />, label: "Durée", value: `${booking.nights} nuits`, day: `${booking.guests} voyageurs` },
+                  { icon: <IoLogOutOutline />, label: "Départ", value: fmtShort(booking.checkOut), day: fmtDay(booking.checkOut) },
+                ].map((d) => (
+                  <div key={d.label} className="flex flex-col items-center gap-1 py-3 border-r last:border-r-0 border-slate-200 dark:border-slate-700">
+                    <span className="text-slate-400 dark:text-white/20 text-sm">{d.icon}</span>
+                    <p className="text-[7px] font-extrabold text-slate-400 dark:text-white/20 uppercase tracking-[.15em]">{d.label}</p>
+                    <p className="text-[11px] font-extrabold text-slate-800 dark:text-white">{d.value}</p>
+                    <p className="text-[8px] text-slate-400 dark:text-white/20 capitalize">{d.day}</p>
                   </div>
-                )}
+                ))}
               </div>
             </div>
 
-            {/* Security badges */}
-            <div className="grid grid-cols-3 gap-3 fade-up d3">
+            {/* Trust badges */}
+            <div className="flex items-center justify-center gap-6">
               {[
-                {
-                  icon: <IoShieldCheckmarkOutline />,
-                  label: "SSL 256-bit",
-                  desc: "Connexion chiffrée",
-                  color: "indigo",
-                },
-                {
-                  icon: <IoLockClosedOutline />,
-                  label: "Données sécurisées",
-                  desc: "Aucune donnée stockée",
-                  color: "violet",
-                },
-                {
-                  icon: <IoCheckmarkCircleOutline />,
-                  label: "PCI DSS",
-                  desc: "Norme bancaire",
-                  color: "purple",
-                },
-              ].map(({ icon, label, desc, color }) => (
-                <div
-                  key={label}
-                  className="flex flex-col items-center text-center gap-2 py-4 px-3 rounded-2xl bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border border-white/50 dark:border-gray-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-all group"
-                >
-                  <div
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center text-base transition-transform group-hover:scale-110 ${
-                      color === "indigo"
-                        ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/30"
-                        : color === "violet"
-                          ? "bg-violet-50 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400 border border-violet-100 dark:border-violet-800/30"
-                          : "bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-800/30"
-                    }`}
-                  >
-                    {icon}
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider block">
-                      {label}
-                    </span>
-                    <span className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">
-                      {desc}
-                    </span>
-                  </div>
+                { icon: <IoShieldCheckmarkOutline />, label: "SSL 256-bit" },
+                { icon: <IoLockClosedOutline />, label: "PCI DSS" },
+                { icon: <IoDiamondOutline />, label: "Stripe" },
+              ].map((b) => (
+                <div key={b.label} className="flex items-center gap-1.5 text-slate-400 dark:text-white/30">
+                  <span className="text-sm">{b.icon}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-wider">{b.label}</span>
                 </div>
               ))}
-            </div>
-
-            {/* Info note */}
-            <div className="flex items-start gap-3 px-5 py-4 rounded-2xl bg-indigo-50/50 dark:bg-indigo-900/15 border border-indigo-100 dark:border-indigo-800/30 fade-up d4">
-              <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center flex-shrink-0 border border-indigo-200 dark:border-indigo-800/30 mt-0.5">
-                <IoFlashOutline className="text-indigo-600 dark:text-indigo-400 text-sm" />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-indigo-700 dark:text-indigo-300 mb-0.5">
-                  Confirmation instantanée
-                </p>
-                <p className="text-[11px] text-indigo-600/60 dark:text-indigo-400/60 leading-relaxed">
-                  Votre réservation est confirmée immédiatement après le
-                  paiement. Un email de confirmation avec tous les détails vous
-                  sera envoyé automatiquement.
-                </p>
-              </div>
             </div>
           </div>
 
-          {/* ═══ RIGHT ══════════════════════════════════════════════════════ */}
-          <aside className="lg:col-span-5 lg:sticky lg:top-24 space-y-5">
-            {/* Property card */}
-            <div className="bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl rounded-3xl border border-white/50 dark:border-gray-800 overflow-hidden shadow-lg shadow-indigo-500/5 fade-up d2">
-              {/* Image */}
-              <div className="relative h-56 bg-gray-100 dark:bg-gray-800">
-                {listingImageUrl && !imgErr ? (
-                  <img
-                    src={listingImageUrl}
-                    alt={booking.listing.title}
-                    className="w-full h-full object-cover"
-                    onError={() => setImgErr(true)}
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-indigo-200 via-violet-200 to-purple-200 dark:from-indigo-900 dark:via-violet-900 dark:to-purple-900 flex items-center justify-center">
-                    <IoHomeOutline className="text-6xl text-indigo-300 dark:text-indigo-700" />
+          {/* RIGHT COLUMN */}
+          <div className="space-y-6">
+            <div className="relative">
+              <div className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl border border-white/50 dark:border-slate-800 rounded-3xl overflow-hidden shadow-lg shadow-slate-200/50 dark:shadow-slate-900/20">
+                <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-900/30 flex items-center justify-center">
+                        <IoWalletOutline className="text-sky-600 dark:text-sky-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">Informations de paiement</h3>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500">Toutes les données sont chiffrées</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {["Visa", "MC", "Amex"].map((c) => (
+                        <div key={c} className="h-6 px-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                          <span className="text-[9px] font-extrabold text-slate-500 dark:text-slate-400 tracking-wider">{c}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/5" />
+                </div>
 
-                {/* Type badge */}
-                {booking.listing.type && (
-                  <div className="absolute top-3 left-3">
-                    <span className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-widest text-white/90 bg-white/15 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/15">
-                      <IoSparklesOutline className="text-[10px]" />
-                      {booking.listing.type}
-                    </span>
-                  </div>
-                )}
-
-                {/* Image bottom info */}
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h3 className="text-white font-extrabold text-lg leading-tight mb-1.5">
-                    {booking.listing.title}
-                  </h3>
-                  {booking.listing.location && (
-                    <p className="text-white/70 text-xs flex items-center gap-1 font-medium">
-                      <IoLocationOutline className="text-sm flex-shrink-0" />
-                      {booking.listing.location}
-                    </p>
+                <div className="p-6">
+                  {clientSecret ? (
+                    <Elements stripe={getStripe()} options={stripeOptions}>
+                      <StripePaymentForm
+                        booking={booking}
+                        onSuccess={handleSuccess}
+                        onError={handleError}
+                        isProcessing={isProcessing}
+                        setIsProcessing={setIsProcessing}
+                        agreed={agreed}
+                        setAgreed={setAgreed}
+                      />
+                    </Elements>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16 gap-4">
+                      <LoadingSpinner variant="spinner" size="md" color="primary" speed="normal" />
+                      <p className="text-xs font-semibold text-slate-400">Initialisation du paiement sécurisé…</p>
+                    </div>
                   )}
                 </div>
               </div>
-
-              <div className="p-5 space-y-5">
-                {/* Date strip */}
-                <div className="grid grid-cols-3 gap-2.5">
-                  {[
-                    {
-                      icon: (
-                        <IoLogInOutline className="text-indigo-600 dark:text-indigo-400" />
-                      ),
-                      label: "Arrivée",
-                      value: fmtShort(booking.checkIn),
-                      day: fmtDay(booking.checkIn),
-                      bg: "bg-indigo-50 dark:bg-indigo-900/20 border-indigo-100 dark:border-indigo-800/30",
-                    },
-                    {
-                      icon: (
-                        <IoMoonOutline className="text-purple-600 dark:text-purple-400" />
-                      ),
-                      label: "Durée",
-                      value: `${booking.nights} nuit${booking.nights > 1 ? "s" : ""}`,
-                      day: `${booking.guests} voyag.`,
-                      bg: "bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-800/30",
-                    },
-                    {
-                      icon: (
-                        <IoLogOutOutline className="text-violet-600 dark:text-violet-400" />
-                      ),
-                      label: "Départ",
-                      value: fmtShort(booking.checkOut),
-                      day: fmtDay(booking.checkOut),
-                      bg: "bg-violet-50 dark:bg-violet-900/20 border-violet-100 dark:border-violet-800/30",
-                    },
-                  ].map(({ icon, label, value, day, bg }) => (
-                    <div
-                      key={label}
-                      className={`flex flex-col items-center gap-1.5 py-3 rounded-xl border ${bg}`}
-                    >
-                      <span className="text-lg">{icon}</span>
-                      <div className="text-center">
-                        <p className="text-[8px] font-extrabold text-gray-400 dark:text-gray-500 uppercase tracking-[.15em]">
-                          {label}
-                        </p>
-                        <p className="text-xs font-extrabold text-gray-900 dark:text-white mt-0.5">
-                          {value}
-                        </p>
-                        <p className="text-[9px] text-gray-400 dark:text-gray-500 capitalize font-medium">
-                          {day}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Reference */}
-                {booking.reference && (
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50/80 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800 text-xs">
-                    <IoReceiptOutline className="text-sm text-gray-400 dark:text-gray-500" />
-                    <span className="text-gray-500 dark:text-gray-400 font-medium">
-                      Réf:
-                    </span>
-                    <span className="font-mono font-bold text-gray-700 dark:text-gray-300 tracking-wider">
-                      {booking.reference}
-                    </span>
-                  </div>
-                )}
-
-                {/* Divider */}
-                <div className="relative">
-                  <div className="h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
-                  <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-900 px-2">
-                    <span className="text-[8px] font-extrabold text-gray-300 dark:text-gray-700 uppercase tracking-widest">
-                      Détails du prix
-                    </span>
-                  </div>
-                </div>
-
-                {/* Price breakdown */}
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">
-                      {fmtPrice(booking.pricePerNight)} TND ×{" "}
-                      {booking.nights} nuit
-                      {booking.nights > 1 ? "s" : ""}
-                    </span>
-                    <span className="font-bold text-gray-700 dark:text-gray-300">
-                      {fmtPrice(nightsTotal)} TND
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">
-                      Frais de ménage
-                    </span>
-                    <span className="font-bold text-gray-700 dark:text-gray-300">
-                      {fmtPrice(booking.cleaningFee)} TND
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500 dark:text-gray-400">
-                      Frais de service
-                    </span>
-                    <span className="font-bold text-indigo-600 dark:text-indigo-400">
-                      {fmtPrice(booking.serviceFee)} TND
-                    </span>
-                  </div>
-                </div>
-
-                {/* Total */}
-                <div className="relative pt-5">
-                  <div className="absolute top-0 left-0 right-0 border-t-2 border-dashed border-gray-200 dark:border-gray-800" />
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="text-[9px] font-extrabold uppercase tracking-[.15em] text-gray-400 dark:text-gray-500 mb-0.5">
-                        Total à payer
-                      </p>
-                      <p className="text-2xl font-black bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent tracking-tight leading-none">
-                        {fmtPrice(booking.totalPrice)}{" "}
-                        <span className="text-sm font-bold">TND</span>
-                      </p>
-                    </div>
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-50 via-violet-50 to-purple-50 dark:from-indigo-900/20 dark:via-violet-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800/30 flex items-center justify-center">
-                      <IoWalletOutline className="text-indigo-600 dark:text-indigo-400 text-xl" />
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Cancellation */}
-            <div className="rounded-2xl p-4 border border-emerald-200/60 dark:border-emerald-800/30 bg-emerald-50/50 dark:bg-emerald-900/10 backdrop-blur-sm fade-up d4">
+            {/* Cancellation policy */}
+            <div className="rounded-2xl p-4 border border-emerald-200/60 dark:border-emerald-800/30 bg-emerald-50/50 dark:bg-emerald-900/10">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center flex-shrink-0 border border-emerald-200 dark:border-emerald-800/30 mt-0.5">
-                  <IoShieldCheckmarkOutline className="text-emerald-500 text-sm" />
+                <div className="w-8 h-8 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                  <IoShieldCheckmarkOutline className="text-emerald-500" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-0.5">
-                    Annulation flexible
-                  </p>
-                  <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/60 leading-relaxed">
-                    Annulation gratuite jusqu'à 30 jours avant l'arrivée.
-                    Remboursement intégral garanti.
-                  </p>
+                  <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 mb-0.5">Annulation flexible</p>
+                  <p className="text-[11px] text-emerald-600/70 dark:text-emerald-400/60">Annulation gratuite jusqu'à 30 jours avant l'arrivée.</p>
                 </div>
               </div>
             </div>
 
-            {/* Help */}
-            <div className="rounded-2xl p-4 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm border border-white/50 dark:border-gray-800 fade-up d5">
+            {/* Help bar */}
+            <div className="rounded-2xl p-4 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border border-slate-200 dark:border-slate-800">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center border border-gray-200 dark:border-gray-700">
-                    <IoChatbubbleOutline className="text-gray-500 dark:text-gray-400 text-sm" />
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                    <IoCallOutline className="text-slate-500 dark:text-slate-400" />
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-gray-900 dark:text-white">
-                      Besoin d'aide ?
-                    </p>
-                    <p className="text-[10px] text-gray-400 dark:text-gray-500">
-                      Disponible 24h/7j
-                    </p>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white">Besoin d'aide ?</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500">Disponible 24h/7j</p>
                   </div>
                 </div>
-                <Link
-                  href="/fr/help"
-                  className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 group"
-                >
-                  Aide{" "}
-                  <IoChevronForwardOutline className="text-[10px] group-hover:translate-x-0.5 transition-transform" />
+                <Link href="/fr/help" className="text-xs font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 transition flex items-center gap-1">
+                  Aide <IoChevronDownOutline className="text-[10px] -rotate-90" />
                 </Link>
               </div>
             </div>
-          </aside>
+
+            {/* Guarantee badges */}
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { icon: <IoTrophyOutline />, label: "Meilleur prix", sub: "Garanti" },
+                { icon: <IoFlashOutline />, label: "Confirmation", sub: "Instantanée" },
+                { icon: <IoDiamondOutline />, label: "Qualité", sub: "Premium" },
+              ].map((b) => (
+                <div key={b.label} className="text-center py-3 px-2 rounded-xl bg-white/50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
+                  <div className="text-slate-400 dark:text-white/30 text-lg mb-1.5 flex justify-center">{b.icon}</div>
+                  <p className="text-[9px] font-extrabold text-slate-600 dark:text-white/50 uppercase tracking-wider">{b.label}</p>
+                  <p className="text-[8px] text-slate-400 dark:text-white/30">{b.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function NoBookingFound() {
+  const router = useRouter();
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex items-center justify-center px-4">
+      <div className="text-center">
+        <div className="w-16 h-16 bg-white/70 dark:bg-slate-900/70 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-slate-800">
+          <IoReceiptOutline className="text-3xl text-slate-400 dark:text-slate-500" />
+        </div>
+        <h1 className="text-lg font-bold text-slate-900 dark:text-white mb-2">Aucune réservation trouvée</h1>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">Vérifiez le lien ou retournez à vos messages.</p>
+        <button onClick={() => router.push("/fr/messages")} className="text-sm font-bold text-sky-600 dark:text-sky-400 hover:text-sky-700 flex items-center justify-center gap-1">
+          Retour aux messages <IoChevronDownOutline className="text-xs -rotate-90" />
+        </button>
+      </div>
     </div>
   );
 }

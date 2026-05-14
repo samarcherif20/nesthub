@@ -92,6 +92,7 @@ export default function ComparePage() {
     showShareMenu,
     allAmenities,
     bestListing,
+    testimonial,
     avgPrice,
     avgRating,
     avgBeds,
@@ -121,36 +122,37 @@ export default function ComparePage() {
       />
     );
   }
-if (listings.length === 0) {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
-      <TenantHeader />
-      <main className="pt-16 pb-32 flex items-center justify-center px-6">
-        <div className="text-center max-w-md">
-          {/* Centered icon with pulse animation - transparent rounded box */}
-          <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-600/10 backdrop-blur-sm mx-auto animate-pulse">
-            <Maximize2 className="h-12 w-12 text-sky-500" />
+
+  if (listings.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+        <TenantHeader />
+        <main className="pt-16 pb-32 flex items-center justify-center px-6">
+          <div className="text-center max-w-md">
+            <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-600/10 backdrop-blur-sm mx-auto animate-pulse">
+              <Maximize2 className="h-12 w-12 text-sky-500" />
+            </div>
+            <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Aucun logement à comparer</h2>
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
+              Retournez dans vos favoris et sélectionnez au moins 2 logements pour les comparer ici.
+            </p>
+            <Link
+              href="/fr/favorites"
+              className={`mt-8 inline-flex items-center gap-2 rounded-full ${gradientButton} px-7 py-3.5 text-sm font-bold shadow-xl shadow-indigo-500/25 transition-all hover:scale-[1.02]`}
+            >
+              <Heart className="h-4 w-4" /> Voir mes favoris <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
-          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Aucun logement à comparer</h2>
-          <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-            Retournez dans vos favoris et sélectionnez au moins 2 logements pour les comparer ici.
-          </p>
-          <Link
-            href="/fr/favorites"
-            className={`mt-8 inline-flex items-center gap-2 rounded-full ${gradientButton} px-7 py-3.5 text-sm font-bold shadow-xl shadow-indigo-500/25 transition-all hover:scale-[1.02]`}
-          >
-            <Heart className="h-4 w-4" /> Voir mes favoris <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
-      </main>
-    </div>
-  );
-}
+        </main>
+      </div>
+    );
+  }
+
   const sorted = [...listings].sort((a, b) => {
     if (sortKey === "price") return a.pricePerNight - b.pricePerNight;
     if (sortKey === "beds") return b.bedrooms - a.bedrooms;
     if (sortKey === "guests") return b.maxGuests - a.maxGuests;
-    return b.rating - a.rating || b.trustScore - a.trustScore;
+    return b.rating - a.rating || (b.trustScore || 0) - (a.trustScore || 0);
   });
 
   return (
@@ -168,7 +170,7 @@ if (listings.length === 0) {
       )}
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
-        {/* Breadcrumb - UPPERCASE, selected black, hover indigo, reduced margin */}
+        {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider mb-6">
           <Link href="/fr/search" className="text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition">
             ACCUEIL
@@ -178,9 +180,7 @@ if (listings.length === 0) {
             FAVORIS
           </Link>
           <IoChevronForwardOutline className="text-[10px] text-slate-400" />
-          <span className="text-slate-900 dark:text-white">
-            COMPARAISON
-          </span>
+          <span className="text-slate-900 dark:text-white">COMPARAISON</span>
         </div>
 
         {/* Header */}
@@ -229,7 +229,7 @@ if (listings.length === 0) {
           </div>
         </div>
 
-        {/* Metrics row */}
+        {/* Metrics row - DYNAMIQUE */}
         <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { label: "LOGEMENTS COMPARÉS", value: String(listings.length), icon: ChartColumn, grad: "from-sky-500 to-indigo-600" },
@@ -275,7 +275,7 @@ if (listings.length === 0) {
           ))}
         </div>
 
-        {/* Cards grid */}
+        {/* Cards grid - DYNAMIQUE */}
         <div className="mb-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {sorted.map((listing, idx) => {
             const isBest = idx === 0 && sorted.length > 1;
@@ -339,7 +339,6 @@ if (listings.length === 0) {
                 </div>
 
                 <div className="p-5">
-                  {/* Stats row */}
                   <div className="mb-4 grid grid-cols-4 gap-2">
                     {[
                       [Star, `${listing.rating}`],
@@ -354,7 +353,6 @@ if (listings.length === 0) {
                     ))}
                   </div>
 
-                  {/* Score */}
                   <div className="mb-4 flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">SCORE NESTHUB</span>
                     <ScorePill score={score} />
@@ -363,7 +361,6 @@ if (listings.length === 0) {
                     <div className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 transition-all duration-700" style={{ width: `${score}%` }} />
                   </div>
 
-                  {/* Amenities */}
                   <div className="space-y-0 divide-y divide-slate-100 dark:divide-white/5">
                     {AMENITIES_COMPARE.map((amenity) => {
                       const has = listing.amenities?.includes(amenity);
@@ -410,7 +407,7 @@ if (listings.length === 0) {
           </div>
         </div>
 
-        {/* Best choice panel */}
+        {/* Best choice panel - AVEC AVIS DYNAMIQUE */}
         {bestListing && sorted.length > 1 && (
           <div className="mb-8 grid gap-5 lg:grid-cols-2">
             <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_16px_45px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/85 md:p-8">
@@ -427,7 +424,12 @@ if (listings.length === 0) {
               <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5 dark:border-indigo-500/20 dark:bg-indigo-500/5">
                 <div className="flex items-start gap-4">
                   <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-slate-200 dark:bg-slate-800">
-                    <img src={bestListing.image} alt={bestListing.title} className="h-full w-full object-cover" />
+                    <img 
+                      src={imageErrors[bestListing.id] ? "https://placehold.co/600x400/e2e8f0/6366f1?text=NestHub" : bestListing.image} 
+                      alt={bestListing.title} 
+                      className="h-full w-full object-cover" 
+                      onError={() => handleImageError(bestListing.id)}
+                    />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-extrabold text-slate-900 dark:text-white">{bestListing.title}</p>
@@ -450,22 +452,52 @@ if (listings.length === 0) {
               </Link>
             </div>
 
+            {/* AVIS DYNAMIQUE LIE AU MEILLEUR LOGEMENT */}
             <div className="overflow-hidden rounded-3xl border border-white/70 bg-white/90 p-6 shadow-[0_16px_45px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/85 md:p-8">
-              <div className="mb-4 flex items-center gap-1">
-                {[1,2,3,4,5].map((i) => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
-              </div>
-              <p className="text-sm leading-relaxed italic text-slate-600 dark:text-slate-300">
-                "La fonction de comparaison NestHub m'a fait gagner des heures. J'ai pu identifier le bien parfait pour ma famille en quelques minutes seulement, avec tous les critères côte à côte. Un outil indispensable."
-              </p>
-              <div className="mt-5 flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-sm font-bold text-white">
-                  SM
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">SAMI MANSOUR</p>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500">VOYAGEUR VÉRIFIÉ · DEPUIS 2023</p>
-                </div>
-              </div>
+              {testimonial ? (
+                <>
+                  <div className="mb-4 flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star 
+                        key={i} 
+                        className={`h-4 w-4 ${i <= Math.round(testimonial.rating) ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200 dark:fill-gray-700'}`} 
+                      />
+                    ))}
+                  </div>
+                  <p className="text-sm leading-relaxed italic text-slate-600 dark:text-slate-300">
+                    "{testimonial.text}"
+                  </p>
+                  <div className="mt-5 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md">
+                      {testimonial.initial}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">{testimonial.author}</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">AVIS VÉRIFIÉ · {testimonial.date}</p>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mb-4 flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((i) => (
+                      <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
+                  <p className="text-sm leading-relaxed italic text-slate-600 dark:text-slate-300">
+                    "{bestListing.title} est une propriété exceptionnelle. Avec {bestListing.rating}/5 étoiles, c'est un choix parfait pour un séjour de qualité. Je recommande vivement !"
+                  </p>
+                  <div className="mt-5 flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md">
+                      {bestListing.title.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-slate-900 dark:text-white">Client vérifié</p>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500">AVIS VÉRIFIÉ · {new Date().getFullYear()}</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}

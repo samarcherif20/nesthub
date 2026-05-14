@@ -145,7 +145,7 @@ export function useVerifyCode() {
             router.push("/dashboard/owner");
           } else {
             console.log(" Redirection vers renter dashboard");
-            router.push("/dashboard/renter");
+            router.push("/search");
           }
         }
       } catch (err: unknown) {

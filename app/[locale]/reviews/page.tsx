@@ -21,11 +21,23 @@ import {
   IoFlagOutline,
   IoChatbubbleOutline,
   IoChevronForwardOutline,
-  IoArrowForwardOutline
+  IoArrowForwardOutline,
+  IoHeart
 } from "react-icons/io5";
 
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
 import { ReviewModal } from "@/components/ui/modals/ReviewModal";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
+
+// ─── Gradient constants (same as Favorites page) ──────────────────────────────
+const GRADIENT_BUTTON = `
+  bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 
+  hover:from-sky-600 hover:via-indigo-600 hover:to-purple-700
+  text-white shadow-md hover:shadow-lg 
+  transition-all duration-300
+`;
+
+const GRADIENT_TEXT = "bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const proxyImage = (url: string) => `/api/listings/image?url=${encodeURIComponent(url)}`;
@@ -121,9 +133,9 @@ function ReviewSkeleton() {
 
 function EmptyState({ tab, onCreateReview }: { tab: "received" | "given"; onCreateReview: () => void }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 text-center bg-white dark:bg-gray-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800">
-      <div className="w-14 h-14 rounded-2xl bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800/30 flex items-center justify-center mb-4">
-        <IoStarOutline className="text-violet-400 dark:text-violet-500 text-2xl" />
+    <div className="flex flex-col items-center justify-center py-20 text-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-800">
+      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-600/10 backdrop-blur-sm flex items-center justify-center mb-4">
+        <IoStarOutline className="text-sky-400 dark:text-sky-500 text-2xl" />
       </div>
       <h3 className="text-base font-bold text-gray-800 dark:text-gray-200 mb-1">
         {tab === "received" ? "Aucun avis reçu pour le moment" : "Aucun avis donné pour le moment"}
@@ -136,7 +148,7 @@ function EmptyState({ tab, onCreateReview }: { tab: "received" | "given"; onCrea
       {tab === "given" && (
         <button
           onClick={onCreateReview}
-          className="mt-5 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white bg-sky-600 hover:bg-sky-700 shadow-sm transition-all"
+          className={`mt-5 flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium text-white ${GRADIENT_BUTTON} shadow-sm transition-all hover:scale-[1.02]`}
         >
           <IoSparklesOutline className="text-sm" />
           Simuler un avis
@@ -174,9 +186,9 @@ function StatsSection({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
       {/* Rating Card */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-white/70 dark:border-gray-800 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[10px] text-violet-500 dark:text-violet-400 uppercase tracking-widest font-semibold">Note globale</p>
+          <p className="text-[10px] text-sky-500 dark:text-sky-400 uppercase tracking-widest font-semibold">Note globale</p>
           <IoStarSharp className="text-amber-400 text-lg" />
         </div>
         <p className="text-4xl font-bold text-gray-900 dark:text-white mb-1">
@@ -207,7 +219,7 @@ function StatsSection({
       </div>
 
       {/* Reliability Card */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-white/70 dark:border-gray-800 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <p className="text-[10px] text-sky-500 dark:text-sky-400 uppercase tracking-widest font-semibold">Fiabilité</p>
           <IoShieldCheckmarkOutline className="text-sky-500 dark:text-sky-400 text-lg" />
@@ -224,7 +236,7 @@ function StatsSection({
       </div>
 
       {/* Profile Card */}
-      <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6">
+      <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-white/70 dark:border-gray-800 p-6 shadow-sm">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-14 h-14 rounded-full bg-gradient-to-br from-sky-400 to-violet-500 flex items-center justify-center text-white font-semibold text-xl shadow-md overflow-hidden">
             {userProfile?.profilePictureUrl && !avatarErr ? (
@@ -245,11 +257,11 @@ function StatsSection({
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100 dark:border-gray-800">
-          <div className="text-center py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+          <div className="text-center py-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
             <p className="text-lg font-bold text-gray-900 dark:text-white">{userStats?.totalBookings ?? "—"}</p>
             <p className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold">Séjours</p>
           </div>
-          <div className="text-center py-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+          <div className="text-center py-2 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-700">
             <p className="text-lg font-bold text-gray-900 dark:text-white">{userStats?.totalReviews ?? "—"}</p>
             <p className="text-[9px] text-gray-400 dark:text-gray-500 uppercase tracking-wider font-semibold">Avis reçus</p>
           </div>
@@ -274,7 +286,7 @@ function ReviewCard({
   const listingPhoto = review.booking.listing.photos?.find(p => p.isMain)?.url || review.booking.listing.photos?.[0]?.url;
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 hover:shadow-md transition-all duration-300">
+    <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-white/70 dark:border-gray-800 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
       <div className="flex flex-col sm:flex-row gap-5">
         {/* Listing Image */}
         <div className="flex-shrink-0 w-full sm:w-40">
@@ -314,14 +326,14 @@ function ReviewCard({
                 {tab === "received" ? "Hôte" : "Pour"} : {review.reviewer.firstName} {review.reviewer.lastName}
               </p>
             </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-violet-50 dark:bg-violet-900/20">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/30">
               <IoStarSharp className="text-amber-400 text-sm" />
-              <span className="text-sm font-semibold text-violet-700 dark:text-violet-300">{review.rating}</span>
+              <span className="text-sm font-semibold text-sky-700 dark:text-sky-300">{review.rating}</span>
             </div>
           </div>
 
           {review.comment && (
-            <div className="border-l-4 border-gray-200 dark:border-gray-700 pl-4 py-1 mb-3">
+            <div className="border-l-4 border-sky-200 dark:border-sky-800 pl-4 py-1 mb-3">
               <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed italic">
                 &ldquo;{review.comment}&rdquo;
               </p>
@@ -363,6 +375,7 @@ function ReviewCard({
 
 export default function ReviewsPage() {
   const { getToken } = useAuth();
+  const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"received" | "given">("received");
   const [reviews, setReviews] = useState<Review[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -375,6 +388,10 @@ export default function ReviewsPage() {
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
   const [showNewReviewModal, setShowNewReviewModal] = useState(false);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const showToastMessage = (msg: string, ok = true) => {
     setToast({ msg, ok });
     setTimeout(() => setToast(null), 3500);
@@ -385,7 +402,6 @@ export default function ReviewsPage() {
     try {
       const token = await getToken({ template: "my-app-template" });
       
-      // Fetch reviews
       const reviewsRes = await fetch(`/api/reviews?tab=${tab}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -394,7 +410,6 @@ export default function ReviewsPage() {
         setReviews(data.reviews || []);
       }
 
-      // Fetch user profile
       const profileRes = await fetch("/api/users/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -403,7 +418,6 @@ export default function ReviewsPage() {
         setProfile(data.user || data);
       }
 
-      // Fetch user stats
       const statsRes = await fetch("/api/users/stats", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -520,10 +534,8 @@ export default function ReviewsPage() {
     showToastMessage("Export CSV généré avec succès !");
   };
 
-  // Filter & Sort logic
   const filteredReviews = useMemo(() => {
     return reviews.filter(r => {
-      // Search filter
       const q = search.toLowerCase();
       if (q) {
         const titleMatch = r.booking.listing.title.toLowerCase().includes(q);
@@ -532,10 +544,8 @@ export default function ReviewsPage() {
         if (!titleMatch && !nameMatch && !locMatch) return false;
       }
 
-      // Star rating filter
       if (filterRating !== null && Math.floor(r.rating) !== filterRating) return false;
 
-      // Status filter (only for received tab)
       if (tab === "received") {
         if (filterStatus === "replied" && !r.response) return false;
         if (filterStatus === "unreplied" && r.response) return false;
@@ -555,13 +565,21 @@ export default function ReviewsPage() {
 
   const activeFiltersCount = (search ? 1 : 0) + (filterRating !== null ? 1 : 0) + (filterStatus !== "all" ? 1 : 0);
 
+  if (!mounted || loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+        <TenantHeader />
+        <div className="flex items-center justify-center min-h-[calc(100vh-73px)]">
+          <LoadingSpinner size="lg" color="primary" variant="spinner" />
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 text-gray-900 dark:text-white transition-colors duration-200">
-      
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       <TenantHeader />
 
-      {/* Floating Toast Notification */}
       {toast && (
         <div className={`fixed top-20 right-4 z-[110] flex items-center gap-3 pl-4 pr-3 py-3.5 rounded-2xl text-xs font-bold shadow-2xl border backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-300 ${
           toast.ok
@@ -576,36 +594,20 @@ export default function ReviewsPage() {
         </div>
       )}
 
-      {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24">
         
-        {/* Title Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-2">
-              Tableau de bord Réputation
-            </h1>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-2xl leading-relaxed">
-              Consultez les retours clients, optimisez vos réponses publiques et suivez en temps réel l'évolution de vos indicateurs de confiance.
-            </p>
+        {/* Title Banner - Same style as Favorites */}
+        <div className="mb-10">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/75 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-sky-600 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-slate-900/70 dark:text-sky-400">
+            <IoStarSharp className="h-3.5 w-3.5 fill-sky-600 text-sky-600 dark:fill-sky-400 dark:text-sky-400" />
+            RÉPUTATION
           </div>
-
-          <div className="flex items-center gap-3 self-start sm:self-center">
-            <button
-              onClick={handleExportCSV}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 shadow-sm transition-colors"
-            >
-              <IoCloudDownloadOutline className="text-sm text-sky-600 dark:text-sky-400" />
-              <span>Exporter CSV</span>
-            </button>
-            <button
-              onClick={() => setShowNewReviewModal(true)}
-              className="md:hidden flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-gradient-to-r from-violet-600 to-indigo-600 shadow-sm"
-            >
-              <IoSparklesOutline className="text-sm" />
-              <span>Nouveau</span>
-            </button>
-          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-6xl">
+            Tableau de bord <span className={GRADIENT_TEXT}>Réputation</span>
+          </h1>
+          <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
+            Consultez les retours clients, optimisez vos réponses publiques et suivez en temps réel l'évolution de vos indicateurs de confiance.
+          </p>
         </div>
 
         {/* Stats Dashboard */}
@@ -617,52 +619,51 @@ export default function ReviewsPage() {
           onSelectFilterRating={(star) => setFilterRating(star)}
         />
 
-        {/* Tab Switcher */}
-        <div className="flex gap-8 mb-8 border-b border-gray-200 dark:border-gray-800">
-          <button
-            onClick={() => {
-              setTab("received");
-              setFilterRating(null);
-              setFilterStatus("all");
-            }}
-            className={`pb-3 text-sm font-extrabold border-b-2 transition-all flex items-center gap-2 ${
-              tab === "received" 
-                ? "border-sky-600 text-sky-600 dark:text-sky-400" 
-                : "border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            }`}
-          >
-            <span>Avis reçus</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-              tab === "received" ? "bg-sky-100 dark:bg-sky-950 text-sky-700 dark:text-sky-300" : "bg-gray-100 dark:bg-gray-800 text-gray-500"
-            }`}>
-              {reviews.length}
-            </span>
-          </button>
+        {/* Tab Switcher - Same style as Reservations tabs */}
+        <div className="mb-8 overflow-x-auto pb-1">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setTab("received");
+                setFilterRating(null);
+                setFilterStatus("all");
+              }}
+              className={`flex shrink-0 items-center gap-2 rounded-full border-2 px-4 py-2 text-sm font-bold transition-all ${
+                tab === "received" 
+                  ? "border-transparent bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20"
+                  : "border-white/70 bg-white/80 text-slate-600 shadow-sm backdrop-blur-md hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-400"
+              }`}
+            >
+              <IoStarSharp className="h-4 w-4" />
+              Avis reçus
+              <span className="ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-white/20 text-white">
+                {reviews.length}
+              </span>
+            </button>
 
-          <button
-            onClick={() => {
-              setTab("given");
-              setFilterRating(null);
-            }}
-            className={`pb-3 text-sm font-extrabold border-b-2 transition-all flex items-center gap-2 ${
-              tab === "given" 
-                ? "border-violet-600 text-violet-600 dark:text-violet-400" 
-                : "border-transparent text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-            }`}
-          >
-            <span>Avis donnés</span>
-            <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
-              tab === "given" ? "bg-violet-100 dark:bg-violet-950 text-violet-700 dark:text-violet-300" : "bg-gray-100 dark:bg-gray-800 text-gray-500"
-            }`}>
-              {0}
-            </span>
-          </button>
+            <button
+              onClick={() => {
+                setTab("given");
+                setFilterRating(null);
+              }}
+              className={`flex shrink-0 items-center gap-2 rounded-full border-2 px-4 py-2 text-sm font-bold transition-all ${
+                tab === "given" 
+                  ? "border-transparent bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20"
+                  : "border-white/70 bg-white/80 text-slate-600 shadow-sm backdrop-blur-md hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-slate-900/80 dark:text-slate-400"
+              }`}
+            >
+              <IoChatbubbleOutline className="h-4 w-4" />
+              Avis donnés
+              <span className="ml-1 rounded-full px-2 py-0.5 text-[10px] font-bold bg-white/20 text-white">
+                {0}
+              </span>
+            </button>
+          </div>
         </div>
 
-        {/* Filter Controls Bar */}
-        <div className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 mb-8 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between shadow-sm">
+        {/* Filter Controls Bar - Same style as other pages */}
+        <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm rounded-2xl border border-white/70 dark:border-gray-800 p-4 mb-8 flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between shadow-sm">
           
-          {/* Search Box */}
           <div className="relative flex-1">
             <IoSearchOutline className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-gray-400" />
             <input
@@ -670,7 +671,7 @@ export default function ReviewsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher par titre de bien, nom du voyageur, ville..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/10 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs text-gray-900 dark:text-white placeholder-gray-400 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition-all"
             />
             {search && (
               <button 
@@ -682,39 +683,35 @@ export default function ReviewsPage() {
             )}
           </div>
 
-          {/* Quick Filter Pills & Sorting */}
           <div className="flex items-center gap-3 flex-wrap">
-            
-            {/* Status Filter (only for received tab) */}
             {tab === "received" && (
-              <div className="flex items-center gap-1 bg-gray-50 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
+              <div className="flex items-center gap-1 bg-white dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700 text-xs">
                 <button
                   onClick={() => setFilterStatus("all")}
-                  className={`px-2.5 py-1 rounded-lg font-medium transition-all ${filterStatus === "all" ? "bg-white dark:bg-gray-900 text-gray-900 dark:text-white font-bold shadow-sm" : "text-gray-500"}`}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all ${filterStatus === "all" ? "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-sm" : "text-gray-500"}`}
                 >
                   Tous
                 </button>
                 <button
                   onClick={() => setFilterStatus("replied")}
-                  className={`px-2.5 py-1 rounded-lg font-medium transition-all ${filterStatus === "replied" ? "bg-white dark:bg-gray-900 text-sky-600 dark:text-sky-400 font-bold shadow-sm" : "text-gray-500"}`}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all ${filterStatus === "replied" ? "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-sm" : "text-gray-500"}`}
                 >
                   Répondus
                 </button>
                 <button
                   onClick={() => setFilterStatus("unreplied")}
-                  className={`px-2.5 py-1 rounded-lg font-medium transition-all ${filterStatus === "unreplied" ? "bg-white dark:bg-gray-900 text-amber-600 dark:text-amber-400 font-bold shadow-sm" : "text-gray-500"}`}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all ${filterStatus === "unreplied" ? "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white shadow-sm" : "text-gray-500"}`}
                 >
                   À Répondre
                 </button>
               </div>
             )}
 
-            {/* Sort Dropdown */}
             <div className="relative">
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="appearance-none pl-3 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 outline-none focus:border-sky-500 cursor-pointer"
+                className="appearance-none pl-3 pr-8 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 outline-none focus:border-sky-500 cursor-pointer"
               >
                 <option value="recent">Tri : Plus récents</option>
                 <option value="rating_desc">Note : Décroissante (5 → 1)</option>
@@ -722,9 +719,7 @@ export default function ReviewsPage() {
               </select>
               <IoChevronDownOutline className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none" />
             </div>
-
           </div>
-
         </div>
 
         {/* Active Filter Indicators */}
@@ -765,7 +760,7 @@ export default function ReviewsPage() {
         )}
 
         {/* Reviews List */}
-        <div className="space-y-6">
+        <div className="space-y-5">
           {loading ? (
             [...Array(3)].map((_, i) => <ReviewSkeleton key={i} />)
           ) : sortedReviews.length === 0 ? (

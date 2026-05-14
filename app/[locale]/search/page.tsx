@@ -153,23 +153,52 @@ const FOOTER_LINKS = [
 const getCategoryIcon = (catId: string, isActive: boolean) => {
   const baseClass = "text-2xl transition-all duration-300";
   const activeClass = "text-white";
-  const inactiveClass = "text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
+  const inactiveClass =
+    "text-slate-600 dark:text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400";
 
   switch (catId) {
     case "all":
-      return <IoCompass className={`${baseClass} ${isActive ? activeClass : inactiveClass}`} />;
+      return (
+        <IoCompass
+          className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+        />
+      );
     case "Villa":
-      return <MdOutlineVilla className={`${baseClass} ${isActive ? activeClass : inactiveClass}`} />;
+      return (
+        <MdOutlineVilla
+          className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+        />
+      );
     case "Appartement":
-      return <TbBuildingCommunity className={`${baseClass} ${isActive ? activeClass : inactiveClass}`} />;
+      return (
+        <TbBuildingCommunity
+          className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+        />
+      );
     case "Maison":
-      return <FaHome className={`${baseClass} ${isActive ? activeClass : inactiveClass}`} />;
+      return (
+        <FaHome
+          className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+        />
+      );
     case "Studio":
-      return <FaCity className={`${baseClass} ${isActive ? activeClass : inactiveClass}`} />;
+      return (
+        <FaCity
+          className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+        />
+      );
     case "Duplex":
-      return <GiModernCity className={`${baseClass} ${isActive ? activeClass : inactiveClass}`} />;
+      return (
+        <GiModernCity
+          className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+        />
+      );
     default:
-      return <FaHome className={`${baseClass} ${isActive ? activeClass : inactiveClass}`} />;
+      return (
+        <FaHome
+          className={`${baseClass} ${isActive ? activeClass : inactiveClass}`}
+        />
+      );
   }
 };
 
@@ -283,21 +312,22 @@ export default function SearchPage() {
 
   const getAmenitiesArray = (listing: any) => {
     if (Array.isArray(listing.amenities)) return listing.amenities;
-    if (typeof listing.amenities === "string") return listing.amenities.split(",");
+    if (typeof listing.amenities === "string")
+      return listing.amenities.split(",");
     return [];
   };
-if (loading && listings.length === 0) {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
-      <div className="flex flex-col items-center gap-4">
-        <LoadingSpinner />
-        <p className="text-sm  text-slate-500 dark:text-slate-400">
-          Chargement des propriétés...
-        </p>
+  if (loading && listings.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+        <div className="flex flex-col items-center gap-4">
+          <LoadingSpinner />
+          <p className="text-sm  text-slate-500 dark:text-slate-400">
+            Chargement des propriétés...
+          </p>
+        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       {alert && (
@@ -359,7 +389,12 @@ if (loading && listings.length === 0) {
                       <input
                         value={searchDestination}
                         onChange={(e) => setSearchDestination(e.target.value)}
-                        onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                        onKeyPress={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleSearch();
+                          }
+                        }}
                         className="w-full bg-transparent py-1 pl-10 pr-4 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
                         placeholder="Sidi Bou Saïd, Hammamet, Djerba..."
                         type="text"
@@ -413,7 +448,9 @@ if (loading && listings.length === 0) {
                       <MdOutlinePeople className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <select
                         value={searchGuests}
-                        onChange={(e) => setSearchGuests(parseInt(e.target.value))}
+                        onChange={(e) =>
+                          setSearchGuests(parseInt(e.target.value))
+                        }
                         className="w-full bg-transparent py-1 pl-10 pr-4 text-sm font-semibold text-slate-900 outline-none dark:text-white"
                       >
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
@@ -426,7 +463,7 @@ if (loading && listings.length === 0) {
                   </div>
 
                   <button
-                    onClick={handleSearch}
+                    onClick={() => handleSearch()}
                     className={`inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-bold transition-all hover:scale-[1.01] ${gradientButton}`}
                   >
                     <IoSearchOutline className="h-4 w-4" /> Rechercher
@@ -498,7 +535,8 @@ if (loading && listings.length === 0) {
               </p>
             </div>
             <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:text-indigo-300">
-              Parcourir l'intégralité des ambiances <FaTimes className="h-3 w-3 rotate-45" />
+              Parcourir l'intégralité des ambiances{" "}
+              <FaTimes className="h-3 w-3 rotate-45" />
             </button>
           </div>
 
@@ -515,18 +553,24 @@ if (loading && listings.length === 0) {
                       : "border-white/70 bg-white/85 shadow-[0_16px_40px_rgba(15,23,42,0.06)] hover:-translate-y-1 hover:border-indigo-200 dark:border-white/10 dark:bg-slate-900/75 dark:hover:border-indigo-500/30"
                   }`}
                 >
-                  <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300 ${
-                    isActive 
-                      ? "bg-white/20" 
-                      : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20"
-                  }`}>
+                  <div
+                    className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300 ${
+                      isActive
+                        ? "bg-white/20"
+                        : "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200 group-hover:bg-indigo-100 dark:group-hover:bg-indigo-500/20"
+                    }`}
+                  >
                     {getCategoryIcon(cat.id, isActive)}
                   </div>
-                  <h3 className={`text-sm font-bold ${isActive ? "text-white" : "text-slate-900 dark:text-white"}`}>
+                  <h3
+                    className={`text-sm font-bold ${isActive ? "text-white" : "text-slate-900 dark:text-white"}`}
+                  >
                     {cat.id === "all" ? "Toutes" : cat.id}
                   </h3>
-                  <p className={`mt-2 text-xs ${isActive ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>
-                    {cat.id === "all" 
+                  <p
+                    className={`mt-2 text-xs ${isActive ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}
+                  >
+                    {cat.id === "all"
                       ? "L'intégralité des expériences NESTHUB"
                       : "Un univers esthétique pleinement assumé"}
                   </p>
@@ -535,8 +579,6 @@ if (loading && listings.length === 0) {
             })}
           </div>
         </section>
-
-    
 
         {/* Results Section */}
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
@@ -712,7 +754,9 @@ if (loading && listings.length === 0) {
                               : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
                           }`}
                         >
-                          {option.value && <FaStar className="mr-1 inline h-3 w-3" />}
+                          {option.value && (
+                            <FaStar className="mr-1 inline h-3 w-3" />
+                          )}
                           {option.label}
                         </button>
                       ))}
@@ -879,7 +923,10 @@ if (loading && listings.length === 0) {
 
             <div className="grid gap-5 md:grid-cols-3">
               {WHY_DIFFERENT.map((item) => (
-                <div key={item.title} className="rounded-[26px] bg-slate-50 p-5 dark:bg-white/5">
+                <div
+                  key={item.title}
+                  className="rounded-[26px] bg-slate-50 p-5 dark:bg-white/5"
+                >
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
                     <item.icon className="h-5 w-5" />
                   </div>
@@ -908,7 +955,10 @@ if (loading && listings.length === 0) {
             </div>
             <div className="flex flex-wrap gap-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
               {FOOTER_LINKS.map((link) => (
-                <button key={link} className="transition-colors hover:text-slate-700 dark:hover:text-white">
+                <button
+                  key={link}
+                  className="transition-colors hover:text-slate-700 dark:hover:text-white"
+                >
                   {link}
                 </button>
               ))}
@@ -916,24 +966,22 @@ if (loading && listings.length === 0) {
           </div>
         </footer>
       </main>
-     {/* Map Button - Floating Animation */}
-<div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-5 duration-500">
-  <Link href="/fr/map">
-    <button
-      className={`group inline-flex items-center gap-2 rounded-full ${gradientButton} px-6 py-3 text-sm font-bold shadow-2xl shadow-indigo-500/25 transition-all duration-300 hover:scale-105 hover:shadow-indigo-500/40 active:scale-95 animate-float`}
-      style={{
-        animation: 'float 3s ease-in-out infinite'
-      }}
-    >
-      <FaMapMarkedAlt className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-      <span className="transition-all duration-300 group-hover:tracking-wider">
-        Explorer la carte
-      </span>
-    </button>
-  </Link>
-</div>
-
-     
+      {/* Map Button - Floating Animation */}
+      <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-5 duration-500">
+        <Link href="/fr/map">
+          <button
+            className={`group inline-flex items-center gap-2 rounded-full ${gradientButton} px-6 py-3 text-sm font-bold shadow-2xl shadow-indigo-500/25 transition-all duration-300 hover:scale-105 hover:shadow-indigo-500/40 active:scale-95 animate-float`}
+            style={{
+              animation: "float 3s ease-in-out infinite",
+            }}
+          >
+            <FaMapMarkedAlt className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+            <span className="transition-all duration-300 group-hover:tracking-wider">
+              Explorer la carte
+            </span>
+          </button>
+        </Link>
+      </div>
 
       {/* Map Preview */}
       {showMapPreview && (
@@ -1042,19 +1090,23 @@ function ListingCard({
   const [imgSrc, setImgSrc] = useState(getImageUrl(listing.image));
   const isNew =
     listing.createdAt &&
-    new Date(listing.createdAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    new Date(listing.createdAt) >
+      new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const isPopular = (listing.viewCount || 0) > 100;
   const isPremium = listing.isVerified;
-  
+
   const getAmenitiesArray = (listing: any) => {
     if (Array.isArray(listing.amenities)) return listing.amenities;
-    if (typeof listing.amenities === "string") return listing.amenities.split(",");
+    if (typeof listing.amenities === "string")
+      return listing.amenities.split(",");
     return [];
   };
 
   return (
     <Link href={`/fr/listings/${listing.id}`} className="group cursor-pointer">
-<div className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_26px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900/80">        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
+      <div className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_26px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900/80">
+        {" "}
+        <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
           <img
             src={imgSrc}
             alt={listing.title}
@@ -1101,7 +1153,8 @@ function ListingCard({
                 {listing.title}
               </h3>
               <p className="mt-1 inline-flex items-center gap-1 text-xs text-white/80">
-                <MdOutlineLocationOn className="h-3.5 w-3.5" /> {listing.location}
+                <MdOutlineLocationOn className="h-3.5 w-3.5" />{" "}
+                {listing.location}
               </p>
             </div>
             <div className="rounded-2xl bg-white/92 px-4 py-3 text-right shadow-lg backdrop-blur-md dark:bg-slate-900/92">
@@ -1114,7 +1167,6 @@ function ListingCard({
             </div>
           </div>
         </div>
-
         <div className="p-5">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
@@ -1135,20 +1187,24 @@ function ListingCard({
           </div>
 
           <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-2">
-            {listing.description || listing.tagline || "Une propriété d'exception vous attend"}
+            {listing.description ||
+              listing.tagline ||
+              "Une propriété d'exception vous attend"}
           </p>
 
           {listing.amenities && (
             <div className="mt-4 flex flex-wrap gap-2">
-              {getAmenitiesArray(listing).slice(0, 4).map((amenity: string) => (
-                <span
-                  key={amenity}
-                  className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
-                >
-                  {getAmenityIcon(amenity)}
-                  {amenity}
-                </span>
-              ))}
+              {getAmenitiesArray(listing)
+                .slice(0, 4)
+                .map((amenity: string) => (
+                  <span
+                    key={amenity}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                  >
+                    {getAmenityIcon(amenity)}
+                    {amenity}
+                  </span>
+                ))}
             </div>
           )}
 
@@ -1190,16 +1246,19 @@ function ListingRow({
   };
 
   const [imgSrc, setImgSrc] = useState(getImageUrl(listing.image));
-  
+
   const getAmenitiesArray = (listing: any) => {
     if (Array.isArray(listing.amenities)) return listing.amenities;
-    if (typeof listing.amenities === "string") return listing.amenities.split(",");
+    if (typeof listing.amenities === "string")
+      return listing.amenities.split(",");
     return [];
   };
 
   return (
     <Link href={`/fr/listings/${listing.id}`}>
-<div className="group rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_20px_60px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80">        <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+      <div className="group rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_20px_60px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80">
+        {" "}
+        <div className="grid gap-4 md:grid-cols-[220px_1fr]">
           <div className="relative h-48 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
             <img
               src={imgSrc}
@@ -1252,14 +1311,16 @@ function ListingRow({
               </p>
               {listing.amenities && (
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {getAmenitiesArray(listing).slice(0, 5).map((amenity: string) => (
-                    <span
-                      key={amenity}
-                      className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
-                    >
-                      {getAmenityIcon(amenity)} {amenity}
-                    </span>
-                  ))}
+                  {getAmenitiesArray(listing)
+                    .slice(0, 5)
+                    .map((amenity: string) => (
+                      <span
+                        key={amenity}
+                        className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                      >
+                        {getAmenityIcon(amenity)} {amenity}
+                      </span>
+                    ))}
                 </div>
               )}
             </div>

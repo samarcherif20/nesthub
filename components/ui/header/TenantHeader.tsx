@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { useUser, useClerk } from "@clerk/nextjs"; // ✅ Ajouter useClerk
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
@@ -46,6 +46,7 @@ const NAV_ITEMS = [
   { label: "Messages", href: "/messages", icon: MessageCircle },
   { label: "Reservations", href: "/reservations", icon: CalendarDays },
 ];
+
 // ─── Circular Orbit Component (Mobile Only - TOP LEFT) ─────────────────────────
 function CircularOrbitMenu({
   isOpen,
@@ -161,7 +162,6 @@ function UserMenu({
 
   const menuItems = [
     { label: t("menu.profile") || "Profile", icon: User, href: "/profile" },
-    { label: t("menu.dashboard") || "Dashboard", icon: Grid3X3, href: "/dashboard" },
     { label: t("menu.reservations") || "Reservations", icon: CalendarDays, href: "/reservations" },
     { label: t("menu.wallet") || "Wallet", icon: Wallet, href: "/wallet" },
     { label: t("menu.reviews") || "Reviews", icon: Star, href: "/reviews" },
@@ -363,10 +363,56 @@ function MobileMenu({
   );
 }
 
+// ─── Logout Modal ─────────────────────────────────────────────────────
+function LogoutModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  t,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  t: any;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white dark:bg-gray-900 w-full max-w-md rounded-2xl shadow-2xl p-6 text-center border border-gray-200 dark:border-gray-800 animate-in zoom-in-95 fade-in duration-200">
+        <div className="w-16 h-16 bg-rose-100 dark:bg-rose-900/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+          <LogOut className="text-2xl text-rose-600" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          {t("logout.confirm") || "Se déconnecter ?"}
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+          {t("logout.message") || "Êtes-vous sûr de vouloir vous déconnecter ?"}
+        </p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium text-sm transition-colors"
+          >
+            {t("logout.cancel") || "Annuler"}
+          </button>
+          <button
+            onClick={onConfirm}
+            className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm shadow-lg shadow-rose-600/20 transition-colors"
+          >
+            {t("logout.confirm") || "Se déconnecter"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main TenantHeader ───────────────────────────────────────────────
 export function TenantHeader({}: TenantHeaderProps) {
   const t = useTranslations("TenantHeader");
-  const { isSignedIn, user, signOut } = useUser();
+  const { isSignedIn, user } = useUser();
+  const { signOut } = useClerk(); // ✅ Utiliser useClerk pour signOut
   const pathname = usePathname();
   const router = useRouter();
 
@@ -425,7 +471,7 @@ export function TenantHeader({}: TenantHeaderProps) {
   );
 
   const handleLogout = async () => {
-    await signOut();
+    await signOut(); // ✅ Maintenant signOut fonctionne correctement
     router.push("/fr/login");
   };
 
@@ -469,15 +515,15 @@ export function TenantHeader({}: TenantHeaderProps) {
               }
             `}
           >
-{/* Top glow */}
-<div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[3px] rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-70" />
+            {/* Top glow */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[3px] rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-70" />
 
-{/* Bottom glow when scrolled */}
-{scrolled && (
-  <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
-)}
+            {/* Bottom glow when scrolled */}
+            {scrolled && (
+              <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
+            )}
             <div className="flex items-center justify-between h-14 md:h-16 px-3 md:px-5">
-              {/* Logo - with fill and scale to show bigger */}
+              {/* Logo */}
               <Link href="/fr/search" className="flex items-center gap-2 group flex-shrink-0">
                 <div className="relative w-10 h-10 md:w-12 md:h-12 scale-380 mt-5">
                   <Image
@@ -547,7 +593,7 @@ export function TenantHeader({}: TenantHeaderProps) {
                   )}
                 </button>
 
-                {/* Notifications - YOUR ORIGINAL COMPONENT */}
+                {/* Notifications */}
                 <NotificationBell />
 
                 {/* Separator */}
@@ -587,7 +633,6 @@ export function TenantHeader({}: TenantHeaderProps) {
                           )}
                         </div>
                       </div>
-                      {/* Username beside avatar */}
                       <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
                         {user?.username || "User"}
                       </span>
@@ -625,7 +670,7 @@ export function TenantHeader({}: TenantHeaderProps) {
         </div>
       )}
 
-      {/* ── Mobile Circular Orbit Menu (replaces header completely) ── */}
+      {/* ── Mobile Circular Orbit Menu ── */}
       {isMobile && (
         <CircularOrbitMenu
           isOpen={orbitOpen}
@@ -638,61 +683,35 @@ export function TenantHeader({}: TenantHeaderProps) {
         />
       )}
 
-      {/* ── Desktop Spacer (only needed when header is visible) ── */}
+      {/* ── Desktop Spacer ── */}
       {!isMobile && <div className="h-20 md:h-24" />}
 
-      {/* Drawers & Modals */}
+      {/* Drawers */}
       <ChatDrawer
         isOpen={localMessengerOpen}
         onClose={() => setLocalMessengerOpen(false)}
         userRole="TENANT"
       />
 
-      {/* Mobile Menu (for when orbit is closed maybe? But orbit replaces it) */}
+      {/* Mobile Menu */}
       <MobileMenu
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
         isSignedIn={isSignedIn}
         user={user}
         onNavigate={handleNavigate}
-        onLogout={handleLogout}
+        onLogout={() => setShowLogoutModal(true)}
         onLogin={() => router.push("/fr/login")}
         t={t}
       />
 
       {/* Logout Modal */}
-      {showLogoutModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowLogoutModal(false)} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-sm mx-auto overflow-hidden border border-gray-200 dark:border-gray-800 p-6">
-            <div className="flex items-center justify-center mb-4">
-              <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-900/25 flex items-center justify-center">
-                <LogOut className="text-rose-500 text-2xl" />
-              </div>
-            </div>
-            <h3 className="text-lg font-extrabold text-center text-gray-900 dark:text-white mb-1.5">
-              Sign Out?
-            </h3>
-            <p className="text-sm text-center text-gray-500 dark:text-gray-400 mb-6">
-              Are you sure you want to sign out?
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLogoutModal(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-200 dark:border-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-rose-500 text-white"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <LogoutModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+        t={t}
+      />
     </>
   );
 }

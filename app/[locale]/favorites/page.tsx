@@ -45,18 +45,6 @@ const CATEGORIES = [
   { id: "APARTMENT", label: "Appartements", icon: Building2 },
 ];
 
-// Crossed-out heart icon component
-function HeartOffIcon() {
-  return (
-    <div className="relative">
-      <Heart className="h-20 w-20 text-slate-300 dark:text-slate-600 stroke-[1.5]" />
-      <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-24 w-0.5 bg-rose-400 rounded-full rotate-45 origin-center" />
-      </div>
-    </div>
-  );
-}
-
 export default function FavoritesPage() {
   const t = useTranslations("FavoritesPage");
   const {
@@ -357,7 +345,7 @@ export default function FavoritesPage() {
 ) : sortedFavorites.length === 0 ? (
   <div className="flex flex-col items-center justify-center py-20 text-center">
     <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-600/10 backdrop-blur-sm mx-auto animate-pulse">
-      <HeartOffIcon />
+      <IoHeartDislikeOutline className="h-14 w-14 text-slate-400" />
     </div>
     <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white">
       Aucun résultat dans cette catégorie
@@ -373,23 +361,7 @@ export default function FavoritesPage() {
       Voir tous les favoris
     </button>
   </div>
-) : sortedFavorites.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <HeartOffIcon />
-            <h3 className="mt-6 text-2xl font-extrabold text-slate-900 dark:text-white">
-              Aucun résultat dans cette catégorie
-            </h3>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              Essayez une autre catégorie pour voir vos favoris.
-            </p>
-            <button
-              type="button"
-              onClick={() => setSelectedCategory("all")}
-              className={`mt-6 rounded-full ${GRADIENT_BUTTON} px-6 py-3 text-sm font-bold shadow-lg shadow-indigo-500/20`}
-            >
-              Voir tous les favoris
-            </button>
-          </div>
+
         ) : viewMode === "grid" ? (
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {sortedFavorites.map((listing) => {
