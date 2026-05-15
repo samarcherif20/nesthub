@@ -1,3 +1,4 @@
+// components/pdf/ContractPDF.tsx
 import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
 
 const styles = StyleSheet.create({
@@ -118,28 +119,34 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: "#999",
   },
+  // ✅ NOUVEAU FOOTER - Plus grand, à droite
   footer: {
     position: "absolute",
     bottom: 30,
-    left: 50,
     right: 50,
-    borderTopWidth: 0.5,
-    borderTopColor: "#ccc",
-    paddingTop: 8,
-  },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    left: "auto",
+    textAlign: "right",
   },
   footerText: {
-    fontSize: 7,
-    color: "#aaa",
+    fontSize: 9,
+    color: "#555",
+    fontWeight: "bold",
   },
-  footerCenter: {
+  footerSmall: {
     fontSize: 7,
-    color: "#aaa",
-    textAlign: "center",
-    marginTop: 3,
+    color: "#999",
+    marginTop: 2,
+  },
+  // ✅ Infos CIN
+  cinInfo: {
+    marginTop: 4,
+    marginBottom: 4,
+    paddingLeft: 15,
+  },
+  cinText: {
+    fontSize: 9,
+    color: "#555",
+    fontStyle: "italic",
   },
 });
 
@@ -210,22 +217,16 @@ export function ContractPDF({ data }: { data: ContractData }) {
         <View style={styles.headerLine} />
         <View style={styles.headerLineThin} />
 
-        <Text style={styles.contractTitle}>
-          CONTRAT DE LOCATION
-        </Text>
+        <Text style={styles.contractTitle}>CONTRAT DE LOCATION</Text>
 
-        {/* PREMIERE PARTIE - TEXTE DES IMAGES */}
+        {/* ✅ PREMIERE PARTIE - reformatée en paragraphe */}
         <Text style={styles.paragraph}>
-          Par le présent acte sous seing privé
-        </Text>
-        <Text style={styles.paragraph}>
-          Entre M. {data.owner.firstName} {data.owner.lastName} d'une part,
-        </Text>
-        <Text style={styles.paragraph}>
-          Et M. {data.tenant.firstName} {data.tenant.lastName} d'autre part,
-        </Text>
-        <Text style={styles.paragraph}>
-          Il a été convenu et arrêté ce qui suit :
+          Par le présent acte sous seing privé, Entre M. {data.owner.firstName}{" "}
+          {data.owner.lastName}{" "}
+          {data.owner.cinNumber ? `(CIN N° ${data.owner.cinNumber})` : ""} d'une
+          part, Et M. {data.tenant.firstName} {data.tenant.lastName}{" "}
+          {data.tenant.cinNumber ? `(CIN N° ${data.tenant.cinNumber})` : ""}{" "}
+          d'autre part, Il a été convenu et arrêté ce qui suit :
         </Text>
 
         {/* Article Premier */}
@@ -235,19 +236,19 @@ export function ContractPDF({ data }: { data: ContractData }) {
         <Text style={styles.paragraph}>
           loue à M. {data.tenant.firstName} {data.tenant.lastName}
         </Text>
-        <Text style={styles.paragraph}>
-          qui accepte.
-        </Text>
+        <Text style={styles.paragraph}>qui accepte.</Text>
 
-        {/* Art. 2 */}
+        {/* Art. 2 - ✅ CORRIGÉ checkInDate */}
         <Text style={styles.paragraphBold}>
-          Art. 2. — La présente location est consentie pour la durée d'{data.dates.nights} nuit(s)
+          Art. 2. — La présente location est consentie pour la durée de{" "}
+          {data.dates.nights} nuit(s) commençant le {checkInDate}
         </Text>
+        <Text style={styles.paragraph}>et finissant le {checkOutDate}.</Text>
         <Text style={styles.paragraph}>
-          et finissant le {checkOutDate}.
-        </Text>
-        <Text style={styles.paragraph}>
-          Faute de congé donné par écrit au moins trois mois à l'avance, le contrat sera prorogé un an aux mêmes conditions, et ainsi de suite jusqu'à ce qu'un congé soit signifié. Le congé doit être signifié par exploit d'huissier ou par lettre recommandée.
+          Faute de congé donné par écrit au moins trois mois à l'avance, le
+          contrat sera prorogé un an aux mêmes conditions, et ainsi de suite
+          jusqu'à ce qu'un congé soit signifié. Le congé doit être signifié par
+          exploit d'huissier ou par lettre recommandée.
         </Text>
 
         {/* Art. 3 */}
@@ -255,57 +256,90 @@ export function ContractPDF({ data }: { data: ContractData }) {
           Art. 3. — Le loyer est fixé à {formatPrice(data.price.totalPrice)}
         </Text>
         <Text style={styles.paragraph}>
-          payable avant l'entrée dans les lieux.
+          payable avant l'entrée dans les lieux et d'avance.
         </Text>
 
         {/* Art. 4 */}
         <Text style={styles.paragraphBold}>
-          Art. 4. — L'abonnement d'eau est à la charge du propriétaire, mais sur l'excédent de consommation le locataire payera.
+          Art. 4. — L'abonnement d'eau est à la charge du propriétaire, mais sur
+          l'excédent de consommation le locataire payera.
         </Text>
         <Text style={styles.paragraph}>
-          En aucun cas, une interruption dans le service, le manque d'eau par accident ou pour une cause quelconque étrangère au propriétaire, ne pourra donner lieu à aucun recours contre ce dernier.
+          En aucun cas, une interruption dans le service, le manque d'eau par
+          accident ou pour une cause quelconque étrangère au propriétaire, ne
+          pourra donner lieu à aucun recours contre ce dernier.
         </Text>
 
         {/* Art. 5 */}
         <Text style={styles.paragraphBold}>
-          Art. 5. — Le locataire ne pourra faire sans autorisation du propriétaire aucune modification dans les lieux loués, qui doivent, de condition expresse, être rendus à la fin du bail en bon état de réparations locatives.
+          Art. 5. — Le locataire ne pourra faire sans autorisation du
+          propriétaire aucune modification dans les lieux loués, qui doivent, de
+          condition expresse, être rendus à la fin du bail en bon état de
+          réparations locatives.
         </Text>
         <Text style={styles.paragraph}>
-          Le locataire devra souffrir sans indemnité ni diminution de loyer, l'exécution de grosses réparations qui seraient nécessaires dans l'intérêt de l'immeuble, quelle que soit la durée ou l'époque des travaux. Enfin, le propriétaire se réserve le droit d'inspecter ou de faire inspecter le local loué, lorsqu'il le jugera nécessaire.
+          Le locataire devra souffrir sans indemnité ni diminution de loyer,
+          l'exécution de grosses réparations qui seraient nécessaires dans
+          l'intérêt de l'immeuble, quelle que soit la durée ou l'époque des
+          travaux. Enfin, le propriétaire se réserve le droit d'inspecter ou de
+          faire inspecter le local loué, lorsqu'il le jugera nécessaire.
         </Text>
         <Text style={styles.paragraph}>
-          Toutes les améliorations qui pourront avoir été faites durant le bail par le locataire resteront gratuitement acquises au propriétaire, à moins que ce dernier préfère le rétablissement des lieux dans leur état primitif.
+          Toutes les améliorations qui pourront avoir été faites durant le bail
+          par le locataire resteront gratuitement acquises au propriétaire, à
+          moins que ce dernier préfère le rétablissement des lieux dans leur
+          état primitif.
         </Text>
 
         {/* Art. 6 */}
         <Text style={styles.paragraphBold}>
-          Art. 6. — En cas de troubles ou de dommages causés par des tiers, le locataire n'aura aucun droit ni recours contre le propriétaire.
+          Art. 6. — En cas de troubles ou de dommages causés par des tiers, le
+          locataire n'aura aucun droit ni recours contre le propriétaire.
         </Text>
 
         {/* Art. 7 */}
         <Text style={styles.paragraphBold}>
-          Art. 7. — Le propriétaire ne sera jamais responsable des infiltrations d'eau provenant des canalisations, terrasses ou étages supérieurs.
+          Art. 7. — Le propriétaire ne sera jamais responsable des infiltrations
+          d'eau provenant des canalisations, terrasses ou étages supérieurs.
         </Text>
 
         {/* Art. 8 */}
         <Text style={styles.paragraphBold}>
-          Art. 8. — Le locataire reconnaît avoir reçu les locaux loués en parfait et complet état. Il devra les rendre à la fin du bail dans le même état et par conséquent de l'essentiel. La réparation des opérations prévues par l'art. 1754 du Code Civil est en outre :
+          Art. 8. — Le locataire reconnaît avoir reçu les locaux loués en
+          parfait et complet état. Il devra les rendre à la fin du bail dans le
+          même état et par conséquent de l'essentiel. La réparation des
+          opérations prévues par l'art. 1754 du Code Civil est en outre :
         </Text>
         <Text style={styles.paragraph}>
-          L'entretien des serrures, clefs, grilles de cheminées ou fourneaux, des sièges des W.C., des planches de placards, des carreaux en ciment, en marbre, céramique, des robinets d'eau, des appareils de chasse : des conduites de toute nature dans les parties non communes avec d'autres locataires : du débouchage, s'il y a lieu, des évier et W. C. Le locataire sera responsable des dégâts qui pourraient être causés par son manque de surveillance à cet égard.
+          L'entretien des serrures, clefs, grilles de cheminées ou fourneaux,
+          des sièges des W.C., des planches de placards, des carreaux en ciment,
+          en marbre, céramique, des robinets d'eau, des appareils de chasse :
+          des conduites de toute nature dans les parties non communes avec
+          d'autres locataires : du débouchage, s'il y a lieu, des évier et W. C.
+          Le locataire sera responsable des dégâts qui pourraient être causés
+          par son manque de surveillance à cet égard.
         </Text>
 
         {/* Art. 9 */}
         <Text style={styles.paragraphBold}>
-          Art. 9. — Il est interdit au locataire de céder ses droits au présent bail, de sous louer ou même de prêter momentanément tout ou partie des locaux loués.
+          Art. 9. — Il est interdit au locataire de céder ses droits au présent
+          bail, de sous louer ou même de prêter momentanément tout ou partie des
+          locaux loués.
         </Text>
         <Text style={styles.paragraph}>
-          Il lui est également interdit : 1) d'étendre ou d'accrocher du linge, des effets ou objets quelconques aux fenêtres et aux balcons. — 2) de se servir du mortier ou des objets quelconques dans les cours des escaliers ou sur les terrasses. — 3) d'entrepôser des matériaux, cendres ou d'huile dans le local loué des personnes d'une mauvaise conduite. — 4) d'introduire les choses ou les objets dans l'appartement.
+          Il lui est également interdit : 1) d'étendre ou d'accrocher du linge,
+          des effets ou objets quelconques aux fenêtres et aux balcons. — 2) de
+          se servir du mortier ou des objets quelconques dans les cours des
+          escaliers ou sur les terrasses. — 3) d'entrepôser des matériaux,
+          cendres ou d'huile dans le local loué des personnes d'une mauvaise
+          conduite. — 4) d'introduire les choses ou les objets dans
+          l'appartement.
         </Text>
 
         {/* Art. 10 */}
         <Text style={styles.paragraphBold}>
-          Art. 10. — Le propriétaire ne répond pas du linge entreposé sur les terrasses ; chaque locataire doit en assurer lui-même la garde.
+          Art. 10. — Le propriétaire ne répond pas du linge entreposé sur les
+          terrasses ; chaque locataire doit en assurer lui-même la garde.
         </Text>
         <Text style={styles.paragraph}>
           Les portes donnant sur les piliers devront toujours être fermées.
@@ -313,62 +347,42 @@ export function ContractPDF({ data }: { data: ContractData }) {
 
         {/* Art. 11 */}
         <Text style={styles.paragraphBold}>
-          Art. 11. — Il est absolument défendu au locataire d'introduire dans le local qui lui est cédé des matières inflammables, explosives ou dangereuses pour la sécurité et la salubrité des immeubles ou des voisins.
+          Art. 11. — Il est absolument défendu au locataire d'introduire dans le
+          local qui lui est cédé des matières inflammables, explosives ou
+          dangereuses pour la sécurité et la salubrité des immeubles ou des
+          voisins.
         </Text>
 
         {/* Art. 12 */}
         <Text style={styles.paragraphBold}>
-          Art. 12. — A défaut de paiement d'un seul terme à son échéance comme en cas d'inexécution des conditions ci-dessus, le présent bail sera de plein droit résilié quinze jours après une simple mise en demeure restée sans effet et par le seul fait de l'expiration du délai. La résiliation étant ainsi acquise, l'expulsion du locataire aura lieu sans délai, à la requête du propriétaire sur ordonnance du référendum rendue par le Président du Tribunal.
+          Art. 12. — A défaut de paiement d'un seul terme à son échéance comme
+          en cas d'inexécution des conditions ci-dessus, le présent bail sera de
+          plein droit résilié quinze jours après une simple mise en demeure
+          restée sans effet et par le seul fait de l'expiration du délai. La
+          résiliation étant ainsi acquise, l'expulsion du locataire aura lieu
+          sans délai, à la requête du propriétaire sur ordonnance du référendum
+          rendue par le Président du Tribunal.
         </Text>
         <Text style={styles.paragraph}>
-          Dans ce cas, les loyers payés d'avance seront acquis au propriétaire à titre de dommages et intérêts, sans que cela nuise aux droits qu'il pourrait avoir d'en réclamer de plus étendus.
+          Dans ce cas, les loyers payés d'avance seront acquis au propriétaire à
+          titre de dommages et intérêts, sans que cela nuise aux droits qu'il
+          pourrait avoir d'en réclamer de plus étendus.
         </Text>
 
         {/* Art. 13 */}
         <Text style={styles.paragraphBold}>
-          Art. 13. — Les frais du présent contrat et les droits d'enregistrement sont à la charge du locataire.
+          Art. 13. — Les frais du présent contrat et les droits d'enregistrement
+          sont à la charge du locataire.
         </Text>
 
         {/* Signature */}
-        <Text style={styles.paragraph}>
-          Fait à Tunis, le {today}.
-        </Text>
+        <Text style={styles.paragraph}>Fait à Tunis, le {today}.</Text>
 
-        {/* SIGNATURES */}
-        <View style={styles.signatureSection}>
-          <View style={styles.signatureRow}>
-            <View style={styles.signatureBox}>
-              <Text style={styles.signatureLabel}>Le Propriétaire</Text>
-              <Text style={styles.signatureSubLabel}>
-                {data.owner.firstName} {data.owner.lastName}
-              </Text>
-              <Text style={styles.signatureLine}>
-                Signature
-              </Text>
-            </View>
-            <View style={styles.signatureBox}>
-              <Text style={styles.signatureLabel}>Le Locataire</Text>
-              <Text style={styles.signatureSubLabel}>
-                {data.tenant.firstName} {data.tenant.lastName}
-              </Text>
-              <Text style={styles.signatureLine}>
-                Signature
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* FOOTER */}
+        {/* ✅ NOUVEAU FOOTER - À droite, plus grand */}
         <View style={styles.footer}>
-          <View style={styles.footerRow}>
-            <Text style={styles.footerText}>
-              NESTHUB Tunisie
-            </Text>
-            <Text style={styles.footerText}>Contrat N° {data.reference}</Text>
-          </View>
-          <Text style={styles.footerCenter}>
-            Document généré le {today}
-          </Text>
+          <Text style={styles.footerText}>NESTHUB Tunisie</Text>
+          <Text style={styles.footerText}>Contrat N° {data.reference}</Text>
+          <Text style={styles.footerSmall}>Généré le {today}</Text>
         </View>
       </Page>
     </Document>

@@ -1,3 +1,4 @@
+// app/api/offers/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
@@ -45,6 +46,8 @@ export async function GET(
             pricePerNight: true,
             cleaningFee: true,
             equipment: true,
+            latitude: true, // ✅ AJOUTÉ
+            longitude: true, // ✅ AJOUTÉ
             photos: {
               take: 1,
               where: { isMain: true },
@@ -61,6 +64,8 @@ export async function GET(
             email: true,
             phoneNumber: true,
             profilePictureUrl: true,
+            cinNumber: true,
+            isIdentityVerified: true,
           },
         },
         owner: {
@@ -72,6 +77,9 @@ export async function GET(
             email: true,
             phoneNumber: true,
             profilePictureUrl: true,
+            cinNumber: true,
+            isIdentityVerified: true,
+            createdAt: true,
             stats: {
               select: { averageRating: true, totalReviews: true },
             },
@@ -84,12 +92,48 @@ export async function GET(
             revealedInfo: true,
           },
         },
+        paymentTransactions: {
+          // ✅ AJOUTÉ pour récupérer le paymentIntent
+          take: 1,
+          where: { status: "SUCCESS" },
+          select: { stripePaymentIntentId: true },
+        },
       },
     });
 
     if (!offer) {
       return NextResponse.json({ error: "Offre non trouvée" }, { status: 404 });
     }
+
+    // 🔍 DEBUG 1: Vérifier les données brutes du listing
+    console.log("🔍 [DEBUG] Listing brut:", {
+      id: offer.listing?.id,
+      title: offer.listing?.title,
+      latitude: offer.listing?.latitude,
+      longitude: offer.listing?.longitude,
+      photo: offer.listing?.photos[0]?.url,
+    });
+
+    // 🔍 DEBUG 2: Vérifier les données du propriétaire
+    console.log("🔍 [DEBUG] Owner createdAt brut:", offer.owner?.createdAt);
+    console.log(
+      "🔍 [DEBUG] Owner createdAt type:",
+      typeof offer.owner?.createdAt,
+    );
+
+    // ✅ Compter les annonces actives du propriétaire
+    const listingsCount = offer.owner
+      ? await prisma.listing.count({
+          where: {
+            ownerId: offer.owner.id,
+            status: "ACTIVE",
+          },
+        })
+      : 0;
+
+    // 🔍 DEBUG 3: Afficher le comptage des annonces
+    console.log("🔍 [DEBUG] listingsCount calculé:", listingsCount);
+    console.log("🔍 [DEBUG] ownerId pour comptage:", offer.owner?.id);
 
     // Récupérer la conversation via l'infoRequest si besoin
     let conversationId = null;
@@ -100,6 +144,13 @@ export async function GET(
       });
       conversationId = conversation?.id || null;
     }
+
+    const joinedYearValue = offer.owner?.createdAt
+      ? new Date(offer.owner.createdAt).getFullYear()
+      : null;
+
+    // 🔍 DEBUG 4: Afficher la valeur calculée de joinedYear
+    console.log("🔍 [DEBUG] joinedYear calculé:", joinedYearValue);
 
     const formattedOffer = {
       id: offer.id,
@@ -117,9 +168,11 @@ export async function GET(
       expiresAt: offer.expiresAt,
       conversationId: conversationId,
       bookingId: offer.booking?.id,
+      paymentIntentId:
+        offer.paymentTransactions?.[0]?.stripePaymentIntentId || null, // ✅ AJOUTÉ
       revealedInfo: offer.booking?.revealedInfo,
       listing: {
-        id: offer.listing.id,
+        id: offer.listing.id, // ✅ AJOUTÉ
         title: offer.listing.title,
         type: offer.listing.type,
         location:
@@ -133,6 +186,8 @@ export async function GET(
         cleaningFee: offer.listing.cleaningFee,
         image: offer.listing.photos[0]?.url,
         equipment: offer.listing.equipment,
+        latitude: offer.listing.latitude, // ✅ AJOUTÉ
+        longitude: offer.listing.longitude, // ✅ AJOUTÉ
       },
       tenant: offer.tenant
         ? {
@@ -143,6 +198,8 @@ export async function GET(
             email: offer.tenant.email,
             phone: offer.tenant.phoneNumber,
             profilePictureUrl: offer.tenant.profilePictureUrl,
+            cinNumber: offer.tenant.cinNumber,
+            isIdentityVerified: offer.tenant.isIdentityVerified,
             name:
               offer.tenant.firstName && offer.tenant.lastName
                 ? `${offer.tenant.firstName} ${offer.tenant.lastName}`
@@ -158,6 +215,10 @@ export async function GET(
             email: offer.owner.email,
             phone: offer.owner.phoneNumber,
             profilePictureUrl: offer.owner.profilePictureUrl,
+            cinNumber: offer.owner.cinNumber,
+            isIdentityVerified: offer.owner.isIdentityVerified,
+            joinedYear: joinedYearValue,
+            listingsCount: listingsCount,
             rating: offer.owner.stats?.averageRating,
             reviewCount: offer.owner.stats?.totalReviews,
             name:
@@ -168,9 +229,34 @@ export async function GET(
         : null,
     };
 
+    // 🔍 DEBUG 5: Afficher les valeurs finales
+    console.log("🔍 [DEBUG] formattedOffer.listing:", {
+      id: formattedOffer.listing?.id,
+      title: formattedOffer.listing?.title,
+      latitude: formattedOffer.listing?.latitude,
+      longitude: formattedOffer.listing?.longitude,
+      image: formattedOffer.listing?.image,
+    });
+
+    console.log("🔍 [DEBUG] formattedOffer.owner:", {
+      joinedYear: formattedOffer.owner?.joinedYear,
+      listingsCount: formattedOffer.owner?.listingsCount,
+      phone: formattedOffer.owner?.phone,
+      name: formattedOffer.owner?.name,
+    });
+
+    console.log(
+      "🔍 [DEBUG] formattedOffer.bookingId:",
+      formattedOffer.bookingId,
+    );
+    console.log(
+      "🔍 [DEBUG] formattedOffer.paymentIntentId:",
+      formattedOffer.paymentIntentId,
+    );
+
     return NextResponse.json(formattedOffer);
   } catch (error) {
-    console.error("Erreur GET offre:", error);
+    console.error("❌ Erreur GET offre:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

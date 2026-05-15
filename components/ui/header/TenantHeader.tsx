@@ -31,6 +31,7 @@ import {
 import { ChatDrawer } from "../chat/ChatDrawer";
 import NotificationBell from "../notifications/NotificationBell";
 import { useTheme } from "next-themes";
+import { GoLaw } from "react-icons/go";
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface TenantHeaderProps {
@@ -166,6 +167,8 @@ function UserMenu({
     { label: t("menu.wallet") || "Wallet", icon: Wallet, href: "/wallet" },
     { label: t("menu.reviews") || "Reviews", icon: Star, href: "/reviews" },
     { label: t("menu.settings") || "Settings", icon: Settings, href: "/settings" },
+    { label: t("menu.disputes") || "ligites", icon: GoLaw , href: "/disputes" },
+
   ];
 
   return (

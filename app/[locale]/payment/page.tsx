@@ -290,30 +290,30 @@ function StripePaymentForm({
 
   const canSubmit = agreed && stripe && elements && isStripeReady;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements || !canSubmit) return;
-    setIsProcessing(true);
-    try {
-      const { error } = await stripe.confirmPayment({
-        elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/fr/payment/success`,
-        },
-        redirect: "if_required",
-      });
-      if (error) {
-        onError(error.message);
-      } else {
-        onSuccess();
-      }
-    } catch (err: any) {
-      onError(err.message);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
 
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!stripe || !elements || !canSubmit) return;
+  setIsProcessing(true);
+  try {
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/fr/payment/success`,  // ← Garde comme ça
+      },
+    });
+    if (error) {
+      onError(error.message);
+    } else {
+      // ✅ Ne pas appeler onSuccess() - laisser Stripe rediriger
+      console.log("✅ Paiement réussi, redirection Stripe...");
+    }
+  } catch (err: any) {
+    onError(err.message);
+  } finally {
+    setIsProcessing(false);
+  }
+};
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="stripe-payment-element min-h-[280px]">
@@ -540,7 +540,6 @@ export default function PaymentPage() {
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
   const [imgErr, setImgErr] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -605,15 +604,16 @@ export default function PaymentPage() {
     fetchOffer();
   }, [offerId, conversationId, showToast]);
 
-  const handleSuccess = () => {
-    setIsSuccess(true);
-    showToast("Paiement effectué avec succès !", "success");
-  };
+  const handlePaymentSuccess = () => {
+  // Stripe va rediriger, on ne fait rien ici
+  console.log("Paiement réussi, redirection Stripe en cours...");
+};
   const handleError = (error: string) => showToast(error, "error");
-  const handleSuccessRedirect = () => router.push(`/fr/payment/success?offerId=${offerId}`);
-
+const handleSuccessRedirect = () => {
+  // On ne fait rien, la redirection se fait via Stripe
+  console.log("✅ Paiement réussi, redirection Stripe en cours...");
+};
   if (isLoading) return <LoadingScreen />;
-  if (isSuccess) return <SuccessScreen booking={booking!} onRedirect={handleSuccessRedirect} />;
   if (!booking) return <NoBookingFound />;
 
   const listingImageUrl = booking.listing.image ? pipListing(booking.listing.image) : null;
@@ -841,7 +841,7 @@ export default function PaymentPage() {
                     <Elements stripe={getStripe()} options={stripeOptions}>
                       <StripePaymentForm
                         booking={booking}
-                        onSuccess={handleSuccess}
+  onSuccess={handlePaymentSuccess}  // ← Change ici
                         onError={handleError}
                         isProcessing={isProcessing}
                         setIsProcessing={setIsProcessing}

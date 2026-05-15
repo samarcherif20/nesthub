@@ -1,8 +1,9 @@
+// app/api/bookings/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-// ✅ GET existant - Récupérer les détails d'une réservation
+// ✅ GET - Récupérer les détails d'une réservation
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -50,6 +51,9 @@ export async function GET(
             email: true,
             phoneNumber: true,
             profilePictureUrl: true,
+            cinNumber: true,
+            isIdentityVerified: true,
+            createdAt: true, // ✅ AJOUTÉ pour joinedYear
             stats: {
               select: { averageRating: true, totalReviews: true },
             },
@@ -64,6 +68,8 @@ export async function GET(
             email: true,
             phoneNumber: true,
             profilePictureUrl: true,
+            cinNumber: true,
+            isIdentityVerified: true,
           },
         },
         revealedInfo: true,
@@ -71,6 +77,17 @@ export async function GET(
         review: true,
         offer: {
           select: { id: true },
+        },
+        payments: {
+          // ✅ AJOUTÉ pour les infos de paiement
+          take: 1,
+          orderBy: { createdAt: "desc" },
+          select: {
+            id: true,
+            status: true,
+            amount: true,
+            providerTransactionId: true,
+          },
         },
       },
     });
@@ -82,6 +99,16 @@ export async function GET(
       );
     }
 
+    // ✅ Compter les annonces actives du propriétaire
+    const listingsCount = booking.owner
+      ? await prisma.listing.count({
+          where: {
+            ownerId: booking.owner.id,
+            status: "ACTIVE",
+          },
+        })
+      : 0;
+
     let conversationId = null;
     if (booking.infoRequestId) {
       const conversation = await prisma.conversation.findFirst({
@@ -92,6 +119,24 @@ export async function GET(
     }
 
     const hasReview = !!booking.review;
+
+    // 🔍 DEBUG LOGS
+    console.log("🔍 [API BOOKING] Listing:", {
+      id: booking.listing.id,
+      title: booking.listing.title,
+      latitude: booking.listing.latitude,
+      longitude: booking.listing.longitude,
+    });
+
+    console.log("🔍 [API BOOKING] Owner:", {
+      id: booking.owner?.id,
+      firstName: booking.owner?.firstName,
+      lastName: booking.owner?.lastName,
+      joinedYear: booking.owner?.createdAt
+        ? new Date(booking.owner.createdAt).getFullYear()
+        : null,
+      listingsCount: listingsCount,
+    });
 
     return NextResponse.json({
       id: booking.id,
@@ -119,9 +164,12 @@ export async function GET(
         latitude: booking.listing.latitude,
         longitude: booking.listing.longitude,
         description: booking.listing.description,
-        photos: booking.listing.photos,
+        image: booking.listing.photos?.[0]?.url || null, // ← AJOUTE CETTE LIGNE
         houseRules: booking.listing.houseRules,
         equipment: booking.listing.equipment,
+        location: [booking.listing.governorate, booking.listing.delegation]
+          .filter(Boolean)
+          .join(", "), // ← AJOUTE CETTE LIGNE
       },
       owner: {
         id: booking.owner?.id,
@@ -131,8 +179,14 @@ export async function GET(
         email: booking.owner?.email,
         phone: booking.owner?.phoneNumber,
         profilePictureUrl: booking.owner?.profilePictureUrl,
+        cinNumber: booking.owner?.cinNumber,
+        isIdentityVerified: booking.owner?.isIdentityVerified,
         rating: booking.owner?.stats?.averageRating,
         reviewCount: booking.owner?.stats?.totalReviews,
+        joinedYear: booking.owner?.createdAt
+          ? new Date(booking.owner.createdAt).getFullYear()
+          : null, // ✅ AJOUTÉ
+        listingsCount: listingsCount, // ✅ AJOUTÉ
       },
       tenant: {
         id: booking.tenant?.id,
@@ -142,9 +196,12 @@ export async function GET(
         email: booking.tenant?.email,
         phone: booking.tenant?.phoneNumber,
         profilePictureUrl: booking.tenant?.profilePictureUrl,
+        cinNumber: booking.tenant?.cinNumber,
+        isIdentityVerified: booking.tenant?.isIdentityVerified,
       },
       revealedInfo: booking.revealedInfo,
       contract: booking.contract,
+      payment: booking.payments?.[0] || null, // ✅ AJOUTÉ
     });
   } catch (error) {
     console.error("❌ [API] Erreur:", error);
@@ -224,7 +281,6 @@ export async function POST(
     );
     const additionalPrice = booking.pricePerNight * additionalNights;
 
-    // ✅ Récupérer les infos du locataire et du listing pour la notification
     const tenantName =
       booking.tenant.firstName && booking.tenant.lastName
         ? `${booking.tenant.firstName} ${booking.tenant.lastName}`
@@ -232,7 +288,6 @@ export async function POST(
 
     const listingTitle = booking.listing.title;
 
-    // Formatage des dates pour la notification
     const formattedCurrentCheckOut = currentCheckOut.toLocaleDateString(
       "fr-FR",
       {
@@ -247,7 +302,6 @@ export async function POST(
       year: "numeric",
     });
 
-    // ✅ Créer une notification détaillée pour le propriétaire
     await prisma.notification.create({
       data: {
         userId: booking.ownerId!,

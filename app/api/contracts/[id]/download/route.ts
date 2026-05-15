@@ -17,7 +17,14 @@ export async function GET(
     
     const contract = await prisma.contract.findUnique({
       where: { id: id },
-      include: { booking: true },
+      include: { 
+        booking: {
+          include: {
+            tenant: true,
+            owner: true,
+          }
+        } 
+      },
     });
 
     if (!contract) {
@@ -43,8 +50,15 @@ export async function GET(
     }
 
     // Extraire le base64 de l'URL data
-    const base64Data = contract.pdfUrl.split(',')[1];
-    const binaryData = Buffer.from(base64Data, 'base64');
+    const base64Match = contract.pdfUrl.match(/^data:application\/pdf;base64,(.+)$/);
+    let binaryData: Buffer;
+    
+    if (base64Match) {
+      binaryData = Buffer.from(base64Match[1], 'base64');
+    } else {
+      // Si c'est déjà du base64 pur
+      binaryData = Buffer.from(contract.pdfUrl, 'base64');
+    }
 
     return new NextResponse(binaryData, {
       status: 200,

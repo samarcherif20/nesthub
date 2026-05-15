@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 require("dotenv").config({ path: ".env.local" });
 process.env.NEXT_DISABLE_TURBOPACK = "1";
-const hostname = "0.0.0.0"; // ✅ ADD THIS LINE - allows network access
+const hostname = "0.0.0.0";
 
 const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
 const { Server } = require("socket.io");
 const { PrismaClient } = require("@prisma/client");
-const OpenAI = require("openai");
+
+// ✅ IMPORT DU MODULE DE MODÉRATION (remplace tout l'ancien code IA)
+const { moderateMessage } = require("./lib/moderation");
 
 const prisma = new PrismaClient();
 const dev = process.env.NODE_ENV !== "production";
@@ -18,144 +20,10 @@ const handle = app.getRequestHandler();
 // Stockage temporaire des utilisateurs connectés
 const userSockets = new Map();
 
-// 🔥 MODÈLES IA GLOBAUX
-let toxicityClassifier = null;
-let nerClassifier = null;
-let intentClassifier = null;
-
 // Variable pour l'instance socket.io (sera exposée à l'API)
 let globalIo = null;
 
-// 🔥 CLIENT GITHUB AI (via GitHub Token)
-const githubAI = new OpenAI({
-  baseURL: "https://models.github.ai/inference",
-  apiKey: process.env.GITHUB_TOKEN,
-});
-
-// 🧠 FONCTION DE DÉTECTION AVEC GITHUB AI (GPT-4o-mini)
-async function detectLeaksWithGitHubAI(content) {
-  const prompt = `Tu es un détecteur de fuite d'informations personnelles pour une plateforme de location immobilière.
-
-Message à analyser: "${content}"
-
-Détecte les éléments suivants:
-- Numéros de téléphone tunisiens (+216, 00216, ou commençant par 2,5,9 suivi de 6 chiffres)
-- Numéros écrits en lettres (ex: "un deux zéro un deux")
-- Adresses email
-- Numéros CIN (6-8 chiffres, ne commençant pas par 2,5,9)
-- RIB (Relevé d'Identité Bancaire)
-- IBAN (international)
-- Adresses physiques (rue, avenue, cité, code postal)
-- Liens WhatsApp (whatsapp.com, wa.me)
-- Liens externes (http, https)
-
-RÈGLES IMPORTANTES:
-1. Réponds UNIQUEMENT en JSON valide
-2. La première ligne doit être "{"
-3. La dernière ligne doit être "}"
-
-FORMAT DE RÉPONSE EXACT (sans texte avant ou après):
-{
-  "hasLeak": true/false,
-  "leaks": [
-    {
-      "type": "phone|cin|rib|iban|email|address|whatsapp|url|number_text",
-      "value": "la valeur exacte détectée",
-      "confidence": 0.95
-    }
-  ],
-  "riskLevel": "low|medium|high",
-  "explanation": "pourquoi c'est une fuite (1 phrase)"
-}
-
-Si aucune fuite:
-{
-  "hasLeak": false,
-  "leaks": [],
-  "riskLevel": "low",
-  "explanation": "Aucune information personnelle détectée"
-}`;
-
-  try {
-    console.log("🤖 [GitHub AI] Appel à gpt-4o-mini...");
-
-    const response = await githubAI.chat.completions.create({
-      messages: [{ role: "user", content: prompt }],
-      model: "gpt-4o-mini",
-      temperature: 0.1,
-    });
-
-    const responseText = response.choices[0].message.content;
-    console.log("📥 [GitHub AI] Réponse reçue");
-
-    // Extraire le JSON de la réponse
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const result = JSON.parse(jsonMatch[0]);
-      console.log("✅ [GitHub AI] Résultat:", JSON.stringify(result, null, 2));
-      return result;
-    }
-
-    return {
-      hasLeak: false,
-      leaks: [],
-      riskLevel: "low",
-      explanation: "Erreur parsing JSON",
-    };
-  } catch (error) {
-    console.error("❌ [GitHub AI] Erreur:", error.message);
-    return {
-      hasLeak: false,
-      leaks: [],
-      riskLevel: "low",
-      explanation: "API error, fallback to regex",
-    };
-  }
-}
-
-// 🔥 FONCTION POUR CHARGER TOUS LES MODÈLES AU DÉMARRAGE
-async function preloadAIModel() {
-  console.log("🤖 [PRELOAD] Chargement des modèles IA au démarrage...");
-  console.log("⏳ Cela peut prendre 30-60 secondes la première fois...");
-
-  try {
-    const { pipeline } = await import("@xenova/transformers");
-
-    console.log("📦 Chargement du modèle de toxicité...");
-    const startTime1 = Date.now();
-    toxicityClassifier = await pipeline(
-      "text-classification",
-      "Xenova/toxic-bert",
-    );
-    console.log(`✅ Modèle toxicité chargé en ${Date.now() - startTime1}ms`);
-
-    console.log("📦 Chargement du modèle NER multilingue...");
-    const startTime2 = Date.now();
-    nerClassifier = await pipeline(
-      "token-classification",
-      "Xenova/bert-base-multilingual-cased-ner-hrl",
-    );
-    console.log(`✅ Modèle NER chargé en ${Date.now() - startTime2}ms`);
-
-    console.log("📦 Chargement du modèle Zero-shot...");
-    const startTime3 = Date.now();
-    intentClassifier = await pipeline(
-      "zero-shot-classification",
-      "Xenova/nli-deberta-v3-xsmall",
-    );
-    console.log(`✅ Modèle Zero-shot chargé en ${Date.now() - startTime3}ms`);
-
-    global.toxicityClassifier = toxicityClassifier;
-    global.nerClassifier = nerClassifier;
-    global.intentClassifier = intentClassifier;
-
-    console.log("✅ [PRELOAD] Tous les modèles IA chargés avec succès");
-  } catch (error) {
-    console.error("❌ [PRELOAD] Erreur préchargement IA:", error);
-  }
-}
-
-// 🔥 Fonction pour détecter les messages vocaux
+// 🧠 Fonction pour détecter les messages vocaux (gardée)
 function isVoiceMessage(content) {
   return (
     content === "🎤 Message vocal" ||
@@ -170,8 +38,8 @@ function getIo() {
 }
 
 app.prepare().then(async () => {
-  console.log("⏳ Démarrage du serveur, chargement des modèles IA...");
-  await preloadAIModel();
+  console.log("⏳ Démarrage du serveur...");
+  console.log("🤖 Module de modération importé depuis lib/moderation.js");
 
   const httpServer = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
@@ -255,55 +123,31 @@ app.prepare().then(async () => {
       } else {
         try {
           // ==========================================
-          // 🧠 ÉTAPE 1 : DÉTECTION AVEC GITHUB AI (GPT-4o-mini)
+          // 🧠 MODÉRATION AVEC LE MODULE EXTERNE
           // ==========================================
-          console.log("🤖 [GitHub AI] Analyse du message...");
+          console.log("🤖 [MODERATION] Analyse du message...");
 
-          const aiResult = await detectLeaksWithGitHubAI(data.content);
+          const result = await moderateMessage(data.content, data.userId);
 
-          if (aiResult.hasLeak) {
+          if (result.isBlocked) {
             isBlocked = true;
-            blockedReason = `[IA] ${aiResult.explanation}`;
-            finalContent = `[Message bloqué - ${blockedReason}]`;
-            console.log(`🛡️ [GitHub AI] BLOQUÉ: ${blockedReason}`);
+            blockedReason = result.reason;
+            finalContent = result.content;
             socket.emit("message-blocked", {
               reason: blockedReason,
-              leaks: aiResult.leaks,
-              riskLevel: aiResult.riskLevel,
+              category: result.category,
+              confidence: result.confidence,
             });
-          }
-
-          // ==========================================
-          // 🛡️ ÉTAPE 2 : DÉTECTION DE TOXICITÉ (mots impolis)
-          // ==========================================
-          if (!isBlocked) {
-            let classifier = global.toxicityClassifier;
-            if (!classifier) {
-              const { pipeline } = await import("@xenova/transformers");
-              classifier = await pipeline(
-                "text-classification",
-                "Xenova/toxic-bert",
-              );
-              global.toxicityClassifier = classifier;
-            }
-
-            if (classifier) {
-              console.log("🛡️ [IA-TOXIC] Analyse de toxicité...");
-              const toxicResults = await classifier(data.content);
-              const badResult = toxicResults.find(
-                (r) => r.label === "toxic" && r.score > 0.7,
-              );
-              if (badResult) {
-                isBlocked = true;
-                blockedReason = `Contenu inapproprié (${badResult.label})`;
-                finalContent = `[Message bloqué - ${blockedReason}]`;
-                console.log(`🛡️ [IA-TOXIC] BLOQUÉ: ${badResult.label}`);
-                socket.emit("message-blocked", { reason: blockedReason });
-              }
-            }
+            console.log(
+              `🛡️ [MODERATION] BLOQUÉ: ${result.reason} (${result.category})`,
+            );
+          } else {
+            console.log(
+              `✅ [MODERATION] AUTORISÉ (confiance: ${result.confidence})`,
+            );
           }
         } catch (error) {
-          console.error("❌ Erreur modération IA:", error);
+          console.error("❌ Erreur modération:", error);
         }
       }
 
@@ -451,12 +295,10 @@ app.prepare().then(async () => {
   });
 
   httpServer.listen(3000, hostname, (err) => {
-    // ← Ajoute hostname ici
     if (err) throw err;
     console.log(`🚀 Serveur prêt sur http://${hostname}:3000`);
     console.log("🔌 Socket.io actif sur /api/socket");
-    console.log("🤖 GitHub AI (GPT-4o-mini) prêt à l'emploi");
-    console.log("✅ Tous les modèles IA préchargés et prêts à l'emploi");
+    console.log("🤖 Modération IA active (GPT-4o-mini)");
   });
 });
 

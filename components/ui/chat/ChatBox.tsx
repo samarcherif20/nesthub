@@ -985,34 +985,6 @@ export function ChatBox({
     setShowMoreMenu(false);
   };
 
-  const handleClearHistory = async () => {
-    if (
-      confirm(
-        "Êtes-vous sûr de vouloir effacer tout l'historique de cette conversation ?",
-      )
-    ) {
-      try {
-        const res = await fetch(
-          `/api/conversations/${conversationId}/messages?deleteAll=true`,
-          { method: "DELETE" },
-        );
-        if (res.ok) {
-          setMessages([]);
-          processedIds.current.clear();
-          showToastMsg("Historique effacé avec succès", "info");
-          sendSocketMessage(
-            conversationId,
-            "L'historique des messages a été effacé",
-            recipientId,
-          );
-          setTimeout(() => loadMessages(), 500);
-        } else showToastMsg("Erreur lors de l'effacement", "error");
-      } catch {
-        showToastMsg("Erreur de connexion", "error");
-      }
-    }
-    setShowMoreMenu(false);
-  };
 
   const handleConfirmOffer = async () => {
     if (!conversationId || !listing) return;
