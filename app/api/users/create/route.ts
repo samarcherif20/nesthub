@@ -58,15 +58,39 @@ export async function POST(req: Request) {
         firstName: null,
         lastName: null,
         phoneNumber: null,
-        status: "PENDING_VALIDATION", // ← AJOUTE CETTE LIGNE
+        status: "PENDING_VALIDATION",
         role: userRole,
         preferredLocale: preferredLocale || "fr",
-        profilePictureUrl: profilePictureUrl || null, // ✅ AJOUTER CETTE LIGNE
+        profilePictureUrl: profilePictureUrl || null,
         updatedAt: new Date(),
       },
     });
 
     console.log("✅ Utilisateur créé:", user);
+
+    // ============================================
+    // 🆕 AJOUTER ICI LA CRÉATION DE UserStats
+    // ============================================
+    try {
+      await prisma.userStats.create({
+        data: {
+          userId: user.id,
+          reliabilityScore: 50,
+          trustLabel: "Non évalué",
+          trustBadge: "gray",
+          scamFlags: [],
+          lastScoredAt: null,
+        },
+      });
+      console.log("✅ UserStats créées pour l'utilisateur:", user.id);
+    } catch (statsError) {
+      console.error(
+        "⚠️ Erreur création UserStats (non bloquante):",
+        statsError,
+      );
+      // On continue même si UserStats échoue (l'utilisateur est déjà créé)
+    }
+
     return NextResponse.json({ success: true, user });
   } catch (error: any) {
     console.error("❌ ERREUR COMPLÈTE:", error);

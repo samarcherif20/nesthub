@@ -12,6 +12,17 @@ const { PrismaClient } = require("@prisma/client");
 // ✅ IMPORT DU MODULE DE MODÉRATION (remplace tout l'ancien code IA)
 const { moderateMessage } = require("./lib/moderation");
 
+// ============================================
+// 🆕 AUGMENTER LA LIMITE DES UPLOADS
+// ============================================
+const express = require("express");
+const expressApp = express(); // ← Renommé pour éviter conflit
+
+expressApp.use(express.json({ limit: "50mb" }));
+expressApp.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+// ============================================
+
 const prisma = new PrismaClient();
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev, hostname });

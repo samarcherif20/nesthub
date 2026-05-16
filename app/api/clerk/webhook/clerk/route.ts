@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { UserRole, AccountStatus } from "@prisma/client";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { NextResponse } from "next/server";
+import { onUserVerified } from "@/lib/risk-scoring";
 
 interface CustomPublicMetadata {
   role?: "TENANT" | "PROPERTY_OWNER" | "ADMIN";
@@ -229,6 +230,8 @@ async function handleUserChange(data: CustomUserData) {
     }
 
     if (existingUser) {
+      // Sauvegarder l'ancien statut email pour détecter le changement
+      const wasEmailVerified = existingUser.isEmailVerified;
       await prisma.user.update({
         where: { id: existingUser.id },
         data: {
@@ -250,7 +253,11 @@ async function handleUserChange(data: CustomUserData) {
           updatedAt: new Date(),
         },
       });
-
+      // ✅ Vérifier si l'email vient d'être vérifié
+      if (isEmailVerified && !wasEmailVerified) {
+        console.log(`📧 Email fraîchement vérifié pour ${existingUser.id}`);
+        await onUserVerified(existingUser.id);
+      }
       // ✅ Sync role to Clerk public metadata
       await syncClerkMetadata();
 

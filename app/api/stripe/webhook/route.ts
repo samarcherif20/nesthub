@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
+import { onBookingCompleted } from "@/lib/risk-scoring"; 
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -207,6 +208,7 @@ async function handlePaymentSuccess(paymentIntent: any) {
     });
     console.log("✅ Paiement créé pour réservation:", bookingReference);
   }
+  await onBookingCompleted(bookingId);
 
   // 6. Notifier le propriétaire
   await prisma.notification.create({

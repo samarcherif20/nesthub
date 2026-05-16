@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { moderateMessage } from "@/lib/ai-moderation";
+import { moderateMessage } from "@/lib/moderation";
 import { del } from "@vercel/blob";
+import { onMessageBlocked } from "@/lib/risk-scoring";
 
 // GET - Récupérer les messages d'une conversation
 export async function GET(
@@ -260,36 +261,12 @@ export async function POST(
         isBlocked = true;
         blockedReason = moderation.reason;
         finalContent = `[Message bloqué - ${moderation.reason}]`;
+
+        // ✅ DÉCLENCHER LE RECALCUL DU SCORE
+        await onMessageBlocked(user.id);
       }
     } catch (error) {
-      // fallback regex
-      const phoneRegex =
-        /(\+216)?[ \-\s]?[259][0-9]{7,8}|[0-9]{2}[-\s]?[0-9]{3}[-\s]?[0-9]{3}/;
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/;
-      const ibanRegex = /TN\d{20}/;
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-
-      if (phoneRegex.test(content)) {
-        isBlocked = true;
-        blockedReason = "Numéro de téléphone détecté";
-        finalContent =
-          "[Message bloqué - Ne partagez pas vos coordonnées personnelles]";
-      } else if (emailRegex.test(content)) {
-        isBlocked = true;
-        blockedReason = "Adresse email détectée";
-        finalContent =
-          "[Message bloqué - Ne partagez pas vos coordonnées personnelles]";
-      } else if (ibanRegex.test(content)) {
-        isBlocked = true;
-        blockedReason = "IBAN détecté";
-        finalContent =
-          "[Message bloqué - Ne partagez pas vos informations bancaires]";
-      } else if (urlRegex.test(content)) {
-        isBlocked = true;
-        blockedReason = "Lien URL détecté";
-        finalContent =
-          "[Message bloqué - Les liens externes ne sont pas autorisés]";
-      }
+      console.error("❌ Erreur modération:", error);
     }
 
     const message = await prisma.message.create({

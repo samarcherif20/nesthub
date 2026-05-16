@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuth } from "@clerk/nextjs/server";
 import { Prisma } from "@prisma/client";
-
+import { onUserVerified } from "@/lib/risk-scoring";
 interface RouteParams {
   params: Promise<{ requestId: string }>;
 }
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             createdAt: true,
             role: true,
             isIdentityVerified: true,
-            cinData: true,        // ✅ AJOUTÉ - données arabes du CIN
+            cinData: true, // ✅ AJOUTÉ - données arabes du CIN
             stats: true,
           },
         },
@@ -237,7 +237,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           },
         }),
       ]);
-
+      // ✅ AJOUTER ICI - APRÈS LA TRANSACTION, AVANT LE RETURN
+      await onUserVerified(verificationRequest.userId);
       return NextResponse.json({
         success: true,
         message: "Demande validée avec succès",

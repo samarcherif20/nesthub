@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { otpStore } from "../add-whatsapp/route";
 import { prisma } from "@/lib/prisma";
+import { onUserVerified } from "@/lib/risk-scoring";
 
 export async function POST(req: Request) {
   try {
@@ -85,6 +86,8 @@ export async function POST(req: Request) {
         },
       });
       console.log("✅ Phone verified sauvegardé en DB");
+      // 🆕 AJOUTER ICI - Déclencher le recalcul du score
+      await onUserVerified(userId);
     } catch (prismaError: any) {
       console.error("⚠️ Erreur Prisma (non bloquant):", prismaError.message);
       // On continue même si Prisma échoue car l'OTP est vérifié

@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { onDisputeOpened } from "@/lib/risk-scoring"; // ← AJOUTER CETTE LIGNE
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
         priority,
       }
     });
+    await onDisputeOpened(dispute.id);
 
     // Notifier l'autre partie
     const otherUserId = isTenant ? booking.ownerId : booking.tenantId;

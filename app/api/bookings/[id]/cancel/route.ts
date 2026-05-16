@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 import { tndToStripeAmount, getCurrentExchangeRate } from "@/lib/currency";
+import { onBookingCancelled } from "@/lib/risk-scoring";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -369,6 +370,7 @@ export async function POST(
         });
       }
     }
+    await onBookingCancelled(booking.id);
 
     return NextResponse.json({
       success: true,
