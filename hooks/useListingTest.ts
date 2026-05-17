@@ -6,6 +6,27 @@ export interface Owner {
   isVerified: boolean;
   username?: string;
   avatar?: string;
+  bio?: string;
+  memberSince?: number;
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  author: string;
+  authorAvatar?: string;
+  date: string;
+  createdAt: string;
+}
+
+export interface ReviewScores {
+  cleanliness: number;
+  accuracy: number;
+  communication: number;
+  location: number;
+  checkin: number;
+  value: number;
 }
 
 export interface Listing {
@@ -36,8 +57,9 @@ export interface Listing {
   owner: Owner;
   pendingDates: string[];
   cleaningFee?: number;
+  reviews?: Review[];
+  reviewScores?: ReviewScores;
 
-  // Nouvelles propriétés
   numberOfKitchens?: number;
   floorNumber?: number;
   hasElevator?: boolean;
@@ -75,25 +97,36 @@ export function useListingTest(id: string) {
         const res = await fetch(`/api/listings/${id}`);
         const data = await res.json();
 
-        console.log("🔴🔴🔴 TEST - DATA:", data);
-        console.log("🔴🔴🔴 TEST - LATITUDE:", data.latitude);
-        console.log("🔴🔴🔴 TEST - LONGITUDE:", data.longitude);
+        console.log("🔴 LISTING DATA:", data);
+        console.log("🔴 maxGuests:", data.maxGuests);
+        console.log("🔴 cleaningFee:", data.cleaningFee);
+        console.log("🔴 reviews count:", data.reviews?.length || 0);
+        console.log("🔴 owner bio:", data.owner?.bio);
 
         const images = data.photos?.map((p: any) => p.url) ?? data.images ?? [];
         const amenities = extractAmenities(data.equipment ?? {});
-
-        // ✅ Parse les règles de manière 100% dynamique
         const houseRules = parseHouseRules(data.houseRules, data);
+
+        // Formater les reviews
+        const formattedReviews = data.reviews?.map((review: any) => ({
+          id: review.id,
+          rating: review.rating,
+          comment: review.comment,
+          author: review.author || review.reviewer?.username || "Anonyme",
+          authorAvatar: review.authorAvatar || review.reviewer?.profilePictureUrl,
+          date: review.date || new Date(review.createdAt).toLocaleDateString("fr-FR", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+          }),
+          createdAt: review.createdAt,
+        })) ?? [];
 
         const transformedListing: Listing = {
           id: data.id,
           title: data.title,
           description: data.description,
-          location:
-            `${data.governorate || ""}, ${data.delegation || ""}`.replace(
-              /^, /,
-              "",
-            ),
+          location: `${data.governorate || ""}, ${data.delegation || ""}`.replace(/^, /, ""),
           governorate: data.governorate,
           delegation: data.delegation,
           street: data.street,
@@ -107,7 +140,7 @@ export function useListingTest(id: string) {
           isVerified: data.isVerified ?? false,
           bedrooms: data.rooms ?? data.bedrooms ?? 1,
           bathrooms: data.bathrooms ?? 1,
-          maxGuests: data.maxGuests,
+          maxGuests: data.maxGuests ?? undefined,
           surfaceArea: data.surfaceArea ?? 0,
           amenities: amenities,
           equipment: data.equipment ?? {},
@@ -115,13 +148,14 @@ export function useListingTest(id: string) {
           blockedDates: data.blockedDates ?? [],
           pendingDates: data.pendingDates ?? [],
           houseRules: houseRules,
-          cleaningFee: data.cleaningFee,
+          cleaningFee: data.cleaningFee ?? 85,
           owner: {
-            name:
-              data.owner?.username ?? data.owner?.firstName ?? "Hôte NestHub",
+            name: data.owner?.username ?? data.owner?.firstName ?? "Hôte NestHub",
             username: data.owner?.username,
             isVerified: data.owner?.isIdentityVerified ?? true,
             avatar: data.owner?.profilePictureUrl,
+            bio: data.owner?.bio || "Passionné par l'hospitalité, je serai ravi de vous accueillir et de rendre votre séjour unique.",
+            memberSince: data.owner?.createdAt ? new Date(data.owner.createdAt).getFullYear() : 2023,
           },
           numberOfKitchens: data.numberOfKitchens ?? 1,
           floorNumber: data.floorNumber,
@@ -140,6 +174,15 @@ export function useListingTest(id: string) {
           weekendPriceMultiplier: data.weekendPriceMultiplier ?? 1.15,
           extraFees: data.extraFees ?? [],
           seasonalRules: data.seasonalRules ?? [],
+          reviews: formattedReviews,
+          reviewScores: data.reviewScores || {
+            cleanliness: 4.5,
+            accuracy: 4.5,
+            communication: 4.5,
+            location: 4.5,
+            checkin: 4.5,
+            value: 4.5,
+          },
         };
 
         setListing(transformedListing);
@@ -161,8 +204,8 @@ export function useListingTest(id: string) {
   })();
 
   const basePrice = listing ? listing.pricePerNight * nights : 0;
-  const cleaningFee = listing?.cleaningFee ?? 0;
-  const serviceFee = listing ? Math.round(basePrice * 0.05) : 0;
+  const cleaningFee = listing?.cleaningFee ?? 85;
+  const serviceFee = listing ? Math.round((basePrice + cleaningFee) * 0.05) : 0;
   const totalToPay = basePrice + cleaningFee + serviceFee;
 
   const calculateTotalPrice = () => totalToPay;
@@ -175,8 +218,7 @@ export function useListingTest(id: string) {
   const isDateBlocked = (date: string) => {
     if (!listing) return true;
     if (listing.blockedDates?.includes(date)) return true;
-    if (listing.availability && listing.availability[date] === false)
-      return true;
+    if (listing.availability && listing.availability[date] === false) return true;
     return false;
   };
 
@@ -230,28 +272,22 @@ function extractAmenities(equipment: Record<string, unknown>): string[] {
   );
 }
 
-// ✅ Parse les règles de manière 100% dynamique sans emojis et sans valeurs par défaut
 function parseHouseRules(houseRulesData: unknown, fullData: any): string[] {
   const rules: string[] = [];
 
-  // Si houseRules est un tableau, on le retourne directement
   if (Array.isArray(houseRulesData) && houseRulesData.length > 0) {
     return houseRulesData;
   }
 
-  // Si houseRules est un objet, on extrait les règles
   if (houseRulesData && typeof houseRulesData === "object") {
     const rulesObj = houseRulesData as Record<string, unknown>;
 
-    // Heures d'arrivée et de départ
     if (rulesObj.checkIn && typeof rulesObj.checkIn === "string") {
       rules.push(`Arrivée à partir de ${rulesObj.checkIn}`);
     }
     if (rulesObj.checkOut && typeof rulesObj.checkOut === "string") {
       rules.push(`Départ avant ${rulesObj.checkOut}`);
     }
-
-    // Règles booléennes
     if (rulesObj.noSmoking === true) {
       rules.push("Interdiction de fumer dans le logement");
     }
@@ -266,7 +302,6 @@ function parseHouseRules(houseRulesData: unknown, fullData: any): string[] {
     }
   }
 
-  // Règles provenant des champs principaux du listing
   if (fullData.petsAllowed === true) {
     rules.push("Animaux acceptés");
   }
@@ -277,7 +312,6 @@ function parseHouseRules(houseRulesData: unknown, fullData: any): string[] {
     rules.push("Enfants bienvenus");
   }
 
-  // Règles personnalisées
   if (fullData.customRules && typeof fullData.customRules === "string") {
     const customLines = fullData.customRules
       .split("\n")

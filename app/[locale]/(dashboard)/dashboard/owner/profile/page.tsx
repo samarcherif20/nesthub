@@ -47,7 +47,9 @@ import { MdOutlineVerified } from "react-icons/md";
 import { TbLanguage } from "react-icons/tb";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useProfile } from "./hooks/useProfile";
-
+// Add at the top with other imports
+import { useCINStatus } from "./hooks/useCINStatus";
+import IdentityPage from "@/components/ui/modals/IdentityModal";
 const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
 
@@ -115,7 +117,9 @@ function getUserTypeLabel(userType: string) {
       return (
         <span className="flex items-center gap-1.5">
           <HomeIcon size={12} className="text-sky-600 dark:text-sky-400" />
-          <span className="text-slate-700 dark:text-slate-300">Property Owner</span>
+          <span className="text-slate-700 dark:text-slate-300">
+            Property Owner
+          </span>
         </span>
       );
     case "tenant":
@@ -128,7 +132,10 @@ function getUserTypeLabel(userType: string) {
     case "professional":
       return (
         <span className="flex items-center gap-1.5">
-          <Briefcase size={12} className="text-purple-600 dark:text-purple-400" />
+          <Briefcase
+            size={12}
+            className="text-purple-600 dark:text-purple-400"
+          />
           <span className="text-slate-700 dark:text-slate-300">Both</span>
         </span>
       );
@@ -136,7 +143,9 @@ function getUserTypeLabel(userType: string) {
       return (
         <span className="flex items-center gap-1.5">
           <User size={12} className="text-slate-500 dark:text-slate-400" />
-          <span className="text-slate-500 dark:text-slate-400">Utilisateur</span>
+          <span className="text-slate-500 dark:text-slate-400">
+            Utilisateur
+          </span>
         </span>
       );
   }
@@ -214,6 +223,15 @@ export default function ProfilePage() {
     setEditingSlot,
     setTempHours,
   } = useProfile();
+  const {
+    cinStatus,
+    loading: cinLoading,
+    showCINModal,
+    setShowCINModal,
+    submitting: cinSubmitting,
+    handleCINSubmission,
+    currentUserId, // ✅ AJOUTER CETTE LIGNE
+  } = useCINStatus();
 
   if (loading) {
     return (
@@ -348,7 +366,10 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   {/* ✅ USERNAME EN PREMIER (prend toute la ligne si tu veux, ici première position) */}
                   <div className="sm:col-span-2">
-                    <Field label={t("fields.username") || "Nom d'utilisateur"} icon={RiUserLine}>
+                    <Field
+                      label={t("fields.username") || "Nom d'utilisateur"}
+                      icon={RiUserLine}
+                    >
                       <div>
                         <input
                           type="text"
@@ -367,7 +388,9 @@ export default function ProfilePage() {
                         {isCheckingUsername && (
                           <div className="flex items-center gap-1 mt-1">
                             <Loader2 className="w-3 h-3 animate-spin text-slate-400" />
-                            <span className="text-[10px] text-slate-400">Vérification...</span>
+                            <span className="text-[10px] text-slate-400">
+                              Vérification...
+                            </span>
                           </div>
                         )}
                         {usernameError && (
@@ -375,11 +398,16 @@ export default function ProfilePage() {
                             <AlertCircle size={10} /> {usernameError}
                           </p>
                         )}
-                        {!usernameError && username && usernameTouched && !isCheckingUsername && isEditing && (
-                          <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1">
-                            <CheckCircle size={10} /> Nom d'utilisateur disponible
-                          </p>
-                        )}
+                        {!usernameError &&
+                          username &&
+                          usernameTouched &&
+                          !isCheckingUsername &&
+                          isEditing && (
+                            <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1">
+                              <CheckCircle size={10} /> Nom d'utilisateur
+                              disponible
+                            </p>
+                          )}
                       </div>
                     </Field>
                   </div>
@@ -618,11 +646,21 @@ export default function ProfilePage() {
                             onChange={(e) => setTempHours(e.target.value)}
                             className="flex-1 px-2 py-1 text-xs rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                           >
-                            <option value="09:00 - 19:00">09:00 - 19:00 (Journée)</option>
-                            <option value="10:00 - 15:00">10:00 - 15:00 (Matinée)</option>
-                            <option value="08:00 - 12:00">08:00 - 12:00 (Matin)</option>
-                            <option value="14:00 - 20:00">14:00 - 20:00 (Après-midi)</option>
-                            <option value="Sur rendez-vous">Sur rendez-vous</option>
+                            <option value="09:00 - 19:00">
+                              09:00 - 19:00 (Journée)
+                            </option>
+                            <option value="10:00 - 15:00">
+                              10:00 - 15:00 (Matinée)
+                            </option>
+                            <option value="08:00 - 12:00">
+                              08:00 - 12:00 (Matin)
+                            </option>
+                            <option value="14:00 - 20:00">
+                              14:00 - 20:00 (Après-midi)
+                            </option>
+                            <option value="Sur rendez-vous">
+                              Sur rendez-vous
+                            </option>
                             <option value="Fermé">Fermé</option>
                           </select>
                           <button
@@ -749,7 +787,10 @@ export default function ProfilePage() {
                             size={12}
                           />
                         ) : (
-                          <RiCloseLine className="text-slate-400 dark:text-slate-500" size={12} />
+                          <RiCloseLine
+                            className="text-slate-400 dark:text-slate-500"
+                            size={12}
+                          />
                         )}
                       </div>
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
@@ -766,15 +807,23 @@ export default function ProfilePage() {
               className={`bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden ${block3d}`}
             >
               <div
-                className={`h-1 bg-gradient-to-r ${idVerified ? "from-emerald-400 to-teal-500" : "from-amber-400 to-orange-500"}`}
+                className={`h-1 bg-gradient-to-r ${
+                  cinStatus.status === "VALIDATED"
+                    ? "from-emerald-400 to-teal-500"
+                    : cinStatus.status === "REJECTED"
+                      ? "from-rose-400 to-red-500"
+                      : "from-amber-400 to-orange-500"
+                }`}
               />
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-5">
                   <div
                     className={`w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center shadow-sm ${
-                      idVerified
+                      cinStatus.status === "VALIDATED"
                         ? "from-emerald-400 to-teal-500"
-                        : "from-amber-400 to-orange-500"
+                        : cinStatus.status === "REJECTED"
+                          ? "from-rose-400 to-red-500"
+                          : "from-amber-400 to-orange-500"
                     }`}
                   >
                     <RiShieldCheckLine className="text-white text-xl" />
@@ -791,14 +840,18 @@ export default function ProfilePage() {
                     </span>
                     <span
                       className={`px-2.5 py-1 rounded-full text-[9px] font-semibold uppercase tracking-widest border ${
-                        idVerified
+                        cinStatus.status === "VALIDATED"
                           ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800/40"
-                          : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/40"
+                          : cinStatus.status === "REJECTED"
+                            ? "bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800/40"
+                            : "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800/40"
                       }`}
                     >
-                      {idVerified
-                        ? t("verification.verified")
-                        : t("verification.pending")}
+                      {cinStatus.status === "VALIDATED"
+                        ? "✓ Vérifié"
+                        : cinStatus.status === "REJECTED"
+                          ? "✗ Rejeté"
+                          : "⏳ En attente"}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -809,13 +862,12 @@ export default function ProfilePage() {
                       <p className="text-xs font-semibold text-slate-900 dark:text-white">
                         {t("verification.idType")}
                       </p>
-                      {idVerifiedDate && (
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                          {t("verification.verifiedDate", {
-                            date: idVerifiedDate,
-                          })}
-                        </p>
-                      )}
+                      {cinStatus.status === "REJECTED" &&
+                        cinStatus.rejectionReason && (
+                          <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-0.5">
+                            Motif : {cinStatus.rejectionReason}
+                          </p>
+                        )}
                     </div>
                   </div>
                 </div>
@@ -824,50 +876,105 @@ export default function ProfilePage() {
                   {t("verification.description")}
                 </p>
 
-                <button
-                  onClick={sendVerificationReminder}
-                  disabled={sendingReminder || reminderSent}
-                  className={`w-full py-3 rounded-xl text-sm font-semibold transition-all border-2 ${
-                    reminderSent
-                      ? "border-emerald-500 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 cursor-not-allowed"
-                      : idVerified
-                        ? "border-emerald-500 dark:border-emerald-600 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500 dark:hover:bg-emerald-600 hover:text-white"
-                        : "bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white border-transparent shadow-sm"
-                  }`}
-                >
-                  {sendingReminder ? (
-                    <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                  ) : reminderSent ? (
-                    "Rappel envoyé ✓"
-                  ) : idVerified ? (
-                    t("verification.update")
-                  ) : (
-                    t("verification.start")
-                  )}
-                </button>
+                {/* ============================================ */}
+                {/* CASE 1: VALIDATED - NO BUTTON */}
+                {/* ============================================ */}
+                {cinStatus.status === "VALIDATED" && (
+                  <button
+                    disabled
+                    className="w-full py-3 rounded-xl text-sm font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-not-allowed"
+                  >
+                    ✓ Identité vérifiée
+                  </button>
+                )}
 
+                {/* ============================================ */}
+                {/* CASE 2: PENDING - ONLY REMINDER BUTTON */}
+                {/* ============================================ */}
+                {cinStatus.status === "PENDING" && (
+                  <button
+                    onClick={sendVerificationReminder}
+                    disabled={sendingReminder || reminderSent}
+                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-sm flex items-center justify-center gap-2"
+                  >
+                    {sendingReminder ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : reminderSent ? (
+                      "✓ Rappel envoyé"
+                    ) : (
+                      <>
+                        <Clock className="w-4 h-4" />
+                        Envoyer un rappel
+                      </>
+                    )}
+                  </button>
+                )}
+
+                {/* ============================================ */}
+                {/* CASE 3: REJECTED - REAPPLY BUTTON (ANIMATED) */}
+                {/* ============================================ */}
+                {cinStatus.status === "REJECTED" && cinStatus.canReapply && (
+                  <button
+                    onClick={() => setShowCINModal(true)}
+                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white shadow-lg animate-pulse flex items-center justify-center gap-2 group"
+                  >
+                    <svg
+                      className="w-4 h-4 group-hover:rotate-12 transition-transform"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                      />
+                    </svg>
+                    Réappliquer maintenant
+                  </button>
+                )}
+
+                {/* ============================================ */}
+                {/* CASE 4: NO STATUS / INITIAL - START BUTTON */}
+                {/* ============================================ */}
+                {!cinStatus.status && (
+                  <button
+                    onClick={() => setShowCINModal(true)}
+                    className="w-full py-3 rounded-xl text-sm font-semibold transition-all bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white shadow-sm flex items-center justify-center gap-2"
+                  >
+                    <RiCameraLine className="w-4 h-4" />
+                    {t("verification.start")}
+                  </button>
+                )}
+
+                {/* Wait time message */}
                 {waitTimeRemaining !== null && (
                   <div className="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                       <p className="text-xs text-amber-700 dark:text-amber-400">
                         Vous avez déjà envoyé un rappel récemment. Veuillez
-                        patienter {waitTimeRemaining} heures.
+                        patienter {waitTimeRemaining} heures.{" "}
                       </p>
                     </div>
                   </div>
                 )}
-                {reminderSent && !idVerified && !waitTimeRemaining && (
-                  <div className="mt-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40">
-                    <div className="flex items-center gap-2">
-                      <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                      <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                        Un rappel a été envoyé à l'administrateur. Vous serez
-                        notifié une fois votre identité vérifiée.
-                      </p>
+
+                {/* Reminder sent message */}
+                {reminderSent &&
+                  cinStatus.status === "PENDING" &&
+                  !waitTimeRemaining && (
+                    <div className="mt-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <p className="text-xs text-emerald-700 dark:text-emerald-400">
+                          Un rappel a été envoyé à l'administrateur. Vous serez
+                          notifié une fois votre identité vérifiée.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
 
@@ -879,7 +986,10 @@ export default function ProfilePage() {
               <div className="p-5">
                 <div className="flex items-center gap-2 mb-4">
                   <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center">
-                    <TrendingUp size={14} className="text-indigo-600 dark:text-indigo-400" />
+                    <TrendingUp
+                      size={14}
+                      className="text-indigo-600 dark:text-indigo-400"
+                    />
                   </div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     Statistiques
@@ -888,7 +998,10 @@ export default function ProfilePage() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-center">
-                    <Home size={16} className="text-sky-500 dark:text-sky-400 mx-auto mb-1" />
+                    <Home
+                      size={16}
+                      className="text-sky-500 dark:text-sky-400 mx-auto mb-1"
+                    />
                     <p className="text-lg font-bold text-slate-900 dark:text-white">
                       {totalProperties}
                     </p>
@@ -981,6 +1094,17 @@ export default function ProfilePage() {
           </aside>
         </div>
       </div>
+      {/* CIN Upload Modal - Only shows when showCINModal is true */}
+      {showCINModal && (
+        <IdentityPage
+          onClose={() => setShowCINModal(false)}
+          onSuccess={async (data) => {
+            await handleCINSubmission(data.rectoFile, data.versoFile);
+          }}
+          userId={currentUserId} // ← Passe l'ID utilisateur
+          initialRejectionReason={cinStatus.rejectionReason}
+        />
+      )}
     </div>
   );
 }

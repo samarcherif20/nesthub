@@ -1,6 +1,6 @@
 // app/[locale]/dashboard/owner/listings/create/page.tsx
 "use client";
-
+import { usePriceRecommendation } from "@/hooks/usePriceRecommendation";
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
@@ -211,6 +211,7 @@ const equipmentIds = [
   "dryer",
 ];
 
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function Stepper({
   value,
@@ -367,8 +368,12 @@ export default function CreateListingPage({
   const fileRef = useRef<HTMLInputElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const { getRecommendation, loading } = usePriceRecommendation();
+
   const geocodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const formRef = useRef(form);
+  const [recommendedPrice, setRecommendedPrice] = useState<number | null>(null);
+  const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<number | null>(null);
 
   useEffect(() => {
     formRef.current = form;
@@ -536,7 +541,30 @@ export default function CreateListingPage({
       }
     }, 800);
   }, [upd, validateField]);
-
+  const handleAIPriceRecommendation = async () => {
+    const result = await getRecommendation({
+      governorate: form.governorate,
+      type: form.type,
+      rooms: form.rooms,
+      bathrooms: form.bathrooms,
+      surfaceArea: form.surfaceArea,
+      equipment: form.equipment,
+      hasBalcony: form.hasBalcony,
+      hasGarden: form.hasGarden,
+      hasGarage: form.hasGarage,
+      hasElevator: form.hasElevator,
+      isFurnished: form.isFurnished,
+      rentalType: form.rentalType,
+    });
+  
+    if (result) {
+      setRecommendedPrice(result.pricePerNight);
+      setRecommendedPriceMonth(result.pricePerMonth);
+      toast.success(`Prix nuit: ${result.pricePerNight} TND | Prix mois: ${result.pricePerMonth} TND`);
+    }
+  };
+  
+ 
   // Détecter modifications non sauvegardées
   useEffect(() => {
     const hasChanges =
@@ -1685,86 +1713,136 @@ export default function CreateListingPage({
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                     <SectionTitle title="Tarifs" />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {(form.rentalType === "SHORT_TERM" ||
-                        form.rentalType === "BOTH") && (
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Sun size={16} className="text-sky-500" />
-                            <label className="text-xs font-black uppercase">
-                              Prix par nuit
-                            </label>
-                            <Tooltip text="Requis">
-                              <span className="text-rose-500 text-xs">*</span>
-                            </Tooltip>
-                          </div>
-                          <div className="flex items-baseline gap-2">
-                            <input
-                              type="number"
-                              value={form.pricePerNight || ""}
-                              onChange={(e) =>
-                                upd({
-                                  pricePerNight: e.target.value
-                                    ? Number(e.target.value)
-                                    : null,
-                                })
-                              }
-                              onBlur={() =>
-                                handleBlur("pricePerNight", form.pricePerNight)
-                              }
-                              placeholder="0"
-                              className="w-full text-2xl font-black bg-transparent border-none outline-none"
-                            />
-                            <span className="text-xs font-bold text-slate-400">
-                              TND / nuit
-                            </span>
-                          </div>
-                          {getFieldError("pricePerNight") && (
-                            <p className="text-xs text-rose-500 mt-1">
-                              {getFieldError("pricePerNight")}
-                            </p>
-                          )}
-                        </div>
-                      )}
-                      {(form.rentalType === "LONG_TERM" ||
-                        form.rentalType === "BOTH") && (
-                        <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Calendar size={16} className="text-purple-500" />
-                            <label className="text-xs font-black uppercase">
-                              Prix par mois
-                            </label>
-                            <Tooltip text="Requis">
-                              <span className="text-rose-500 text-xs">*</span>
-                            </Tooltip>
-                          </div>
-                          <div className="flex items-baseline gap-2">
-                            <input
-                              type="number"
-                              value={form.pricePerMonth || ""}
-                              onChange={(e) =>
-                                upd({
-                                  pricePerMonth: e.target.value
-                                    ? Number(e.target.value)
-                                    : null,
-                                })
-                              }
-                              onBlur={() =>
-                                handleBlur("pricePerMonth", form.pricePerMonth)
-                              }
-                              placeholder="0"
-                              className="w-full text-2xl font-black bg-transparent border-none outline-none"
-                            />
-                            <span className="text-xs font-bold text-slate-400">
-                              TND / mois
-                            </span>
-                          </div>
-                          {getFieldError("pricePerMonth") && (
-                            <p className="text-xs text-rose-500 mt-1">
-                              {getFieldError("pricePerMonth")}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                    {(form.rentalType === "SHORT_TERM" || form.rentalType === "BOTH") && (
+  <div className="space-y-3">
+    {/* SECTION IA - RECOMMANDATION */}
+    <div className="p-4 bg-gradient-to-r from-sky-50 to-indigo-50 dark:from-sky-950/30 dark:to-indigo-950/30 rounded-lg border border-sky-200 dark:border-sky-800">
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles size={16} className="text-sky-500" />
+        <label className="text-xs font-black uppercase text-sky-700">
+          Prix recommandé par IA
+        </label>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-2xl font-black text-sky-600">
+          {recommendedPrice || "---"}
+        </span>
+        <span className="text-xs font-bold text-slate-400">TND / nuit</span>
+      </div>
+      <button
+        type="button"
+        onClick={handleAIPriceRecommendation}
+                disabled={loading}
+        className="mt-2 flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-sky-600 bg-white rounded-lg hover:bg-sky-50 transition-colors"
+      >
+        {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+        {loading ? "Calcul en cours..." : "💰 Obtenir la recommandation IA"}
+      </button>
+      {recommendedPrice && (
+        <button
+          type="button"
+          onClick={() => upd({ pricePerNight: recommendedPrice })}
+          className="mt-2 ml-2 px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+        >
+          ✓ Utiliser ce prix
+        </button>
+      )}
+    </div>
+
+    {/* SECTION PROPRIÉTAIRE - PRIX PERSONNALISÉ */}
+    <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+      <div className="flex items-center gap-2 mb-2">
+        <Sun size={16} className="text-sky-500" />
+        <label className="text-xs font-black uppercase">
+          Votre prix par nuit
+        </label>
+        <Tooltip text="Requis">
+          <span className="text-rose-500 text-xs">*</span>
+        </Tooltip>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <input
+          type="number"
+          value={form.pricePerNight || ""}
+          onChange={(e) =>
+            upd({
+              pricePerNight: e.target.value ? Number(e.target.value) : null,
+            })
+          }
+          onBlur={() => handleBlur("pricePerNight", form.pricePerNight)}
+          placeholder="0"
+          className="w-full text-2xl font-black bg-transparent border-none outline-none"
+        />
+        <span className="text-xs font-bold text-slate-400">TND / nuit</span>
+      </div>
+      {getFieldError("pricePerNight") && (
+        <p className="text-xs text-rose-500 mt-1">
+          {getFieldError("pricePerNight")}
+        </p>
+      )}
+    </div>
+  </div>
+)}
+                     {(form.rentalType === "LONG_TERM" || form.rentalType === "BOTH") && (
+  <div className="space-y-3">
+    {/* SECTION IA - RECOMMANDATION */}
+    <div className="p-4 bg-gradient-to-r from-sky-50 to-indigo-50 dark:from-sky-950/30 dark:to-indigo-950/30 rounded-lg border border-sky-200 dark:border-sky-800">
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles size={16} className="text-sky-500" />
+        <label className="text-xs font-black uppercase text-sky-700">
+          Prix recommandé par IA
+        </label>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-2xl font-black text-sky-600">
+          {recommendedPriceMonth || "---"}
+        </span>
+        <span className="text-xs font-bold text-slate-400">TND / mois</span>
+      </div>
+      <button
+        type="button"
+        onClick={handleAIPriceRecommendation}
+                disabled={loading}
+        className="mt-2 flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-sky-600 bg-white rounded-lg hover:bg-sky-50 transition-colors"
+      >
+        {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+        {loading ? "Calcul en cours..." : "💰 Obtenir la recommandation IA"}
+      </button>
+      {recommendedPriceMonth && (
+        <button
+          type="button"
+          onClick={() => upd({ pricePerMonth: recommendedPriceMonth })}
+          className="mt-2 ml-2 px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+        >
+          ✓ Utiliser ce prix
+        </button>
+      )}
+    </div>
+
+    {/* SECTION PROPRIÉTAIRE - PRIX PERSONNALISÉ */}
+    <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+      <div className="flex items-center gap-2 mb-2">
+        <Calendar size={16} className="text-purple-500" />
+        <label className="text-xs font-black uppercase">Votre prix par mois</label>
+        <Tooltip text="Requis"><span className="text-rose-500 text-xs">*</span></Tooltip>
+      </div>
+      <div className="flex items-baseline gap-2">
+        <input
+          type="number"
+          value={form.pricePerMonth || ""}
+          onChange={(e) => upd({ pricePerMonth: e.target.value ? Number(e.target.value) : null })}
+          onBlur={() => handleBlur("pricePerMonth", form.pricePerMonth)}
+          placeholder="0"
+          className="w-full text-2xl font-black bg-transparent border-none outline-none"
+        />
+        <span className="text-xs font-bold text-slate-400">TND / mois</span>
+      </div>
+      {getFieldError("pricePerMonth") && (
+        <p className="text-xs text-rose-500 mt-1">{getFieldError("pricePerMonth")}</p>
+      )}
+    </div>
+  </div>
+)}
                     </div>
                   </div>
 

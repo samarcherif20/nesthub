@@ -20,6 +20,34 @@ interface FormattedBooking {
   totalPrice: number;
 }
 
+// Fonction helper pour calculer les scores des avis
+function calculateReviewScoresFromList(reviews: any[]) {
+  if (!reviews || reviews.length === 0) {
+    return {
+      cleanliness: 4.5,
+      accuracy: 4.5,
+      communication: 4.5,
+      location: 4.5,
+      checkin: 4.5,
+      value: 4.5,
+    };
+  }
+  
+  const getAvg = (field: string) => {
+    const sum = reviews.reduce((acc, r) => acc + (r[field] || 0), 0);
+    return +(sum / reviews.length).toFixed(1);
+  };
+  
+  return {
+    cleanliness: getAvg("cleanliness") || 4.5,
+    accuracy: getAvg("accuracy") || 4.5,
+    communication: getAvg("communication") || 4.5,
+    location: getAvg("location") || 4.5,
+    checkin: getAvg("checkin") || 4.5,
+    value: getAvg("value") || 4.5,
+  };
+}
+
 // Fonction utilitaire pour fusionner les données originales avec la révision en attente
 function mergeWithPendingRevision(original: any, pending: any): any {
   console.log(`🔧 [mergeWithPendingRevision] DEBUT`);
@@ -133,8 +161,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     }
 
-    // Récupérer l'annonce avec toutes ses relations
-    const listing = (await prisma.listing.findUnique({
+    // ✅ Récupérer l'annonce SANS reviews (car pas de relation directe)
+    const listing = await prisma.listing.findUnique({
       where: { id },
       include: {
         owner: {
@@ -148,6 +176,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             profilePictureUrl: true,
             isIdentityVerified: true,
             createdAt: true,
+            bio: true,
             stats: {
               select: { averageRating: true, totalReviews: true },
             },
@@ -157,7 +186,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
           orderBy: { position: "asc" },
         },
       },
-    })) as any;
+    });
 
     if (!listing) {
       console.log(`❌ Annonce non trouvée: ${id}`);
@@ -167,13 +196,41 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
+    // ✅ Récupérer les reviews via les bookings du listing
+    const bookingsWithReviews = await prisma.booking.findMany({
+      where: {
+        listingId: id,
+        review: { isNot: null },
+        status: { in: ["COMPLETED", "CONFIRMED"] },
+      },
+      include: {
+        review: {
+          include: {
+            reviewer: {
+              select: {
+                username: true,
+                firstName: true,
+                lastName: true,
+                profilePictureUrl: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+
+    // Extraire les reviews
+    const reviewsList = bookingsWithReviews
+      .filter(b => b.review)
+      .map(b => b.review);
+
     console.log(`📋 Annonce trouvée:`);
     console.log(`   - Titre: ${listing.title}`);
     console.log(`   - Statut: ${listing.status}`);
     console.log(`   - hasPendingRevision: ${listing.hasPendingRevision}`);
-    console.log(
-      `   - pendingRevision: ${listing.pendingRevision ? JSON.stringify(listing.pendingRevision).substring(0, 200) : "null"}`,
-    );
+    console.log(`   - Nombre de reviews: ${reviewsList.length}`);
 
     // 🔥 CRUCIAL: Fusionner avec les données en attente de révision
     let displayData = { ...listing };
@@ -183,15 +240,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         `\n📝 [GET] Annonce ${id} a des modifications EN ATTENTE de validation`,
       );
       const pendingData = listing.pendingRevision;
-      console.log(`📝 Contenu de pendingRevision:`);
-      console.log(`   - title: ${pendingData.title || "(non modifié)"}`);
-      console.log(
-        `   - pricePerNight: ${pendingData.pricePerNight || "(non modifié)"}`,
-      );
-      console.log(
-        `   - description: ${pendingData.description?.substring(0, 50) || "(non modifié)"}...`,
-      );
-
       displayData = mergeWithPendingRevision(displayData, pendingData);
       console.log(
         `✅ Données fusionnées - nouveau titre: ${displayData.title}`,
@@ -327,7 +375,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }));
     }
 
-    // 🔥 CONSTRUIRE LA RÉPONSE AVEC displayData (fusionné)
+    // Formater les reviews pour la réponse
+    const formattedReviews = reviewsList.map((review: any) => ({
+      id: review.id,
+      rating: review.rating,
+      comment: review.comment,
+      author: review.reviewer?.username || review.reviewer?.firstName || "Anonyme",
+      authorAvatar: review.reviewer?.profilePictureUrl,
+      createdAt: review.createdAt,
+      date: new Date(review.createdAt).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }),
+    }));
+
+    // 🔥 CONSTRUIRE LA RÉPONSE
     const response = {
       id: displayData.id,
       title: displayData.title,
@@ -392,6 +455,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       upcomingBookings: upcomingBookings,
       pastBookings: pastBookings,
       isOwner: isOwner,
+      reviews: formattedReviews,
+      reviewScores: calculateReviewScoresFromList(reviewsList),
     };
 
     console.log(`\n✅ RÉPONSE FINALE:`);
@@ -399,6 +464,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     console.log(`   - Statut: ${response.status}`);
     console.log(`   - Prix par nuit: ${response.pricePerNight}`);
     console.log(`   - Révision en attente: ${response.hasPendingRevision}`);
+    console.log(`   - Nombre de reviews: ${response.reviews.length}`);
     console.log(`${"=".repeat(60)}\n`);
 
     return NextResponse.json(response);
@@ -407,57 +473,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
-
-// POST - Incrémenter les vues
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    const { userId: clerkId } = getAuth(request);
-    const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json({ error: "ID manquant" }, { status: 400 });
-    }
-
-    if (clerkId) {
-      const user = await prisma.user.findUnique({
-        where: { clerkId },
-        select: { id: true },
-      });
-      if (user) {
-        const listing = await prisma.listing.findFirst({
-          where: { id, ownerId: user.id },
-          select: { id: true, title: true },
-        });
-        if (listing) {
-          return NextResponse.json({
-            success: false,
-            message: "Vue non comptée (propriétaire)",
-            reason: "owner",
-          });
-        }
-      }
-    }
-
-    const updatedListing = await prisma.listing.update({
-      where: { id },
-      data: { viewCount: { increment: 1 } },
-      select: { viewCount: true, title: true },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Vue comptée",
-      viewCount: updatedListing.viewCount,
-    });
-  } catch (error) {
-    console.error("[VIEW API] Erreur:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
-  }
-}
-
 // PUT - Mise à jour complète
 export const PUT = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {

@@ -90,6 +90,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const response = {
       ...verificationRequest,
       cinData: verificationRequest.user?.cinData,
+      previousRejection:
+        verificationRequest.status === "REAPPLIED"
+          ? {
+              motif: verificationRequest.rejectionMotif,
+              date: verificationRequest.processedAt, // Use processedAt instead of rejectedAt
+            }
+          : null,
     };
 
     return NextResponse.json(response);
@@ -143,7 +150,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    if (verificationRequest.status !== "PENDING") {
+    if (
+      verificationRequest.status !== "PENDING" &&
+      verificationRequest.status !== "REAPPLIED"
+    ) {
       return NextResponse.json(
         { error: "Cette demande a déjà été traitée" },
         { status: 400 },
