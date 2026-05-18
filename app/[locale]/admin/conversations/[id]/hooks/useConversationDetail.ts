@@ -14,6 +14,8 @@ export interface Message {
   senderAvatar: string | null;
   isRead: boolean;
   isSystem: boolean;
+  isBlocked: boolean;  
+
 }
 
 export interface Participant {

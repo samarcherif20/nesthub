@@ -55,7 +55,7 @@ function getLocalIpAddress(): string {
 export async function POST(request: NextRequest) {
   try {
     const uploadSessions = getUploadSessions();
-    
+
     // Nettoyer les sessions expirées
     for (const [id, session] of uploadSessions.entries()) {
       if (session.expiresAt < Date.now()) {
@@ -65,15 +65,16 @@ export async function POST(request: NextRequest) {
 
     const sessionId = randomUUID();
     const expiresAt = Date.now() + SESSION_DURATION;
+    const { userId, mode } = await request.json(); // mode = "inscription" ou "reapply"
 
     uploadSessions.set(sessionId, {
       id: sessionId,
       expiresAt,
       files: {},
       status: "waiting",
+      mode: mode || "inscription", // ← AJOUTE CETTE LIGNE
       createdAt: new Date().toISOString(),
     });
-
     const localIp = getLocalIpAddress();
     const port = process.env.PORT || 3000;
     const baseUrl = `http://${localIp}:${port}`;
@@ -92,12 +93,13 @@ export async function POST(request: NextRequest) {
       qrUrl,
       expiresAt,
       localIp,
+      mode: mode || "inscription",
     });
   } catch (error) {
     console.error("❌ Error creating session:", error);
     return NextResponse.json(
       { error: "Failed to create session" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -122,12 +124,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Session expirée" }, { status: 410 });
     }
 
-    return NextResponse.json(session);
+    return NextResponse.json({
+      ...session,
+      mode: session.mode,
+    });
   } catch (error) {
     console.error("❌ Error getting session:", error);
     return NextResponse.json(
       { error: "Failed to get session" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

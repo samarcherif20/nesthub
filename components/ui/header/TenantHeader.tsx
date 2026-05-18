@@ -1,9 +1,9 @@
 "use client";
-
+import React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useUser, useClerk } from "@clerk/nextjs"; // ✅ Ajouter useClerk
+import { useUser, useClerk } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
 import {
@@ -48,7 +48,19 @@ const NAV_ITEMS = [
   { label: "Reservations", href: "/reservations", icon: CalendarDays },
 ];
 
-// ─── Circular Orbit Component (Mobile Only - TOP LEFT) ─────────────────────────
+// ─── Couleurs pour l'avatar (comme dans OwnerLayout) ─────────────────
+const avatarColors = [
+  "bg-blue-500",
+  "bg-indigo-500",
+  "bg-purple-500",
+  "bg-violet-500",
+  "bg-sky-500",
+  "bg-cyan-500",
+  "bg-emerald-500",
+  "bg-teal-500",
+];
+
+// ─── Circular Orbit Component ───────────────────────────────────────
 function CircularOrbitMenu({
   isOpen,
   onToggle,
@@ -117,7 +129,6 @@ function CircularOrbitMenu({
           );
         })}
 
-        {/* Core trigger button - matching your theme gradient */}
         <button
           onClick={onToggle}
           className="w-16 h-16 rounded-full flex items-center justify-center text-white shadow-2xl hover:scale-105 active:scale-95 transition-all relative z-10"
@@ -137,14 +148,20 @@ function CircularOrbitMenu({
   );
 }
 
-// ─── User Menu Dropdown ──────────────────────────────────────────────
+// ─── User Menu Dropdown (version corrigée avec avatar comme OwnerLayout) ──
 function UserMenu({
   user,
+  appUser,
+  avatarColor,
+  getAvatarUrl,
   onClose,
   onLogout,
   t,
 }: {
   user: any;
+  appUser: any;
+  avatarColor: string;
+  getAvatarUrl: () => string | null;
   onClose: () => void;
   onLogout: () => void;
   t: any;
@@ -167,9 +184,12 @@ function UserMenu({
     { label: t("menu.wallet") || "Wallet", icon: Wallet, href: "/wallet" },
     { label: t("menu.reviews") || "Reviews", icon: Star, href: "/reviews" },
     { label: t("menu.settings") || "Settings", icon: Settings, href: "/settings" },
-    { label: t("menu.disputes") || "ligites", icon: GoLaw , href: "/disputes" },
-
+    { label: t("menu.disputes") || "ligites", icon: GoLaw, href: "/disputes" },
   ];
+
+  const displayName = appUser?.username || user?.username || user?.firstName || "User";
+  const initial = displayName.charAt(0).toUpperCase();
+  const avatarUrl = getAvatarUrl();
 
   return (
     <div
@@ -180,26 +200,25 @@ function UserMenu({
         <div className="relative p-5 pb-4 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-sky-500/10" />
           <div className="relative flex items-center gap-3">
+            {/* Avatar - comme dans OwnerLayout */}
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[2px] shadow-lg shadow-violet-500/20 flex-shrink-0">
               <div className="w-full h-full rounded-[14px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
-                {user?.imageUrl ? (
-                  <Image
-                    src={user.imageUrl}
-                    alt="Avatar"
-                    width={56}
-                    height={56}
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
+                    alt={displayName}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <span className="text-xl font-bold bg-gradient-to-br from-violet-500 to-indigo-600 bg-clip-text text-transparent">
-                    {user?.username?.charAt(0) || "U"}
-                  </span>
+                  <div className={`w-full h-full ${avatarColor} flex items-center justify-center text-white font-bold text-xl`}>
+                    {initial}
+                  </div>
                 )}
               </div>
             </div>
             <div className="min-w-0">
               <p className="font-bold text-gray-900 dark:text-white text-sm truncate">
-                {user?.username || "User"}
+                {displayName}
               </p>
               <p className="text-xs text-gray-400 truncate">
                 {user?.emailAddresses[0]?.emailAddress || "user@email.com"}
@@ -266,6 +285,9 @@ function MobileMenu({
   onClose,
   isSignedIn,
   user,
+  appUser,
+  avatarColor,
+  getAvatarUrl,
   onNavigate,
   onLogout,
   onLogin,
@@ -275,12 +297,19 @@ function MobileMenu({
   onClose: () => void;
   isSignedIn?: boolean;
   user?: any;
+  appUser?: any;
+  avatarColor: string;
+  getAvatarUrl: () => string | null;
   onNavigate: (href: string) => void;
   onLogout: () => void;
   onLogin: () => void;
   t: any;
 }) {
   if (!isOpen) return null;
+
+  const displayName = appUser?.username || user?.username || user?.firstName || "User";
+  const initial = displayName.charAt(0).toUpperCase();
+  const avatarUrl = getAvatarUrl();
 
   return (
     <div className="fixed inset-0 z-[100] md:hidden">
@@ -292,24 +321,22 @@ function MobileMenu({
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[2px]">
                   <div className="w-full h-full rounded-[14px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
-                    {user?.imageUrl ? (
-                      <Image
-                        src={user.imageUrl}
-                        alt="Avatar"
-                        width={48}
-                        height={48}
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt={displayName}
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-lg font-bold bg-gradient-to-br from-violet-500 to-indigo-600 bg-clip-text text-transparent">
-                        {user?.username?.charAt(0) || "U"}
-                      </span>
+                      <div className={`w-full h-full ${avatarColor} flex items-center justify-center text-white font-bold text-lg`}>
+                        {initial}
+                      </div>
                     )}
                   </div>
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 dark:text-white text-sm">
-                    {user?.username || "User"}
+                    {displayName}
                   </p>
                   <p className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" /> Verified Tenant
@@ -415,7 +442,7 @@ function LogoutModal({
 export function TenantHeader({}: TenantHeaderProps) {
   const t = useTranslations("TenantHeader");
   const { isSignedIn, user } = useUser();
-  const { signOut } = useClerk(); // ✅ Utiliser useClerk pour signOut
+  const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -430,6 +457,56 @@ export function TenantHeader({}: TenantHeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  
+  // États pour l'avatar (comme dans OwnerLayout)
+  const [appUser, setAppUser] = useState<any>(null);
+  const [avatarError, setAvatarError] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Couleur aléatoire pour l'avatar (comme dans OwnerLayout)
+  const avatarColor = React.useMemo(() => {
+    const randomIndex = Math.floor(Math.random() * avatarColors.length);
+    return avatarColors[randomIndex];
+  }, []);
+
+  // Récupérer les données utilisateur depuis la DB (comme dans OwnerLayout)
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!isSignedIn || !user) {
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch("/api/users/me");
+        if (response.ok) {
+          const data = await response.json();
+          setAppUser(data.user);
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUserData();
+  }, [isSignedIn, user]);
+
+  // Réinitialiser l'erreur d'avatar quand l'URL change
+  useEffect(() => {
+    setAvatarError(false);
+  }, [appUser?.profilePictureUrl, user?.imageUrl]);
+
+  // Fonction pour obtenir l'URL de l'avatar (comme dans OwnerLayout)
+  const getAvatarUrl = () => {
+    if (appUser?.profilePictureUrl && !avatarError)
+      return `/api/users/avatar?url=${encodeURIComponent(appUser.profilePictureUrl)}`;
+    if (user?.imageUrl && !avatarError) return user.imageUrl;
+    return null;
+  };
+
+  // Nom d'affichage
+  const displayName = appUser?.username || user?.username || user?.firstName || "Utilisateur";
+  const initial = displayName.charAt(0).toUpperCase();
 
   // Check if mobile view
   useEffect(() => {
@@ -474,7 +551,7 @@ export function TenantHeader({}: TenantHeaderProps) {
   );
 
   const handleLogout = async () => {
-    await signOut(); // ✅ Maintenant signOut fonctionne correctement
+    await signOut();
     router.push("/fr/login");
   };
 
@@ -482,7 +559,7 @@ export function TenantHeader({}: TenantHeaderProps) {
     const fullHref = `/fr${href}`;
     return fullHref === "/fr/search"
       ? pathname === "/fr/search" || pathname === "/fr"
-      : pathname.startsWith(fullHref);
+      : pathname?.startsWith(fullHref);
   };
 
   const getBadge = (href: string) => {
@@ -491,10 +568,9 @@ export function TenantHeader({}: TenantHeaderProps) {
     return 0;
   };
 
-  // Theme preset for orbit menu
   const themePreset = { accentColor: "#8b5cf6" };
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
       <>
         <div className="fixed top-0 w-full z-50 h-20 bg-white dark:bg-gray-900" />
@@ -518,10 +594,7 @@ export function TenantHeader({}: TenantHeaderProps) {
               }
             `}
           >
-            {/* Top glow */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[3px] rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-70" />
-
-            {/* Bottom glow when scrolled */}
             {scrolled && (
               <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
             )}
@@ -602,7 +675,7 @@ export function TenantHeader({}: TenantHeaderProps) {
                 {/* Separator */}
                 <div className="hidden md:block w-px h-5 bg-gray-200 dark:bg-gray-700" />
 
-                {/* User Menu with Username */}
+                {/* User Menu with Avatar comme OwnerLayout */}
                 {isSignedIn ? (
                   <div className="relative">
                     <button
@@ -619,25 +692,24 @@ export function TenantHeader({}: TenantHeaderProps) {
                         }
                       `}
                     >
+                      {/* Avatar - comme dans OwnerLayout */}
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[1.5px] shadow-sm shadow-violet-500/15">
                         <div className="w-full h-full rounded-[7px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
-                          {user?.imageUrl ? (
-                            <Image
-                              src={user.imageUrl}
-                              alt="Avatar"
-                              width={32}
-                              height={32}
+                          {getAvatarUrl() ? (
+                            <img
+                              src={getAvatarUrl()!}
+                              alt={displayName}
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-xs font-bold bg-gradient-to-br from-violet-500 to-indigo-600 bg-clip-text text-transparent">
-                              {user?.username?.charAt(0) || "U"}
-                            </span>
+                            <div className={`w-full h-full ${avatarColor} flex items-center justify-center text-white font-bold text-xs`}>
+                              {initial}
+                            </div>
                           )}
                         </div>
                       </div>
                       <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-                        {user?.username || "User"}
+                        {displayName}
                       </span>
                       <ChevronDown
                         className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${
@@ -649,6 +721,9 @@ export function TenantHeader({}: TenantHeaderProps) {
                     {userMenuOpen && (
                       <UserMenu
                         user={user}
+                        appUser={appUser}
+                        avatarColor={avatarColor}
+                        getAvatarUrl={getAvatarUrl}
                         onClose={() => setUserMenuOpen(false)}
                         onLogout={() => {
                           setUserMenuOpen(false);
@@ -679,7 +754,7 @@ export function TenantHeader({}: TenantHeaderProps) {
           isOpen={orbitOpen}
           onToggle={() => setOrbitOpen(!orbitOpen)}
           onNavigate={handleNavigate}
-          activeTab={pathname.includes("/search") ? "explorer" : pathname.includes("/favorites") ? "favorites" : pathname.includes("/messages") ? "messages" : "reservations"}
+          activeTab={pathname?.includes("/search") ? "explorer" : pathname?.includes("/favorites") ? "favorites" : pathname?.includes("/messages") ? "messages" : "reservations"}
           favoritesCount={favoritesCount}
           unreadCount={unreadCount}
           themePreset={themePreset}
@@ -702,6 +777,9 @@ export function TenantHeader({}: TenantHeaderProps) {
         onClose={() => setMobileMenuOpen(false)}
         isSignedIn={isSignedIn}
         user={user}
+        appUser={appUser}
+        avatarColor={avatarColor}
+        getAvatarUrl={getAvatarUrl}
         onNavigate={handleNavigate}
         onLogout={() => setShowLogoutModal(true)}
         onLogin={() => router.push("/fr/login")}

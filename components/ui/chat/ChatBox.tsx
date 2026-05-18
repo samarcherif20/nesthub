@@ -38,6 +38,8 @@ import { fr } from "date-fns/locale";
 import { useChatSocket } from "@/hooks/useChatSocket";
 import EmojiPicker from "emoji-picker-react";
 import LoadingSpinner from "../LoadingSpinner";
+import { useRealtimeChatBox } from "@/hooks/useRealtimeChatBox";
+import { ChatLockedOverlay } from "./ChatLockedOverlay";
 
 // ─── pip helpers ────────────────────────────────────────────────────────────────
 const pipAvatar = (url: string) =>
@@ -724,6 +726,14 @@ export function ChatBox({
     startTyping,
     stopTyping,
   } = useChatSocket();
+  // Ajouter après les autres useState
+  const {
+    isClosed,
+    blockReason,
+    isChecking,
+    isUserBlocked: isBlockedByRecipient,
+    hasBlockedUser,
+  } = useRealtimeChatBox(conversationId, recipientId);
 
   const showToastMsg = useCallback(
     (message: string, type: "success" | "error" | "info" = "info") =>
@@ -961,31 +971,76 @@ export function ChatBox({
     setShowMoreMenu(false);
   };
 
-  const handleBlockUser = async () => {
-    try {
-      const res = await fetch(`/api/users/${recipientId}/block`, {
+const handleBlockUser = async () => {
+  try {
+    const res = await fetch(`/api/users/${recipientId}/block`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.ok) {
+      setIsUserBlocked(true);
+      showToastMsg(`Utilisateur ${recipientName} bloqué avec succès`, "error");
+      
+      // ✅ ENVOIE UN VRAI MESSAGE SYSTÈME VIA L'API
+      const systemMsgRes = await fetch(`/api/conversations/${conversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: `🚫 Vous avez bloqué ${recipientName}. Vous ne recevrez plus ses messages.`,
+          isSystem: true,
+        }),
       });
-      if (res.ok) {
-        setIsUserBlocked(true);
-        showToastMsg(
-          `Utilisateur ${recipientName} bloqué avec succès`,
-          "error",
-        );
-        sendSocketMessage(
-          conversationId,
-          "L'utilisateur a été bloqué",
-          recipientId,
-        );
-      } else showToastMsg("Erreur lors du blocage", "error");
-    } catch {
-      showToastMsg("Erreur de connexion", "error");
+      
+      if (systemMsgRes.ok) {
+        const systemMessage = await systemMsgRes.json();
+        setMessages((prev) => [...prev, systemMessage]);
+        processedIds.current.add(systemMessage.id);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      }
+      
+    } else showToastMsg("Erreur lors du blocage", "error");
+  } catch {
+    showToastMsg("Erreur de connexion", "error");
+  }
+  setShowMoreMenu(false);
+};
+const handleUnblockUser = async () => {
+  try {
+    const res = await fetch(`/api/users/${recipientId}/block`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (res.ok) {
+      showToastMsg(`${recipientName} a été débloqué`, "success");
+      
+      // ✅ ENVOIE UN VRAI MESSAGE SYSTÈME VIA L'API
+      const systemMsgRes = await fetch(`/api/conversations/${conversationId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: `✅ Vous avez débloqué ${recipientName}. Vous pouvez à nouveau lui envoyer des messages.`,
+          isSystem: true,
+        }),
+      });
+      
+      if (systemMsgRes.ok) {
+        const systemMessage = await systemMsgRes.json();
+        setMessages((prev) => [...prev, systemMessage]);
+        processedIds.current.add(systemMessage.id);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      }
+      
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } else {
+      showToastMsg("Erreur lors du déblocage", "error");
     }
-    setShowMoreMenu(false);
-  };
-
-
+  } catch (error) {
+    console.error("Error unblocking user:", error);
+    showToastMsg("Erreur de connexion", "error");
+  }
+};
   const handleConfirmOffer = async () => {
     if (!conversationId || !listing) return;
     setIsCreatingOffer(true);
@@ -1045,7 +1100,37 @@ export function ChatBox({
       </div>
     );
   }
-
+  // ✅ AJOUTE CETTE CONDITION ICI - APRÈS LE if (isLoading) ET AVANT LE return PRINCIPAL
+  if (isClosed && !isChecking && !hasBlockedUser && !isBlockedByRecipient) {
+    return (
+      <div className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+          <Avatar
+            src={recipientImage}
+            name={recipientName}
+            size={38}
+            online={isConnected}
+          />
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+              {recipientName}
+            </p>
+            {listingTitle && (
+              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                {listingTitle}
+              </p>
+            )}
+          </div>
+          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full">
+            Verrouillé
+          </span>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <ChatLockedOverlay reason={blockReason} />
+        </div>
+      </div>
+    );
+  }
   const listingImageUrl = listing?.image
     ? pipListingImage(listing.image)
     : null;
@@ -1132,7 +1217,6 @@ export function ChatBox({
                       : "Bloquer cet utilisateur"}
                   </span>
                 </button>
-                
               </div>
             )}
           </div>
@@ -1173,7 +1257,41 @@ export function ChatBox({
           </div>
         </div>
       )}
+      {/* ============================================ */}
+      {/* BANDEAUX DE BLOCAGE - STYLE MESSENGER */}
+      {/* ============================================ */}
 
+      {/* Cas 1 : TU as bloqué la personne */}
+      {!isClosed && hasBlockedUser && (
+        <div className="mx-4 mt-2 mb-1 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <IoBanOutline className="text-amber-600 dark:text-amber-400 text-sm flex-shrink-0" />
+            <span className="text-xs text-amber-700 dark:text-amber-400">
+              Vous avez bloqué {recipientName}. Vous ne pouvez plus lui envoyer
+              de messages.
+            </span>
+          </div>
+          <button
+            onClick={handleUnblockUser}
+            className="px-3 py-1.5 text-xs font-medium bg-amber-100 dark:bg-amber-800/50 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-700/50 transition-colors"
+          >
+            Débloquer
+          </button>
+        </div>
+      )}
+
+      {/* Cas 2 : La personne t'a bloqué */}
+      {!isClosed && isBlockedByRecipient && (
+        <div className="mx-4 mt-2 mb-1 p-3 bg-slate-100 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2">
+            <IoShieldOutline className="text-slate-500 text-sm flex-shrink-0" />
+            <span className="text-xs text-slate-600 dark:text-slate-400">
+              {recipientName} vous a bloqué. Vous ne pouvez plus lui envoyer de
+              messages.
+            </span>
+          </div>
+        </div>
+      )}
       {/* Info panel (pour le propriétaire) */}
       {isOwner && showInfoPanel && listing && (
         <div className="bg-slate-50 dark:bg-slate-800/30 border-b border-slate-100 dark:border-slate-800 px-4 py-3 shrink-0">
@@ -1419,7 +1537,9 @@ export function ChatBox({
           </div>
           <VoiceRecorder
             onSend={handleSendVoice}
-            isDisabled={!isConnected || isUserBlocked}
+            isDisabled={
+              !isConnected || isUserBlocked || hasBlockedUser || isClosed
+            }
           />
           <textarea
             ref={inputRef}
@@ -1432,13 +1552,20 @@ export function ChatBox({
                 : "Écrire un message…"
             }
             rows={1}
-            disabled={!isConnected || isUserBlocked}
+            disabled={
+              !isConnected || isUserBlocked || hasBlockedUser || isClosed
+            }
             className="flex-1 bg-transparent border-none outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none min-h-[28px] max-h-[120px] py-0.5"
           />
           <button
             onClick={handleSend}
             disabled={
-              !input.trim() || isSending || !isConnected || isUserBlocked
+              !input.trim() ||
+              isSending ||
+              !isConnected ||
+              isUserBlocked ||
+              hasBlockedUser ||
+              isClosed
             }
             className={`self-end w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95 flex-shrink-0 ${input.trim() && !isSending && isConnected && !isUserBlocked ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"}`}
           >

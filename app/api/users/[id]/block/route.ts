@@ -1,130 +1,140 @@
+// app/api/users/[id]/block/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { getAuth } from "@clerk/nextjs/server";
+import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(
+// ✅ GET - Vérifier le statut de blocage
+export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId: clerkId } = getAuth(req);
-
-    if (!clerkId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // ✅ ATTENDRE params avec await
-    const { id: blockedUserId } = await params;
+    const { id: targetUserId } = await params;
 
-    // Récupérer l'utilisateur qui bloque
-    const blocker = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
+    // Récupérer l'utilisateur courant
+    const currentUser = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true, firstName: true, lastName: true }
     });
 
-    if (!blocker) {
-      return NextResponse.json(
-        { error: "Utilisateur non trouvé" },
-        { status: 404 },
-      );
+    if (!currentUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Vérifier si le blocage existe déjà
-    const existingBlock = await prisma.block.findFirst({
+    // Vérifier si l'utilisateur courant a bloqué la cible
+    const hasBlockedUser = await prisma.block.findUnique({
       where: {
-        blockerId: blocker.id,
-        blockedId: blockedUserId,
-      },
+        blockerId_blockedId: {
+          blockerId: currentUser.id,
+          blockedId: targetUserId
+        }
+      }
     });
 
-    if (existingBlock) {
-      return NextResponse.json(
-        { error: "Utilisateur déjà bloqué" },
-        { status: 400 },
-      );
-    }
-
-    // Créer le blocage
-    const block = await prisma.block.create({
-      data: {
-        blockerId: blocker.id,
-        blockedId: blockedUserId,
-      },
-    });
-
-    // Bloquer les conversations entre les deux utilisateurs
-    await prisma.conversation.updateMany({
+    // Vérifier si la cible a bloqué l'utilisateur courant
+    const isBlockedByUser = await prisma.block.findUnique({
       where: {
-        OR: [
-          { ownerId: blocker.id, tenantId: blockedUserId },
-          { ownerId: blockedUserId, tenantId: blocker.id },
-        ],
-      },
-      data: { isBlocked: true },
+        blockerId_blockedId: {
+          blockerId: targetUserId,
+          blockedId: currentUser.id
+        }
+      }
     });
+
+    // Récupérer le nom de la cible
+    const target = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { firstName: true, lastName: true }
+    });
+
+    const targetName = target 
+      ? `${target.firstName || ""} ${target.lastName || ""}`.trim()
+      : "cet utilisateur";
 
     return NextResponse.json({
-      success: true,
-      blockId: block.id,
-      message: "Utilisateur bloqué avec succès",
+      hasBlockedUser: !!hasBlockedUser,
+      isBlockedByUser: !!isBlockedByUser,
+      targetName
     });
   } catch (error) {
-    console.error("[users/block] POST Erreur:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error("Error in block GET API:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-// DELETE - Débloquer un utilisateur
-export async function DELETE(
+// ✅ POST - Bloquer ou débloquer un utilisateur
+export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId: clerkId } = getAuth(req);
-
-    if (!clerkId) {
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const { id: blockedUserId } = await params;
 
-    const blocker = await prisma.user.findUnique({
-      where: { clerkId },
-      select: { id: true },
+    // Récupérer l'utilisateur courant
+    const currentUser = await prisma.user.findUnique({
+      where: { clerkId: userId },
+      select: { id: true }
     });
 
-    if (!blocker) {
-      return NextResponse.json(
-        { error: "Utilisateur non trouvé" },
-        { status: 404 },
-      );
+    if (!currentUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Supprimer le blocage
-    await prisma.block.deleteMany({
+    if (currentUser.id === blockedUserId) {
+      return NextResponse.json({ error: "Cannot block yourself" }, { status: 400 });
+    }
+
+    // Vérifier si déjà bloqué
+    const existingBlock = await prisma.block.findUnique({
       where: {
-        blockerId: blocker.id,
-        blockedId: blockedUserId,
-      },
+        blockerId_blockedId: {
+          blockerId: currentUser.id,
+          blockedId: blockedUserId
+        }
+      }
     });
 
-    // Débloquer les conversations
-    await prisma.conversation.updateMany({
-      where: {
-        OR: [
-          { ownerId: blocker.id, tenantId: blockedUserId },
-          { ownerId: blockedUserId, tenantId: blocker.id },
-        ],
-      },
-      data: { isBlocked: false },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Utilisateur débloqué avec succès",
-    });
+    if (existingBlock) {
+      // ✅ DÉBLOQUER
+      await prisma.block.delete({
+        where: {
+          blockerId_blockedId: {
+            blockerId: currentUser.id,
+            blockedId: blockedUserId
+          }
+        }
+      });
+      
+      // ❌ NE PAS débloquer la conversation (laisser isBlocked pour la modération seulement)
+      // La conversation reste active, seul le blocage utilisateur est supprimé
+      
+      return NextResponse.json({ success: true, action: "unblocked" });
+    } else {
+      // ✅ BLOQUER
+      await prisma.block.create({
+        data: {
+          blockerId: currentUser.id,
+          blockedId: blockedUserId
+        }
+      });
+      
+      // ❌ NE PAS bloquer la conversation (isBlocked est réservé à la modération)
+      // Le blocage utilisateur est géré séparément via la table Block
+      
+      return NextResponse.json({ success: true, action: "blocked" });
+    }
   } catch (error) {
-    console.error("[users/block] DELETE Erreur:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    console.error("Error in block POST API:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

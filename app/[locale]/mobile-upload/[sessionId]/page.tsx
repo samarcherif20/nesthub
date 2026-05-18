@@ -562,7 +562,12 @@ export default function MobileUploadPage() {
   const params = useParams();
   const router = useRouter();
   const sessionId = params.sessionId as string;
-
+  const [mode, setMode] = useState<"inscription" | "reapply">("inscription");
+  const [steps, setSteps] = useState<DocumentType[]>([
+    "recto",
+    "verso",
+    "selfie",
+  ]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [allUploaded, setAllUploaded] = useState(false);
@@ -592,7 +597,7 @@ export default function MobileUploadPage() {
     selfie: useRef<HTMLInputElement>(null),
   };
 
-  const currentType = STEP_ORDER[currentStepIndex];
+  const currentType = steps[currentStepIndex];
   const currentDocument = documents[currentType];
 
   const isTransitioning = animState !== "idle";
@@ -600,12 +605,31 @@ export default function MobileUploadPage() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const res = await fetch(
+          `/api/mobile-upload/session?sessionId=${sessionId}`,
+        );
+        const data = await res.json();
+        setMode(data.mode || "inscription");
+        // Si mode reapply, enlève le selfie des étapes
+        if (data.mode === "reapply") {
+          setSteps(["recto", "verso"]);
+        } else {
+          setSteps(["recto", "verso", "selfie"]);
+        }
+      } catch (error) {
+        console.error("Erreur récupération session:", error);
+      }
+    };
+    fetchSession();
+  }, [sessionId]);
   const goToStep = useCallback(
     (nextIndex: number) => {
       if (
         nextIndex < 0 ||
-        nextIndex > 2 ||
+        nextIndex > steps.length - 1 ||
         nextIndex === currentStepIndex ||
         animState !== "idle"
       )
@@ -626,16 +650,18 @@ export default function MobileUploadPage() {
         }, 350);
       }, 280);
     },
-    [currentStepIndex, animState],
+    [currentStepIndex, animState, steps.length],
   );
 
   const goNext = useCallback(() => {
-    if (currentStepIndex < 2) goToStep(currentStepIndex + 1);
-  }, [currentStepIndex, goToStep]);
+    if (currentStepIndex < steps.length - 1) goToStep(currentStepIndex + 1);
+  }, [currentStepIndex, goToStep, steps.length]);
 
+  // Déjà correcte, mais vérifie :
   const goPrev = useCallback(() => {
     if (currentStepIndex > 0) goToStep(currentStepIndex - 1);
   }, [currentStepIndex, goToStep]);
+  // ✅ Celle-ci est bonne car elle utilise currentStepIndex > 0
 
   const handleCapture = useCallback(
     (type: DocumentType) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -652,8 +678,8 @@ export default function MobileUploadPage() {
             status: "captured",
           },
         }));
-        const stepIndex = STEP_ORDER.indexOf(type);
-        if (stepIndex < STEP_ORDER.length - 1) {
+        const stepIndex = steps.indexOf(type);
+        if (stepIndex < steps.length - 1) {
           setTimeout(() => goToStep(stepIndex + 1), 800);
         }
       };
@@ -683,123 +709,127 @@ export default function MobileUploadPage() {
     if (currentStepIndex !== 0) goToStep(0);
   }, [currentStepIndex, goToStep]);
 
-const handleUploadAll = useCallback(async () => {
-  try {
-    const sessionCheck = await fetch(
-      `/api/mobile-upload/session?sessionId=${sessionId}`,
-    );
-    if (!sessionCheck.ok) {
-      alert("La session a expiré. Veuillez re-scanner le QR code.");
-      router.push("/");
+  const handleUploadAll = useCallback(async () => {
+    try {
+      const sessionCheck = await fetch(
+        `/api/mobile-upload/session?sessionId=${sessionId}`,
+      );
+      if (!sessionCheck.ok) {
+        alert("La session a expiré. Veuillez re-scanner le QR code.");
+        router.push("/");
+        return;
+      }
+    } catch (error) {
+      console.error("Session check failed:", error);
+      alert("Erreur de connexion. Veuillez réessayer.");
       return;
     }
-  } catch (error) {
-    console.error("Session check failed:", error);
-    alert("Erreur de connexion. Veuillez réessayer.");
-    return;
-  }
-  const toUpload = Object.entries(documents).filter(
-    ([, doc]) => doc.status === "captured" && doc.file,
-  ) as [DocumentType, DocumentState][];
+    const toUpload = Object.entries(documents).filter(
+      ([, doc]) => doc.status === "captured" && doc.file,
+    ) as [DocumentType, DocumentState][];
 
-  if (toUpload.length === 0) return;
+    if (toUpload.length === 0) return;
 
-  setUploading(true);
-  setUploadProgress(0);
+    setUploading(true);
+    setUploadProgress(0);
 
-  let successCount = 0;
-  const errors: string[] = [];
+    let successCount = 0;
+    const errors: string[] = [];
 
-  for (let i = 0; i < toUpload.length; i++) {
-    const [type, doc] = toUpload[i];
+    for (let i = 0; i < toUpload.length; i++) {
+      const [type, doc] = toUpload[i];
 
-    setDocuments((prev) => ({
-      ...prev,
-      [type]: { ...prev[type], status: "uploading" },
-    }));
+      setDocuments((prev) => ({
+        ...prev,
+        [type]: { ...prev[type], status: "uploading" },
+      }));
 
-    const formData = new FormData();
-    formData.append("sessionId", sessionId);
-    formData.append("type", type);
-    
-    // ✅ CORRECTION: Forcer le bon type MIME
-    let fileToUpload = doc.file!;
-    if (fileToUpload.type === 'application/octet-stream') {
-      console.log("⚠️ Correction du type MIME pour:", type);
-      const buffer = await fileToUpload.arrayBuffer();
-      fileToUpload = new File([buffer], fileToUpload.name.replace('.octet-stream', '.jpg'), {
-        type: 'image/jpeg'
-      });
-    }
-    formData.append("file", fileToUpload);
+      const formData = new FormData();
+      formData.append("sessionId", sessionId);
+      formData.append("type", type);
 
-    try {
-      const res = await fetch("/api/mobile-upload/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      let responseData;
-      try {
-        responseData = await res.json();
-      } catch (e) {
-        console.error("Failed to parse JSON:", e);
-        responseData = {
-          error: "Réponse invalide du serveur",
-          success: false,
-        };
+      // ✅ CORRECTION: Forcer le bon type MIME
+      let fileToUpload = doc.file!;
+      if (fileToUpload.type === "application/octet-stream") {
+        console.log("⚠️ Correction du type MIME pour:", type);
+        const buffer = await fileToUpload.arrayBuffer();
+        fileToUpload = new File(
+          [buffer],
+          fileToUpload.name.replace(".octet-stream", ".jpg"),
+          {
+            type: "image/jpeg",
+          },
+        );
       }
+      formData.append("file", fileToUpload);
 
-      console.log(`Upload ${type}:`, {
-        status: res.status,
-        data: responseData,
-      });
+      try {
+        const res = await fetch("/api/mobile-upload/upload", {
+          method: "POST",
+          body: formData,
+        });
 
-      if (res.ok && responseData.success) {
-        successCount++;
-        setDocuments((prev) => ({
-          ...prev,
-          [type]: { ...prev[type], status: "uploaded" },
-        }));
-      } else {
-        const errorMsg = responseData.error || "Erreur lors de l'envoi";
-        errors.push(`${type}: ${errorMsg}`);
+        let responseData;
+        try {
+          responseData = await res.json();
+        } catch (e) {
+          console.error("Failed to parse JSON:", e);
+          responseData = {
+            error: "Réponse invalide du serveur",
+            success: false,
+          };
+        }
+
+        console.log(`Upload ${type}:`, {
+          status: res.status,
+          data: responseData,
+        });
+
+        if (res.ok && responseData.success) {
+          successCount++;
+          setDocuments((prev) => ({
+            ...prev,
+            [type]: { ...prev[type], status: "uploaded" },
+          }));
+        } else {
+          const errorMsg = responseData.error || "Erreur lors de l'envoi";
+          errors.push(`${type}: ${errorMsg}`);
+          setDocuments((prev) => ({
+            ...prev,
+            [type]: {
+              ...prev[type],
+              status: "error",
+              errorMessage: errorMsg,
+            },
+          }));
+        }
+      } catch (error) {
+        console.error(`Network error for ${type}:`, error);
+        errors.push(`${type}: Erreur de connexion`);
         setDocuments((prev) => ({
           ...prev,
           [type]: {
             ...prev[type],
             status: "error",
-            errorMessage: errorMsg,
+            errorMessage: "Erreur de connexion au serveur",
           },
         }));
       }
-    } catch (error) {
-      console.error(`Network error for ${type}:`, error);
-      errors.push(`${type}: Erreur de connexion`);
-      setDocuments((prev) => ({
-        ...prev,
-        [type]: {
-          ...prev[type],
-          status: "error",
-          errorMessage: "Erreur de connexion au serveur",
-        },
-      }));
+
+      setUploadProgress(Math.round(((i + 1) / toUpload.length) * 100));
     }
 
-    setUploadProgress(Math.round(((i + 1) / toUpload.length) * 100));
-  }
+    setUploading(false);
 
-  setUploading(false);
-
-  if (successCount === 3) {
-    setAllUploaded(true);
-    setTimeout(() => {
-      router.push("/dashboard/owner/profile");
-    }, 2000);
-  } else if (errors.length > 0) {
-    console.error("Upload errors:", errors);
-  }
-}, [documents, sessionId, router]);
+    if (successCount === 3) {
+      setAllUploaded(true);
+      setTimeout(() => {
+        router.push("/dashboard/owner/profile");
+      }, 2000);
+    } else if (errors.length > 0) {
+      console.error("Upload errors:", errors);
+    }
+  }, [documents, sessionId, router]);
 
   const uploadedCount = Object.values(documents).filter(
     (d) => d.status === "uploaded",
@@ -807,7 +837,7 @@ const handleUploadAll = useCallback(async () => {
   const hasAnyContent = Object.values(documents).some(
     (d) => d.status !== "idle",
   );
-  const allStepsReady = STEP_ORDER.every((type) => {
+  const allStepsReady = steps.every((type) => {
     const s = documents[type].status;
     return s === "captured";
   });
@@ -830,7 +860,8 @@ const handleUploadAll = useCallback(async () => {
 
   const barPct = allUploaded
     ? 100
-    : ((currentStepIndex + (currentDocument.status !== "idle" ? 0.5 : 0)) / 3) *
+    : ((currentStepIndex + (currentDocument.status !== "idle" ? 0.5 : 0)) /
+        steps.length) *
       100;
 
   // Show loading spinner while mounting
@@ -987,13 +1018,13 @@ const handleUploadAll = useCallback(async () => {
               <h1
                 className={`text-2xl sm:text-[1.7rem] font-bold tracking-tight leading-tight ${isDark ? "text-white" : "text-gray-800"}`}
               >
-                {DOC_CONFIGS[STEP_ORDER[displayedStepIndex]].title}
+                {DOC_CONFIGS[steps[displayedStepIndex]].title}
               </h1>
               <p
                 className={`text-sm mt-1 font-medium ${isDark ? "text-white/60" : "text-gray-500"}`}
               >
-                Étape {displayedStepIndex + 1} sur 3 ·{" "}
-                {DOC_CONFIGS[STEP_ORDER[displayedStepIndex]].subtitle}
+                Étape {displayedStepIndex + 1} sur {steps.length} ·{" "}
+                {DOC_CONFIGS[steps[displayedStepIndex]].subtitle}
               </p>
             </div>
 
@@ -1006,8 +1037,9 @@ const handleUploadAll = useCallback(async () => {
                   <span
                     className={`text-xs font-bold ${isDark ? "text-emerald-300" : "text-emerald-700"}`}
                   >
-                    {uploadedCount}/3 document{uploadedCount > 1 ? "s" : ""}{" "}
-                    envoyé{uploadedCount > 1 ? "s" : ""}
+                    {uploadedCount}/{steps.length} document
+                    {uploadedCount > 1 ? "s" : ""} envoyé
+                    {uploadedCount > 1 ? "s" : ""}
                   </span>
                 </div>
               </div>
@@ -1029,7 +1061,7 @@ const handleUploadAll = useCallback(async () => {
 
           {/* Mini steps */}
           <div className="mt-5 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-            {STEP_ORDER.map((type, index) => {
+            {steps.map((type, index) => {
               const doc = documents[type];
               const cfg = DOC_CONFIGS[type];
               const isCurrent = index === displayedStepIndex;
@@ -1114,7 +1146,7 @@ const handleUploadAll = useCallback(async () => {
             <div className="max-w-lg mx-auto space-y-3">
               {!uploading &&
                 !allUploaded &&
-                currentStepIndex < 2 &&
+                currentStepIndex < steps.length - 1 &&
                 (currentDocument.status === "captured" ||
                   currentDocument.status === "uploaded") && (
                   <button
@@ -1129,7 +1161,7 @@ const handleUploadAll = useCallback(async () => {
 
               {!uploading &&
                 !allUploaded &&
-                currentStepIndex === 2 &&
+                currentStepIndex === steps.length - 1 &&
                 allStepsReady && (
                   <button
                     onClick={handleUploadAll}

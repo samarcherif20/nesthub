@@ -1,7 +1,7 @@
 // app/[locale]/admin/conversations/[id]/page.tsx
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect,useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -22,6 +22,8 @@ import {
   IoFlagOutline,
   IoRefreshOutline,
   IoTimeOutline,
+  IoCallOutline,
+  IoCardOutline,
 } from "react-icons/io5";
 import { useConversationDetail } from "./hooks/useConversationDetail";
 
@@ -31,7 +33,9 @@ export default function ConversationDetailPage() {
   const conversationId = params.id as string;
   const t = useTranslations("ConversationDetail");
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
+  const [openBlocked, setOpenBlocked] = useState(false);
+  const [openLeak, setOpenLeak] = useState(false);
+  const [openPayment, setOpenPayment] = useState(false);
   const {
     conversation,
     loading,
@@ -141,10 +145,8 @@ export default function ConversationDetailPage() {
 
       {/* Main content */}
       <div className="flex-1 flex gap-6 min-h-0">
-
         {/* ══ LEFT — Conversation ══ */}
         <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm">
-
           {/* Participants — STICKY */}
           <div className="flex-shrink-0 px-5 py-3 border-b border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50">
             <div className="flex items-center justify-between flex-wrap gap-3">
@@ -152,7 +154,11 @@ export default function ConversationDetailPage() {
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 overflow-hidden flex items-center justify-center">
                     {owner.avatar ? (
-                      <img src={getImageUrl(owner.avatar)} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={getImageUrl(owner.avatar)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs">
                         {owner.firstName?.charAt(0) || "O"}
@@ -160,8 +166,12 @@ export default function ConversationDetailPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-white">{owner.fullName}</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">{t("owner")}</p>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-white">
+                      {owner.fullName}
+                    </p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {t("owner")}
+                    </p>
                   </div>
                 </div>
 
@@ -170,7 +180,11 @@ export default function ConversationDetailPage() {
                 <div className="flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 overflow-hidden flex items-center justify-center">
                     {tenant.avatar ? (
-                      <img src={getImageUrl(tenant.avatar)} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={getImageUrl(tenant.avatar)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs">
                         {tenant.firstName?.charAt(0) || "T"}
@@ -178,15 +192,21 @@ export default function ConversationDetailPage() {
                     )}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-slate-900 dark:text-white">{tenant.fullName}</p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">{t("tenant")}</p>
+                    <p className="text-xs font-semibold text-slate-900 dark:text-white">
+                      {tenant.fullName}
+                    </p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      {t("tenant")}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700/50 px-2 py-1 rounded flex items-center gap-1">
                 <IoLocationOutline className="text-[10px]" />
-                <span className="truncate max-w-[200px]">{conversation.listing.title?.substring(0, 35)}...</span>
+                <span className="truncate max-w-[200px]">
+                  {conversation.listing.title?.substring(0, 35)}...
+                </span>
               </div>
             </div>
           </div>
@@ -196,18 +216,25 @@ export default function ConversationDetailPage() {
             {conversation.messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <IoChatbubbleOutline className="text-5xl text-slate-300 dark:text-slate-600 mb-3" />
-                <p className="text-sm text-slate-400 dark:text-slate-500">{t("noMessages")}</p>
+                <p className="text-sm text-slate-400 dark:text-slate-500">
+                  {t("noMessages")}
+                </p>
               </div>
             )}
 
             {conversation.messages.map((message) => {
               const isOwner = message.senderId === owner.id;
               const isSystem = message.isSystem;
-              const displayContent = isSystem ? cleanSystemMessage(message.content) : message.content;
+              const displayContent = isSystem
+                ? cleanSystemMessage(message.content)
+                : message.content;
 
               if (isSystem) {
                 return (
-                  <div key={message.id} className="flex items-center justify-center py-2">
+                  <div
+                    key={message.id}
+                    className="flex items-center justify-center py-2"
+                  >
                     <div className="flex items-center gap-1.5 px-4 py-1 bg-slate-100 dark:bg-slate-700/50 rounded-full">
                       <IoTimeOutline className="text-[9px] text-slate-400 dark:text-slate-500" />
                       <span className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wider">
@@ -225,7 +252,11 @@ export default function ConversationDetailPage() {
                 >
                   <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/50 dark:to-purple-900/50 overflow-hidden flex items-center justify-center flex-shrink-0">
                     {message.senderAvatar ? (
-                      <img src={getImageUrl(message.senderAvatar)} alt="" className="w-full h-full object-cover" />
+                      <img
+                        src={getImageUrl(message.senderAvatar)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <span className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px]">
                         {message.senderName?.charAt(0) || "?"}
@@ -233,17 +264,25 @@ export default function ConversationDetailPage() {
                     )}
                   </div>
 
-                  <div className={`space-y-0.5 ${!isOwner ? "items-end flex flex-col" : ""}`}>
-                    <div className={`px-3.5 py-2.5 rounded-2xl text-[15px] leading-relaxed ${
-                      !isOwner
-                        ? "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-br-sm shadow-sm shadow-indigo-500/20"
-                        : "bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-sm border border-slate-200 dark:border-slate-600"
-                    }`}>
+                  <div
+                    className={`space-y-0.5 ${!isOwner ? "items-end flex flex-col" : ""}`}
+                  >
+                    <div
+                      className={`px-3.5 py-2.5 rounded-2xl text-[15px] leading-relaxed ${
+                        !isOwner
+                          ? "bg-gradient-to-br from-indigo-500 to-indigo-700 text-white rounded-br-sm shadow-sm shadow-indigo-500/20"
+                          : "bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 rounded-bl-sm border border-slate-200 dark:border-slate-600"
+                      }`}
+                    >
                       {displayContent}
                     </div>
-                    <div className={`flex items-center gap-1 px-1 ${!isOwner ? "flex-row-reverse" : ""}`}>
+                    <div
+                      className={`flex items-center gap-1 px-1 ${!isOwner ? "flex-row-reverse" : ""}`}
+                    >
                       <span className="text-[9px] text-slate-400 dark:text-slate-500">
-                        {format(new Date(message.createdAt), "HH:mm", { locale: fr })}
+                        {format(new Date(message.createdAt), "HH:mm", {
+                          locale: fr,
+                        })}
                       </span>
                       {message.isRead && (
                         <IoCheckmarkDoneOutline className="text-[9px] text-indigo-500 dark:text-indigo-400" />
@@ -291,8 +330,12 @@ export default function ConversationDetailPage() {
                 <IoShieldOutline className="text-lg" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white">{t("aiTitle")}</h2>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400">{t("aiSubtitle")}</p>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                  {t("aiTitle")}
+                </h2>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                  {t("aiSubtitle")}
+                </p>
               </div>
             </div>
 
@@ -318,12 +361,22 @@ export default function ConversationDetailPage() {
                 ].map(({ user, descHigh, descMid, descLow }) => {
                   const score = user.reliabilityScore || 0;
                   const color = getScoreColor(score);
-                  const desc = score >= 70 ? descHigh : score >= 40 ? descMid : descLow;
+                  const desc =
+                    score >= 70 ? descHigh : score >= 40 ? descMid : descLow;
                   return (
-                    <div key={user.id} className="bg-white dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                    <div
+                      key={user.id}
+                      className="bg-white dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700"
+                    >
                       <div className="flex justify-between items-center mb-1">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{user.fullName}</span>
-                        <span className={`text-xs font-bold text-${color}-600 dark:text-${color}-400`}>{score}%</span>
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          {user.fullName}
+                        </span>
+                        <span
+                          className={`text-xs font-bold text-${color}-600 dark:text-${color}-400`}
+                        >
+                          {score}%
+                        </span>
                       </div>
                       <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
                         <div
@@ -331,100 +384,265 @@ export default function ConversationDetailPage() {
                           style={{ width: `${score}%` }}
                         />
                       </div>
-                      <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">{desc}</p>
+                      <p className="text-[9px] text-slate-500 dark:text-slate-400 mt-1">
+                        {desc}
+                      </p>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Alerts */}
-            {hasReports && (
-              <div>
-                <h3 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                  {t("detectedAlerts")}
-                </h3>
-                <div className="space-y-2">
-                  <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 p-3 rounded-xl flex items-start gap-2">
-                    <IoWarningOutline className="text-red-600 dark:text-red-400 text-sm mt-0.5 flex-shrink-0" />
-                    <div>
-                      <p className="text-xs font-semibold text-red-700 dark:text-red-400">{t("userReport")}</p>
-                      <p className="text-[9px] text-red-600 dark:text-red-400/80 mt-0.5">{t("reportedCount", { count: conversation.reportCount })}</p>
-                    </div>
-                  </div>
-                  {isFlagged && (
-                    <div className="bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 p-3 rounded-xl flex items-start gap-2">
-                      <IoShieldOutline className="text-amber-600 dark:text-amber-400 text-sm mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">{t("blockedConversation")}</p>
-                        <p className="text-[9px] text-amber-600 dark:text-amber-400/80 mt-0.5">{t("suspendedByModerator")}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+{/* IA DETECTION - ALERTES DE FUITE */}
+<div>
+  <h3 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+    <IoShieldOutline className="text-base" />
+    Alertes IA - Fuites détectées
+  </h3>
+  <div className="space-y-3">
+    
+    {/* 1. MESSAGES BLOQUÉS PAR L'IA (DÉJÀ BLOQUÉS) */}
+    {(() => {
+      const blockedMessages = conversation.messages.filter(
+        (m) => !m.isSystem && m.content.startsWith("[Message bloqué")
+      );
+      if (blockedMessages.length === 0) return null;
+      return (
+        <div className="bg-violet-50/50 dark:bg-violet-950/20 rounded-xl border border-violet-200 dark:border-violet-800/40 overflow-hidden">
+          <button
+            onClick={() => setOpenBlocked(!openBlocked)}
+            className="w-full p-3 flex items-center justify-between hover:bg-violet-100/40 dark:hover:bg-violet-900/20 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-violet-100 dark:bg-violet-900/40 rounded-full flex items-center justify-center">
+                <IoFlagOutline className="text-violet-500 text-sm" />
               </div>
-            )}
-
-            {/* Notes */}
-            {conversation.notes && conversation.notes.length > 0 && (
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    {t("internalNotes")}
-                  </h3>
-                  <span className="text-[9px] bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 px-1.5 py-0.5 rounded">
-                    {conversation.notes.length}
-                  </span>
-                </div>
-                <div className="space-y-2">
-                  {conversation.notes.slice(0, 3).map((n) => (
-                    <div key={n.id} className="bg-white dark:bg-slate-800/50 p-2.5 rounded-lg border-l-2 border-indigo-500 shadow-sm">
-                      <p className="text-[10px] text-slate-700 dark:text-slate-300 leading-relaxed">{n.content}</p>
-                      <div className="flex justify-between items-center mt-1">
-                        <span className="text-[8px] font-medium text-slate-500 dark:text-slate-400">{n.adminName}</span>
-                        <span className="text-[8px] text-slate-400 dark:text-slate-500">{format(new Date(n.createdAt), "dd/MM HH:mm", { locale: fr })}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div>
-              <h3 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                {t("quickActions")}
-              </h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => handleAction(isFlagged ? "UNFLAG" : "FLAG")}
-                  className={`w-full py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-2 active:scale-95 ${
-                    isFlagged
-                      ? "bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-500/30 border border-amber-200 dark:border-amber-500/30"
-                      : "bg-red-50 dark:bg-red-500/20 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/30 border border-red-200 dark:border-red-500/30"
-                  }`}
-                >
-                  <IoFlagOutline className="text-sm" />
-                  {isFlagged ? t("removeFlag") : t("flag")}
-                </button>
-                <button
-                  onClick={() => handleAction("CLOSE")}
-                  className="w-full py-2 bg-indigo-50 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 rounded-lg text-xs font-bold uppercase tracking-wide transition-all hover:bg-indigo-100 dark:hover:bg-indigo-500/30 flex items-center justify-center gap-2 active:scale-95"
-                >
-                  <IoCheckmarkCircleOutline className="text-sm" />
-                  {t("close")}
-                </button>
-                {conversation.status !== "OPEN" && (
-                  <button
-                    onClick={() => handleAction("REOPEN")}
-                    className="w-full py-2 bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 rounded-lg text-xs font-bold uppercase tracking-wide transition-all hover:bg-emerald-100 dark:hover:bg-emerald-500/30 flex items-center justify-center gap-2 active:scale-95"
-                  >
-                    <IoRefreshOutline className="text-sm" />
-                    {t("reopen")}
-                  </button>
-                )}
+              <div className="text-left">
+                <p className="text-xs font-semibold text-violet-700 dark:text-violet-300">
+                  Messages bloqués par l'IA
+                </p>
+                <p className="text-[10px] text-violet-500">
+                  {blockedMessages.length} message{blockedMessages.length > 1 ? 's' : ''} bloqué{blockedMessages.length > 1 ? 's' : ''}
+                </p>
               </div>
             </div>
+            <IoChevronForwardOutline
+              className={`text-violet-400 text-sm transition-transform duration-200 ${openBlocked ? "rotate-90" : ""}`}
+            />
+          </button>
+          {openBlocked && (
+            <div className="px-3 pb-3 pt-0 border-t border-violet-100 dark:border-violet-800/40 space-y-2">
+              {blockedMessages.map((msg) => (
+                <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <p className="text-[10px] font-medium text-violet-700 dark:text-violet-400">
+                      {msg.senderName}
+                    </p>
+                    <span className="text-[9px] text-violet-400">
+                      {format(new Date(msg.createdAt), "HH:mm", { locale: fr })}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-violet-600 dark:text-violet-300 mt-0.5 italic">
+                    {msg.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })()}
+
+    {/* 2. TENTATIVES DE FUITE DE COORDONNÉES (NON BLOQUÉES) */}
+    {(() => {
+      const leakMessages = conversation.messages.filter(
+        (m) =>
+          !m.isSystem &&
+          !m.content.startsWith("[Message bloqué") &&
+          (m.content.includes("+216") ||
+            m.content.includes("00216") ||
+            /\b[2579]\d{7}\b/.test(m.content) ||
+            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(m.content) ||
+            m.content.toLowerCase().includes("whatsapp") ||
+            m.content.toLowerCase().includes("telegram"))
+      );
+      if (leakMessages.length === 0) return null;
+      return (
+        <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 overflow-hidden">
+          <button
+            onClick={() => setOpenLeak(!openLeak)}
+            className="w-full p-3 flex items-center justify-between hover:bg-amber-100/40 dark:hover:bg-amber-900/20 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center">
+                <IoCallOutline className="text-amber-500 text-sm" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                  Tentatives de fuite de coordonnées
+                </p>
+                <p className="text-[10px] text-amber-500">
+                  {leakMessages.length} tentative{leakMessages.length > 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+            <IoChevronForwardOutline
+              className={`text-amber-400 text-sm transition-transform duration-200 ${openLeak ? "rotate-90" : ""}`}
+            />
+          </button>
+          {openLeak && (
+            <div className="px-3 pb-3 pt-0 border-t border-amber-100 dark:border-amber-800/40 space-y-2">
+              {leakMessages.map((msg) => (
+                <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                      {msg.senderName}
+                    </p>
+                    <span className="text-[9px] text-amber-400">
+                      {format(new Date(msg.createdAt), "HH:mm", { locale: fr })}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-slate-600 dark:text-slate-400 mt-0.5">
+                    {msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })()}
+
+    {/* 3. PAIEMENT EXTERNE SUSPECT */}
+    {(() => {
+      const paymentMessages = conversation.messages.filter(
+        (m) =>
+          !m.isSystem &&
+          !m.content.startsWith("[Message bloqué") &&
+          (m.content.toLowerCase().includes("paypal") ||
+            m.content.toLowerCase().includes("western") ||
+            m.content.toLowerCase().includes("virement") ||
+            m.content.includes("hors plateforme") ||
+            m.content.includes("barra"))
+      );
+      if (paymentMessages.length === 0) return null;
+      return (
+        <div className="bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-800/40 overflow-hidden">
+          <button
+            onClick={() => setOpenPayment(!openPayment)}
+            className="w-full p-3 flex items-center justify-between hover:bg-purple-100/40 dark:hover:bg-purple-900/20 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
+                <IoCardOutline className="text-purple-500 text-sm" />
+              </div>
+              <div className="text-left">
+                <p className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+                  Paiement externe suspect
+                </p>
+                <p className="text-[10px] text-purple-500">
+                  {paymentMessages.length} tentative{paymentMessages.length > 1 ? 's' : ''}
+                </p>
+              </div>
+            </div>
+            <IoChevronForwardOutline
+              className={`text-purple-400 text-sm transition-transform duration-200 ${openPayment ? "rotate-90" : ""}`}
+            />
+          </button>
+          {openPayment && (
+            <div className="px-3 pb-3 pt-0 border-t border-purple-100 dark:border-purple-800/40 space-y-2">
+              {paymentMessages.map((msg) => (
+                <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
+                  <div className="flex justify-between items-start">
+                    <p className="text-[10px] font-medium text-purple-700 dark:text-purple-400">
+                      {msg.senderName}
+                    </p>
+                    <span className="text-[9px] text-purple-400">
+                      {format(new Date(msg.createdAt), "HH:mm", { locale: fr })}
+                    </span>
+                  </div>
+                  <p className="text-[9px] text-slate-600 dark:text-slate-400 mt-0.5">
+                    {msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    })()}
+
+    {/* 4. AUCUNE ALERTE */}
+    {conversation.messages.filter(
+      (m) =>
+        !m.isSystem &&
+        (m.content.startsWith("[Message bloqué") ||
+          m.content.includes("+216") ||
+          /\b[2579]\d{7}\b/.test(m.content) ||
+          /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(m.content) ||
+          m.content.toLowerCase().includes("whatsapp") ||
+          m.content.toLowerCase().includes("paypal"))
+    ).length === 0 && (
+      <div className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
+        <div className="flex items-center gap-2 p-3">
+          <div className="w-7 h-7 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center">
+            <IoCheckmarkCircleOutline className="text-emerald-500 text-sm" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+              Aucune alerte détectée
+            </p>
+            <p className="text-[10px] text-emerald-500">
+              Cette conversation semble sécurisée
+            </p>
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+{/* Quick Actions - Style inspiré UI */}
+<div className="space-y-3">
+  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+    Actions Rapides
+  </h3>
+  <div className="grid grid-cols-1 gap-2">
+    
+    {/* BOUTON FLAG / UNFLAG */}
+    <button
+      onClick={() => handleAction(isFlagged ? "UNFLAG" : "FLAG")}
+      className={`w-full py-2 rounded-full text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md ${
+        isFlagged
+          ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20"
+          : "bg-red-500 hover:bg-red-600 text-white shadow-red-500/20"
+      }`}
+    >
+      <IoFlagOutline className="text-sm" />
+      {isFlagged ? "Débloquer" : "Bloquer"}
+    </button>
+
+    {/* BOUTON CLOSE */}
+    <button
+      onClick={() => handleAction("CLOSE")}
+      className="w-full py-2 rounded-full bg-slate-700 hover:bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-slate-700/20"
+    >
+      <IoCheckmarkCircleOutline className="text-sm" />
+      Fermer
+    </button>
+
+    {/* BOUTON REOPEN (conditionnel) */}
+    {conversation.status !== "OPEN" && (
+      <button
+        onClick={() => handleAction("REOPEN")}
+        className="w-full py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+      >
+        <IoRefreshOutline className="text-sm" />
+        Réouvrir
+      </button>
+    )}
+
+  </div>
+</div>
           </div>
         </div>
       </div>

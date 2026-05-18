@@ -124,8 +124,7 @@ export async function POST(
     }
 
     const { conversationId } = await params;
-    const { content } = await req.json();
-
+const { content, isSystem } = await req.json();
     if (!content || !content.trim()) {
       return NextResponse.json(
         { error: "Le message ne peut pas être vide" },
@@ -157,12 +156,68 @@ export async function POST(
       },
     });
 
-    if (!conversation) {
+       if (!conversation) {
       return NextResponse.json(
         { error: "Conversation non trouvée" },
         { status: 404 },
       );
     }
+
+    // 🔥 ============================================
+    // 🔥 SI C'EST UN MESSAGE SYSTÈME - PAS DE VÉRIFICATIONS
+    // 🔥 ============================================
+    if (isSystem === true) {
+      const receiverId = conversation.ownerId === user.id ? conversation.tenantId : conversation.ownerId;
+      
+      const systemMessage = await prisma.message.create({
+        data: {
+          conversationId,
+          senderId: user.id,
+          receiverId,
+          content,
+          isSystem: true,
+          isBlocked: false,
+          isRead: true,
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profilePictureUrl: true,
+            },
+          },
+        },
+      });
+
+      await prisma.conversation.update({
+        where: { id: conversationId },
+        data: {
+          lastMessage: content.substring(0, 100),
+          lastMessageAt: new Date(),
+          ...(conversation.ownerId === user.id
+            ? { unreadCountTenant: { increment: 1 } }
+            : { unreadCountOwner: { increment: 1 } }),
+        },
+      });
+
+      return NextResponse.json({
+        id: systemMessage.id,
+        content: systemMessage.content,
+        senderId: systemMessage.senderId,
+        senderName: "Système",
+        createdAt: systemMessage.createdAt.toISOString(),
+        isBlocked: false,
+        isRead: true,
+        isSystem: true,
+        type: "text",
+      });
+    }
+
+    // 🔥 ============================================
+    // 🔥 VÉRIFICATIONS NORMALES POUR LES MESSAGES UTILISATEUR
+    // 🔥 ============================================
 
     // 🔥 ============================================
     // 🔥 VÉRIFICATION CRUCIALE : STATUT DE LA CONVERSATION
@@ -209,38 +264,43 @@ export async function POST(
       );
     }
 
-    // 3. Vérifier si l'utilisateur n'a pas bloqué l'autre
-    const blockExists = await prisma.block.findFirst({
+    // 3. Vérifier si l'EXPÉDITEUR a bloqué le DESTINATAIRE
+    const senderBlockedRecipient = await prisma.block.findFirst({
       where: {
-        OR: [
-          {
-            blockerId: user.id,
-            blockedId:
-              conversation.ownerId === user.id
-                ? conversation.tenantId
-                : conversation.ownerId,
-          },
-          {
-            blockerId:
-              conversation.ownerId === user.id
-                ? conversation.tenantId
-                : conversation.ownerId,
-            blockedId: user.id,
-          },
-        ],
+        blockerId: user.id,
+        blockedId:
+          conversation.ownerId === user.id
+            ? conversation.tenantId
+            : conversation.ownerId,
       },
     });
 
-    if (blockExists) {
+    // Si l'expéditeur a bloqué le destinataire → REFUSER le message
+    if (senderBlockedRecipient) {
       return NextResponse.json(
         {
-          error: "Vous ne pouvez plus envoyer de messages à cet utilisateur.",
-          code: "USER_BLOCKED",
+          error:
+            "Vous avez bloqué cet utilisateur. Débloquez-le pour lui envoyer des messages.",
+          code: "SENDER_BLOCKED_RECIPIENT",
         },
         { status: 403 },
       );
     }
 
+    // 4. Vérifier si le DESTINATAIRE a bloqué l'EXPÉDITEUR
+    // Dans ce cas, le message est accepté mais NE SERA PAS DÉLIVRÉ
+    const receiverBlockedSender = await prisma.block.findFirst({
+      where: {
+        blockerId:
+          conversation.ownerId === user.id
+            ? conversation.tenantId
+            : conversation.ownerId,
+        blockedId: user.id,
+      },
+    });
+
+    // Variable pour savoir si le message sera délivré
+    const willBeDelivered = !receiverBlockedSender;
     // ============================================
     // FIN DES VÉRIFICATIONS - CONTINUER L'ENVOI
     // ============================================
@@ -302,24 +362,27 @@ export async function POST(
       },
     });
 
-    const senderName =
-      user.firstName && user.lastName
-        ? `${user.firstName} ${user.lastName}`
-        : "Quelqu'un";
+    // Envoyer la notification SEULEMENT si le message sera délivré
+    if (willBeDelivered) {
+      const senderName =
+        user.firstName && user.lastName
+          ? `${user.firstName} ${user.lastName}`
+          : "Quelqu'un";
 
-    await prisma.notification.create({
-      data: {
-        userId: receiverId,
-        type: "NEW_MESSAGE",
-        title: "Nouveau message",
-        content: `${senderName} vous a envoyé un message.`,
+      await prisma.notification.create({
         data: {
-          conversationId,
-          messageId: message.id,
+          userId: receiverId,
+          type: "NEW_MESSAGE",
+          title: "Nouveau message",
+          content: `${senderName} vous a envoyé un message.`,
+          data: {
+            conversationId,
+            messageId: message.id,
+          },
+          channels: ["IN_APP"],
         },
-        channels: ["IN_APP", "EMAIL"],
-      },
-    });
+      });
+    }
 
     return NextResponse.json({
       id: message.id,
@@ -327,12 +390,12 @@ export async function POST(
       senderId: message.senderId,
       senderName:
         `${message.sender.firstName || ""} ${message.sender.lastName || ""}`.trim(),
-      senderImage: message.sender.profilePictureUrl,
       createdAt: message.createdAt.toISOString(),
       isBlocked: message.isBlocked,
       isRead: message.isRead,
       isSystem: false,
       type: "text",
+      willBeDelivered: willBeDelivered, // ← AJOUTE CETTE LIGNE
     });
   } catch (error) {
     console.error("[POST /api/conversations/messages] Erreur:", error);

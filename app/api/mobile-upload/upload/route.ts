@@ -11,16 +11,21 @@ const getUploadSessions = () => {
   return global.__uploadSessions;
 };
 
-async function detectImageType(buffer: Buffer): Promise<{ mimeType: string; extension: string }> {
-  if (buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF) {
-    return { mimeType: 'image/jpeg', extension: 'jpg' };
-  }
-  else if (buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4E && buffer[3] === 0x47) {
-    return { mimeType: 'image/png', extension: 'png' };
-  }
-  else {
+async function detectImageType(
+  buffer: Buffer,
+): Promise<{ mimeType: string; extension: string }> {
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return { mimeType: "image/jpeg", extension: "jpg" };
+  } else if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    return { mimeType: "image/png", extension: "png" };
+  } else {
     console.log("⚠️ Type non détecté, fallback à JPEG");
-    return { mimeType: 'image/jpeg', extension: 'jpg' };
+    return { mimeType: "image/jpeg", extension: "jpg" };
   }
 }
 
@@ -32,12 +37,12 @@ export async function POST(request: NextRequest) {
     const type = formData.get("type") as string;
     const file = formData.get("file") as File;
 
-    console.log("📸 Upload reçu:", { 
-      sessionId, 
-      type, 
-      fileName: file?.name, 
+    console.log("📸 Upload reçu:", {
+      sessionId,
+      type,
+      fileName: file?.name,
       fileType: file?.type,
-      fileSize: file?.size 
+      fileSize: file?.size,
     });
 
     if (!sessionId || !type || !file) {
@@ -68,14 +73,14 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     const { mimeType, extension } = await detectImageType(buffer);
-    
+
     console.log(`📸 Type détecté: ${mimeType} (${extension}) pour ${type}`);
 
     // ✅ STOCKER EN MÉMOIRE (base64) - PAS D'UPLOAD VERCEL BLOB
     const base64Data = buffer.toString("base64");
 
     if (!session.files) session.files = {};
-    
+
     // Stocker les données en base64 dans la session
     session.files[type] = {
       data: base64Data,
@@ -88,20 +93,26 @@ export async function POST(request: NextRequest) {
 
     const filesCount = Object.keys(session.files).length;
 
-    if (filesCount === 3) {
+    const isComplete = filesCount >= 2;
+
+    if (isComplete) {
       session.status = "completed";
-      console.log("🎉 Tous les 3 fichiers reçus en mémoire!");
+      const expectedTotal = session.mode === "reapply" ? 2 : 3;
+      console.log(`🎉 Documents reçus! (${filesCount}/${expectedTotal})`);
     }
 
     uploadSessions.set(sessionId, session);
 
     console.log(`✅ Stockage mémoire réussi: ${type} (${filesCount}/3)`);
 
+    const expectedTotal = session.mode === "reapply" ? 2 : 3;
+
     return NextResponse.json({
       success: true,
       type,
       filesReceived: filesCount,
-      totalExpected: 3,
+      totalExpected: expectedTotal,
+      isComplete: filesCount >= expectedTotal,
     });
   } catch (error) {
     console.error("❌ Upload error:", error);

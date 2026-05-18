@@ -211,7 +211,6 @@ const equipmentIds = [
   "dryer",
 ];
 
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function Stepper({
   value,
@@ -356,6 +355,9 @@ export default function CreateListingPage({
   const { locale } = React.use(params);
   const router = useRouter();
   const { user } = useUser();
+  const { getRecommendation, loading } = usePriceRecommendation();
+const [recommendedPrice, setRecommendedPrice] = useState<number | null>(null);
+const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<number | null>(null);
   const t = useTranslations("CreateListing");
 
   const [step, setStep] = useState(1);
@@ -368,12 +370,8 @@ export default function CreateListingPage({
   const fileRef = useRef<HTMLInputElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const { getRecommendation, loading } = usePriceRecommendation();
-
   const geocodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const formRef = useRef(form);
-  const [recommendedPrice, setRecommendedPrice] = useState<number | null>(null);
-  const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<number | null>(null);
 
   useEffect(() => {
     formRef.current = form;
@@ -493,7 +491,28 @@ export default function CreateListingPage({
     },
     [fieldErrors],
   );
+const handleAIPriceRecommendation = async () => {
+  const result = await getRecommendation({
+    governorate: form.governorate,
+    type: form.type,
+    rooms: form.rooms,
+    bathrooms: form.bathrooms,
+    surfaceArea: form.surfaceArea,
+    equipment: form.equipment,
+    hasBalcony: form.hasBalcony,
+    hasGarden: form.hasGarden,
+    hasGarage: form.hasGarage,
+    hasElevator: form.hasElevator,
+    isFurnished: form.isFurnished,
+    rentalType: form.rentalType,
+  });
 
+  if (result) {
+    setRecommendedPrice(result.pricePerNight);
+    setRecommendedPriceMonth(result.pricePerMonth);
+    toast.success(`Prix nuit: ${result.pricePerNight} TND | Prix mois: ${result.pricePerMonth} TND`);
+  }
+};
   // ═══════════════════════════════════════════════════════════════════
   // GÉOCODAGE SUR ENTER AVEC DEBOUNCE
   // ═══════════════════════════════════════════════════════════════════
@@ -541,30 +560,7 @@ export default function CreateListingPage({
       }
     }, 800);
   }, [upd, validateField]);
-  const handleAIPriceRecommendation = async () => {
-    const result = await getRecommendation({
-      governorate: form.governorate,
-      type: form.type,
-      rooms: form.rooms,
-      bathrooms: form.bathrooms,
-      surfaceArea: form.surfaceArea,
-      equipment: form.equipment,
-      hasBalcony: form.hasBalcony,
-      hasGarden: form.hasGarden,
-      hasGarage: form.hasGarage,
-      hasElevator: form.hasElevator,
-      isFurnished: form.isFurnished,
-      rentalType: form.rentalType,
-    });
-  
-    if (result) {
-      setRecommendedPrice(result.pricePerNight);
-      setRecommendedPriceMonth(result.pricePerMonth);
-      toast.success(`Prix nuit: ${result.pricePerNight} TND | Prix mois: ${result.pricePerMonth} TND`);
-    }
-  };
-  
- 
+
   // Détecter modifications non sauvegardées
   useEffect(() => {
     const hasChanges =
@@ -1687,228 +1683,246 @@ export default function CreateListingPage({
                 </div>
               )}
 
-              {/* STEP 5 : Tarifs */}
-              {step === 5 && (
-                <div className="space-y-5">
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title="Type de location" />
-                    <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg gap-1">
-                      {["SHORT_TERM", "LONG_TERM", "BOTH"].map((rt) => (
-                        <button
-                          key={rt}
-                          type="button"
-                          onClick={() => upd({ rentalType: rt })}
-                          className={`flex-1 py-2 rounded-md text-sm font-bold transition-all cursor-pointer ${form.rentalType === rt ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm" : "text-slate-500"}`}
-                        >
-                          {rt === "SHORT_TERM"
-                            ? "Courte durée"
-                            : rt === "LONG_TERM"
-                              ? "Longue durée"
-                              : "Les deux"}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title="Tarifs" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {(form.rentalType === "SHORT_TERM" || form.rentalType === "BOTH") && (
-  <div className="space-y-3">
-    {/* SECTION IA - RECOMMANDATION */}
-    <div className="p-4 bg-gradient-to-r from-sky-50 to-indigo-50 dark:from-sky-950/30 dark:to-indigo-950/30 rounded-lg border border-sky-200 dark:border-sky-800">
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles size={16} className="text-sky-500" />
-        <label className="text-xs font-black uppercase text-sky-700">
-          Prix recommandé par IA
-        </label>
+             {/* STEP 5 : Tarifs */}
+{step === 5 && (
+  <div className="space-y-5">
+    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+      <SectionTitle title="Type de location" />
+      <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg gap-1">
+        {["SHORT_TERM", "LONG_TERM", "BOTH"].map((rt) => (
+          <button
+            key={rt}
+            type="button"
+            onClick={() => upd({ rentalType: rt })}
+            className={`flex-1 py-2 rounded-md text-sm font-bold transition-all cursor-pointer ${form.rentalType === rt ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm" : "text-slate-500"}`}
+          >
+            {rt === "SHORT_TERM"
+              ? "Courte durée"
+              : rt === "LONG_TERM"
+                ? "Longue durée"
+                : "Les deux"}
+          </button>
+        ))}
       </div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-black text-sky-600">
-          {recommendedPrice || "---"}
-        </span>
-        <span className="text-xs font-bold text-slate-400">TND / nuit</span>
-      </div>
-      <button
-        type="button"
-        onClick={handleAIPriceRecommendation}
-                disabled={loading}
-        className="mt-2 flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-sky-600 bg-white rounded-lg hover:bg-sky-50 transition-colors"
-      >
-        {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-        {loading ? "Calcul en cours..." : "💰 Obtenir la recommandation IA"}
-      </button>
-      {recommendedPrice && (
-        <button
-          type="button"
-          onClick={() => upd({ pricePerNight: recommendedPrice })}
-          className="mt-2 ml-2 px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-        >
-          ✓ Utiliser ce prix
-        </button>
-      )}
     </div>
 
-    {/* SECTION PROPRIÉTAIRE - PRIX PERSONNALISÉ */}
-    <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-      <div className="flex items-center gap-2 mb-2">
-        <Sun size={16} className="text-sky-500" />
-        <label className="text-xs font-black uppercase">
-          Votre prix par nuit
-        </label>
-        <Tooltip text="Requis">
-          <span className="text-rose-500 text-xs">*</span>
-        </Tooltip>
-      </div>
-      <div className="flex items-baseline gap-2">
-        <input
-          type="number"
-          value={form.pricePerNight || ""}
-          onChange={(e) =>
-            upd({
-              pricePerNight: e.target.value ? Number(e.target.value) : null,
-            })
-          }
-          onBlur={() => handleBlur("pricePerNight", form.pricePerNight)}
-          placeholder="0"
-          className="w-full text-2xl font-black bg-transparent border-none outline-none"
-        />
-        <span className="text-xs font-bold text-slate-400">TND / nuit</span>
-      </div>
-      {getFieldError("pricePerNight") && (
-        <p className="text-xs text-rose-500 mt-1">
-          {getFieldError("pricePerNight")}
-        </p>
-      )}
-    </div>
-  </div>
-)}
-                     {(form.rentalType === "LONG_TERM" || form.rentalType === "BOTH") && (
-  <div className="space-y-3">
-    {/* SECTION IA - RECOMMANDATION */}
-    <div className="p-4 bg-gradient-to-r from-sky-50 to-indigo-50 dark:from-sky-950/30 dark:to-indigo-950/30 rounded-lg border border-sky-200 dark:border-sky-800">
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles size={16} className="text-sky-500" />
-        <label className="text-xs font-black uppercase text-sky-700">
-          Prix recommandé par IA
-        </label>
-      </div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-2xl font-black text-sky-600">
-          {recommendedPriceMonth || "---"}
-        </span>
-        <span className="text-xs font-bold text-slate-400">TND / mois</span>
-      </div>
-      <button
-        type="button"
-        onClick={handleAIPriceRecommendation}
-                disabled={loading}
-        className="mt-2 flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-sky-600 bg-white rounded-lg hover:bg-sky-50 transition-colors"
-      >
-        {loading ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
-        {loading ? "Calcul en cours..." : "💰 Obtenir la recommandation IA"}
-      </button>
-      {recommendedPriceMonth && (
-        <button
-          type="button"
-          onClick={() => upd({ pricePerMonth: recommendedPriceMonth })}
-          className="mt-2 ml-2 px-3 py-1.5 text-xs font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-        >
-          ✓ Utiliser ce prix
-        </button>
-      )}
-    </div>
-
-    {/* SECTION PROPRIÉTAIRE - PRIX PERSONNALISÉ */}
-    <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-      <div className="flex items-center gap-2 mb-2">
-        <Calendar size={16} className="text-purple-500" />
-        <label className="text-xs font-black uppercase">Votre prix par mois</label>
-        <Tooltip text="Requis"><span className="text-rose-500 text-xs">*</span></Tooltip>
-      </div>
-      <div className="flex items-baseline gap-2">
-        <input
-          type="number"
-          value={form.pricePerMonth || ""}
-          onChange={(e) => upd({ pricePerMonth: e.target.value ? Number(e.target.value) : null })}
-          onBlur={() => handleBlur("pricePerMonth", form.pricePerMonth)}
-          placeholder="0"
-          className="w-full text-2xl font-black bg-transparent border-none outline-none"
-        />
-        <span className="text-xs font-bold text-slate-400">TND / mois</span>
-      </div>
-      {getFieldError("pricePerMonth") && (
-        <p className="text-xs text-rose-500 mt-1">{getFieldError("pricePerMonth")}</p>
-      )}
-    </div>
-  </div>
-)}
-                    </div>
-                  </div>
-
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title="Frais supplémentaires" />
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <Shield size={16} className="text-emerald-500" />
-                        <div>
-                          <p className="font-bold text-sm">
-                            Caution de sécurité
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            Montant remboursable
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {form.securityDeposit !== null && (
-                            <input
-                              type="number"
-                              value={form.securityDeposit}
-                              onChange={(e) =>
-                                upd({ securityDeposit: Number(e.target.value) })
-                              }
-                              className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
-                            />
-                          )}
-                          <Toggle
-                            checked={form.securityDeposit !== null}
-                            onChange={(v) =>
-                              upd({ securityDeposit: v ? 500 : null })
-                            }
-                          />
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-                        <Sparkles size={16} className="text-sky-500" />
-                        <div>
-                          <p className="font-bold text-sm">Frais de ménage</p>
-                          <p className="text-xs text-slate-500">
-                            Nettoyage inclus
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {form.cleaningFee !== null && (
-                            <input
-                              type="number"
-                              value={form.cleaningFee}
-                              onChange={(e) =>
-                                upd({ cleaningFee: Number(e.target.value) })
-                              }
-                              className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
-                            />
-                          )}
-                          <Toggle
-                            checked={form.cleaningFee !== null}
-                            onChange={(v) =>
-                              upd({ cleaningFee: v ? 50 : null })
-                            }
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+      <SectionTitle title="Tarifs" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        
+        {/* CARTE IA - COURT TERME */}
+        {(form.rentalType === "SHORT_TERM" || form.rentalType === "BOTH") && (
+          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-sky-50 via-indigo-50/30 to-sky-50 dark:from-sky-950/20 dark:via-indigo-950/10 dark:to-sky-950/20 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-sky-200/50 dark:hover:shadow-sky-900/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center shadow-md animate-pulse">
+                  <Sparkles size={14} className="text-white" />
                 </div>
-              )}
+                <span className="text-[10px] font-black uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                  IA Recommendation
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-sky-700 dark:text-sky-300">
+                  {recommendedPrice || "—"}
+                </span>
+                <span className="text-xs font-bold text-slate-400">TND / nuit</span>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={handleAIPriceRecommendation}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-sky-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-sky-200 dark:border-sky-800 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={12} />
+                  )}
+                  {loading ? "Calcul..." : "Estimer"}
+                </button>
+                {recommendedPrice && (
+                  <button
+                    type="button"
+                    onClick={() => upd({ pricePerNight: recommendedPrice })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
+                  >
+                    <Check size={12} />
+                    Appliquer
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PRIX PROPRIÉTAIRE - COURT TERME */}
+        {(form.rentalType === "SHORT_TERM" || form.rentalType === "BOTH") && (
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                <Sun size={14} className="text-amber-500" />
+              </div>
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                Votre prix
+              </label>
+              <Tooltip text="Requis">
+                <span className="text-rose-500 text-[10px]">*</span>
+              </Tooltip>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <input
+                type="number"
+                value={form.pricePerNight || ""}
+                onChange={(e) =>
+                  upd({ pricePerNight: e.target.value ? Number(e.target.value) : null })
+                }
+                onBlur={() => handleBlur("pricePerNight", form.pricePerNight)}
+                placeholder="0"
+                className="w-full text-2xl font-black bg-transparent border-none outline-none"
+              />
+              <span className="text-xs font-bold text-slate-400">TND / nuit</span>
+            </div>
+            {getFieldError("pricePerNight") && (
+              <p className="text-[10px] text-rose-500 mt-1">{getFieldError("pricePerNight")}</p>
+            )}
+          </div>
+        )}
+
+        {/* CARTE IA - LONG TERME */}
+        {(form.rentalType === "LONG_TERM" || form.rentalType === "BOTH") && (
+          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 via-indigo-50/30 to-purple-50 dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-purple-950/20 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-900/20">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center shadow-md animate-pulse">
+                  <Sparkles size={14} className="text-white" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                  IA Recommendation
+                </span>
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl font-black text-purple-700 dark:text-purple-300">
+                  {recommendedPriceMonth || "—"}
+                </span>
+                <span className="text-xs font-bold text-slate-400">TND / mois</span>
+              </div>
+              <div className="flex gap-2 mt-3">
+                <button
+                  type="button"
+                  onClick={handleAIPriceRecommendation}
+                  disabled={loading}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-purple-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 size={12} className="animate-spin" />
+                  ) : (
+                    <Sparkles size={12} />
+                  )}
+                  {loading ? "Calcul..." : "Estimer"}
+                </button>
+                {recommendedPriceMonth && (
+                  <button
+                    type="button"
+                    onClick={() => upd({ pricePerMonth: recommendedPriceMonth })}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
+                  >
+                    <Check size={12} />
+                    Appliquer
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PRIX PROPRIÉTAIRE - LONG TERME */}
+        {(form.rentalType === "LONG_TERM" || form.rentalType === "BOTH") && (
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+                <Calendar size={14} className="text-purple-500" />
+              </div>
+              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                Votre prix
+              </label>
+              <Tooltip text="Requis">
+                <span className="text-rose-500 text-[10px]">*</span>
+              </Tooltip>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <input
+                type="number"
+                value={form.pricePerMonth || ""}
+                onChange={(e) =>
+                  upd({ pricePerMonth: e.target.value ? Number(e.target.value) : null })
+                }
+                onBlur={() => handleBlur("pricePerMonth", form.pricePerMonth)}
+                placeholder="0"
+                className="w-full text-2xl font-black bg-transparent border-none outline-none"
+              />
+              <span className="text-xs font-bold text-slate-400">TND / mois</span>
+            </div>
+            {getFieldError("pricePerMonth") && (
+              <p className="text-[10px] text-rose-500 mt-1">{getFieldError("pricePerMonth")}</p>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+
+    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+      <SectionTitle title="Frais supplémentaires" />
+      <div className="space-y-3">
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+          <Shield size={16} className="text-emerald-500" />
+          <div>
+            <p className="font-bold text-sm">Caution de sécurité</p>
+            <p className="text-xs text-slate-500">Montant remboursable</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {form.securityDeposit !== null && (
+              <input
+                type="number"
+                value={form.securityDeposit}
+                onChange={(e) => upd({ securityDeposit: Number(e.target.value) })}
+                className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
+              />
+            )}
+            <Toggle
+              checked={form.securityDeposit !== null}
+              onChange={(v) => upd({ securityDeposit: v ? 500 : null })}
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+          <Sparkles size={16} className="text-sky-500" />
+          <div>
+            <p className="font-bold text-sm">Frais de ménage</p>
+            <p className="text-xs text-slate-500">Nettoyage inclus</p>
+          </div>
+          <div className="flex items-center gap-2">
+            {form.cleaningFee !== null && (
+              <input
+                type="number"
+                value={form.cleaningFee}
+                onChange={(e) => upd({ cleaningFee: Number(e.target.value) })}
+                className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
+              />
+            )}
+            <Toggle
+              checked={form.cleaningFee !== null}
+              onChange={(v) => upd({ cleaningFee: v ? 50 : null })}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
 
               {/* STEP 6 : Aperçu */}
               {step === 6 && (
