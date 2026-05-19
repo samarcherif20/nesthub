@@ -1,5 +1,4 @@
-// hooks/useListingTest.ts
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export interface Owner {
   name: string;
@@ -88,6 +87,140 @@ export function useListingTest(id: string) {
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState(1);
 
+  const [blockedDates, setBlockedDates] = useState<
+    { startDate: string; endDate: string; reason?: string }[]
+  >([]);
+  const [pendingDates, setPendingDates] = useState<string[]>([]);
+  const [pricingRules, setPricingRules] = useState<
+    { startDate: string; endDate: string; fixedPrice: number }[]
+  >([]);
+
+ const fetchAvailability = useCallback(async () => {
+  if (!id) return;
+
+  console.log("🔵 fetchAvailability: Début pour listing", id);
+
+  try {
+    const now = new Date();
+    const allBlockedDates: any[] = [];
+    const allPricingRules: any[] = [];
+    const allPendingDates: string[] = []; // ← tableau de strings
+
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now);
+      date.setMonth(now.getMonth() + i);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1;
+
+      const res = await fetch(
+        `/api/listings/availability?listingId=${id}&year=${year}&month=${month}`,
+      );
+
+      if (res.ok) {
+        const data = await res.json();
+        allBlockedDates.push(...(data.blockedDates || []));
+        allPricingRules.push(...(data.pricingRules || []));
+        
+        // ✅ CONVERSION CORRECTE : transformer les objets en strings
+        const pendingData = data.pendingBlockedDates || [];
+        for (const item of pendingData) {
+          if (item.startDate) {
+            const dateStr = new Date(item.startDate).toISOString().split('T')[0];
+            allPendingDates.push(dateStr);
+          } else if (typeof item === "string") {
+            allPendingDates.push(item.split('T')[0]);
+          }
+        }
+      }
+    }
+
+    // Supprimer les doublons
+    const uniquePendingDates = [...new Set(allPendingDates)];
+    
+    console.log(`📊 fetchAvailability: ${allBlockedDates.length} dates ROUGES, ${uniquePendingDates.length} dates ORANGES`);
+    console.log("🟠 Dates ORANGES:", uniquePendingDates);
+
+    setBlockedDates(allBlockedDates);
+    setPendingDates(uniquePendingDates); // ← maintenant ce sont des strings !
+    setPricingRules(allPricingRules);
+  } catch (error) {
+    console.error("❌ Erreur fetchAvailability:", error);
+  }
+}, [id]);
+  // ✅ CORRECTION: Vérifier si une date est bloquée (utilise les données de l'API)
+  const isDateBlocked = useCallback(
+    (date: string) => {
+      if (!listing) return true;
+      if (!date) return false;
+
+      // Vérifier dans blockedDates de l'API
+      const isBlockedByAPI = blockedDates.some((blocked) => {
+        const blockedStart = new Date(blocked.startDate)
+          .toISOString()
+          .split("T")[0];
+        return blockedStart === date;
+      });
+
+      if (isBlockedByAPI) {
+        console.log(`📅 ${date} est bloqué par l'API`);
+        return true;
+      }
+
+      // Vérifier dans pendingDates
+      if (pendingDates.includes(date)) {
+        console.log(`📅 ${date} est en attente`);
+        return true;
+      }
+
+      // Vérifier dans listing.blockedDates
+      if (listing.blockedDates?.includes(date)) {
+        console.log(`📅 ${date} est bloqué par listing.blockedDates`);
+        return true;
+      }
+
+      // Vérifier dans listing.availability
+      if (listing.availability && listing.availability[date] === false) {
+        console.log(`📅 ${date} est bloqué par availability`);
+        return true;
+      }
+
+      return false;
+    },
+    [listing, blockedDates, pendingDates],
+  );
+
+  // ✅ Vérifier si une plage complète est disponible
+  const isDateRangeAvailable = useCallback(
+    (startDate: string, endDate: string) => {
+      if (!startDate || !endDate) return false;
+
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const dates: string[] = [];
+
+      // Générer toutes les dates de la plage (excluant endDate)
+      for (let d = new Date(start); d < end; d.setDate(d.getDate() + 1)) {
+        dates.push(d.toISOString().split("T")[0]);
+      }
+
+      console.log(
+        `🔍 Vérification plage: ${startDate} → ${endDate} (${dates.length} nuits)`,
+      );
+
+      // Vérifier chaque date
+      for (const date of dates) {
+        if (isDateBlocked(date)) {
+          console.log(`❌ Plage non disponible: ${date} est bloqué`);
+          return false;
+        }
+      }
+
+      console.log(`✅ Plage disponible: ${startDate} → ${endDate}`);
+      return true;
+    },
+    [isDateBlocked],
+  );
+
   useEffect(() => {
     if (!id) return;
 
@@ -97,36 +230,37 @@ export function useListingTest(id: string) {
         const res = await fetch(`/api/listings/${id}`);
         const data = await res.json();
 
-        console.log("🔴 LISTING DATA:", data);
-        console.log("🔴 maxGuests:", data.maxGuests);
-        console.log("🔴 cleaningFee:", data.cleaningFee);
-        console.log("🔴 reviews count:", data.reviews?.length || 0);
-        console.log("🔴 owner bio:", data.owner?.bio);
-
         const images = data.photos?.map((p: any) => p.url) ?? data.images ?? [];
         const amenities = extractAmenities(data.equipment ?? {});
         const houseRules = parseHouseRules(data.houseRules, data);
 
-        // Formater les reviews
-        const formattedReviews = data.reviews?.map((review: any) => ({
-          id: review.id,
-          rating: review.rating,
-          comment: review.comment,
-          author: review.author || review.reviewer?.username || "Anonyme",
-          authorAvatar: review.authorAvatar || review.reviewer?.profilePictureUrl,
-          date: review.date || new Date(review.createdAt).toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-          }),
-          createdAt: review.createdAt,
-        })) ?? [];
+        const formattedReviews =
+          data.reviews?.map((review: any) => ({
+            id: review.id,
+            rating: review.rating,
+            comment: review.comment,
+            author: review.author || review.reviewer?.username || "Anonyme",
+            authorAvatar:
+              review.authorAvatar || review.reviewer?.profilePictureUrl,
+            date:
+              review.date ||
+              new Date(review.createdAt).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              }),
+            createdAt: review.createdAt,
+          })) ?? [];
 
         const transformedListing: Listing = {
           id: data.id,
           title: data.title,
           description: data.description,
-          location: `${data.governorate || ""}, ${data.delegation || ""}`.replace(/^, /, ""),
+          location:
+            `${data.governorate || ""}, ${data.delegation || ""}`.replace(
+              /^, /,
+              "",
+            ),
           governorate: data.governorate,
           delegation: data.delegation,
           street: data.street,
@@ -150,12 +284,17 @@ export function useListingTest(id: string) {
           houseRules: houseRules,
           cleaningFee: data.cleaningFee ?? 85,
           owner: {
-            name: data.owner?.username ?? data.owner?.firstName ?? "Hôte NestHub",
+            name:
+              data.owner?.username ?? data.owner?.firstName ?? "Hôte NestHub",
             username: data.owner?.username,
             isVerified: data.owner?.isIdentityVerified ?? true,
             avatar: data.owner?.profilePictureUrl,
-            bio: data.owner?.bio || "Passionné par l'hospitalité, je serai ravi de vous accueillir et de rendre votre séjour unique.",
-            memberSince: data.owner?.createdAt ? new Date(data.owner.createdAt).getFullYear() : 2023,
+            bio:
+              data.owner?.bio ||
+              "Passionné par l'hospitalité, je serai ravi de vous accueillir et de rendre votre séjour unique.",
+            memberSince: data.owner?.createdAt
+              ? new Date(data.owner.createdAt).getFullYear()
+              : 2023,
           },
           numberOfKitchens: data.numberOfKitchens ?? 1,
           floorNumber: data.floorNumber,
@@ -197,6 +336,26 @@ export function useListingTest(id: string) {
     fetchListing();
   }, [id]);
 
+  useEffect(() => {
+    if (id) {
+      fetchAvailability();
+    }
+  }, [id, fetchAvailability]);
+
+  // ✅ Log quand checkIn/checkOut changent
+  useEffect(() => {
+    if (checkIn && checkOut) {
+      const available = isDateRangeAvailable(checkIn, checkOut);
+      console.log(
+        `📅 Dates sélectionnées: ${checkIn} → ${checkOut}, Disponible: ${available}`,
+      );
+    } else if (checkIn) {
+      console.log(
+        `📅 Check-in sélectionné: ${checkIn}, Bloqué: ${isDateBlocked(checkIn)}`,
+      );
+    }
+  }, [checkIn, checkOut, isDateRangeAvailable, isDateBlocked]);
+
   const nights = (() => {
     if (!checkIn || !checkOut) return 0;
     const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
@@ -213,13 +372,6 @@ export function useListingTest(id: string) {
   const resetDates = () => {
     setCheckIn("");
     setCheckOut("");
-  };
-
-  const isDateBlocked = (date: string) => {
-    if (!listing) return true;
-    if (listing.blockedDates?.includes(date)) return true;
-    if (listing.availability && listing.availability[date] === false) return true;
-    return false;
   };
 
   const getAvailableDates = () => {
@@ -258,7 +410,12 @@ export function useListingTest(id: string) {
     calculateTotalPrice,
     resetDates,
     isDateBlocked,
+    isDateRangeAvailable,
     getAvailableDates,
+    blockedDates,
+    pendingDates,
+    pricingRules,
+    fetchAvailability,
   };
 }
 

@@ -1,7 +1,7 @@
 // hooks/useListing.ts
 console.log("🔥🔥🔥 LE FICHIER useListing.ts EST CHARGÉ !!!");
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export interface Owner {
   name: string;
@@ -56,6 +56,32 @@ export function useListing(id: string) {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState(1);
+  
+  // Nouveaux states pour la disponibilité
+  const [blockedDates, setBlockedDates] = useState<{ startDate: string; endDate: string; reason?: string }[]>([]);
+  const [pendingDates, setPendingDates] = useState<string[]>([]);
+  const [pricingRules, setPricingRules] = useState<{ startDate: string; endDate: string; fixedPrice: number }[]>([]);
+
+  // Fonction pour récupérer la disponibilité
+  const fetchAvailability = useCallback(async () => {
+    if (!id) return;
+    
+    try {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = now.getMonth() + 1;
+      
+      const res = await fetch(`/api/listings/availability?listingId=${id}&year=${year}&month=${month}`);
+      if (!res.ok) return;
+      
+      const data = await res.json();
+      setBlockedDates(data.blockedDates || []);
+      setPendingDates(data.pendingBlockedDates || []);
+      setPricingRules(data.pricingRules || []);
+    } catch (error) {
+      console.error("Error fetching availability:", error);
+    }
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -135,6 +161,13 @@ export function useListing(id: string) {
     fetchListing();
   }, [id]);
 
+  // Récupérer la disponibilité après le chargement du listing
+  useEffect(() => {
+    if (id) {
+      fetchAvailability();
+    }
+  }, [id, fetchAvailability]);
+
   const nights = (() => {
     if (!checkIn || !checkOut) return 0;
     const diff = new Date(checkOut).getTime() - new Date(checkIn).getTime();
@@ -198,6 +231,11 @@ export function useListing(id: string) {
     resetDates,
     isDateBlocked,
     getAvailableDates,
+    blockedDates,
+    pendingDates,
+    pricingRules,
+    fetchAvailability,
+   
   };
 }
 

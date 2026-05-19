@@ -32,6 +32,7 @@ import {
   IoTimerOutline,
   IoCardOutline,
   IoArrowForwardOutline,
+  IoEyeOutline,
 } from "react-icons/io5";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -39,7 +40,6 @@ import { useChatSocket } from "@/hooks/useChatSocket";
 import EmojiPicker from "emoji-picker-react";
 import LoadingSpinner from "../LoadingSpinner";
 import { useRealtimeChatBox } from "@/hooks/useRealtimeChatBox";
-import { ChatLockedOverlay } from "./ChatLockedOverlay";
 
 // ─── pip helpers ────────────────────────────────────────────────────────────────
 const pipAvatar = (url: string) =>
@@ -61,6 +61,8 @@ interface Message {
   type?: "text" | "voice";
   voiceUrl?: string;
   duration?: number;
+  reason?: string; // ← AJOUTEZ CETTE LIGNE
+
   replyTo?: {
     id: string;
     content: string;
@@ -709,14 +711,21 @@ export function ChatBox({
   const [listingImageErr, setListingImageErr] = useState(false);
   const [showOfferCard, setShowOfferCard] = useState(false);
   const [offerCreated, setOfferCreated] = useState(false);
-
+  const [isTyping, setIsTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(
+    null,
+  );
+  const [lastReportTime, setLastReportTime] = useState(0);
   const processedIds = useRef<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const emojiRef = useRef<HTMLDivElement>(null);
   const moreRef = useRef<HTMLDivElement>(null);
-
+  const [showBlockSheet, setShowBlockSheet] = useState(false);
+  const [blockCooldown, setBlockCooldown] = useState(false);
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const notificationSoundRef = useRef<HTMLAudioElement | null>(null);
   const {
     socket,
     isConnected,
@@ -800,7 +809,13 @@ export function ChatBox({
       setIsLoading(false);
     }
   }, [conversationId, listing]);
-
+  useEffect(() => {
+    if (!isLoading && messages.length > 0) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 100);
+    }
+  }, [isLoading, messages.length]);
   useEffect(() => {
     if (conversationId) {
       joinConversation(conversationId);
@@ -822,21 +837,26 @@ export function ChatBox({
     });
   }, [socketMessages]);
 
-  useEffect(() => {
-    if (!socket) return;
-    const handleDirectMessage = (message: Message) => {
-      if (!processedIds.current.has(message.id)) {
-        processedIds.current.add(message.id);
-        setMessages((prev) => [...prev, message]);
-        setTimeout(
-          () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
-          100,
-        );
+ useEffect(() => {
+  if (!socket) return;
+  const handleDirectMessage = (message: Message) => {
+    if (!processedIds.current.has(message.id)) {
+      processedIds.current.add(message.id);
+      setMessages((prev) => [...prev, message]);
+      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+      
+      // JOUER LE SON SEULEMENT SI LE MESSAGE N'EST PAS DE MOI
+      // Comparer l'ID de l'expéditeur avec recipientId
+      if (message.senderId !== recipientId && notificationSoundRef.current) {
+        notificationSoundRef.current.play().catch((err) => {
+          console.log("Son non joué:", err);
+        });
       }
-    };
-    socket.on("new-message", handleDirectMessage);
-    return () => socket.off("new-message", handleDirectMessage);
-  }, [socket]);
+    }
+  };
+  socket.on("new-message", handleDirectMessage);
+  return () => socket.off("new-message", handleDirectMessage);
+}, [socket, recipientId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -851,7 +871,90 @@ export function ChatBox({
     socket.on("message-blocked", h);
     return () => socket.off("message-blocked", h);
   }, [socket]);
+  
+  useEffect(() => {
+  notificationSoundRef.current = new Audio("/sounds/message.mp3");
+  notificationSoundRef.current.load();
+  return () => {
+    if (notificationSoundRef.current) {
+      notificationSoundRef.current = null;
+    }
+  };
+}, []);
+  // Écouter l'état "en train d'écrire" de l'autre utilisateur
+  useEffect(() => {
+    if (!socket) return;
 
+    const handleUserTyping = (data: {
+      userId: string;
+      conversationId: string;
+    }) => {
+      if (
+        data.userId === recipientId &&
+        data.conversationId === conversationId
+      ) {
+        setIsTyping(true);
+        if (typingTimeout) clearTimeout(typingTimeout);
+        const timeout = setTimeout(() => setIsTyping(false), 3000);
+        setTypingTimeout(timeout);
+      }
+    };
+
+    const handleUserStopTyping = (data: {
+      userId: string;
+      conversationId: string;
+    }) => {
+      if (
+        data.userId === recipientId &&
+        data.conversationId === conversationId
+      ) {
+        setIsTyping(false);
+      }
+    };
+
+    socket.on("user-typing", handleUserTyping);
+    socket.on("user-stop-typing", handleUserStopTyping);
+
+    return () => {
+      socket.off("user-typing", handleUserTyping);
+      socket.off("user-stop-typing", handleUserStopTyping);
+      if (typingTimeout) clearTimeout(typingTimeout);
+    };
+  }, [socket, recipientId, conversationId, typingTimeout]);
+  const checkBlockCooldown = useCallback(() => {
+    const lastBlockTime = localStorage.getItem(`block_${recipientId}`);
+    if (lastBlockTime) {
+      const timeDiff = Date.now() - parseInt(lastBlockTime);
+      const hours48 = 48 * 60 * 60 * 1000;
+      if (timeDiff < hours48) {
+        const remaining = Math.ceil((hours48 - timeDiff) / (60 * 60 * 1000));
+        setBlockCooldown(true);
+        setCooldownRemaining(remaining);
+        return false;
+      }
+    }
+    setBlockCooldown(false);
+    return true;
+  }, [recipientId]);
+
+  const handleOpenBlockSheet = () => {
+    if (blockCooldown) {
+      showToastMsg(
+        `Bloque uniquement toutes les 48h. Encore ${cooldownRemaining}h`,
+        "error",
+      );
+      return;
+    }
+    setShowBlockSheet(true);
+    setShowMoreMenu(false);
+  };
+
+  const confirmBlock = async () => {
+    setShowBlockSheet(false);
+    await handleBlockUser();
+    localStorage.setItem(`block_${recipientId}`, Date.now().toString());
+    showToastMsg(`${recipientName} a été bloqué`, "error");
+  };
   const handleDeleteMessage = async (messageId: string) => {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce message ?")) {
       try {
@@ -948,6 +1051,16 @@ export function ChatBox({
   };
 
   const handleReportConversation = async () => {
+    // Vérifier si 5 minutes se sont écoulées
+    const now = Date.now();
+    if (now - lastReportTime < 5 * 60 * 1000) {
+      showToastMsg(
+        "Vous pouvez signaler une conversation toutes les 5 minutes",
+        "error",
+      );
+      return;
+    }
+
     try {
       const res = await fetch(`/api/conversations/${conversationId}/report`, {
         method: "POST",
@@ -955,14 +1068,10 @@ export function ChatBox({
         body: JSON.stringify({ reason: "Comportement inapproprié" }),
       });
       if (res.ok) {
+        setLastReportTime(now); // Enregistrer l'heure du signalement
         showToastMsg(
           "Conversation signalée à l'équipe de modération",
           "success",
-        );
-        sendSocketMessage(
-          conversationId,
-          "Cette conversation a été signalée",
-          recipientId,
         );
       } else showToastMsg("Erreur lors du signalement", "error");
     } catch {
@@ -970,77 +1079,84 @@ export function ChatBox({
     }
     setShowMoreMenu(false);
   };
+  const handleBlockUser = async () => {
+    try {
+      const res = await fetch(`/api/users/${recipientId}/block`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        setIsUserBlocked(true);
+        showToastMsg(
+          `Utilisateur ${recipientName} bloqué avec succès`,
+          "error",
+        );
 
-const handleBlockUser = async () => {
-  try {
-    const res = await fetch(`/api/users/${recipientId}/block`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (res.ok) {
-      setIsUserBlocked(true);
-      showToastMsg(`Utilisateur ${recipientName} bloqué avec succès`, "error");
-      
-      // ✅ ENVOIE UN VRAI MESSAGE SYSTÈME VIA L'API
-      const systemMsgRes = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: `🚫 Vous avez bloqué ${recipientName}. Vous ne recevrez plus ses messages.`,
-          isSystem: true,
-        }),
-      });
-      
-      if (systemMsgRes.ok) {
-        const systemMessage = await systemMsgRes.json();
-        setMessages((prev) => [...prev, systemMessage]);
-        processedIds.current.add(systemMessage.id);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-      }
-      
-    } else showToastMsg("Erreur lors du blocage", "error");
-  } catch {
-    showToastMsg("Erreur de connexion", "error");
-  }
-  setShowMoreMenu(false);
-};
-const handleUnblockUser = async () => {
-  try {
-    const res = await fetch(`/api/users/${recipientId}/block`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    });
-    if (res.ok) {
-      showToastMsg(`${recipientName} a été débloqué`, "success");
-      
-      // ✅ ENVOIE UN VRAI MESSAGE SYSTÈME VIA L'API
-      const systemMsgRes = await fetch(`/api/conversations/${conversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          content: `✅ Vous avez débloqué ${recipientName}. Vous pouvez à nouveau lui envoyer des messages.`,
-          isSystem: true,
-        }),
-      });
-      
-      if (systemMsgRes.ok) {
-        const systemMessage = await systemMsgRes.json();
-        setMessages((prev) => [...prev, systemMessage]);
-        processedIds.current.add(systemMessage.id);
-        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-      }
-      
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
-    } else {
-      showToastMsg("Erreur lors du déblocage", "error");
+        // ✅ ENVOIE UN VRAI MESSAGE SYSTÈME VIA L'API
+        const systemMsgRes = await fetch(
+          `/api/conversations/${conversationId}/messages`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: `🚫 Vous avez bloqué ${recipientName}. Vous ne recevrez plus ses messages.`,
+              isSystem: true,
+            }),
+          },
+        );
+
+        if (systemMsgRes.ok) {
+          const systemMessage = await systemMsgRes.json();
+          setMessages((prev) => [...prev, systemMessage]);
+          processedIds.current.add(systemMessage.id);
+          setTimeout(
+            () =>
+              messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+            100,
+          );
+        }
+      } else showToastMsg("Erreur lors du blocage", "error");
+    } catch {
+      showToastMsg("Erreur de connexion", "error");
     }
-  } catch (error) {
-    console.error("Error unblocking user:", error);
-    showToastMsg("Erreur de connexion", "error");
-  }
-};
+    setShowMoreMenu(false);
+  };
+  const handleUnblockUser = async () => {
+    try {
+      const res = await fetch(`/api/users/${recipientId}/block`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) {
+        setIsUserBlocked(false); // ← Ajouter cette ligne
+        showToastMsg(`${recipientName} a été débloqué`, "success");
+
+        // ✅ ENVOIE UN VRAI MESSAGE SYSTÈME
+        const systemMsgRes = await fetch(
+          `/api/conversations/${conversationId}/messages`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              content: `✅ Vous avez débloqué ${recipientName}. Vous pouvez à nouveau lui envoyer des messages.`,
+              isSystem: true,
+            }),
+          },
+        );
+
+        if (systemMsgRes.ok) {
+          const systemMessage = await systemMsgRes.json();
+          setMessages((prev) => [...prev, systemMessage]);
+          processedIds.current.add(systemMessage.id);
+        }
+      } else {
+        showToastMsg("Erreur lors du déblocage", "error");
+      }
+    } catch (error) {
+      console.error("Error unblocking user:", error);
+      showToastMsg("Erreur de connexion", "error");
+    }
+  };
   const handleConfirmOffer = async () => {
     if (!conversationId || !listing) return;
     setIsCreatingOffer(true);
@@ -1100,37 +1216,8 @@ const handleUnblockUser = async () => {
       </div>
     );
   }
-  // ✅ AJOUTE CETTE CONDITION ICI - APRÈS LE if (isLoading) ET AVANT LE return PRINCIPAL
-  if (isClosed && !isChecking && !hasBlockedUser && !isBlockedByRecipient) {
-    return (
-      <div className="flex flex-col h-full bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-          <Avatar
-            src={recipientImage}
-            name={recipientName}
-            size={38}
-            online={isConnected}
-          />
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-              {recipientName}
-            </p>
-            {listingTitle && (
-              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
-                {listingTitle}
-              </p>
-            )}
-          </div>
-          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full">
-            Verrouillé
-          </span>
-        </div>
-        <div className="flex-1 flex items-center justify-center p-6">
-          <ChatLockedOverlay reason={blockReason} />
-        </div>
-      </div>
-    );
-  }
+  const isAdminLocked =
+    isClosed && !isChecking && !hasBlockedUser && !isBlockedByRecipient;
   const listingImageUrl = listing?.image
     ? pipListingImage(listing.image)
     : null;
@@ -1180,6 +1267,40 @@ const handleUnblockUser = async () => {
           <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
             {recipientName}
           </p>
+          {/* Indicateur "en train d'écrire" */}
+          {isTyping && isConnected && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <div className="flex gap-0.5">
+                <span
+                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "0ms" }}
+                ></span>
+                <span
+                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "150ms" }}
+                ></span>
+                <span
+                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
+                  style={{ animationDelay: "300ms" }}
+                ></span>
+              </div>
+              <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                {recipientName} est en train d'écrire...
+              </span>
+            </div>
+          )}
+
+          {/* Statut de connexion */}
+          {!isTyping && (
+            <div className="flex items-center gap-1 mt-0.5">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-slate-400"}`}
+              ></span>
+              <span className="text-[10px] ${isConnected ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}">
+                {isConnected ? "En ligne" : "Hors ligne"}
+              </span>
+            </div>
+          )}
           {listingTitle && (
             <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
               {listingTitle}
@@ -1189,8 +1310,9 @@ const handleUnblockUser = async () => {
         <div className="flex items-center gap-1 shrink-0">
           <div className="relative" ref={moreRef}>
             <button
-              onClick={() => setShowMoreMenu((p) => !p)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              onClick={() => !isAdminLocked && setShowMoreMenu((p) => !p)}
+              disabled={isAdminLocked}
+              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isAdminLocked ? "text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
             >
               <IoEllipsisVerticalOutline className="text-lg" />
             </button>
@@ -1206,15 +1328,17 @@ const handleUnblockUser = async () => {
                   </span>
                 </button>
                 <button
-                  onClick={handleBlockUser}
-                  disabled={isUserBlocked}
+                  onClick={handleOpenBlockSheet}
+                  disabled={isUserBlocked || blockCooldown}
                   className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700 disabled:opacity-50"
                 >
                   <IoBanOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
                   <span className="text-slate-700 dark:text-slate-300">
                     {isUserBlocked
                       ? "Utilisateur bloqué"
-                      : "Bloquer cet utilisateur"}
+                      : blockCooldown
+                        ? `Bloqué (reste ${cooldownRemaining}h)`
+                        : "Bloquer cet utilisateur"}
                   </span>
                 </button>
               </div>
@@ -1226,8 +1350,31 @@ const handleUnblockUser = async () => {
             Reconnexion…
           </span>
         )}
+        {isAdminLocked && (
+          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full ml-2">
+            Verrouillé
+          </span>
+        )}
       </div>
-
+      {/* Safety Banner - Style Atlas Algorithm avec dégradé */}
+      {isAdminLocked && (
+        <div className="sticky top-0 z-40 px-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-500">
+          <div className=" backdrop-blur-md rounded-2xl p-4 flex items-center gap-4 shadow-[0_8px_30px_-6px_rgba(79,70,229,0.2)] border border-red-200/50 dark:border-red-800/30 hover:shadow-[0_12px_40px_-8px_rgba(79,70,229,0.3)] transition-all duration-300">
+            <div className="bg-red-500/60 p-2.5 rounded-full shadow-lg shadow-indigo-500/25">
+              <IoShieldOutline className="text-white text-xl" />
+            </div>
+            <div className="flex-1">
+              <p className="font-headline font-bold text-sm text-red-700 dark:from-indigo-300 dark:via-violet-300 dark:to-sky-300 bg-clip-text ">
+                Algorithme de protection NESTHUB
+              </p>
+              <p className="text-xs text-gray-700 dark:text-gray-400 leading-relaxed">
+                {blockReason ||
+                  "Notre système de sécurité a détecté un risque potentiel. Cette discussion est sous surveillance temporaire."}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Bandeau de paiement - uniquement si offre ACCEPTED ET paiement NON effectué */}
       {showPaymentBanner && offerId && (
         <div className="mx-4 mt-2 mb-1 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
@@ -1260,25 +1407,6 @@ const handleUnblockUser = async () => {
       {/* ============================================ */}
       {/* BANDEAUX DE BLOCAGE - STYLE MESSENGER */}
       {/* ============================================ */}
-
-      {/* Cas 1 : TU as bloqué la personne */}
-      {!isClosed && hasBlockedUser && (
-        <div className="mx-4 mt-2 mb-1 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <IoBanOutline className="text-amber-600 dark:text-amber-400 text-sm flex-shrink-0" />
-            <span className="text-xs text-amber-700 dark:text-amber-400">
-              Vous avez bloqué {recipientName}. Vous ne pouvez plus lui envoyer
-              de messages.
-            </span>
-          </div>
-          <button
-            onClick={handleUnblockUser}
-            className="px-3 py-1.5 text-xs font-medium bg-amber-100 dark:bg-amber-800/50 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-700/50 transition-colors"
-          >
-            Débloquer
-          </button>
-        </div>
-      )}
 
       {/* Cas 2 : La personne t'a bloqué */}
       {!isClosed && isBlockedByRecipient && (
@@ -1380,6 +1508,9 @@ const handleUnblockUser = async () => {
             {messages.map((msg) => {
               const isOwn = msg.senderId !== recipientId;
               const isBlockedConversation = isUserBlocked;
+              const isIAModerated =
+                msg.isBlocked === true ||
+                msg.content?.includes("[Message bloqué");
               const isOfferMessage =
                 msg.content.includes("offre de réservation") ||
                 msg.content.includes("Offre de réservation");
@@ -1387,6 +1518,7 @@ const handleUnblockUser = async () => {
                 msg.content.includes("réservation confirmée") ||
                 msg.content.includes("Réservation confirmée");
 
+              // 1. MESSAGES SYSTÈME
               if (msg.isSystem) {
                 let senderName = "";
                 if (isOfferMessage && listingTitle) {
@@ -1401,11 +1533,93 @@ const handleUnblockUser = async () => {
                 );
               }
 
+              // 2. MESSAGES BLOQUÉS PAR L'IA
+              if (isIAModerated) {
+                const badgePosition = isOwn
+                  ? "-top-3 -left-3"
+                  : "-top-3 -right-3";
+                const blockReason = (msg as any).reason || "";
+
+                return (
+                  <div
+                    key={msg.id}
+                    className={`flex items-end gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
+                  >
+                    {!isOwn && (
+                      <div className="flex-shrink-0">
+                        <Avatar
+                          src={msg.senderImage}
+                          name={msg.senderName}
+                          size={28}
+                        />
+                      </div>
+                    )}
+
+                    <div
+                      className={`max-w-[70%] ${isOwn ? "items-end" : "items-start"} flex flex-col`}
+                    >
+                      <div
+                        className={`relative ${isOwn ? "bg-indigo-500 dark:bg-indigo-600" : "bg-slate-100 dark:bg-slate-800"} p-3 rounded-2xl ${isOwn ? "rounded-br-md" : "rounded-bl-md"} shadow-lg ${isOwn ? "text-white" : "text-slate-700 dark:text-slate-200"}`}
+                      >
+                        <div
+                          className={`absolute ${badgePosition} bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold flex items-center gap-1 shadow-md border border-white/20 z-10`}
+                        >
+                          <IoAlertCircleOutline className="text-[10px]" />
+                          SIGNALÉ
+                        </div>
+
+                        {!isOwn && (
+                          <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">
+                            {msg.senderName}
+                          </p>
+                        )}
+
+                        <p className="text-sm leading-relaxed opacity-40 select-none blur-[1px]">
+                          {msg.content}
+                        </p>
+
+                        <div className="mt-2 pt-2 border-t border-wgray-900 dark:border-slate-700 flex items-start gap-2">
+                          <IoShieldOutline className="text-[10px] text-gray-700 dark:text-slate-400 mt-0.5 flex-shrink-0" />
+                          <span className="text-[9px] text-gray-700 dark:text-slate-400 italic leading-relaxed">
+                            Ce message viole nos conditions de sécurité{" "}
+                            {blockReason ? `— ${blockReason}` : ""}
+                          </span>
+                        </div>
+                      </div>
+                      <div
+                        className={`flex gap-1 mt-1 ${isOwn ? "justify-end" : "justify-start"}`}
+                      >
+                        <span
+                          className="text-[10px] text-slate-400 dark:text-slate-500 cursor-default"
+                          title={new Date(msg.createdAt).toLocaleString(
+                            "fr-FR",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              day: "numeric",
+                              month: "short",
+                            },
+                          )}
+                        >
+                          {formatDistanceToNow(new Date(msg.createdAt), {
+                            addSuffix: true,
+                            locale: fr,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+
+                    {isOwn && <div className="w-7 flex-shrink-0" />}
+                  </div>
+                );
+              }
+
+              // 3. MESSAGES NORMAUX
               let messageBgClass = "";
               let messageTextClass = "";
 
               if (isOwn) {
-                messageBgClass = "bg-violet-500 dark:bg-purple-600";
+                messageBgClass = "bg-indigo-500 dark:bg-indigo-600";
                 messageTextClass = "text-white";
               } else {
                 messageBgClass = "bg-slate-100 dark:bg-slate-800";
@@ -1415,15 +1629,15 @@ const handleUnblockUser = async () => {
               if (!isOwn) {
                 if (isBlockedConversation) {
                   messageBgClass =
-                    "bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800";
+                    "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800";
                   messageTextClass = "text-red-700 dark:text-red-300";
                 } else if (isOfferMessage) {
                   messageBgClass =
-                    "bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800";
+                    "bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800";
                   messageTextClass = "text-amber-800 dark:text-amber-300";
                 } else if (isBookingMessage) {
                   messageBgClass =
-                    "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800";
+                    "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800";
                   messageTextClass = "text-emerald-800 dark:text-emerald-300";
                 }
               }
@@ -1431,7 +1645,7 @@ const handleUnblockUser = async () => {
               return (
                 <div
                   key={msg.id}
-                  className={`flex items-start gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
+                  className={`flex items-end gap-2 ${isOwn ? "flex-row-reverse" : "flex-row"}`}
                   onContextMenu={(e) => isOwn && handleContextMenu(e, msg)}
                 >
                   {!isOwn && (
@@ -1447,7 +1661,7 @@ const handleUnblockUser = async () => {
                     className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm ${messageBgClass} ${messageTextClass} ${isOwn ? "rounded-br-md" : "rounded-bl-md"} shadow-sm`}
                   >
                     {msg.replyTo && (
-                      <div className="mb-1.5 pb-1.5 border-b border-white/20 text-[10px] text-white/60">
+                      <div className="mb-1.5 pb-1.5 border-b border-white/20 dark:border-slate-700 text-[10px] text-white/60 dark:text-slate-400">
                         <span className="font-medium">
                           ↳ Réponse à {msg.replyTo.senderName}:
                         </span>
@@ -1455,7 +1669,7 @@ const handleUnblockUser = async () => {
                       </div>
                     )}
                     {!isOwn && (
-                      <p className="text-[10px] font-medium text-slate-700 dark:text-slate-400 mb-1">
+                      <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 mb-1">
                         {msg.senderName}
                       </p>
                     )}
@@ -1471,7 +1685,7 @@ const handleUnblockUser = async () => {
                           {msg.content}
                         </p>
                         <div
-                          className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isOwn ? "text-white/50" : "text-slate-400"}`}
+                          className={`flex items-center justify-end gap-1 mt-1 text-[10px] ${isOwn ? "text-white/50" : "text-slate-400 dark:text-slate-500"}`}
                         >
                           {formatDistanceToNow(new Date(msg.createdAt), {
                             addSuffix: true,
@@ -1487,7 +1701,7 @@ const handleUnblockUser = async () => {
               );
             })}
 
-            {/* Afficher la carte d'offre au centre de la conversation */}
+            {/* Afficher la carte d'offre */}
             {isTenant && listing && showOfferCard && !offerCreated && (
               <OfferCard
                 listing={listing}
@@ -1503,84 +1717,219 @@ const handleUnblockUser = async () => {
         )}
         <div ref={messagesEndRef} />
       </div>
+      {/* Bottom Sheet style Messenger pour bloquer - dans la zone des messages */}
+      {showBlockSheet && (
+        <>
+          <div
+            className="absolute inset-0 bg-black/20 dark:bg-slate-800/50  z-[100] animate-in fade-in duration-200 rounded-xl"
+            onClick={() => setShowBlockSheet(false)}
+          />
+          <div className="absolute bottom-0 left-0 right-0 z-[101] bg-white dark:bg-slate-900 rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom-10 duration-300">
+            {/* Barre de swipe */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 bg-slate-300 dark:bg-slate-600 rounded-full" />
+            </div>
 
-      {/* Input area */}
-      <div className="px-3 py-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-        {replyTo && (
-          <ReplyPreview replyTo={replyTo} onCancel={() => setReplyTo(null)} />
-        )}
-
-        <div className="flex items-end gap-2 bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2 border border-slate-200 dark:border-slate-700 focus-within:border-indigo-300 transition-colors">
-          <div className="relative self-end pb-0.5" ref={emojiRef}>
-            <button
-              onClick={() => setShowEmojiPicker((p) => !p)}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
-            >
-              <IoHappyOutline className="text-xl" />
-            </button>
-            {showEmojiPicker && (
-              <div className="absolute bottom-full mb-2 left-0 z-20">
-                <EmojiPicker
-                  onEmojiClick={(emojiData: any) => {
-                    setInput((prev) => prev + emojiData.emoji);
-                    setShowEmojiPicker(false);
-                    inputRef.current?.focus();
-                  }}
-                  theme={emojiTheme}
-                  lazyLoadEmojis
-                  searchPlaceholder="Rechercher..."
-                  width={300}
-                  height={400}
-                />
+            <div className="px-5 pb-6">
+              <div className="flex items-center gap-3 mb-5">
+                <Avatar src={recipientImage} name={recipientName} size={48} />
+                <div>
+                  <h3 className="font-semibold text-base text-slate-900 dark:text-white">
+                    Bloquer {recipientName}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Vous ne pourrez plus lui envoyer de messages
+                  </p>
+                </div>
               </div>
-            )}
+
+              <div className="bg-amber-50 dark:bg-amber-950/30 rounded-xl p-3 mb-5 border border-amber-200 dark:border-amber-800/50">
+                <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                  Cette action est réversible après 48 heures
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowBlockSheet(false)}
+                  className="flex-1 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmBlock}
+                  className="flex-1 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white font-medium text-sm transition-all active:scale-95 shadow-sm"
+                >
+                  Bloquer
+                </button>
+              </div>
+            </div>
           </div>
-          <VoiceRecorder
-            onSend={handleSendVoice}
-            isDisabled={
-              !isConnected || isUserBlocked || hasBlockedUser || isClosed
-            }
-          />
-          <textarea
-            ref={inputRef}
-            value={input}
-            onChange={adjustHeight}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              replyTo
-                ? `Répondre à ${replyTo.senderName}...`
-                : "Écrire un message…"
-            }
-            rows={1}
-            disabled={
-              !isConnected || isUserBlocked || hasBlockedUser || isClosed
-            }
-            className="flex-1 bg-transparent border-none outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none min-h-[28px] max-h-[120px] py-0.5"
-          />
-          <button
-            onClick={handleSend}
-            disabled={
-              !input.trim() ||
-              isSending ||
-              !isConnected ||
-              isUserBlocked ||
-              hasBlockedUser ||
-              isClosed
-            }
-            className={`self-end w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95 flex-shrink-0 ${input.trim() && !isSending && isConnected && !isUserBlocked ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"}`}
-          >
-            {isSending ? (
-              <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-            ) : (
-              <IoSendSharp className="text-sm" />
+        </>
+      )}
+      {/* Input area - Masquée si conversation verrouillée par admin */}
+      {!isAdminLocked ? (
+        hasBlockedUser ? (
+          /* Message de blocage style Messenger */
+          <div className="px-4 py-6 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+            <div className="flex flex-col items-center justify-center text-center">
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                <IoBanOutline className="text-slate-400 text-xl" />
+              </div>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                Vous avez bloqué {recipientName}
+              </p>
+              <p className="text-xs text-slate-400 mt-1 mb-4">
+                Vous ne recevrez plus ses messages
+              </p>
+              <button
+                onClick={handleUnblockUser}
+                className="px-4 py-2 rounded-full bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-semibold transition-all active:scale-95"
+              >
+                Débloquer
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Input normal */
+          <div className="px-3 py-3 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+            {replyTo && (
+              <ReplyPreview
+                replyTo={replyTo}
+                onCancel={() => setReplyTo(null)}
+              />
             )}
-          </button>
-        </div>
-        <p className="text-[10px] text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
-          <IoLockClosedOutline className="text-xs" />
-          Messages sécurisés · Ne partagez pas vos informations personnelles
-        </p>
-      </div>
+
+            <div className="flex items-end gap-2 bg-slate-50 dark:bg-slate-800 rounded-xl px-3 py-2 border border-slate-200 dark:border-slate-700 focus-within:border-indigo-300 transition-colors">
+              <div className="relative self-end pb-0.5" ref={emojiRef}>
+                <button
+                  onClick={() => setShowEmojiPicker((p) => !p)}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <IoHappyOutline className="text-xl" />
+                </button>
+                {showEmojiPicker && (
+                  <div className="absolute bottom-full mb-2 left-0 z-20">
+                    <EmojiPicker
+                      onEmojiClick={(emojiData: any) => {
+                        setInput((prev) => prev + emojiData.emoji);
+                        setShowEmojiPicker(false);
+                        inputRef.current?.focus();
+                      }}
+                      theme={emojiTheme}
+                      lazyLoadEmojis
+                      searchPlaceholder="Rechercher..."
+                      width={300}
+                      height={400}
+                    />
+                  </div>
+                )}
+              </div>
+              <VoiceRecorder
+                onSend={handleSendVoice}
+                isDisabled={
+                  !isConnected ||
+                  isUserBlocked ||
+                  hasBlockedUser ||
+                  isAdminLocked
+                }
+              />
+              <textarea
+                ref={inputRef}
+                value={input}
+                onChange={adjustHeight}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  replyTo
+                    ? `Répondre à ${replyTo.senderName}...`
+                    : "Écrire un message…"
+                }
+                rows={1}
+                disabled={
+                  !isConnected ||
+                  isUserBlocked ||
+                  hasBlockedUser ||
+                  isAdminLocked
+                }
+                className="flex-1 bg-transparent border-none outline-none text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none min-h-[28px] max-h-[120px] py-0.5"
+              />
+              <button
+                onClick={handleSend}
+                disabled={
+                  !input.trim() ||
+                  isSending ||
+                  !isConnected ||
+                  isUserBlocked ||
+                  hasBlockedUser ||
+                  isAdminLocked
+                }
+                className={`self-end w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-95 flex-shrink-0 ${input.trim() && !isSending && isConnected && !isUserBlocked ? "bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm" : "bg-slate-100 dark:bg-slate-800 text-slate-400 cursor-not-allowed"}`}
+              >
+                {isSending ? (
+                  <span className="w-3.5 h-3.5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                ) : (
+                  <IoSendSharp className="text-sm" />
+                )}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 text-center mt-2 flex items-center justify-center gap-1">
+              <IoLockClosedOutline className="text-xs" />
+              Messages sécurisés · Ne partagez pas vos informations personnelles
+            </p>
+          </div>
+        )
+      ) : (
+        /* Footer verrouillé par admin */
+        <footer className="p-4 bg-gradient-to-t from-indigo-50/30 via-white/50 to-transparent dark:from-indigo-950/20 dark:via-slate-900/50 shrink-0">
+          <div className="max-w-4xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm rounded-2xl p-5 shadow-[0_-10px_40px_-15px_rgba(79,70,229,0.15)] border border-indigo-100/50 dark:border-indigo-800/30 hover:shadow-[0_-15px_50px_-15px_rgba(79,70,229,0.25)] transition-all duration-300 flex flex-col items-center text-center gap-3">
+              <div className="flex items-center gap-3">
+                <div className="relative"></div>
+                <span className="font-headline font-bold text-sm bg-gradient-to-r from-indigo-700 via-violet-700 to-sky-700 dark:from-indigo-300 dark:via-violet-300 dark:to-sky-300 bg-clip-text text-transparent">
+                  Cette conversation est temporairement suspendue pour votre
+                  sécurité
+                </span>
+              </div>
+
+              <p className="text-xs text-black dark:text-white max-w-lg leading-relaxed">
+                Afin de protéger vos données personnelles et d'éviter toute
+                fraude, le système Atlas a restreint l'envoi de messages. Un
+                modérateur NestHub examine actuellement cet échange.
+              </p>
+
+              <div className="flex gap-3 w-full sm:w-auto mt-2">
+                <button
+                  onClick={handleReportConversation}
+                  className="group flex-1 sm:flex-none px-5 py-2.5 rounded-full bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-bold text-[11px] uppercase tracking-wider border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition-all duration-300 active:scale-95"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    Signaler un problème
+                  </span>
+                </button>
+                <button
+                  onClick={() => window.open("/fr/security/rules", "_blank")}
+                  className="group flex-1 sm:flex-none px-5 py-2.5 rounded-full bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 text-white font-bold text-[11px] uppercase tracking-wider shadow-lg shadow-indigo-500/30 hover:shadow-xl hover:shadow-indigo-500/50 hover:scale-[1.02] transition-all duration-300 active:scale-95"
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    Consulter nos règles
+                    <IoArrowForwardOutline className="text-sm opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-0 group-hover:translate-x-1" />
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex justify-center items-center gap-2">
+              <div className="relative">
+                <span className="absolute inline-flex h-3 w-3 rounded-full bg-red-500 opacity-75 animate-ping"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              </div>
+              <span className="text-[10px] font-bold bg-gradient-to-r from-red-600 to-rose-600 dark:from-red-400 dark:to-rose-400 bg-clip-text text-transparent uppercase tracking-wider animate-pulse">
+                Alerte sécurité active
+              </span>
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }

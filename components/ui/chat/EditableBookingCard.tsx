@@ -114,11 +114,11 @@ export function EditableBookingCard({
   const validateDates = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     // ✅ NORMALISER LES DATES AVANT COMPARAISON
     const normalizedCheckIn = normalizeDateForAPI(checkIn);
     const normalizedCheckOut = normalizeDateForAPI(checkOut);
-    
+
     const checkInDate = new Date(normalizedCheckIn);
     const checkOutDate = new Date(normalizedCheckOut);
 
@@ -159,10 +159,10 @@ export function EditableBookingCard({
       const response = await fetch(`/api/info-requests/${infoRequestId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          checkIn: formattedCheckIn, 
-          checkOut: formattedCheckOut, 
-          guests 
+        body: JSON.stringify({
+          checkIn: formattedCheckIn,
+          checkOut: formattedCheckOut,
+          guests,
         }),
       });
 
@@ -209,7 +209,9 @@ export function EditableBookingCard({
                 Détails du séjour
               </h3>
               <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                {isLocked ? "Réservation confirmée" : "Votre demande d'information"}
+                {isLocked
+                  ? "Réservation confirmée"
+                  : "Votre demande d'information"}
               </p>
             </div>
           </div>
@@ -286,11 +288,13 @@ export function EditableBookingCard({
         </div>
 
         {/* Dates */}
-        <div className={`rounded-xl p-4 space-y-3 ${
-          isLocked 
-            ? "bg-slate-50 dark:bg-slate-800/30" 
-            : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
-        }`}>
+        <div
+          className={`rounded-xl p-4 space-y-3 ${
+            isLocked
+              ? "bg-slate-50 dark:bg-slate-800/30"
+              : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
+          }`}
+        >
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center">
               <IoCalendarOutline className="text-white text-sm" />
@@ -298,7 +302,9 @@ export function EditableBookingCard({
             <span className="text-[11px] font-semibold uppercase tracking-wider bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
               Dates du séjour
             </span>
-            {isLocked && <IoTimeOutline className="text-slate-400 text-xs ml-auto" />}
+            {isLocked && (
+              <IoTimeOutline className="text-slate-400 text-xs ml-auto" />
+            )}
           </div>
 
           {isEditing && !isLocked ? (
@@ -324,7 +330,11 @@ export function EditableBookingCard({
                   type="date"
                   value={formatDateForInput(checkOut)}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  min={checkIn ? formatDateForInput(checkIn) : new Date().toISOString().split("T")[0]}
+                  min={
+                    checkIn
+                      ? formatDateForInput(checkIn)
+                      : new Date().toISOString().split("T")[0]
+                  }
                   className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
                   disabled={isLocked}
                 />
@@ -361,11 +371,13 @@ export function EditableBookingCard({
         </div>
 
         {/* Guests */}
-        <div className={`rounded-xl p-4 space-y-3 ${
-          isLocked 
-            ? "bg-slate-50 dark:bg-slate-800/30" 
-            : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
-        }`}>
+        <div
+          className={`rounded-xl p-4 space-y-3 ${
+            isLocked
+              ? "bg-slate-50 dark:bg-slate-800/30"
+              : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
+          }`}
+        >
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center">
               <IoPeopleOutline className="text-white text-sm" />
@@ -406,11 +418,13 @@ export function EditableBookingCard({
 
         {/* Price */}
         {nights > 0 && listing.pricePerNight && (
-          <div className={`rounded-xl p-4 ${
-            isLocked 
-              ? "bg-slate-50 dark:bg-slate-800/30" 
-              : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
-          }`}>
+          <div
+            className={`rounded-xl p-4 ${
+              isLocked
+                ? "bg-slate-50 dark:bg-slate-800/30"
+                : "bg-gradient-to-br from-sky-50 to-purple-50 dark:from-sky-950/20 dark:to-purple-950/20"
+            }`}
+          >
             <div className="flex items-center gap-2 mb-3">
               <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-400 to-purple-500 flex items-center justify-center">
                 <IoWalletOutline className="text-white text-sm" />
@@ -450,11 +464,11 @@ export function EditableBookingCard({
 
         {/* Message verrouillé si offre acceptée */}
         {isLocked && (
-          <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 text-center border border-emerald-200 dark:border-emerald-800/30">
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 text-center border border-emerald-200 dark:border-emerald-800/30 ">
             <div className="flex items-center justify-center gap-2">
               <IoCheckmarkCircleOutline className="text-emerald-500 text-sm" />
               <p className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
-                Offre acceptée - Les dates sont verrouillées
+                Les dates sont verrouillées
               </p>
             </div>
           </div>

@@ -714,8 +714,17 @@ export default function ListingDetailPage() {
   const id = params.id as string;
   const t = useTranslations("ListingPage");
 
-  const { listing, loading, checkIn, setCheckIn, checkOut, setCheckOut } =
-    useListing(id);
+  const {
+    listing,
+    loading,
+    checkIn,
+    setCheckIn,
+    checkOut,
+    setCheckOut,
+    blockedDates,
+    pendingDates,
+    pricingRules,
+  } = useListing(id);
   const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -732,9 +741,6 @@ export default function ListingDetailPage() {
     type: "success" | "error" | "info";
   } | null>(null);
   const [showShare, setShowShare] = useState(false);
-  const [pricingRules, setPricingRules] = useState<
-    { startDate: string; endDate: string; fixedPrice: number }[]
-  >([]);
 
   // Info request states
   const [infoRequestLoading, setInfoRequestLoading] = useState(false);
@@ -773,21 +779,7 @@ export default function ListingDetailPage() {
     }
   }, [listing?.id, dark]);
 
-  const fetchPricingRules = useCallback(async () => {
-    if (!listing?.id) return;
-    try {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = now.getMonth() + 1;
-      const res = await fetch(
-        `/api/listings/availability?listingId=${listing.id}&year=${year}&month=${month}`,
-      );
-      const data = await res.json();
-      if (data.pricingRules) setPricingRules(data.pricingRules);
-    } catch (error) {
-      console.error("Error fetching pricing rules:", error);
-    }
-  }, [listing?.id]);
+ 
 
   const fetchNearbyPOIs = useCallback(async () => {
     if (!listing?.latitude || !listing?.longitude) return;
@@ -803,13 +795,11 @@ export default function ListingDetailPage() {
     }
   }, [listing?.latitude, listing?.longitude, id]);
 
-  useEffect(() => {
-    if (listing?.id) {
-      fetchPricingRules();
-      fetchNearbyPOIs();
-    }
-  }, [fetchPricingRules, fetchNearbyPOIs, listing?.id]);
-
+ useEffect(() => {
+  if (listing?.id && listing?.latitude && listing?.longitude) {
+    fetchNearbyPOIs();
+  }
+}, [fetchNearbyPOIs, listing?.id, listing?.latitude, listing?.longitude]);
   const handleCalendarSelect = useCallback(
     (start: string, end: string) => {
       setCheckIn(start);
@@ -890,33 +880,33 @@ export default function ListingDetailPage() {
     );
   };
 
- // Remplacer handleShare par :
-const handleShare = async () => {
-  const shareData = {
-    title: listing?.title || "NestHub - Logement d'exception",
-    text: `Découvrez ${listing?.title} sur NestHub - ${listing?.location}`,
-    url: window.location.href,
-  };
+  // Remplacer handleShare par :
+  const handleShare = async () => {
+    const shareData = {
+      title: listing?.title || "NestHub - Logement d'exception",
+      text: `Découvrez ${listing?.title} sur NestHub - ${listing?.location}`,
+      url: window.location.href,
+    };
 
-  // Vérifier si l'API Web Share est disponible (mobile/ navigateurs compatibles)
-  if (typeof navigator !== 'undefined' && navigator.share) {
-    try {
-      await navigator.share(shareData);
-      showToast("Partagé avec succès !", "success");
-    } catch (err) {
-      if ((err as Error).name !== 'AbortError') {
-        // Fallback : copier le lien
-        await navigator.clipboard.writeText(window.location.href);
-        showToast("Lien copié dans le presse-papier", "success");
+    // Vérifier si l'API Web Share est disponible (mobile/ navigateurs compatibles)
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share(shareData);
+        showToast("Partagé avec succès !", "success");
+      } catch (err) {
+        if ((err as Error).name !== "AbortError") {
+          // Fallback : copier le lien
+          await navigator.clipboard.writeText(window.location.href);
+          showToast("Lien copié dans le presse-papier", "success");
+        }
       }
+    } else {
+      // Fallback pour les navigateurs qui ne supportent pas Web Share
+      await navigator.clipboard.writeText(window.location.href);
+      showToast("Lien copié dans le presse-papier", "success");
     }
-  } else {
-    // Fallback pour les navigateurs qui ne supportent pas Web Share
-    await navigator.clipboard.writeText(window.location.href);
-    showToast("Lien copié dans le presse-papier", "success");
-  }
-  setShowShare(false);
-};
+    setShowShare(false);
+  };
 
   if (loading)
     return (
@@ -1078,26 +1068,26 @@ const handleShare = async () => {
                   <IoShareSocialOutline className="text-sm" />
                 </motion.button>
                 {showShare && (
-    <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden">
-      <button
-        onClick={handleShare}
-        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-      >
-        <IoShareSocialOutline className="text-sm text-sky-500" />
-        Partager
-      </button>
-      <button
-        onClick={() => {
-          navigator.clipboard.writeText(window.location.href);
-          showToast("Lien copié !", "success");
-          setShowShare(false);
-        }}
-        className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors border-t border-gray-100 dark:border-slate-700"
-      >
-        <IoCopyOutline className="text-sm text-sky-500" />
-        Copier le lien
-      </button>
-    </div>
+                  <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden">
+                    <button
+                      onClick={handleShare}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                    >
+                      <IoShareSocialOutline className="text-sm text-sky-500" />
+                      Partager
+                    </button>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(window.location.href);
+                        showToast("Lien copié !", "success");
+                        setShowShare(false);
+                      }}
+                      className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors border-t border-gray-100 dark:border-slate-700"
+                    >
+                      <IoCopyOutline className="text-sm text-sky-500" />
+                      Copier le lien
+                    </button>
+                  </div>
                 )}
               </div>
               <motion.button
@@ -1352,9 +1342,9 @@ const handleShare = async () => {
                 className={`rounded-xl p-2 border ${dark ? "bg-slate-800/40 border-white/10" : "bg-gray-50 border-gray-200"}`}
               >
                 <AvailabilityCalendar
-                  availability={listing.availability}
-                  blockedDates={listing.blockedDates}
-                  pendingDates={listing.pendingDates}
+                  availability={listing?.availability}
+                  blockedDates={blockedDates}
+                  pendingDates={pendingDates}
                   pricingRules={pricingRules}
                   selectedStart={checkIn}
                   selectedEnd={checkOut}
@@ -1422,116 +1412,159 @@ const handleShare = async () => {
               </div>
             </Section>
 
-           {/* Reviews Section - DYNAMIQUE avec reviewScores */}
-<Section
-  title="AVIS"
-  sub={`${listing.reviewCount || 0} témoignages`}
-  delay={0.32}
-  dark={dark}
->
-  {listing.reviews && listing.reviews.length > 0 ? (
-    <>
-      {/* Barres de scores - seulement s'il y a des avis */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        {[
-          { label: "Propreté", value: listing.reviewScores?.cleanliness || 4.5 },
-          { label: "Précision", value: listing.reviewScores?.accuracy || 4.5 },
-          { label: "Communication", value: listing.reviewScores?.communication || 4.5 },
-          { label: "Emplacement", value: listing.reviewScores?.location || 4.5 },
-          { label: "Arrivée", value: listing.reviewScores?.checkin || 4.5 },
-          { label: "Qualité-prix", value: listing.reviewScores?.value || 4.5 },
-        ].map((score, idx) => (
-          <motion.div
-            key={score.label}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 + idx * 0.05 }}
-            className="flex items-center gap-3"
-          >
-            <span className={`text-xs w-24 ${dark ? "text-white/40" : "text-gray-500"}`}>
-              {score.label}
-            </span>
-            <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <motion.div
-                className="h-full bg-amber-400 rounded-full"
-                initial={{ width: 0 }}
-                animate={{ width: `${((score.value || 0) / 5) * 100}%` }}
-                transition={{ duration: 0.8, delay: 0.2 + idx * 0.05 }}
-              />
-            </div>
-            <span className={`text-xs font-semibold ${dark ? "text-white/60" : "text-gray-700"}`}>
-              {(score.value || 0).toFixed(1)}
-            </span>
-          </motion.div>
-        ))}
-      </div>
+            {/* Reviews Section - DYNAMIQUE avec reviewScores */}
+            <Section
+              title="AVIS"
+              sub={`${listing.reviewCount || 0} témoignages`}
+              delay={0.32}
+              dark={dark}
+            >
+              {listing.reviews && listing.reviews.length > 0 ? (
+                <>
+                  {/* Barres de scores - seulement s'il y a des avis */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    {[
+                      {
+                        label: "Propreté",
+                        value: listing.reviewScores?.cleanliness || 4.5,
+                      },
+                      {
+                        label: "Précision",
+                        value: listing.reviewScores?.accuracy || 4.5,
+                      },
+                      {
+                        label: "Communication",
+                        value: listing.reviewScores?.communication || 4.5,
+                      },
+                      {
+                        label: "Emplacement",
+                        value: listing.reviewScores?.location || 4.5,
+                      },
+                      {
+                        label: "Arrivée",
+                        value: listing.reviewScores?.checkin || 4.5,
+                      },
+                      {
+                        label: "Qualité-prix",
+                        value: listing.reviewScores?.value || 4.5,
+                      },
+                    ].map((score, idx) => (
+                      <motion.div
+                        key={score.label}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 + idx * 0.05 }}
+                        className="flex items-center gap-3"
+                      >
+                        <span
+                          className={`text-xs w-24 ${dark ? "text-white/40" : "text-gray-500"}`}
+                        >
+                          {score.label}
+                        </span>
+                        <div className="flex-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <motion.div
+                            className="h-full bg-amber-400 rounded-full"
+                            initial={{ width: 0 }}
+                            animate={{
+                              width: `${((score.value || 0) / 5) * 100}%`,
+                            }}
+                            transition={{
+                              duration: 0.8,
+                              delay: 0.2 + idx * 0.05,
+                            }}
+                          />
+                        </div>
+                        <span
+                          className={`text-xs font-semibold ${dark ? "text-white/60" : "text-gray-700"}`}
+                        >
+                          {(score.value || 0).toFixed(1)}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
 
-      {/* Liste des avis */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {listing.reviews.slice(0, 2).map((review, i) => (
-          <motion.div
-            key={review.id || i}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 + i * 0.1 }}
-            whileHover={{ y: -4 }}
-            className={`p-4 rounded-xl transition-all duration-300 ${
-              dark
-                ? "bg-slate-800/40 border border-white/10"
-                : "bg-white border border-white shadow-sm"
-            }`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <p className={`text-sm font-semibold ${dark ? "text-white/80" : "text-gray-800"}`}>
-                  {review.author}
-                </p>
-                <p className={`text-[10px] ${dark ? "text-white/30" : "text-gray-400"} mt-0.5`}>
-                  {review.date}
-                </p>
-              </div>
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <IoStar
-                    key={s}
-                    className={`text-[11px] ${s <= (review.rating || 5) ? "text-amber-400" : dark ? "text-white/20" : "text-gray-200"}`}
-                  />
-                ))}
-              </div>
-            </div>
-            <p className={`text-sm leading-relaxed ${dark ? "text-white/50" : "text-gray-500"}`}>
-              {review.comment}
-            </p>
-          </motion.div>
-        ))}
-      </div>
+                  {/* Liste des avis */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {listing.reviews.slice(0, 2).map((review, i) => (
+                      <motion.div
+                        key={review.id || i}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 + i * 0.1 }}
+                        whileHover={{ y: -4 }}
+                        className={`p-4 rounded-xl transition-all duration-300 ${
+                          dark
+                            ? "bg-slate-800/40 border border-white/10"
+                            : "bg-white border border-white shadow-sm"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div>
+                            <p
+                              className={`text-sm font-semibold ${dark ? "text-white/80" : "text-gray-800"}`}
+                            >
+                              {review.author}
+                            </p>
+                            <p
+                              className={`text-[10px] ${dark ? "text-white/30" : "text-gray-400"} mt-0.5`}
+                            >
+                              {review.date}
+                            </p>
+                          </div>
+                          <div className="flex gap-0.5">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <IoStar
+                                key={s}
+                                className={`text-[11px] ${s <= (review.rating || 5) ? "text-amber-400" : dark ? "text-white/20" : "text-gray-200"}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <p
+                          className={`text-sm leading-relaxed ${dark ? "text-white/50" : "text-gray-500"}`}
+                        >
+                          {review.comment}
+                        </p>
+                      </motion.div>
+                    ))}
+                  </div>
 
-      {/* Bouton voir tous les avis - seulement s'il y a des avis */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
-        className={`mt-4 w-full py-2.5 rounded-xl border border-dashed text-xs font-medium uppercase tracking-wide transition-all ${dark ? "border-white/10 text-white/30 hover:text-white/50 hover:border-white/20" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"}`}
-      >
-        VOIR TOUS LES {listing.reviewCount || 0} AVIS
-      </motion.button>
-    </>
-  ) : (
-    // Message "Aucun avis" - sans barres de scores ni bouton
-    <div className={`p-6 rounded-xl text-center ${dark ? "bg-slate-800/40 border border-white/10" : "bg-gray-50 border border-white shadow-sm"}`}>
-      <div className="flex flex-col items-center gap-2">
-        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${dark ? "bg-slate-700" : "bg-gray-100"}`}>
-          <IoStar className={`text-2xl ${dark ? "text-gray-500" : "text-gray-400"}`} />
-        </div>
-        <p className={`text-sm font-medium ${dark ? "text-white/60" : "text-gray-600"}`}>
-          Aucun avis pour le moment
-        </p>
-        <p className={`text-xs ${dark ? "text-white/30" : "text-gray-400"}`}>
-          Soyez le premier à donner votre avis !
-        </p>
-      </div>
-    </div>
-  )}
-</Section>
+                  {/* Bouton voir tous les avis - seulement s'il y a des avis */}
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`mt-4 w-full py-2.5 rounded-xl border border-dashed text-xs font-medium uppercase tracking-wide transition-all ${dark ? "border-white/10 text-white/30 hover:text-white/50 hover:border-white/20" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"}`}
+                  >
+                    VOIR TOUS LES {listing.reviewCount || 0} AVIS
+                  </motion.button>
+                </>
+              ) : (
+                // Message "Aucun avis" - sans barres de scores ni bouton
+                <div
+                  className={`p-6 rounded-xl text-center ${dark ? "bg-slate-800/40 border border-white/10" : "bg-gray-50 border border-white shadow-sm"}`}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <div
+                      className={`w-12 h-12 rounded-full flex items-center justify-center ${dark ? "bg-slate-700" : "bg-gray-100"}`}
+                    >
+                      <IoStar
+                        className={`text-2xl ${dark ? "text-gray-500" : "text-gray-400"}`}
+                      />
+                    </div>
+                    <p
+                      className={`text-sm font-medium ${dark ? "text-white/60" : "text-gray-600"}`}
+                    >
+                      Aucun avis pour le moment
+                    </p>
+                    <p
+                      className={`text-xs ${dark ? "text-white/30" : "text-gray-400"}`}
+                    >
+                      Soyez le premier à donner votre avis !
+                    </p>
+                  </div>
+                </div>
+              )}
+            </Section>
             {/* Rules */}
             {houseRules.length > 0 && (
               <Section

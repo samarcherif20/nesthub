@@ -1,12 +1,13 @@
-// app/api/stripe/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { onBookingCompleted } from "@/lib/risk-scoring"; 
+import { onBookingCompleted } from "@/lib/risk-scoring";
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const sig = req.headers.get("stripe-signature");
+
+  console.log("📡 [WEBHOOK] Requête reçue, signature présente:", !!sig);
 
   // ✅ Pour les tests en local, on peut accepter les appels sans signature
   if (!sig && process.env.NODE_ENV === "development") {
@@ -15,10 +16,15 @@ export async function POST(req: NextRequest) {
     );
     try {
       const event = JSON.parse(body);
+      console.log(
+        "📦 [WEBHOOK] Événement parsé (mode dev):",
+        event.type,
+        event.id,
+      );
       await processEvent(event);
       return NextResponse.json({ received: true });
     } catch (err) {
-      console.error("Erreur traitement webhook:", err);
+      console.error("❌ Erreur traitement webhook:", err);
       return NextResponse.json({ error: "Webhook error" }, { status: 400 });
     }
   }
@@ -31,8 +37,13 @@ export async function POST(req: NextRequest) {
       sig!,
       process.env.STRIPE_WEBHOOK_SECRET!,
     );
+    console.log(
+      "✅ [WEBHOOK] Signature vérifiée, événement:",
+      event.type,
+      event.id,
+    );
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
+    console.error("❌ Webhook signature verification failed:", err);
     return NextResponse.json({ error: "Webhook error" }, { status: 400 });
   }
 
@@ -42,6 +53,12 @@ export async function POST(req: NextRequest) {
 }
 
 async function processEvent(event: any) {
+  console.log("🔥🔥🔥 [PROCESS] Événement reçu:", event.type, event.id);
+  console.log(
+    "📦 [PROCESS] Données:",
+    JSON.stringify(event.data.object, null, 2).slice(0, 500),
+  );
+
   // Sauvegarder l'événement pour audit
   await prisma.stripeWebhookEvent.create({
     data: {
@@ -54,16 +71,27 @@ async function processEvent(event: any) {
 
   switch (event.type) {
     case "payment_intent.succeeded":
+      console.log("💰💰💰 [PROCESS] C'est un payment_intent.succeeded !");
       await handlePaymentSuccess(event.data.object);
       break;
 
+    case "payment_intent.created":
+      console.log("📝 [PROCESS] PaymentIntent créé (en attente de paiement)");
+      // Ne rien faire
+      break;
+
     case "payment_intent.payment_failed":
+      console.log("❌ [PROCESS] PaymentIntent échoué");
       await handlePaymentFailure(event.data.object);
       break;
 
     case "charge.refunded":
+      console.log("💰 [PROCESS] Refund processed");
       await handleRefund(event.data.object);
       break;
+
+    default:
+      console.log(`⚠️ [PROCESS] Type non traité: ${event.type}`);
   }
 
   // Marquer comme traité
@@ -71,13 +99,21 @@ async function processEvent(event: any) {
     where: { stripeEventId: event.id },
     data: { processed: true, processedAt: new Date() },
   });
+  console.log("✅ [PROCESS] Événement marqué comme traité");
 }
 
 async function handlePaymentSuccess(paymentIntent: any) {
-  console.log("💰 PaymentIntent réussi:", paymentIntent.id);
+  console.log("💰💰💰 [SUCCESS] Début traitement pour:", paymentIntent.id);
+  console.log(
+    "🔍 [SUCCESS] Recherche transaction avec stripePaymentIntentId:",
+    paymentIntent.id,
+  );
 
-  // 1. Mettre à jour la transaction
-  const transaction = await prisma.paymentTransaction.findFirst({
+  // ✅ ÉTAPE 1: Attendre 1.5 secondes pour laisser le temps à la transaction d'être écrite
+  await new Promise(resolve => setTimeout(resolve, 1500));
+
+  // ✅ ÉTAPE 2: Chercher la transaction avec retry
+  let transaction = await prisma.paymentTransaction.findFirst({
     where: { stripePaymentIntentId: paymentIntent.id },
     include: {
       offer: {
@@ -90,36 +126,113 @@ async function handlePaymentSuccess(paymentIntent: any) {
     },
   });
 
+  // ✅ ÉTAPE 3: Réessayer 3 fois si pas trouvée
+  let retries = 0;
+  while (!transaction && retries < 3) {
+    console.log(`🔄 [SUCCESS] Transaction non trouvée, tentative ${retries + 1}/3...`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    transaction = await prisma.paymentTransaction.findFirst({
+      where: { stripePaymentIntentId: paymentIntent.id },
+      include: {
+        offer: {
+          include: {
+            listing: true,
+            tenant: true,
+            owner: true,
+          },
+        },
+      },
+    });
+    retries++;
+  }
+
+  // ✅ ÉTAPE 4: Si toujours pas trouvée, créer la transaction manuellement depuis les métadonnées
   if (!transaction) {
+    console.log("⚠️ [SUCCESS] Transaction toujours non trouvée, création manuelle...");
+    
+    const metadata = paymentIntent.metadata;
+    if (!metadata?.offerId) {
+      console.error("❌ [SUCCESS] Impossible de créer la transaction: pas d'offerId dans metadata");
+      return;
+    }
+
+    // Récupérer l'offre
+    const offer = await prisma.offer.findUnique({
+      where: { id: metadata.offerId },
+      include: {
+        listing: true,
+        tenant: true,
+        owner: true,
+      },
+    });
+
+    if (!offer) {
+      console.error("❌ [SUCCESS] Offre non trouvée pour création manuelle:", metadata.offerId);
+      return;
+    }
+
+    // Créer la transaction
+    transaction = await prisma.paymentTransaction.create({
+      data: {
+        offerId: offer.id,
+        userId: offer.tenantId,
+        amount: parseFloat(metadata.amountTND || offer.totalPrice.toString()),
+        currency: "TND",
+        status: "SUCCESS",
+        provider: "STRIPE",
+        stripePaymentIntentId: paymentIntent.id,
+        providerTransactionId: paymentIntent.id,
+        paidAt: new Date(),
+        metadata: {
+          amountEUR: metadata.amountEUR,
+          exchangeRate: metadata.exchangeRate,
+        },
+      },
+      include: {
+        offer: {
+          include: {
+            listing: true,
+            tenant: true,
+            owner: true,
+          },
+        },
+      },
+    });
+    console.log("✅ [SUCCESS] Transaction créée manuellement:", transaction.id);
+  }
+
+  console.log("✅ [SUCCESS] Transaction trouvée/créée:", transaction.id);
+  console.log("📦 [SUCCESS] Offer associée:", transaction.offer?.id);
+
+  if (!transaction.offer) {
     console.error(
-      "❌ Transaction non trouvée pour paymentIntent:",
-      paymentIntent.id,
+      "❌ [SUCCESS] Offre non trouvée pour transaction:",
+      transaction.id,
     );
     return;
   }
 
-  if (!transaction.offer) {
-    console.error("❌ Offre non trouvée pour transaction:", transaction.id);
-    return;
+  // Mettre à jour le statut de la transaction (si pas déjà SUCCESS)
+  if (transaction.status !== "SUCCESS") {
+    await prisma.paymentTransaction.update({
+      where: { id: transaction.id },
+      data: {
+        status: "SUCCESS",
+        paidAt: new Date(),
+        providerTransactionId: paymentIntent.id,
+      },
+    });
+    console.log("✅ [SUCCESS] Transaction mise à jour");
   }
-
-  // Mettre à jour le statut de la transaction
-  await prisma.paymentTransaction.update({
-    where: { id: transaction.id },
-    data: {
-      status: "SUCCESS",
-      paidAt: new Date(),
-      providerTransactionId: paymentIntent.id,
-    },
-  });
 
   // 2. Mettre à jour le statut de l'offre
   await prisma.offer.update({
     where: { id: transaction.offerId },
     data: { status: "ACCEPTED", acceptedAt: new Date() },
   });
+  console.log("✅ [SUCCESS] Offre mise à jour");
 
-  // 3. Vérifier si la réservation existe déjà (éviter les doublons)
+  // 3. Vérifier si la réservation existe déjà
   const existingBooking = await prisma.booking.findFirst({
     where: { offerId: transaction.offerId },
   });
@@ -130,24 +243,22 @@ async function handlePaymentSuccess(paymentIntent: any) {
   if (existingBooking) {
     bookingId = existingBooking.id;
     bookingReference = existingBooking.reference;
-    console.log("✅ Réservation déjà existante:", bookingReference);
+    console.log("✅ [SUCCESS] Réservation déjà existante:", bookingReference);
 
-    // ✅ CRITICAL: Mettre à jour avec stripePaymentIntentId
     await prisma.booking.update({
       where: { id: existingBooking.id },
       data: {
         paymentStatus: "PAID",
         status: "CONFIRMED",
-        stripePaymentIntentId: paymentIntent.id, // ← AJOUTÉ !
+        stripePaymentIntentId: paymentIntent.id,
         confirmedAt: new Date(),
       },
     });
     console.log(
-      "✅ Réservation mise à jour avec stripePaymentIntentId:",
+      "✅ [SUCCESS] Réservation mise à jour avec stripePaymentIntentId:",
       paymentIntent.id,
     );
   } else {
-    // 4. Créer la réservation AVEC stripePaymentIntentId
     const newBooking = await prisma.booking.create({
       data: {
         reference: `NH-${Date.now()}-${transaction.offerId.slice(-6)}`,
@@ -166,19 +277,16 @@ async function handlePaymentSuccess(paymentIntent: any) {
         status: "CONFIRMED",
         paymentStatus: "PAID",
         offerId: transaction.offerId,
-        stripePaymentIntentId: paymentIntent.id, // ← AJOUTÉ !
+        stripePaymentIntentId: paymentIntent.id,
         confirmedAt: new Date(),
       },
     });
     bookingId = newBooking.id;
     bookingReference = newBooking.reference;
-    console.log(
-      "✅ Réservation créée avec stripePaymentIntentId:",
-      paymentIntent.id,
-    );
+    console.log("✅ [SUCCESS] Réservation CRÉÉE:", bookingReference);
   }
 
-  // 5. Créer ou mettre à jour l'enregistrement de paiement
+  // 4. Créer ou mettre à jour l'enregistrement de paiement
   const existingPayment = await prisma.payment.findFirst({
     where: { bookingId: bookingId },
   });
@@ -192,7 +300,7 @@ async function handlePaymentSuccess(paymentIntent: any) {
         paidAt: new Date(),
       },
     });
-    console.log("✅ Paiement mis à jour:", existingPayment.id);
+    console.log("✅ [SUCCESS] Paiement mis à jour:", existingPayment.id);
   } else {
     await prisma.payment.create({
       data: {
@@ -206,11 +314,15 @@ async function handlePaymentSuccess(paymentIntent: any) {
         paidAt: new Date(),
       },
     });
-    console.log("✅ Paiement créé pour réservation:", bookingReference);
+    console.log(
+      "✅ [SUCCESS] Paiement créé pour réservation:",
+      bookingReference,
+    );
   }
+
   await onBookingCompleted(bookingId);
 
-  // 6. Notifier le propriétaire
+  // 5. Notifications
   await prisma.notification.create({
     data: {
       userId: transaction.offer.ownerId,
@@ -220,8 +332,8 @@ async function handlePaymentSuccess(paymentIntent: any) {
       data: { bookingId: bookingId, amount: transaction.amount },
     },
   });
+  console.log("✅ [SUCCESS] Notification propriétaire envoyée");
 
-  // 7. Notifier le locataire
   await prisma.notification.create({
     data: {
       userId: transaction.offer.tenantId,
@@ -231,8 +343,9 @@ async function handlePaymentSuccess(paymentIntent: any) {
       data: { bookingId: bookingId },
     },
   });
+  console.log("✅ [SUCCESS] Notification locataire envoyée");
 
-  // 8. Envoyer un message système dans la conversation
+  // 6. Message système
   const conversation = await prisma.conversation.findFirst({
     where: {
       listingId: transaction.offer.listingId,
@@ -251,7 +364,10 @@ async function handlePaymentSuccess(paymentIntent: any) {
         isSystem: true,
       },
     });
+    console.log("✅ [SUCCESS] Message système envoyé");
   }
+
+  console.log("🎉 [SUCCESS] FIN - Tout est OK !");
 }
 
 async function handlePaymentFailure(paymentIntent: any) {

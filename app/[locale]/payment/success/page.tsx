@@ -5,8 +5,11 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
-import MapPicker from "@/components/ui/maps/MapPicker";
+import dynamic from "next/dynamic";
 
+const MapPicker = dynamic(() => import("@/components/ui/maps/MapPicker"), {
+  ssr: false,
+});
 import {
   IoCheckmarkCircleOutline,
   IoDocumentTextOutline,
@@ -372,7 +375,9 @@ function SensitiveField({
   return (
     <div className="group">
       <div className="flex items-center gap-2 mb-1.5">
-        <span className={`text-sm ${isDark ? "text-white/25" : "text-slate-400"}`}>
+        <span
+          className={`text-sm ${isDark ? "text-white/25" : "text-slate-400"}`}
+        >
           {icon}
         </span>
         <span
@@ -409,8 +414,8 @@ function SensitiveField({
             gradient
               ? "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 bg-clip-text text-transparent"
               : isDark
-              ? "text-white/80"
-              : "text-slate-700"
+                ? "text-white/80"
+                : "text-slate-700"
           } ${!revealed ? "blur-[4px] select-none" : ""}`}
         >
           {revealed ? value : masked}
@@ -451,7 +456,8 @@ function PersonCard({
 
   if (!firstName) return null;
 
-  const pipProfile = (url: string) => `/api/users/avatar?url=${encodeURIComponent(url)}`;
+  const pipProfile = (url: string) =>
+    `/api/users/avatar?url=${encodeURIComponent(url)}`;
 
   return (
     <motion.div
@@ -501,12 +507,11 @@ function PersonCard({
                     e.currentTarget.style.display = "none";
                     if (e.currentTarget.parentElement) {
                       e.currentTarget.parentElement.innerHTML = `${firstName.charAt(0)}${lastName?.charAt(0) || ""}`;
-                      e.currentTarget.parentElement.className =
-                        `w-10 h-10 rounded-xl flex items-center justify-center text-white font-extrabold text-sm shadow-lg ${
-                          isDark
-                            ? "bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 shadow-violet-500/20"
-                            : "bg-gradient-to-br from-indigo-400 via-violet-400 to-purple-500 shadow-indigo-500/20"
-                        }`;
+                      e.currentTarget.parentElement.className = `w-10 h-10 rounded-xl flex items-center justify-center text-white font-extrabold text-sm shadow-lg ${
+                        isDark
+                          ? "bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 shadow-violet-500/20"
+                          : "bg-gradient-to-br from-indigo-400 via-violet-400 to-purple-500 shadow-indigo-500/20"
+                      }`;
                     }
                   }}
                 />
@@ -525,7 +530,9 @@ function PersonCard({
               >
                 {role}
               </p>
-              <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}>
+              <p
+                className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}
+              >
                 {firstName} {lastName || ""}
               </p>
             </div>
@@ -541,7 +548,9 @@ function PersonCard({
               <IoCheckmarkCircleOutline
                 className={`text-xs ${isDark ? "text-emerald-400" : "text-emerald-500"}`}
               />
-              <span className={`text-[9px] font-bold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}>
+              <span
+                className={`text-[9px] font-bold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}
+              >
                 Vérifié
               </span>
             </div>
@@ -567,27 +576,45 @@ function PersonCard({
           {phone && (
             <div>
               <div className="flex items-center gap-2 mb-1.5">
-                <span className={`text-sm ${isDark ? "text-white/25" : "text-slate-400"}`}>
+                <span
+                  className={`text-sm ${isDark ? "text-white/25" : "text-slate-400"}`}
+                >
                   <IoCallOutline />
                 </span>
-                <span className={`text-[9px] font-extrabold uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-slate-400"}`}>
+                <span
+                  className={`text-[9px] font-extrabold uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-slate-400"}`}
+                >
                   Téléphone
                 </span>
               </div>
-              <div className={`px-3.5 py-2.5 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-slate-50 border-slate-200"}`}>
-                <p className={`text-sm font-bold ${isDark ? "text-white/80" : "text-slate-700"}`}>{phone}</p>
+              <div
+                className={`px-3.5 py-2.5 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-slate-50 border-slate-200"}`}
+              >
+                <p
+                  className={`text-sm font-bold ${isDark ? "text-white/80" : "text-slate-700"}`}
+                >
+                  {phone}
+                </p>
               </div>
             </div>
           )}
           {extra?.map((item) => (
             <div key={item.label}>
               <div className="flex items-center gap-2 mb-1.5">
-                <span className={`text-[9px] font-extrabold uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-slate-400"}`}>
+                <span
+                  className={`text-[9px] font-extrabold uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-slate-400"}`}
+                >
                   {item.label}
                 </span>
               </div>
-              <div className={`px-3.5 py-2.5 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-slate-50 border-slate-200"}`}>
-                <p className={`text-sm font-bold ${isDark ? "text-white/60" : "text-slate-500"}`}>{item.value}</p>
+              <div
+                className={`px-3.5 py-2.5 rounded-xl border ${isDark ? "bg-white/[0.03] border-white/[0.06]" : "bg-slate-50 border-slate-200"}`}
+              >
+                <p
+                  className={`text-sm font-bold ${isDark ? "text-white/60" : "text-slate-500"}`}
+                >
+                  {item.value}
+                </p>
               </div>
             </div>
           ))}
@@ -642,7 +669,12 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
           <motion.div
             initial={{ y: -30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.8, type: "spring", stiffness: 200, damping: 12 }}
+            transition={{
+              delay: 0.8,
+              type: "spring",
+              stiffness: 200,
+              damping: 12,
+            }}
             className="relative"
           >
             <motion.div
@@ -668,9 +700,11 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
               : "bg-white/60 border-white/80"
           }`}
         >
-          <span className={`text-[8px] font-bold uppercase tracking-wider ${
-            isDark ? "text-white/40" : "text-slate-500"
-          }`}>
+          <span
+            className={`text-[8px] font-bold uppercase tracking-wider ${
+              isDark ? "text-white/40" : "text-slate-500"
+            }`}
+          >
             Position GPS
           </span>
         </div>
@@ -681,15 +715,19 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
               : "bg-indigo-100 border-indigo-200"
           }`}
         >
-          <span className={`text-[8px] font-bold uppercase tracking-wider ${
-            isDark ? "text-indigo-400" : "text-indigo-600"
-          }`}>
+          <span
+            className={`text-[8px] font-bold uppercase tracking-wider ${
+              isDark ? "text-indigo-400" : "text-indigo-600"
+            }`}
+          >
             Précis
           </span>
         </div>
         <div
           className={`absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t ${
-            isDark ? "from-[#070b14] to-transparent" : "from-white/80 to-transparent"
+            isDark
+              ? "from-[#070b14] to-transparent"
+              : "from-white/80 to-transparent"
           }`}
         />
       </motion.div>
@@ -711,16 +749,20 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
           >
             <div className="flex items-center gap-1.5 mb-1">
               <IoNavigateOutline className="text-indigo-400 text-xs" />
-              <span className={`text-[8px] font-extrabold uppercase tracking-[0.15em] ${
-                isDark ? "text-white/25" : "text-slate-400"
-              }`}>
+              <span
+                className={`text-[8px] font-extrabold uppercase tracking-[0.15em] ${
+                  isDark ? "text-white/25" : "text-slate-400"
+                }`}
+              >
                 Latitude
               </span>
             </div>
             <p className="text-lg font-mono font-black text-indigo-400 tracking-wider">
               {lat.toFixed(4)}°
             </p>
-            <p className={`text-[9px] mt-0.5 ${isDark ? "text-white/15" : "text-slate-300"}`}>
+            <p
+              className={`text-[9px] mt-0.5 ${isDark ? "text-white/15" : "text-slate-300"}`}
+            >
               {lat > 0 ? "Nord" : "Sud"}
             </p>
           </div>
@@ -741,16 +783,20 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
           >
             <div className="flex items-center gap-1.5 mb-1">
               <IoMapOutline className="text-violet-400 text-xs" />
-              <span className={`text-[8px] font-extrabold uppercase tracking-[0.15em] ${
-                isDark ? "text-white/25" : "text-slate-400"
-              }`}>
+              <span
+                className={`text-[8px] font-extrabold uppercase tracking-[0.15em] ${
+                  isDark ? "text-white/25" : "text-slate-400"
+                }`}
+              >
                 Longitude
               </span>
             </div>
             <p className="text-lg font-mono font-black text-violet-400 tracking-wider">
               {lng.toFixed(4)}°
             </p>
-            <p className={`text-[9px] mt-0.5 ${isDark ? "text-white/15" : "text-slate-300"}`}>
+            <p
+              className={`text-[9px] mt-0.5 ${isDark ? "text-white/15" : "text-slate-300"}`}
+            >
               {lng > 0 ? "Est" : "Ouest"}
             </p>
           </div>
@@ -831,10 +877,10 @@ function StepIndicator({ activeStep }: { activeStep: number }) {
                       ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-400"
                       : "bg-emerald-100 border-emerald-300 text-emerald-600"
                     : isActive
-                    ? "bg-gradient-to-br from-indigo-500 to-violet-600 border-indigo-500 text-white"
-                    : isDark
-                    ? "bg-white/[0.03] border-white/[0.08] text-white/20"
-                    : "bg-slate-100 border-slate-200 text-slate-300"
+                      ? "bg-gradient-to-br from-indigo-500 to-violet-600 border-indigo-500 text-white"
+                      : isDark
+                        ? "bg-white/[0.03] border-white/[0.08] text-white/20"
+                        : "bg-slate-100 border-slate-200 text-slate-300"
                 }`}
               >
                 {isDone ? (
@@ -856,12 +902,12 @@ function StepIndicator({ activeStep }: { activeStep: number }) {
                       ? "text-emerald-400"
                       : "text-emerald-600"
                     : isActive
-                    ? isDark
-                      ? "text-indigo-400"
-                      : "text-indigo-600"
-                    : isDark
-                    ? "text-white/20"
-                    : "text-slate-300"
+                      ? isDark
+                        ? "text-indigo-400"
+                        : "text-indigo-600"
+                      : isDark
+                        ? "text-white/20"
+                        : "text-slate-300"
                 }`}
               >
                 {step.label}
@@ -869,7 +915,9 @@ function StepIndicator({ activeStep }: { activeStep: number }) {
             </div>
             {i < 2 && (
               <div className="flex-1 h-px mx-3 relative overflow-hidden">
-                <div className={`absolute inset-0 ${isDark ? "bg-white/[0.06]" : "bg-slate-200"}`} />
+                <div
+                  className={`absolute inset-0 ${isDark ? "bg-white/[0.06]" : "bg-slate-200"}`}
+                />
                 <motion.div
                   className="absolute inset-y-0 left-0 bg-emerald-500/50"
                   initial={{ width: "0%" }}
@@ -912,11 +960,15 @@ function SectionHeader({
         <span className="text-white text-base">{icon}</span>
       </div>
       <div>
-        <h2 className={`text-sm font-extrabold leading-tight ${isDark ? "text-white" : "text-slate-800"}`}>
+        <h2
+          className={`text-sm font-extrabold leading-tight ${isDark ? "text-white" : "text-slate-800"}`}
+        >
           {title}
         </h2>
         {subtitle && (
-          <p className={`text-[10px] font-medium ${isDark ? "text-white/30" : "text-slate-400"}`}>
+          <p
+            className={`text-[10px] font-medium ${isDark ? "text-white/30" : "text-slate-400"}`}
+          >
             {subtitle}
           </p>
         )}
@@ -981,6 +1033,8 @@ export default function ConfirmationPage() {
               );
               if (bookingRes.ok) {
                 data = await bookingRes.json();
+                console.log("🔍 data reçu de /api/bookings:", data);
+                console.log("🔍 data.id =", data.id); // ← Vérifie ici
                 conversationIdTemp = data.conversationId;
               }
             } else if (transaction.offerId) {
@@ -1106,6 +1160,9 @@ export default function ConfirmationPage() {
 
   const handleDownloadContract = async () => {
     if (!booking) return;
+    console.log("🔍 booking complet:", booking);
+    console.log("🔍 booking.id:", booking.id);
+    console.log("🔍 offerId de l'URL:", offerId);
     setContractLoading(true);
     try {
       const requestBody: { offerId?: string; bookingId?: string } = {};
@@ -1222,7 +1279,11 @@ export default function ConfirmationPage() {
               : "bg-white text-indigo-600 hover:bg-slate-100"
           }`}
         >
-          {isDark ? <IoSunnyOutline className="text-xl" /> : <IoMoonOutline className="text-xl" />}
+          {isDark ? (
+            <IoSunnyOutline className="text-xl" />
+          ) : (
+            <IoMoonOutline className="text-xl" />
+          )}
         </motion.button>
 
         {/* SUCCESS HERO */}
@@ -1238,7 +1299,9 @@ export default function ConfirmationPage() {
               confirmé !
             </span>
           </h1>
-          <p className={`text-sm mb-5 max-w-md mx-auto ${isDark ? "text-white/30" : "text-slate-500"}`}>
+          <p
+            className={`text-sm mb-5 max-w-md mx-auto ${isDark ? "text-white/30" : "text-slate-500"}`}
+          >
             Votre réservation est finalisée. Tous les détails sont ci-dessous.
           </p>
 
@@ -1247,14 +1310,22 @@ export default function ConfirmationPage() {
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: 0.5, type: "spring" }}
           >
-            <p className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-1 ${
-              isDark ? "text-white/25" : "text-slate-400"
-            }`}>
+            <p
+              className={`text-[10px] uppercase tracking-[0.2em] font-bold mb-1 ${
+                isDark ? "text-white/25" : "text-slate-400"
+              }`}
+            >
               Montant payé
             </p>
-            <p className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-900"}`}>
+            <p
+              className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-900"}`}
+            >
               <AnimatedPrice target={booking.totalPrice} duration={1.5} />{" "}
-              <span className={`text-lg ${isDark ? "text-white/30" : "text-slate-400"}`}>TND</span>
+              <span
+                className={`text-lg ${isDark ? "text-white/30" : "text-slate-400"}`}
+              >
+                TND
+              </span>
             </p>
           </motion.div>
 
@@ -1268,14 +1339,18 @@ export default function ConfirmationPage() {
                 : "bg-white/50 border-slate-200"
             }`}
           >
-            <span className={`text-[9px] font-extrabold uppercase tracking-[0.2em] ${
-              isDark ? "text-white/25" : "text-slate-400"
-            }`}>
+            <span
+              className={`text-[9px] font-extrabold uppercase tracking-[0.2em] ${
+                isDark ? "text-white/25" : "text-slate-400"
+              }`}
+            >
               Réf:
             </span>
-            <span className={`font-mono font-extrabold text-sm tracking-wider ${
-              isDark ? "text-white" : "text-slate-700"
-            }`}>
+            <span
+              className={`font-mono font-extrabold text-sm tracking-wider ${
+                isDark ? "text-white" : "text-slate-700"
+              }`}
+            >
               {booking.reference}
             </span>
             <IoCheckmarkCircleOutline className="text-emerald-400 text-sm" />
@@ -1332,17 +1407,23 @@ export default function ConfirmationPage() {
                       <IoHomeOutline className="text-indigo-400 text-base" />
                     </div>
                     <div className="min-w-0">
-                      <p className={`text-[9px] font-extrabold uppercase tracking-[0.2em] ${
-                        isDark ? "text-indigo-400" : "text-indigo-600"
-                      }`}>
+                      <p
+                        className={`text-[9px] font-extrabold uppercase tracking-[0.2em] ${
+                          isDark ? "text-indigo-400" : "text-indigo-600"
+                        }`}
+                      >
                         Propriété
                       </p>
-                      <p className={`text-sm font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}>
+                      <p
+                        className={`text-sm font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}
+                      >
                         {booking.listing.title}
                       </p>
-                      <p className={`text-[11px] flex items-center gap-1 mt-0.5 ${
-                        isDark ? "text-white/30" : "text-slate-500"
-                      }`}>
+                      <p
+                        className={`text-[11px] flex items-center gap-1 mt-0.5 ${
+                          isDark ? "text-white/30" : "text-slate-500"
+                        }`}
+                      >
                         <IoLocationOutline className="text-xs flex-shrink-0" />
                         {booking.listing.address || booking.listing.location}
                       </p>
@@ -1356,21 +1437,27 @@ export default function ConfirmationPage() {
                         label: "Arrivée",
                         value: fmtDate(booking.checkIn),
                         sub: `Dès ${booking.checkInTime}`,
-                        bg: isDark ? "border-indigo-500/10" : "border-indigo-200/50",
+                        bg: isDark
+                          ? "border-indigo-500/10"
+                          : "border-indigo-200/50",
                       },
                       {
                         icon: <IoMoonOutline className="text-violet-400" />,
                         label: "Durée",
                         value: `${booking.nights} nuits`,
                         sub: `${booking.guests} voyageurs`,
-                        bg: isDark ? "border-violet-500/10" : "border-violet-200/50",
+                        bg: isDark
+                          ? "border-violet-500/10"
+                          : "border-violet-200/50",
                       },
                       {
                         icon: <IoLogOutOutline className="text-purple-400" />,
                         label: "Départ",
                         value: fmtDate(booking.checkOut),
                         sub: `Avant ${booking.checkOutTime}`,
-                        bg: isDark ? "border-purple-500/10" : "border-purple-200/50",
+                        bg: isDark
+                          ? "border-purple-500/10"
+                          : "border-purple-200/50",
                       },
                     ].map((d) => (
                       <div
@@ -1379,18 +1466,24 @@ export default function ConfirmationPage() {
                       >
                         <div className="flex items-center gap-1.5">
                           <span className="text-base">{d.icon}</span>
-                          <p className={`text-[8px] font-extrabold uppercase tracking-[0.15em] ${
-                            isDark ? "text-white/25" : "text-slate-400"
-                          }`}>
+                          <p
+                            className={`text-[8px] font-extrabold uppercase tracking-[0.15em] ${
+                              isDark ? "text-white/25" : "text-slate-400"
+                            }`}
+                          >
                             {d.label}
                           </p>
                         </div>
-                        <p className={`text-xs font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}>
+                        <p
+                          className={`text-xs font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}
+                        >
                           {d.value}
                         </p>
-                        <p className={`text-[10px] font-medium ${
-                          isDark ? "text-white/25" : "text-slate-400"
-                        }`}>
+                        <p
+                          className={`text-[10px] font-medium ${
+                            isDark ? "text-white/25" : "text-slate-400"
+                          }`}
+                        >
                           {d.sub}
                         </p>
                       </div>
@@ -1410,8 +1503,15 @@ export default function ConfirmationPage() {
                         accent: true,
                       },
                     ].map((item) => (
-                      <div key={item.label} className="flex justify-between text-sm">
-                        <span className={isDark ? "text-white/30" : "text-slate-500"}>
+                      <div
+                        key={item.label}
+                        className="flex justify-between text-sm"
+                      >
+                        <span
+                          className={
+                            isDark ? "text-white/30" : "text-slate-500"
+                          }
+                        >
                           {item.label}
                         </span>
                         <span
@@ -1419,8 +1519,8 @@ export default function ConfirmationPage() {
                             item.accent
                               ? "text-indigo-400"
                               : isDark
-                              ? "text-white/60"
-                              : "text-slate-600"
+                                ? "text-white/60"
+                                : "text-slate-600"
                           }`}
                         >
                           {fmtPrice(item.value)} TND
@@ -1428,10 +1528,14 @@ export default function ConfirmationPage() {
                       </div>
                     ))}
                   </div>
-                  <div className={`flex justify-between items-center pt-4 border-t border-dashed ${
-                    isDark ? "border-white/[0.06]" : "border-slate-200"
-                  }`}>
-                    <p className={`text-sm font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}>
+                  <div
+                    className={`flex justify-between items-center pt-4 border-t border-dashed ${
+                      isDark ? "border-white/[0.06]" : "border-slate-200"
+                    }`}
+                  >
+                    <p
+                      className={`text-sm font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}
+                    >
                       Total payé
                     </p>
                     <p className="text-xl font-black bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 bg-clip-text text-transparent">
@@ -1529,29 +1633,39 @@ export default function ConfirmationPage() {
                       <IoDocumentTextOutline className="text-indigo-400 text-xl" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}>
+                      <p
+                        className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}
+                      >
                         Contrat de location
                       </p>
-                      <p className={`text-[11px] mt-0.5 ${
-                        isDark ? "text-white/30" : "text-slate-500"
-                      }`}>
+                      <p
+                        className={`text-[11px] mt-0.5 ${
+                          isDark ? "text-white/30" : "text-slate-500"
+                        }`}
+                      >
                         {booking.listing.title} · Réf {booking.reference}
                       </p>
-                      <p className={`text-[10px] mt-1 ${
-                        isDark ? "text-white/20" : "text-slate-400"
-                      }`}>
+                      <p
+                        className={`text-[10px] mt-1 ${
+                          isDark ? "text-white/20" : "text-slate-400"
+                        }`}
+                      >
                         PDF · Généré automatiquement · Signé électroniquement
                       </p>
                     </div>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border flex-shrink-0 ${
-                      isDark
-                        ? "bg-emerald-500/10 border-emerald-500/20"
-                        : "bg-emerald-100 border-emerald-200"
-                    }`}>
+                    <div
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border flex-shrink-0 ${
+                        isDark
+                          ? "bg-emerald-500/10 border-emerald-500/20"
+                          : "bg-emerald-100 border-emerald-200"
+                      }`}
+                    >
                       <IoCheckmarkCircleOutline className="text-emerald-400 text-xs" />
-                      <span className={`text-[9px] font-bold ${
-                        isDark ? "text-emerald-400" : "text-emerald-600"
-                      }`}>
+                      <span
+                        className={`text-[9px] font-bold ${
+                          isDark ? "text-emerald-400" : "text-emerald-600"
+                        }`}
+                      >
                         Prêt
                       </span>
                     </div>
@@ -1564,7 +1678,9 @@ export default function ConfirmationPage() {
                       className="flex items-center justify-center gap-2.5 py-3.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 shadow-lg shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/25 hover:scale-[1.02] active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <IoDocumentTextOutline className="text-lg" />
-                      {contractLoading ? "Génération..." : "Télécharger le contrat"}
+                      {contractLoading
+                        ? "Génération..."
+                        : "Télécharger le contrat"}
                     </button>
                     <button
                       onClick={handleContactHost}
@@ -1579,15 +1695,19 @@ export default function ConfirmationPage() {
                     </button>
                   </div>
 
-                  <div className={`flex items-center gap-2.5 mt-4 px-4 py-3 rounded-xl border ${
-                    isDark
-                      ? "bg-emerald-500/5 border-emerald-500/10"
-                      : "bg-emerald-50 border-emerald-200"
-                  }`}>
+                  <div
+                    className={`flex items-center gap-2.5 mt-4 px-4 py-3 rounded-xl border ${
+                      isDark
+                        ? "bg-emerald-500/5 border-emerald-500/10"
+                        : "bg-emerald-50 border-emerald-200"
+                    }`}
+                  >
                     <IoShieldCheckmarkOutline className="text-emerald-400 text-base flex-shrink-0" />
-                    <p className={`text-[11px] font-bold ${
-                      isDark ? "text-emerald-400/70" : "text-emerald-600/70"
-                    }`}>
+                    <p
+                      className={`text-[11px] font-bold ${
+                        isDark ? "text-emerald-400/70" : "text-emerald-600/70"
+                      }`}
+                    >
                       Transaction sécurisée · Données chiffrées · PCI Compliant
                     </p>
                   </div>
@@ -1635,7 +1755,9 @@ export default function ConfirmationPage() {
                           : "bg-gradient-to-br from-indigo-500/10 to-violet-500/10"
                       }`}
                     >
-                      <IoHomeOutline className={`text-5xl ${isDark ? "text-white/30" : "text-slate-400"}`} />
+                      <IoHomeOutline
+                        className={`text-5xl ${isDark ? "text-white/30" : "text-slate-400"}`}
+                      />
                     </div>
                   )}
                   <div
@@ -1671,17 +1793,23 @@ export default function ConfirmationPage() {
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     {[
                       {
-                        icon: <IoCalendarOutline className="text-indigo-400 text-sm" />,
+                        icon: (
+                          <IoCalendarOutline className="text-indigo-400 text-sm" />
+                        ),
                         val: fmtShort(booking.checkIn),
                         lbl: "Arrivée",
                       },
                       {
-                        icon: <IoMoonOutline className="text-violet-400 text-sm" />,
+                        icon: (
+                          <IoMoonOutline className="text-violet-400 text-sm" />
+                        ),
                         val: `${booking.nights}N`,
                         lbl: "Durée",
                       },
                       {
-                        icon: <IoPeopleOutline className="text-purple-400 text-sm" />,
+                        icon: (
+                          <IoPeopleOutline className="text-purple-400 text-sm" />
+                        ),
                         val: booking.guests,
                         lbl: "Voyag.",
                       },
@@ -1695,26 +1823,34 @@ export default function ConfirmationPage() {
                         }`}
                       >
                         {icon}
-                        <p className={`text-sm font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}>
+                        <p
+                          className={`text-sm font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}
+                        >
                           {val}
                         </p>
-                        <p className={`text-[9px] font-bold uppercase tracking-wider ${
-                          isDark ? "text-white/25" : "text-slate-400"
-                        }`}>
+                        <p
+                          className={`text-[9px] font-bold uppercase tracking-wider ${
+                            isDark ? "text-white/25" : "text-slate-400"
+                          }`}
+                        >
                           {lbl}
                         </p>
                       </div>
                     ))}
                   </div>
 
-                  <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${
-                    isDark
-                      ? "bg-white/[0.02] border-white/[0.04]"
-                      : "bg-white/50 border-slate-200"
-                  }`}>
-                    <span className={`text-xs font-bold uppercase tracking-wider ${
-                      isDark ? "text-white/30" : "text-slate-400"
-                    }`}>
+                  <div
+                    className={`flex items-center justify-between px-4 py-3 rounded-xl border ${
+                      isDark
+                        ? "bg-white/[0.02] border-white/[0.04]"
+                        : "bg-white/50 border-slate-200"
+                    }`}
+                  >
+                    <span
+                      className={`text-xs font-bold uppercase tracking-wider ${
+                        isDark ? "text-white/30" : "text-slate-400"
+                      }`}
+                    >
                       Total
                     </span>
                     <span className="text-base font-black bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 bg-clip-text text-transparent">
@@ -1725,81 +1861,88 @@ export default function ConfirmationPage() {
               </div>
             </motion.div>
 
-{booking.listing.latitude && booking.listing.longitude && (
-  <motion.div
-    initial={{ opacity: 0, y: 25 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay: 0.3 }}
-    className="relative"
-  >
-    <div
-      className={`absolute -inset-1 rounded-[28px] blur-lg ${
-        isDark
-          ? "bg-gradient-to-r from-indigo-500/5 via-violet-500/5 to-purple-500/5"
-          : "bg-gradient-to-r from-indigo-200/20 via-violet-200/20 to-purple-200/20"
-      }`}
-    />
-    <div
-      className={`relative backdrop-blur-xl border rounded-[24px] overflow-hidden ${
-        isDark
-          ? "bg-white/[0.03] border-white/[0.06]"
-          : "bg-white/70 border-white/50 shadow-lg shadow-slate-200/50"
-      }`}
-    >
-      <div
-        className={`h-px bg-gradient-to-r from-transparent to-transparent ${
-          isDark ? "via-indigo-500/30" : "via-indigo-500/20"
-        }`}
-      />
-      <div className="p-5">
-        <SectionHeader
-          icon={<IoNavigateOutline />}
-          title="Emplacement exact"
-          subtitle={booking.listing.address || booking.listing.location}
-        />
-        
-        {/* MAP PICKER - Vue seule (readOnly) */}
-        <div className="h-64 sm:h-80 w-full rounded-xl overflow-hidden">
-          <MapPicker
-            latitude={booking.listing.latitude}
-            longitude={booking.listing.longitude}
-            onLocationChange={() => {}} // readOnly donc pas de changement
-            readOnly={true}
-            showAllMarkers={false}
-            className="w-full h-full"
-          />
-        </div>
-        
-        {/* Coordonnées textuelles sous la carte */}
-        <div className="mt-4 flex items-center justify-between px-2 py-2">
-          <div className="flex items-center gap-2">
-            <div className={`w-1.5 h-1.5 rounded-full ${
-              isDark ? "bg-emerald-400" : "bg-emerald-500"
-            } animate-pulse`} />
-            <code className={`text-[10px] font-mono font-medium ${
-              isDark ? "text-white/40" : "text-slate-500"
-            }`}>
-              {booking.listing.latitude.toFixed(6)}, {booking.listing.longitude.toFixed(6)}
-            </code>
-          </div>
-          <a
-            href={`https://www.google.com/maps?q=${booking.listing.latitude},${booking.listing.longitude}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all group ${
-              isDark
-                ? "bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/15"
-                : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-            }`}
-          >
-            <IoNavigateOutline className="text-xs group-hover:rotate-[-15deg] transition-transform" />
-            Ouvrir dans Google Maps
-          </a>
-        </div>
-      </div>
-    </div>
-  </motion.div>
-)}
+            {booking.listing.latitude && booking.listing.longitude && (
+              <motion.div
+                initial={{ opacity: 0, y: 25 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="relative"
+              >
+                <div
+                  className={`absolute -inset-1 rounded-[28px] blur-lg ${
+                    isDark
+                      ? "bg-gradient-to-r from-indigo-500/5 via-violet-500/5 to-purple-500/5"
+                      : "bg-gradient-to-r from-indigo-200/20 via-violet-200/20 to-purple-200/20"
+                  }`}
+                />
+                <div
+                  className={`relative backdrop-blur-xl border rounded-[24px] overflow-hidden ${
+                    isDark
+                      ? "bg-white/[0.03] border-white/[0.06]"
+                      : "bg-white/70 border-white/50 shadow-lg shadow-slate-200/50"
+                  }`}
+                >
+                  <div
+                    className={`h-px bg-gradient-to-r from-transparent to-transparent ${
+                      isDark ? "via-indigo-500/30" : "via-indigo-500/20"
+                    }`}
+                  />
+                  <div className="p-5">
+                    <SectionHeader
+                      icon={<IoNavigateOutline />}
+                      title="Emplacement exact"
+                      subtitle={
+                        booking.listing.address || booking.listing.location
+                      }
+                    />
+
+                    {/* MAP PICKER - Vue seule (readOnly) */}
+                    <div className="h-64 sm:h-80 w-full rounded-xl overflow-hidden">
+                      <MapPicker
+                        latitude={booking.listing.latitude}
+                        longitude={booking.listing.longitude}
+                        onLocationChange={() => {}} // readOnly donc pas de changement
+                        readOnly={true}
+                        showAllMarkers={false}
+                        className="w-full h-full"
+                      />
+                    </div>
+
+                    {/* Coordonnées textuelles sous la carte */}
+                    <div className="mt-4 flex items-center justify-between px-2 py-2">
+                      <div className="flex items-center gap-2">
+                        <div
+                          className={`w-1.5 h-1.5 rounded-full ${
+                            isDark ? "bg-emerald-400" : "bg-emerald-500"
+                          } animate-pulse`}
+                        />
+                        <code
+                          className={`text-[10px] font-mono font-medium ${
+                            isDark ? "text-white/40" : "text-slate-500"
+                          }`}
+                        >
+                          {booking.listing.latitude.toFixed(6)},{" "}
+                          {booking.listing.longitude.toFixed(6)}
+                        </code>
+                      </div>
+                      <a
+                        href={`https://www.google.com/maps?q=${booking.listing.latitude},${booking.listing.longitude}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all group ${
+                          isDark
+                            ? "bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/15"
+                            : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
+                        }`}
+                      >
+                        <IoNavigateOutline className="text-xs group-hover:rotate-[-15deg] transition-transform" />
+                        Ouvrir dans Google Maps
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
             {/* Info notes */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -1820,11 +1963,14 @@ export default function ConfirmationPage() {
               >
                 <IoInformationCircleOutline className="text-amber-400 text-sm" />
               </div>
-              <p className={`text-[11px] leading-relaxed font-medium ${
-                isDark ? "text-amber-400/50" : "text-amber-600/70"
-              }`}>
+              <p
+                className={`text-[11px] leading-relaxed font-medium ${
+                  isDark ? "text-amber-400/50" : "text-amber-600/70"
+                }`}
+              >
                 Le code d'accès sera activé le jour de votre arrivée à partir de{" "}
-                {booking.checkInTime}. Contactez l'hôte via le chat pour toute question.
+                {booking.checkInTime}. Contactez l'hôte via le chat pour toute
+                question.
               </p>
             </motion.div>
 
@@ -1848,14 +1994,18 @@ export default function ConfirmationPage() {
                 <IoMailOutline className="text-indigo-400 text-sm" />
               </div>
               <div>
-                <p className={`text-xs font-bold mb-0.5 ${
-                  isDark ? "text-indigo-400" : "text-indigo-600"
-                }`}>
+                <p
+                  className={`text-xs font-bold mb-0.5 ${
+                    isDark ? "text-indigo-400" : "text-indigo-600"
+                  }`}
+                >
                   E-mail envoyé
                 </p>
-                <p className={`text-[11px] leading-relaxed ${
-                  isDark ? "text-indigo-400/40" : "text-indigo-600/60"
-                }`}>
+                <p
+                  className={`text-[11px] leading-relaxed ${
+                    isDark ? "text-indigo-400/40" : "text-indigo-600/60"
+                  }`}
+                >
                   Un récapitulatif complet a été envoyé à votre adresse e-mail.
                 </p>
               </div>
@@ -1884,10 +2034,14 @@ export default function ConfirmationPage() {
                   <IoHomeOutline className="text-indigo-400 text-base" />
                 </div>
                 <div>
-                  <p className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}>
+                  <p
+                    className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}
+                  >
                     Mes réservations
                   </p>
-                  <p className={`text-[10px] ${isDark ? "text-white/25" : "text-slate-400"}`}>
+                  <p
+                    className={`text-[10px] ${isDark ? "text-white/25" : "text-slate-400"}`}
+                  >
                     Voir tous vos séjours
                   </p>
                 </div>
@@ -1921,16 +2075,24 @@ export default function ConfirmationPage() {
               }`}
             >
               <div>
-                <p className={`text-xs font-bold ${isDark ? "text-white/60" : "text-slate-600"}`}>
+                <p
+                  className={`text-xs font-bold ${isDark ? "text-white/60" : "text-slate-600"}`}
+                >
                   Besoin d'aide ?
                 </p>
-                <p className={`text-[10px] ${isDark ? "text-white/20" : "text-slate-400"}`}>
+                <p
+                  className={`text-[10px] ${isDark ? "text-white/20" : "text-slate-400"}`}
+                >
                   Support 24h/7j
                 </p>
               </div>
-              <button className={`text-xs font-bold transition-colors flex items-center gap-1 group ${
-                isDark ? "text-indigo-400 hover:text-indigo-300" : "text-indigo-600 hover:text-indigo-700"
-              }`}>
+              <button
+                className={`text-xs font-bold transition-colors flex items-center gap-1 group ${
+                  isDark
+                    ? "text-indigo-400 hover:text-indigo-300"
+                    : "text-indigo-600 hover:text-indigo-700"
+                }`}
+              >
                 Centre d'aide{" "}
                 <IoChevronForwardOutline className="text-[10px] group-hover:translate-x-0.5 transition-transform" />
               </button>
@@ -1944,9 +2106,21 @@ export default function ConfirmationPage() {
               className="grid grid-cols-3 gap-3"
             >
               {[
-                { icon: <IoTrophyOutline />, label: "Meilleur prix", sub: "Garanti" },
-                { icon: <IoFlashOutline />, label: "Confirmation", sub: "Instantanée" },
-                { icon: <IoDiamondOutline />, label: "Qualité", sub: "Premium" },
+                {
+                  icon: <IoTrophyOutline />,
+                  label: "Meilleur prix",
+                  sub: "Garanti",
+                },
+                {
+                  icon: <IoFlashOutline />,
+                  label: "Confirmation",
+                  sub: "Instantanée",
+                },
+                {
+                  icon: <IoDiamondOutline />,
+                  label: "Qualité",
+                  sub: "Premium",
+                },
               ].map((b) => (
                 <div
                   key={b.label}
@@ -1956,17 +2130,23 @@ export default function ConfirmationPage() {
                       : "bg-white/50 border-slate-200 hover:border-slate-300"
                   }`}
                 >
-                  <div className={`text-lg mb-1.5 flex justify-center ${
-                    isDark ? "text-white/20" : "text-slate-400"
-                  }`}>
+                  <div
+                    className={`text-lg mb-1.5 flex justify-center ${
+                      isDark ? "text-white/20" : "text-slate-400"
+                    }`}
+                  >
                     {b.icon}
                   </div>
-                  <p className={`text-[9px] font-extrabold uppercase tracking-wider ${
-                    isDark ? "text-white/40" : "text-slate-500"
-                  }`}>
+                  <p
+                    className={`text-[9px] font-extrabold uppercase tracking-wider ${
+                      isDark ? "text-white/40" : "text-slate-500"
+                    }`}
+                  >
                     {b.label}
                   </p>
-                  <p className={`text-[8px] ${isDark ? "text-white/15" : "text-slate-300"}`}>
+                  <p
+                    className={`text-[8px] ${isDark ? "text-white/15" : "text-slate-300"}`}
+                  >
                     {b.sub}
                   </p>
                 </div>
@@ -1984,11 +2164,15 @@ export default function ConfirmationPage() {
             isDark ? "border-white/[0.04]" : "border-slate-200"
           }`}
         >
-          <p className={`text-sm italic text-center sm:text-left ${
-            isDark ? "text-white/20" : "text-slate-400"
-          }`}>
+          <p
+            className={`text-sm italic text-center sm:text-left ${
+              isDark ? "text-white/20" : "text-slate-400"
+            }`}
+          >
             "Merci de faire confiance à{" "}
-            <span className="not-italic font-bold text-indigo-400">NESTHUB</span>
+            <span className="not-italic font-bold text-indigo-400">
+              NESTHUB
+            </span>
             . Nous espérons que votre séjour sera inoubliable."
           </p>
           <div className="flex items-center gap-2 opacity-50">

@@ -7,8 +7,10 @@ interface AvailabilityCalendarProps {
   availability?:
     | Record<string, { available: boolean; price?: number }>
     | { date: string; isAvailable: boolean }[];
-  blockedDates?: { startDate: string; endDate: string; reason?: string }[] | string[];
-  pendingDates?: string[];
+  blockedDates?:
+    | { startDate: string; endDate: string; reason?: string }[]
+    | string[];
+pendingDates?: (string | { startDate: string; endDate: string; reason?: string })[];
   pricingRules?: { startDate: string; endDate: string; fixedPrice: number }[];
   selectedStart?: string;
   selectedEnd?: string;
@@ -27,7 +29,6 @@ export default function AvailabilityCalendar({
   const [currentDate, setCurrentDate] = useState(new Date());
   const [tempStart, setTempStart] = useState<string | null>(null);
   const [tempEnd, setTempEnd] = useState<string | null>(null);
-  const [specialPrices, setSpecialPrices] = useState<Map<string, number>>(new Map());
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -44,9 +45,14 @@ export default function AvailabilityCalendar({
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
-  // Récupérer les prix spéciaux
+  // ✅ Fonction pour formater la date SANS décalage UTC
+  const formatDate = (year: number, month: number, day: number): string => {
+    return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  };
+
   const getPricingRulesMap = () => {
-    if (!pricingRules || pricingRules.length === 0) return new Map<string, number>();
+    if (!pricingRules || pricingRules.length === 0)
+      return new Map<string, number>();
     const map = new Map<string, number>();
     pricingRules.forEach((rule) => {
       const start = new Date(rule.startDate);
@@ -94,43 +100,45 @@ export default function AvailabilityCalendar({
     }
     return set;
   };
-
-  const getPendingSet = () => {
-    if (!pendingDates) return new Set<string>();
-    return new Set(pendingDates.map(d => d.split("T")[0]));
-  };
-
+const getPendingSet = () => {
+  if (!pendingDates || pendingDates.length === 0) return new Set<string>();
+  const set = new Set<string>();
+  
+  for (const item of pendingDates) {
+    if (typeof item === "string") {
+      set.add(item.split("T")[0]);
+    }
+  }
+  
+  return set;
+};
   const availabilityMap = getAvailabilityMap();
   const blockedSet = getBlockedSet();
   const pendingSet = getPendingSet();
   const pricingMap = getPricingRulesMap();
 
   const isBlocked = (day: number) => {
-    const date = new Date(year, month, day);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = formatDate(year, month, day);
     return blockedSet.has(dateStr);
   };
 
   const isPending = (day: number) => {
-    const date = new Date(year, month, day);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = formatDate(year, month, day);
     return pendingSet.has(dateStr);
   };
 
   const hasSpecialPrice = (day: number) => {
-    const date = new Date(year, month, day);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = formatDate(year, month, day);
     return pricingMap.has(dateStr);
   };
 
   const getSpecialPrice = (day: number) => {
-    const date = new Date(year, month, day);
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = formatDate(year, month, day);
     return pricingMap.get(dateStr);
   };
 
   const isDateAvailable = (day: number) => {
-    const dateStr = new Date(year, month, day).toISOString().split("T")[0];
+    const dateStr = formatDate(year, month, day);
     if (isBlocked(day)) return false;
     if (isPending(day)) return false;
     if (availabilityMap[dateStr] !== undefined) {
@@ -140,54 +148,132 @@ export default function AvailabilityCalendar({
   };
 
   const isPast = (day: number) => {
-    const date = new Date(year, month, day);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const date = new Date(year, month, day);
+    date.setHours(0, 0, 0, 0);
     return date < today;
   };
 
-  const isSelected = (day: number) => {
-    const dateStr = new Date(year, month, day).toISOString().split("T")[0];
-    return (
-      tempStart === dateStr ||
-      tempEnd === dateStr ||
-      selectedStart === dateStr ||
-      selectedEnd === dateStr
-    );
+  // ✅ Vérifie si le jour est la date de DÉBUT
+  const isStartDate = (day: number): boolean => {
+    const dateStr = formatDate(year, month, day);
+    return tempStart === dateStr || selectedStart === dateStr;
   };
 
-  const isInRange = (day: number) => {
-    const dateStr = new Date(year, month, day).toISOString().split("T")[0];
+  // ✅ Vérifie si le jour est la date de FIN
+  const isEndDate = (day: number): boolean => {
+    const dateStr = formatDate(year, month, day);
+    return tempEnd === dateStr || selectedEnd === dateStr;
+  };
+
+  // ✅ Vérifie si le jour est sélectionné (début OU fin)
+  const isSelected = (day: number): boolean => {
+    return isStartDate(day) || isEndDate(day);
+  };
+
+  // ✅ Vérifie si le jour est entre début et fin
+  const isInRange = (day: number): boolean => {
+    const dateStr = formatDate(year, month, day);
     const start = tempStart || selectedStart;
     const end = tempEnd || selectedEnd;
     if (!start || !end) return false;
     return dateStr > start && dateStr < end;
   };
 
+  // ✅ HANDLE CLICK - COMPORTEMENT INTELLIGENT
+  // Si plage existante (20→29) et clique sur 18 → devient (18→29)
+  // Si clique sur 31 → devient (20→31)
   const handleDateClick = (day: number) => {
     if (isPast(day) || !isDateAvailable(day)) return;
 
-    const dateStr = new Date(year, month, day).toISOString().split("T")[0];
+    const dateStr = formatDate(year, month, day);
 
-    if (!tempStart || (tempStart && tempEnd)) {
+    console.log(`🖱️ Click sur: ${dateStr}`, { tempStart, tempEnd, selectedStart, selectedEnd });
+
+    // Récupérer les dates actuelles
+    const currentStart = tempStart || selectedStart;
+    const currentEnd = tempEnd || selectedEnd;
+
+    // CAS 1: Pas de sélection existante
+    if (!currentStart && !currentEnd) {
+      console.log(`📅 Nouvelle sélection - Début: ${dateStr}`);
       setTempStart(dateStr);
       setTempEnd(null);
-    } else {
-      if (dateStr < tempStart) {
+      if (onSelectRange) onSelectRange(dateStr, "");
+      return;
+    }
+
+    // CAS 2: On a une date de début mais pas de fin
+    if (currentStart && !currentEnd) {
+      if (dateStr === currentStart) {
+        // Même date : annuler
+        console.log(`🔄 Annulation`);
+        setTempStart(null);
+        setTempEnd(null);
+        if (onSelectRange) onSelectRange("", "");
+      } else if (dateStr < currentStart) {
+        // Nouvelle date AVANT → devient le nouveau début
+        console.log(`🔄 Nouveau début: ${dateStr}, fin gardée: ${currentStart}`);
         setTempStart(dateStr);
-        setTempEnd(tempStart);
-        if (onSelectRange) onSelectRange(dateStr, tempStart);
+        setTempEnd(currentStart);
+        if (onSelectRange) onSelectRange(dateStr, currentStart);
       } else {
+        // Nouvelle date APRÈS → devient la fin
+        console.log(`📅 Sélection complète: ${currentStart} → ${dateStr}`);
         setTempEnd(dateStr);
-        if (onSelectRange) onSelectRange(tempStart, dateStr);
+        if (onSelectRange) onSelectRange(currentStart, dateStr);
       }
+      return;
+    }
+
+    // CAS 3: On a une sélection complète (début ET fin)
+    if (currentStart && currentEnd) {
+      if (dateStr < currentStart) {
+        // ✅ Clique AVANT la date de début → change le début, garde la fin
+        console.log(`🔄 Modification du début: ${currentStart} → ${dateStr} (fin gardée: ${currentEnd})`);
+        setTempStart(dateStr);
+        setTempEnd(currentEnd);
+        if (onSelectRange) onSelectRange(dateStr, currentEnd);
+      } else if (dateStr > currentEnd) {
+        // ✅ Clique APRÈS la date de fin → change la fin, garde le début
+        console.log(`🔄 Modification de la fin: ${currentEnd} → ${dateStr} (début gardé: ${currentStart})`);
+        setTempStart(currentStart);
+        setTempEnd(dateStr);
+        if (onSelectRange) onSelectRange(currentStart, dateStr);
+      } else if (dateStr > currentStart && dateStr < currentEnd) {
+        // ✅ Clique ENTRE début et fin → divise la plage (recommence à partir de cette date)
+        console.log(`🔄 Nouvelle sélection à partir de: ${dateStr}`);
+        setTempStart(dateStr);
+        setTempEnd(null);
+        if (onSelectRange) onSelectRange(dateStr, "");
+      } else if (dateStr === currentStart) {
+        // ✅ Clique sur la date de début → annule la sélection
+        console.log(`🔄 Annulation (clic sur début)`);
+        setTempStart(null);
+        setTempEnd(null);
+        if (onSelectRange) onSelectRange("", "");
+      } else if (dateStr === currentEnd) {
+        // ✅ Clique sur la date de fin → annule la sélection
+        console.log(`🔄 Annulation (clic sur fin)`);
+        setTempStart(null);
+        setTempEnd(null);
+        if (onSelectRange) onSelectRange("", "");
+      }
+      return;
     }
   };
 
+ 
+
   useEffect(() => {
+    console.log("🔄 Sync props:", { selectedStart, selectedEnd });
     if (selectedStart && selectedEnd) {
       setTempStart(selectedStart);
       setTempEnd(selectedEnd);
+    } else if (selectedStart && !selectedEnd) {
+      setTempStart(selectedStart);
+      setTempEnd(null);
     } else if (!selectedStart && !selectedEnd) {
       setTempStart(null);
       setTempEnd(null);
@@ -202,13 +288,17 @@ export default function AvailabilityCalendar({
     const available = isDateAvailable(day);
     const selected = isSelected(day);
     const inRange = isInRange(day);
+    const isStart = isStartDate(day);
+    const isEnd = isEndDate(day);
 
     if (past)
       return "bg-gray-100 dark:bg-slate-800 text-gray-300 dark:text-gray-600 cursor-not-allowed";
 
-    if (selected && !blocked && !pending)
+    // ✅ Les dates de début et fin sont en bleu foncé
+    if ((isStart || isEnd) && !blocked && !pending)
       return "bg-sky-500 dark:bg-sky-600 text-white font-semibold cursor-pointer hover:bg-sky-600 dark:hover:bg-sky-700";
 
+    // ✅ Les dates entre sont en bleu clair
     if (inRange && !blocked && !pending)
       return "bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 font-semibold cursor-pointer";
 
@@ -264,13 +354,12 @@ export default function AvailabilityCalendar({
         ))}
 
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
-          const isStart =
-            (tempStart || selectedStart) ===
-            new Date(year, month, day).toISOString().split("T")[0];
           const pending = isPending(day);
           const special = hasSpecialPrice(day);
           const specialPrice = getSpecialPrice(day);
           const blocked = isBlocked(day);
+          const isStart = isStartDate(day);
+          const isEnd = isEndDate(day);
 
           return (
             <button
@@ -292,16 +381,16 @@ export default function AvailabilityCalendar({
               {pending && !isPast(day) && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-500" />
               )}
-              {isStart && !isPast(day) && !blocked && !pending && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-sky-500 dark:bg-sky-400" />
+              {(isStart || isEnd) && !isPast(day) && !blocked && !pending && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white dark:bg-white" />
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Légende complète */}
-      <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-gray-100 dark:border-slate-800">
+      
+      <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-emerald-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
@@ -329,7 +418,13 @@ export default function AvailabilityCalendar({
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-sky-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            Sélectionné
+            Début / Fin du séjour
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 rounded-full bg-sky-100 dark:bg-sky-950/50 border border-sky-200" />
+          <span className="text-xs text-gray-600 dark:text-gray-400">
+            Nuits du séjour
           </span>
         </div>
       </div>

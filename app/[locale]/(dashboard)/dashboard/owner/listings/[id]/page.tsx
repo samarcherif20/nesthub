@@ -288,11 +288,22 @@ export default function OwnerListingDetailPage({
     availability,
     updateAvailability,
     loadingAvailability,
-    occupancyRate,      // ✅ AJOUTÉ
-    totalRevenue,       // ✅ AJOUTÉ
-    conversionRate,     // ✅ AJOUTÉ
+    occupancyRate, // ✅ AJOUTÉ
+    totalRevenue, // ✅ AJOUTÉ
+    conversionRate, // ✅ AJOUTÉ
   } = useListingDetail(id, locale, setError);
-
+  // À ajouter dans le composant, avant le return JSX
+  // À la place de la ligne actuelle
+  const pendingDatesFromAvailability = Object.entries(availability || {})
+    .filter(([date, data]) => {
+      // ✅ Exclure les dates qui sont déjà dans blockedDates (ROUGE)
+      const isInBlockedDates = blockedDates?.some((bd) => {
+        const blockedDate = new Date(bd.startDate).toISOString().split("T")[0];
+        return blockedDate === date;
+      });
+      return data.available === false && !isInBlockedDates;
+    })
+    .map(([date]) => date);
   const pip = (url: string) =>
     `/api/listings/image?url=${encodeURIComponent(url)}`;
 
@@ -377,7 +388,9 @@ export default function OwnerListingDetailPage({
           <div className="mb-6 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-4">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-              <p className="text-sm text-rose-600 dark:text-rose-400">{error}</p>
+              <p className="text-sm text-rose-600 dark:text-rose-400">
+                {error}
+              </p>
             </div>
           </div>
         )}
@@ -745,23 +758,34 @@ export default function OwnerListingDetailPage({
                   {t("sections.availability")}
                 </h2>
               </div>
-              
+
               {loadingAvailability ? (
                 <div className="flex justify-center py-8">
                   <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
                 </div>
               ) : (
-                <AvailabilityCalendar
-                  listingId={listing.id}
-                  availability={availability}
-                  blockedDates={blockedDates}
-                  onUpdateAvailability={updateAvailability}
-                  readOnly={false}
-                  onDateSelect={(date) => {
-                    setSelectedDate(date);
-                    console.log("Date sélectionnée:", date);
-                  }}
-                />
+                <>
+                  {/* LOGS DE DÉBOGAGE */}
+                  {console.log(
+                    "🔴 blockedDates reçues:",
+                    JSON.stringify(blockedDates, null, 2),
+                  )}
+                  {console.log(
+                    "🟡 pendingDatesFromAvailability:",
+                    pendingDatesFromAvailability,
+                  )}
+                  {console.log("📊 blockedDates.length:", blockedDates?.length)}
+
+                  <AvailabilityCalendar
+                    blockedDates={blockedDates || []}
+                    pendingDates={pendingDatesFromAvailability}
+                    pricingRules={[]}
+                    onSelectRange={(start, end) => {
+                      console.log("Dates sélectionnées: ", start, end);
+                      setSelectedDate(new Date(start));
+                    }}
+                  />
+                </>
               )}
             </section>
           </div>
