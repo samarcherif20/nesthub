@@ -10,6 +10,7 @@ import { ThemeProviderWrapper } from "./theme-provider-wrapper"; // Import the c
 
 // @ts-expect-error
 import "../globals.css";
+import { AutoRefreshProvider } from "@/components/ui/providers/AutoRefreshProvider";
 
 interface LayoutProps {
   children: ReactNode;
@@ -40,8 +41,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
         <body suppressHydrationWarning>
           <ThemeProviderWrapper>
             <NextIntlClientProvider messages={messages} locale={locale}>
-              
-              {children}
+              <AutoRefreshProvider>{children}</AutoRefreshProvider>
             </NextIntlClientProvider>
           </ThemeProviderWrapper>
         </body>

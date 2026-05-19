@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuth } from "@clerk/nextjs/server";
 
-// ============================================
+
 // CONFIGURATION
-// ============================================
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/jpg', 'image/heic', 'image/heif'];
 
-// ============================================
 // MAPPING DES MOIS (arabe → chiffres)
-// ============================================
 const arabicMonths: Record<string, string> = {
   "جانفي": "01", "فيفري": "02", "مارس": "03", "أفريل": "04",
   "ماي": "05", "جوان": "06", "جويلية": "07", "أوت": "08",
@@ -20,9 +17,7 @@ const arabicMonths: Record<string, string> = {
   "septembre": "09", "octobre": "10", "novembre": "11", "décembre": "12"
 };
 
-// ============================================
 // NETTOYAGE DE TEXTE
-// ============================================
 function cleanText(text: string): string {
   return text
     .replace(/[^\w\s\u0600-\u06FF\-']/g, ' ')
@@ -30,9 +25,7 @@ function cleanText(text: string): string {
     .trim();
 }
 
-// ============================================
 // EXTRACTION POUR LE RECTO
-// ============================================
 function extractRecto(text: string) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   
@@ -41,7 +34,7 @@ function extractRecto(text: string) {
   let lastName = "";
   let dateOfBirth = "";
   
-  console.log("📝 Analyse recto - lignes reçues:", lines);
+  console.log(" Analyse recto - lignes reçues:", lines);
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -50,7 +43,7 @@ function extractRecto(text: string) {
     const cinMatch = line.match(/\b(\d{8})\b/);
     if (cinMatch && !cinNumber) {
       cinNumber = cinMatch[1];
-      console.log("  ✅ CIN trouvé:", cinNumber);
+      console.log("   CIN trouvé:", cinNumber);
     }
     
     // 2. Prénom (الاسم)
@@ -59,7 +52,7 @@ function extractRecto(text: string) {
       if (!raw && lines[i + 1]) raw = lines[i + 1].trim();
       if (raw) {
         firstName = cleanText(raw);
-        console.log("  ✅ Prénom trouvé:", firstName);
+        console.log("   Prénom trouvé:", firstName);
       }
     }
     
@@ -69,7 +62,7 @@ function extractRecto(text: string) {
       if (!raw && lines[i + 1]) raw = lines[i + 1].trim();
       if (raw) {
         lastName = cleanText(raw);
-        console.log("  ✅ Nom trouvé:", lastName);
+        console.log("   Nom trouvé:", lastName);
       }
     }
     
@@ -99,7 +92,7 @@ function extractRecto(text: string) {
           }
         }
         
-        if (dateOfBirth) console.log("  ✅ Date naissance:", dateOfBirth);
+        if (dateOfBirth) console.log("  Date naissance:", dateOfBirth);
       }
     }
   }
@@ -107,15 +100,13 @@ function extractRecto(text: string) {
   return { cinNumber, firstName, lastName, dateOfBirth };
 }
 
-// ============================================
-// EXTRACTION POUR LE VERSO (CORRIGÉ - SANS CIN)
-// ============================================
+// EXTRACTION POUR LE VERSO 
 function extractVerso(text: string) {
   const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
   
   let profession = "";
   
-  console.log("📝 Analyse verso - lignes reçues:", lines);
+  console.log(" Analyse verso - lignes reçues:", lines);
   
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -126,7 +117,7 @@ function extractVerso(text: string) {
       if (!raw && lines[i + 1]) raw = lines[i + 1].trim();
       if (raw) {
         profession = cleanText(raw);
-        console.log("  ✅ Profession trouvée:", profession);
+        console.log("   Profession trouvée:", profession);
       }
       break;
     }
@@ -136,19 +127,15 @@ function extractVerso(text: string) {
       const parts = line.split(/PROFESSION\s*:?\s*/i);
       if (parts.length > 1 && parts[1].trim()) {
         profession = cleanText(parts[1].trim());
-        console.log("  ✅ Profession trouvée (français):", profession);
+        console.log("   Profession trouvée (français):", profession);
       }
       break;
     }
   }
-  
-  // ✅ Retourne seulement la profession (pas de CIN)
-  return { profession };
+    return { profession };
 }
 
-// ============================================
 // ROUTE PRINCIPALE
-// ============================================
 export async function POST(request: NextRequest) {
   try {
     // 1. Authentification
@@ -177,7 +164,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Fichier trop volumineux (max 5MB)' }, { status: 400 });
     }
     
-    console.log(`📸 OCR ${side} - Fichier: ${file.name}, Type: ${file.type}`);
+    console.log(` OCR ${side} - Fichier: ${file.name}, Type: ${file.type}`);
     
     // 4. Conversion en base64
     const bytes = await file.arrayBuffer();
@@ -187,7 +174,7 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
     
     if (!apiKey) {
-      console.warn("⚠️ GOOGLE_CLOUD_API_KEY non configurée - mode démo");
+      console.warn(" GOOGLE_CLOUD_API_KEY non configurée - mode démo");
       // Mode démo avec données fictives
       const demoData = side === "recto" 
         ? { cinNumber: "09797383", firstName: "احمد", lastName: "بن عيسى", dateOfBirth: "1991-10-19" }
@@ -218,14 +205,14 @@ export async function POST(request: NextRequest) {
     
     if (!visionResponse.ok) {
       const errorText = await visionResponse.text();
-      console.error("❌ Google Vision error:", errorText);
+      console.error(" Google Vision error:", errorText);
       throw new Error(`Google Vision API error: ${visionResponse.status}`);
     }
     
     const data = await visionResponse.json();
     const fullText = data.responses?.[0]?.fullTextAnnotation?.text || '';
     
-    console.log(`📝 Texte brut (${side}):`, fullText.substring(0, 300));
+    console.log(` Texte brut (${side}):`, fullText.substring(0, 300));
     
     // 6. Extraction selon le côté
     let extracted;
@@ -235,7 +222,7 @@ export async function POST(request: NextRequest) {
       extracted = extractVerso(fullText);
     }
     
-    console.log(`✅ Résultat ${side}:`, extracted);
+    console.log(` Résultat ${side}:`, extracted);
     
     // 7. Réponse
     return NextResponse.json({
@@ -246,7 +233,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error("❌ Erreur OCR:", error);
+    console.error(" Erreur OCR:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Erreur lors de l'analyse OCR" },
       { status: 500 }

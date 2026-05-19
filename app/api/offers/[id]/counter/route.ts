@@ -11,7 +11,7 @@ function generateOfferReference(): string {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   try {
     const { userId } = await auth();
@@ -28,7 +28,10 @@ export async function POST(
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
     }
 
     const parentOffer = await prisma.offer.findUnique({
@@ -44,7 +47,10 @@ export async function POST(
     });
 
     if (!parentOffer) {
-      return NextResponse.json({ error: "Offre originale non trouvée" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Offre originale non trouvée" },
+        { status: 404 },
+      );
     }
 
     // Vérifier que l'utilisateur est le propriétaire ou le locataire
@@ -56,7 +62,7 @@ export async function POST(
     if (parentOffer.counterCount >= 3) {
       return NextResponse.json(
         { error: "Nombre maximum de contre-offres atteint (3)" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -64,7 +70,7 @@ export async function POST(
     const checkInDate = checkIn ? new Date(checkIn) : parentOffer.checkIn;
     const checkOutDate = checkOut ? new Date(checkOut) : parentOffer.checkOut;
     const nights = Math.ceil(
-      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24)
+      (checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24),
     );
     const newPricePerNight = pricePerNight || parentOffer.pricePerNight;
     const basePrice = newPricePerNight * nights;
@@ -108,15 +114,19 @@ export async function POST(
 
     // Créer un message système dans le chat
     const conversation = parentOffer.infoRequest?.conversation;
-    const senderName = user.id === parentOffer.ownerId ? "Le propriétaire" : "Le locataire";
-    
+    const senderName =
+      user.id === parentOffer.ownerId ? "Le propriétaire" : "Le locataire";
+
     if (conversation) {
       await prisma.message.create({
         data: {
           conversationId: conversation.id,
           senderId: user.id,
-          receiverId: user.id === parentOffer.ownerId ? parentOffer.tenantId : parentOffer.ownerId,
-          content: `🔄 **Contre-offre reçue**\n\n${senderName} propose:\n📅 ${checkInDate.toLocaleDateString("fr-FR")} → ${checkOutDate.toLocaleDateString("fr-FR")} (${nights} nuits)\n💰 ${newPricePerNight} TND/nuit\n💵 Total: ${totalPrice.toLocaleString("fr-FR")} TND\n\n${message ? `💬 Message: ${message}` : ""}\n\n⏰ Valable 24h.`,
+          receiverId:
+            user.id === parentOffer.ownerId
+              ? parentOffer.tenantId
+              : parentOffer.ownerId,
+          content: ` "Contre-offre reçue"\n\n${senderName} propose:\n ${checkInDate.toLocaleDateString("fr-FR")} → ${checkOutDate.toLocaleDateString("fr-FR")} (${nights} nuits)\n Pour  ${newPricePerNight} TND/nuit\n et Total: ${totalPrice.toLocaleString("fr-FR")} TND\n\n${message ? ` Message: ${message}` : ""}\n\n Valable 24h.`,
           isRead: false,
           isSystem: true,
         },
@@ -124,7 +134,10 @@ export async function POST(
     }
 
     // Notification
-    const notifyUserId = user.id === parentOffer.ownerId ? parentOffer.tenantId : parentOffer.ownerId;
+    const notifyUserId =
+      user.id === parentOffer.ownerId
+        ? parentOffer.tenantId
+        : parentOffer.ownerId;
     await prisma.notification.create({
       data: {
         userId: notifyUserId,
@@ -135,7 +148,7 @@ export async function POST(
           offerId: counterOffer.id,
           listingId: parentOffer.listingId,
         },
-        channels: ["IN_APP", "EMAIL"],
+        channels: ["IN_APP"],
       },
     });
 

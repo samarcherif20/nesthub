@@ -1,4 +1,3 @@
-// components/ui/maps/MapPickerWrapper.tsx
 "use client";
 
 import dynamic from "next/dynamic";
@@ -36,13 +35,14 @@ interface MapPickerWrapperProps {
   longitude: number | null;
   onLocationChange: (lat: number, lng: number) => void;
   onAddressChange?: (address: string) => void;
+  onLocationDetected?: (lat: number, lng: number, addressData?: any) => void; // ✅ NOUVEAU
   className?: string;
   readOnly?: boolean;
   markers?: ListingMarker[];
   showAllMarkers?: boolean;
   onMarkerClick?: (listingId: string) => void;
-  isGeocoding?: boolean;      // ✅ AJOUTÉ
-  showCurrentLocation?: boolean; // ✅ AJOUTÉ
+  isGeocoding?: boolean;
+  showCurrentLocation?: boolean;
 }
 
 export default function MapPickerWrapper(props: MapPickerWrapperProps) {

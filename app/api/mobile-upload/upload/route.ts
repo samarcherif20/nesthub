@@ -24,7 +24,7 @@ async function detectImageType(
   ) {
     return { mimeType: "image/png", extension: "png" };
   } else {
-    console.log("⚠️ Type non détecté, fallback à JPEG");
+    console.log(" Type non détecté, fallback à JPEG");
     return { mimeType: "image/jpeg", extension: "jpg" };
   }
 }
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const type = formData.get("type") as string;
     const file = formData.get("file") as File;
 
-    console.log("📸 Upload reçu:", {
+    console.log(" Upload reçu:", {
       sessionId,
       type,
       fileName: file?.name,
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     const session = uploadSessions.get(sessionId);
 
     if (!session) {
-      console.log("❌ Session non trouvée:", sessionId);
+      console.log(" Session non trouvée:", sessionId);
       return NextResponse.json(
         { error: "Session expirée", success: false },
         { status: 404 },
@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     const { mimeType, extension } = await detectImageType(buffer);
 
-    console.log(`📸 Type détecté: ${mimeType} (${extension}) pour ${type}`);
+    console.log(` Type détecté: ${mimeType} (${extension}) pour ${type}`);
 
-    // ✅ STOCKER EN MÉMOIRE (base64) - PAS D'UPLOAD VERCEL BLOB
+    // STOCKER EN MÉMOIRE (base64) - PAS D'UPLOAD VERCEL BLOB
     const base64Data = buffer.toString("base64");
 
     if (!session.files) session.files = {};
@@ -98,12 +98,12 @@ export async function POST(request: NextRequest) {
     if (isComplete) {
       session.status = "completed";
       const expectedTotal = session.mode === "reapply" ? 2 : 3;
-      console.log(`🎉 Documents reçus! (${filesCount}/${expectedTotal})`);
+      console.log(` Documents reçus! (${filesCount}/${expectedTotal})`);
     }
 
     uploadSessions.set(sessionId, session);
 
-    console.log(`✅ Stockage mémoire réussi: ${type} (${filesCount}/3)`);
+    console.log(` Stockage mémoire réussi: ${type} (${filesCount}/3)`);
 
     const expectedTotal = session.mode === "reapply" ? 2 : 3;
 
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
       isComplete: filesCount >= expectedTotal,
     });
   } catch (error) {
-    console.error("❌ Upload error:", error);
+    console.error(" Upload error:", error);
     return NextResponse.json(
       { error: "Erreur serveur lors de l'upload", success: false },
       { status: 500 },

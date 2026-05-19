@@ -2,7 +2,15 @@ import createMiddleware from "next-intl/middleware";
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { locales, defaultLocale, isValidLocale } from "@/lib/i18n";
-
+function addNoCacheHeaders(response: NextResponse) {
+  response.headers.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  return response;
+}
 const intlMiddleware = createMiddleware({
   locales,
   defaultLocale: "fr",
@@ -118,7 +126,7 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   if (pathname.startsWith("/api/")) {
     const publicApiRoutes = [
-      "/api/users/avatar",       // ← AJOUTER
+      "/api/users/avatar", // ← AJOUTER
       "/api/users/increment-login-attempts",
       "/api/users/reset-login-attempts",
       "/api/users/update-last-login",
@@ -395,7 +403,7 @@ export default clerkMiddleware(async (auth, req) => {
     console.log("🔐 Accès à la page verifications:", pathWithoutLocale);
   }
 
-  return intlResponse;
+  return addNoCacheHeaders(intlResponse);
 });
 
 export const config = {

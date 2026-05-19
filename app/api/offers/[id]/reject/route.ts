@@ -13,8 +13,6 @@ export async function POST(
     if (!userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
-
-    // ✅ CORRECTION: await params
     const { id: offerId } = await params;
     const body = await req.json();
     const { reason } = body;
@@ -80,7 +78,7 @@ export async function POST(
           conversationId: conversation.id,
           senderId: offer.ownerId,
           receiverId: offer.tenantId,
-          content: `❌ **Offre refusée**\n\nLe propriétaire a refusé votre offre.${reasonText}\n\nVous pouvez continuer à discuter pour trouver un accord.`,
+          content: ` "Offre refusée"\n\nLe propriétaire a refusé votre offre.${reasonText}\n\nVous pouvez continuer à discuter pour trouver un accord.`,
           isRead: false,
           isSystem: true,
         },
@@ -106,7 +104,7 @@ export async function POST(
           offerId: offer.id,
           listingId: offer.listingId,
         },
-        channels: ["IN_APP", "EMAIL"],
+        channels: ["IN_APP"],
       },
     });
 

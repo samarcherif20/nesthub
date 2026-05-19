@@ -37,13 +37,13 @@ export async function GET(req: NextRequest) {
     });
 
     console.log(
-      `✅ ${notifications.length} notifications chargées pour user ${user.id}`,
+      ` ${notifications.length} notifications chargées pour user ${user.id}`,
     );
     console.log("Première notification:", notifications[0]?.id);
 
     return NextResponse.json(notifications);
   } catch (error) {
-    console.error("❌ Erreur notifications:", error);
+    console.error(" Erreur notifications:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

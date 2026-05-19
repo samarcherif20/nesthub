@@ -66,7 +66,7 @@ export async function POST(
       );
     }
 
-    // ✅ 1. Bloquer les dates dans le calendrier (pendant 24h)
+    //  1. Bloquer les dates dans le calendrier (pendant 24h)
     const startDate = new Date(offer.checkIn);
     const endDate = new Date(offer.checkOut);
     const datesToBlock: Date[] = [];
@@ -80,7 +80,7 @@ export async function POST(
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
-    // 🔧 CORRECTION 1: Bloquer chaque date dans BlockedDate
+    //   Bloquer chaque date dans BlockedDate
     for (const date of datesToBlock) {
       // Vérifier si un blocage existe déjà pour cette date
       const existingBlock = await prisma.blockedDate.findFirst({
@@ -112,7 +112,7 @@ export async function POST(
       }
     }
 
-    // 🔧 CORRECTION 2: Bloquer dans AvailabilityCalendar
+    // Bloquer dans AvailabilityCalendar
     for (const date of datesToBlock) {
       const existingCalendar = await prisma.availabilityCalendar.findFirst({
         where: {
@@ -141,7 +141,7 @@ export async function POST(
       }
     }
 
-    // ✅ 2. Enregistrer le pending booking pour libération automatique
+    //  2. Enregistrer le pending booking pour libération automatique
     await prisma.pendingBooking.upsert({
       where: { offerId: offer.id },
       update: {
@@ -158,7 +158,7 @@ export async function POST(
       },
     });
 
-    // ✅ 3. Mettre à jour l'offre
+    //  3. Mettre à jour l'offre
     const updatedOffer = await prisma.offer.update({
       where: { id: offerId },
       data: {
@@ -167,7 +167,7 @@ export async function POST(
       },
     });
 
-    // ✅ 4. Créer un message système dans le chat
+    //  4. Créer un message système dans le chat
     const conversation = offer.infoRequest?.conversation;
     if (conversation) {
       await prisma.message.create({
@@ -175,7 +175,7 @@ export async function POST(
           conversationId: conversation.id,
           senderId: offer.ownerId,
           receiverId: offer.tenantId,
-          content: `✅ **Offre acceptée !**\n\nLe propriétaire a accepté votre offre.\n\n📅 Dates: ${offer.checkIn.toLocaleDateString()} → ${offer.checkOut.toLocaleDateString()}\n💰 Montant: ${offer.totalPrice.toLocaleString("fr-FR")} TND\n⏰ **Vous avez jusqu'au ${expiresAt.toLocaleString()} pour finaliser le paiement.**\n\nPassé ce délai, les dates seront automatiquement libérées.`,
+          content: ` "Offre acceptée !"\n\nLe propriétaire a accepté votre offre.\n\nPour les Dates de : ${offer.checkIn.toLocaleDateString()} → ${offer.checkOut.toLocaleDateString()}\n Ayant le Montant: ${offer.totalPrice.toLocaleString("fr-FR")} TND\n Vous avez jusqu'au ${expiresAt.toLocaleString()} pour finaliser le paiement.\n\nPassé ce délai, les dates seront automatiquement libérées.`,
           isRead: false,
           isSystem: true,
         },
@@ -184,7 +184,7 @@ export async function POST(
       await prisma.conversation.update({
         where: { id: conversation.id },
         data: {
-          lastMessage: `✅ Offre acceptée - ${offer.totalPrice.toLocaleString("fr-FR")} TND à payer avant ${expiresAt.toLocaleString()}`,
+          lastMessage: ` Offre acceptée - ${offer.totalPrice.toLocaleString("fr-FR")} TND à payer avant ${expiresAt.toLocaleString()}`,
           lastMessageAt: new Date(),
         },
       });
@@ -195,14 +195,14 @@ export async function POST(
       data: {
         userId: offer.tenantId,
         type: "OFFER_ACCEPTED",
-        title: "🎉 Offre acceptée !",
+        title: " Offre acceptée !",
         content: `Le propriétaire a accepté votre offre pour "${offer.listing.title}". Vous avez jusqu'au ${expiresAt.toLocaleString()} pour payer.`,
         data: {
           offerId: offer.id,
           listingId: offer.listingId,
           expiresAt: expiresAt.toISOString(),
         },
-        channels: ["IN_APP", "EMAIL"],
+        channels: ["IN_APP"],
       },
     });
 

@@ -20,7 +20,7 @@ const getUploadSessions = () => {
 function getLocalIpAddress(): string {
   const nets = networkInterfaces();
 
-  console.log("🔍 Detecting network interfaces...");
+  console.log(" Detecting network interfaces...");
 
   for (const name of Object.keys(nets)) {
     const interfaces = nets[name];
@@ -29,10 +29,10 @@ function getLocalIpAddress(): string {
     for (const net of interfaces) {
       if (net.family === "IPv4" && !net.internal) {
         const ip = net.address;
-        console.log(`📡 Found: ${ip} on ${name}`);
+        console.log(` Found: ${ip} on ${name}`);
 
         if (ip === "192.168.1.18") {
-          console.log(`✅ Using WiFi IP: ${ip}`);
+          console.log(` Using WiFi IP: ${ip}`);
           return ip;
         }
 
@@ -41,14 +41,14 @@ function getLocalIpAddress(): string {
           ip.startsWith("192.168.0.") ||
           ip.startsWith("10.0.0.")
         ) {
-          console.log(`✅ Using local network IP: ${ip}`);
+          console.log(` Using local network IP: ${ip}`);
           return ip;
         }
       }
     }
   }
 
-  console.error("❌ No valid IP found, using localhost");
+  console.error("No valid IP found, using localhost");
   return "localhost";
 }
 
@@ -80,13 +80,12 @@ export async function POST(request: NextRequest) {
     const baseUrl = `http://${localIp}:${port}`;
     const qrUrl = `${baseUrl}/mobile-upload/${sessionId}`;
 
-    console.log("\n🔗 ========== MOBILE UPLOAD SESSION ==========");
-    console.log(`📱 Session ID: ${sessionId}`);
-    console.log(`🌐 QR URL: ${qrUrl}`);
-    console.log(`💻 Server IP: ${localIp}`);
-    console.log(`⏰ Expires: ${new Date(expiresAt).toLocaleTimeString()}`);
-    console.log(`📦 Total sessions: ${uploadSessions.size}`);
-    console.log("=============================================\n");
+    console.log("\MOBILE UPLOAD SESSION ");
+    console.log(` Session ID: ${sessionId}`);
+    console.log(` QR URL: ${qrUrl}`);
+    console.log(` Server IP: ${localIp}`);
+    console.log(` Expires: ${new Date(expiresAt).toLocaleTimeString()}`);
+    console.log(` Total sessions: ${uploadSessions.size}`);
 
     return NextResponse.json({
       sessionId,
@@ -96,7 +95,7 @@ export async function POST(request: NextRequest) {
       mode: mode || "inscription",
     });
   } catch (error) {
-    console.error("❌ Error creating session:", error);
+    console.error(" Error creating session:", error);
     return NextResponse.json(
       { error: "Failed to create session" },
       { status: 500 },
@@ -129,7 +128,7 @@ export async function GET(request: NextRequest) {
       mode: session.mode,
     });
   } catch (error) {
-    console.error("❌ Error getting session:", error);
+    console.error(" Error getting session:", error);
     return NextResponse.json(
       { error: "Failed to get session" },
       { status: 500 },

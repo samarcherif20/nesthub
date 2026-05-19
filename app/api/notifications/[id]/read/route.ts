@@ -23,8 +23,6 @@ export async function PUT(
         { status: 404 },
       );
     }
-
-    // ✅ CORRECTION: await params pour Next.js 15
     const { id } = await params;
 
     await NotificationService.markAsRead(id, user.id);

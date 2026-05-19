@@ -46,8 +46,8 @@ export async function GET(
             pricePerNight: true,
             cleaningFee: true,
             equipment: true,
-            latitude: true, // ✅ AJOUTÉ
-            longitude: true, // ✅ AJOUTÉ
+            latitude: true,
+            longitude: true,
             photos: {
               take: 1,
               where: { isMain: true },
@@ -93,7 +93,6 @@ export async function GET(
           },
         },
         paymentTransactions: {
-          // ✅ AJOUTÉ pour récupérer le paymentIntent
           take: 1,
           where: { status: "SUCCESS" },
           select: { stripePaymentIntentId: true },
@@ -105,8 +104,7 @@ export async function GET(
       return NextResponse.json({ error: "Offre non trouvée" }, { status: 404 });
     }
 
-    // 🔍 DEBUG 1: Vérifier les données brutes du listing
-    console.log("🔍 [DEBUG] Listing brut:", {
+    console.log(" [DEBUG] Listing brut:", {
       id: offer.listing?.id,
       title: offer.listing?.title,
       latitude: offer.listing?.latitude,
@@ -114,14 +112,13 @@ export async function GET(
       photo: offer.listing?.photos[0]?.url,
     });
 
-    // 🔍 DEBUG 2: Vérifier les données du propriétaire
-    console.log("🔍 [DEBUG] Owner createdAt brut:", offer.owner?.createdAt);
+    console.log("[DEBUG] Owner createdAt brut:", offer.owner?.createdAt);
     console.log(
       "🔍 [DEBUG] Owner createdAt type:",
       typeof offer.owner?.createdAt,
     );
 
-    // ✅ Compter les annonces actives du propriétaire
+    //  Compter les annonces actives du propriétaire
     const listingsCount = offer.owner
       ? await prisma.listing.count({
           where: {
@@ -131,9 +128,8 @@ export async function GET(
         })
       : 0;
 
-    // 🔍 DEBUG 3: Afficher le comptage des annonces
-    console.log("🔍 [DEBUG] listingsCount calculé:", listingsCount);
-    console.log("🔍 [DEBUG] ownerId pour comptage:", offer.owner?.id);
+    console.log(" [DEBUG] listingsCount calculé:", listingsCount);
+    console.log(" [DEBUG] ownerId pour comptage:", offer.owner?.id);
 
     // Récupérer la conversation via l'infoRequest si besoin
     let conversationId = null;
@@ -149,8 +145,7 @@ export async function GET(
       ? new Date(offer.owner.createdAt).getFullYear()
       : null;
 
-    // 🔍 DEBUG 4: Afficher la valeur calculée de joinedYear
-    console.log("🔍 [DEBUG] joinedYear calculé:", joinedYearValue);
+    console.log(" [DEBUG] joinedYear calculé:", joinedYearValue);
 
     const formattedOffer = {
       id: offer.id,
@@ -172,7 +167,7 @@ export async function GET(
         offer.paymentTransactions?.[0]?.stripePaymentIntentId || null, // ✅ AJOUTÉ
       revealedInfo: offer.booking?.revealedInfo,
       listing: {
-        id: offer.listing.id, // ✅ AJOUTÉ
+        id: offer.listing.id,
         title: offer.listing.title,
         type: offer.listing.type,
         location:
@@ -186,8 +181,8 @@ export async function GET(
         cleaningFee: offer.listing.cleaningFee,
         image: offer.listing.photos[0]?.url,
         equipment: offer.listing.equipment,
-        latitude: offer.listing.latitude, // ✅ AJOUTÉ
-        longitude: offer.listing.longitude, // ✅ AJOUTÉ
+        latitude: offer.listing.latitude,
+        longitude: offer.listing.longitude,
       },
       tenant: offer.tenant
         ? {
@@ -229,8 +224,7 @@ export async function GET(
         : null,
     };
 
-    // 🔍 DEBUG 5: Afficher les valeurs finales
-    console.log("🔍 [DEBUG] formattedOffer.listing:", {
+    console.log("[DEBUG] formattedOffer.listing:", {
       id: formattedOffer.listing?.id,
       title: formattedOffer.listing?.title,
       latitude: formattedOffer.listing?.latitude,
@@ -238,25 +232,22 @@ export async function GET(
       image: formattedOffer.listing?.image,
     });
 
-    console.log("🔍 [DEBUG] formattedOffer.owner:", {
+    console.log(" [DEBUG] formattedOffer.owner:", {
       joinedYear: formattedOffer.owner?.joinedYear,
       listingsCount: formattedOffer.owner?.listingsCount,
       phone: formattedOffer.owner?.phone,
       name: formattedOffer.owner?.name,
     });
 
+    console.log("[DEBUG] formattedOffer.bookingId:", formattedOffer.bookingId);
     console.log(
-      "🔍 [DEBUG] formattedOffer.bookingId:",
-      formattedOffer.bookingId,
-    );
-    console.log(
-      "🔍 [DEBUG] formattedOffer.paymentIntentId:",
+      " [DEBUG] formattedOffer.paymentIntentId:",
       formattedOffer.paymentIntentId,
     );
 
     return NextResponse.json(formattedOffer);
   } catch (error) {
-    console.error("❌ Erreur GET offre:", error);
+    console.error(" Erreur GET offre:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

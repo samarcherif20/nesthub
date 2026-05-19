@@ -10,7 +10,7 @@ function generateOfferReference(): string {
   return `${prefix}-${timestamp}-${random}`;
 }
 
-// POST - Créer une offre (locataire clique "Demander à réserver")
+// Créer une offre (locataire clique "Demander à réserver")
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ CORRECTION: Vérifier s'il y a une offre active (PENDING ou ACCEPTED)
+    // Vérifier s'il y a une offre active (PENDING ou ACCEPTED)
     const existingActiveOffer = await prisma.offer.findFirst({
       where: {
         infoRequestId: infoRequest.id,
@@ -81,8 +81,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ✅ NOUVEAU: Supprimer les anciennes offres refusées/expirées pour en créer une nouvelle
-    // Cela permet au locataire de refaire une offre après un refus
+    // Supprimer les anciennes offres refusées/expirées pour en créer une nouvelle Cela permet au locataire de refaire une offre après un refus
     const deletedOffers = await prisma.offer.deleteMany({
       where: {
         infoRequestId: infoRequest.id,
@@ -91,7 +90,9 @@ export async function POST(req: NextRequest) {
     });
 
     if (deletedOffers.count > 0) {
-      console.log(`🗑️ ${deletedOffers.count} ancienne(s) offre(s) supprimée(s) pour infoRequest ${infoRequest.id}`);
+      console.log(
+        ` ${deletedOffers.count} ancienne(s) offre(s) supprimée(s) pour infoRequest ${infoRequest.id}`,
+      );
     }
 
     // Calculer les prix
@@ -107,7 +108,7 @@ export async function POST(req: NextRequest) {
     const serviceFee = Math.round(basePrice * 0.05);
     const totalPrice = basePrice + cleaningFee + serviceFee;
 
-    console.log("📊 Détail prix offre:", {
+    console.log(" Détail prix offre:", {
       nights,
       pricePerNight,
       basePrice,
@@ -147,7 +148,7 @@ export async function POST(req: NextRequest) {
         conversationId: conversation.id,
         senderId: conversation.tenantId,
         receiverId: conversation.ownerId,
-        content: `📝 **Offre de réservation créée**\n\n📅 ${infoRequest.checkIn.toLocaleDateString("fr-FR")} → ${infoRequest.checkOut.toLocaleDateString("fr-FR")} (${nights} nuits)\n👥 ${infoRequest.guests} voyageur(s)\n💰 Détail du prix:\n• ${pricePerNight} TND × ${nights} nuit(s) = ${basePrice} TND\n• Frais de ménage: ${cleaningFee} TND\n• Frais de service (5%): ${serviceFee} TND\n• **TOTAL: ${totalPrice.toLocaleString("fr-FR")} TND**\n\n⏰ Le propriétaire a 24h pour répondre.`,
+        content: ` "Offre de réservation créée"\n\n Pour les Dates de : ${infoRequest.checkIn.toLocaleDateString("fr-FR")} → ${infoRequest.checkOut.toLocaleDateString("fr-FR")} (${nights} nuits)\n et nombres de voyageur(s) : ${infoRequest.guests} \n , Détail du prix:\n• ${pricePerNight} TND × ${nights} nuit(s) = ${basePrice} TND\n• Frais de ménage: ${cleaningFee} TND\n• Frais de service (5%): ${serviceFee} TND\n• "TOTAL: ${totalPrice.toLocaleString("fr-FR")} TND"\n\n Le propriétaire a 24h pour répondre.`,
         isRead: false,
         isSystem: true,
       },
@@ -174,7 +175,7 @@ export async function POST(req: NextRequest) {
           listingId: conversation.listingId,
           conversationId: conversation.id,
         },
-        channels: ["IN_APP", "EMAIL"],
+        channels: ["IN_APP"],
       },
     });
 
@@ -189,7 +190,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET - Récupérer les offres d'une conversation
+//  Récupérer les offres d'une conversation
 export async function GET(req: NextRequest) {
   try {
     const { userId } = await auth();

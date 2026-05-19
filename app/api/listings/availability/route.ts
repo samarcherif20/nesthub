@@ -80,31 +80,42 @@ export async function GET(request: NextRequest) {
         }),
       ]);
 
-    // ✅ Convertir les pending bookings en format pour le frontend (seront en ORANGE)
-    const pendingBlockedDatesArray = pendingBookings.flatMap((pb) => {
-      const dates = pb.dates as string[];
-      return dates.map((dateStr) => ({
-        id: `pending-${pb.id}-${dateStr}`,
-        listingId: pb.listingId,
-        startDate: new Date(dateStr),
-        endDate: new Date(dateStr),
-        reason: `⏳ En attente de paiement - Expire ${new Date(pb.expiresAt).toLocaleString()}`,
-        isRecurring: false,
-        blockedById: "",
-        createdAt: new Date(),
-      }));
-    });
+    // ✅ FILTRER : Exclure les pendingBookings qui ont déjà un booking CONFIRMÉ
+    const pendingBlockedDatesArray = pendingBookings
+      .filter((pb) => {
+        // Vérifier si un booking confirmé existe pour cette offre
+        const hasConfirmedBooking = bookings.some(
+          (b) => b.offerId === pb.offerId && b.status === "CONFIRMED",
+        );
+        if (hasConfirmedBooking) {
+          console.log(
+            `🟠 Pending booking ${pb.id} ignoré (booking confirmé existe déjà)`,
+          );
+        }
+        return !hasConfirmedBooking; // Ne garder que les pending SANS booking confirmé
+      })
+      .flatMap((pb) => {
+        const dates = pb.dates as string[];
+        return dates.map((dateStr) => ({
+          id: `pending-${pb.id}-${dateStr}`,
+          listingId: pb.listingId,
+          startDate: new Date(dateStr),
+          endDate: new Date(dateStr),
+          reason: `⏳ En attente de paiement - Expire ${new Date(pb.expiresAt).toLocaleString()}`,
+          isRecurring: false,
+          blockedById: "",
+          createdAt: new Date(),
+        }));
+      });
 
     // ✅ Convertir les bookings CONFIRMÉS en dates bloquées (seront en ROUGE)
     const confirmedBlockedDates = bookings.flatMap((booking) => {
-      // ✅ Seulement les bookings CONFIRMÉS (payés)
       if (booking.status !== "CONFIRMED") return [];
-      
+
       const dates: { startDate: Date; endDate: Date; reason: string }[] = [];
       const checkIn = new Date(booking.checkIn);
       const checkOut = new Date(booking.checkOut);
 
-      // Boucle sur chaque jour entre checkIn et checkOut (excluant checkOut)
       for (
         let d = new Date(checkIn);
         d < checkOut;
@@ -120,19 +131,19 @@ export async function GET(request: NextRequest) {
     });
 
     // ✅ Fusionner les dates ROUGES (blocages manuels + réservations confirmées)
-    const redBlockedDates = [
-      ...blockedDates,
-      ...confirmedBlockedDates,
-    ];
+    const redBlockedDates = [...blockedDates, ...confirmedBlockedDates];
 
     console.log(`📊 Résultats:`);
     console.log(`   - blockedDates (manuels): ${blockedDates.length}`);
-    console.log(`   - confirmedBlockedDates (payés): ${confirmedBlockedDates.length}`);
-    console.log(`   - pendingBlockedDates (en attente): ${pendingBlockedDatesArray.length}`);
+    console.log(
+      `   - confirmedBlockedDates (payés): ${confirmedBlockedDates.length}`,
+    );
+    console.log(
+      `   - pendingBlockedDates (en attente, sans booking): ${pendingBlockedDatesArray.length}`,
+    );
     console.log(`   - total ROUGES: ${redBlockedDates.length}`);
     console.log(`   - total ORANGES: ${pendingBlockedDatesArray.length}`);
 
-    // Log détaillé des dates ROUGES
     if (redBlockedDates.length > 0) {
       console.log("🔴 Dates ROUGES (indisponibles):");
       redBlockedDates.forEach((bd, i) => {
@@ -142,7 +153,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Log détaillé des dates ORANGES
     if (pendingBlockedDatesArray.length > 0) {
       console.log("🟠 Dates ORANGES (en attente de paiement):");
       pendingBlockedDatesArray.forEach((pb, i) => {
@@ -152,19 +162,6 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Log détaillé des pricingRules
-    if (pricingRules.length > 0) {
-      console.log("💰 pricingRules détaillés:");
-      pricingRules.forEach((pr, i) => {
-        console.log(
-          `   ${i + 1}. id=${pr.id}, startDate=${pr.startDate}, endDate=${pr.endDate}, fixedPrice=${pr.fixedPrice}`,
-        );
-      });
-    }
-
-    // ✅ SÉPARATION IMPORTANTE: 
-    // - blockedDates: pour les dates ROUGES (indisponibles)
-    // - pendingBlockedDates: pour les dates ORANGES (en attente de paiement)
     const response = {
       blockedDates: redBlockedDates,
       pendingBlockedDates: pendingBlockedDatesArray,

@@ -57,7 +57,11 @@ import {
   PartyPopper,
   Dog,
   Ban,
+  Headphones,
+  MessageCircle,
+  TrendingUp,
 } from "lucide-react";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface SeasonalRule {
@@ -197,18 +201,17 @@ const governorates = [
 ];
 
 const equipmentIds = [
-  "wifi",
-  "ac",
-  "heating",
-  "kitchen",
-  "parking",
-  "pool",
-  "gym",
-  "washer",
-  "tv",
-  "balcony",
-  "dishwasher",
-  "dryer",
+  { id: "wifi", label: "Wi-Fi" },
+  { id: "ac", label: "Climatisation" },
+  { id: "heating", label: "Chauffage" },
+  { id: "kitchen", label: "Cuisine équipée" },
+  { id: "parking", label: "Parking" },
+  { id: "pool", label: "Piscine" },
+  { id: "gym", label: "Salle de sport" },
+  { id: "washer", label: "Lave-linge" },
+  { id: "tv", label: "Télévision" },
+  { id: "dishwasher", label: "Lave-vaisselle" },
+  { id: "dryer", label: "Sèche-linge" },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -227,6 +230,7 @@ function Stepper({
     <div className="flex items-center bg-white dark:bg-slate-800 rounded-lg px-2 py-1 shadow-sm border border-slate-100 dark:border-slate-700">
       <button
         type="button"
+        aria-label="Diminuer la valeur" // ← AJOUTER
         onClick={() => onChange(Math.max(min, value - 1))}
         className="w-9 h-9 flex items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all active:scale-90 cursor-pointer"
       >
@@ -237,6 +241,7 @@ function Stepper({
       </span>
       <button
         type="button"
+        aria-label="Augmenter la valeur" // ← AJOUTER
         onClick={() => onChange(Math.min(max, value + 1))}
         className="w-9 h-9 flex items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all active:scale-90 cursor-pointer"
       >
@@ -257,7 +262,7 @@ function Toggle({
     <button
       type="button"
       role="switch"
-      aria-checked={checked}
+      aria-label={checked ? "Désactiver" : "Activer"} // ← AJOUTER
       onClick={() => onChange(!checked)}
       className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500/40 cursor-pointer ${checked ? "bg-sky-600" : "bg-slate-200 dark:bg-slate-700"}`}
     >
@@ -356,8 +361,10 @@ export default function CreateListingPage({
   const router = useRouter();
   const { user } = useUser();
   const { getRecommendation, loading } = usePriceRecommendation();
-const [recommendedPrice, setRecommendedPrice] = useState<number | null>(null);
-const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<number | null>(null);
+  const [recommendedPrice, setRecommendedPrice] = useState<number | null>(null);
+  const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<
+    number | null
+  >(null);
   const t = useTranslations("CreateListing");
 
   const [step, setStep] = useState(1);
@@ -372,7 +379,30 @@ const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<number | null
   const [isGeocoding, setIsGeocoding] = useState(false);
   const geocodeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const formRef = useRef(form);
+  const [uploadCount, setUploadCount] = useState(0);
+  const [uploadedCount, setUploadedCount] = useState(0);
+  const [isPageLoading, setIsPageLoading] = useState(true);
+  useEffect(() => {
+    // Simuler un chargement (ou attendre des données)
+    const timer = setTimeout(() => setIsPageLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
+  // Ajouter juste avant le return principal (vers ligne ~900)
+  if (isPageLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner className=" mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
+  // Ajouter après les useState, vers ligne 550
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]); // ← Se déclenche quand 'step' change
   useEffect(() => {
     formRef.current = form;
   }, [form]);
@@ -491,28 +521,30 @@ const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<number | null
     },
     [fieldErrors],
   );
-const handleAIPriceRecommendation = async () => {
-  const result = await getRecommendation({
-    governorate: form.governorate,
-    type: form.type,
-    rooms: form.rooms,
-    bathrooms: form.bathrooms,
-    surfaceArea: form.surfaceArea,
-    equipment: form.equipment,
-    hasBalcony: form.hasBalcony,
-    hasGarden: form.hasGarden,
-    hasGarage: form.hasGarage,
-    hasElevator: form.hasElevator,
-    isFurnished: form.isFurnished,
-    rentalType: form.rentalType,
-  });
+  const handleAIPriceRecommendation = async () => {
+    const result = await getRecommendation({
+      governorate: form.governorate,
+      type: form.type,
+      rooms: form.rooms,
+      bathrooms: form.bathrooms,
+      surfaceArea: form.surfaceArea,
+      equipment: form.equipment,
+      hasBalcony: form.hasBalcony,
+      hasGarden: form.hasGarden,
+      hasGarage: form.hasGarage,
+      hasElevator: form.hasElevator,
+      isFurnished: form.isFurnished,
+      rentalType: form.rentalType,
+    });
 
-  if (result) {
-    setRecommendedPrice(result.pricePerNight);
-    setRecommendedPriceMonth(result.pricePerMonth);
-    toast.success(`Prix nuit: ${result.pricePerNight} TND | Prix mois: ${result.pricePerMonth} TND`);
-  }
-};
+    if (result) {
+      setRecommendedPrice(result.pricePerNight);
+      setRecommendedPriceMonth(result.pricePerMonth);
+      toast.success(
+        `Prix nuit: ${result.pricePerNight} TND | Prix mois: ${result.pricePerMonth} TND`,
+      );
+    }
+  };
   // ═══════════════════════════════════════════════════════════════════
   // GÉOCODAGE SUR ENTER AVEC DEBOUNCE
   // ═══════════════════════════════════════════════════════════════════
@@ -807,14 +839,6 @@ const handleAIPriceRecommendation = async () => {
     }
   }, [form, listingId, saving, uploadPhotos]);
 
-  // Sauvegarde automatique toutes les 30 secondes
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (form.title || form.photos.length > 0) saveDraft();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [form, saveDraft]);
-
   const goToNextStep = () => {
     if (validateStep()) setStep((s) => Math.min(STEPS.length, s + 1));
   };
@@ -829,7 +853,7 @@ const handleAIPriceRecommendation = async () => {
       const formWithUrls = {
         ...form,
         photos: uploadedPhotos,
-        status: "ACTIVE",
+        status: "PENDING_REVIEW",
       };
       const url = listingId ? `/api/listings/${listingId}` : "/api/listings";
       const method = listingId ? "PUT" : "POST";
@@ -843,8 +867,8 @@ const handleAIPriceRecommendation = async () => {
       if (response.ok) {
         localStorage.removeItem("listing_draft");
         toast.dismiss(loadingToast);
-        toast.success("Annonce publiée avec succès !");
-        router.push(`/${locale}/dashboard/owner/listings`);
+        toast.success("Annonce soumise pour validation !"); // ← Changement du message
+        router.push(`/${locale}/dashboard/owner/listings`); // ← direct, sans délai
       } else {
         toast.dismiss(loadingToast);
         toast.error(
@@ -861,17 +885,37 @@ const handleAIPriceRecommendation = async () => {
 
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
+
+    const filesArray = Array.from(files).slice(0, 20 - form.photos.length);
+    const totalFiles = filesArray.length;
+
+    setUploadCount(totalFiles);
+    setUploadedCount(0);
+
     const newPhotos = [];
-    for (const file of Array.from(files).slice(0, 20 - form.photos.length)) {
-      const { url, thumbnailUrl } = await uploadSinglePhoto(file);
-      newPhotos.push({
-        url,
-        thumbnailUrl,
-        isMain: form.photos.length === 0 && newPhotos.length === 0,
-        file: undefined,
-      });
+    for (let i = 0; i < filesArray.length; i++) {
+      const file = filesArray[i];
+      try {
+        const { url, thumbnailUrl } = await uploadSinglePhoto(file);
+        newPhotos.push({
+          url,
+          thumbnailUrl,
+          isMain: form.photos.length === 0 && newPhotos.length === 0,
+          file: undefined,
+        });
+        setUploadedCount(i + 1);
+      } catch (error) {
+        console.error("Erreur upload:", error);
+        toast.error(`Erreur lors de l'upload`);
+      }
     }
+
     upd({ photos: [...form.photos, ...newPhotos] });
+
+    setTimeout(() => {
+      setUploadCount(0);
+      setUploadedCount(0);
+    }, 500);
   };
 
   const removePhoto = (idx: number) => {
@@ -907,7 +951,7 @@ const handleAIPriceRecommendation = async () => {
     <div className="h-full flex flex-col  overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800">
-        <div className="max-w-6xl mx-auto py-4 px-6">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center gap-2 text-xs font-bold uppercase text-slate-500 dark:text-slate-400 mb-2">
             <Link
               href={`/${locale}/dashboard/owner/listings`}
@@ -997,7 +1041,8 @@ const handleAIPriceRecommendation = async () => {
       </div>
 
       {/* Contenu scrollable */}
-      <div className="flex-1 overflow-y-auto py-8">
+      <div className="flex-1 overflow-y-auto py-8 transition-all duration-300 animate-fadeIn">
+        {" "}
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
@@ -1077,9 +1122,11 @@ const handleAIPriceRecommendation = async () => {
                           <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                             Description
                           </label>
-                          <Tooltip text="Requis">
-                            <span className="text-rose-500 text-xs">*</span>
-                          </Tooltip>
+                          <span
+                            className={`text-[10px] ${form.description.length > 1800 ? "text-amber-500" : "text-slate-400"}`}
+                          >
+                            {form.description.length}/2000
+                          </span>
                         </div>
                         <textarea
                           value={form.description}
@@ -1206,13 +1253,19 @@ const handleAIPriceRecommendation = async () => {
 
                     {/* Aide */}
                     <div className="mb-4">
-                      <p className="text-xs text-slate-400">
-                        💡 Appuyez sur{" "}
-                        <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-mono">
-                          Entrée
-                        </kbd>{" "}
-                        dans les champs "Délégation" ou "Rue" pour localiser
-                        l'adresse sur la carte
+                      <p className="text-xs text-slate-400 flex items-center gap-1.5">
+                        <Lightbulb
+                          size={12}
+                          className="text-sky-500 shrink-0"
+                        />
+                        <span>Appuyez sur</span>
+                        <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-mono font-bold">
+                          "Entrée"
+                        </kbd>
+                        <span>
+                          dans les champs "Délégation" ou "Rue" pour localiser
+                          l'adresse sur la carte
+                        </span>
                       </p>
                     </div>
 
@@ -1229,6 +1282,38 @@ const handleAIPriceRecommendation = async () => {
                           onLocationChange={(lat, lng) => {
                             upd({ latitude: lat, longitude: lng });
                             handleBlur("location", null);
+                          }}
+                          // ✅ AJOUTE CETTE PROP
+                          onLocationDetected={(lat, lng, addressData) => {
+                            if (addressData) {
+                              console.log(" Adresse détectée:", addressData);
+
+                              upd({
+                                governorate:
+                                  addressData.governorate || form.governorate,
+                                delegation:
+                                  addressData.delegation || form.delegation,
+                                street: addressData.street || form.street,
+                                latitude: lat,
+                                longitude: lng,
+                              });
+
+                              if (addressData.governorate)
+                                handleBlur(
+                                  "governorate",
+                                  addressData.governorate,
+                                );
+                              if (addressData.delegation)
+                                handleBlur(
+                                  "delegation",
+                                  addressData.delegation,
+                                );
+                              if (addressData.street)
+                                handleBlur("street", addressData.street);
+                              handleBlur("location", null);
+
+                              toast.success(" Position et adresse trouvées !");
+                            }
                           }}
                           onAddressChange={(address) =>
                             console.log("Address:", address)
@@ -1323,8 +1408,7 @@ const handleAIPriceRecommendation = async () => {
                           const current = form.maxGuests ?? 0;
                           upd({ maxGuests: Math.max(0, current - 1) });
                         }}
-                        disabled={form.maxGuests === null}
-                        className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 disabled:opacity-30"
+                        className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 disabled:opacity-30 cursor-pointer"
                       >
                         <ChevronLeft size={16} />
                       </button>
@@ -1337,27 +1421,25 @@ const handleAIPriceRecommendation = async () => {
                           const current = form.maxGuests ?? 0;
                           upd({ maxGuests: Math.min(50, current + 1) });
                         }}
-                        disabled={form.maxGuests === null}
-                        className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 disabled:opacity-30"
+                        className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center hover:bg-gray-200 disabled:opacity-30 cursor-pointer"
                       >
                         <ChevronRight size={16} />
                       </button>
                       <button
                         type="button"
                         onClick={() => upd({ maxGuests: null })}
-                        className="ml-1 px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded"
+                        className="ml-1 px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded cursor-pointer"
                       >
                         Effacer
                       </button>
                     </div>
                   </div>
-
                   {/* Équipements extérieurs */}
                   <div className="grid grid-cols-1 gap-3 mt-4">
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Trees size={16} className="text-emerald-500" />
                       <span className="font-bold text-sm">
-                        Balcon / Terrasse
+                        Balcon ou terrasse{" "}
                       </span>
                       <Toggle
                         checked={form.hasBalcony}
@@ -1375,7 +1457,7 @@ const handleAIPriceRecommendation = async () => {
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Car size={16} className="text-emerald-500" />
                       <span className="font-bold text-sm">
-                        Garage / Parking
+                        Garage ou Parking
                       </span>
                       <Toggle
                         checked={form.hasGarage}
@@ -1461,16 +1543,15 @@ const handleAIPriceRecommendation = async () => {
                 </div>
               )}
 
-              {/* STEP 3 : Équipements */}
               {step === 3 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                   <SectionTitle title="Équipements" />
-                  <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                    {equipmentIds.map((id) => {
-                      const active = !!form.equipment[id];
-                      const Icon = equipmentIcons[id] || Check;
+                  <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
+                    {equipmentIds.map((equip) => {
+                      const active = !!form.equipment[equip.id];
+                      const Icon = equipmentIcons[equip.id] || Check;
                       return (
-                        <label key={id} className="cursor-pointer group">
+                        <label key={equip.id} className="cursor-pointer group">
                           <input
                             type="checkbox"
                             checked={active}
@@ -1478,36 +1559,41 @@ const handleAIPriceRecommendation = async () => {
                               upd({
                                 equipment: {
                                   ...form.equipment,
-                                  [id]: e.target.checked,
+                                  [equip.id]: e.target.checked,
                                 },
                               })
                             }
                             className="sr-only"
                           />
                           <div
-                            className={`flex flex-col items-center gap-1.5 p-2.5 rounded-lg border-2 transition-all duration-200 ${active ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20" : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"}`}
+                            className={`flex flex-col items-center gap-2 p-3 rounded-lg border-2 transition-all duration-200 ${
+                              active
+                                ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20"
+                                : "border-transparent bg-slate-50 dark:bg-slate-800 hover:border-slate-200"
+                            }`}
                           >
                             <Icon
-                              size={18}
+                              size={20}
                               className={
                                 active ? "text-sky-600" : "text-slate-400"
                               }
                             />
                             <span
-                              className={`text-[9px] font-bold text-center ${active ? "text-sky-700" : "text-slate-500"}`}
+                              className={`text-[10px] font-semibold text-center ${
+                                active ? "text-sky-700" : "text-slate-500"
+                              }`}
                             >
-                              {id}
+                              {equip.label}
                             </span>
                           </div>
                         </label>
                       );
                     })}
                   </div>
-
                   <div className="mt-6 space-y-3">
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Sparkles size={16} className="text-violet-600" />
-                      <div>
+                      <div className="text-center">
                         <p className="font-semibold text-sm">Meublé</p>
                         <p className="text-xs text-slate-500">
                           Logement équipé et meublé
@@ -1572,11 +1658,13 @@ const handleAIPriceRecommendation = async () => {
                   </div>
                 </div>
               )}
-
               {/* STEP 4 : Photos */}
+
               {step === 4 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                   <SectionTitle title="Photos" />
+
+                  {/* Zone de drop avec état d'upload */}
                   <div
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -1589,7 +1677,13 @@ const handleAIPriceRecommendation = async () => {
                       handleFiles(e.dataTransfer.files);
                     }}
                     onClick={() => fileRef.current?.click()}
-                    className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all duration-200 ${dragActive ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20" : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-sky-300"}`}
+                    className={`relative flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-8 cursor-pointer transition-all duration-200 ${
+                      uploadCount > 0
+                        ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20"
+                        : dragActive
+                          ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20"
+                          : "border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 hover:border-sky-300"
+                    }`}
                   >
                     <input
                       ref={fileRef}
@@ -1598,14 +1692,45 @@ const handleAIPriceRecommendation = async () => {
                       multiple
                       className="hidden"
                       onChange={(e) => handleFiles(e.target.files)}
+                      disabled={uploadCount > 0}
                     />
-                    <Camera size={28} className="text-sky-500 mb-2" />
-                    <p className="font-bold text-base">
-                      Déposez vos photos ici
-                    </p>
-                    <p className="text-xs text-slate-500 text-center mt-1">
-                      PNG, JPG jusqu'à 20 photos
-                    </p>
+
+                    {/* 🟢 SPINNER GLOBAL PENDANT L'UPLOAD */}
+                    {uploadCount > 0 ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2
+                          size={40}
+                          className="animate-spin text-sky-500"
+                        />
+                        <div className="text-center">
+                          <p className="font-bold text-base text-sky-600 dark:text-sky-400">
+                            Upload en cours...
+                          </p>
+                          <p className="text-xs text-slate-500 mt-1">
+                            {uploadedCount} / {uploadCount} photos
+                          </p>
+                        </div>
+                        <div className="w-48 h-1.5 bg-sky-200 dark:bg-sky-900 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-sky-500 rounded-full transition-all duration-300"
+                            style={{
+                              width: `${(uploadedCount / uploadCount) * 100}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <Camera size={28} className="text-sky-500 mb-2" />
+                        <p className="font-bold text-base">
+                          Déposez vos photos ici
+                        </p>
+                        <p className="text-xs text-slate-500 text-center mt-1">
+                          PNG, JPG jusqu'à 20 photos
+                        </p>
+                      </>
+                    )}
+
                     <div className="absolute top-3 right-3 px-2 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">
                       <Info size={12} /> {form.photos.length}/20
                     </div>
@@ -1683,251 +1808,303 @@ const handleAIPriceRecommendation = async () => {
                 </div>
               )}
 
-             {/* STEP 5 : Tarifs */}
-{step === 5 && (
-  <div className="space-y-5">
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-      <SectionTitle title="Type de location" />
-      <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg gap-1">
-        {["SHORT_TERM", "LONG_TERM", "BOTH"].map((rt) => (
-          <button
-            key={rt}
-            type="button"
-            onClick={() => upd({ rentalType: rt })}
-            className={`flex-1 py-2 rounded-md text-sm font-bold transition-all cursor-pointer ${form.rentalType === rt ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm" : "text-slate-500"}`}
-          >
-            {rt === "SHORT_TERM"
-              ? "Courte durée"
-              : rt === "LONG_TERM"
-                ? "Longue durée"
-                : "Les deux"}
-          </button>
-        ))}
-      </div>
-    </div>
+              {/* STEP 5 : Tarifs */}
+              {step === 5 && (
+                <div className="space-y-5">
+                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+                    <SectionTitle title="Type de location" />
+                    <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg gap-1">
+                      {["SHORT_TERM", "LONG_TERM", "BOTH"].map((rt) => (
+                        <button
+                          key={rt}
+                          type="button"
+                          onClick={() => upd({ rentalType: rt })}
+                          className={`flex-1 py-2 rounded-md text-sm font-bold transition-all cursor-pointer ${form.rentalType === rt ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm" : "text-slate-500"}`}
+                        >
+                          {rt === "SHORT_TERM"
+                            ? "Courte durée"
+                            : rt === "LONG_TERM"
+                              ? "Longue durée"
+                              : "Les deux"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-      <SectionTitle title="Tarifs" />
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        
-        {/* CARTE IA - COURT TERME */}
-        {(form.rentalType === "SHORT_TERM" || form.rentalType === "BOTH") && (
-          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-sky-50 via-indigo-50/30 to-sky-50 dark:from-sky-950/20 dark:via-indigo-950/10 dark:to-sky-950/20 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-sky-200/50 dark:hover:shadow-sky-900/20">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center shadow-md animate-pulse">
-                  <Sparkles size={14} className="text-white" />
+                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+                    <SectionTitle title="Tarifs" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* CARTE IA - COURT TERME */}
+                      {(form.rentalType === "SHORT_TERM" ||
+                        form.rentalType === "BOTH") && (
+                        <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-sky-50 via-indigo-50/30 to-sky-50 dark:from-sky-950/20 dark:via-indigo-950/10 dark:to-sky-950/20 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-sky-200/50 dark:hover:shadow-sky-900/20">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                          <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center shadow-md animate-pulse">
+                                <Sparkles size={14} className="text-white" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                                IA Recommendation
+                              </span>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-black text-sky-700 dark:text-sky-300">
+                                {recommendedPrice || "—"}
+                              </span>
+                              <span className="text-xs font-bold text-slate-400">
+                                TND / nuit
+                              </span>
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                type="button"
+                                onClick={handleAIPriceRecommendation}
+                                disabled={loading}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-sky-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-sky-200 dark:border-sky-800 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all disabled:opacity-50"
+                              >
+                                {loading ? (
+                                  <Loader2 size={12} className="animate-spin" />
+                                ) : (
+                                  <Sparkles size={12} />
+                                )}
+                                {loading ? "Calcul..." : "Estimer"}
+                              </button>
+                              {recommendedPrice && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    upd({ pricePerNight: recommendedPrice })
+                                  }
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
+                                >
+                                  <Check size={12} />
+                                  Appliquer
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* PRIX PROPRIÉTAIRE - COURT TERME */}
+                      {(form.rentalType === "SHORT_TERM" ||
+                        form.rentalType === "BOTH") && (
+                        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 transition-all hover:shadow-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
+                              <Sun size={14} className="text-amber-500" />
+                            </div>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                              Votre prix
+                            </label>
+                            <Tooltip text="Requis">
+                              <span className="text-rose-500 text-[10px]">
+                                *
+                              </span>
+                            </Tooltip>
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <input
+                              type="number"
+                              value={form.pricePerNight || ""}
+                              onChange={(e) =>
+                                upd({
+                                  pricePerNight: e.target.value
+                                    ? Number(e.target.value)
+                                    : null,
+                                })
+                              }
+                              onBlur={() =>
+                                handleBlur("pricePerNight", form.pricePerNight)
+                              }
+                              placeholder="0"
+                              className="w-full text-2xl font-black bg-transparent border-none outline-none"
+                            />
+                            <span className="text-xs font-bold text-slate-400">
+                              TND / nuit
+                            </span>
+                          </div>
+                          {getFieldError("pricePerNight") && (
+                            <p className="text-[10px] text-rose-500 mt-1">
+                              {getFieldError("pricePerNight")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* CARTE IA - LONG TERME */}
+                      {(form.rentalType === "LONG_TERM" ||
+                        form.rentalType === "BOTH") && (
+                        <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 via-indigo-50/30 to-purple-50 dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-purple-950/20 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-900/20">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                          <div className="relative z-10">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center shadow-md animate-pulse">
+                                <Sparkles size={14} className="text-white" />
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                                IA Recommendation
+                              </span>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-black text-purple-700 dark:text-purple-300">
+                                {recommendedPriceMonth || "—"}
+                              </span>
+                              <span className="text-xs font-bold text-slate-400">
+                                TND / mois
+                              </span>
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                              <button
+                                type="button"
+                                onClick={handleAIPriceRecommendation}
+                                disabled={loading}
+                                className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-purple-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all disabled:opacity-50"
+                              >
+                                {loading ? (
+                                  <Loader2 size={12} className="animate-spin" />
+                                ) : (
+                                  <Sparkles size={12} />
+                                )}
+                                {loading ? "Calcul..." : "Estimer"}
+                              </button>
+                              {recommendedPriceMonth && (
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    upd({
+                                      pricePerMonth: recommendedPriceMonth,
+                                    })
+                                  }
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
+                                >
+                                  <Check size={12} />
+                                  Appliquer
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* PRIX PROPRIÉTAIRE - LONG TERME */}
+                      {(form.rentalType === "LONG_TERM" ||
+                        form.rentalType === "BOTH") && (
+                        <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 transition-all hover:shadow-md">
+                          <div className="flex items-center gap-2 mb-2">
+                            <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
+                              <Calendar size={14} className="text-purple-500" />
+                            </div>
+                            <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
+                              Votre prix
+                            </label>
+                            <Tooltip text="Requis">
+                              <span className="text-rose-500 text-[10px]">
+                                *
+                              </span>
+                            </Tooltip>
+                          </div>
+                          <div className="flex items-baseline gap-2">
+                            <input
+                              type="number"
+                              value={form.pricePerMonth || ""}
+                              onChange={(e) =>
+                                upd({
+                                  pricePerMonth: e.target.value
+                                    ? Number(e.target.value)
+                                    : null,
+                                })
+                              }
+                              onBlur={() =>
+                                handleBlur("pricePerMonth", form.pricePerMonth)
+                              }
+                              placeholder="0"
+                              className="w-full text-2xl font-black bg-transparent border-none outline-none"
+                            />
+                            <span className="text-xs font-bold text-slate-400">
+                              TND / mois
+                            </span>
+                          </div>
+                          {getFieldError("pricePerMonth") && (
+                            <p className="text-[10px] text-rose-500 mt-1">
+                              {getFieldError("pricePerMonth")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
+                    <SectionTitle title="Frais supplémentaires" />
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <Shield size={16} className="text-emerald-500" />
+                        <div>
+                          <p className="font-bold text-sm">
+                            Caution de sécurité
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Montant remboursable
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {form.securityDeposit !== null && (
+                            <input
+                              type="number"
+                              value={form.securityDeposit}
+                              onChange={(e) =>
+                                upd({ securityDeposit: Number(e.target.value) })
+                              }
+                              className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
+                            />
+                          )}
+                          <Toggle
+                            checked={form.securityDeposit !== null}
+                            onChange={(v) =>
+                              upd({ securityDeposit: v ? 500 : null })
+                            }
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
+                        <Sparkles size={16} className="text-sky-500" />
+                        <div>
+                          <p className="font-bold text-sm">Frais de ménage</p>
+                          <p className="text-xs text-slate-500">
+                            Nettoyage inclus
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {form.cleaningFee !== null && (
+                            <input
+                              type="number"
+                              value={form.cleaningFee}
+                              onChange={(e) =>
+                                upd({ cleaningFee: Number(e.target.value) })
+                              }
+                              className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
+                            />
+                          )}
+                          <Toggle
+                            checked={form.cleaningFee !== null}
+                            onChange={(v) =>
+                              upd({ cleaningFee: v ? 50 : null })
+                            }
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-sky-600 dark:text-sky-400">
-                  IA Recommendation
-                </span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-sky-700 dark:text-sky-300">
-                  {recommendedPrice || "—"}
-                </span>
-                <span className="text-xs font-bold text-slate-400">TND / nuit</span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <button
-                  type="button"
-                  onClick={handleAIPriceRecommendation}
-                  disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-sky-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-sky-200 dark:border-sky-800 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all disabled:opacity-50"
-                >
-                  {loading ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <Sparkles size={12} />
-                  )}
-                  {loading ? "Calcul..." : "Estimer"}
-                </button>
-                {recommendedPrice && (
-                  <button
-                    type="button"
-                    onClick={() => upd({ pricePerNight: recommendedPrice })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
-                  >
-                    <Check size={12} />
-                    Appliquer
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PRIX PROPRIÉTAIRE - COURT TERME */}
-        {(form.rentalType === "SHORT_TERM" || form.rentalType === "BOTH") && (
-          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 transition-all hover:shadow-md">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">
-                <Sun size={14} className="text-amber-500" />
-              </div>
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                Votre prix
-              </label>
-              <Tooltip text="Requis">
-                <span className="text-rose-500 text-[10px]">*</span>
-              </Tooltip>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <input
-                type="number"
-                value={form.pricePerNight || ""}
-                onChange={(e) =>
-                  upd({ pricePerNight: e.target.value ? Number(e.target.value) : null })
-                }
-                onBlur={() => handleBlur("pricePerNight", form.pricePerNight)}
-                placeholder="0"
-                className="w-full text-2xl font-black bg-transparent border-none outline-none"
-              />
-              <span className="text-xs font-bold text-slate-400">TND / nuit</span>
-            </div>
-            {getFieldError("pricePerNight") && (
-              <p className="text-[10px] text-rose-500 mt-1">{getFieldError("pricePerNight")}</p>
-            )}
-          </div>
-        )}
-
-        {/* CARTE IA - LONG TERME */}
-        {(form.rentalType === "LONG_TERM" || form.rentalType === "BOTH") && (
-          <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 via-indigo-50/30 to-purple-50 dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-purple-950/20 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-900/20">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center shadow-md animate-pulse">
-                  <Sparkles size={14} className="text-white" />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                  IA Recommendation
-                </span>
-              </div>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-black text-purple-700 dark:text-purple-300">
-                  {recommendedPriceMonth || "—"}
-                </span>
-                <span className="text-xs font-bold text-slate-400">TND / mois</span>
-              </div>
-              <div className="flex gap-2 mt-3">
-                <button
-                  type="button"
-                  onClick={handleAIPriceRecommendation}
-                  disabled={loading}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-purple-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all disabled:opacity-50"
-                >
-                  {loading ? (
-                    <Loader2 size={12} className="animate-spin" />
-                  ) : (
-                    <Sparkles size={12} />
-                  )}
-                  {loading ? "Calcul..." : "Estimer"}
-                </button>
-                {recommendedPriceMonth && (
-                  <button
-                    type="button"
-                    onClick={() => upd({ pricePerMonth: recommendedPriceMonth })}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
-                  >
-                    <Check size={12} />
-                    Appliquer
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PRIX PROPRIÉTAIRE - LONG TERME */}
-        {(form.rentalType === "LONG_TERM" || form.rentalType === "BOTH") && (
-          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 transition-all hover:shadow-md">
-            <div className="flex items-center gap-2 mb-2">
-              <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/40 flex items-center justify-center">
-                <Calendar size={14} className="text-purple-500" />
-              </div>
-              <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                Votre prix
-              </label>
-              <Tooltip text="Requis">
-                <span className="text-rose-500 text-[10px]">*</span>
-              </Tooltip>
-            </div>
-            <div className="flex items-baseline gap-2">
-              <input
-                type="number"
-                value={form.pricePerMonth || ""}
-                onChange={(e) =>
-                  upd({ pricePerMonth: e.target.value ? Number(e.target.value) : null })
-                }
-                onBlur={() => handleBlur("pricePerMonth", form.pricePerMonth)}
-                placeholder="0"
-                className="w-full text-2xl font-black bg-transparent border-none outline-none"
-              />
-              <span className="text-xs font-bold text-slate-400">TND / mois</span>
-            </div>
-            {getFieldError("pricePerMonth") && (
-              <p className="text-[10px] text-rose-500 mt-1">{getFieldError("pricePerMonth")}</p>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-
-    <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-      <SectionTitle title="Frais supplémentaires" />
-      <div className="space-y-3">
-        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-          <Shield size={16} className="text-emerald-500" />
-          <div>
-            <p className="font-bold text-sm">Caution de sécurité</p>
-            <p className="text-xs text-slate-500">Montant remboursable</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {form.securityDeposit !== null && (
-              <input
-                type="number"
-                value={form.securityDeposit}
-                onChange={(e) => upd({ securityDeposit: Number(e.target.value) })}
-                className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
-              />
-            )}
-            <Toggle
-              checked={form.securityDeposit !== null}
-              onChange={(v) => upd({ securityDeposit: v ? 500 : null })}
-            />
-          </div>
-        </div>
-        <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
-          <Sparkles size={16} className="text-sky-500" />
-          <div>
-            <p className="font-bold text-sm">Frais de ménage</p>
-            <p className="text-xs text-slate-500">Nettoyage inclus</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {form.cleaningFee !== null && (
-              <input
-                type="number"
-                value={form.cleaningFee}
-                onChange={(e) => upd({ cleaningFee: Number(e.target.value) })}
-                className="w-20 bg-white border rounded py-1.5 px-2 text-sm text-right"
-              />
-            )}
-            <Toggle
-              checked={form.cleaningFee !== null}
-              onChange={(v) => upd({ cleaningFee: v ? 50 : null })}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+              )}
 
               {/* STEP 6 : Aperçu */}
               {step === 6 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
-                  <div className="relative h-56 bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600">
+                  {/* Hero Image - PLUS HAUTE */}
+                  <div className="relative h-64  bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600">
                     {(() => {
                       const mainPhoto =
                         form.photos.find((p) => p.isMain) || form.photos[0];
@@ -1972,29 +2149,80 @@ const handleAIPriceRecommendation = async () => {
                       </div>
                     </div>
                   </div>
-                  <div className="p-4">
-                    <div className="flex gap-4 text-xs text-slate-500 pb-3 border-b border-slate-100">
-                      <span>
-                        <Bed size={14} className="inline mr-1.5" />
+
+                  {/* TOUTES LES CARACTÉRISTIQUES */}
+                  <div className="p-4 space-y-3">
+                    {/* Métriques principales */}
+                    <div className="flex flex-wrap gap-4 text-xs text-slate-500 pb-3 border-b border-slate-100">
+                      <span className="flex items-center gap-1.5">
+                        <Bed size={14} className="text-slate-400" />{" "}
                         {form.rooms} ch.
                       </span>
-                      <span>
-                        <Bath size={14} className="inline mr-1.5" />
+                      <span className="flex items-center gap-1.5">
+                        <Bath size={14} className="text-slate-400" />{" "}
                         {form.bathrooms} sdb
                       </span>
-                      <span>
-                        <Users size={14} className="inline mr-1.5" />
+                      <span className="flex items-center gap-1.5">
+                        <Utensils size={14} className="text-slate-400" />{" "}
+                        {form.numberOfKitchens} cuis.
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Users size={14} className="text-slate-400" />{" "}
                         {form.maxGuests === null ? "—" : form.maxGuests} pers.
                       </span>
                       {form.surfaceArea && (
-                        <span>
-                          <Ruler size={14} className="inline mr-1.5" />
+                        <span className="flex items-center gap-1.5">
+                          <Ruler size={14} className="text-slate-400" />{" "}
                           {form.surfaceArea} m²
                         </span>
                       )}
+                      {form.floorNumber !== null && (
+                        <span className="flex items-center gap-1.5">
+                          <ArrowUp size={14} className="text-slate-400" />{" "}
+                          {form.floorNumber === 0
+                            ? "RDC"
+                            : `${form.floorNumber} ét.`}
+                        </span>
+                      )}
                     </div>
+
+                    {/* Équipements clés (max 4) */}
+                    {Object.keys(form.equipment).filter(
+                      (key) => form.equipment[key],
+                    ).length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {Object.entries(form.equipment)
+                          .filter(([, active]) => active)
+                          .slice(0, 4)
+                          .map(([key]) => {
+                            const equip = equipmentIds.find(
+                              (e) => e.id === key,
+                            );
+                            const Icon = equipmentIcons[key] || Check;
+                            return (
+                              <span
+                                key={key}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-[11px] font-medium"
+                              >
+                                <Icon size={12} /> {equip?.label || key}
+                              </span>
+                            );
+                          })}
+                        {Object.keys(form.equipment).filter(
+                          (key) => form.equipment[key],
+                        ).length > 4 && (
+                          <span className="text-[11px] font-medium text-slate-500 px-2 py-1">
+                            +
+                            {Object.keys(form.equipment).filter(
+                              (key) => form.equipment[key],
+                            ).length - 4}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {/* Description courte */}
                     {form.description && (
-                      <p className="text-sm text-slate-600 mt-3 line-clamp-2">
+                      <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 pt-1">
                         {form.description}
                       </p>
                     )}
@@ -2005,11 +2233,16 @@ const handleAIPriceRecommendation = async () => {
 
             {/* Sidebar conseils */}
             <div className="hidden lg:block">
-              <div className="sticky top-4 space-y-4">
-                <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-800">
+              <div className="sticky top-4 space-y-5">
+                {/* Carte Conseils */}
+                <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-sky-100 dark:border-sky-900/40">
                   <div className="flex items-center gap-2 mb-3">
-                    <Lightbulb size={16} className="text-sky-500" />
-                    <h3 className="font-bold text-sm">Conseils</h3>
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center">
+                      <Lightbulb size={14} className="text-white" />
+                    </div>
+                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                      Conseils
+                    </h3>
                   </div>
                   <ul className="space-y-2">
                     <li className="flex items-start gap-2 text-xs">
@@ -2017,49 +2250,67 @@ const handleAIPriceRecommendation = async () => {
                         size={12}
                         className="text-sky-500 shrink-0 mt-0.5"
                       />
-                      Des photos de qualité augmentent les réservations
+                      <span className="text-slate-600 dark:text-slate-300">
+                        Des photos de qualité augmentent les réservations
+                      </span>
                     </li>
                     <li className="flex items-start gap-2 text-xs">
                       <Check
                         size={12}
                         className="text-sky-500 shrink-0 mt-0.5"
                       />
-                      Un titre accrocheur attire plus de voyageurs
+                      <span className="text-slate-600 dark:text-slate-300">
+                        Un titre accrocheur attire plus de voyageurs
+                      </span>
                     </li>
                     <li className="flex items-start gap-2 text-xs">
                       <Check
                         size={12}
                         className="text-sky-500 shrink-0 mt-0.5"
                       />
-                      Répondez rapidement aux demandes
+                      <span className="text-slate-600 dark:text-slate-300">
+                        Répondez rapidement aux demandes
+                      </span>
                     </li>
                     <li className="flex items-start gap-2 text-xs">
                       <Check
                         size={12}
                         className="text-sky-500 shrink-0 mt-0.5"
                       />
-                      Un prix compétitif augmente vos chances
+                      <span className="text-slate-600 dark:text-slate-300">
+                        Un prix compétitif augmente vos chances
+                      </span>
                     </li>
                   </ul>
+                  <div className="mt-3 pt-2 border-t border-sky-100 dark:border-sky-800/50">
+                    <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400">
+                      +35% de réservations
+                    </span>
+                  </div>
                 </div>
+
+                {/* Carte Pourquoi NestHub */}
                 <div className="relative overflow-hidden rounded-xl p-5 text-white">
                   <div className="absolute inset-0 bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600" />
                   <div className="relative z-10">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-white/80 mb-2">
-                      Pourquoi NestHub ?
-                    </p>
+                    <div className="flex items-center gap-2 mb-3">
+                      <Rocket size={14} className="text-white" />
+                      <p className="text-[9px] font-black uppercase tracking-wider text-white/80">
+                        NESTHUB
+                      </p>
+                    </div>
                     <ul className="space-y-1.5">
                       <li className="flex items-center gap-2 text-xs text-white/90">
-                        <Shield size={12} /> Paiement sécurisé
+                        <Shield size={11} /> Paiement sécurisé
                       </li>
                       <li className="flex items-center gap-2 text-xs text-white/90">
-                        <Users size={12} /> Assistance 24/7
+                        <Headphones size={11} /> Assistance 24/7
                       </li>
                       <li className="flex items-center gap-2 text-xs text-white/90">
-                        <Sparkles size={12} /> Assurance incluse
+                        <Sparkles size={11} /> Assurance incluse
                       </li>
                       <li className="flex items-center gap-2 text-xs text-white/90">
-                        <Rocket size={12} /> Visibilité maximale
+                        <Rocket size={11} /> Visibilité maximale
                       </li>
                     </ul>
                   </div>
@@ -2104,13 +2355,23 @@ const handleAIPriceRecommendation = async () => {
               {saving ? "Publication..." : "Publier"}
             </button>
           ) : (
+            // Remplacer le bouton Continuer par :
             <button
               type="button"
               onClick={goToNextStep}
-              disabled={!isStepValid}
-              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all ${isStepValid ? "bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white shadow-md" : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"}`}
+              disabled={!isStepValid || uploadCount > 0} // ← AJOUTER uploadCount > 0
+              className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all ${
+                isStepValid && uploadCount === 0 // ← MODIFIER cette condition
+                  ? "bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white shadow-md"
+                  : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
+              }`}
             >
-              Continuer <ChevronRight size={14} />
+              {uploadCount > 0 ? ( // ← AJOUTER cette condition
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <ChevronRight size={14} />
+              )}
+              Continuer
             </button>
           )}
         </div>

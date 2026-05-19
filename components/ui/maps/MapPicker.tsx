@@ -111,6 +111,8 @@ interface MapPickerProps {
   longitude: number | null;
   onLocationChange: (lat: number, lng: number) => void;
   onAddressChange?: (address: string) => void;
+  onLocationDetected?: (lat: number, lng: number, addressData?: any) => void; // ✅ NOUVEAU
+
   className?: string;
   readOnly?: boolean;
   markers?: ListingMarker[];
@@ -121,9 +123,11 @@ interface MapPickerProps {
 
 function MapClickHandler({
   onLocationChange,
+  onLocationDetected,
   readOnly,
 }: {
   onLocationChange: (lat: number, lng: number) => void;
+  onLocationDetected?: (lat: number, lng: number, addressData?: any) => void;
   readOnly?: boolean;
 }) {
   useMapEvents({
@@ -157,27 +161,33 @@ function MapController({
 }
 
 // ✅ Composant pour centrer la carte sur tous les marqueurs
-function FitBoundsOnMarkers({ markers, enabled }: { markers: ListingMarker[]; enabled: boolean }) {
+function FitBoundsOnMarkers({
+  markers,
+  enabled,
+}: {
+  markers: ListingMarker[];
+  enabled: boolean;
+}) {
   const map = useMap();
 
   useEffect(() => {
     if (!enabled || !markers || markers.length === 0) return;
-    
+
     // Filtrer les marqueurs valides
-    const validMarkers = markers.filter(m => m.latitude && m.longitude);
+    const validMarkers = markers.filter((m) => m.latitude && m.longitude);
     if (validMarkers.length === 0) return;
 
     // Créer les bounds
     const bounds = L.latLngBounds(
-      validMarkers.map((m) => [m.latitude, m.longitude])
+      validMarkers.map((m) => [m.latitude, m.longitude]),
     );
-    
+
     // Ajuster la vue avec un padding
-    map.fitBounds(bounds, { 
+    map.fitBounds(bounds, {
       padding: [50, 50],
       maxZoom: 13,
       animate: true,
-      duration: 1
+      duration: 1,
     });
   }, [markers, enabled, map]);
 
@@ -209,6 +219,8 @@ export default function MapPicker({
   longitude,
   onLocationChange,
   onAddressChange,
+  onLocationDetected, // ✅ AJOUTE CETTE LIGNE
+
   className = "",
   readOnly = false,
   markers = [],
@@ -231,28 +243,22 @@ export default function MapPicker({
     [latitude, longitude],
   );
 
-  // Reverse geocoding pour obtenir l'adresse
   const reverseGeocode = useCallback(
     async (lat: number, lng: number) => {
       try {
+        // ✅ Appelle TON API
         const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?` +
-            `format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
-          {
-            headers: {
-              "Accept-Language": "fr",
-            },
-          },
+          `/api/geocode/reverse?lat=${lat}&lng=${lng}`,
         );
         const data = await response.json();
-        if (data.display_name) {
-          const formattedAddress = data.display_name
-            .split(",")
-            .slice(0, 3)
-            .join(",");
+
+        if (data.success && data.address) {
+          const formattedAddress =
+            data.address.fullAddress ||
+            `${data.address.street}, ${data.address.delegation}, ${data.address.governorate}`;
           setAddress(formattedAddress);
           if (onAddressChange) {
-            onAddressChange(data.display_name);
+            onAddressChange(data.address.fullAddress || formattedAddress);
           }
         }
         return data;
@@ -263,15 +269,19 @@ export default function MapPicker({
     },
     [onAddressChange],
   );
-
   const handleLocationChange = useCallback(
     (lat: number, lng: number) => {
       if (readOnly) return;
       onLocationChange(lat, lng);
       setMapCenter([lat, lng]);
       reverseGeocode(lat, lng);
+
+      // ✅ Appeler aussi onLocationDetected pour remplir les champs
+      if (onLocationDetected) {
+        onLocationDetected(lat, lng, null);
+      }
     },
-    [onLocationChange, reverseGeocode, readOnly],
+    [onLocationChange, reverseGeocode, readOnly, onLocationDetected],
   );
 
   // Bouton de localisation
@@ -285,11 +295,42 @@ export default function MapPicker({
 
     setIsLocating(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        handleLocationChange(
-          position.coords.latitude,
-          position.coords.longitude,
-        );
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        // Mettre à jour la position
+        handleLocationChange(lat, lng);
+
+        // ✅ Appeler le callback avec les coordonnées et l'adresse
+        if (onLocationDetected) {
+          try {
+            // ✅ APPELLER TON API, PAS NOMINATIM DIRECTEMENT
+            const response = await fetch(
+              `/api/geocode/reverse?lat=${lat}&lng=${lng}`,
+            );
+            const data = await response.json();
+
+            if (data.success && data.address) {
+              const addressData = {
+                governorate: data.address.governorate || "",
+                delegation: data.address.delegation || "",
+                street: data.address.street || "",
+                fullAddress: data.address.fullAddress || "",
+                lat,
+                lng,
+              };
+
+              onLocationDetected(lat, lng, addressData);
+            } else {
+              onLocationDetected(lat, lng, null);
+            }
+          } catch (error) {
+            console.error("Reverse geocode error:", error);
+            onLocationDetected(lat, lng, null);
+          }
+        }
+
         setIsLocating(false);
       },
       (error) => {
@@ -312,7 +353,6 @@ export default function MapPicker({
       },
     );
   };
-
   // Mettre à jour l'adresse quand les coordonnées changent
   useEffect(() => {
     if (position) {
@@ -345,9 +385,10 @@ export default function MapPicker({
 
         <MapClickHandler
           onLocationChange={handleLocationChange}
+          onLocationDetected={onLocationDetected}
           readOnly={readOnly}
         />
-        
+
         {mapReady && <MapController center={mapCenter} zoom={16} />}
 
         {mapReady && (

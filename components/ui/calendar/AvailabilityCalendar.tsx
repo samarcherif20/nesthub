@@ -10,7 +10,7 @@ interface AvailabilityCalendarProps {
   blockedDates?:
     | { startDate: string; endDate: string; reason?: string }[]
     | string[];
-pendingDates?: (string | { startDate: string; endDate: string; reason?: string })[];
+  pendingDates?: (string | { startDate: string; endDate: string; reason?: string })[];
   pricingRules?: { startDate: string; endDate: string; fixedPrice: number }[];
   selectedStart?: string;
   selectedEnd?: string;
@@ -45,7 +45,6 @@ export default function AvailabilityCalendar({
   const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
   const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
 
-  // ✅ Fonction pour formater la date SANS décalage UTC
   const formatDate = (year: number, month: number, day: number): string => {
     return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
   };
@@ -58,7 +57,7 @@ export default function AvailabilityCalendar({
       const start = new Date(rule.startDate);
       const end = new Date(rule.endDate);
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toISOString().split("T")[0];
+        const dateStr = formatDate(d.getFullYear(), d.getMonth(), d.getDate());
         map.set(dateStr, rule.fixedPrice);
       }
     });
@@ -83,35 +82,58 @@ export default function AvailabilityCalendar({
   };
 
   const getBlockedSet = () => {
-    if (!blockedDates) return new Set<string>();
+    if (!blockedDates || blockedDates.length === 0) return new Set<string>();
     const set = new Set<string>();
+    
     if (Array.isArray(blockedDates)) {
       blockedDates.forEach((b) => {
         if (typeof b === "string") {
-          set.add(b);
+          const date = new Date(b);
+          set.add(formatDate(date.getFullYear(), date.getMonth(), date.getDate()));
         } else if (b.startDate && b.endDate) {
           const start = new Date(b.startDate);
           const end = new Date(b.endDate);
           for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            set.add(d.toISOString().split("T")[0]);
+            set.add(formatDate(d.getFullYear(), d.getMonth(), d.getDate()));
           }
         }
       });
     }
     return set;
   };
-const getPendingSet = () => {
-  if (!pendingDates || pendingDates.length === 0) return new Set<string>();
-  const set = new Set<string>();
-  
-  for (const item of pendingDates) {
-    if (typeof item === "string") {
-      set.add(item.split("T")[0]);
+
+  const getPendingSet = () => {
+    if (!pendingDates || pendingDates.length === 0) return new Set<string>();
+    const set = new Set<string>();
+    
+    for (const item of pendingDates) {
+      try {
+        let dateStr = "";
+        
+        if (typeof item === "string") {
+          const date = new Date(item);
+          dateStr = formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+        } else if (item && typeof item === "object") {
+          if (item.startDate) {
+            const date = new Date(item.startDate);
+            dateStr = formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+          } else if (item.date) {
+            const date = new Date(item.date);
+            dateStr = formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+          }
+        }
+        
+        if (dateStr) {
+          set.add(dateStr);
+        }
+      } catch (e) {
+        console.error("Erreur parsing pending date:", item, e);
+      }
     }
-  }
-  
-  return set;
-};
+    
+    return set;
+  };
+
   const availabilityMap = getAvailabilityMap();
   const blockedSet = getBlockedSet();
   const pendingSet = getPendingSet();
@@ -155,24 +177,20 @@ const getPendingSet = () => {
     return date < today;
   };
 
-  // ✅ Vérifie si le jour est la date de DÉBUT
   const isStartDate = (day: number): boolean => {
     const dateStr = formatDate(year, month, day);
     return tempStart === dateStr || selectedStart === dateStr;
   };
 
-  // ✅ Vérifie si le jour est la date de FIN
   const isEndDate = (day: number): boolean => {
     const dateStr = formatDate(year, month, day);
     return tempEnd === dateStr || selectedEnd === dateStr;
   };
 
-  // ✅ Vérifie si le jour est sélectionné (début OU fin)
   const isSelected = (day: number): boolean => {
     return isStartDate(day) || isEndDate(day);
   };
 
-  // ✅ Vérifie si le jour est entre début et fin
   const isInRange = (day: number): boolean => {
     const dateStr = formatDate(year, month, day);
     const start = tempStart || selectedStart;
@@ -181,81 +199,51 @@ const getPendingSet = () => {
     return dateStr > start && dateStr < end;
   };
 
-  // ✅ HANDLE CLICK - COMPORTEMENT INTELLIGENT
-  // Si plage existante (20→29) et clique sur 18 → devient (18→29)
-  // Si clique sur 31 → devient (20→31)
   const handleDateClick = (day: number) => {
     if (isPast(day) || !isDateAvailable(day)) return;
 
     const dateStr = formatDate(year, month, day);
 
-    console.log(`🖱️ Click sur: ${dateStr}`, { tempStart, tempEnd, selectedStart, selectedEnd });
-
-    // Récupérer les dates actuelles
     const currentStart = tempStart || selectedStart;
     const currentEnd = tempEnd || selectedEnd;
 
-    // CAS 1: Pas de sélection existante
     if (!currentStart && !currentEnd) {
-      console.log(`📅 Nouvelle sélection - Début: ${dateStr}`);
       setTempStart(dateStr);
       setTempEnd(null);
       if (onSelectRange) onSelectRange(dateStr, "");
       return;
     }
 
-    // CAS 2: On a une date de début mais pas de fin
     if (currentStart && !currentEnd) {
       if (dateStr === currentStart) {
-        // Même date : annuler
-        console.log(`🔄 Annulation`);
         setTempStart(null);
         setTempEnd(null);
         if (onSelectRange) onSelectRange("", "");
       } else if (dateStr < currentStart) {
-        // Nouvelle date AVANT → devient le nouveau début
-        console.log(`🔄 Nouveau début: ${dateStr}, fin gardée: ${currentStart}`);
         setTempStart(dateStr);
         setTempEnd(currentStart);
         if (onSelectRange) onSelectRange(dateStr, currentStart);
       } else {
-        // Nouvelle date APRÈS → devient la fin
-        console.log(`📅 Sélection complète: ${currentStart} → ${dateStr}`);
         setTempEnd(dateStr);
         if (onSelectRange) onSelectRange(currentStart, dateStr);
       }
       return;
     }
 
-    // CAS 3: On a une sélection complète (début ET fin)
     if (currentStart && currentEnd) {
       if (dateStr < currentStart) {
-        // ✅ Clique AVANT la date de début → change le début, garde la fin
-        console.log(`🔄 Modification du début: ${currentStart} → ${dateStr} (fin gardée: ${currentEnd})`);
         setTempStart(dateStr);
         setTempEnd(currentEnd);
         if (onSelectRange) onSelectRange(dateStr, currentEnd);
       } else if (dateStr > currentEnd) {
-        // ✅ Clique APRÈS la date de fin → change la fin, garde le début
-        console.log(`🔄 Modification de la fin: ${currentEnd} → ${dateStr} (début gardé: ${currentStart})`);
         setTempStart(currentStart);
         setTempEnd(dateStr);
         if (onSelectRange) onSelectRange(currentStart, dateStr);
       } else if (dateStr > currentStart && dateStr < currentEnd) {
-        // ✅ Clique ENTRE début et fin → divise la plage (recommence à partir de cette date)
-        console.log(`🔄 Nouvelle sélection à partir de: ${dateStr}`);
         setTempStart(dateStr);
         setTempEnd(null);
         if (onSelectRange) onSelectRange(dateStr, "");
-      } else if (dateStr === currentStart) {
-        // ✅ Clique sur la date de début → annule la sélection
-        console.log(`🔄 Annulation (clic sur début)`);
-        setTempStart(null);
-        setTempEnd(null);
-        if (onSelectRange) onSelectRange("", "");
-      } else if (dateStr === currentEnd) {
-        // ✅ Clique sur la date de fin → annule la sélection
-        console.log(`🔄 Annulation (clic sur fin)`);
+      } else if (dateStr === currentStart || dateStr === currentEnd) {
         setTempStart(null);
         setTempEnd(null);
         if (onSelectRange) onSelectRange("", "");
@@ -264,10 +252,7 @@ const getPendingSet = () => {
     }
   };
 
- 
-
   useEffect(() => {
-    console.log("🔄 Sync props:", { selectedStart, selectedEnd });
     if (selectedStart && selectedEnd) {
       setTempStart(selectedStart);
       setTempEnd(selectedEnd);
@@ -294,19 +279,19 @@ const getPendingSet = () => {
     if (past)
       return "bg-gray-100 dark:bg-slate-800 text-gray-300 dark:text-gray-600 cursor-not-allowed";
 
-    // ✅ Les dates de début et fin sont en bleu foncé
     if ((isStart || isEnd) && !blocked && !pending)
       return "bg-sky-500 dark:bg-sky-600 text-white font-semibold cursor-pointer hover:bg-sky-600 dark:hover:bg-sky-700";
 
-    // ✅ Les dates entre sont en bleu clair
     if (inRange && !blocked && !pending)
       return "bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 font-semibold cursor-pointer";
 
-    if (pending)
-      return "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-semibold cursor-not-allowed border border-amber-200 dark:border-amber-800";
-
+    // ✅ PRIORITÉ ROUGE
     if (blocked)
       return "bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-semibold cursor-not-allowed line-through";
+
+    // ✅ ORANGE seulement si non bloqué
+    if (pending)
+      return "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-semibold cursor-not-allowed border border-amber-200 dark:border-amber-800";
 
     if (special)
       return "bg-purple-100 dark:bg-purple-950/40 text-purple-700 dark:text-purple-400 font-semibold cursor-pointer hover:bg-purple-200 dark:hover:bg-purple-900/50 border border-purple-200 dark:border-purple-800";
@@ -378,7 +363,8 @@ const getPendingSet = () => {
                   {specialPrice} TND
                 </span>
               )}
-              {pending && !isPast(day) && (
+              {/* ✅ Point ORANGE uniquement si en attente ET PAS bloqué */}
+              {pending && !isPast(day) && !blocked && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-500" />
               )}
               {(isStart || isEnd) && !isPast(day) && !blocked && !pending && (
@@ -389,7 +375,6 @@ const getPendingSet = () => {
         })}
       </div>
 
-      
       <div className="flex flex-wrap gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-emerald-500" />
