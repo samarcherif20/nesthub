@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log("📦 Body reçu:", body);
+    console.log(" Body reçu:", body);
 
     const {
       userId,
@@ -24,10 +24,11 @@ export async function POST(req: Request) {
       rib,
       bankName,
       accountHolder,
-      cinRectoUrl,      // ✅ AJOUTE CETTE LIGNE
-      cinVersoUrl,      // ✅ AJOUTE CETTE LIGNE
-      cinData,          // ✅ OPTIONNEL mais recommandé
-      profilePictureUrl, // ✅ OPTIONNEL
+      cinRectoUrl,
+      cinVersoUrl,
+      cinData,
+      profilePictureUrl,
+      acceptsForeigners,
     } = body;
 
     if (!userId) {
@@ -65,14 +66,17 @@ export async function POST(req: Request) {
         rib: rib || undefined,
         bankName: bankName || undefined,
         accountHolder: accountHolder || undefined,
-        profilePictureUrl: profilePictureUrl || undefined, // ✅ AJOUTE
-        cinData: cinData || undefined, // ✅ AJOUTE (pour stocker toutes les données CIN)
+        profilePictureUrl: profilePictureUrl || undefined,
+        cinData: cinData || undefined,
         isEmailVerified: true,
+        acceptsForeigners:
+          acceptsForeigners !== undefined ? acceptsForeigners : null,
+
         status: "PENDING_VALIDATION",
       },
     });
 
-    console.log("✅ Utilisateur mis à jour:", {
+    console.log(" Utilisateur mis à jour:", {
       id: updatedUser.id,
       role: updatedUser.role,
       gender: updatedUser.gender,
@@ -122,49 +126,30 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log("✅ VerificationRequest créée:", verificationRequest.id);
+    console.log(" VerificationRequest créée:", verificationRequest.id);
 
-    // ============================================
-    // ✅ NOTIFICATION 1: Pour l'utilisateur
-    // ============================================
-    await prisma.notification.create({
-      data: {
+    //  NOTIFICATION 1: Pour l'utilisateur
+
+    // Vérifier si une notification similaire existe déjà et n'est pas lue
+    const existingUserNotification = await prisma.notification.findFirst({
+      where: {
         userId: updatedUser.id,
         type: "SYSTEM_ALERT",
-        title: "📋 Profil en attente de validation",
-        content: `Bonjour ${firstName || ""} ${lastName || ""}, votre profil a été soumis avec succès. Nos équipes vont vérifier vos informations dans les plus brefs délais. Vous serez notifié dès que votre compte sera activé.`,
-        channels: ["IN_APP", "EMAIL"],
-        data: {
-          status: "PENDING_VALIDATION",
-          verificationRequestId: verificationRequest.id,
-          submittedAt: new Date().toISOString(),
-        },
+        title: " Profil en attente de validation",
         isRead: false,
-        sentAt: new Date(),
       },
     });
 
-    // ============================================
-    // ✅ NOTIFICATION 2: Pour les admins
-    // ============================================
-    const admins = await prisma.user.findMany({
-      where: { role: "ADMIN" },
-      select: { id: true },
-    });
-
-    for (const admin of admins) {
+    if (!existingUserNotification) {
       await prisma.notification.create({
         data: {
-          userId: admin.id,
+          userId: updatedUser.id,
           type: "SYSTEM_ALERT",
-          title: "🆕 Nouvelle demande de vérification",
-          content: `L'utilisateur ${firstName || ""} ${lastName || ""} (${updatedUser.email}) a soumis son profil pour validation. Veuillez vérifier ses documents.`,
-          channels: ["IN_APP", "EMAIL"],
+          title: " Profil en attente de validation",
+          content: `Bonjour ${firstName || ""} ${lastName || ""}, votre profil a été soumis avec succès. Nos équipes vont vérifier vos informations dans les plus brefs délais. Vous serez notifié dès que votre compte sera activé.`,
+          channels: ["IN_APP"],
           data: {
-            type: "VERIFICATION_REQUEST",
-            userId: updatedUser.id,
-            userName: `${firstName} ${lastName}`,
-            userEmail: updatedUser.email,
+            status: "PENDING_VALIDATION",
             verificationRequestId: verificationRequest.id,
             submittedAt: new Date().toISOString(),
           },
@@ -172,18 +157,67 @@ export async function POST(req: Request) {
           sentAt: new Date(),
         },
       });
+      console.log(" Notification utilisateur créée");
+    } else {
+      console.log(" Notification utilisateur déjà existante, ignorée");
     }
 
-    console.log(`✅ Notifications envoyées à ${admins.length} admin(s)`);
+    //  NOTIFICATION 2: Pour les admins
+
+    const admins = await prisma.user.findMany({
+      where: { role: "ADMIN" },
+      select: { id: true },
+    });
+
+    for (const admin of admins) {
+      // Vérifier si une notification similaire existe déjà pour cette demande
+      const existingAdminNotification = await prisma.notification.findFirst({
+        where: {
+          userId: admin.id,
+          type: "SYSTEM_ALERT",
+          title: " Nouvelle demande de vérification",
+          isRead: false,
+          data: {
+            path: ["verificationRequestId"],
+            equals: verificationRequest.id,
+          },
+        },
+      });
+
+      if (!existingAdminNotification) {
+        await prisma.notification.create({
+          data: {
+            userId: admin.id,
+            type: "SYSTEM_ALERT",
+            title: " Nouvelle demande de vérification",
+            content: `L'utilisateur ${firstName || ""} ${lastName || ""} (${updatedUser.email}) a soumis son profil pour validation. Veuillez vérifier ses documents.`,
+            channels: ["IN_APP", "EMAIL"],
+            data: {
+              type: "VERIFICATION_REQUEST",
+              userId: updatedUser.id,
+              userName: `${firstName} ${lastName}`,
+              userEmail: updatedUser.email,
+              verificationRequestId: verificationRequest.id,
+              submittedAt: new Date().toISOString(),
+            },
+            isRead: false,
+            sentAt: new Date(),
+          },
+        });
+      }
+    }
+
+    console.log(` Notifications envoyées (ou ignorées si déjà existantes)`);
 
     return NextResponse.json({
       success: true,
-      message: "Profil complété avec succès. En attente de validation par l'admin.",
+      message:
+        "Profil complété avec succès. En attente de validation par l'admin.",
       user: updatedUser,
       verificationRequestId: verificationRequest.id,
     });
   } catch (error: any) {
-    console.error("❌ Erreur complete-profile:", error);
+    console.error(" Erreur complete-profile:", error);
     return NextResponse.json(
       { error: error.message || "Erreur serveur" },
       { status: 500 },

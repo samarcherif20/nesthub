@@ -81,7 +81,8 @@ model User {
   stripeCustomerId String? @unique
   stripeAccountId  String? @unique // Pour Stripe Connect (versements propriétaires)
   // Relations Admin
-  riskScore            Int?     @default(50)  // ← AJOUTÉ
+  riskScore            Int?                    @default(50)  // ← AJOUTÉ
+  acceptsForeigners    Boolean?                
 
   writtenNotes         AdminNote[]           @relation("AuthorUser")
   adminNotes           AdminNote[]           @relation("TargetUser")

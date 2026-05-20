@@ -28,10 +28,9 @@ export function useInscription() {
   const [delegation, setDelegation] = useState("");
   const [gender, setGender] = useState("");
 
-  // ════════════════════════════════════════════════════════════════════════════
   // TOUS LES ÉTATS
-  // ════════════════════════════════════════════════════════════════════════════
-
+  const [step2Errors, setStep2Errors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
@@ -87,7 +86,14 @@ export function useInscription() {
   const [cinNumber, setCinNumber] = useState("");
   const [profession, setProfession] = useState("");
   const [isOcrLoading, setIsOcrLoading] = useState(false);
+  const [documentType, setDocumentType] = useState<"cin" | "passport">("cin");
 
+  // États pour le PASSEPORT
+  const [passportFile, setPassportFile] = useState<File | null>(null);
+  const [passportUrl, setPassportUrl] = useState<string | null>(null);
+  const [passportNumber, setPassportNumber] = useState("");
+  const [passportExpiryDate, setPassportExpiryDate] = useState("");
+  const [passportCountry, setPassportCountry] = useState("");
   // Étape 3 - WhatsApp
   const [whatsappCode, setWhatsappCode] = useState("");
   const [isWhatsappLoading, setIsWhatsappLoading] = useState(false);
@@ -122,12 +128,10 @@ export function useInscription() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [showQRCode, setShowQRCode] = useState(false);
   const [isMobileUploading, setIsMobileUploading] = useState(false);
-  // ════════════════════════════════════════════════════════════════════════════
-  // FONCTION RESET
-  // ════════════════════════════════════════════════════════════════════════════
 
+  // FONCTION RESET
   const resetForm = useCallback(() => {
-    console.log("🧹 Reset complet du formulaire...");
+    console.log(" Reset complet du formulaire...");
 
     setRole(null);
     setUsername("");
@@ -175,10 +179,17 @@ export function useInscription() {
     setCinRectoUrl(null);
     setCinVersoUrl(null);
     setProfilePictureUrl(null);
-    setCinData(null); // ✅ Important: réinitialiser cinData
+    setCinData(null);
 
     setIsUploadingCIN(false);
     setUploadCINError("");
+
+    setDocumentType("cin");
+    setPassportFile(null);
+    setPassportUrl(null);
+    setPassportNumber("");
+    setPassportExpiryDate("");
+    setPassportCountry("");
 
     setEmailError("");
     setUsernameError("");
@@ -194,75 +205,65 @@ export function useInscription() {
     localStorage.removeItem("currentUserId");
     setCurrentUserId(null);
 
-    console.log("✅ Reset terminé");
+    console.log(" Reset terminé");
   }, []);
 
-  // ════════════════════════════════════════════════════════════════════════════
   // FONCTION OCR
-  // ════════════════════════════════════════════════════════════════════════════
 
-  const handleOCR = useCallback(
-    async (file: File, side: "recto" | "verso") => {
-      try {
-        setIsOcrLoading(true);
-        console.log(`📄 OCR ${side} démarré pour:`, file.name);
+  const handleOCR = useCallback(async (file: File, side: "recto" | "verso") => {
+    try {
+      setIsOcrLoading(true);
+      console.log(` OCR ${side} démarré pour:`, file.name);
 
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("side", side);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("side", side);
 
-        const response = await fetch("/api/ocr", {
-          method: "POST",
-          body: formData,
-        });
+      const response = await fetch("/api/ocr", {
+        method: "POST",
+        body: formData,
+      });
 
-        const data = await response.json();
+      const data = await response.json();
 
-        if (!response.ok) {
-          console.warn(`⚠️ OCR ${side} échoué:`, data.error);
-          toast.warning(`OCR ${side} non disponible`, {
-            description: "Vous devrez remplir les champs manuellement.",
-          });
-          return null;
-        }
-
-        console.log(`✅ OCR ${side} réussi:`, data);
-
-        if (side === "recto") {
-          if (data.firstName && !firstName) setFirstName(data.firstName);
-          if (data.lastName && !lastName) setLastName(data.lastName);
-          if (data.dateOfBirth && !dateNaissance)
-            setDateNaissance(data.dateOfBirth);
-          if (data.cinNumber && !cinNumber) setCinNumber(data.cinNumber);
-        } else if (side === "verso") {
-          if (data.profession && !profession) setProfession(data.profession);
-        }
-
-        toast.success(`OCR ${side} analysé!`, {
-          description: "Les données ont été extraites avec succès.",
-        });
-
-        return data.extracted || null;
-      } catch (error) {
-        console.error(`❌ Erreur OCR ${side}:`, error);
-        toast.error(`Erreur OCR ${side}`, {
-          description:
-            error instanceof Error
-              ? error.message
-              : "Veuillez remplir manuellement",
+      if (!response.ok) {
+        console.warn(` OCR ${side} échoué:`, data.error);
+        toast.warning(t("ocr.notAvailable", { side }), {
+          description: t("ocr.fillManually"),
         });
         return null;
-      } finally {
-        setIsOcrLoading(false);
       }
-    },
-    [firstName, lastName, dateNaissance, cinNumber, profession],
-  );
 
-  // ════════════════════════════════════════════════════════════════════════════
+      console.log(` OCR ${side} réussi:`, data);
+
+      if (side === "recto") {
+        if (data.firstName && !firstName) setFirstName(data.firstName);
+        if (data.lastName && !lastName) setLastName(data.lastName);
+        if (data.dateOfBirth && !dateNaissance)
+          setDateNaissance(data.dateOfBirth);
+        if (data.cinNumber && !cinNumber) setCinNumber(data.cinNumber);
+      } else if (side === "verso") {
+        if (data.profession && !profession) setProfession(data.profession);
+      }
+
+      toast.success(t("ocr.success", { side }), {
+        description: t("ocr.extractedSuccess"),
+      });
+
+      return data.extracted || null;
+    } catch (error) {
+      console.error(` Erreur OCR ${side}:`, error);
+      toast.error(t("ocr.errorTitle", { side }), {
+        description:
+          error instanceof Error ? error.message : t("ocr.fillManually"),
+      });
+      return null;
+    } finally {
+      setIsOcrLoading(false);
+    }
+  }, []);
+
   // VALIDATION D'UNICITÉ
-  // ════════════════════════════════════════════════════════════════════════════
-
   const checkEmailExists = async (emailValue: string): Promise<boolean> => {
     if (!emailValue || !ValidationPatterns.isEmail(emailValue)) return false;
     try {
@@ -395,10 +396,7 @@ export function useInscription() {
     [t],
   );
 
-  // ════════════════════════════════════════════════════════════════════════════
   // EFFETS
-  // ════════════════════════════════════════════════════════════════════════════
-
   useEffect(() => {
     setMounted(true);
     const savedUserId = localStorage.getItem("currentUserId");
@@ -413,7 +411,7 @@ export function useInscription() {
     const clerkStatus = params.get("__clerk_status");
 
     if (params.get("verified") === "true" || clerkStatus === "verified") {
-      console.log("✅ Email vérifié - Passage à l'étape 2");
+      console.log(" Email vérifié - Passage à l'étape 2");
       setCurrentStep(2);
       setPendingVerification(false);
       window.history.replaceState({}, "", `/${currentLocale}/inscription`);
@@ -463,11 +461,11 @@ export function useInscription() {
   // Ajoute ce useEffect pour surveiller les changements de cinData
   useEffect(() => {
     if (cinData && Object.keys(cinData).length > 0) {
-      console.log("🔄 cinData CHANGÉ dans le modal:", cinData);
+      console.log(" cinData CHANGÉ dans le modal:", cinData);
       // Force un petit délai pour que React ait le temps de re-rendre
       setTimeout(() => {
         console.log(
-          "✅ Modal devrait maintenant afficher:",
+          " Modal devrait maintenant afficher:",
           cinData.firstName,
           cinData.lastName,
         );
@@ -477,57 +475,235 @@ export function useInscription() {
   const handleUploadCIN = async (): Promise<boolean> => {
     const userId = currentUserId || localStorage.getItem("currentUserId");
     if (!userId) {
-      setUploadCINError("ID utilisateur introuvable");
-      toast.error("Erreur", { description: "ID utilisateur non trouvé" });
+      setUploadCINError(t("errors.userNotFound"));
+      toast.error(t("errors.error"), { description: t("errors.userNotFound") });
       return false;
     }
 
-    // ✅ CAS 1: UPLOAD MOBILE (on a déjà les URLs)
-    if (cinRectoUrl && cinVersoUrl && profilePictureUrl) {
-      console.log("📱 Upload mobile détecté - conversion des URLs en fichiers");
-      setIsUploadingCIN(true);
-      setUploadCINError("");
+    setIsUploadingCIN(true);
+    setUploadCINError("");
 
-      try {
-        // Convertir les URLs en fichiers (comme si on les uploadait depuis le desktop)
-        const urlToFile = async (
-          url: string,
-          filename: string,
-        ): Promise<File> => {
-          const response = await fetch(url);
-          const blob = await response.blob();
-          return new File([blob], filename, { type: blob.type });
-        };
+    try {
+      //  CAS 1: PASSEPORT
+      if (documentType === "passport") {
+        // Vérifier qu'on a les fichiers nécessaires
+        if (!passportFile && !passportUrl) {
+          setUploadCINError(t("errors.passportRequired"));
+          toast.error(t("errors.error"), {
+            description: t("errors.passportRequired"),
+          });
+          return false;
+        }
 
-        const [rectoFile, versoFile, profileFile] = await Promise.all([
-          urlToFile(cinRectoUrl, "recto.jpg"),
-          urlToFile(cinVersoUrl, "verso.jpg"),
-          urlToFile(profilePictureUrl, "selfie.jpg"),
-        ]);
+        let finalPassportFile = passportFile;
+        let finalProfileFile = profilePhoto;
 
-        // ✅ APPELER LA MÊME API que l'upload desktop !
+        // CAS MOBILE: on a des URLs, pas des fichiers
+        if (passportUrl && !passportFile) {
+          console.log(" Upload mobile détecté (passeport)");
+          const urlToFile = async (
+            url: string,
+            filename: string,
+          ): Promise<File> => {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new File([blob], filename, { type: blob.type });
+          };
+
+          const [passportFileConverted, profileFileConverted] =
+            await Promise.all([
+              urlToFile(passportUrl, "passport.jpg"),
+              profilePictureUrl
+                ? urlToFile(profilePictureUrl, "selfie.jpg")
+                : Promise.resolve(null),
+            ]);
+
+          finalPassportFile = passportFileConverted;
+          finalProfileFile = profileFileConverted;
+        }
+
+        // Validation finale
+        if (!finalPassportFile) {
+          setUploadCINError(t("errors.passportFileMissing"));
+          return false;
+        }
+
         const formData = new FormData();
         formData.append("userId", userId);
-        formData.append("cinRecto", rectoFile);
-        formData.append("cinVerso", versoFile);
-        formData.append("profilePhoto", profileFile);
+        formData.append("documentType", "passport");
+        formData.append("passportFile", finalPassportFile);
+        if (finalProfileFile) formData.append("profilePhoto", finalProfileFile);
 
-        const res = await fetch("/api/registration/upload-cin", {
+        const res = await fetch("/api/registration/upload-document", {
           method: "POST",
           body: formData,
         });
 
         const data = await res.json();
-
         if (!res.ok) throw new Error(data.error || "Erreur upload");
 
-        // Sauvegarder les URLs (inchangées)
+        // Sauvegarder les URLs
+        if (data.urls?.passport) setPassportUrl(data.urls.passport);
+        if (data.urls?.profilePhoto)
+          setProfilePictureUrl(data.urls.profilePhoto);
+
+        // Créer les données extraites
+        if (data.extracted) {
+          const newDocumentData = {
+            documentType: "passport",
+            passportNumber: data.extracted.passportNumber || null,
+            firstName: data.extracted.firstName || null,
+            lastName: data.extracted.lastName || null,
+            dateOfBirth: data.extracted.dateOfBirth || null,
+            expiryDate: data.extracted.expiryDate || null,
+            sex: data.extracted.sex || null,
+            profession: data.extracted.profession || null,
+            cinNumber: data.extracted.cinNumber || null,
+            country: data.extracted.country || null,
+            extractedAt: new Date().toISOString(),
+            documentUrl: data.urls?.passport || passportUrl,
+          };
+
+          setCinData(newDocumentData);
+          setShowOcrConfirm(true);
+
+          // Remplir automatiquement les champs
+          if (data.extracted.firstName && !firstName)
+            setFirstName(data.extracted.firstName);
+          if (data.extracted.lastName && !lastName)
+            setLastName(data.extracted.lastName);
+          if (data.extracted.dateOfBirth && !dateNaissance)
+            setDateNaissance(data.extracted.dateOfBirth);
+          if (data.extracted.passportNumber && !passportNumber)
+            setPassportNumber(data.extracted.passportNumber);
+          if (data.extracted.expiryDate && !passportExpiryDate)
+            setPassportExpiryDate(data.extracted.expiryDate);
+          if (data.extracted.sex && !gender) setGender(data.extracted.sex);
+          if (data.extracted.profession && !profession)
+            setProfession(data.extracted.profession);
+          if (data.extracted.country && !passportCountry)
+            setPassportCountry(data.extracted.country);
+          if (data.extracted.cinNumber && !cinNumber)
+            setCinNumber(data.extracted.cinNumber);
+        }
+        toast.success(t("passport.analyzed"), {
+          description: data.extracted?.passportNumber
+            ? t("passport.numberDetected", {
+                number: data.extracted.passportNumber,
+              })
+            : t("passport.uploadSuccess"),
+        });
+
+        return true;
+      }
+
+      //  CAS 2: CIN
+      if (documentType === "cin") {
+        //  CAS 2.1: UPLOAD MOBILE
+        if (cinRectoUrl && cinVersoUrl && profilePictureUrl) {
+          console.log(
+            "Upload mobile détecté - conversion des URLs en fichiers",
+          );
+
+          const urlToFile = async (
+            url: string,
+            filename: string,
+          ): Promise<File> => {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            return new File([blob], filename, { type: blob.type });
+          };
+
+          const [rectoFile, versoFile, profileFile] = await Promise.all([
+            urlToFile(cinRectoUrl, "recto.jpg"),
+            urlToFile(cinVersoUrl, "verso.jpg"),
+            urlToFile(profilePictureUrl, "selfie.jpg"),
+          ]);
+
+          const formData = new FormData();
+          formData.append("userId", userId);
+          formData.append("documentType", "cin");
+          formData.append("cinRecto", rectoFile);
+          formData.append("cinVerso", versoFile);
+          formData.append("profilePhoto", profileFile);
+
+          const res = await fetch("/api/registration/upload-document", {
+            method: "POST",
+            body: formData,
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Erreur upload");
+
+          if (data.urls?.profilePhoto)
+            setProfilePictureUrl(data.urls.profilePhoto);
+          if (data.urls?.cinRecto) setCinRectoUrl(data.urls.cinRecto);
+          if (data.urls?.cinVerso) setCinVersoUrl(data.urls.cinVerso);
+
+          if (data.extracted) {
+            const newCinData = {
+              firstName: data.extracted.firstName || null,
+              lastName: data.extracted.lastName || null,
+              cinNumber: data.extracted.cinNumber || null,
+              dateOfBirth: data.extracted.dateOfBirth || null,
+              profession: data.extracted.profession || null,
+              extractedAt: new Date().toISOString(),
+              documentType: "CIN",
+              rectoUrl: data.urls?.cinRecto || cinRectoUrl,
+              versoUrl: data.urls?.cinVerso || cinVersoUrl,
+            };
+
+            setCinData(newCinData);
+            setShowOcrConfirm(true);
+
+            if (data.extracted.dateOfBirth && !dateNaissance)
+              setDateNaissance(data.extracted.dateOfBirth);
+            if (data.extracted.cinNumber && !cinNumber)
+              setCinNumber(data.extracted.cinNumber);
+            if (data.extracted.profession && !profession)
+              setProfession(data.extracted.profession);
+          }
+
+          toast.success(t("documents.analyzed"), {
+            description: data.extracted
+              ? t("cin.numberDetected", {
+                  number: data.extracted.cinNumber ?? "?",
+                })
+              : t("documents.uploadSuccess"),
+          });
+
+          return true;
+        }
+
+        //  CAS 2.2: UPLOAD DESKTOP
+        if (!cinRecto || !cinVerso || !profilePhoto) {
+          setUploadCINError(t("errors.threeFilesRequired"));
+          toast.error(t("errors.error"), {
+            description: t("errors.threeFilesRequired"),
+          });
+          return false;
+        }
+
+        const formData = new FormData();
+        formData.append("userId", userId);
+        formData.append("documentType", "cin");
+        formData.append("cinRecto", cinRecto);
+        formData.append("cinVerso", cinVerso);
+        formData.append("profilePhoto", profilePhoto);
+
+        const res = await fetch("/api/registration/upload-document", {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur upload");
+
         if (data.urls?.profilePhoto)
           setProfilePictureUrl(data.urls.profilePhoto);
         if (data.urls?.cinRecto) setCinRectoUrl(data.urls.cinRecto);
         if (data.urls?.cinVerso) setCinVersoUrl(data.urls.cinVerso);
 
-        // Créer et mettre à jour cinData
         if (data.extracted) {
           const newCinData = {
             firstName: data.extracted.firstName || null,
@@ -537,102 +713,26 @@ export function useInscription() {
             profession: data.extracted.profession || null,
             extractedAt: new Date().toISOString(),
             documentType: "CIN",
-            rectoUrl: data.urls?.cinRecto || cinRectoUrl,
-            versoUrl: data.urls?.cinVerso || cinVersoUrl,
+            rectoUrl: data.urls?.cinRecto || null,
+            versoUrl: data.urls?.cinVerso || null,
           };
 
           setCinData(newCinData);
           setShowOcrConfirm(true);
 
-          if (data.extracted.dateOfBirth && !dateNaissance) {
+          if (data.extracted.dateOfBirth && !dateNaissance)
             setDateNaissance(data.extracted.dateOfBirth);
-          }
-          if (data.extracted.cinNumber && !cinNumber) {
+          if (data.extracted.cinNumber && !cinNumber)
             setCinNumber(data.extracted.cinNumber);
-          }
-          if (data.extracted.profession && !profession) {
+          if (data.extracted.profession && !profession)
             setProfession(data.extracted.profession);
-          }
         }
 
-        toast.success("Documents analysés !", {
-          description: data.extracted
-            ? `CIN n°${data.extracted.cinNumber ?? "?"} — vérifiez avant de confirmer.`
-            : "Upload réussi. Remplissez manuellement.",
-        });
-
+        toast.success(t("documents.analyzed"));
         return true;
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : "Erreur inconnue";
-        setUploadCINError(msg);
-        toast.error("Erreur analyse", { description: msg });
-        return false;
-      } finally {
-        setIsUploadingCIN(false);
       }
-    }
 
-    // ✅ CAS 2: UPLOAD DESKTOP (upload normal des fichiers)
-    if (!cinRecto || !cinVerso || !profilePhoto) {
-      setUploadCINError("Veuillez uploader les 3 fichiers");
-      toast.error("Erreur", {
-        description: "Veuillez uploader les 3 fichiers",
-      });
       return false;
-    }
-
-    setIsUploadingCIN(true);
-    setUploadCINError("");
-
-    try {
-      const formData = new FormData();
-      formData.append("userId", userId);
-      formData.append("cinRecto", cinRecto);
-      formData.append("cinVerso", cinVerso);
-      formData.append("profilePhoto", profilePhoto);
-
-      const res = await fetch("/api/registration/upload-cin", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || "Erreur upload");
-
-      if (data.urls?.profilePhoto) setProfilePictureUrl(data.urls.profilePhoto);
-      if (data.urls?.cinRecto) setCinRectoUrl(data.urls.cinRecto);
-      if (data.urls?.cinVerso) setCinVersoUrl(data.urls.cinVerso);
-
-      if (data.extracted) {
-        const newCinData = {
-          firstName: data.extracted.firstName || null,
-          lastName: data.extracted.lastName || null,
-          cinNumber: data.extracted.cinNumber || null,
-          dateOfBirth: data.extracted.dateOfBirth || null,
-          profession: data.extracted.profession || null,
-          extractedAt: new Date().toISOString(),
-          documentType: "CIN",
-          rectoUrl: data.urls?.cinRecto || null,
-          versoUrl: data.urls?.cinVerso || null,
-        };
-
-        setCinData(newCinData);
-        setShowOcrConfirm(true);
-
-        if (data.extracted.dateOfBirth && !dateNaissance) {
-          setDateNaissance(data.extracted.dateOfBirth);
-        }
-        if (data.extracted.cinNumber && !cinNumber) {
-          setCinNumber(data.extracted.cinNumber);
-        }
-        if (data.extracted.profession && !profession) {
-          setProfession(data.extracted.profession);
-        }
-      }
-
-      toast.success("Documents analysés !");
-      return true;
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erreur inconnue";
       setUploadCINError(msg);
@@ -642,20 +742,26 @@ export function useInscription() {
       setIsUploadingCIN(false);
     }
   };
-  // ════════════════════════════════════════════════════════════════════════════
-  // WHATSAPP
-  // ════════════════════════════════════════════════════════════════════════════
 
+  // WHATSAPP
   const handleSendWhatsApp = async () => {
+    if (!governorate) {
+      toast.error(t("errors.governorateRequired"));
+      return;
+    }
+    if (!delegation) {
+      toast.error(t("errors.delegationRequired"));
+      return;
+    }
     if (!phoneNumber) {
-      setFormError("Veuillez entrer votre numéro de téléphone");
+      setFormError(t("errors.phoneRequired"));
       return;
     }
 
     const userId = currentUserId || localStorage.getItem("currentUserId");
 
     if (!userId) {
-      setFormError("ID utilisateur non trouvé");
+      setFormError(t("errors.userNotFound"));
       return;
     }
 
@@ -696,9 +802,7 @@ export function useInscription() {
       }
 
       setPhoneNumberResourceId(data.phoneNumberId);
-      setWhatsappAlertMessage(
-        `Un code de vérification a été envoyé sur WhatsApp au +216 ${phoneNumber}`,
-      );
+      setWhatsappAlertMessage(t("whatsapp.codeSent", { phoneNumber }));
       setShowWhatsappAlert(true);
     } catch (error: any) {
       console.error("Erreur WhatsApp:", error);
@@ -712,7 +816,7 @@ export function useInscription() {
     e.preventDefault();
 
     if (whatsappCode.length !== 6) {
-      setWhatsappError("Code à 6 chiffres requis");
+      setWhatsappError(t("errors.codeRequired"));
       return;
     }
 
@@ -741,20 +845,17 @@ export function useInscription() {
       if (response.ok) {
         setCurrentStep(4);
       } else {
-        throw new Error(data.error || "Code invalide");
+        throw new Error(data.error || t("errors.invalidCode"));
       }
     } catch (error: any) {
       console.error("Erreur vérification:", error);
-      setWhatsappError(error.message || "Code invalide");
+      setWhatsappError(error.message || t("errors.invalidCode"));
     } finally {
       setIsWhatsappLoading(false);
     }
   };
 
-  // ════════════════════════════════════════════════════════════════════════════
   // VALIDATION
-  // ════════════════════════════════════════════════════════════════════════════
-
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -934,7 +1035,7 @@ export function useInscription() {
             const uploadData = await uploadRes.json();
             uploadedProfilePictureUrl = uploadData.url;
             setProfilePictureUrl(uploadedProfilePictureUrl);
-            console.log("✅ Photo uploadée:", uploadedProfilePictureUrl);
+            console.log("Photo uploadée:", uploadedProfilePictureUrl);
           }
         } catch (err) {
           console.error("Erreur upload photo:", err);
@@ -969,14 +1070,14 @@ export function useInscription() {
       localStorage.setItem("preferred-language", currentLocale);
 
       const verifyUrl = `${window.location.origin}/${currentLocale}/inscription/verify-catch`;
-      console.log("📧 Verification URL:", verifyUrl);
+      console.log(" Verification URL:", verifyUrl);
 
       await signUp.prepareEmailAddressVerification({
         strategy: "email_link",
         redirectUrl: verifyUrl,
       });
 
-      setAlertMessage(`Un lien de vérification a été envoyé à ${email}`);
+      setAlertMessage(t("alerts.verificationLinkSent", { email }));
       setShowSuccessAlert(true);
     } catch (error: any) {
       console.error("ERREUR DÉTAILLÉE:", error);
@@ -988,15 +1089,12 @@ export function useInscription() {
     }
   };
 
-  // ════════════════════════════════════════════════════════════════════════════
-  // HANDLE CONFIRM IDENTITY (CORRIGÉ)
-  // ════════════════════════════════════════════════════════════════════════════
-
+  // HANDLE CONFIRM IDENTITY
   const handleConfirmIdentity = async () => {
-    // ✅ Vérifier que les données OCR sont disponibles
+    //  Vérifier que les données OCR sont disponibles
     if (!cinData || !cinData.firstName) {
-      toast.error("Données OCR manquantes", {
-        description: "Veuillez d'abord analyser vos documents.",
+      toast.error(t("ocr.missingData"), {
+        description: t("ocr.analyzeFirst"),
       });
       return;
     }
@@ -1007,16 +1105,16 @@ export function useInscription() {
     const tempId = currentUserId || localStorage.getItem("currentUserId");
 
     try {
-      // ✅ Les URLs sont déjà dans cinData (créées pendant handleUploadCIN)
+      //  Les URLs sont déjà dans cinData (créées pendant handleUploadCIN)
       const uploadedProfilePictureUrl =
         cinData.profilePictureUrl || profilePictureUrl;
       const uploadedRectoUrl = cinData.rectoUrl || cinRectoUrl;
       const uploadedVersoUrl = cinData.versoUrl || cinVersoUrl;
 
-      // ✅ Préparer les données à envoyer
+      //  Préparer les données à envoyer
       const cinDataToSave = {
-        firstName: cinData.firstName, // 'سمر'
-        lastName: cinData.lastName, // 'الشريف'
+        firstName: cinData.firstName,
+        lastName: cinData.lastName,
         cinNumber: cinData.cinNumber || cinNumber,
         dateOfBirth: cinData.dateOfBirth || dateNaissance,
         profession: cinData.profession || profession,
@@ -1026,27 +1124,27 @@ export function useInscription() {
         versoUrl: uploadedVersoUrl,
       };
 
-      console.log("📦 Envoi des données au serveur:", {
-        firstNameFrancais: firstName, // 'samar'
-        lastNameFrancais: lastName, // 'cherif'
-        cinDataArabe: cinDataToSave, // {firstName: 'سمر', lastName: 'الشريف'}
+      console.log(" Envoi des données au serveur:", {
+        firstNameFrancais: firstName,
+        lastNameFrancais: lastName,
+        cinDataArabe: cinDataToSave,
       });
       // Juste avant le fetch, ajoute :
-      console.log("🔍 Vérification cinData avant envoi:", {
+      console.log(" Vérification cinData avant envoi:", {
         firstNameArabe: cinData.firstName,
         lastNameArabe: cinData.lastName,
         cinNumber: cinData.cinNumber,
         dateOfBirth: cinData.dateOfBirth,
         profession: cinData.profession,
       });
-      // ✅ Envoi au serveur avec les valeurs FRANÇAISES + ARABES
+      //  Envoi au serveur avec les valeurs FRANÇAISES + ARABES
       const completeProfileRes = await fetch("/api/users/complete-profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: tempId,
-          firstName: firstName || "", // 'samar' (français)
-          lastName: lastName || "", // 'cherif' (français)
+          firstName: firstName || "",
+          lastName: lastName || "",
           dateNaissance: dateNaissance || cinData?.dateOfBirth || "",
           cinNumber: cinNumber || cinData?.cinNumber || "",
           bio: bio || "",
@@ -1059,20 +1157,20 @@ export function useInscription() {
           cinRectoUrl: uploadedRectoUrl || "",
           cinVersoUrl: uploadedVersoUrl || "",
           profilePictureUrl: uploadedProfilePictureUrl || "",
-          cinData: cinDataToSave, // ✅ Données arabes du CIN
+          cinData: cinDataToSave,
         }),
       });
 
       if (!completeProfileRes.ok) {
         const errorData = await completeProfileRes.json();
-        console.error("❌ Erreur complete-profile:", errorData);
+        console.error(" Erreur complete-profile:", errorData);
         throw new Error(errorData.error || "Erreur lors de l'enregistrement");
       }
 
       const completeProfileData = await completeProfileRes.json();
-      console.log("✅ Complete-profile réussi:", completeProfileData);
+      console.log(" Complete-profile réussi:", completeProfileData);
 
-      // ✅ Mise à jour Clerk ID si nécessaire
+      //  Mise à jour Clerk ID si nécessaire
       if (isUserLoaded && user?.id && tempId && tempId !== user.id) {
         try {
           await fetch("/api/users/update-clerk-id", {
@@ -1083,7 +1181,7 @@ export function useInscription() {
           localStorage.setItem("currentUserId", user.id);
           setCurrentUserId(user.id);
         } catch (syncErr) {
-          console.warn("⚠️ Sync Clerk ID échoué (non bloquant):", syncErr);
+          console.warn(" Sync Clerk ID échoué (non bloquant):", syncErr);
         }
       }
 
@@ -1091,14 +1189,13 @@ export function useInscription() {
         completeProfileData.message || "Profil complété avec succès !",
       );
 
-      // ✅ Fermer le modal et montrer le welcome
+      //  Fermer le modal et montrer le welcome
       setShowOcrConfirm(false);
       setShowWelcome(true);
     } catch (error) {
-      console.error("❌ Erreur handleConfirmIdentity:", error);
-      toast.error("Erreur lors de la confirmation", {
-        description:
-          error instanceof Error ? error.message : "Veuillez réessayer",
+      console.error(" Erreur handleConfirmIdentity:", error);
+      toast.error(t("errors.confirmationError"), {
+        description: error instanceof Error ? error.message : t("errors.retry"),
       });
       setUploadCINError(
         error instanceof Error ? error.message : "Erreur inconnue",
@@ -1108,10 +1205,7 @@ export function useInscription() {
     }
   };
 
-  // ════════════════════════════════════════════════════════════════════════════
   // HANDLE GO TO COMPLETE PROFILE & DASHBOARD
-  // ════════════════════════════════════════════════════════════════════════════
-
   const handleGoToCompleteProfile = async () => {
     setShowWelcome(false);
     localStorage.removeItem("pendingEmail");
@@ -1134,9 +1228,45 @@ export function useInscription() {
     const currentLocale = getCurrentLocale();
     router.push(`/${currentLocale}/dashboard`);
   };
-  // ════════════════════════════════════════════════════════════════════════════
-  // RETURN
-  // ════════════════════════════════════════════════════════════════════════════
+
+  const validateStep2 = useCallback(() => {
+    const errors: Record<string, string> = {};
+
+    if (!firstName.trim()) {
+      errors.firstName = t("errors.firstNameRequired");
+    }
+    if (!lastName.trim()) {
+      errors.lastName = t("errors.lastNameRequired");
+    }
+    if (!phoneNumber || phoneNumber.length < 8) {
+      errors.phoneNumber = t("errors.phoneTooShort");
+    }
+    if (!governorate) {
+      errors.governorate = t("errors.governorateRequired");
+    }
+    if (!delegation) {
+      errors.delegation = t("errors.delegationRequired");
+    }
+
+    setStep2Errors(errors);
+    return Object.keys(errors).length === 0;
+  }, [firstName, lastName, phoneNumber, governorate, delegation, t]);
+
+  // À ajouter dans useInscription
+  const handleAnalyzeDocuments = useCallback(async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const success = await handleUploadCIN();
+      if (success) {
+        console.log(" Upload réussi");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [isSubmitting, handleUploadCIN]);
+
   return {
     t,
     mounted,
@@ -1242,11 +1372,11 @@ export function useInscription() {
     gender,
     setGender,
     cinRectoUrl,
-    setCinRectoUrl, // ✅ AJOUTE CETTE LIGNE
+    setCinRectoUrl,
     cinVersoUrl,
-    setCinVersoUrl, // ✅ AJOUTE CETTE LIGNE
+    setCinVersoUrl,
     profilePictureUrl,
-    setProfilePictureUrl, // ✅ AJOUTE CETTE LIGNE
+    setProfilePictureUrl,
     resetForm,
     setCinData,
     sessionId,
@@ -1259,5 +1389,20 @@ export function useInscription() {
     setShowQRCode,
     isMobileUploading,
     setIsMobileUploading,
+    documentType,
+    setDocumentType,
+    passportFile,
+    setPassportFile,
+    passportUrl,
+    setPassportUrl,
+    passportNumber,
+    setPassportNumber,
+    passportExpiryDate,
+    setPassportExpiryDate,
+    passportCountry,
+    setPassportCountry,
+    step2Errors,
+    validateStep2,
+    handleAnalyzeDocuments,
   };
 }

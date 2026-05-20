@@ -9,30 +9,23 @@ import {
   Eye,
   Loader2,
   CheckCircle,
-  ArrowLeft,
   ArrowRight,
-  UserPlus,
-  Badge,
   Smartphone,
   RefreshCw,
   Camera,
   ShieldCheck,
   CloudUpload,
-  Sparkles,
   CircleDashed,
   QrCode,
   X,
   FlipHorizontal,
   User,
-  IdCard,
 } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { RiLockPasswordLine } from "react-icons/ri";
 import {
   MdOutlineDangerous,
   MdVerified,
-  MdAccountCircle,
-  MdOutlineCameraAlt,
   MdLockOutline,
   MdReportGmailerrorred,
   MdOutlineAlternateEmail,
@@ -40,8 +33,6 @@ import {
   MdOutlineLocationOn,
   MdMarkEmailRead,
   MdPendingActions,
-  MdOutlineSecurity,
-  MdSecurity,
 } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
 import { MdOutlineHomeWork } from "react-icons/md";
@@ -51,32 +42,23 @@ import {
   FaCheckCircle,
   FaCheck,
   FaWhatsapp,
-  FaGavel,
   FaUsers,
   FaRegUser,
-  FaIdCard,
 } from "react-icons/fa";
-import { FaAddressCard } from "react-icons/fa";
-import {
-  BsFillCreditCard2BackFill,
-  BsFillPersonVcardFill,
-  BsFillPostcardFill,
-} from "react-icons/bs";
+import { BsFillPersonVcardFill, BsFillPostcardFill } from "react-icons/bs";
 import { GiPartyPopper } from "react-icons/gi";
 import { IoChevronBackSharp } from "react-icons/io5";
 import { LuBadgeInfo } from "react-icons/lu";
-import { TiCloudStorage } from "react-icons/ti";
-import { RiUserFollowFill } from "react-icons/ri";
-import ImageCropper from "@/components/ui/ImageCropper";
 import { useInscription } from "./hooks/useInscription";
+import { DocumentTypeSelector } from "@/components/ui/DocumentTypeSelector";
+import { DocumentUploader } from "@/components/ui/DocumentUploader";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
-import { AiTwotoneIdcard } from "react-icons/ai";
-// Ajoute cette fonction près du début du fichier, après les imports
+import { BiErrorAlt } from "react-icons/bi";
 
-// ── Alert components ──
+// Alert components
 const SuccessAlert = ({
   message,
   onClose,
@@ -268,13 +250,27 @@ export default function InscriptionPage() {
     setShowQRCode,
     isMobileUploading,
     setIsMobileUploading,
-    // ✅ AJOUTE CES 3 LIGNES
     cinRectoUrl,
     setCinRectoUrl,
     cinVersoUrl,
     setCinVersoUrl,
     profilePictureUrl,
     setProfilePictureUrl,
+    documentType,
+    setDocumentType,
+    passportFile,
+    setPassportFile,
+    passportUrl,
+    setPassportUrl,
+    passportNumber,
+    setPassportNumber,
+    passportExpiryDate,
+    setPassportExpiryDate,
+    passportCountry,
+    setPassportCountry,
+    step2Errors,
+    validateStep2,
+    handleAnalyzeDocuments,
   } = useInscription();
 
   const router = useRouter();
@@ -286,7 +282,6 @@ export default function InscriptionPage() {
 
   const totalDone = [cinRecto, cinVerso, profilePhoto].filter(Boolean).length;
   const docsDone = !!(cinRecto && cinVerso);
-
   // Timer pour masquer l'erreur après 5 secondes
   useEffect(() => {
     if (generalError) {
@@ -335,7 +330,7 @@ export default function InscriptionPage() {
     }
   }, [whatsappError]);
 
-  // ✅ FONCTION handleOCR CORRIGÉE - retourne les données extraites
+  //  FONCTION handleOCR CORRIGÉE - retourne les données extraites
   const handleOCR = async (file: File, side: "recto" | "verso") => {
     const formData = new FormData();
     formData.append("file", file);
@@ -345,30 +340,33 @@ export default function InscriptionPage() {
       const response = await fetch("/api/ocr", {
         method: "POST",
         body: formData,
-        credentials: "include", // ✅ AJOUTER CETTE LIGNE
+        credentials: "include",
       });
 
       const data = await response.json();
-      console.log("📦 Réponse OCR complète:", data);
+      console.log(" Réponse OCR complète:", data);
 
       if (data.success && data.extracted) {
-        console.log("📝 Données extraites:", data.extracted);
+        console.log(" Données extraites:", data.extracted);
 
-        // ✅ MODIFICATION 1: Ne plus écraser les noms français ici
-        // On garde cette logique uniquement pour les champs techniques
-        // if (data.extracted.firstName) setFirstName(data.extracted.firstName);
-        // if (data.extracted.lastName) setLastName(data.extracted.lastName);
+        // Ne plus écraser les noms français ici
 
         if (data.extracted.cinNumber) setCinNumber(data.extracted.cinNumber);
         if (data.extracted.dateOfBirth)
           setDateNaissance(data.extracted.dateOfBirth);
         if (data.extracted.profession) setProfession(data.extracted.profession);
-
+        if (data.extracted.passportNumber)
+          setPassportNumber(data.extracted.passportNumber);
+        if (data.extracted.expiryDate)
+          setPassportExpiryDate(data.extracted.expiryDate);
+        if (data.extracted.country) setPassportCountry(data.extracted.country);
+        if (data.extracted.firstName) setFirstName(data.extracted.firstName);
+        if (data.extracted.lastName) setLastName(data.extracted.lastName);
         toast.success(t("ocrDetected"), {
           description: t("ocrDetectedDescription"),
         });
 
-        // ✅ MODIFICATION 2: Retourner les données extraites
+        // Retourner les données extraites
         return data.extracted;
       } else {
         console.log("Aucune donnée OCR extraite ou erreur", data);
@@ -398,133 +396,179 @@ export default function InscriptionPage() {
     return new File([byteArray], filename, { type: mimeType });
   };
   const handleMobileSync = useCallback(async () => {
-  setIsMobileUploading(true);
-  setUploadProgress(0);
+    setIsMobileUploading(true);
+    setUploadProgress(0);
 
-  const userId = currentUserId || localStorage.getItem("currentUserId");
-  if (!userId) {
-    toast.error("Erreur", { description: "Utilisateur non trouvé" });
-    setIsMobileUploading(false);
-    return;
-  }
-
-  let interval: NodeJS.Timeout | null = null;
-  let timeout: NodeJS.Timeout | null = null;
-
-  try {
-    const res = await fetch("/api/mobile-upload/session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId }),
-    });
-
-    const data = await res.json();
-    const currentSessionId = data.sessionId;
-
-    if (currentSessionId) {
-      setSessionId(currentSessionId);
-      setQrUrl(data.qrUrl);
-      setShowQRCode(true);
-      setUploadProgress(0);
-
-      timeout = setTimeout(() => {
-        if (interval) clearInterval(interval);
-        setShowQRCode(false);
-        setIsMobileUploading(false);
-        toast.info("Session expirée");
-      }, 600000);
-
-      interval = setInterval(async () => {
-        try {
-          const sessionRes = await fetch(
-            `/api/mobile-upload/session?sessionId=${currentSessionId}`,
-          );
-
-          if (sessionRes.status === 404 || sessionRes.status === 410) {
-            if (interval) clearInterval(interval);
-            if (timeout) clearTimeout(timeout);
-            setShowQRCode(false);
-            setIsMobileUploading(false);
-            toast.info("Session expirée");
-            return;
-          }
-
-          const sessionData = await sessionRes.json();
-          const filesCount = Object.keys(sessionData.files || {}).length;
-          setUploadProgress(filesCount);
-
-          if (filesCount === 3) {
-            if (interval) clearInterval(interval);
-            if (timeout) clearTimeout(timeout);
-
-            const files = sessionData.files;
-
-            // ✅ Convertir base64 en File objets
-            const base64ToFile = (base64: string, filename: string, mimeType: string): File => {
-              const byteCharacters = atob(base64);
-              const byteNumbers = new Array(byteCharacters.length);
-              for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-              }
-              const byteArray = new Uint8Array(byteNumbers);
-              return new File([byteArray], filename, { type: mimeType });
-            };
-
-            if (files.recto?.data) {
-              const file = base64ToFile(files.recto.data, "recto.jpg", files.recto.type);
-              setCinRecto(file);
-              setCinRectoUrl(null); // Pas d'URL car pas encore uploadé
-            }
-            if (files.verso?.data) {
-              const file = base64ToFile(files.verso.data, "verso.jpg", files.verso.type);
-              setCinVerso(file);
-              setCinVersoUrl(null);
-            }
-            if (files.selfie?.data) {
-              const file = base64ToFile(files.selfie.data, "selfie.jpg", files.selfie.type);
-              setProfilePhoto(file);
-              setProfilePictureUrl(null);
-            }
-
-            setShowQRCode(false);
-            setIsMobileUploading(false);
-
-            toast.success("3 documents reçus du mobile !", {
-              description: "Cliquez sur 'Analyser les documents' pour finaliser",
-            });
-          }
-        } catch (error) {
-          console.error("Erreur polling:", error);
-        }
-      }, 2000);
+    const userId = currentUserId || localStorage.getItem("currentUserId");
+    if (!userId) {
+      toast.error(t("errors.error"), { description: t("errors.userNotFound") });
+      setIsMobileUploading(false);
+      return;
     }
-  } catch (error) {
-    console.error("Erreur création session:", error);
-    toast.error("Erreur", {
-      description: "Impossible de créer la session mobile",
-    });
-    setIsMobileUploading(false);
-  }
-}, [
-  currentUserId,
-  setCinRecto,
-  setCinVerso,
-  setProfilePhoto,
-  setCinRectoUrl,
-  setCinVersoUrl,
-  setProfilePictureUrl,
-]);
-  // ============================================================
+
+    let interval: NodeJS.Timeout | null = null;
+    let timeout: NodeJS.Timeout | null = null;
+
+    try {
+      const res = await fetch("/api/mobile-upload/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, documentType }),
+      });
+
+      const data = await res.json();
+      const currentSessionId = data.sessionId;
+
+      if (currentSessionId) {
+        setSessionId(currentSessionId);
+        setQrUrl(data.qrUrl);
+        setShowQRCode(true);
+        setUploadProgress(0);
+
+        timeout = setTimeout(() => {
+          if (interval) clearInterval(interval);
+          setShowQRCode(false);
+          setIsMobileUploading(false);
+          toast.info(t("sessionExpired"));
+        }, 600000);
+
+        interval = setInterval(async () => {
+          try {
+            const sessionRes = await fetch(
+              `/api/mobile-upload/session?sessionId=${currentSessionId}`,
+            );
+
+            if (sessionRes.status === 404 || sessionRes.status === 410) {
+              if (interval) clearInterval(interval);
+              if (timeout) clearTimeout(timeout);
+              setShowQRCode(false);
+
+              setIsMobileUploading(false);
+              toast.info(t("sessionExpired"));
+              return;
+            }
+
+            const sessionData = await sessionRes.json();
+            const filesCount = Object.keys(sessionData.files || {}).length;
+            setUploadProgress(filesCount);
+
+            //  DÉTECTION DU MODE (CIN ou PASSEPORT)
+            const isPassportMode = sessionData.documentType === "passport";
+            const expectedCount = isPassportMode ? 2 : 3;
+
+            if (filesCount >= expectedCount) {
+              if (interval) clearInterval(interval);
+              if (timeout) clearTimeout(timeout);
+
+              const files = sessionData.files;
+
+              const base64ToFile = (
+                base64: string,
+                filename: string,
+                mimeType: string,
+              ): File => {
+                const byteCharacters = atob(base64);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                  byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                return new File([byteArray], filename, { type: mimeType });
+              };
+
+              if (isPassportMode) {
+                //  MODE PASSEPORT : 2 fichiers (passeport + selfie)
+                if (files.passport?.data) {
+                  const file = base64ToFile(
+                    files.passport.data,
+                    "passport.jpg",
+                    files.passport.type,
+                  );
+                  setPassportFile(file);
+                  setPassportUrl(null);
+                }
+                if (files.selfie?.data) {
+                  const file = base64ToFile(
+                    files.selfie.data,
+                    "selfie.jpg",
+                    files.selfie.type,
+                  );
+                  setProfilePhoto(file);
+                  setProfilePictureUrl(null);
+                }
+                setShowQRCode(false);
+                setIsMobileUploading(false);
+                toast.success(t("mobile.receivedPassport"), {
+                  description: t("mobile.clickToAnalyze"),
+                });
+              } else {
+                //  MODE CIN : 3 fichiers (recto + verso + selfie)
+                if (files.recto?.data) {
+                  const file = base64ToFile(
+                    files.recto.data,
+                    "recto.jpg",
+                    files.recto.type,
+                  );
+                  setCinRecto(file);
+                  setCinRectoUrl(null);
+                }
+                if (files.verso?.data) {
+                  const file = base64ToFile(
+                    files.verso.data,
+                    "verso.jpg",
+                    files.verso.type,
+                  );
+                  setCinVerso(file);
+                  setCinVersoUrl(null);
+                }
+                if (files.selfie?.data) {
+                  const file = base64ToFile(
+                    files.selfie.data,
+                    "selfie.jpg",
+                    files.selfie.type,
+                  );
+                  setProfilePhoto(file);
+                  setProfilePictureUrl(null);
+                }
+                setShowQRCode(false);
+                setIsMobileUploading(false);
+                toast.success(t("mobile.receivedDocuments"), {
+                  description: t("mobile.clickToAnalyze"),
+                });
+              }
+            }
+          } catch (error) {
+            console.error("Erreur polling:", error);
+          }
+        }, 2000);
+      }
+    } catch (error) {
+      console.error("Erreur création session:", error);
+      toast.error(t("errors.error"), {
+        description: t("mobile.sessionCreationFailed"),
+      });
+      setIsMobileUploading(false);
+    }
+  }, [
+    currentUserId,
+    documentType,
+    setCinRecto,
+    setCinVerso,
+    setProfilePhoto,
+    setCinRectoUrl,
+    setCinVersoUrl,
+    setProfilePictureUrl,
+    setPassportFile,
+    setPassportUrl,
+  ]);
   // COMPOSANTS POUR ÉTAPE 4
-  // ============================================================
-  // ✅ CORRIGÉ :
   function useObjectUrl(
     file: File | null,
     fileUrl?: string | null,
   ): string | null {
     const [url, setUrl] = useState<string | null>(null);
     const prevUrl = useRef<string | null>(null);
-
+    const [isSubmitting, setIsSubmitting] = useState(false);
     useEffect(() => {
       if (prevUrl.current) {
         URL.revokeObjectURL(prevUrl.current);
@@ -560,7 +604,7 @@ export default function InscriptionPage() {
   }
 
   function IDCard({ side, file, fileUrl, onFile, onRemove }: IDCardProps) {
-    const preview = useObjectUrl(file, fileUrl); // ← Passe fileUrl
+    const preview = useObjectUrl(file, fileUrl);
     const [drag, setDrag] = useState(false);
     const id = `id-${side}`;
     const isRecto = side === "recto";
@@ -568,8 +612,8 @@ export default function InscriptionPage() {
     // Utiliser preview si disponible, sinon fileUrl
     const imageSrc = fileUrl ? pipAvatar(fileUrl) : preview;
 
-    console.log(`📸 ${side} - fileUrl:`, fileUrl);
-    console.log(`📸 ${side} - imageSrc:`, imageSrc);
+    console.log(` ${side} - fileUrl:`, fileUrl);
+    console.log(` ${side} - imageSrc:`, imageSrc);
     const handleFile = (f: File) => {
       if (!f.type.startsWith("image/")) {
         toast.error(t("errors.formatNotSupported"), {
@@ -723,11 +767,11 @@ export default function InscriptionPage() {
     onFile: (f: File) => void;
     onRemove: () => void;
   }) {
-    const preview = useObjectUrl(file, fileUrl); // ← Passe fileUrl
+    const preview = useObjectUrl(file, fileUrl);
     const imageSrc = fileUrl ? pipAvatar(fileUrl) : preview;
 
-    console.log(`📸 Avatar - fileUrl:`, fileUrl);
-    console.log(`📸 Avatar - imageSrc:`, imageSrc);
+    console.log(` Avatar - fileUrl:`, fileUrl);
+    console.log(` Avatar - imageSrc:`, imageSrc);
 
     return (
       <div className="flex items-center gap-4">
@@ -809,24 +853,25 @@ export default function InscriptionPage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-white dark:bg-slate-900 flex items-center justify-center p-3 sm:p-4 md:p-6 relative overflow-hidden">
+    <div className="relative min-h-screen w-full flex flex-col items-center justify-start p-3 sm:p-4 md:p-6">
+      {" "}
       {/* ── Arrière-plan ciel bleu avec coupure diagonale écarlate ── */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {/* ── Arrière-plan ciel bleu avec coupure diagonale écarlate ── */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        {" "}
         <div className="absolute -top-24 left-[-6rem] h-72 w-72 rounded-full bg-white blur-3xl dark:bg-blue-500/10" />
         <div className="absolute top-8 right-16 h-56 w-56 rounded-full bg-sky-200/50 blur-3xl dark:bg-purple-500/10" />
         <div className="absolute -bottom-24 left-[-6rem] h-72 w-72 rounded-full bg-sky-200/50 blur-3xl dark:bg-purple-500/10" />
         <div className="absolute bottom-8 right-16 h-56 w-56 rounded-full bg-white/70 blur-3xl dark:bg-blue-500/10" />
-
         {/* Ligne inclinée blanche */}
         <div className="absolute inset-x-0 bottom-[41.5%] h-px rotate-[-5deg] bg-white/40 dark:bg-white/10" />
-
         <div
           className="absolute inset-x-0 bottom-0 h-[44%] bg-gradient-to-r from-blue-500 via-sky-500 to-purple-500 shadow-[0_-18px_50px_rgba(59,130,246,0.22)] dark:from-[#172554] dark:via-[#1d4ed8] dark:to-[#581c87] dark:shadow-[0_-18px_50px_rgba(37,99,235,0.18)]"
           style={{ clipPath: "polygon(0 32%, 100% 0, 100% 100%, 0 100%)" }}
         />
       </div>
-
-      <div className="w-full max-w-[min(100%,800px)] sm:max-w-3xl md:max-w-4xl lg:max-w-[900px] mx-auto">
+      <div className="w-full max-w-[min(100%,800px)] sm:max-w-3xl md:max-w-4xl lg:max-w-[900px] mx-auto flex flex-col justify-center">
+        {" "}
         {/* Logo */}
         <div className="flex items-center gap-3 mb-4 sm:mb-6 justify-center">
           <div className="relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14">
@@ -841,7 +886,6 @@ export default function InscriptionPage() {
             N E S T H U B
           </h2>
         </div>
-
         {/* Stepper avec dégradé NestHub */}
         <div className="mb-8">
           <div className="flex items-start justify-between px-2 gap-3">
@@ -961,7 +1005,6 @@ export default function InscriptionPage() {
             </div>
           </div>
         </div>
-
         {/* Alertes */}
         <AnimatePresence>
           {showSuccessAlert && (
@@ -984,7 +1027,6 @@ export default function InscriptionPage() {
             />
           )}
         </AnimatePresence>
-
         {/* Message d'erreur général - style comme le login */}
         {showGeneralError && generalError && (
           <motion.div
@@ -1007,7 +1049,6 @@ export default function InscriptionPage() {
             </button>
           </motion.div>
         )}
-
         <AnimatePresence mode="wait">
           {/* ÉTAPE 1 : COMPTE (EMAIL) */}
           {currentStep === 1 && !pendingVerification && (
@@ -1017,7 +1058,7 @@ export default function InscriptionPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm max-h-[85vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm"
             >
               <div className="mb-3 sm:mb-4 md:mb-5">
                 <h1 className="text-base sm:text-lg md:text-xl lg:text-2xl font-bold mb-1 text-gray-900 dark:text-white">
@@ -1359,7 +1400,7 @@ export default function InscriptionPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm overflow-y-auto"
+              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm"
             >
               {/* En-tête avec badge de confidentialité */}
               <div className="mb-3 sm:mb-4 md:mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -1736,6 +1777,12 @@ export default function InscriptionPage() {
                           Zaghouan
                         </option>
                       </select>
+                      {step2Errors.governorate && (
+                        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                          <BiErrorAlt size={12} />
+                          {step2Errors.governorate}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -3198,6 +3245,12 @@ export default function InscriptionPage() {
                           )}
                         </select>
                       </div>
+                      {step2Errors.delegation && (
+                        <p className="mt-1 text-xs text-red-500 flex items-center gap-1">
+                          <BiErrorAlt size={12} />
+                          {step2Errors.delegation}
+                        </p>
+                      )}
                     </motion.div>
                   )}
                 </div>
@@ -3248,23 +3301,11 @@ export default function InscriptionPage() {
                   <button
                     type="button"
                     onClick={() => {
-                      if (!firstName.trim()) {
-                        setTouchedStep2({ ...touchedStep2, firstName: true });
-                        return;
+                      if (validateStep2()) {
+                        handleSendWhatsApp();
+                      } else {
+                        toast.error(t("errors.correctErrors"));
                       }
-                      if (!lastName.trim()) {
-                        setTouchedStep2({ ...touchedStep2, lastName: true });
-                        return;
-                      }
-                      if (!phoneNumber) {
-                        setTouchedStep2({ ...touchedStep2, phoneNumber: true });
-                        return;
-                      }
-                      if (phoneNumber.length < 8) {
-                        setTouchedStep2({ ...touchedStep2, phoneNumber: true });
-                        return;
-                      }
-                      handleSendWhatsApp();
                     }}
                     disabled={isWhatsappLoading}
                     className="flex-1 flex items-center justify-center gap-2 py-2 sm:py-2.5 bg-blue-400 text-black font-bold rounded-xl transition-all duration-300 ease-in-out hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 active:scale-[0.98] text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -3294,7 +3335,7 @@ export default function InscriptionPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm max-h-[85vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 p-3 sm:p-4 md:p-5 rounded-xl shadow-2xl backdrop-blur-sm"
             >
               {/* En-tête */}
               <div className="mb-3 sm:mb-4 md:mb-5">
@@ -3314,7 +3355,7 @@ export default function InscriptionPage() {
                     {t("whatsappStep.codeSentTitle")}
                   </h3>
                   <p className="text-xs text-slate-600 dark:text-slate-400">
-                    {t("whatsappStep.codeSentMessage")}{" "}
+                    {t("whatsappStep.codeSentTitle")}{" "}
                     <span className="font-medium text-green-600 dark:text-green-400">
                       +216 {phoneNumber}
                     </span>
@@ -3397,7 +3438,6 @@ export default function InscriptionPage() {
                 </div>
 
                 {/* Footer Actions */}
-                {/* Footer Actions - ÉTAPE 3 */}
                 <div className="pt-3 sm:pt-4 flex gap-3 sm:gap-4 items-center justify-between border-t border-slate-200 dark:border-slate-700">
                   {/* Bouton Retour */}
                   <button
@@ -3433,7 +3473,7 @@ export default function InscriptionPage() {
             </motion.div>
           )}
 
-          {/* ÉTAPE 4 : DOCUMENTS D'IDENTITÉ AVEC OPTIONS */}
+          {/* ÉTAPE 4 : DOCUMENTS D'IDENTITÉ AVEC OPTIONS CIN / PASSEPORT */}
           {currentStep === 4 && (
             <motion.div
               key="documents"
@@ -3441,7 +3481,7 @@ export default function InscriptionPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl backdrop-blur-sm overflow-hidden"
+              className="bg-white dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl backdrop-blur-sm"
             >
               {/* Header with QR trigger */}
               <div className="px-5 pt-5 pb-3 flex items-start justify-between border-b border-slate-100 dark:border-slate-800">
@@ -3452,7 +3492,6 @@ export default function InscriptionPage() {
                     </h1>
                   </div>
                   <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-                    {" "}
                     {t("documentsStep.subtitle")}
                   </p>
                 </div>
@@ -3464,93 +3503,149 @@ export default function InscriptionPage() {
                   onClick={handleMobileSync}
                   className="flex items-center gap-1.5 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/25 text-blue-600 dark:text-blue-400 text-[11px] font-semibold px-3 py-1.5 rounded-xl transition-all"
                 >
-                  <QrCode className="w-3.5 h-3.5  text-xs sm:text-sm" />
-                  <p className="text-xs sm:text-sm">{t("mobileUpload")}</p>
+                  <QrCode className="w-3.5 h-3.5" />
+                  <span className="text-xs sm:text-sm hidden sm:inline">
+                    {t("mobileUpload")}
+                  </span>
                 </motion.button>
               </div>
 
-              {/* Progress chips */}
+              {/* SELECTEUR TYPE DE DOCUMENT */}
+              <div className="px-5 pt-4">
+                <DocumentTypeSelector
+                  value={documentType}
+                  onChange={setDocumentType}
+                />
+              </div>
+
+              {/* PROGRESS CHIPS - Dynamique selon le type */}
               <div className="px-5 pt-4 pb-2">
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-3 border border-slate-100 dark:border-slate-700/40">
-                  {[
-                    { label: t("cinFront"), done: !!cinRecto },
-                    { label: t("cinBack"), done: !!cinVerso },
-                    { label: t("photo"), done: !!profilePhoto },
-                  ].map(({ label, done }) => (
+                  {documentType === "cin" ? (
+                    <>
+                      {[
+                        { label: t("cinFront"), done: !!cinRecto },
+                        { label: t("cinBack"), done: !!cinVerso },
+                        { label: t("photo"), done: !!profilePhoto },
+                      ].map(({ label, done }) => (
+                        <div
+                          key={label}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 ${
+                            done
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+                              : "text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-700/50"
+                          }`}
+                        >
+                          {done ? (
+                            <CheckCircle className="w-3 h-3" />
+                          ) : (
+                            <CircleDashed className="w-3 h-3" />
+                          )}
+                          {label}
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      {[
+                        {
+                          label: t("passportDocumentLabel"),
+                          done: !!passportFile,
+                        },
+                        { label: t("photo"), done: !!profilePhoto },
+                      ].map(({ label, done }) => (
+                        <div
+                          key={label}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 ${
+                            done
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
+                              : "text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-700/50"
+                          }`}
+                        >
+                          {done ? (
+                            <CheckCircle className="w-3 h-3" />
+                          ) : (
+                            <CircleDashed className="w-3 h-3" />
+                          )}
+                          {label}
+                        </div>
+                      ))}
+                      <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60 mx-0.5" />
+                      <div className="text-[10px] font-bold text-slate-500 whitespace-nowrap px-1">
+                        {[passportFile, profilePhoto].filter(Boolean).length}
+                        <span className="text-slate-300 dark:text-slate-700">
+                          /2
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* CONTENU SELON LE TYPE DE DOCUMENT */}
+              {documentType === "cin" ? (
+                <>
+                  {/* CIN Cards - Horizontal layout */}
+                  <div
+                    className="px-10 pb-2 relative z-10"
+                    style={{ overflow: "visible" }}
+                  >
+                    {" "}
                     <div
-                      key={label}
-                      className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-[10px] font-bold transition-all duration-300 ${
-                        done
-                          ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25"
-                          : "text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-700/50"
-                      }`}
+                      className={`flex gap-3 ${isMobileUploading ? "opacity-60 pointer-events-none" : ""}`}
                     >
-                      {done ? (
-                        <CheckCircle className="w-3 h-3" />
-                      ) : (
-                        <CircleDashed className="w-3 h-3" />
-                      )}
-                      {label}
-                    </div>
-                  ))}
-                  <div className="w-px h-6 bg-slate-200 dark:bg-slate-700/60 mx-0.5" />
-                  <div className="text-[10px] font-bold text-slate-500 whitespace-nowrap px-1">
-                    {totalDone}
-                    <span className="text-slate-300 dark:text-slate-700">
-                      /3
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* CIN Cards - Horizontal layout */}
-              <div className="px-10 pb-2 relative">
-                <div
-                  className={`flex gap-3 ${isMobileUploading ? "opacity-60 pointer-events-none" : ""}`}
-                >
-                  {/* Recto CIN */}
-                  <IDCard
-                    side="recto"
-                    file={cinRecto}
-                    fileUrl={cinRectoUrl} // ← Assure-toi que c'est défini
-                    onFile={(file) => {
-                      setCinRecto(file);
-                      handleOCR(file, "recto");
-                    }}
-                    onRemove={() => {
-                      setCinRecto(null);
-                      setCinRectoUrl(null);
-                    }}
-                  />
-
-                  {/* Verso CIN */}
-                  <IDCard
-                    side="verso"
-                    file={cinVerso}
-                    fileUrl={cinVersoUrl}
-                    onFile={(file) => {
-                      setCinVerso(file);
-                      handleOCR(file, "verso");
-                    }}
-                    onRemove={() => {
-                      setCinVerso(null);
-                      setCinVersoUrl(null);
-                    }}
-                  />
-                </div>
-
-                {/* Overlay de chargement pendant l'upload mobile */}
-                {isMobileUploading && showQRCode && (
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl p-3 flex items-center gap-2 shadow-lg">
-                      <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-                      <span className="text-xs font-medium">
-                        {t("uploadInProgress")} {uploadProgress}/3
-                      </span>
+                      <IDCard
+                        side="recto"
+                        file={cinRecto}
+                        fileUrl={cinRectoUrl}
+                        onFile={(file) => {
+                          setCinRecto(file);
+                          handleOCR(file, "recto");
+                        }}
+                        onRemove={() => {
+                          setCinRecto(null);
+                          setCinRectoUrl(null);
+                        }}
+                      />
+                      <IDCard
+                        side="verso"
+                        file={cinVerso}
+                        fileUrl={cinVersoUrl}
+                        onFile={(file) => {
+                          setCinVerso(file);
+                          handleOCR(file, "verso");
+                        }}
+                        onRemove={() => {
+                          setCinVerso(null);
+                          setCinVersoUrl(null);
+                        }}
+                      />
                     </div>
                   </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <>
+                  {/* PASSEPORT Upload - 1 face */}
+                  <div className="px-5 pb-2">
+                    <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      {t("passport.uploadLabel")}{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <DocumentUploader
+                      file={passportFile}
+                      fileUrl={passportUrl}
+                      onFile={async (file) => {
+                        setPassportFile(file);
+                      }}
+                      onRemove={() => {
+                        setPassportFile(null);
+                        setPassportUrl(null);
+                      }}
+                      isUploading={isUploadingCIN}
+                    />
+                  </div>
+                </>
+              )}
 
               {/* Divider optionnel */}
               <div className="mx-5 my-3 flex items-center gap-3">
@@ -3574,7 +3669,7 @@ export default function InscriptionPage() {
                 />
               </div>
 
-              {/* Security notice - style comme étape 2 */}
+              {/* Security notice */}
               <div className="mx-5 mb-4 flex items-center gap-2.5 bg-amber-50 dark:bg-amber-950/30 rounded-2xl px-3.5 py-3 border border-amber-200 dark:border-amber-800/50 shadow-sm">
                 <ShieldCheck className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
                 <div>
@@ -3600,26 +3695,32 @@ export default function InscriptionPage() {
                 </motion.button>
 
                 <motion.button
-                  whileTap={docsDone ? { scale: 0.97 } : {}}
+                  whileTap={{ scale: 0.97 }}
                   type="button"
-                  disabled={!docsDone}
-                  onClick={async () => {
-                    const success = await handleUploadCIN();
-                    if (success) {
-                      // Le modal s'ouvre automatiquement dans handleUploadCIN
-                      console.log("✅ Upload réussi, modal va s'ouvrir");
-                    }
-                  }}
+                  disabled={
+                    (documentType === "cin" &&
+                      (!cinRecto || !cinVerso || !profilePhoto)) ||
+                    (documentType === "passport" &&
+                      (!passportFile || !profilePhoto))
+                  }
+                  onClick={handleAnalyzeDocuments}
                   className={`
-    relative flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold transition-all duration-300 overflow-hidden
-    ${
-      docsDone
-        ? "bg-blue-400 text-black shadow-md shadow-blue-500/25 hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:shadow-lg hover:shadow-blue-500/30"
-        : "bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed border border-slate-200 dark:border-slate-700/50"
-    }
-  `}
+  relative flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-bold transition-all duration-300 overflow-hidden
+  ${
+    (documentType === "cin" && cinRecto && cinVerso && profilePhoto) ||
+    (documentType === "passport" && passportFile && profilePhoto)
+      ? "bg-blue-400 text-black shadow-md shadow-blue-500/25 hover:bg-linear-to-r hover:from-blue-500 hover:via-purple-500 hover:to-indigo-500 hover:shadow-lg hover:shadow-blue-500/30"
+      : "bg-blue-400 text-black opacity-50 cursor-not-allowed"
+  }
+`}
                 >
-                  {docsDone && (
+                  {((documentType === "cin" &&
+                    cinRecto &&
+                    cinVerso &&
+                    profilePhoto) ||
+                    (documentType === "passport" &&
+                      passportFile &&
+                      profilePhoto)) && (
                     <motion.div
                       className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0"
                       animate={{ x: ["-100%", "100%"] }}
@@ -3631,93 +3732,81 @@ export default function InscriptionPage() {
                       }}
                     />
                   )}
-                  {docsDone ? (
-                    <>
-                      <Loader2
-                        className={`w-3.5 h-3.5 ${isUploadingCIN ? "animate-spin" : ""}`}
-                      />
-                      {isUploadingCIN ? t("analyzing") : t("analyzeDocuments")}
-                      {!isUploadingCIN && (
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      )}
-                    </>
-                  ) : (
-                    <>
-                      <CloudUpload className="w-3.5 h-3.5" />
-                      {t("bothSidesRequired")}{" "}
-                    </>
-                  )}
+                  <>
+                    <Loader2
+                      className={`w-3.5 h-3.5 ${isUploadingCIN ? "animate-spin" : ""}`}
+                    />
+                    {isUploadingCIN ? t("analyzing") : t("analyzeDocuments")}
+                    {!isUploadingCIN && <ArrowRight className="w-3.5 h-3.5" />}
+                  </>
                 </motion.button>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Modal QR Code - Version Bottom Sheet */}
+        {/* Modal QR Code */}
         {showQRCode && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
             onClick={() => setShowQRCode(false)}
           >
-            {/* backdrop */}
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
-
             <motion.div
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              transition={{ type: "spring", stiffness: 340, damping: 28 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-sm mx-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden"
+              className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[#1E90FF]/20"
             >
-              {/* Gradient top accent */}
-              <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-blue-500 to-transparent" />
-
-              {/* Handle (visible seulement sur mobile) */}
-              <div className="flex justify-center pt-3 pb-1 sm:hidden">
-                <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-slate-700" />
-              </div>
-
-              {/* Header */}
-              <div className="px-6 pt-4 pb-5 flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
-                      <Smartphone className="w-3.5 h-3.5 text-white" />
-                    </div>
-                    <h3 className="text-slate-900 dark:text-white font-bold text-sm">
-                      {t("uploadViaMobile")}
+              {/* Header avec icône et boutons en haut */}
+              <div className="flex items-center justify-between gap-3 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                    <Smartphone className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                      {t("uploadViaMobile") || "Upload via mobile"}
                     </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {t("scanToContinue") ||
+                        "Scannez le QR code avec votre téléphone"}
+                    </p>
                   </div>
-                  <p className="text-slate-500 text-[11px] ml-9">
-                    {t("scanToContinue")}
-                  </p>
                 </div>
-                <button
-                  onClick={() => setShowQRCode(false)}
-                  className="mt-0.5 w-7 h-7 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
+
+                {/* Boutons Rafraîchir et Fermer en haut */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleMobileSync}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-medium text-xs transition-all"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => setShowQRCode(false)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-medium text-xs transition-all"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
 
-              {/* QR + instructions */}
-              <div className="px-6 pb-6 flex gap-5 items-center">
-                {/* QR */}
-                <div className="relative flex-shrink-0">
-                  <div className="bg-white p-3 rounded-2xl shadow-2xl">
-                    {qrUrl ? (
-                      <QRCodeSVG value={qrUrl} size={130} level="M" />
-                    ) : (
-                      <div className="w-[130px] h-[130px] flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
-                      </div>
-                    )}
-                  </div>
-                  {/* Corner accents */}
+              {/*  QR Code centré */}
+              <div className="flex flex-col items-center justify-center mb-4">
+                <div className="relative bg-white p-4 rounded-2xl shadow-xl mb-4">
+                  {qrUrl ? (
+                    <QRCodeSVG value={qrUrl} size={200} level="M" />
+                  ) : (
+                    <div className="w-[200px] h-[200px] flex items-center justify-center">
+                      <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+                    </div>
+                  )}
+                  {/* Coins décoratifs */}
                   {[
                     "top-0 left-0 border-t-2 border-l-2 rounded-tl-md",
                     "top-0 right-0 border-t-2 border-r-2 rounded-tr-md",
@@ -3726,95 +3815,83 @@ export default function InscriptionPage() {
                   ].map((cls, i) => (
                     <div
                       key={i}
-                      className={`absolute w-4 h-4 border-blue-400 ${cls}`}
-                      style={{ margin: "-2px" }}
+                      className={`absolute w-5 h-5 border-blue-400 ${cls}`}
+                      style={{ margin: "-4px" }}
                     />
                   ))}
                 </div>
 
-                {/* Steps */}
-                <div className="flex-1 space-y-3">
+                {/* Instructions */}
+                <div className="space-y-2 w-full">
                   {[
                     {
-                      icon: <QrCode className="w-3.5 h-3.5" />,
-                      text: t("qrStep1"),
+                      icon: <QrCode className="w-4 h-4" />,
+                      text:
+                        t("qrStep1") ||
+                        "Ouvrez l'appareil photo de votre téléphone",
                     },
                     {
-                      icon: <Camera className="w-3.5 h-3.5" />,
-                      text: t("qrStep2"),
+                      icon: <Camera className="w-4 h-4" />,
+                      text: t("qrStep2") || "Scannez le QR code ci-dessus",
                     },
                     {
-                      icon: <RefreshCw className="w-3.5 h-3.5" />,
-                      text: t("qrStep3"),
+                      icon: <RefreshCw className="w-4 h-4" />,
+                      text:
+                        t("qrStep3") ||
+                        "Les documents seront automatiquement synchronisés",
                     },
                   ].map(({ icon, text }, i) => (
-                    <div key={i} className="flex items-center gap-2.5">
-                      <div className="w-6 h-6 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center flex-shrink-0">
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center flex-shrink-0">
                         {icon}
                       </div>
-                      <span className="text-slate-600 dark:text-slate-400 text-[11px] leading-tight">
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
                         {text}
                       </span>
                     </div>
                   ))}
-
-                  {/* Barre de progression si upload en cours */}
-                  {/* Barre de progression si upload en cours */}
-                  {uploadProgress > 0 && (
-                    <div className="mt-2">
-                      <div className="flex justify-between text-[10px] text-slate-500 mb-1">
-                        <span>{t("progress")}</span>
-                        <span className="font-mono font-bold">
-                          {uploadProgress === 3 ? (
-                            <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" /> Terminé !
-                            </span>
-                          ) : (
-                            `${uploadProgress}/3`
-                          )}
-                        </span>
-                      </div>
-                      <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-blue-500 to-green-500"
-                          initial={{ width: "0%" }}
-                          animate={{ width: `${(uploadProgress / 3) * 100}%` }}
-                          transition={{ duration: 0.3, ease: "easeOut" }}
-                        />
-                      </div>
-                      {uploadProgress === 3 && (
-                        <motion.p
-                          initial={{ opacity: 0, y: 5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="text-[10px] text-green-600 dark:text-green-400 text-center mt-1 font-medium"
-                        >
-                          ✓ Documents reçus - Fermeture automatique...
-                        </motion.p>
-                      )}
-                    </div>
-                  )}
-
-                  <button
-                    onClick={handleMobileSync}
-                    className="flex items-center gap-1.5 text-[10px] text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 font-medium transition-colors mt-1"
-                  >
-                    <RefreshCw className="w-3 h-3" />
-                    {t("refresh")}
-                  </button>
                 </div>
+
+                {/* Barre de progression */}
+                {uploadProgress > 0 && (
+                  <div className="mt-4 w-full">
+                    <div className="flex justify-between text-xs text-slate-500 mb-1">
+                      <span>{t("progress") || "Progression"}</span>
+                      <span className="font-mono font-bold">
+                        {uploadProgress === 3 ? (
+                          <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" /> Terminé !
+                          </span>
+                        ) : (
+                          `${uploadProgress}/3`
+                        )}
+                      </span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <motion.div
+                        className="h-full bg-gradient-to-r from-blue-500 to-green-500"
+                        initial={{ width: "0%" }}
+                        animate={{ width: `${(uploadProgress / 3) * 100}%` }}
+                        transition={{ duration: 0.3, ease: "easeOut" }}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {/* Bottom bar */}
-              <div className="flex items-center gap-2 px-6 py-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-700/50">
-                <ShieldCheck className="w-3 h-3 text-slate-500 dark:text-slate-600" />
-                <span className="text-[10px] text-slate-500 dark:text-slate-600">
-                  {t("sessionEncrypted")}
+              <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                <span className="text-xs text-slate-500 dark:text-slate-400">
+                  {t("sessionEncrypted") || "Session sécurisée et chiffrée"}
                 </span>
               </div>
             </motion.div>
           </motion.div>
         )}
-        {/* Modal confirmation OCR - VERSION QUI MARCHE */}
+        {/* Modal confirmation OCR T */}
         {showOcrConfirm && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -3827,105 +3904,185 @@ export default function InscriptionPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-[#1E90FF]/20"
             >
-              {/* Header */}
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 bg-[#1E90FF]/10 rounded-full flex items-center justify-center">
                   <FaCheckCircle className="text-indigo-700 text-xl" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold">{t("ocrConfirm.title")}</h3>
+                  <h3 className="text-lg font-bold">
+                    {documentType === "cin"
+                      ? t("ocrConfirm.title")
+                      : t("passport.verificationTitle")}
+                  </h3>
                   <p className="text-xs text-slate-500">
-                    {t("ocrConfirm.description")}
+                    {documentType === "cin"
+                      ? t("ocrConfirm.description")
+                      : t("passport.verificationDescription")}
                   </p>
                 </div>
               </div>
 
-              {/* Info Banner */}
               <div className="mb-5 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex gap-2">
                 <LuBadgeInfo className="text-blue-500 text-2xl mt-0.5" />
                 <p className="text-xs text-blue-700 dark:text-blue-300">
-                  {t("ocrConfirm.infoBanner")}
+                  {documentType === "cin"
+                    ? t("ocrConfirm.infoBanner")
+                    : t("passport.infoBanner")}
                 </p>
               </div>
 
-              {/* Champs OCR - AVEC GESTION DIRECTE */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {/* Prénom */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.firstNameLabel")}
-                  </label>
-                  <input
-                    type="text"
-                    value={(() => {
-                      const val = cinData?.firstName;
-                      console.log("🎯 RENDU PRÉNOM:", val);
-                      return val || "";
-                    })()}
-                    readOnly
-                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-arabic"
-                  />
+              {/* CHAMPS SELON LE TYPE */}
+              {documentType === "cin" ? (
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("ocrConfirm.firstNameLabel")}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.firstName || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("ocrConfirm.lastNameLabel")}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.lastName || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("ocrConfirm.dateOfBirthLabel")}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.dateOfBirth || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("ocrConfirm.cinNumberLabel")}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.cinNumber || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-mono"
+                    />
+                  </div>
+                  <div className="col-span-2 space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      Profession
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.profession || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
                 </div>
-
-                {/* Nom */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.lastNameLabel")}
-                  </label>
-                  <input
-                    type="text"
-                    value={cinData?.lastName || ""}
-                    readOnly
-                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-arabic"
-                  />
+              ) : (
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("passport.numberLabel")}{" "}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.passportNumber || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("passport.cinNumberLabel")}{" "}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.cinNumber || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-mono"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("passport.lastNameLabel")}{" "}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.lastName || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("passport.firstNameLabel")}{" "}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.firstName || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("passport.dateOfBirthLabel")}{" "}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.dateOfBirth || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("passport.expiryDateLabel")}{" "}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.expiryDate || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("passport.genderLabel")}{" "}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.sex || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                      {t("passport.professionLabel")}{" "}
+                    </label>
+                    <input
+                      type="text"
+                      value={cinData?.profession || ""}
+                      readOnly
+                      className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
                 </div>
+              )}
 
-                {/* Date de naissance */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.dateOfBirthLabel")}
-                  </label>
-                  <input
-                    type="text"
-                    value={cinData?.dateOfBirth || ""}
-                    readOnly
-                    placeholder={t("dateFormatPlaceholder")}
-                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
-
-                {/* N° CIN */}
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                    {t("ocrConfirm.cinNumberLabel")}
-                  </label>
-                  <input
-                    type="text"
-                    value={cinData?.cinNumber || ""}
-                    readOnly
-                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
-
-                {/* Profession */}
-                <div className="col-span-2 space-y-1">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
-                    {t("ocrConfirm.professionLabel")}
-                    <span className="text-[10px] normal-case text-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 rounded">
-                      {t("ocrConfirm.versoBadge")}
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    value={cinData?.profession || ""}
-                    readOnly
-                    placeholder={t("ocrConfirm.professionPlaceholder")}
-                    className="w-full bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2 text-sm font-arabic"
-                  />
-                </div>
-              </div>
-
-              {/* Security Banner */}
               <div className="flex items-center gap-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 mb-5">
                 <MdVerified className="text-emerald-500 text-xl shrink-0" />
                 <p className="text-xs text-emerald-700 dark:text-emerald-300">
@@ -3933,7 +4090,6 @@ export default function InscriptionPage() {
                 </p>
               </div>
 
-              {/* Boutons */}
               <div className="flex gap-3">
                 <button
                   type="button"
@@ -4048,7 +4204,6 @@ export default function InscriptionPage() {
             </motion.div>
           </motion.div>
         )}
-
         {/* Footer */}
         <footer className="relative z-20 mt- sm:mt-6 pt-3 text-[10px] text-gray-200 dark:text-slate-600 flex flex-wrap justify-center gap-3 sm:gap-4 ">
           <Link
@@ -4073,13 +4228,11 @@ export default function InscriptionPage() {
             © 2026 NESTHUB
           </span>
         </footer>
-
         {/* Security Message */}
         <p className="relative z-20 mt-3 text-center text-[10px] text-gray-200 dark:text-slate-600 max-w-xs mx-auto">
           {t("securityMessage")}
         </p>
       </div>
-
       {/* Decoration Gradients */}
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none -z-10 overflow-hidden">
         <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full" />

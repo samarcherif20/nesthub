@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { networkInterfaces } from "os";
 
-const SESSION_DURATION = 60 * 60 * 1000; // 60 minutes
+const SESSION_DURATION = 60 * 60 * 1000;
 
 // Stockage global des sessions
 declare global {
@@ -65,14 +65,16 @@ export async function POST(request: NextRequest) {
 
     const sessionId = randomUUID();
     const expiresAt = Date.now() + SESSION_DURATION;
-    const { userId, mode } = await request.json(); // mode = "inscription" ou "reapply"
+    const { userId, mode, documentType } = await request.json();
 
     uploadSessions.set(sessionId, {
       id: sessionId,
       expiresAt,
       files: {},
       status: "waiting",
-      mode: mode || "inscription", // ← AJOUTE CETTE LIGNE
+      mode: mode || "inscription",
+      documentType: documentType || "cin",
+
       createdAt: new Date().toISOString(),
     });
     const localIp = getLocalIpAddress();

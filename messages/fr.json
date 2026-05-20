@@ -902,7 +902,13 @@
       "helpCenter": "Centre d'aide"
     }
   },
+
+  "VerifyCatch": {
+    "title": "Redirection en cours...",
+    "description": "Merci de veuillez patienter pendant que nous vérifions vos informations ! "
+  },
   "Inscription": {
+    "continue": "étape suivante",
     "title": "Inscription",
     "step": "Étape {step} sur 4",
     "Compte": "1.Compte",
@@ -987,6 +993,8 @@
     "checking": "Vérification...",
 
     "errors": {
+      "correctErrors": "Veuillez corriger les erreurs",
+
       "chooseRole": "Veuillez choisir un rôle (Propriétaire ou Locataire)",
       "usernameRequired": "Veuillez entrer un nom d'utilisateur",
       "usernameInvalid": "Le nom d'utilisateur doit contenir entre 3 et 20 caractères (lettres et chiffres uniquement)",
@@ -1016,13 +1024,25 @@
       "fileTooLarge": "Fichier trop volumineux",
       "maxSize10MB": "Maximum 10MB",
       "formatNotSupported": "Format non supporté",
-      "chooseImage": "Veuillez choisir une image"
+      "chooseImage": "Veuillez choisir une image",
+      "governorateRequired": "Veuillez sélectionner un gouvernorat",
+      "delegationRequired": "Veuillez sélectionner une délégation",
+      "userNotFound": "ID utilisateur non trouvé",
+      "error": "Erreur",
+      "passportRequired": "Veuillez uploader votre passeport",
+      "passportFileMissing": "Fichier passeport manquant",
+      "threeFilesRequired": "Veuillez uploader les 3 fichiers",
+      "invalidCode": "Code invalide",
+      "confirmationError": "Erreur lors de la confirmation",
+      "retry": "Veuillez réessayer"
     },
+    "passportDocument": "Passeport",
 
     "documentsStep": {
       "title": "Vérification d'identité",
       "subtitle": "Étape 4 sur 4 : Téléchargez vos documents officiels (OCR automatique)",
       "identityDocument": "Pièce d'identité",
+
       "cinFront": "CIN Recto",
       "cinBack": "CIN Verso",
       "frontSide": "Face avant",
@@ -1101,7 +1121,8 @@
       "verificationEmailSent": "Un lien de vérification a été envoyé à {email}",
       "emailSent": "Email envoyé ! ",
       "codeSentTitle": "Code envoyé !",
-      "gotCode": "J'ai reçu le code"
+      "gotCode": "J'ai reçu le code",
+      "verificationLinkSent": "Un lien de vérification a été envoyé à {{email}}"
     },
 
     "whatsapp": {
@@ -1149,7 +1170,63 @@
     "cinFront": "CIN Recto",
     "cinBack": "CIN Verso",
     "photo": "Photo",
-    "dateFormatPlaceholder": "AAAA-MM-JJ"
+    "dateFormatPlaceholder": "AAAA-MM-JJ",
+    "ocr": {
+      "notAvailable": "OCR {{side}} non disponible",
+      "fillManually": "Veuillez remplir manuellement",
+      "success": "OCR {{side}} analysé !",
+      "extractedSuccess": "Les données ont été extraites avec succès.",
+      "errorTitle": "Erreur OCR {{side}}",
+      "missingData": "Données OCR manquantes",
+      "analyzeFirst": "Veuillez d'abord analyser vos documents."
+    },
+    "passport": {
+      "analyzed": "Passeport analysé !",
+      "numberDetected": "Passeport n°{{number}} — vérifiez avant de confirmer.",
+      "uploadSuccess": "Upload réussi. Remplissez manuellement.",
+      "verificationTitle": "Vérification du passeport",
+      "verificationDescription": "Vérifiez les informations extraites de votre passeport",
+      "infoBanner": "Les données ci-dessous ont été extraites automatiquement. Vérifiez-les avant confirmation.",
+      "numberLabel": "N° Passeport",
+      "cinNumberLabel": "N° CIN",
+      "lastNameLabel": "Nom",
+      "firstNameLabel": "Prénom",
+      "dateOfBirthLabel": "Date naissance",
+      "expiryDateLabel": "Date expiration",
+      "genderLabel": "Sexe",
+      "professionLabel": "Profession",
+      "uploadLabel": "Télécharger le passeport"
+    },
+    "documents": {
+      "analyzed": "Documents analysés !",
+      "uploadSuccess": "Upload réussi. Remplissez manuellement."
+    },
+    "cin": {
+      "numberDetected": "CIN n°{{number}} — vérifiez avant de confirmer."
+    },
+    "sessionExpired": "Session expirée",
+    "mobile": {
+      "receivedPassport": "2 documents reçus du mobile (passeport + selfie) !",
+      "receivedDocuments": "3 documents reçus du mobile !",
+      "clickToAnalyze": "Cliquez sur 'Analyser les documents' pour finaliser",
+      "sessionCreationFailed": "Impossible de créer la session mobile"
+    },
+    "passport": {
+      "verificationTitle": "Vérification du passeport",
+      "verificationDescription": "Vérifiez les informations extraites de votre passeport",
+      "infoBanner": "Les données ci-dessous ont été extraites automatiquement. Vérifiez-les avant confirmation.",
+      "numberLabel": "N° Passeport",
+      "cinNumberLabel": "N° CIN",
+      "lastNameLabel": "Nom",
+      "firstNameLabel": "Prénom",
+      "dateOfBirthLabel": "Date naissance",
+      "expiryDateLabel": "Date expiration",
+      "genderLabel": "Sexe",
+      "professionLabel": "Profession",
+      "uploadLabel": "Télécharger le passeport"
+    },
+
+    "passportDocumentLabel": "Passeport"
   },
 
   "AdminInvitations": {
@@ -1386,7 +1463,7 @@
   },
 
   "SSOCallback": {
-     "title": "CONNEXION SÉCURISÉE",
+    "title": "CONNEXION SÉCURISÉE",
     "subtitle": "VERIFICATION SSO",
     "connecting": "Connexion en cours",
     "pleaseWait": "Veuillez patienter...",
@@ -2482,23 +2559,23 @@
     }
   },
   "OwnerCalendar": {
-     "emptyState": {
-    "title": "Créez votre première annonce",
-    "description": "Commencez par ajouter un bien immobilier pour commencer à gérer votre calendrier de disponibilités.",
-    "button": "Ajouter un bien",
-    "helpLink": "Comment créer une annonce ?"
-  },
-  "noProperty": {
-    "title": "Aucune propriété sélectionnée",
-    "description": "Sélectionnez une propriété dans la liste à gauche pour visualiser et gérer son calendrier.",
-    "button": "Sélectionner une propriété"
-  },
-  "page": {
-    "title": "Calendrier",
-    "managementFor": "Gestion de",
-    "selectProperty": "Sélectionnez une propriété",
-    "noProperties": "Aucune propriété"
-  },
+    "emptyState": {
+      "title": "Créez votre première annonce",
+      "description": "Commencez par ajouter un bien immobilier pour commencer à gérer votre calendrier de disponibilités.",
+      "button": "Ajouter un bien",
+      "helpLink": "Comment créer une annonce ?"
+    },
+    "noProperty": {
+      "title": "Aucune propriété sélectionnée",
+      "description": "Sélectionnez une propriété dans la liste à gauche pour visualiser et gérer son calendrier.",
+      "button": "Sélectionner une propriété"
+    },
+    "page": {
+      "title": "Calendrier",
+      "managementFor": "Gestion de",
+      "selectProperty": "Sélectionnez une propriété",
+      "noProperties": "Aucune propriété"
+    },
     "common": {
       "guest": "Voyageur",
       "dates": "date(s)",
@@ -2517,7 +2594,7 @@
       "apply": "Appliquer",
       "selectedDates": "date(s) sélectionnée(s)"
     },
-    
+
     "legend": {
       "booked": "Réservé",
       "blocked": "Bloqué",
@@ -3184,7 +3261,7 @@
       "reservations": "Réservations"
     },
     "menu": {
-      "disputes":"Ligites",
+      "disputes": "Ligites",
       "profile": "Mon profil",
       "dashboard": "Tableau de bord",
       "reservations": "Mes réservations",
@@ -3578,6 +3655,11 @@
     "loading": {
       "message": "Chargement de votre profil..."
     },
+    "foreigners": "Location aux étrangers",
+    "acceptForeigners": "Oui, j'accepte de louer à des étrangers",
+    "rejectForeigners": " Non, je refuse de louer à des étrangers",
+    "foreignersRequired": "Veuillez indiquer si vous acceptez de louer à des étrangers",
+
     "title": "Compléter mon profil",
     "subtitle": "Remplissez vos informations pour activer votre compte",
     "save": "Enregistrer",
@@ -3632,9 +3714,10 @@
     "step2": "Photo",
     "step3": "Adresse",
     "step4": "Biographie",
-    "step5": "Source",
+    "step5": "Politique étrangers",
     "step6": "Langues",
     "step7": "Bancaire",
+    "step8": "Source ",
     "clickToSelect": "Cliquez pour ajouter vos langues",
     "languageFrench": "Français",
     "languageEnglish": "Anglais",

@@ -41,7 +41,20 @@ export function useTenantProfile(userData: any) {
       setProfilePhoto(userData.profilePictureUrl || null);
       setGovernorate(userData.governorate || "");
       setDelegation(userData.delegation || "");
-      setGender(userData.gender || "");
+       let genderValue = userData.gender;
+    let genderFromPassport = userData.cinData?.sex;
+    
+    if (genderFromPassport) {
+      // Si le passeport a fourni un sexe, on le prend (priorité)
+      if (genderFromPassport === "MALE") setGender("Homme");
+      else if (genderFromPassport === "FEMALE") setGender("Femme");
+      else setGender(genderFromPassport);
+    } else if (genderValue) {
+      // Sinon, on prend la valeur existante dans userData
+      if (genderValue === "MALE") setGender("Homme");
+      else if (genderValue === "FEMALE") setGender("Femme");
+      else setGender(genderValue);
+    }
       setHowFound(userData.howFound || "");
       if (userData.spokenLanguages?.length)
         setLanguages(userData.spokenLanguages);

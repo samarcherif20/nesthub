@@ -30,6 +30,11 @@ export function useLandlordProfile(userData: any) {
   const [bankName, setBankName] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
 
+  // 🆕 NOUVEAU CHAMP POUR LES PROPRIÉTAIRES
+  const [acceptsForeigners, setAcceptsForeigners] = useState<boolean | null>(
+    null,
+  );
+
   useEffect(() => {
     if (userData) {
       setFirstName(userData.firstName || "");
@@ -44,11 +49,25 @@ export function useLandlordProfile(userData: any) {
       setProfilePhoto(userData.profilePictureUrl || null);
       setGovernorate(userData.governorate || "");
       setDelegation(userData.delegation || "");
-      setGender(userData.gender || "");
+      let genderValue = userData.gender;
+      let genderFromPassport = userData.cinData?.sex;
+
+      if (genderFromPassport) {
+        // Si le passeport a fourni un sexe, on le prend (priorité)
+        if (genderFromPassport === "MALE") setGender("Homme");
+        else if (genderFromPassport === "FEMALE") setGender("Femme");
+        else setGender(genderFromPassport);
+      } else if (genderValue) {
+        // Sinon, on prend la valeur existante dans userData
+        if (genderValue === "MALE") setGender("Homme");
+        else if (genderValue === "FEMALE") setGender("Femme");
+        else setGender(genderValue);
+      }
       setHowFound(userData.howFound || "");
       setRib(userData.rib || "");
       setBankName(userData.bankName || "");
       setAccountHolder(userData.accountHolder || "");
+      setAcceptsForeigners(userData.acceptsForeigners ?? null);
       if (userData.spokenLanguages?.length)
         setLanguages(userData.spokenLanguages);
     }
@@ -88,6 +107,7 @@ export function useLandlordProfile(userData: any) {
           rib,
           bankName,
           accountHolder,
+          acceptsForeigners, // 🆕 AJOUTER
         }),
       });
 
@@ -133,6 +153,8 @@ export function useLandlordProfile(userData: any) {
     setBankName,
     accountHolder,
     setAccountHolder,
+    acceptsForeigners, // 🆕
+    setAcceptsForeigners, // 🆕
     handleSave,
     handleSkip,
   };
