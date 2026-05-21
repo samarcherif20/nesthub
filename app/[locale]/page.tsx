@@ -1,6 +1,6 @@
-
 "use client";
 import { useEffect, useMemo, useState } from "react";
+import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
 import {
   BadgeCheck,
   BedDouble,
@@ -25,6 +25,7 @@ import {
   Sun,
   Users,
   Waves,
+  X,
 } from "lucide-react";
 
 type HeroSlide = {
@@ -335,6 +336,125 @@ function SectionHeading({
   );
 }
 
+// ==================== COMPOSANT PREMIUM IMAGE POUR CLERK ====================
+function PremiumImage({ imageUrl, alt, listingTitle, listingPrice }: { 
+  imageUrl: string; 
+  alt: string; 
+  listingTitle: string;
+  listingPrice: number;
+}) {
+  const { isSignedIn } = useUser();
+  const [showModal, setShowModal] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+
+  if (isSignedIn) {
+    return (
+      <img
+        src={imageUrl}
+        alt={alt}
+        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+      />
+    );
+  }
+
+  return (
+    <>
+      <div 
+        className="relative w-full h-full cursor-pointer overflow-hidden"
+        onClick={() => setShowModal(true)}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
+        <img
+          src={imageUrl}
+          alt={alt}
+          className={`h-full w-full object-cover transition-all duration-700 ${
+            isHovering ? 'blur-0 scale-105' : 'blur-xl'
+          }`}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        
+        <div className={`absolute bottom-0 left-0 right-0 p-4 transition-all duration-300 ${
+          isHovering ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+        }`}>
+          <div className="bg-black/60 backdrop-blur-md rounded-xl p-3 text-center">
+            <p className="text-white text-xs font-medium">👆 Cliquez pour découvrir</p>
+            <p className="text-amber-400 text-sm font-bold mt-1">{listingPrice} TND / nuit</p>
+          </div>
+        </div>
+        
+        <div className="absolute top-3 right-3">
+          <div className="px-2 py-1 bg-amber-500/90 backdrop-blur rounded-lg text-[10px] font-bold text-black">
+            ✨ PREMIUM
+          </div>
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative max-w-md w-full bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all animate-in zoom-in-95 duration-300">
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            
+            <div className="relative h-56">
+              <img src={imageUrl} alt={alt} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-4">
+                <p className="text-white text-sm font-bold">{listingTitle}</p>
+                <p className="text-amber-400 text-xs">{listingPrice} TND / nuit</p>
+              </div>
+            </div>
+            
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                Contenu exclusif
+              </h3>
+              
+              <p className="text-gray-600 mt-2 text-sm">
+                Créez un compte gratuitement pour voir toutes les photos de cette propriété d'exception
+              </p>
+              
+              <div className="mt-6 space-y-3">
+                <SignUpButton mode="modal">
+                  <button className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all transform hover:scale-[1.02]">
+                    ✨ S'inscrire gratuitement
+                  </button>
+                </SignUpButton>
+                <SignInButton mode="modal">
+                  <button className="w-full py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-amber-300 hover:text-amber-600 transition-all">
+                    🔑 Se connecter
+                  </button>
+                </SignInButton>
+              </div>
+              
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Accès immédiat</span>
+                <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Sans engagement</span>
+              </div>
+              
+              <p className="text-[10px] text-gray-400 mt-4">
+                🔒 Vos données sont protégées • Désinscription en 1 clic
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ==================== LISTING CARD ====================
 function ListingCard({
   listing,
   onToggle,
@@ -342,29 +462,36 @@ function ListingCard({
   listing: Listing;
   onToggle: (id: number) => void;
 }) {
+  const { isSignedIn } = useUser();
+
   return (
     <div className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900/75">
       <div className="relative h-72 overflow-hidden">
-        <img
-          src={listing.image}
+        
+        <PremiumImage 
+          imageUrl={listing.image}
           alt={listing.title}
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+          listingTitle={listing.title}
+          listingPrice={listing.price}
         />
+        
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
 
-        <button
-          type="button"
-          onClick={() => onToggle(listing.id)}
-          className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow-lg backdrop-blur-md transition-all hover:scale-105 dark:bg-slate-900/80 dark:text-white"
-        >
-          <Heart className={`h-5 w-5 ${listing.loved ? "fill-rose-500 text-rose-500" : ""}`} />
-        </button>
+        {isSignedIn && (
+          <button
+            type="button"
+            onClick={() => onToggle(listing.id)}
+            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow-lg backdrop-blur-md transition-all hover:scale-105 dark:bg-slate-900/80 dark:text-white"
+          >
+            <Heart className={`h-5 w-5 ${listing.loved ? "fill-rose-500 text-rose-500" : ""}`} />
+          </button>
+        )}
 
-        <div className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold tracking-[0.16em] text-slate-800 shadow-md backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
+        <div className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold tracking-[0.16em] text-slate-800 shadow-md backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
           {listing.badge}
         </div>
 
-        <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+        <div className="absolute bottom-4 left-4 right-4 z-10 flex items-end justify-between gap-3">
           <div>
             <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
               <BadgeCheck className="h-3 w-3" /> Score {listing.score}/100
@@ -437,19 +564,35 @@ export default function HomePage() {
   const [subscribed, setSubscribed] = useState(false);
   const [listings, setListings] = useState(LISTINGS);
   const [toast, setToast] = useState<string | null>(null);
+  const { isSignedIn } = useUser();
 
+  // Initialiser le thème clair par défaut
   useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const apply = () => setIsDark(media.matches);
-    apply();
-    media.addEventListener("change", apply);
-    return () => media.removeEventListener("change", apply);
+    // Vérifier si une préférence est sauvegardée dans localStorage
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    } else if (savedTheme === "light") {
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
+    } else {
+      // Par défaut : mode clair
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   }, []);
 
+  // Sauvegarder le thème quand il change
   useEffect(() => {
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    root.classList.add(isDark ? "dark" : "light");
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
   }, [isDark]);
 
   useEffect(() => {
@@ -499,6 +642,7 @@ export default function HomePage() {
   };
 
   const toggleListingLike = (id: number) => {
+    if (!isSignedIn) return;
     setListings((prev) =>
       prev.map((listing) =>
         listing.id === id ? { ...listing, loved: !listing.loved } : listing,
@@ -506,342 +650,349 @@ export default function HomePage() {
     );
   };
 
+  const toggleTheme = () => {
+    setIsDark(!isDark);
+  };
+
   return (
-    <div className={isDark ? "dark" : ""}>
-      <div className="min-h-screen bg-[#f9f9ff] text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
-        {toast && (
-          <div className="fixed top-6 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-slate-900/90 px-5 py-3 text-sm font-semibold text-white shadow-xl backdrop-blur-xl dark:bg-white/90 dark:text-slate-900">
-            {toast}
-          </div>
-        )}
+    <div className="min-h-screen bg-[#f9f9ff] text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+      {toast && (
+        <div className="fixed top-6 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-slate-900/90 px-5 py-3 text-sm font-semibold text-white shadow-xl backdrop-blur-xl dark:bg-white/90 dark:text-slate-900">
+          {toast}
+        </div>
+      )}
 
-        <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/65">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
-            <button className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 shadow-lg shadow-blue-500/20">
-                <Building2 className="h-5 w-5 text-white" />
-              </div>
-              <div className="text-left">
-                <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-sky-500 dark:text-sky-400">NESTHUB</p>
-                <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Mediterranean Luxury Stays</p>
-              </div>
-            </button>
-
-            <nav className="hidden items-center gap-7 text-sm font-medium text-slate-500 dark:text-slate-400 md:flex">
-              {[
-                "Destinations",
-                "Collections",
-                "For Hosts",
-                "Journal",
-              ].map((item) => (
-                <button key={item} className="transition-colors hover:text-slate-900 dark:hover:text-white">
-                  {item}
-                </button>
-              ))}
-            </nav>
-
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsDark((prev) => !prev)}
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:scale-105 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
-              >
-                {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-              </button>
-              <button className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-gradient-to-r hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600 dark:bg-white dark:text-slate-900">
-                Commencer
-              </button>
+      <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/65">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+          <button className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 shadow-lg shadow-blue-500/20">
+              <Building2 className="h-5 w-5 text-white" />
             </div>
-          </div>
-        </header>
+            <div className="text-left">
+              <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-sky-500 dark:text-sky-400">NESTHUB</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Mediterranean Luxury Stays</p>
+            </div>
+          </button>
 
-        <section className="relative isolate overflow-hidden">
-          <div className="absolute inset-0">
-            {HERO_SLIDES.map((slide, index) => (
-              <div
-                key={slide.title}
-                className={`absolute inset-0 transition-opacity duration-1000 ${heroIndex === index ? "opacity-100" : "opacity-0"}`}
-              >
-                <img src={slide.image} alt={slide.title} className="h-full w-full object-cover" />
-              </div>
+          <nav className="hidden items-center gap-7 text-sm font-medium text-slate-500 dark:text-slate-400 md:flex">
+            {["Destinations", "Collections", "For Hosts", "Journal"].map((item) => (
+              <button key={item} className="transition-colors hover:text-slate-900 dark:hover:text-white">
+                {item}
+              </button>
             ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:scale-105 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            {!isSignedIn ? (
+              <SignUpButton mode="modal">
+                <button className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-gradient-to-r hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600 dark:bg-white dark:text-slate-900">
+                  Commencer
+                </button>
+              </SignUpButton>
+            ) : (
+              <button className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-gradient-to-r hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600 dark:bg-white dark:text-slate-900">
+                Mon compte
+              </button>
+            )}
           </div>
+        </div>
+      </header>
 
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-950/35 to-indigo-950/60" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.28),transparent_26%),radial-gradient(circle_at_center,rgba(56,189,248,0.18),transparent_34%)]" />
-          <div className="absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-sky-400/20 blur-3xl animate-pulse-soft" />
-          <div className="absolute right-[8%] top-[20%] h-56 w-56 rounded-full bg-purple-500/20 blur-3xl animate-pulse-soft" />
-
-          <div className="relative mx-auto flex min-h-[92vh] max-w-7xl items-center px-4 py-16 sm:px-6">
-            <div className="grid w-full gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="max-w-3xl pt-10 lg:pt-0">
-                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-white/90 backdrop-blur-md">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  The face of Tunisia's premium hospitality
-                </div>
-
-                <h1 className="text-shadow-hero text-5xl font-extrabold tracking-tight text-white md:text-7xl">
-                  Extraordinary stays for a <span className="text-sky-300">Mediterranean generation.</span>
-                </h1>
-                <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/80 md:text-xl">
-                  NestHub transforms property search into desire: cinematic villas, editorial listings, trusted hosts and a digital experience designed to feel unforgettable from the first scroll.
-                </p>
-
-                <div className="mt-8 flex flex-wrap gap-4">
-                  <button
-                    type="button"
-                    onClick={runSearch}
-                    className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-slate-900 shadow-xl transition-all hover:scale-[1.02]"
-                  >
-                    <Search className="h-4 w-4" />
-                    Find your stay
-                  </button>
-                  <button className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/15">
-                    <Camera className="h-4 w-4" />
-                    Explore visual collections
-                  </button>
-                </div>
-
-                <div className="mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
-                  {stats.map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md transition-transform hover:-translate-y-1"
-                    >
-                      <p className="text-2xl font-extrabold text-white">{stat.value}</p>
-                      <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/65">{stat.label}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex items-end lg:justify-end">
-                <div className="relative w-full max-w-xl">
-                  <div className="animate-float-slow absolute -left-12 top-12 hidden w-44 rounded-[26px] border border-white/20 bg-white/14 p-3 shadow-[0_25px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl lg:block">
-                    <div className="rounded-[22px] bg-white/90 p-4 dark:bg-slate-950/85">
-                      <div className="mb-3 flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-500">Signature pick</span>
-                        <BadgeCheck className="h-4 w-4 text-emerald-500" />
-                      </div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">Villa Palm Hammamet</p>
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">8 invités • plage privée • sunset deck</p>
-                      <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
-                        <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                        4.98 / 5
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="animate-float-slower absolute -right-8 bottom-14 hidden w-52 rounded-[26px] border border-white/20 bg-slate-950/70 p-3 text-white shadow-[0_25px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:block">
-                    <div className="rounded-[22px] border border-white/10 bg-white/10 p-4">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-300">Today’s mood</p>
-                      <p className="mt-2 text-lg font-bold">Sea, silence, stone.</p>
-                      <p className="mt-1 text-xs leading-relaxed text-white/70">
-                        Travelers don’t search for rooms. They search for a feeling. Build the homepage around that feeling.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="w-full overflow-hidden rounded-[32px] border border-white/20 bg-white/14 p-3 shadow-[0_30px_120px_rgba(0,0,0,0.25)] backdrop-blur-2xl">
-                    <div className="rounded-[28px] bg-white/90 p-6 dark:bg-slate-950/85">
-                      <div className="mb-5 flex items-center justify-between">
-                        <div>
-                          <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-500">Smart discovery</p>
-                          <h2 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">Design your perfect arrival</h2>
-                        </div>
-                        <div className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
-                          AI assisted
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="col-span-2">
-                          <label className="mb-1 block text-xs font-semibold text-slate-500">Destination</label>
-                          <div className="relative">
-                            <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                            <input
-                              value={destination}
-                              onChange={(e) => setDestination(e.target.value)}
-                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                              placeholder="Sidi Bou Saïd, Hammamet, Djerba..."
-                            />
-                          </div>
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-xs font-semibold text-slate-500">Type de séjour</label>
-                          <select
-                            value={propertyType}
-                            onChange={(e) => setPropertyType(e.target.value as Filter["type"])}
-                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                          >
-                            <option value="ALL">Tout explorer</option>
-                            <option value="VILLA">Villa</option>
-                            <option value="HOUSE">Dar / Maison</option>
-                            <option value="APARTMENT">Appartement</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="mb-1 block text-xs font-semibold text-slate-500">Invités</label>
-                          <div className="relative">
-                            <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                            <input
-                              type="number"
-                              min={1}
-                              max={12}
-                              value={guests}
-                              onChange={(e) => setGuests(Number(e.target.value) || 1)}
-                              className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-5 grid grid-cols-3 gap-3">
-                        {[
-                          { label: "Instant booking", icon: CheckCircle2 },
-                          { label: "Verified hosts", icon: ShieldCheck },
-                          { label: "Editorial picks", icon: Gem },
-                        ].map(({ label, icon: Icon }) => (
-                          <div key={label} className="rounded-2xl bg-slate-50 p-3 text-center dark:bg-white/5">
-                            <Icon className="mx-auto h-4 w-4 text-indigo-500" />
-                            <p className="mt-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300">{label}</p>
-                          </div>
-                        ))}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={runSearch}
-                        className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.01]"
-                      >
-                        <Search className="h-4 w-4" />
-                        Reveal extraordinary homes
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+      <section className="relative isolate overflow-hidden">
+        <div className="absolute inset-0">
+          {HERO_SLIDES.map((slide, index) => (
+            <div
+              key={slide.title}
+              className={`absolute inset-0 transition-opacity duration-1000 ${heroIndex === index ? "opacity-100" : "opacity-0"}`}
+            >
+              <img src={slide.image} alt={slide.title} className="h-full w-full object-cover" />
             </div>
-          </div>
+          ))}
+        </div>
 
-          <div className="relative z-10 mx-auto -mt-8 max-w-7xl px-4 pb-6 sm:px-6">
-            <div className="overflow-hidden rounded-full border border-white/15 bg-white/10 py-3 backdrop-blur-xl">
-              <div className="marquee-track flex items-center gap-10 px-6">
-                {[...TRUST_BELT, ...TRUST_BELT].map(({ label, icon: Icon }, index) => (
-                  <div key={`${label}-${index}`} className="flex items-center gap-2 text-sm font-semibold text-white/85">
-                    <Icon className="h-4 w-4 text-sky-300" />
-                    <span>{label}</span>
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-950/35 to-indigo-950/60" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.28),transparent_26%),radial-gradient(circle_at_center,rgba(56,189,248,0.18),transparent_34%)]" />
+        <div className="absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-sky-400/20 blur-3xl animate-pulse-soft" />
+        <div className="absolute right-[8%] top-[20%] h-56 w-56 rounded-full bg-purple-500/20 blur-3xl animate-pulse-soft" />
+
+        <div className="relative mx-auto flex min-h-[92vh] max-w-7xl items-center px-4 py-16 sm:px-6">
+          <div className="grid w-full gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="max-w-3xl pt-10 lg:pt-0">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-white/90 backdrop-blur-md">
+                <Sparkles className="h-3.5 w-3.5" />
+                The face of Tunisia's premium hospitality
+              </div>
+
+              <h1 className="text-shadow-hero text-5xl font-extrabold tracking-tight text-white md:text-7xl">
+                Extraordinary stays for a <span className="text-sky-300">Mediterranean generation.</span>
+              </h1>
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/80 md:text-xl">
+                NestHub transforms property search into desire: cinematic villas, editorial listings, trusted hosts and a digital experience designed to feel unforgettable from the first scroll.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-4">
+                <button
+                  type="button"
+                  onClick={runSearch}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-slate-900 shadow-xl transition-all hover:scale-[1.02]"
+                >
+                  <Search className="h-4 w-4" />
+                  Find your stay
+                </button>
+                <button className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/15">
+                  <Camera className="h-4 w-4" />
+                  Explore visual collections
+                </button>
+              </div>
+
+              <div className="mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                {stats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md transition-transform hover:-translate-y-1"
+                  >
+                    <p className="text-2xl font-extrabold text-white">{stat.value}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/65">{stat.label}</p>
                   </div>
                 ))}
               </div>
             </div>
-          </div>
 
-          <div className="relative z-10 mx-auto max-w-7xl px-4 pb-8 sm:px-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              {[
-                {
-                  icon: ShieldCheck,
-                  title: "Every listing is staged to inspire trust",
-                  text: "Verified visuals, premium curation and consistent storytelling across every property.",
-                },
-                {
-                  icon: Camera,
-                  title: "An editorial standard, not just a marketplace",
-                  text: "Photography, copy and discovery all feel like a luxury magazine come to life.",
-                },
-                {
-                  icon: Compass,
-                  title: "Built to convert curiosity into booking desire",
-                  text: "A homepage designed as the face of the platform — cinematic, confident and unforgettable.",
-                },
-              ].map(({ icon: Icon, title, text }) => (
-                <div
-                  key={title}
-                  className="rounded-[28px] border border-white/70 bg-white/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:-translate-y-1 dark:border-white/10 dark:bg-slate-900/75"
-                >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
-                    <Icon className="h-5 w-5" />
+            <div className="flex items-end lg:justify-end">
+              <div className="relative w-full max-w-xl">
+                <div className="animate-float-slow absolute -left-12 top-12 hidden w-44 rounded-[26px] border border-white/20 bg-white/14 p-3 shadow-[0_25px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl lg:block">
+                  <div className="rounded-[22px] bg-white/90 p-4 dark:bg-slate-950/85">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-500">Signature pick</span>
+                      <BadgeCheck className="h-4 w-4 text-emerald-500" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Villa Palm Hammamet</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">8 invités • plage privée • sunset deck</p>
+                    <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      4.98 / 5
+                    </div>
                   </div>
-                  <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">{title}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
+                </div>
+
+                <div className="animate-float-slower absolute -right-8 bottom-14 hidden w-52 rounded-[26px] border border-white/20 bg-slate-950/70 p-3 text-white shadow-[0_25px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:block">
+                  <div className="rounded-[22px] border border-white/10 bg-white/10 p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-300">Today's mood</p>
+                    <p className="mt-2 text-lg font-bold">Sea, silence, stone.</p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/70">
+                      Travelers don't search for rooms. They search for a feeling. Build the homepage around that feeling.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-full overflow-hidden rounded-[32px] border border-white/20 bg-white/14 p-3 shadow-[0_30px_120px_rgba(0,0,0,0.25)] backdrop-blur-2xl">
+                  <div className="rounded-[28px] bg-white/90 p-6 dark:bg-slate-950/85">
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-500">Smart discovery</p>
+                        <h2 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">Design your perfect arrival</h2>
+                      </div>
+                      <div className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+                        AI assisted
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <label className="mb-1 block text-xs font-semibold text-slate-500">Destination</label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            value={destination}
+                            onChange={(e) => setDestination(e.target.value)}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                            placeholder="Sidi Bou Saïd, Hammamet, Djerba..."
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-500">Type de séjour</label>
+                        <select
+                          value={propertyType}
+                          onChange={(e) => setPropertyType(e.target.value as Filter["type"])}
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                        >
+                          <option value="ALL">Tout explorer</option>
+                          <option value="VILLA">Villa</option>
+                          <option value="HOUSE">Dar / Maison</option>
+                          <option value="APARTMENT">Appartement</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-500">Invités</label>
+                        <div className="relative">
+                          <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="number"
+                            min={1}
+                            max={12}
+                            value={guests}
+                            onChange={(e) => setGuests(Number(e.target.value) || 1)}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-3 gap-3">
+                      {[
+                        { label: "Instant booking", icon: CheckCircle2 },
+                        { label: "Verified hosts", icon: ShieldCheck },
+                        { label: "Editorial picks", icon: Gem },
+                      ].map(({ label, icon: Icon }) => (
+                        <div key={label} className="rounded-2xl bg-slate-50 p-3 text-center dark:bg-white/5">
+                          <Icon className="mx-auto h-4 w-4 text-indigo-500" />
+                          <p className="mt-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={runSearch}
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.01]"
+                    >
+                      <Search className="h-4 w-4" />
+                      Reveal extraordinary homes
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 mx-auto -mt-8 max-w-7xl px-4 pb-6 sm:px-6">
+          <div className="overflow-hidden rounded-full border border-white/15 bg-white/10 py-3 backdrop-blur-xl">
+            <div className="marquee-track flex items-center gap-10 px-6">
+              {[...TRUST_BELT, ...TRUST_BELT].map(({ label, icon: Icon }, index) => (
+                <div key={`${label}-${index}`} className="flex items-center gap-2 text-sm font-semibold text-white/85">
+                  <Icon className="h-4 w-4 text-sky-300" />
+                  <span>{label}</span>
                 </div>
               ))}
             </div>
           </div>
-        </section>
+        </div>
 
-        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
-            <SectionHeading
-              eyebrow="Quick collections"
-              title={<>Browse with <span className={GRAD_TEXT}>desire, not filters.</span></>}
-              text="We transformed property categories into collectible moods — so every click feels like a new chapter in a Mediterranean story."
-            />
-            <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:text-indigo-300">
-              See all collections <ChevronRight className="h-4 w-4" />
-            </button>
+        <div className="relative z-10 mx-auto max-w-7xl px-4 pb-8 sm:px-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              {
+                icon: ShieldCheck,
+                title: "Every listing is staged to inspire trust",
+                text: "Verified visuals, premium curation and consistent storytelling across every property.",
+              },
+              {
+                icon: Camera,
+                title: "An editorial standard, not just a marketplace",
+                text: "Photography, copy and discovery all feel like a luxury magazine come to life.",
+              },
+              {
+                icon: Compass,
+                title: "Built to convert curiosity into booking desire",
+                text: "A homepage designed as the face of the platform — cinematic, confident and unforgettable.",
+              },
+            ].map(({ icon: Icon, title, text }) => (
+              <div
+                key={title}
+                className="rounded-[28px] border border-white/70 bg-white/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:-translate-y-1 dark:border-white/10 dark:bg-slate-900/75"
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {QUICK_FILTERS.map((filter) => {
-              const active = activeFilter === filter.id;
-              return (
-                <button
-                  key={filter.id}
-                  type="button"
-                  onClick={() => setActiveFilter(filter.id)}
-                  className={`group rounded-[28px] border px-5 py-6 text-left transition-all ${
-                    active
-                      ? "border-transparent bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-xl shadow-indigo-500/20"
-                      : "border-white/70 bg-white/85 shadow-[0_16px_40px_rgba(15,23,42,0.06)] hover:-translate-y-1 hover:border-indigo-100 dark:border-white/10 dark:bg-slate-900/75"
-                  }`}
-                >
-                  <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${active ? "bg-white/15" : "bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-slate-200"}`}>
-                    {filter.icon}
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+          <SectionHeading
+            eyebrow="Quick collections"
+            title={<>Browse with <span className={GRAD_TEXT}>desire, not filters.</span></>}
+            text="We transformed property categories into collectible moods — so every click feels like a new chapter in a Mediterranean story."
+          />
+          <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:text-indigo-300">
+            See all collections <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {QUICK_FILTERS.map((filter) => {
+            const active = activeFilter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => setActiveFilter(filter.id)}
+                className={`group rounded-[28px] border px-5 py-6 text-left transition-all ${
+                  active
+                    ? "border-transparent bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-xl shadow-indigo-500/20"
+                    : "border-white/70 bg-white/85 shadow-[0_16px_40px_rgba(15,23,42,0.06)] hover:-translate-y-1 hover:border-indigo-100 dark:border-white/10 dark:bg-slate-900/75"
+                }`}
+              >
+                <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${active ? "bg-white/15" : "bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-slate-200"}`}>
+                  {filter.icon}
+                </div>
+                <h3 className={`text-sm font-bold ${active ? "text-white" : "text-slate-900 dark:text-white"}`}>
+                  {filter.label}
+                </h3>
+                <p className={`mt-2 text-xs ${active ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>
+                  {filter.id === "all"
+                    ? "L'ensemble de la collection NestHub"
+                    : "Une sélection au style très affirmé"}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="featured" className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+          <SectionHeading
+            eyebrow="Editorial picks"
+            title={<>The homepage that makes people <span className={GRAD_TEXT}>want to stay longer.</span></>}
+            text="This is not a grid of listings. It's a visual argument for taste, confidence and premium Tunisian hospitality."
+          />
+          <div className="rounded-full border border-indigo-100 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/75 dark:text-indigo-300">
+            {editorialListings.length} résultats inspirants
+          </div>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-12">
+          {featuredPrimary && (
+            <div className="lg:col-span-7">
+              <div className="group overflow-hidden rounded-[36px] border border-white/70 bg-white/85 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+                <div className="relative h-[520px] overflow-hidden">
+                  <img
+                    src={featuredPrimary.image}
+                    alt={featuredPrimary.title}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent" />
+                  <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-800 shadow-lg backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
+                    Hero collection
                   </div>
-                  <h3 className={`text-sm font-bold ${active ? "text-white" : "text-slate-900 dark:text-white"}`}>
-                    {filter.label}
-                  </h3>
-                  <p className={`mt-2 text-xs ${active ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>
-                    {filter.id === "all"
-                      ? "L’ensemble de la collection NestHub"
-                      : "Une sélection au style très affirmé"}
-                  </p>
-                </button>
-              );
-            })}
-          </div>
-        </section>
-
-        <section id="featured" className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
-            <SectionHeading
-              eyebrow="Editorial picks"
-              title={<>The homepage that makes people <span className={GRAD_TEXT}>want to stay longer.</span></>}
-              text="This is not a grid of listings. It’s a visual argument for taste, confidence and premium Tunisian hospitality."
-            />
-            <div className="rounded-full border border-indigo-100 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/75 dark:text-indigo-300">
-              {editorialListings.length} résultats inspirants
-            </div>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-12">
-            {featuredPrimary && (
-              <div className="lg:col-span-7">
-                <div className="group overflow-hidden rounded-[36px] border border-white/70 bg-white/85 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
-                  <div className="relative h-[520px] overflow-hidden">
-                    <img
-                      src={featuredPrimary.image}
-                      alt={featuredPrimary.title}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent" />
-                    <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-800 shadow-lg backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
-                      Hero collection
-                    </div>
+                  {isSignedIn && (
                     <button
                       type="button"
                       onClick={() => toggleListingLike(featuredPrimary.id)}
@@ -849,48 +1000,50 @@ export default function HomePage() {
                     >
                       <Heart className={`h-5 w-5 ${featuredPrimary.loved ? "fill-rose-500 text-rose-500" : ""}`} />
                     </button>
-                    <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
-                      <div className="mb-4 flex flex-wrap items-center gap-3">
-                        <div className="rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                          Trust score {featuredPrimary.score}/100
-                        </div>
-                        <div className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
-                          {featuredPrimary.type}
-                        </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
+                      <div className="rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                        Trust score {featuredPrimary.score}/100
                       </div>
-                      <h3 className="max-w-2xl text-4xl font-extrabold tracking-tight text-white">
-                        {featuredPrimary.title}
-                      </h3>
-                      <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80 md:text-base">
-                        {featuredPrimary.story}
-                      </p>
-                      <div className="mt-5 flex flex-wrap items-center gap-5 text-sm text-white/85">
-                        <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4" /> {featuredPrimary.location}</span>
-                        <span className="inline-flex items-center gap-2"><Users className="h-4 w-4" /> {featuredPrimary.guests} invités</span>
-                        <span className="inline-flex items-center gap-2"><BedDouble className="h-4 w-4" /> {featuredPrimary.bedrooms} chambres</span>
+                      <div className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
+                        {featuredPrimary.type}
                       </div>
+                    </div>
+                    <h3 className="max-w-2xl text-4xl font-extrabold tracking-tight text-white">
+                      {featuredPrimary.title}
+                    </h3>
+                    <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80 md:text-base">
+                      {featuredPrimary.story}
+                    </p>
+                    <div className="mt-5 flex flex-wrap items-center gap-5 text-sm text-white/85">
+                      <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4" /> {featuredPrimary.location}</span>
+                      <span className="inline-flex items-center gap-2"><Users className="h-4 w-4" /> {featuredPrimary.guests} invités</span>
+                      <span className="inline-flex items-center gap-2"><BedDouble className="h-4 w-4" /> {featuredPrimary.bedrooms} chambres</span>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            <div className="grid gap-5 lg:col-span-5">
-              {featuredSecondary.map((listing) => (
-                <div
-                  key={listing.id}
-                  className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80"
-                >
-                  <div className="grid md:grid-cols-[220px_1fr]">
-                    <div className="relative h-56 overflow-hidden md:h-full">
-                      <img src={listing.image} alt={listing.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
-                    </div>
-                    <div className="p-5">
-                      <div className="mb-3 flex items-center justify-between">
-                        <div className="rounded-full bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
-                          {listing.badge}
-                        </div>
+          <div className="grid gap-5 lg:col-span-5">
+            {featuredSecondary.map((listing) => (
+              <div
+                key={listing.id}
+                className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80"
+              >
+                <div className="grid md:grid-cols-[220px_1fr]">
+                  <div className="relative h-56 overflow-hidden md:h-full">
+                    <img src={listing.image} alt={listing.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
+                  </div>
+                  <div className="p-5">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="rounded-full bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+                        {listing.badge}
+                      </div>
+                      {isSignedIn && (
                         <button
                           type="button"
                           onClick={() => toggleListingLike(listing.id)}
@@ -898,311 +1051,311 @@ export default function HomePage() {
                         >
                           <Heart className={`h-5 w-5 ${listing.loved ? "fill-rose-500 text-rose-500" : ""}`} />
                         </button>
+                      )}
+                    </div>
+                    <h4 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{listing.title}</h4>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{listing.story}</p>
+                    <div className="mt-5 flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{listing.price} TND</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">per night</p>
                       </div>
-                      <h4 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{listing.title}</h4>
-                      <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{listing.story}</p>
-                      <div className="mt-5 flex items-end justify-between gap-4">
-                        <div>
-                          <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{listing.price} TND</p>
-                          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">per night</p>
-                        </div>
-                        <div className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:bg-white/5 dark:text-slate-200">
-                          <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {listing.rating}
-                        </div>
+                      <div className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:bg-white/5 dark:text-slate-200">
+                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {listing.rating}
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {editorialListings.slice(0, 3).map((listing) => (
-              <ListingCard key={`grid-${listing.id}`} listing={listing} onToggle={toggleListingLike} />
-            ))}
-          </div>
-        </section>
-
-        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
-            <SectionHeading
-              eyebrow="Signature destinations"
-              title={<>A homepage should feel like a <span className={GRAD_TEXT}>travel editorial.</span></>}
-              text="So instead of stacking generic cards, we spotlight places like moods: sea, stone, palm, light and architecture — each one with its own emotional identity."
-            />
-            <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900/75 dark:text-slate-200">
-              4 curated destination worlds
-            </div>
-          </div>
-
-          <div className="grid gap-5 lg:grid-cols-12">
-            <div className="relative overflow-hidden rounded-[36px] border border-white/70 bg-white/85 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 lg:col-span-5">
-              <div className="relative h-full min-h-[540px] overflow-hidden rounded-[30px]">
-                <img
-                  src={DESTINATION_SPOTLIGHTS[0].image}
-                  alt={DESTINATION_SPOTLIGHTS[0].title}
-                  className="h-full w-full object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/15 to-transparent" />
-                <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-800 shadow-lg backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
-                  Editorial spotlight
-                </div>
-                <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-300">
-                    {DESTINATION_SPOTLIGHTS[0].mood}
-                  </p>
-                  <h3 className="mt-2 text-4xl font-extrabold tracking-tight text-white">
-                    {DESTINATION_SPOTLIGHTS[0].title}
-                  </h3>
-                  <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 md:text-base">
-                    {DESTINATION_SPOTLIGHTS[0].blurb}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid gap-5 lg:col-span-7 md:grid-cols-2">
-              {DESTINATION_SPOTLIGHTS.slice(1).map((item, index) => (
-                <div
-                  key={item.title}
-                  className={`group overflow-hidden rounded-[32px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all hover:-translate-y-1 dark:border-white/10 dark:bg-slate-900/80 ${
-                    index === 1 ? "md:translate-y-10" : ""
-                  }`}
-                >
-                  <div className="relative h-64 overflow-hidden">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
-                    <div className="absolute inset-x-0 bottom-0 p-5">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-300">
-                        {item.mood}
-                      </p>
-                      <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">{item.title}</h3>
-                    </div>
-                  </div>
-                  <div className="p-5">
-                    <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">{item.blurb}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
-            {[
-              { value: "72h", label: "editorial refresh cycle" },
-              { value: "98%", label: "visual consistency score" },
-              { value: "4x", label: "stronger hero impact" },
-              { value: "∞", label: "brand memorability ambition" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-[24px] border border-white/70 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]"
-              >
-                <p className="text-3xl font-extrabold tracking-tight">{item.value}</p>
-                <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-white/60">{item.label}</p>
               </div>
             ))}
           </div>
-        </section>
+        </div>
 
-        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-          <div className="grid gap-5 lg:grid-cols-12">
-            <div className="rounded-[32px] border border-white/70 bg-white/85 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 lg:col-span-5">
-              <SectionHeading
-                eyebrow="Platform DNA"
-                title={<>Not just more listings. <span className={GRAD_TEXT}>A stronger point of view.</span></>}
-                text="Every block on this homepage is designed to sell aspiration, trust and distinction — the three things a premium marketplace needs before a single click on search."
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {editorialListings.slice(0, 3).map((listing) => (
+            <ListingCard key={`grid-${listing.id}`} listing={listing} onToggle={toggleListingLike} />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+          <SectionHeading
+            eyebrow="Signature destinations"
+            title={<>A homepage should feel like a <span className={GRAD_TEXT}>travel editorial.</span></>}
+            text="So instead of stacking generic cards, we spotlight places like moods: sea, stone, palm, light and architecture — each one with its own emotional identity."
+          />
+          <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900/75 dark:text-slate-200">
+            4 curated destination worlds
+          </div>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-12">
+          <div className="relative overflow-hidden rounded-[36px] border border-white/70 bg-white/85 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 lg:col-span-5">
+            <div className="relative h-full min-h-[540px] overflow-hidden rounded-[30px]">
+              <img
+                src={DESTINATION_SPOTLIGHTS[0].image}
+                alt={DESTINATION_SPOTLIGHTS[0].title}
+                className="h-full w-full object-cover"
               />
-              <div className="mt-8 space-y-4">
-                {[
-                  {
-                    icon: ShieldCheck,
-                    title: "Verified by design",
-                    text: "Profiles, stays and trust signals are embedded directly into the discovery flow.",
-                  },
-                  {
-                    icon: Gem,
-                    title: "Luxury without visual noise",
-                    text: "A sharp editorial system that lets each image breathe and each listing feel desirable.",
-                  },
-                  {
-                    icon: Palmtree,
-                    title: "Built for destination emotion",
-                    text: "More than utility: the platform should feel like arrival before booking ever happens.",
-                  },
-                ].map(({ icon: Icon, title, text }) => (
-                  <div key={title} className="flex items-start gap-4 rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-900 dark:text-white">{title}</h3>
-                      <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
-                    </div>
-                  </div>
-                ))}
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/15 to-transparent" />
+              <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-800 shadow-lg backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
+                Editorial spotlight
+              </div>
+              <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-300">
+                  {DESTINATION_SPOTLIGHTS[0].mood}
+                </p>
+                <h3 className="mt-2 text-4xl font-extrabold tracking-tight text-white">
+                  {DESTINATION_SPOTLIGHTS[0].title}
+                </h3>
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 md:text-base">
+                  {DESTINATION_SPOTLIGHTS[0].blurb}
+                </p>
               </div>
             </div>
+          </div>
 
-            <div className="grid gap-5 lg:col-span-7 md:grid-cols-2">
+          <div className="grid gap-5 lg:col-span-7 md:grid-cols-2">
+            {DESTINATION_SPOTLIGHTS.slice(1).map((item, index) => (
+              <div
+                key={item.title}
+                className={`group overflow-hidden rounded-[32px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all hover:-translate-y-1 dark:border-white/10 dark:bg-slate-900/80 ${
+                  index === 1 ? "md:translate-y-10" : ""
+                }`}
+              >
+                <div className="relative h-64 overflow-hidden">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-300">
+                      {item.mood}
+                    </p>
+                    <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">{item.title}</h3>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">{item.blurb}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
+          {[
+            { value: "72h", label: "editorial refresh cycle" },
+            { value: "98%", label: "visual consistency score" },
+            { value: "4x", label: "stronger hero impact" },
+            { value: "∞", label: "brand memorability ambition" },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[24px] border border-white/70 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]"
+            >
+              <p className="text-3xl font-extrabold tracking-tight">{item.value}</p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-white/60">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        <div className="grid gap-5 lg:grid-cols-12">
+          <div className="rounded-[32px] border border-white/70 bg-white/85 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 lg:col-span-5">
+            <SectionHeading
+              eyebrow="Platform DNA"
+              title={<>Not just more listings. <span className={GRAD_TEXT}>A stronger point of view.</span></>}
+              text="Every block on this homepage is designed to sell aspiration, trust and distinction — the three things a premium marketplace needs before a single click on search."
+            />
+            <div className="mt-8 space-y-4">
               {[
                 {
-                  title: "A homepage that feels like a cover story",
-                  text: "Hero imagery, dramatic contrast, glass interfaces and layered motion cues make the platform feel premium from the first fold.",
-                  icon: Camera,
+                  icon: ShieldCheck,
+                  title: "Verified by design",
+                  text: "Profiles, stays and trust signals are embedded directly into the discovery flow.",
                 },
                 {
-                  title: "Property cards that sell desire",
-                  text: "Large imagery, trust score, strong pricing hierarchy and human storytelling all work together to increase emotional engagement.",
-                  icon: Home,
+                  icon: Gem,
+                  title: "Luxury without visual noise",
+                  text: "A sharp editorial system that lets each image breathe and each listing feel desirable.",
                 },
                 {
-                  title: "Social proof with taste",
-                  text: "Reviews, ratings and verification are surfaced in ways that feel elegant instead of transactional.",
-                  icon: CheckCircle2,
+                  icon: Palmtree,
+                  title: "Built for destination emotion",
+                  text: "More than utility: the platform should feel like arrival before booking ever happens.",
                 },
-                {
-                  title: "A visual system ready to scale",
-                  text: "Collections, filters and featured editors picks can all evolve without losing cohesion or impact.",
-                  icon: Compass,
-                },
-              ].map(({ title, text, icon: Icon }, index) => (
-                <div
-                  key={title}
-                  className={`rounded-[28px] border border-white/70 bg-white/85 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 ${index % 2 === 1 ? "md:translate-y-8" : ""}`}
-                >
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+              ].map(({ icon: Icon, title, text }) => (
+                <div key={title} className="flex items-start gap-4 rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
                     <Icon className="h-5 w-5" />
                   </div>
-                  <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">{title}</h3>
-                  <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">{title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </div>
-        </section>
 
-        <section className="bg-slate-50/80 py-20 dark:bg-slate-900/30">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
-              <SectionHeading
-                eyebrow="Verified reviews"
-                title={<>People remember how a platform <span className={GRAD_TEXT}>made them feel.</span></>}
-                text="So the testimonials shouldn’t just reassure — they should amplify the brand narrative of confidence, beauty and simplicity."
-              />
-              <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
-                4.9 / 5 • 2 400+ verified reviews
+          <div className="grid gap-5 lg:col-span-7 md:grid-cols-2">
+            {[
+              {
+                title: "A homepage that feels like a cover story",
+                text: "Hero imagery, dramatic contrast, glass interfaces and layered motion cues make the platform feel premium from the first fold.",
+                icon: Camera,
+              },
+              {
+                title: "Property cards that sell desire",
+                text: "Large imagery, trust score, strong pricing hierarchy and human storytelling all work together to increase emotional engagement.",
+                icon: Home,
+              },
+              {
+                title: "Social proof with taste",
+                text: "Reviews, ratings and verification are surfaced in ways that feel elegant instead of transactional.",
+                icon: CheckCircle2,
+              },
+              {
+                title: "A visual system ready to scale",
+                text: "Collections, filters and featured editors picks can all evolve without losing cohesion or impact.",
+                icon: Compass,
+              },
+            ].map(({ title, text, icon: Icon }, index) => (
+              <div
+                key={title}
+                className={`rounded-[28px] border border-white/70 bg-white/85 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 ${index % 2 === 1 ? "md:translate-y-8" : ""}`}
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-50/80 py-20 dark:bg-slate-900/30">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+            <SectionHeading
+              eyebrow="Verified reviews"
+              title={<>People remember how a platform <span className={GRAD_TEXT}>made them feel.</span></>}
+              text="So the testimonials shouldn't just reassure — they should amplify the brand narrative of confidence, beauty and simplicity."
+            />
+            <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+              4.9 / 5 • 2 400+ verified reviews
+            </div>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-[32px] border border-white/70 bg-white/85 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+              <p className="text-6xl font-extrabold leading-none text-sky-500/20">"</p>
+              <p className="-mt-6 text-2xl font-semibold leading-relaxed text-slate-900 dark:text-white">
+                NestHub doesn't look like a rental platform. It feels like the front page of a destination brand — and that changes everything.
+              </p>
+              <div className="mt-8 flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-lg font-bold text-white">
+                  W
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-white">Walid Ben Amor</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Founder's editorial note</p>
+                </div>
               </div>
             </div>
 
-            <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="rounded-[32px] border border-white/70 bg-white/85 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
-                <p className="text-6xl font-extrabold leading-none text-sky-500/20">“</p>
-                <p className="-mt-6 text-2xl font-semibold leading-relaxed text-slate-900 dark:text-white">
-                  NestHub doesn’t look like a rental platform. It feels like the front page of a destination brand — and that changes everything.
-                </p>
-                <div className="mt-8 flex items-center gap-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-lg font-bold text-white">
-                    W
-                  </div>
-                  <div>
-                    <p className="font-bold text-slate-900 dark:text-white">Walid Ben Amor</p>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">Founder’s editorial note</p>
-                  </div>
-                </div>
-              </div>
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-1">
+              {REVIEWS.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-1">
-                {REVIEWS.map((review) => (
-                  <ReviewCard key={review.id} review={review} />
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        <div className="rounded-[36px] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-[1px] shadow-[0_30px_120px_rgba(49,46,129,0.28)]">
+          <div className="grid gap-8 rounded-[inherit] bg-slate-950/95 p-8 text-white md:grid-cols-[1.15fr_0.85fr] md:p-10">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.24em] text-sky-300">
+                <Send className="h-3.5 w-3.5" /> Newsletter privée
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tight md:text-5xl">
+                Keep the platform unforgettable — <span className="text-sky-300">even after they leave.</span>
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 md:text-base">
+                Bring travelers back with insider drops, private collections, seasonal edits and property stories that feel collectible. A premium homepage deserves premium follow-up.
+              </p>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                {[
+                  "Curated launches",
+                  "Private host selections",
+                  "Editorial travel notes",
+                ].map((item) => (
+                  <div key={item} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-semibold text-white/90">
+                    {item}
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
-        </section>
 
-        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
-          <div className="rounded-[36px] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-[1px] shadow-[0_30px_120px_rgba(49,46,129,0.28)]">
-            <div className="grid gap-8 rounded-[inherit] bg-slate-950/95 p-8 text-white md:grid-cols-[1.15fr_0.85fr] md:p-10">
-              <div>
-                <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.24em] text-sky-300">
-                  <Send className="h-3.5 w-3.5" /> Newsletter privée
+            <div className="rounded-[30px] border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+              <p className="text-sm font-bold uppercase tracking-[0.24em] text-sky-300">Get inspired</p>
+              <p className="mt-2 text-2xl font-bold">Receive the most beautiful stays before everyone else.</p>
+              <div className="mt-6 space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-white/60">Adresse email</label>
+                  <input
+                    type="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="vous@exemple.com"
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-sky-400"
+                  />
                 </div>
-                <h2 className="text-3xl font-extrabold tracking-tight md:text-5xl">
-                  Keep the platform unforgettable — <span className="text-sky-300">even after they leave.</span>
-                </h2>
-                <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 md:text-base">
-                  Bring travelers back with insider drops, private collections, seasonal edits and property stories that feel collectible. A premium homepage deserves premium follow-up.
-                </p>
-
-                <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                  {[
-                    "Curated launches",
-                    "Private host selections",
-                    "Editorial travel notes",
-                  ].map((item) => (
-                    <div key={item} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-semibold text-white/90">
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-[30px] border border-white/10 bg-white/5 p-6 backdrop-blur-md">
-                <p className="text-sm font-bold uppercase tracking-[0.24em] text-sky-300">Get inspired</p>
-                <p className="mt-2 text-2xl font-bold">Receive the most beautiful stays before everyone else.</p>
-                <div className="mt-6 space-y-3">
-                  <div>
-                    <label className="mb-1 block text-xs font-semibold text-white/60">Adresse email</label>
-                    <input
-                      type="email"
-                      value={newsletterEmail}
-                      onChange={(e) => setNewsletterEmail(e.target.value)}
-                      placeholder="vous@exemple.com"
-                      className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-sky-400"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!newsletterEmail.trim()) return;
-                      setSubscribed(true);
-                      setToast("Merci — vous êtes maintenant abonné à l’inspiration NestHub.");
-                    }}
-                    className="w-full rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.01]"
-                  >
-                    {subscribed ? "Déjà abonné" : "S'abonner à la sélection"}
-                  </button>
-                  <p className="text-xs leading-relaxed text-white/45">
-                    Zéro spam. Seulement des adresses extraordinaires, des histoires visuelles et des opportunités premium.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <footer className="border-t border-slate-200 bg-white/70 py-10 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/70">
-          <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div>
-              <p className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">NESTHUB</p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">The face of extraordinary stays in Tunisia.</p>
-            </div>
-            <div className="flex flex-wrap gap-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-              {FOOTER_LINKS.map((link) => (
-                <button key={link} className="transition-colors hover:text-slate-700 dark:hover:text-white">
-                  {link}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!newsletterEmail.trim()) return;
+                    setSubscribed(true);
+                    setToast("Merci — vous êtes maintenant abonné à l'inspiration NestHub.");
+                  }}
+                  className="w-full rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.01]"
+                >
+                  {subscribed ? "Déjà abonné" : "S'abonner à la sélection"}
                 </button>
-              ))}
+                <p className="text-xs leading-relaxed text-white/45">
+                  Zéro spam. Seulement des adresses extraordinaires, des histoires visuelles et des opportunités premium.
+                </p>
+              </div>
             </div>
           </div>
-        </footer>
-      </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-slate-200 bg-white/70 py-10 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/70">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div>
+            <p className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">NESTHUB</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">The face of extraordinary stays in Tunisia.</p>
+          </div>
+          <div className="flex flex-wrap gap-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+            {FOOTER_LINKS.map((link) => (
+              <button key={link} className="transition-colors hover:text-slate-700 dark:hover:text-white">
+                {link}
+              </button>
+            ))}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

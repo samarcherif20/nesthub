@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { useLocale } from "next-intl";
 import { toast } from "sonner";
 
 export function useTenantProfile(userData: any) {
   const router = useRouter();
+  const locale = useLocale();
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Données pré-remplies (readonly)
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -22,7 +23,6 @@ export function useTenantProfile(userData: any) {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [gender, setGender] = useState("");
 
-  // Champs à remplir
   const [bio, setBio] = useState("");
   const [languages, setLanguages] = useState<string[]>(["Français"]);
   const [howFound, setHowFound] = useState("");
@@ -41,20 +41,18 @@ export function useTenantProfile(userData: any) {
       setProfilePhoto(userData.profilePictureUrl || null);
       setGovernorate(userData.governorate || "");
       setDelegation(userData.delegation || "");
-       let genderValue = userData.gender;
-    let genderFromPassport = userData.cinData?.sex;
-    
-    if (genderFromPassport) {
-      // Si le passeport a fourni un sexe, on le prend (priorité)
-      if (genderFromPassport === "MALE") setGender("Homme");
-      else if (genderFromPassport === "FEMALE") setGender("Femme");
-      else setGender(genderFromPassport);
-    } else if (genderValue) {
-      // Sinon, on prend la valeur existante dans userData
-      if (genderValue === "MALE") setGender("Homme");
-      else if (genderValue === "FEMALE") setGender("Femme");
-      else setGender(genderValue);
-    }
+      let genderValue = userData.gender;
+      let genderFromPassport = userData.cinData?.sex;
+
+      if (genderFromPassport) {
+        if (genderFromPassport === "MALE") setGender("MALE");
+        else if (genderFromPassport === "FEMALE") setGender("FEMALE");
+        else setGender(genderFromPassport);
+      } else if (genderValue) {
+        if (genderValue === "MALE") setGender("MALE");
+        else if (genderValue === "FEMALE") setGender("FEMALE");
+        else setGender(genderValue);
+      }
       setHowFound(userData.howFound || "");
       if (userData.spokenLanguages?.length)
         setLanguages(userData.spokenLanguages);
@@ -97,7 +95,7 @@ export function useTenantProfile(userData: any) {
 
       if (response.ok) {
         toast.success("Profil locataire enregistré !");
-        router.push("/fr/search");
+        router.push(`/${locale}/search`);
       } else {
         const error = await response.json();
         toast.error("Erreur", { description: error.error });
@@ -109,7 +107,7 @@ export function useTenantProfile(userData: any) {
     }
   };
 
-  const handleSkip = () => router.push("/fr/search");
+  const handleSkip = () => router.push(`/${locale}/search`);
 
   return {
     isLoading,

@@ -21,8 +21,9 @@ interface VerificationRequest {
   status: string;
   documentFrontUrl: string;
   documentBackUrl?: string;
+  documentType?: "cin" | "passport";
   extractedData?: ExtractedData;
-  cinData?: {           // ← AJOUTER
+  cinData?: {
     firstName?: string;
     lastName?: string;
     cinNumber?: string;
@@ -31,6 +32,12 @@ interface VerificationRequest {
     extractedAt?: string;
     rectoUrl?: string;
     versoUrl?: string;
+    passportUrl?: string;
+    documentType?: string;
+    passportNumber?: string;
+    expiryDate?: string;
+    sex?: string;
+    country?: string;
   };
   adminComment?: string;
   rejectionMotif?: string;

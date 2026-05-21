@@ -1,12 +1,11 @@
-// app/[locale]/(auth)/forgot-password/hooks/useForgotPassword.ts
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 
-export function useForgotPassword() {
+export function useForgotPassword(t: any) {
   const router = useRouter();
   const locale = useLocale();
-  
+
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -15,8 +14,9 @@ export function useForgotPassword() {
   const [mounted, setMounted] = useState(true);
 
   const validateEmail = (email: string) => {
-    if (!email.trim()) return "L'email est requis";
-    if (!email.includes("@") || !email.includes(".")) return "Email invalide";
+    if (!email.trim()) return t("errors.emailRequired");
+    if (!email.includes("@") || !email.includes("."))
+      return t("errors.emailInvalid");
     return null;
   };
 
@@ -43,21 +43,21 @@ export function useForgotPassword() {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/reset-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      
+
       const data = await response.json();
-      
+
       if (response.ok) {
-        setSuccessMessage(`Un lien de réinitialisation a été envoyé à ${email}`);
+        setSuccessMessage(t("success.message", { email: email }));
       } else {
-        setError(data.error || "Une erreur est survenue");
+        setError(data.error || t("errors.general"));
       }
     } catch (err) {
-      setError("Erreur de connexion");
+      setError(t("errors.connection"));
     } finally {
       setLoading(false);
     }

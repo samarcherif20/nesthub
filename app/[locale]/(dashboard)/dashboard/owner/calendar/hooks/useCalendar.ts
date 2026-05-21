@@ -1,7 +1,13 @@
 // app/[locale]/(dashboard)/owner/calendar/hooks/useCalendar.ts
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-
+// Ajoute cette fonction après les imports, vers ligne 15-20
+function formatDateForAPI(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 export interface CalendarDay {
   date: Date;
   isCurrentMonth: boolean;
@@ -41,6 +47,7 @@ export interface Booking {
     firstName: string;
     lastName: string;
     email: string;
+    username?: string;
   };
 }
 
@@ -53,44 +60,89 @@ export interface Listing {
 }
 
 export const BOOKING_COLORS = [
-  { bg: "#6366f1", light: "rgba(99,102,241,0.15)", dark: "rgba(99,102,241,0.25)" },
-  { bg: "#8b5cf6", light: "rgba(139,92,246,0.15)", dark: "rgba(139,92,246,0.25)" },
-  { bg: "#0ea5e9", light: "rgba(14,165,233,0.15)", dark: "rgba(14,165,233,0.25)" },
-  { bg: "#10b981", light: "rgba(16,185,129,0.15)", dark: "rgba(16,185,129,0.25)" },
-  { bg: "#f59e0b", light: "rgba(245,158,11,0.15)", dark: "rgba(245,158,11,0.25)" },
+  {
+    bg: "#6366f1",
+    light: "rgba(99,102,241,0.15)",
+    dark: "rgba(99,102,241,0.25)",
+  },
+  {
+    bg: "#8b5cf6",
+    light: "rgba(139,92,246,0.15)",
+    dark: "rgba(139,92,246,0.25)",
+  },
+  {
+    bg: "#0ea5e9",
+    light: "rgba(14,165,233,0.15)",
+    dark: "rgba(14,165,233,0.25)",
+  },
+  {
+    bg: "#10b981",
+    light: "rgba(16,185,129,0.15)",
+    dark: "rgba(16,185,129,0.25)",
+  },
+  {
+    bg: "#f59e0b",
+    light: "rgba(245,158,11,0.15)",
+    dark: "rgba(245,158,11,0.25)",
+  },
 ];
 
-export const FR_MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+export const FR_MONTHS = [
+  "Janvier",
+  "Février",
+  "Mars",
+  "Avril",
+  "Mai",
+  "Juin",
+  "Juillet",
+  "Août",
+  "Septembre",
+  "Octobre",
+  "Novembre",
+  "Décembre",
+];
 export const FR_DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 
 export function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function normalizeBlockedDates(blockedDates: any[]): BlockedDate[] {
   const normalized: BlockedDate[] = [];
   for (const bd of blockedDates) {
-    // Gérer les plages de dates
     if (bd.startDate && bd.endDate) {
       const start = new Date(bd.startDate);
       const end = new Date(bd.endDate);
-      start.setHours(0, 0, 0, 0);
-      end.setHours(0, 0, 0, 0);
-      let current = new Date(start);
-      while (current <= end) {
+
+      const startUTC = new Date(
+        Date.UTC(start.getFullYear(), start.getMonth(), start.getDate()),
+      );
+      const endUTC = new Date(
+        Date.UTC(end.getFullYear(), end.getMonth(), end.getDate()),
+      );
+
+      let current = new Date(startUTC);
+      while (current <= endUTC) {
+        const year = current.getUTCFullYear();
+        const month = String(current.getUTCMonth() + 1).padStart(2, "0");
+        const day = String(current.getUTCDate()).padStart(2, "0");
+        const dateStr = `${year}-${month}-${day}`;
+
         normalized.push({
           id: bd.id,
-          date: current.toISOString().split("T")[0],
+          date: dateStr,
           reason: bd.reason,
           customPrice: bd.customPrice,
           startDate: bd.startDate,
           endDate: bd.endDate,
         });
-        current.setDate(current.getDate() + 1);
+        current.setUTCDate(current.getUTCDate() + 1);
       }
-    } 
-    // Gérer les dates simples
-    else {
+    } else {
       const dateStr = bd.startDate?.split("T")[0] || bd.date?.split("T")[0];
       if (dateStr) {
         normalized.push({
@@ -118,6 +170,14 @@ export function buildGrid(
   const lastDay = new Date(year, month + 1, 0);
   const days: CalendarDay[] = [];
 
+  // AJOUTE CETTE FONCTION À L'INTÉRIEUR
+  const formatDate = (date: Date): string => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   // Jours du mois précédent
   let offset = firstDay.getDay() - 1;
   if (offset < 0) offset = 6;
@@ -140,7 +200,7 @@ export function buildGrid(
   // Jours du mois courant
   for (let i = 1; i <= lastDay.getDate(); i++) {
     const d = new Date(year, month, i);
-    const dateStr = d.toISOString().split("T")[0];
+    const dateStr = formatDate(d);
     const isPast = d < todayMidnight;
 
     // Vérifier si bloqué
@@ -155,20 +215,22 @@ export function buildGrid(
       co.setHours(0, 0, 0, 0);
       return d >= ci && d < co;
     });
-    
+
     const isCheckIn = !!bookings.find((b) => {
       const ci = new Date(b.checkIn);
       ci.setHours(0, 0, 0, 0);
       return isSameDay(d, ci);
     });
-    
+
     const isCheckOut = !!bookings.find((b) => {
       const co = new Date(b.checkOut);
       co.setHours(0, 0, 0, 0);
       return isSameDay(d, co);
     });
 
-    const colorIdx = booking ? (booking.colorIndex ?? 0) % BOOKING_COLORS.length : 0;
+    const colorIdx = booking
+      ? (booking.colorIndex ?? 0) % BOOKING_COLORS.length
+      : 0;
 
     // Vérifier les prix spéciaux
     const priceRule = pricingRules.find((r) => {
@@ -188,7 +250,13 @@ export function buildGrid(
       isCheckIn,
       isCheckOut,
       bookingId: booking?.id,
-      bookingGuest: booking?.tenant ? `${booking.tenant.firstName} ${booking.tenant.lastName || ""}` : booking?.guestName,
+      bookingGuest: booking?.tenant?.username
+        ? booking.tenant.username
+        : booking?.tenant?.firstName
+          ? booking.tenant.firstName
+          : booking?.guestName
+            ? booking.guestName.split(" ")[0]
+            : undefined,
       bookingNights: booking?.nights,
       bookingColor: booking ? BOOKING_COLORS[colorIdx].bar : undefined,
       customPrice: priceRule?.fixedPrice || blockedEntry?.customPrice,
@@ -210,7 +278,7 @@ export function buildGrid(
       isCheckOut: false,
     });
   }
-  
+
   return days;
 }
 
@@ -230,17 +298,20 @@ export function useCalendar() {
   const [loadingCal, setLoadingCal] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const authFetch = useCallback(async (url: string, opts: RequestInit = {}) => {
-    const token = await getToken({ template: "my-app-template" });
-    return fetch(url, {
-      ...opts,
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        ...(opts.headers ?? {}),
-      },
-    });
-  }, [getToken]);
+  const authFetch = useCallback(
+    async (url: string, opts: RequestInit = {}) => {
+      const token = await getToken({ template: "my-app-template" });
+      return fetch(url, {
+        ...opts,
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(opts.headers ?? {}),
+        },
+      });
+    },
+    [getToken],
+  );
 
   // Charger les listings
   useEffect(() => {
@@ -263,31 +334,51 @@ export function useCalendar() {
     try {
       const y = currentDate.getFullYear();
       const m = currentDate.getMonth() + 1;
-      console.log(`🔄 Fetch availability pour ${selectedListing.id} - ${y}/${m}`);
+      console.log(
+        `🔄 Fetch availability pour ${selectedListing.id} - ${y}/${m}`,
+      );
 
       const res = await authFetch(
         `/api/listings/availability?listingId=${selectedListing.id}&year=${y}&month=${m}`,
       );
-      
+
       if (res.ok) {
         const data = await res.json();
-        console.log(`📊 Données reçues: blockedDates=${data.blockedDates?.length}, pricingRules=${data.pricingRules?.length}, bookings=${data.bookings?.length}`);
+        console.log(
+          `📊 Données reçues: blockedDates=${data.blockedDates?.length}, pricingRules=${data.pricingRules?.length}, bookings=${data.bookings?.length}`,
+        );
 
-        const normalizedBlockedDates = normalizeBlockedDates(data.blockedDates ?? []);
-        console.log(`📅 normalizedBlockedDates:`, normalizedBlockedDates.map(b => b.date));
-        
-        const formattedBookings: Booking[] = (data.bookings ?? []).map((b: any, i: number) => ({
-          id: b.id,
-          checkIn: b.checkIn,
-          checkOut: b.checkOut,
-          status: b.status,
-          guestName: b.tenant?.firstName ? `${b.tenant.firstName} ${b.tenant.lastName || ""}` : b.guestName,
-          guestEmail: b.tenant?.email || b.guestEmail,
-          totalPrice: b.totalPrice,
-          nights: Math.ceil((new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) / (1000 * 60 * 60 * 24)),
-          colorIndex: i,
-          tenant: b.tenant,
-        }));
+        const normalizedBlockedDates = normalizeBlockedDates(
+          data.blockedDates ?? [],
+        );
+        console.log(
+          `📅 normalizedBlockedDates:`,
+          normalizedBlockedDates.map((b) => b.date),
+        );
+
+        const formattedBookings: Booking[] = (data.bookings ?? []).map(
+          (b: any, i: number) => ({
+            id: b.id,
+            checkIn: b.checkIn,
+            checkOut: b.checkOut,
+            status: b.status,
+            guestName: b.tenant?.username
+              ? b.tenant.username
+              : b.tenant?.firstName
+                ? b.tenant.firstName
+                : b.guestName
+                  ? b.guestName.split(" ")[0]
+                  : "Guest",
+            guestEmail: b.tenant?.email || b.guestEmail,
+            totalPrice: b.totalPrice,
+            nights: Math.ceil(
+              (new Date(b.checkOut).getTime() - new Date(b.checkIn).getTime()) /
+                (1000 * 60 * 60 * 24),
+            ),
+            colorIndex: i,
+            tenant: b.tenant,
+          }),
+        );
 
         setBlockedDates(normalizedBlockedDates);
         setBookings(formattedBookings);
@@ -320,15 +411,27 @@ export function useCalendar() {
 
   const thisMonthDays = days.filter((d) => d.isCurrentMonth);
   const bookedDays = thisMonthDays.filter((d) => d.isBooked).length;
-  const blockedDaysCount = thisMonthDays.filter((d) => d.isBlocked && !d.isPast).length;
+  const blockedDaysCount = thisMonthDays.filter(
+    (d) => d.isBlocked && !d.isPast,
+  ).length;
   const totalDays = thisMonthDays.length;
-  const occupancy = totalDays > 0 ? Math.round((bookedDays / totalDays) * 100) : 0;
+  const occupancy =
+    totalDays > 0 ? Math.round((bookedDays / totalDays) * 100) : 0;
   const revenue = bookings.reduce((s, b) => s + (b.totalPrice ?? 0), 0);
 
-  const isDaySelected = (date: Date) => selectedDays.some((d) => isSameDay(d, date));
+  const isDaySelected = (date: Date) =>
+    selectedDays.some((d) => isSameDay(d, date));
 
   const handleDayMouseEnter = (day: CalendarDay) => {
-    if (!isSelecting || !rangeStart || !day.isCurrentMonth || day.isPast || day.isBooked || day.isBlocked) return;
+    if (
+      !isSelecting ||
+      !rangeStart ||
+      !day.isCurrentMonth ||
+      day.isPast ||
+      day.isBooked ||
+      day.isBlocked
+    )
+      return;
     const start = rangeStart;
     const end = day.date;
     const newSelected: Date[] = [];
@@ -343,7 +446,8 @@ export function useCalendar() {
   };
 
   const handleDayClick = (day: CalendarDay) => {
-    if (!day.isCurrentMonth || day.isPast || day.isBooked || day.isBlocked) return;
+    if (!day.isCurrentMonth || day.isPast || day.isBooked || day.isBlocked)
+      return;
     if (!isSelecting) {
       setRangeStart(day.date);
       setSelectedDays([day.date]);
@@ -390,13 +494,16 @@ export function useCalendar() {
         body: JSON.stringify({
           listingId: selectedListing.id,
           action: "block",
-          dates: datesToBlock.map((d) => d.toISOString().split("T")[0]),
+          dates: datesToBlock.map((d) => formatDateForAPI(d)),
           reason: reason || null,
         }),
       });
       if (res.ok) {
         clearSelection();
         await fetchAvailability();
+      } else {
+        const error = await res.text();
+        console.error("Erreur block:", error);
       }
     } catch (e) {
       console.error(e);
@@ -415,7 +522,7 @@ export function useCalendar() {
         body: JSON.stringify({
           listingId: selectedListing.id,
           action: "unblock",
-          dates: datesToUnblock.map((d) => d.toISOString().split("T")[0]),
+          dates: datesToUnblock.map((d) => formatDateForAPI(d)),
         }),
       });
       if (res.ok) {
@@ -439,7 +546,7 @@ export function useCalendar() {
         body: JSON.stringify({
           listingId: selectedListing.id,
           action: "setPrice",
-          dates: datesToPrice.map((d) => d.toISOString().split("T")[0]),
+          dates: datesToPrice.map((d) => formatDateForAPI(d)),
           customPrice: price,
         }),
       });
@@ -456,7 +563,9 @@ export function useCalendar() {
 
   const upcomingBookings = bookings
     .filter((b) => new Date(b.checkIn) >= today)
-    .sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime());
+    .sort(
+      (a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime(),
+    );
 
   return {
     listings,

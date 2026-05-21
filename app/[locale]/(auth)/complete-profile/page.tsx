@@ -122,7 +122,7 @@ export default function CompleteProfilePage() {
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [showSaved, setShowSaved] = useState(false);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  
+
   const [touched, setTouched] = useState({
     gender: false,
     howFound: false,
@@ -258,11 +258,19 @@ export default function CompleteProfilePage() {
   // ✅ VALIDATION COMPLÈTE
   const isGenderValid = gender !== "";
   const isLanguagesValid = selectedLanguages.length > 0;
-  const isHowFoundValid = profileAny.howFound !== "" && profileAny.howFound !== null;
-  const isBankValid = !isLandlord || (profileAny.rib && profileAny.bankName && profileAny.accountHolder);
+  const isHowFoundValid =
+    profileAny.howFound !== "" && profileAny.howFound !== null;
+  const isBankValid =
+    !isLandlord ||
+    (profileAny.rib && profileAny.bankName && profileAny.accountHolder);
   const isForeignersValid = !isLandlord || acceptsForeigners !== null;
-  
-  const isFormValid = isGenderValid && isLanguagesValid && isHowFoundValid && isBankValid && isForeignersValid;
+
+  const isFormValid =
+    isGenderValid &&
+    isLanguagesValid &&
+    isHowFoundValid &&
+    isBankValid &&
+    isForeignersValid;
 
   const handleSave = async () => {
     setTouched({
@@ -281,7 +289,8 @@ export default function CompleteProfilePage() {
       if (!isLanguagesValid) errorMessage += `- ${t("languages")}\n`;
       if (!isHowFoundValid) errorMessage += `- ${t("howFound")}\n`;
       if (isLandlord && !isBankValid) errorMessage += `- ${t("bankInfo")}\n`;
-      if (isLandlord && !isForeignersValid) errorMessage += `- ${t("foreigners")}\n`;
+      if (isLandlord && !isForeignersValid)
+        errorMessage += `- ${t("foreigners")}\n`;
       toast.error(t("missingFieldsTitle"), { description: errorMessage });
       return;
     }
@@ -322,23 +331,37 @@ export default function CompleteProfilePage() {
     { id: 6, label: t("step6"), done: selectedLanguages.length > 0 },
     ...(isLandlord
       ? [
-          { id: 7, label: t("step7"), done: !!(profileAny.rib && profileAny.bankName && profileAny.accountHolder) },
+          {
+            id: 7,
+            label: t("step7"),
+            done: !!(
+              profileAny.rib &&
+              profileAny.bankName &&
+              profileAny.accountHolder
+            ),
+          },
           { id: 8, label: t("step8"), done: acceptsForeigners !== null },
         ]
       : []),
   ];
 
-  const lbl = "mb-1 block text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400";
-  const ro = "w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3.5 py-2 text-sm text-slate-600 dark:text-slate-400 outline-none cursor-not-allowed";
-  const ed = "w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20";
-  const card = "rounded-2xl border border-white/80 dark:border-white/10 bg-white/94 dark:bg-slate-900/80 shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-sm";
+  const lbl =
+    "mb-1 block text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400";
+  const ro =
+    "w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3.5 py-2 text-sm text-slate-600 dark:text-slate-400 outline-none cursor-not-allowed";
+  const ed =
+    "w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20";
+  const card =
+    "rounded-2xl border border-white/80 dark:border-white/10 bg-white/94 dark:bg-slate-900/80 shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:shadow-[0_18px_40px_rgba(0,0,0,0.35)] backdrop-blur-sm";
 
   if (isProfileLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white dark:bg-slate-950 z-50">
         <div className="flex flex-col items-center justify-center gap-4">
           <LoadingSpinner />
-          <p className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">{t("loading.message")}</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 animate-pulse">
+            {t("loading.message")}
+          </p>
         </div>
       </div>
     );
@@ -356,7 +379,7 @@ export default function CompleteProfilePage() {
         style={{ clipPath: "polygon(0 32%, 100% 0, 100% 100%, 0 100%)" }}
       />
       <div className="absolute inset-x-0 bottom-[41.5%] h-px rotate-[-5deg] bg-white/60 dark:bg-white/5" />
-      
+
       <div className="relative z-10 flex h-full flex-col px-12 py-7">
         {/* Header */}
         <div className="mb-5 flex flex-shrink-0 items-center justify-between">
@@ -364,11 +387,17 @@ export default function CompleteProfilePage() {
             <h1 className="bg-gradient-to-r from-blue-400 via-sky-500 to-purple-500 bg-clip-text text-xl font-bold text-transparent">
               {t("title")}
             </h1>
-            <p className="mt-0.5 text-[13px] text-slate-600 dark:text-slate-400">{t("subtitle")}</p>
+            <p className="mt-0.5 text-[13px] text-slate-600 dark:text-slate-400">
+              {t("subtitle")}
+            </p>
           </div>
           <div className="flex items-center gap-5">
             <HalfGauge pct={pct} />
-            {showSaved && <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">✓ {t("saved")}</span>}
+            {showSaved && (
+              <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                ✓ {t("saved")}
+              </span>
+            )}
             <button
               onClick={handleSave}
               disabled={profileAny.isLoading || !isFormValid}
@@ -378,7 +407,11 @@ export default function CompleteProfilePage() {
                   : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
               }`}
             >
-              {profileAny.isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save size={15} />}
+              {profileAny.isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save size={15} />
+              )}
               {t("save")}
             </button>
           </div>
@@ -389,8 +422,12 @@ export default function CompleteProfilePage() {
           {/* Left Column - Steps */}
           <div className={`${card} h-full p-5`}>
             <div className="mb-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">{t("progress")}</p>
-              <p className="mt-1 text-sm font-bold text-slate-700 dark:text-slate-200">{t("steps")}</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                {t("progress")}
+              </p>
+              <p className="mt-1 text-sm font-bold text-slate-700 dark:text-slate-200">
+                {t("steps")}
+              </p>
             </div>
             <div className="relative flex h-[calc(100%-3rem)] flex-col justify-center gap-5">
               <div className="absolute left-[14px] top-3 bottom-3 w-px bg-slate-200 dark:bg-white/10" />
@@ -405,7 +442,9 @@ export default function CompleteProfilePage() {
                   >
                     {step.done ? "✓" : step.id}
                   </div>
-                  <span className={`text-[13px] ${step.done ? "font-medium text-slate-700 dark:text-slate-200" : "text-slate-400 dark:text-slate-500"}`}>
+                  <span
+                    className={`text-[13px] ${step.done ? "font-medium text-slate-700 dark:text-slate-200" : "text-slate-400 dark:text-slate-500"}`}
+                  >
                     {step.label}
                   </span>
                 </div>
@@ -419,61 +458,108 @@ export default function CompleteProfilePage() {
             <div className={`${card} flex-1 p-6 overflow-y-auto`}>
               <div className="mb-4 flex items-center gap-2">
                 <User size={16} className="text-blue-500 dark:text-blue-400" />
-                <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">{t("personalInfo")}</h2>
+                <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
+                  {t("personalInfo")}
+                </h2>
               </div>
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>{t("firstName")}</label>
-                    <input value={profileAny.firstName || ""} readOnly className={ro} />
+                    <input
+                      value={profileAny.firstName || ""}
+                      readOnly
+                      className={ro}
+                    />
                   </div>
                   <div>
                     <label className={lbl}>{t("lastName")}</label>
-                    <input value={profileAny.lastName || ""} readOnly className={ro} />
+                    <input
+                      value={profileAny.lastName || ""}
+                      readOnly
+                      className={ro}
+                    />
                   </div>
                 </div>
                 <div>
                   <label className={lbl}>{t("email")}</label>
-                  <input value={user?.emailAddresses[0]?.emailAddress || ""} readOnly className={ro} />
+                  <input
+                    value={user?.emailAddresses[0]?.emailAddress || ""}
+                    readOnly
+                    className={ro}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className={lbl}>{t("birthDate")}</label>
-                    <input value={profileAny.birthDate || ""} readOnly className={ro} />
+                    <input
+                      value={profileAny.birthDate || ""}
+                      readOnly
+                      className={ro}
+                    />
                   </div>
                   <div>
                     <label className={lbl}>{t("cin")}</label>
-                    <input value={profileAny.cinNumber || ""} readOnly className={ro} placeholder={t("notProvided")} />
+                    <input
+                      value={profileAny.cinNumber || ""}
+                      readOnly
+                      className={ro}
+                      placeholder={t("notProvided")}
+                    />
                   </div>
                 </div>
                 <div>
                   <label className={lbl}>{t("phone")}</label>
-                  <input value={profileAny.phone || ""} readOnly className={ro} />
+                  <input
+                    value={profileAny.phone || ""}
+                    readOnly
+                    className={ro}
+                  />
                 </div>
                 <div>
                   <label className={lbl}>{t("profession")}</label>
-                  <input value={profileAny.profession || ""} readOnly className={ro} placeholder={t("notProvided")} />
+                  <input
+                    value={profileAny.profession || ""}
+                    readOnly
+                    className={ro}
+                    placeholder={t("notProvided")}
+                  />
                 </div>
                 <div>
                   <label className={lbl}>
                     {t("gender")} <span className="text-red-500">*</span>
-                    {touched.gender && !gender && <span className="text-red-500 text-[8px] ml-1">{t("genderRequired")}</span>}
+                    {touched.gender && !gender && (
+                      <span className="text-red-500 text-[8px] ml-1">
+                        {t("genderRequired")}
+                      </span>
+                    )}
                   </label>
                   {userData?.cinData?.sex ? (
                     <div className="flex h-[36px] items-center gap-5">
                       <span className="text-sm text-slate-600 dark:text-slate-300">
-                        {gender === "Homme" ? "Homme" : gender === "Femme" ? "Femme" : gender}
+                        {gender === "MALE"
+                          ? t("man")
+                          : gender === "FEMALE"
+                            ? t("woman")
+                            : gender === "OTHER"
+                              ? t("other")
+                              : gender}
                       </span>
-                      <span className="text-xs text-slate-400">(importé depuis votre passeport)</span>
+                      <span className="text-xs text-slate-400">
+                        ({t("importedFromPassport")})
+                      </span>
                     </div>
                   ) : (
                     <div className="flex h-[36px] items-center gap-5">
                       {[
-                        { value: "Homme", label: t("man") },
-                        { value: "Femme", label: t("woman") },
-                        { value: "Autre", label: t("other") },
+                        { value: "MALE", label: t("man") },
+                        { value: "FEMALE", label: t("woman") },
+                        { value: "OTHER", label: t("other") },
                       ].map((g) => (
-                        <label key={g.value} className="flex cursor-pointer items-center gap-1.5 text-[13px] text-slate-600 dark:text-slate-300">
+                        <label
+                          key={g.value}
+                          className="flex cursor-pointer items-center gap-1.5 text-[13px] text-slate-600 dark:text-slate-300"
+                        >
                           <input
                             type="radio"
                             name="gender"
@@ -487,7 +573,11 @@ export default function CompleteProfilePage() {
                       ))}
                     </div>
                   )}
-                  {touched.gender && !gender && <p className="text-[10px] text-red-500 mt-1">{t("genderSelect")}</p>}
+                  {touched.gender && !gender && (
+                    <p className="text-[10px] text-red-500 mt-1">
+                      {t("genderSelect")}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -495,17 +585,32 @@ export default function CompleteProfilePage() {
             {/* Address */}
             <div className={`${card} p-6`}>
               <div className="mb-3 flex items-center gap-2">
-                <MapPin size={16} className="text-blue-500 dark:text-blue-400" />
-                <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">{t("address")}</h2>
+                <MapPin
+                  size={16}
+                  className="text-blue-500 dark:text-blue-400"
+                />
+                <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
+                  {t("address")}
+                </h2>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className={lbl}>{t("governorate")}</label>
-                  <input value={profileAny.governorate || ""} readOnly className={ro} placeholder={t("notProvided")} />
+                  <input
+                    value={profileAny.governorate || ""}
+                    readOnly
+                    className={ro}
+                    placeholder={t("notProvided")}
+                  />
                 </div>
                 <div>
                   <label className={lbl}>{t("delegation")}</label>
-                  <input value={profileAny.delegation || ""} readOnly className={ro} placeholder={t("notProvided")} />
+                  <input
+                    value={profileAny.delegation || ""}
+                    readOnly
+                    className={ro}
+                    placeholder={t("notProvided")}
+                  />
                 </div>
               </div>
             </div>
@@ -514,7 +619,10 @@ export default function CompleteProfilePage() {
             {isLandlord && (
               <div className={`${card} p-6`}>
                 <div className="mb-3 flex items-center gap-2">
-                  <CreditCard size={16} className="text-purple-500 dark:text-purple-400" />
+                  <CreditCard
+                    size={16}
+                    className="text-purple-500 dark:text-purple-400"
+                  />
                   <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
                     {t("bankInfo")} <span className="text-red-500">*</span>
                   </h2>
@@ -524,31 +632,55 @@ export default function CompleteProfilePage() {
                     <label className={lbl}>{t("rib")} *</label>
                     <input
                       value={profileAny.rib || ""}
-                      onChange={(e) => { profileAny.setRib?.(e.target.value); setTouched((prev) => ({ ...prev, rib: true })); }}
+                      onChange={(e) => {
+                        profileAny.setRib?.(e.target.value);
+                        setTouched((prev) => ({ ...prev, rib: true }));
+                      }}
                       className={`${ed} ${touched.rib && !profileAny.rib ? "border-red-400" : ""}`}
-                      placeholder="TN59 1234..."
+                      placeholder={t("ribPlaceholder")}
                     />
-                    {touched.rib && !profileAny.rib && <p className="text-[9px] text-red-500 mt-0.5">{t("required")}</p>}
+                    {touched.rib && !profileAny.rib && (
+                      <p className="text-[9px] text-red-500 mt-0.5">
+                        {t("required")}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className={lbl}>{t("bankName")} *</label>
                     <input
                       value={profileAny.bankName || ""}
-                      onChange={(e) => { profileAny.setBankName?.(e.target.value); setTouched((prev) => ({ ...prev, bankName: true })); }}
+                      onChange={(e) => {
+                        profileAny.setBankName?.(e.target.value);
+                        setTouched((prev) => ({ ...prev, bankName: true }));
+                      }}
                       className={`${ed} ${touched.bankName && !profileAny.bankName ? "border-red-400" : ""}`}
-                      placeholder="BIAT, Attijari..."
+                      placeholder={t("bankNamePlaceholder")}
                     />
-                    {touched.bankName && !profileAny.bankName && <p className="text-[9px] text-red-500 mt-0.5">{t("required")}</p>}
+                    {touched.bankName && !profileAny.bankName && (
+                      <p className="text-[9px] text-red-500 mt-0.5">
+                        {t("required")}
+                      </p>
+                    )}
                   </div>
                   <div>
                     <label className={lbl}>{t("accountHolder")} *</label>
                     <input
                       value={profileAny.accountHolder || ""}
-                      onChange={(e) => { profileAny.setAccountHolder?.(e.target.value); setTouched((prev) => ({ ...prev, accountHolder: true })); }}
+                      onChange={(e) => {
+                        profileAny.setAccountHolder?.(e.target.value);
+                        setTouched((prev) => ({
+                          ...prev,
+                          accountHolder: true,
+                        }));
+                      }}
                       className={`${ed} ${touched.accountHolder && !profileAny.accountHolder ? "border-red-400" : ""}`}
-                      placeholder="Nom complet"
+                      placeholder={t("accountHolderPlaceholder")}
                     />
-                    {touched.accountHolder && !profileAny.accountHolder && <p className="text-[9px] text-red-500 mt-0.5">{t("required")}</p>}
+                    {touched.accountHolder && !profileAny.accountHolder && (
+                      <p className="text-[9px] text-red-500 mt-0.5">
+                        {t("required")}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -560,16 +692,28 @@ export default function CompleteProfilePage() {
             {/* Profile Photo */}
             <div className={`${card} p-6`}>
               <div className="mb-4 flex items-center gap-2">
-                <Camera size={16} className="text-blue-500 dark:text-blue-400" />
-                <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">{t("profilePhoto")}</h2>
+                <Camera
+                  size={16}
+                  className="text-blue-500 dark:text-blue-400"
+                />
+                <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
+                  {t("profilePhoto")}
+                </h2>
               </div>
               <div className="flex items-center gap-5">
                 <div className="relative flex-shrink-0">
                   <div className="flex h-[68px] w-[68px] items-center justify-center overflow-hidden rounded-full border-[3px] border-blue-100 dark:border-blue-500/20 bg-slate-100 dark:bg-slate-800">
                     {profilePhotoUrl ? (
-                      <img src={getDisplayImageUrl(profilePhotoUrl) || ""} alt="Profile" className="h-full w-full object-cover" />
+                      <img
+                        src={getDisplayImageUrl(profilePhotoUrl) || ""}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                      />
                     ) : (
-                      <User size={26} className="text-slate-300 dark:text-slate-600" />
+                      <User
+                        size={26}
+                        className="text-slate-300 dark:text-slate-600"
+                      />
                     )}
                   </div>
                   <button
@@ -580,37 +724,65 @@ export default function CompleteProfilePage() {
                   >
                     <Camera size={11} />
                   </button>
-                  <input ref={photoInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{profileAny.firstName} {profileAny.lastName}</p>
-                  <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">{profileAny.profession}</p>
-                  <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">{t("photoHint")}</p>
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                    {profileAny.firstName} {profileAny.lastName}
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-400 dark:text-slate-500">
+                    {profileAny.profession}
+                  </p>
+                  <p className="mt-1 text-[10px] text-slate-400 dark:text-slate-500">
+                    {t("photoHint")}
+                  </p>
                 </div>
               </div>
-              {isUploadingPhoto && <div className="mt-3 flex justify-center"><Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" /></div>}
+              {isUploadingPhoto && (
+                <div className="mt-3 flex justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-500 dark:text-blue-400" />
+                </div>
+              )}
             </div>
 
             {/* Biography */}
             <div className={`${card} flex flex-1 flex-col p-6`}>
               <div className="mb-3 flex items-center gap-2">
-                <FileText size={16} className="text-blue-500 dark:text-blue-400" />
-                <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">{t("bio")}</h2>
+                <FileText
+                  size={16}
+                  className="text-blue-500 dark:text-blue-400"
+                />
+                <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
+                  {t("bio")}
+                </h2>
               </div>
               <textarea
                 value={profileAny.bio || ""}
-                onChange={(e) => profileAny.setBio(e.target.value.slice(0, 300))}
+                onChange={(e) =>
+                  profileAny.setBio(e.target.value.slice(0, 300))
+                }
                 className="flex-1 w-full resize-none rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm leading-relaxed text-slate-700 dark:text-slate-200 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20 placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 placeholder={t("bioPlaceholder")}
               />
-              <p className="mt-1.5 text-right text-[10px] font-medium text-slate-400 dark:text-slate-500">{profileAny.bio?.length || 0}/300</p>
+              <p className="mt-1.5 text-right text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                {profileAny.bio?.length || 0}/300
+              </p>
             </div>
 
             {/* Foreigners - ONLY for landlords */}
             {isLandlord && (
               <div className={`${card} p-6`}>
                 <div className="mb-3 flex items-center gap-2">
-                  <Globe size={16} className="text-purple-500 dark:text-purple-400" />
+                  <Globe
+                    size={16}
+                    className="text-purple-500 dark:text-purple-400"
+                  />
                   <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
                     {t("foreigners")} <span className="text-red-500">*</span>
                   </h2>
@@ -620,26 +792,42 @@ export default function CompleteProfilePage() {
                     { value: true, label: t("acceptForeigners") },
                     { value: false, label: t("rejectForeigners") },
                   ].map((opt) => (
-                    <label key={opt.value.toString()} className="flex cursor-pointer items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300">
+                    <label
+                      key={opt.value.toString()}
+                      className="flex cursor-pointer items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300"
+                    >
                       <input
                         type="radio"
                         name="acceptsForeigners"
                         checked={acceptsForeigners === opt.value}
-                        onChange={() => { setAcceptsForeigners(opt.value); setTouched((prev) => ({ ...prev, acceptsForeigners: true })); }}
+                        onChange={() => {
+                          setAcceptsForeigners(opt.value);
+                          setTouched((prev) => ({
+                            ...prev,
+                            acceptsForeigners: true,
+                          }));
+                        }}
                         className="h-3.5 w-3.5 accent-blue-500 dark:accent-blue-400"
                       />
                       {opt.label}
                     </label>
                   ))}
                 </div>
-                {touched.acceptsForeigners && acceptsForeigners === null && <p className="text-[10px] text-red-500 mt-2">{t("foreignersRequired")}</p>}
+                {touched.acceptsForeigners && acceptsForeigners === null && (
+                  <p className="text-[10px] text-red-500 mt-2">
+                    {t("foreignersRequired")}
+                  </p>
+                )}
               </div>
             )}
 
             {/* How did you find us */}
             <div className={`${card} p-6`}>
               <div className="mb-3 flex items-center gap-2">
-                <Search size={16} className="text-purple-500 dark:text-purple-400" />
+                <Search
+                  size={16}
+                  className="text-purple-500 dark:text-purple-400"
+                />
                 <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
                   {t("howFound")} <span className="text-red-500">*</span>
                 </h2>
@@ -647,39 +835,72 @@ export default function CompleteProfilePage() {
               <div className="relative">
                 <select
                   value={profileAny.howFound || ""}
-                  onChange={(e) => { profileAny.setHowFound(e.target.value); setTouched((prev) => ({ ...prev, howFound: true })); }}
+                  onChange={(e) => {
+                    profileAny.setHowFound(e.target.value);
+                    setTouched((prev) => ({ ...prev, howFound: true }));
+                  }}
                   className={`w-full appearance-none rounded-lg border ${
-                    touched.howFound && !profileAny.howFound ? "border-red-400" : "border-slate-200 dark:border-slate-700"
+                    touched.howFound && !profileAny.howFound
+                      ? "border-red-400"
+                      : "border-slate-200 dark:border-slate-700"
                   } bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-500/20`}
                 >
-                  {HOW_FOUND_OPTIONS.map((opt) => (<option key={opt.value} value={opt.value}>{opt.label}</option>))}
+                  {HOW_FOUND_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
                 </select>
-                <ChevronDown size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                <ChevronDown
+                  size={14}
+                  className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+                />
               </div>
-              {touched.howFound && !profileAny.howFound && <p className="text-[10px] text-red-500 mt-1">{t("genderSelect")}</p>}
+              {touched.howFound && !profileAny.howFound && (
+                <p className="text-[10px] text-red-500 mt-1">
+                  {t("genderSelect")}
+                </p>
+              )}
             </div>
 
             {/* Languages */}
             <div className={`${card} p-6`}>
               <div className="mb-3 flex items-center gap-2">
-                <Languages size={16} className="text-purple-500 dark:text-purple-400" />
+                <Languages
+                  size={16}
+                  className="text-purple-500 dark:text-purple-400"
+                />
                 <h2 className="text-[14px] font-bold text-slate-700 dark:text-slate-200">
                   {t("languages")} <span className="text-red-500">*</span>
                 </h2>
               </div>
-              {touched.languages && selectedLanguages.length === 0 && <p className="text-[10px] text-red-500 mb-2">{t("atLeastOne")}</p>}
+              {touched.languages && selectedLanguages.length === 0 && (
+                <p className="text-[10px] text-red-500 mb-2">
+                  {t("atLeastOne")}
+                </p>
+              )}
               {selectedLanguages.length > 0 && (
                 <div className="mb-3 flex flex-wrap gap-2">
                   {selectedLanguages.map((lang) => (
-                    <span key={lang} className="flex h-7 items-center gap-1.5 rounded-full border border-blue-100 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 px-3 text-xs font-medium text-blue-700 dark:text-blue-300">
+                    <span
+                      key={lang}
+                      className="flex h-7 items-center gap-1.5 rounded-full border border-blue-100 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 px-3 text-xs font-medium text-blue-700 dark:text-blue-300"
+                    >
                       {lang}
-                      <X size={11} className="cursor-pointer transition-colors hover:text-red-500" onClick={() => handleRemoveLanguage(lang)} />
+                      <X
+                        size={11}
+                        className="cursor-pointer transition-colors hover:text-red-500"
+                        onClick={() => handleRemoveLanguage(lang)}
+                      />
                     </span>
                   ))}
                 </div>
               )}
               <div className="relative" ref={langRef}>
-                <Search size={14} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 z-10 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+                />
                 <input
                   type="text"
                   value={langSearch}
@@ -694,17 +915,43 @@ export default function CompleteProfilePage() {
                       <button
                         key={lang.code}
                         type="button"
-                        onClick={() => { addLanguage(lang.name); setTouched((prev) => ({ ...prev, languages: true })); }}
+                        onClick={() => {
+                          addLanguage(lang.name);
+                          setTouched((prev) => ({ ...prev, languages: true }));
+                        }}
                         className="flex w-full items-center gap-2 px-3.5 py-2 text-left text-sm text-slate-600 dark:text-slate-300 transition-colors hover:bg-blue-50 dark:hover:bg-white/5 hover:text-blue-700 dark:hover:text-blue-300"
                       >
-                        <Languages size={12} className="text-slate-400 dark:text-slate-500" />
-                        {langSearch ? lang.name.split(new RegExp(`(${langSearch})`, "gi")).map((part, i) => part.toLowerCase() === langSearch.toLowerCase() ? <strong key={i} className="text-blue-600 dark:text-blue-400">{part}</strong> : <span key={i}>{part}</span>) : lang.name}
+                        <Languages
+                          size={12}
+                          className="text-slate-400 dark:text-slate-500"
+                        />
+                        {langSearch
+                          ? lang.name
+                              .split(new RegExp(`(${langSearch})`, "gi"))
+                              .map((part, i) =>
+                                part.toLowerCase() ===
+                                langSearch.toLowerCase() ? (
+                                  <strong
+                                    key={i}
+                                    className="text-blue-600 dark:text-blue-400"
+                                  >
+                                    {part}
+                                  </strong>
+                                ) : (
+                                  <span key={i}>{part}</span>
+                                ),
+                              )
+                          : lang.name}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              {selectedLanguages.length === 0 && <p className="text-[10px] text-slate-400 mt-1.5">{t("clickToSelect")}</p>}
+              {selectedLanguages.length === 0 && (
+                <p className="text-[10px] text-slate-400 mt-1.5">
+                  {t("clickToSelect")}
+                </p>
+              )}
             </div>
           </div>
         </div>

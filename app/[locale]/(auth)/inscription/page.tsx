@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   EyeOff,
   Eye,
@@ -274,6 +274,7 @@ export default function InscriptionPage() {
   } = useInscription();
 
   const router = useRouter();
+  const locale = useLocale();
 
   // États pour l'erreur générale avec timer
   const [generalError, setGeneralError] = useState<string | null>(null);
@@ -413,7 +414,7 @@ export default function InscriptionPage() {
       const res = await fetch("/api/mobile-upload/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, documentType }),
+        body: JSON.stringify({ userId, documentType, locale }),
       });
 
       const data = await res.json();
@@ -421,7 +422,9 @@ export default function InscriptionPage() {
 
       if (currentSessionId) {
         setSessionId(currentSessionId);
-        setQrUrl(data.qrUrl);
+        // Use the QR URL from the API response (already has the correct IP)
+        const fullQrUrl = data.qrUrl;
+        setQrUrl(fullQrUrl);
         setShowQRCode(true);
         setUploadProgress(0);
 
@@ -560,6 +563,7 @@ export default function InscriptionPage() {
     setProfilePictureUrl,
     setPassportFile,
     setPassportUrl,
+    locale,
   ]);
   // COMPOSANTS POUR ÉTAPE 4
   function useObjectUrl(
@@ -1340,7 +1344,7 @@ export default function InscriptionPage() {
                   >
                     {t("acceptTerms.prefix")}{" "}
                     <Link
-                      href="/fr/terms"
+                      href={`/${locale}/terms`}
                       target="_blank"
                       className="font-semibold text-purple-800 dark:text-primary hover:underline"
                     >
@@ -1348,7 +1352,7 @@ export default function InscriptionPage() {
                     </Link>{" "}
                     {t("acceptTerms.and")}{" "}
                     <Link
-                      href="/fr/privacy"
+                      href={`/${locale}/privacy`}
                       target="_blank"
                       className="font-semibold text-purple-800 dark:text-primary hover:underline"
                     >
@@ -1383,7 +1387,7 @@ export default function InscriptionPage() {
               <p className="mt-3 sm:mt-4 text-center text-xs text-slate-600 dark:text-slate-400">
                 {t("alreadyHaveAccount")}{" "}
                 <Link
-                  href="/fr/login"
+                  href={`/${locale}/login`}
                   className="text-primary font-bold hover:underline"
                 >
                   {t("login")}
@@ -4173,11 +4177,13 @@ export default function InscriptionPage() {
                   setIsCompletingProfile(true);
                   try {
                     setShowWelcome(false);
+
                     localStorage.setItem(
                       "redirectAfterLogin",
-                      "/fr/complete-profile",
+                      `/${locale}/complete-profile`,
                     );
-                    await router.push("/fr/complete-profile");
+
+                    await router.push(`/${locale}/complete-profile`);
                   } finally {
                     setIsCompletingProfile(false);
                   }
@@ -4205,31 +4211,31 @@ export default function InscriptionPage() {
           </motion.div>
         )}
         {/* Footer */}
-        <footer className="relative z-20 mt- sm:mt-6 pt-3 text-[10px] text-gray-200 dark:text-slate-600 flex flex-wrap justify-center gap-3 sm:gap-4 ">
+        <footer className="relative z-20 mt- sm:mt-6 pt-3 text-[10px] text-gray-200 dark:text-slate-400 flex flex-wrap justify-center gap-3 sm:gap-4 ">
           <Link
-            href="/fr/terms"
+            href={`/${locale}/terms`}
             className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
           >
             {t("termsOfUse")}
           </Link>
           <Link
-            href="/fr/privacy"
+            href={`/${locale}/privacy`}
             className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
           >
             {t("privacyPolicy")}
           </Link>
           <Link
-            href="/fr/faq"
+            href={`/${locale}/faq`}
             className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
           >
             {t("help")}
           </Link>
-          <span className="text-gray-200 dark:text-slate-700">
+          <span className="text-gray-200 dark:text-slate-400">
             © 2026 NESTHUB
           </span>
         </footer>
         {/* Security Message */}
-        <p className="relative z-20 mt-3 text-center text-[10px] text-gray-200 dark:text-slate-600 max-w-xs mx-auto">
+        <p className="relative z-20 mt-3 text-center text-[10px] text-gray-200 dark:text-slate-400 max-w-xs mx-auto">
           {t("securityMessage")}
         </p>
       </div>

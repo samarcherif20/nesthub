@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLocale } from "next-intl";
 
-export function useResetPassword() {
+export function useResetPassword(t: any) {
   const router = useRouter();
   const locale = useLocale();
   
@@ -36,13 +36,13 @@ export function useResetPassword() {
   }, [router, locale]);
 
   const validatePassword = (pwd: string) => {
-    if (!pwd) return "Le mot de passe est requis";
-    if (pwd.length < 8) return "Le mot de passe doit contenir au moins 8 caractères";
-    if (!/[A-Z]/.test(pwd)) return "Le mot de passe doit contenir au moins une majuscule";
-    if (!/[a-z]/.test(pwd)) return "Le mot de passe doit contenir au moins une minuscule";
-    if (!/[0-9]/.test(pwd)) return "Le mot de passe doit contenir au moins un chiffre";
-    return null;
-  };
+  if (!pwd) return t("errors.passwordRequired");
+  if (pwd.length < 8) return t("errors.passwordMinLength");
+  if (!/[A-Z]/.test(pwd)) return t("errors.passwordUppercase");
+  if (!/[a-z]/.test(pwd)) return t("errors.passwordLowercase");
+  if (!/[0-9]/.test(pwd)) return t("errors.passwordNumber");
+  return null;
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +54,7 @@ export function useResetPassword() {
     }
     
     if (password !== confirmPassword) {
-      setError("Les mots de passe ne correspondent pas");
+  setError(t("errors.passwordsDoNotMatch"));
       return;
     }
     
@@ -77,7 +77,7 @@ export function useResetPassword() {
           body: JSON.stringify({ email, password }),
         });
       } else {
-        setError("Données manquantes");
+setError(t("errors.missingData"));
         return;
       }
       
@@ -89,10 +89,10 @@ export function useResetPassword() {
           router.push(`/${locale}/login?reset=success`);
         }, 2000);
       } else {
-        setError(data.error || "Une erreur est survenue");
+setError(data.error || t("errors.general"));
       }
     } catch (err) {
-      setError("Erreur de connexion");
+setError(t("errors.connection"));
     } finally {
       setLoading(false);
     }

@@ -2,15 +2,17 @@
 
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, Loader2, Smartphone, QrCode, X } from "lucide-react";
+import { CheckCircle } from "lucide-react";
+import { useMobileUpload } from "./hooks/useMobileUpload";
 
 // ============================================================
-// ICONS (gardés de l'original)
+// ICONS
 // ============================================================
 
 function IconChevronLeft({ className = "w-5 h-5" }: { className?: string }) {
@@ -106,9 +108,10 @@ function IconArrowForward({ className = "w-5 h-5" }: { className?: string }) {
 // ============================================================
 
 function LoadingSpinner() {
-  const { resolvedTheme } = useTheme();
+  const { resolvedTheme, theme } = useTheme();
+  const t = useTranslations("MobileUpload");
   const [mounted, setMounted] = useState(false);
-  const isDark = mounted ? resolvedTheme === "dark" : true;
+  const isDark = mounted && (resolvedTheme === "dark" || theme === "dark");
 
   useEffect(() => {
     setMounted(true);
@@ -116,10 +119,19 @@ function LoadingSpinner() {
 
   if (!mounted) {
     return (
-      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 bg-white dark:bg-slate-950">
-        <div className="relative w-20 h-20">
-          <div className="absolute inset-0 rounded-full border-3 border-gray-200 dark:border-slate-800" />
-          <div className="absolute inset-0 rounded-full border-3 border-transparent border-t-sky-500 border-r-purple-600 animate-spin" />
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-slate-900 dark:to-slate-950">
+        <div className="relative w-24 h-24">
+          <div className="absolute inset-0 rounded-full border-2 border-slate-200 dark:border-slate-700" />
+          <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+          <div className="absolute inset-0 rounded-full flex items-center justify-center overflow-hidden">
+            <Image
+              src="/logo/logo.png"
+              alt="Logo"
+              fill
+              className="object-cover scale-110"
+              sizes="100px"
+            />
+          </div>
         </div>
       </div>
     );
@@ -127,30 +139,104 @@ function LoadingSpinner() {
 
   return (
     <div
-      className={`fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 ${
-        isDark ? "bg-slate-950" : "bg-white"
-      }`}
+      className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-6 transition-colors duration-300"
+      style={{
+        background: isDark
+          ? "radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%)"
+          : "radial-gradient(circle at 50% 50%, #ede9fe 0%, #f8f7ff 100%)",
+      }}
     >
-      <div className="relative w-20 h-20">
-        <div className="absolute inset-0 rounded-full border-3 border-gray-200 dark:border-slate-800" />
-        <div className="absolute inset-0 rounded-full border-3 border-transparent border-t-sky-500 border-r-purple-600 animate-spin" />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="relative w-10 h-10">
-            <Image
-              src="/logo/logo.png"
-              alt="Logo"
-              fill
-              className="object-contain scale-[2]"
-            />
-          </div>
+      <style>
+        {`
+          @keyframes spinLoader { 
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          @keyframes pulseGlow {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.2); }
+          }
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+        `}
+      </style>
+
+      {/* Logo avec spinner */}
+      <div className="relative w-24 h-24">
+        {/* Cercle de bordure externe */}
+        <div
+          className="absolute inset-0 rounded-full transition-colors duration-300"
+          style={{
+            border: `2px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+          }}
+        />
+
+        {/* Spinner rotatif */}
+        <div
+          className="absolute inset-0 rounded-full transition-colors duration-300"
+          style={{
+            border: `2px solid transparent`,
+            borderTopColor: isDark ? "#818cf8" : "#4f46e5",
+            borderRightColor: isDark
+              ? "rgba(129,140,248,0.3)"
+              : "rgba(79,70,229,0.3)",
+            animation: "spinLoader 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite",
+          }}
+        />
+
+        {/* Logo */}
+        <div
+          className="absolute inset-0 rounded-full flex items-center justify-center overflow-hidden"
+          style={{
+            animation: "pulseGlow 2s ease-in-out infinite",
+          }}
+        >
+          <Image
+            src="/logo/logo.png"
+            alt="Logo"
+            fill
+            className="object-cover scale-110"
+            sizes="100px"
+            priority
+          />
         </div>
       </div>
-      <div className="flex flex-col items-center gap-2">
+
+      {/* Texte */}
+      <div
+        className="flex flex-col items-center gap-2"
+        style={{ animation: "fadeInUp 0.5s ease-out both 0.2s" }}
+      >
         <p
-          className={`text-sm font-semibold tracking-[.15em] uppercase ${isDark ? "text-white/70" : "text-gray-700"}`}
+          className={`text-sm font-semibold tracking-[0.15em] uppercase transition-colors duration-300 ${
+            isDark ? "text-white/80" : "text-slate-700"
+          }`}
         >
-          Chargement de l'interface...
+          {t("loading")}
         </p>
+        <p
+          className={`text-[10px] tracking-[0.3em] uppercase transition-colors duration-300 ${
+            isDark ? "text-white/30" : "text-slate-400"
+          }`}
+        >
+          NESTHUB
+        </p>
+      </div>
+
+      {/* Points de chargement */}
+      <div className="flex gap-2 mt-2">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-1.5 h-1.5 rounded-full transition-colors duration-300"
+            style={{
+              backgroundColor: isDark ? "#a78bfa" : "#6366f1",
+              animation: `pulseGlow 1.4s ease-in-out ${i * 0.2}s infinite`,
+            }}
+          />
+        ))}
       </div>
     </div>
   );
@@ -160,8 +246,9 @@ function LoadingSpinner() {
 // LOADER
 // ============================================================
 
-function Loader({ message = "Envoi en cours..." }: { message?: string }) {
+function Loader({ message = "uploading" }: { message?: string }) {
   const { resolvedTheme } = useTheme();
+  const t = useTranslations("MobileUpload");
   const isDark = resolvedTheme === "dark";
 
   return (
@@ -177,7 +264,7 @@ function Loader({ message = "Envoi en cours..." }: { message?: string }) {
       <p
         className={`text-sm font-bold ${isDark ? "text-gray-200" : "text-gray-800"}`}
       >
-        {message}
+        {t(message)}
       </p>
     </div>
   );
@@ -187,16 +274,10 @@ function Loader({ message = "Envoi en cours..." }: { message?: string }) {
 // SUCCESS ANIMATION
 // ============================================================
 
-function SuccessAnimation({ onComplete }: { onComplete: () => void }) {
+function SuccessAnimation() {
   const { resolvedTheme } = useTheme();
+  const t = useTranslations("MobileUpload");
   const isDark = resolvedTheme === "dark";
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onComplete();
-    }, 2500);
-    return () => clearTimeout(timer);
-  }, [onComplete]);
 
   return (
     <motion.div
@@ -225,7 +306,7 @@ function SuccessAnimation({ onComplete }: { onComplete: () => void }) {
         transition={{ delay: 0.3 }}
         className="text-2xl font-bold bg-gradient-to-r from-emerald-500 to-green-500 bg-clip-text text-transparent"
       >
-        Documents reçus !
+        {t("documentsReceived")}
       </motion.h2>
 
       <motion.p
@@ -234,21 +315,14 @@ function SuccessAnimation({ onComplete }: { onComplete: () => void }) {
         transition={{ delay: 0.5 }}
         className={`text-sm ${isDark ? "text-gray-400" : "text-gray-600"}`}
       >
-        Redirection vers la page d'inscription...
+        {t("youCanClose")}
       </motion.p>
-
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: "80%" }}
-        transition={{ delay: 0.7, duration: 1.5 }}
-        className="h-1 rounded-full bg-gradient-to-r from-emerald-500 to-green-500"
-      />
     </motion.div>
   );
 }
 
 // ============================================================
-// TYPES
+// TYPES & CONFIGS
 // ============================================================
 
 type DocumentType = "recto" | "verso" | "selfie" | "passport";
@@ -259,9 +333,6 @@ interface DocumentState {
   status: "idle" | "captured" | "uploading" | "uploaded" | "error";
   errorMessage?: string;
 }
-
-const CIN_STEPS: DocumentType[] = ["recto", "verso", "selfie"];
-const PASSPORT_STEPS: DocumentType[] = ["passport", "selfie"];
 
 const DOC_CONFIGS: Record<
   DocumentType,
@@ -281,62 +352,62 @@ const DOC_CONFIGS: Record<
   }
 > = {
   recto: {
-    title: "Carte d'identité",
-    subtitle: "Face avant",
-    helper: "Cadrez bien le recto de votre CIN dans un endroit bien éclairé",
+    title: "cinFront",
+    subtitle: "frontSide",
+    helper: "cinRectoHelper",
     icon: <IconBadge className="w-6 h-6" />,
     colorClass: "text-sky-600 dark:text-sky-400",
     bgClass: "bg-sky-50 dark:bg-sky-950/30",
     gradientFrom: "#0ea5e9",
     gradientTo: "#3b82f6",
     capture: "environment",
-    buttonLabel: "Photographier le recto",
+    buttonLabel: "takePhoto",
     stepNumber: 1,
   },
   verso: {
-    title: "Carte d'identité",
-    subtitle: "Face arrière",
-    helper: "Retournez votre carte et capturez le verso",
+    title: "cinBack",
+    subtitle: "backSide",
+    helper: "cinVersoHelper",
     icon: <IconBadge className="w-6 h-6" />,
     colorClass: "text-purple-600 dark:text-purple-400",
     bgClass: "bg-purple-50 dark:bg-purple-950/30",
     gradientFrom: "#8b5cf6",
     gradientTo: "#a855f7",
     capture: "environment",
-    buttonLabel: "Photographier le verso",
+    buttonLabel: "takePhoto",
     stepNumber: 2,
   },
   selfie: {
-    title: "Selfie",
-    subtitle: "Vérification biométrique",
-    helper: "Placez votre visage bien centré dans le cercle",
+    title: "selfie",
+    subtitle: "biometricVerification",
+    helper: "selfieHelper",
     icon: <IconFace className="w-6 h-6" />,
     colorClass: "text-indigo-600 dark:text-indigo-400",
     bgClass: "bg-indigo-50 dark:bg-indigo-950/30",
     gradientFrom: "#4f46e5",
     gradientTo: "#6366f1",
     capture: "user",
-    buttonLabel: "Prendre un selfie",
+    buttonLabel: "takeSelfie",
     stepNumber: 3,
     isSelfie: true,
   },
   passport: {
-    title: "Passeport",
-    subtitle: "Page principale",
-    helper: "Cadrez bien la page principale de votre passeport",
+    title: "passport",
+    subtitle: "mainPage",
+    helper: "passportHelper",
     icon: <IconBadge className="w-6 h-6" />,
     colorClass: "text-amber-600 dark:text-amber-400",
     bgClass: "bg-amber-50 dark:bg-amber-950/30",
     gradientFrom: "#f59e0b",
     gradientTo: "#ef4444",
     capture: "environment",
-    buttonLabel: "Photographier le passeport",
+    buttonLabel: "takePhoto",
     stepNumber: 1,
   },
 };
 
 // ============================================================
-// STEP CARD COMPONENT (CORRIGÉ pour supporter passport)
+// STEP CARD COMPONENT
 // ============================================================
 
 interface StepCardProps {
@@ -354,6 +425,7 @@ function StepCard({
   onRemove,
   fileInputRef,
 }: StepCardProps) {
+  const t = useTranslations("MobileUpload");
   const config = DOC_CONFIGS[type];
   const isUploaded = doc.status === "uploaded";
   const isUploading = doc.status === "uploading";
@@ -376,7 +448,7 @@ function StepCard({
         }
       `}
     >
-      {isUploading && <Loader message={`Envoi ${config.title}…`} />}
+      {isUploading && <Loader message="sending" />}
 
       <div
         className="h-1 w-full"
@@ -409,16 +481,16 @@ function StepCard({
             </div>
             <div>
               <h3 className="font-bold text-gray-900 dark:text-white text-base">
-                {config.title}
+                {t(config.title)}
               </h3>
               <p className="text-gray-500 dark:text-gray-400 text-xs mt-0.5">
                 {isUploaded
-                  ? "Document validé"
+                  ? t("documentValidated")
                   : isError
                     ? doc.errorMessage
                     : isCaptured
-                      ? "Photo prête"
-                      : config.subtitle}
+                      ? t("photoReady")
+                      : t(config.subtitle)}
               </p>
             </div>
           </div>
@@ -426,7 +498,7 @@ function StepCard({
 
         {!doc.preview && !isUploaded && (
           <p className="text-gray-400 dark:text-gray-500 text-xs leading-relaxed mb-5">
-            {config.helper}
+            {t(config.helper)}
           </p>
         )}
 
@@ -445,7 +517,7 @@ function StepCard({
                     <div className="w-40 h-40 rounded-full overflow-hidden border-4 border-white dark:border-slate-800 shadow-xl">
                       <img
                         src={doc.preview}
-                        alt={config.title}
+                        alt={t(config.title)}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -453,7 +525,7 @@ function StepCard({
                 ) : (
                   <img
                     src={doc.preview}
-                    alt={config.title}
+                    alt={t(config.title)}
                     className="w-full h-full object-cover"
                   />
                 )}
@@ -472,7 +544,7 @@ function StepCard({
                   className="flex-1 py-3 rounded-xl bg-gray-50 dark:bg-slate-800/80 text-gray-700 dark:text-gray-200 font-semibold text-xs flex items-center justify-center gap-2 active:scale-[0.97] transition-all border border-gray-200 dark:border-slate-700"
                 >
                   <IconRetake className="w-4 h-4" />
-                  Reprendre
+                  {t("retake")}
                 </button>
                 <button
                   onClick={onRemove}
@@ -507,10 +579,10 @@ function StepCard({
                   </div>
                   <div className="text-center">
                     <p className="text-gray-600 dark:text-gray-300 text-xs font-medium">
-                      Appuyez pour capturer
+                      {t("tapToCapture")}
                     </p>
                     <p className="text-gray-400 dark:text-gray-500 text-[10px] mt-0.5">
-                      Caméra frontale
+                      {t("frontCamera")}
                     </p>
                   </div>
                 </>
@@ -523,10 +595,10 @@ function StepCard({
                   </div>
                   <div className="text-center">
                     <p className="text-gray-600 dark:text-gray-300 text-xs font-medium">
-                      Appuyez pour capturer
+                      {t("tapToCapture")}
                     </p>
                     <p className="text-gray-400 dark:text-gray-500 text-[10px] mt-0.5">
-                      Caméra arrière
+                      {t("rearCamera")}
                     </p>
                   </div>
                 </>
@@ -549,324 +621,70 @@ function StepCard({
 }
 
 // ============================================================
-// MAIN PAGE (CORRIGÉE)
+// MAIN PAGE
 // ============================================================
 
 export default function MobileUploadPage() {
   const params = useParams();
-  const router = useRouter();
   const sessionId = params.sessionId as string;
-  const [documentMode, setDocumentMode] = useState<"cin" | "passport">("cin");
-  const [steps, setSteps] = useState<DocumentType[]>([...CIN_STEPS]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [allUploaded, setAllUploaded] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
-
-  const { resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [animState, setAnimState] = useState<"idle" | "exit" | "enter">("idle");
-  const [animDirection, setAnimDirection] = useState<"forward" | "backward">(
-    "forward",
-  );
-  const [pendingStepIndex, setPendingStepIndex] = useState<number | null>(null);
-
-  // Initialisation des documents selon le mode
-  const getInitialDocuments = (): Record<DocumentType, DocumentState> => {
-    if (documentMode === "passport") {
-      return {
-        passport: { file: null, preview: null, status: "idle" },
-        selfie: { file: null, preview: null, status: "idle" },
-        recto: { file: null, preview: null, status: "idle" },
-        verso: { file: null, preview: null, status: "idle" },
-      };
-    }
-    return {
-      recto: { file: null, preview: null, status: "idle" },
-      verso: { file: null, preview: null, status: "idle" },
-      selfie: { file: null, preview: null, status: "idle" },
-      passport: { file: null, preview: null, status: "idle" },
-    };
-  };
-
-  const [documents, setDocuments] = useState<
-    Record<DocumentType, DocumentState>
-  >(getInitialDocuments());
-
-  const fileInputRefs = {
-    recto: useRef<HTMLInputElement>(null),
-    verso: useRef<HTMLInputElement>(null),
-    selfie: useRef<HTMLInputElement>(null),
-    passport: useRef<HTMLInputElement>(null),
-  };
-
-  const currentType = steps[currentStepIndex];
-  const currentDocument = documents[currentType];
-  const isTransitioning = animState !== "idle";
-
-  // Récupérer la session et le mode
+  const t = useTranslations("MobileUpload");
+  const [locale, setLocale] = useState("fr");
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+  const {
+    steps,
+    uploading,
+    uploadProgress,
+    allUploaded,
+    showSuccess,
+    currentStepIndex,
+    currentType,
+    currentDocument,
+    uploadedCount,
+    hasAnyContent,
+    allStepsReady,
+    isTransitioning,
+    barPct,
+    goNext,
+    goPrev,
+    handleCapture,
+    handleRemove,
+    handleUploadAll,
+    resetUpload,
+    setShowSuccess,
+    fileInputRefs,
+  } = useMobileUpload();
   useEffect(() => {
-    setMounted(true);
-    const fetchSession = async () => {
+    async function fetchSession() {
       try {
         const res = await fetch(
           `/api/mobile-upload/session?sessionId=${sessionId}`,
         );
         const data = await res.json();
-
-        // Détecter le mode (CIN ou PASSEPORT)
-        const mode = data.documentType || "cin";
-        setDocumentMode(mode);
-
-        if (mode === "passport") {
-          setSteps([...PASSPORT_STEPS]);
-          setDocuments({
-            passport: { file: null, preview: null, status: "idle" },
-            selfie: { file: null, preview: null, status: "idle" },
-            recto: { file: null, preview: null, status: "idle" },
-            verso: { file: null, preview: null, status: "idle" },
-          });
-        } else {
-          setSteps([...CIN_STEPS]);
-          setDocuments({
-            recto: { file: null, preview: null, status: "idle" },
-            verso: { file: null, preview: null, status: "idle" },
-            selfie: { file: null, preview: null, status: "idle" },
-            passport: { file: null, preview: null, status: "idle" },
-          });
-        }
-        setCurrentStepIndex(0);
+        if (data.locale) setLocale(data.locale);
       } catch (error) {
-        console.error("Erreur récupération session:", error);
+        console.error("Error:", error);
+      } finally {
+        setSessionLoaded(true);
       }
-    };
+    }
     fetchSession();
   }, [sessionId]);
+  const { resolvedTheme } = useTheme();
+  const router = useRouter();
+  const isDark = resolvedTheme === "dark";
+  const displayedStepIndex = currentStepIndex;
+  let cardAnimClass = "card-stable";
 
-  const goToStep = useCallback(
-    (nextIndex: number) => {
-      if (
-        nextIndex < 0 ||
-        nextIndex > steps.length - 1 ||
-        nextIndex === currentStepIndex ||
-        animState !== "idle"
-      )
-        return;
-
-      const dir = nextIndex > currentStepIndex ? "forward" : "backward";
-      setAnimDirection(dir);
-      setPendingStepIndex(nextIndex);
-      setAnimState("exit");
-
-      setTimeout(() => {
-        setCurrentStepIndex(nextIndex);
-        setAnimState("enter");
-        setTimeout(() => {
-          setAnimState("idle");
-          setPendingStepIndex(null);
-        }, 350);
-      }, 280);
-    },
-    [currentStepIndex, animState, steps.length],
-  );
-
-  const goNext = useCallback(() => {
-    if (currentStepIndex < steps.length - 1) goToStep(currentStepIndex + 1);
-  }, [currentStepIndex, goToStep, steps.length]);
-
-  const goPrev = useCallback(() => {
-    if (currentStepIndex > 0) goToStep(currentStepIndex - 1);
-  }, [currentStepIndex, goToStep]);
-
-  const handleCapture = useCallback(
-    (type: DocumentType) => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        setDocuments((prev) => ({
-          ...prev,
-          [type]: {
-            file: file,
-            preview: reader.result as string,
-            status: "captured",
-          },
-        }));
-        const stepIndex = steps.indexOf(type);
-        if (stepIndex < steps.length - 1) {
-          setTimeout(() => goToStep(stepIndex + 1), 800);
-        }
-      };
-      reader.readAsDataURL(file);
-      if (fileInputRefs[type]?.current) {
-        fileInputRefs[type].current!.value = "";
-      }
-    },
-    [goToStep, steps],
-  );
-
-  const handleRemove = useCallback((type: DocumentType) => {
-    setDocuments((prev) => ({
-      ...prev,
-      [type]: { file: null, preview: null, status: "idle" },
-    }));
-  }, []);
-
-  const handleUploadAll = useCallback(async () => {
-    const toUpload = Object.entries(documents).filter(
-      ([type, doc]) =>
-        steps.includes(type as DocumentType) &&
-        doc.status === "captured" &&
-        doc.file,
-    ) as [DocumentType, DocumentState][];
-
-    if (toUpload.length === 0) return;
-
-    setUploading(true);
-    setUploadProgress(0);
-
-    let successCount = 0;
-    const errors: string[] = [];
-
-    for (let i = 0; i < toUpload.length; i++) {
-      const [type, doc] = toUpload[i];
-
-      setDocuments((prev) => ({
-        ...prev,
-        [type]: { ...prev[type], status: "uploading" },
-      }));
-
-      const formData = new FormData();
-      formData.append("sessionId", sessionId);
-      formData.append("type", type);
-
-      let fileToUpload = doc.file!;
-      if (fileToUpload.type === "application/octet-stream") {
-        const buffer = await fileToUpload.arrayBuffer();
-        fileToUpload = new File(
-          [buffer],
-          fileToUpload.name.replace(".octet-stream", ".jpg"),
-          {
-            type: "image/jpeg",
-          },
-        );
-      }
-      formData.append("file", fileToUpload);
-
-      try {
-        const res = await fetch("/api/mobile-upload/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        let responseData;
-        try {
-          responseData = await res.json();
-        } catch (e) {
-          responseData = {
-            error: "Réponse invalide du serveur",
-            success: false,
-          };
-        }
-
-        if (res.ok && responseData.success) {
-          successCount++;
-          setDocuments((prev) => ({
-            ...prev,
-            [type]: { ...prev[type], status: "uploaded" },
-          }));
-        } else {
-          const errorMsg = responseData.error || "Erreur lors de l'envoi";
-          errors.push(`${type}: ${errorMsg}`);
-          setDocuments((prev) => ({
-            ...prev,
-            [type]: {
-              ...prev[type],
-              status: "error",
-              errorMessage: errorMsg,
-            },
-          }));
-        }
-      } catch (error) {
-        errors.push(`${type}: Erreur de connexion`);
-        setDocuments((prev) => ({
-          ...prev,
-          [type]: {
-            ...prev[type],
-            status: "error",
-            errorMessage: "Erreur de connexion au serveur",
-          },
-        }));
-      }
-
-      setUploadProgress(Math.round(((i + 1) / toUpload.length) * 100));
-    }
-
-    setUploading(false);
-
-    const expectedCount = steps.length;
-    if (successCount === expectedCount) {
-      setAllUploaded(true);
-      // Afficher l'animation de succès
-      setShowSuccess(true);
-    } else if (errors.length > 0) {
-      console.error("Upload errors:", errors);
-    }
-  }, [documents, sessionId, steps]);
-
-  const uploadedCount = Object.entries(documents).filter(
-    ([type, d]) =>
-      steps.includes(type as DocumentType) && d.status === "uploaded",
-  ).length;
-
-  const hasAnyContent = Object.entries(documents).some(
-    ([type, d]) => steps.includes(type as DocumentType) && d.status !== "idle",
-  );
-
-  const allStepsReady = steps.every((type) => {
-    const s = documents[type].status;
-    return s === "captured";
-  });
-
-  const displayedStepIndex =
-    pendingStepIndex !== null && animState === "enter"
-      ? pendingStepIndex
-      : currentStepIndex;
-
-  let cardAnimClass = "";
-  if (animState === "exit") {
-    cardAnimClass =
-      animDirection === "forward" ? "card-exit-left" : "card-exit-right";
-  } else if (animState === "enter") {
-    cardAnimClass =
-      animDirection === "forward" ? "card-enter-right" : "card-enter-left";
-  } else {
-    cardAnimClass = "card-stable";
-  }
-
-  const barPct = allUploaded
-    ? 100
-    : ((currentStepIndex + (currentDocument?.status !== "idle" ? 0.5 : 0)) /
-        steps.length) *
-      100;
-
-  if (!mounted) {
+  if (!steps.length || !sessionLoaded) {
     return <LoadingSpinner />;
   }
-
-  const isDark = resolvedTheme === "dark";
 
   return (
     <>
       <AnimatePresence>{showSuccess && <SuccessAnimation />}</AnimatePresence>
 
       <div
-        className={`min-h-screen relative overflow-x-hidden transition-colors duration-300 ${
-          isDark ? "bg-slate-950" : "bg-white"
-        }`}
+        className={`min-h-screen relative overflow-x-hidden transition-colors duration-300 ${isDark ? "bg-slate-950" : "bg-white"}`}
       >
         <style jsx global>{`
           @keyframes exitLeft {
@@ -953,23 +771,20 @@ export default function MobileUploadPage() {
         <div className="relative z-10 min-h-screen flex flex-col">
           {/* HEADER */}
           <header
-            className={`sticky top-0 w-full z-50 backdrop-blur-2xl border-b ${
-              isDark
-                ? "bg-slate-950/80 border-white/5"
-                : "bg-white/80 border-gray-100"
-            }`}
+            className={`sticky top-0 w-full z-50 backdrop-blur-2xl border-b ${isDark ? "bg-slate-950/80 border-white/5" : "bg-white/80 border-gray-100"}`}
           >
             <div className="flex justify-between items-center px-4 py-3.5 max-w-lg mx-auto">
               <button
                 onClick={() => {
-                  if (currentStepIndex > 0 && !isTransitioning) goPrev();
-                  else router.back();
+                  if (!isTransitioning) {
+                    if (currentStepIndex > 0) {
+                      goPrev();
+                    } else {
+                      router.push(`/${locale}/inscription`);
+                    }
+                  }
                 }}
-                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors active:scale-95 ${
-                  isDark
-                    ? "bg-white/5 hover:bg-white/10"
-                    : "bg-gray-100 hover:bg-gray-200"
-                }`}
+                className={`w-10 h-10 flex items-center justify-center rounded-xl transition-colors active:scale-95 ${isDark ? "bg-white/5 hover:bg-white/10" : "bg-gray-100 hover:bg-gray-200"}`}
               >
                 <IconChevronLeft
                   className={`w-5 h-5 ${isDark ? "text-white" : "text-gray-700"}`}
@@ -989,7 +804,6 @@ export default function MobileUploadPage() {
                   N E S T H U B
                 </h2>
               </div>
-
               <div className="w-10 h-10" />
             </div>
 
@@ -1011,36 +825,29 @@ export default function MobileUploadPage() {
             <div className="mb-7">
               <div className="text-center">
                 <h1
-                  className={`text-2xl sm:text-[1.7rem] font-bold tracking-tight leading-tight ${
-                    isDark ? "text-white" : "text-gray-800"
-                  }`}
+                  className={`text-2xl sm:text-[1.7rem] font-bold tracking-tight leading-tight ${isDark ? "text-white" : "text-gray-800"}`}
                 >
-                  {DOC_CONFIGS[steps[displayedStepIndex]]?.title || "Upload"}
+                  {t(DOC_CONFIGS[steps[displayedStepIndex]]?.title || "upload")}
                 </h1>
                 <p
                   className={`text-sm mt-1 font-medium ${isDark ? "text-white/60" : "text-gray-500"}`}
                 >
-                  Étape {displayedStepIndex + 1} sur {steps.length} ·{" "}
-                  {DOC_CONFIGS[steps[displayedStepIndex]]?.subtitle || ""}
+                  {t("step")} {displayedStepIndex + 1} {t("of")} {steps.length}{" "}
+                  · {t(DOC_CONFIGS[steps[displayedStepIndex]]?.subtitle || "")}
                 </p>
               </div>
 
               {uploadedCount > 0 && (
                 <div className="mt-4 flex justify-center">
                   <div
-                    className={`px-4 py-2 rounded-full inline-flex items-center gap-2 border ${
-                      isDark
-                        ? "bg-emerald-950/40 border-emerald-800/50"
-                        : "bg-emerald-50 border-emerald-200"
-                    }`}
+                    className={`px-4 py-2 rounded-full inline-flex items-center gap-2 border ${isDark ? "bg-emerald-950/40 border-emerald-800/50" : "bg-emerald-50 border-emerald-200"}`}
                   >
                     <IconCheckCircle className="w-4 h-4 text-emerald-500" />
                     <span
                       className={`text-xs font-bold ${isDark ? "text-emerald-300" : "text-emerald-700"}`}
                     >
-                      {uploadedCount}/{steps.length} document
-                      {uploadedCount > 1 ? "s" : ""} envoyé
-                      {uploadedCount > 1 ? "s" : ""}
+                      {uploadedCount}/{steps.length} {t("document")}
+                      {uploadedCount > 1 ? "s" : ""} {t("sent")}
                     </span>
                   </div>
                 </div>
@@ -1067,26 +874,24 @@ export default function MobileUploadPage() {
             {/* Mini steps */}
             <div className="mt-5 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
               {steps.map((type, index) => {
-                const doc = documents[type];
+                const doc =
+                  currentType === type ? currentDocument : { status: "idle" };
                 const cfg = DOC_CONFIGS[type];
                 const isCurrent = index === displayedStepIndex;
 
                 return (
                   <button
                     key={type}
-                    onClick={() => !isTransitioning && goToStep(index)}
-                    className={`
-                      flex-1 rounded-xl border px-3 py-2.5 text-left transition-all duration-300
-                      ${
-                        isCurrent
-                          ? isDark
-                            ? "bg-white/5 border-white/10 shadow-sm"
-                            : "bg-white border-gray-200 shadow-sm"
-                          : isDark
-                            ? "bg-white/5 border-white/5"
-                            : "bg-white/50 border-gray-100"
-                      }
-                    `}
+                    onClick={() => !isTransitioning && goPrev()}
+                    className={`flex-1 rounded-xl border px-3 py-2.5 text-left transition-all duration-300 ${
+                      isCurrent
+                        ? isDark
+                          ? "bg-white/5 border-white/10 shadow-sm"
+                          : "bg-white border-gray-200 shadow-sm"
+                        : isDark
+                          ? "bg-white/5 border-white/5"
+                          : "bg-white/50 border-gray-100"
+                    }`}
                   >
                     <div className="flex items-center gap-2">
                       <div
@@ -1110,16 +915,16 @@ export default function MobileUploadPage() {
                         <p
                           className={`text-[11px] font-bold truncate leading-tight ${isDark ? "text-white" : "text-gray-800"}`}
                         >
-                          {cfg.title}
+                          {t(cfg.title)}
                         </p>
                         <p
                           className={`text-[10px] truncate ${isDark ? "text-gray-500" : "text-gray-400"}`}
                         >
                           {doc.status === "uploaded"
-                            ? "✓ Validé"
+                            ? "✓ " + t("validated")
                             : doc.status === "captured"
-                              ? "Prêt"
-                              : "En attente"}
+                              ? t("ready")
+                              : t("pending")}
                         </p>
                       </div>
                     </div>
@@ -1130,18 +935,13 @@ export default function MobileUploadPage() {
 
             {/* Security note */}
             <div
-              className={`mt-8 flex items-start gap-3 px-1 py-4 rounded-xl ${
-                isDark
-                  ? "bg-white/5 border border-white/5"
-                  : "bg-gray-50/80 border border-gray-100"
-              }`}
+              className={`mt-8 flex items-start gap-3 px-1 py-4 rounded-xl ${isDark ? "bg-white/5 border border-white/5" : "bg-gray-50/80 border border-gray-100"}`}
             >
               <IconShield className="w-5 h-5 text-emerald-500 flex-shrink-0 mt-0.5 ml-3" />
               <p
                 className={`text-xs leading-relaxed pr-3 ${isDark ? "text-white/50" : "text-gray-500"}`}
               >
-                Vos données sont chiffrées de bout en bout et traitées
-                uniquement pour la vérification d'identité.
+                {t("securityNote")}
               </p>
             </div>
           </main>
@@ -1149,11 +949,7 @@ export default function MobileUploadPage() {
           {/* FOOTER */}
           <footer className="fixed bottom-0 left-0 w-full z-40 pb-[env(safe-area-inset-bottom)]">
             <div
-              className={`bg-gradient-to-t pt-8 pb-6 px-4 sm:px-5 ${
-                isDark
-                  ? "from-slate-950 via-slate-950/95 to-transparent"
-                  : "from-white via-white/95 to-transparent"
-              }`}
+              className={`bg-gradient-to-t pt-8 pb-6 px-4 sm:px-5 ${isDark ? "from-slate-950 via-slate-950/95 to-transparent" : "from-white via-white/95 to-transparent"}`}
             >
               <div className="max-w-lg mx-auto space-y-3">
                 {!uploading &&
@@ -1166,8 +962,7 @@ export default function MobileUploadPage() {
                       disabled={isTransitioning}
                       className="w-full py-4 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-bold text-sm shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
                     >
-                      Continuer
-                      <IconArrowForward className="w-5 h-5" />
+                      {t("continue")} <IconArrowForward className="w-5 h-5" />
                     </button>
                   )}
 
@@ -1180,18 +975,13 @@ export default function MobileUploadPage() {
                       disabled={isTransitioning}
                       className="w-full py-4 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-bold text-sm shadow-lg active:scale-[0.98] transition-all flex items-center justify-center gap-2.5 disabled:opacity-50"
                     >
-                      <IconUpload className="w-5 h-5" />
-                      Envoyer tous les documents
+                      <IconUpload className="w-5 h-5" /> {t("sendAllDocuments")}
                     </button>
                   )}
 
                 {uploading && (
                   <div
-                    className={`w-full py-4 rounded-xl border backdrop-blur-xl flex flex-col items-center gap-2.5 px-6 shadow-lg ${
-                      isDark
-                        ? "bg-slate-950/90 border-white/5"
-                        : "bg-white border-gray-200"
-                    }`}
+                    className={`w-full py-4 rounded-xl border backdrop-blur-xl flex flex-col items-center gap-2.5 px-6 shadow-lg ${isDark ? "bg-slate-950/90 border-white/5" : "bg-white border-gray-200"}`}
                   >
                     <div className="flex items-center gap-3 w-full">
                       <div className="relative w-6 h-6 flex-shrink-0">
@@ -1219,28 +1009,18 @@ export default function MobileUploadPage() {
                     <p
                       className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? "text-gray-400" : "text-gray-500"}`}
                     >
-                      Envoi des documents…
+                      {t("sendingDocuments")}
                     </p>
                   </div>
                 )}
 
                 {hasAnyContent && !uploading && !allUploaded && (
                   <button
-                    onClick={() => {
-                      setDocuments(getInitialDocuments());
-                      setAllUploaded(false);
-                      setUploadProgress(0);
-                      if (currentStepIndex !== 0) goToStep(0);
-                    }}
+                    onClick={resetUpload}
                     disabled={isTransitioning}
-                    className={`w-full py-3.5 rounded-xl border font-medium text-sm tracking-wide active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${
-                      isDark
-                        ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10"
-                        : "bg-white/60 border-gray-200 text-gray-600 hover:bg-white"
-                    }`}
+                    className={`w-full py-3.5 rounded-xl border font-medium text-sm tracking-wide active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 ${isDark ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : "bg-white/60 border-gray-200 text-gray-600 hover:bg-white"}`}
                   >
-                    <IconDiscard className="w-4 h-4" />
-                    Tout effacer
+                    <IconDiscard className="w-4 h-4" /> {t("clearAll")}
                   </button>
                 )}
               </div>

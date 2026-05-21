@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import {
   getClerkErrorMessage,
   getClerkErrorCode,
@@ -32,6 +32,7 @@ export function useVerifyCode() {
   const { signIn, setActive } = useSignIn();
   const router = useRouter();
   const t = useTranslations("Login");
+  const locale = useLocale();
 
   const inputRefs = [
     useRef<HTMLInputElement>(null),
@@ -57,7 +58,7 @@ export function useVerifyCode() {
     setPendingUserRole(userRole);
 
     if (!identifier) {
-      router.push("/fr/login");
+      router.push(`/${locale}/login`);
     }
   }, [router]);
 
@@ -96,7 +97,7 @@ export function useVerifyCode() {
   const closeSuccess = useCallback(() => setSuccessMessage(null), []);
 
   const handleBackToLogin = useCallback(() => {
-    router.push("/fr/login");
+    router.push(`/${locale}/login`);
   }, [router]);
 
   //  Version qui utilise la ref pour être sûre d'avoir les 6 chiffres
@@ -139,13 +140,13 @@ export function useVerifyCode() {
           // Redirection selon le rôle
           if (userRole === "ADMIN") {
             console.log(" Redirection vers admin dashboard");
-            router.push("/admin/dashboard");
+            router.push(`/${locale}/admin/dashboard`);
           } else if (userRole === "PROPERTY_OWNER") {
             console.log(" Redirection vers owner dashboard");
-            router.push("/dashboard/owner");
+            router.push(`/${locale}/dashboard/owner`);
           } else {
             console.log(" Redirection vers renter dashboard");
-            router.push("/search");
+            router.push(`/${locale}/search`);
           }
         }
       } catch (err: unknown) {

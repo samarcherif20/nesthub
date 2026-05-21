@@ -20,8 +20,28 @@ const getUploadSessions = () => {
 function getLocalIpAddress(): string {
   const nets = networkInterfaces();
 
-  console.log(" Detecting network interfaces...");
+  console.log("Detecting network interfaces...");
 
+  // First, try to find the exact Wi-Fi adapter
+  for (const name of Object.keys(nets)) {
+    const interfaces = nets[name];
+    if (!interfaces || !Array.isArray(interfaces)) continue;
+
+    // Look specifically for Wi-Fi adapter
+    if (
+      name.toLowerCase().includes("wi-fi") ||
+      name.toLowerCase().includes("wlan")
+    ) {
+      for (const net of interfaces) {
+        if (net.family === "IPv4" && !net.internal) {
+          console.log(`Found Wi-Fi IP: ${net.address} on ${name}`);
+          return net.address;
+        }
+      }
+    }
+  }
+
+  // If Wi-Fi not found, look for any 192.168.x.x address
   for (const name of Object.keys(nets)) {
     const interfaces = nets[name];
     if (!interfaces || !Array.isArray(interfaces)) continue;
@@ -29,19 +49,10 @@ function getLocalIpAddress(): string {
     for (const net of interfaces) {
       if (net.family === "IPv4" && !net.internal) {
         const ip = net.address;
-        console.log(` Found: ${ip} on ${name}`);
+        console.log(`Found: ${ip} on ${name}`);
 
-        if (ip === "192.168.1.18") {
-          console.log(` Using WiFi IP: ${ip}`);
-          return ip;
-        }
-
-        if (
-          ip.startsWith("192.168.1.") ||
-          ip.startsWith("192.168.0.") ||
-          ip.startsWith("10.0.0.")
-        ) {
-          console.log(` Using local network IP: ${ip}`);
+        if (ip.startsWith("192.168.")) {
+          console.log(`Using IP: ${ip}`);
           return ip;
         }
       }
@@ -65,7 +76,7 @@ export async function POST(request: NextRequest) {
 
     const sessionId = randomUUID();
     const expiresAt = Date.now() + SESSION_DURATION;
-    const { userId, mode, documentType } = await request.json();
+    const { userId, mode, documentType, locale } = await request.json();
 
     uploadSessions.set(sessionId, {
       id: sessionId,
@@ -73,6 +84,8 @@ export async function POST(request: NextRequest) {
       files: {},
       status: "waiting",
       mode: mode || "inscription",
+      locale: locale || "fr",
+
       documentType: documentType || "cin",
 
       createdAt: new Date().toISOString(),
@@ -80,8 +93,7 @@ export async function POST(request: NextRequest) {
     const localIp = getLocalIpAddress();
     const port = process.env.PORT || 3000;
     const baseUrl = `http://${localIp}:${port}`;
-    const qrUrl = `${baseUrl}/mobile-upload/${sessionId}`;
-
+    const qrUrl = `${baseUrl}/${locale || "fr"}/mobile-upload/${sessionId}`;
     console.log("\MOBILE UPLOAD SESSION ");
     console.log(` Session ID: ${sessionId}`);
     console.log(` QR URL: ${qrUrl}`);

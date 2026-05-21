@@ -1,19 +1,20 @@
 // app/[locale]/(auth)/forgot-password/page.tsx
 "use client";
 
-import { useState, useEffect } from "react"; // ✅ AJOUTER CETTE LIGNE
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Lock, X } from "lucide-react";
 import { IoMailOutline, IoArrowBackOutline } from "react-icons/io5";
 import { MdOutlineDangerous, MdReportGmailerrorred } from "react-icons/md";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import Alert from "@/components/ui/Alert";
 import { useForgotPassword } from "./hooks/useForgotPassword";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("ForgotPassword");
+  const locale = useLocale(); 
 
   const {
     email,
@@ -28,7 +29,7 @@ export default function ForgotPasswordPage() {
     closeError,
     closeSuccess,
     handleBackToLogin,
-  } = useForgotPassword();
+} = useForgotPassword(t);
 
   // État pour l'erreur système (bandeau)
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -278,14 +279,12 @@ export default function ForgotPasswordPage() {
             className="mt-6 pt-4 text-[10px] text-slate-400 dark:text-slate-600 flex justify-between w-full border-t border-slate-100 dark:border-slate-800/50"
           >
             <div className="flex gap-3">
-              <Link
-                href="/legal"
+              <Link href={`/${locale}/legal`}
                 className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
               >
                 {t("legal")}
               </Link>
-              <Link
-                href="/privacy"
+              <Link href={`/${locale}/privacy`}
                 className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
               >
                 {t("privacy")}

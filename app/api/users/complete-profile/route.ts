@@ -46,6 +46,11 @@ export async function POST(req: Request) {
         { status: 404 },
       );
     }
+    // Si l'utilisateur est déjà ACTIVE, ne pas modifier le statut
+    let statusToSet = "PENDING_VALIDATION";
+    if (existingUser.status === "ACTIVE") {
+      statusToSet = "ACTIVE";
+    }
 
     // Mettre à jour l'utilisateur
     const updatedUser = await prisma.user.update({
@@ -104,29 +109,69 @@ export async function POST(req: Request) {
         },
       });
     }
-
-    // 2. Create VerificationRequest for admin dashboard
-    const verificationRequest = await prisma.verificationRequest.create({
-      data: {
-        userId: updatedUser.id,
-        documentFrontUrl: cinRectoUrl || cinData?.rectoUrl || "",
-        documentBackUrl: cinVersoUrl || cinData?.versoUrl || "",
-        selfieUrl: profilePictureUrl || null,
-        extractedData: {
-          firstName,
-          lastName,
-          cinNumber,
-          dateOfBirth: dateNaissance,
-          profession,
-          governorate,
-          delegation,
+    // 2. Vérifier si une VerificationRequest existe déjà
+    const existingVerificationRequest =
+      await prisma.verificationRequest.findFirst({
+        where: {
+          userId: updatedUser.id,
+          status: "PENDING",
         },
-        status: "PENDING",
-        submittedAt: new Date(),
-      },
-    });
+      });
 
-    console.log(" VerificationRequest créée:", verificationRequest.id);
+    let verificationRequest;
+
+    if (existingVerificationRequest) {
+      // Mettre à jour l'existante
+      verificationRequest = await prisma.verificationRequest.update({
+        where: { id: existingVerificationRequest.id },
+        data: {
+          documentFrontUrl:
+            cinRectoUrl ||
+            cinData?.rectoUrl ||
+            existingVerificationRequest.documentFrontUrl,
+          documentBackUrl:
+            cinVersoUrl ||
+            cinData?.versoUrl ||
+            existingVerificationRequest.documentBackUrl,
+          selfieUrl: profilePictureUrl || existingVerificationRequest.selfieUrl,
+          extractedData: {
+            firstName,
+            lastName,
+            cinNumber,
+            dateOfBirth: dateNaissance,
+            profession,
+            governorate,
+            delegation,
+          },
+        },
+      });
+      console.log(" VerificationRequest mise à jour:", verificationRequest.id);
+    } else {
+      // Créer une nouvelle
+      verificationRequest = await prisma.verificationRequest.create({
+        data: {
+          userId: updatedUser.id,
+          documentFrontUrl: cinRectoUrl || cinData?.rectoUrl || "",
+          documentBackUrl: cinVersoUrl || cinData?.versoUrl || "",
+          selfieUrl: profilePictureUrl || null,
+          extractedData: {
+            firstName,
+            lastName,
+            cinNumber,
+            dateOfBirth: dateNaissance,
+            profession,
+            governorate,
+            delegation,
+          },
+          status: "PENDING",
+          submittedAt: new Date(),
+        },
+      });
+      console.log(
+        " Nouvelle VerificationRequest créée:",
+        verificationRequest.id,
+      );
+    }
 
     //  NOTIFICATION 1: Pour l'utilisateur
 

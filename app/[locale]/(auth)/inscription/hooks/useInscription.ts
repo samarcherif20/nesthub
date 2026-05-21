@@ -1,24 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSignUp, useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { ValidationPatterns } from "@/lib/utils";
 
-const getCurrentLocale = () => {
-  if (typeof window === "undefined") return "fr";
-  const pathname = window.location.pathname;
-  const segments = pathname.split("/").filter(Boolean);
-  const validLocales = ["fr", "en", "ar", "de", "es", "it"];
-  if (segments[0] && validLocales.includes(segments[0])) {
-    return segments[0];
-  }
-  return localStorage.getItem("preferred-language") || "fr";
-};
-
 export function useInscription() {
   const t = useTranslations("Inscription");
+  const locale = useLocale();
+
   const { isLoaded, signUp, setActive } = useSignUp();
   const { signOut } = useClerk();
   const { isLoaded: isUserLoaded, user } = useUser();
@@ -406,27 +397,38 @@ export function useInscription() {
     }
 
     const params = new URLSearchParams(window.location.search);
-    const currentLocale = getCurrentLocale();
-
     const clerkStatus = params.get("__clerk_status");
+    const error = params.get("error");
 
+    // Handle invalid link error
+    if (error === "invalid_link") {
+      toast.error(t("errors.linkInvalid"), {
+        description: t("errors.linkInvalidDescription"),
+      });
+      window.history.replaceState({}, "", `/${locale}/inscription`);
+      return;
+    }
+
+    // Handle expired link error
+    if (error === "link_expired") {
+      toast.error(t("errors.linkExpired"), {
+        description: t("errors.linkExpiredDescription"),
+      });
+      window.history.replaceState({}, "", `/${locale}/inscription`);
+      return;
+    }
+
+    // Handle successful verification
     if (params.get("verified") === "true" || clerkStatus === "verified") {
       console.log(" Email vérifié - Passage à l'étape 2");
       setCurrentStep(2);
       setPendingVerification(false);
-      window.history.replaceState({}, "", `/${currentLocale}/inscription`);
-      toast.success("Email vérifié !", {
-        description: "Continuez votre inscription.",
+      window.history.replaceState({}, "", `/${locale}/inscription`);
+      toast.success(t("alerts.emailVerified"), {
+        description: t("alerts.continueInscription"),
       });
     }
-
-    if (params.get("error") === "link_expired") {
-      toast.error("Lien expiré", {
-        description: "Le lien de vérification a expiré. Veuillez recommencer.",
-      });
-      window.history.replaceState({}, "", `/${currentLocale}/inscription`);
-    }
-  }, []);
+  }, [locale, t]);
 
   useEffect(() => {
     if (isUserLoaded && user && user.id) {
@@ -549,8 +551,10 @@ export function useInscription() {
 
         // Créer les données extraites
         if (data.extracted) {
+          const imageUrl = data.urls?.passport || passportUrl;
+
           const newDocumentData = {
-            documentType: "passport",
+            documentType: "PASSPORT",
             passportNumber: data.extracted.passportNumber || null,
             firstName: data.extracted.firstName || null,
             lastName: data.extracted.lastName || null,
@@ -561,17 +565,16 @@ export function useInscription() {
             cinNumber: data.extracted.cinNumber || null,
             country: data.extracted.country || null,
             extractedAt: new Date().toISOString(),
-            documentUrl: data.urls?.passport || passportUrl,
+            documentUrl: imageUrl,
+            passportUrl: imageUrl,
+            imageUrl: imageUrl,
           };
 
           setCinData(newDocumentData);
           setShowOcrConfirm(true);
 
           // Remplir automatiquement les champs
-          if (data.extracted.firstName && !firstName)
-            setFirstName(data.extracted.firstName);
-          if (data.extracted.lastName && !lastName)
-            setLastName(data.extracted.lastName);
+
           if (data.extracted.dateOfBirth && !dateNaissance)
             setDateNaissance(data.extracted.dateOfBirth);
           if (data.extracted.passportNumber && !passportNumber)
@@ -802,7 +805,7 @@ export function useInscription() {
       }
 
       setPhoneNumberResourceId(data.phoneNumberId);
-      setWhatsappAlertMessage(t("whatsapp.codeSent", { phoneNumber }));
+      setWhatsappAlertMessage(t("whatsapp.codeSent", { phone: phoneNumber }));
       setShowWhatsappAlert(true);
     } catch (error: any) {
       console.error("Erreur WhatsApp:", error);
@@ -1016,7 +1019,6 @@ export function useInscription() {
       }
 
       const userIdToUse = temporaryClerkId;
-      const currentLocale = getCurrentLocale();
 
       let uploadedProfilePictureUrl = null;
       if (profilePhoto) {
@@ -1050,7 +1052,7 @@ export function useInscription() {
           email,
           username,
           role,
-          preferredLocale: currentLocale,
+          preferredLocale: locale,
           profilePictureUrl: uploadedProfilePictureUrl,
         }),
       });
@@ -1067,9 +1069,9 @@ export function useInscription() {
       localStorage.setItem("pendingUsername", username);
       localStorage.setItem("pendingPassword", password);
       localStorage.setItem("pendingRole", role ?? "");
-      localStorage.setItem("preferred-language", currentLocale);
+      localStorage.setItem("preferred-language", locale);
 
-      const verifyUrl = `${window.location.origin}/${currentLocale}/inscription/verify-catch`;
+      const verifyUrl = `${window.location.origin}/${locale}/inscription/verify-catch`;
       console.log(" Verification URL:", verifyUrl);
 
       await signUp.prepareEmailAddressVerification({
@@ -1108,20 +1110,38 @@ export function useInscription() {
       //  Les URLs sont déjà dans cinData (créées pendant handleUploadCIN)
       const uploadedProfilePictureUrl =
         cinData.profilePictureUrl || profilePictureUrl;
-      const uploadedRectoUrl = cinData.rectoUrl || cinRectoUrl;
-      const uploadedVersoUrl = cinData.versoUrl || cinVersoUrl;
 
-      //  Préparer les données à envoyer
+      let uploadedRectoUrl = null;
+      let uploadedVersoUrl = null;
+      let uploadedPassportUrl = null;
+
+      if (documentType === "passport") {
+        uploadedPassportUrl = cinData.passportUrl || passportUrl;
+      } else {
+        uploadedRectoUrl = cinData.rectoUrl || cinRectoUrl;
+        uploadedVersoUrl = cinData.versoUrl || cinVersoUrl;
+      }
+
       const cinDataToSave = {
+        // Champs communs
         firstName: cinData.firstName,
         lastName: cinData.lastName,
         cinNumber: cinData.cinNumber || cinNumber,
         dateOfBirth: cinData.dateOfBirth || dateNaissance,
         profession: cinData.profession || profession,
         extractedAt: new Date().toISOString(),
-        documentType: "CIN",
+        documentType:
+          cinData.documentType ||
+          (documentType === "passport" ? "PASSPORT" : "CIN"),
+        // URLs
         rectoUrl: uploadedRectoUrl,
         versoUrl: uploadedVersoUrl,
+        passportUrl: uploadedPassportUrl,
+        // Champs spécifiques au passeport
+        passportNumber: cinData.passportNumber || null,
+        expiryDate: cinData.expiryDate || null,
+        sex: cinData.sex || null,
+        country: cinData.country || null,
       };
 
       console.log(" Envoi des données au serveur:", {
@@ -1156,8 +1176,10 @@ export function useInscription() {
           howFound: "inscription",
           cinRectoUrl: uploadedRectoUrl || "",
           cinVersoUrl: uploadedVersoUrl || "",
+          passportUrl: uploadedPassportUrl || "",
           profilePictureUrl: uploadedProfilePictureUrl || "",
           cinData: cinDataToSave,
+          documentType: documentType,
         }),
       });
 
@@ -1188,6 +1210,7 @@ export function useInscription() {
       toast.success(
         completeProfileData.message || "Profil complété avec succès !",
       );
+      localStorage.removeItem("redirectAfterLogin");
 
       //  Fermer le modal et montrer le welcome
       setShowOcrConfirm(false);
@@ -1207,14 +1230,15 @@ export function useInscription() {
 
   // HANDLE GO TO COMPLETE PROFILE & DASHBOARD
   const handleGoToCompleteProfile = async () => {
+    localStorage.removeItem("redirectAfterLogin");
+
     setShowWelcome(false);
     localStorage.removeItem("pendingEmail");
     localStorage.removeItem("pendingUsername");
     localStorage.removeItem("pendingPassword");
     localStorage.removeItem("pendingRole");
 
-    const currentLocale = getCurrentLocale();
-    router.push(`/${currentLocale}/complete-profile`);
+    router.push(`/${locale}/complete-profile`);
   };
 
   const handleGoToDashboard = async () => {
@@ -1225,8 +1249,7 @@ export function useInscription() {
     localStorage.removeItem("pendingPassword");
     localStorage.removeItem("pendingRole");
     await signOut();
-    const currentLocale = getCurrentLocale();
-    router.push(`/${currentLocale}/dashboard`);
+    router.push(`/${locale}/dashboard`);
   };
 
   const validateStep2 = useCallback(() => {

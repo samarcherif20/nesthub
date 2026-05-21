@@ -9,6 +9,10 @@ export interface VerificationRequest {
   documentFrontUrl: string;
   documentBackUrl: string | null;
   extractedData: any;
+    documentType?: "cin" | "passport";  
+  cinData?: { 
+    documentType?: string;
+  };
   user: {
     id: string;
     email: string;

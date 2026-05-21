@@ -28,11 +28,11 @@ export async function GET(request: NextRequest) {
               profilePictureUrl: true,
               role: true,
               createdAt: true,
-              cinData: true, // ✅ AJOUTÉ - pour les données arabes du CIN
+              cinData: true,
             },
           },
         },
-        orderBy: { submittedAt: "asc" },
+        orderBy: { submittedAt: "desc" },
         skip,
         take: limit,
       }),
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // ✅ Transformer la réponse pour inclure cinData au niveau supérieur
+    // Transformer la réponse pour inclure cinData au niveau supérieur
     const formattedRequests = requests.map((req) => ({
       ...req,
       cinData: req.user?.cinData,

@@ -57,7 +57,12 @@ export async function GET(request: NextRequest) {
           },
           include: {
             tenant: {
-              select: { firstName: true, lastName: true, email: true },
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                username: true,
+              },
             },
           },
         }),

@@ -5,13 +5,14 @@ import Link from "next/link";
 import { Loader2, Lock, X } from "lucide-react";
 import { BsHourglassSplit } from "react-icons/bs";
 import { LuMailCheck, LuMailX } from "react-icons/lu";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { maskEmail } from "@/lib/utils";
 import { useVerifyCode } from "./hooks/useVerifyCode";
 import Alert from "@/components/ui/Alert";
 
 export default function VerifyEmailCodePage() {
   const t = useTranslations("Login");
+  const locale = useLocale();
 
   const {
     code,
@@ -248,13 +249,13 @@ export default function VerifyEmailCodePage() {
           <div className="mt-4 pt-3 text-[10px] text-slate-400 dark:text-slate-600 flex justify-between w-full border-t border-slate-100 dark:border-slate-800/50">
             <div className="flex gap-3">
               <Link
-                href="/legal"
+                href={`/${locale}/legal`}
                 className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
               >
                 {t("legal")}
               </Link>
               <Link
-                href="/privacy"
+                href={`/${locale}/privacy`}
                 className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
               >
                 {t("privacy")}

@@ -3,14 +3,15 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { useLocale } from "next-intl";
 import { toast } from "sonner";
 
 export function useLandlordProfile(userData: any) {
   const router = useRouter();
+  const locale = useLocale();
   const { user } = useUser();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Données pré-remplies (readonly)
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
@@ -22,7 +23,6 @@ export function useLandlordProfile(userData: any) {
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [gender, setGender] = useState("");
 
-  // Champs à remplir
   const [bio, setBio] = useState("");
   const [languages, setLanguages] = useState<string[]>(["Français"]);
   const [howFound, setHowFound] = useState("");
@@ -30,7 +30,6 @@ export function useLandlordProfile(userData: any) {
   const [bankName, setBankName] = useState("");
   const [accountHolder, setAccountHolder] = useState("");
 
-  // 🆕 NOUVEAU CHAMP POUR LES PROPRIÉTAIRES
   const [acceptsForeigners, setAcceptsForeigners] = useState<boolean | null>(
     null,
   );
@@ -53,14 +52,12 @@ export function useLandlordProfile(userData: any) {
       let genderFromPassport = userData.cinData?.sex;
 
       if (genderFromPassport) {
-        // Si le passeport a fourni un sexe, on le prend (priorité)
-        if (genderFromPassport === "MALE") setGender("Homme");
-        else if (genderFromPassport === "FEMALE") setGender("Femme");
+        if (genderFromPassport === "MALE") setGender("MALE");
+        else if (genderFromPassport === "FEMALE") setGender("FEMALE");
         else setGender(genderFromPassport);
       } else if (genderValue) {
-        // Sinon, on prend la valeur existante dans userData
-        if (genderValue === "MALE") setGender("Homme");
-        else if (genderValue === "FEMALE") setGender("Femme");
+        if (genderValue === "MALE") setGender("MALE");
+        else if (genderValue === "FEMALE") setGender("FEMALE");
         else setGender(genderValue);
       }
       setHowFound(userData.howFound || "");
@@ -107,13 +104,13 @@ export function useLandlordProfile(userData: any) {
           rib,
           bankName,
           accountHolder,
-          acceptsForeigners, // 🆕 AJOUTER
+          acceptsForeigners,
         }),
       });
 
       if (response.ok) {
         toast.success("Profil propriétaire enregistré !");
-        router.push("/fr/dashboard/owner");
+        router.push(`/${locale}/dashboard/owner`);
       } else {
         const error = await response.json();
         toast.error("Erreur", { description: error.error });
@@ -125,7 +122,7 @@ export function useLandlordProfile(userData: any) {
     }
   };
 
-  const handleSkip = () => router.push("/fr/dashboard");
+  const handleSkip = () => router.push(`/${locale}/dashboard`);
 
   return {
     isLoading,
@@ -153,8 +150,8 @@ export function useLandlordProfile(userData: any) {
     setBankName,
     accountHolder,
     setAccountHolder,
-    acceptsForeigners, // 🆕
-    setAcceptsForeigners, // 🆕
+    acceptsForeigners,
+    setAcceptsForeigners,
     handleSave,
     handleSkip,
   };

@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
     closeError,
     closeSuccess,
     validatePassword,
-  } = useResetPassword();
+  } = useResetPassword(t);
 
   // État pour l'erreur système (bandeau)
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -293,12 +293,12 @@ export default function ResetPasswordPage() {
                   </div>
                   <span className="text-[10px] text-slate-400">
                     {password.length < 8
-                      ? "Faible"
+                      ? t("strengthWeak")
                       : password.length >= 8 &&
                           /[A-Z]/.test(password) &&
                           /[0-9]/.test(password)
-                        ? "Fort"
-                        : "Moyen"}
+                        ? t("strengthStrong")
+                        : t("strengthMedium")}
                   </span>
                 </div>
               )}
@@ -421,13 +421,13 @@ export default function ResetPasswordPage() {
           >
             <div className="flex gap-3">
               <Link
-                href="/legal"
+                href={`/${locale}/legal`}
                 className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
               >
                 {t("legal")}
               </Link>
               <Link
-                href="/privacy"
+                href={`/${locale}/privacy`}
                 className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
               >
                 {t("privacy")}

@@ -3,9 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
+import { useLocale } from "next-intl";
 
 export function useCompleteProfile() {
   const router = useRouter();
+  const locale = useLocale();
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
 
@@ -44,7 +46,7 @@ export function useCompleteProfile() {
 
   const handleLogout = async () => {
     await signOut();
-    router.push("/fr/login");
+    router.push(`/${locale}/login`);
   };
 
   return {

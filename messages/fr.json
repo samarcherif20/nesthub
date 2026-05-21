@@ -970,11 +970,11 @@
     "privacyDescription": "Votre identité réelle ne sera pas partagée publiquement",
     "personalInfoTitle": "Informations Personnelles",
     "firstName": "Prénom réel",
-    "firstNamePlaceholder": "ex: Mohamed",
+    "firstNamePlaceholder": "ex : mohamed",
     "lastName": "Nom réel",
-    "lastNamePlaceholder": "ex: Ben hssin",
+    "lastNamePlaceholder": "ex : aloui",
     "phoneNumber": "Numéro de téléphone",
-    "phonePlaceholder": "XX XXX XXX",
+    "phonePlaceholder": "99-999-999",
     "whatsappWarning": "Important : Nous utiliserons ce numéro pour la vérification WhatsApp.",
     "activateWhatsapp": "Activer WhatsApp en 1 clic",
     "whatsappInstruction": "Clique → WhatsApp s'ouvre → clique Envoyer → reviens ici",
@@ -993,6 +993,10 @@
     "checking": "Vérification...",
 
     "errors": {
+      "linkInvalid": "Invalid link",
+      "linkInvalidDescription": "The verification link is invalid. Please request a new one.",
+      "linkExpired": "Link expired",
+      "linkExpiredDescription": "The verification link has expired. Please request a new verification email.",
       "correctErrors": "Veuillez corriger les erreurs",
 
       "chooseRole": "Veuillez choisir un rôle (Propriétaire ou Locataire)",
@@ -1122,7 +1126,9 @@
       "emailSent": "Email envoyé ! ",
       "codeSentTitle": "Code envoyé !",
       "gotCode": "J'ai reçu le code",
-      "verificationLinkSent": "Un lien de vérification a été envoyé à {{email}}"
+      "verificationLinkSent": "Un lien de vérification a été envoyé à {email}",
+      "emailVerified": "Email verified successfully!",
+      "continueInscription": "Please continue your registration."
     },
 
     "whatsapp": {
@@ -1182,7 +1188,7 @@
     },
     "passport": {
       "analyzed": "Passeport analysé !",
-      "numberDetected": "Passeport n°{{number}} — vérifiez avant de confirmer.",
+      "numberDetected": "Passeport n°{number} — vérifiez avant de confirmer.",
       "uploadSuccess": "Upload réussi. Remplissez manuellement.",
       "verificationTitle": "Vérification du passeport",
       "verificationDescription": "Vérifiez les informations extraites de votre passeport",
@@ -1204,29 +1210,18 @@
     "cin": {
       "numberDetected": "CIN n°{{number}} — vérifiez avant de confirmer."
     },
+
     "sessionExpired": "Session expirée",
+
+    "close": "Fermer",
+
+    "passportDocumentLabel": "Passeport",
     "mobile": {
       "receivedPassport": "2 documents reçus du mobile (passeport + selfie) !",
       "receivedDocuments": "3 documents reçus du mobile !",
       "clickToAnalyze": "Cliquez sur 'Analyser les documents' pour finaliser",
       "sessionCreationFailed": "Impossible de créer la session mobile"
-    },
-    "passport": {
-      "verificationTitle": "Vérification du passeport",
-      "verificationDescription": "Vérifiez les informations extraites de votre passeport",
-      "infoBanner": "Les données ci-dessous ont été extraites automatiquement. Vérifiez-les avant confirmation.",
-      "numberLabel": "N° Passeport",
-      "cinNumberLabel": "N° CIN",
-      "lastNameLabel": "Nom",
-      "firstNameLabel": "Prénom",
-      "dateOfBirthLabel": "Date naissance",
-      "expiryDateLabel": "Date expiration",
-      "genderLabel": "Sexe",
-      "professionLabel": "Profession",
-      "uploadLabel": "Télécharger le passeport"
-    },
-
-    "passportDocumentLabel": "Passeport"
+    }
   },
 
   "AdminInvitations": {
@@ -1322,6 +1317,8 @@
   },
 
   "VerificationDetail": {
+    "passportNumber": "Numéro de passeport",
+    "nationality": "Nationalité",
     "verifications": "VÉRIFICATIONS",
     "alreadyValidated": "Cette demande a déjà été validée",
     "alreadyRejected": "Cette demande a déjà été rejetée",
@@ -1416,6 +1413,10 @@
     }
   },
   "Verifications": {
+    "documentType": {
+      "cin": "CIN",
+      "passport": "PASSEPORT"
+    },
     "unauthorized": "Accès non autorisé",
     "adminRequired": "Vous devez être administrateur.",
     "title": "File de vérification",
@@ -1440,6 +1441,7 @@
       "role": "Rôle",
       "date": "Date",
       "status": "Statut",
+      "documentType": "TYPE DOCUMENT",
       "action": "Action"
     },
     "role": {
@@ -1473,6 +1475,15 @@
   },
 
   "ForgotPassword": {
+    "errors": {
+      "emailRequired": "L'email est requis",
+      "emailInvalid": "Email invalide",
+      "general": "Une erreur est survenue",
+      "connection": "Erreur de connexion"
+    },
+    "success": {
+      "message": "Un lien de réinitialisation a été envoyé à {email}"
+    },
     "title": "Mot de passe oublié",
     "subtitle": "Entrez votre email pour recevoir un lien de réinitialisation",
     "emailLabel": "Email",
@@ -1500,7 +1511,21 @@
     "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
     "securityBadge": "Chiffrement AES-256 • Conforme RGPD",
     "legal": "Mentions légales",
-    "privacy": "Confidentialité"
+    "privacy": "Confidentialité",
+    "errors": {
+      "passwordRequired": "Le mot de passe est requis",
+      "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères",
+      "passwordUppercase": "Le mot de passe doit contenir au moins une majuscule",
+      "passwordLowercase": "Le mot de passe doit contenir au moins une minuscule",
+      "passwordNumber": "Le mot de passe doit contenir au moins un chiffre",
+      "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+      "missingData": "Données manquantes",
+      "general": "Une erreur est survenue",
+      "connection": "Erreur de connexion"
+    },
+    "strengthWeak": "Faible",
+    "strengthMedium": "Moyen",
+    "strengthStrong": "Fort"
   },
   "VerificationsHistory": {
     "verifications": "VÉRIFICATIONS",
@@ -3652,6 +3677,10 @@
     "resetSuccess": "Paramètres réinitialisés"
   },
   "CompleteProfile": {
+    "importedFromPassport": "importé depuis votre passeport",
+    "ribPlaceholder": "TN59 1234...",
+    "bankNamePlaceholder": "BIAT, Attijari...",
+    "accountHolderPlaceholder": "Nom complet",
     "loading": {
       "message": "Chargement de votre profil..."
     },
@@ -3799,5 +3828,63 @@
     "help": "Aide",
     "privacy": "Confidentialité",
     "terms": "Conditions"
+  },
+  "MobileUpload": {
+    "loading": "Chargement de l'interface...",
+    "uploading": "Envoi en cours...",
+    "sending": "Envoi en cours...",
+    "documentsReceived": "Documents reçus !",
+    "youCanClose": "Vous pouvez fermer cette page",
+    "documentValidated": "Document validé",
+    "photoReady": "Photo prête",
+    "retake": "Reprendre",
+    "tapToCapture": "Appuyez pour capturer",
+    "frontCamera": "Caméra frontale",
+    "rearCamera": "Caméra arrière",
+    "step": "Étape",
+    "of": "sur",
+    "document": "document",
+    "sent": "envoyé",
+    "validated": "Validé",
+    "ready": "Prêt",
+    "pending": "En attente",
+    "securityNote": "Vos données sont chiffrées de bout en bout et traitées uniquement pour la vérification d'identité.",
+    "continue": "Continuer",
+    "sendAllDocuments": "Envoyer tous les documents",
+    "sendingDocuments": "Envoi des documents…",
+    "clearAll": "Tout effacer",
+    "cinFront": "Carte d'identité",
+    "cinBack": "Carte d'identité",
+    "frontSide": "Face avant",
+    "backSide": "Face arrière",
+    "cinRectoHelper": "Cadrez bien le recto de votre CIN dans un endroit bien éclairé",
+    "cinVersoHelper": "Retournez votre carte et capturez le verso",
+    "selfie": "Selfie",
+    "biometricVerification": "Vérification biométrique",
+    "selfieHelper": "Placez votre visage bien centré dans le cercle",
+    "takeSelfie": "Prendre un selfie",
+    "passport": "Passeport",
+    "mainPage": "Page principale",
+    "passportHelper": "Cadrez bien la page principale de votre passeport",
+    "takePhoto": "Photographier",
+    "upload": "Upload"
+  },
+  
+  "IdentityVerification": {
+    "title": "Vérification d'identité requise",
+    "description": {
+      "create_listing": "Pour créer une annonce, vous devez d'abord vérifier votre identité. Cela garantit la sécurité de notre communauté et la fiabilité des échanges.",
+      "make_booking": "Pour effectuer une réservation, vous devez d'abord vérifier votre identité. Cela garantit la sécurité de notre communauté et la fiabilité des échanges."
+    },
+    "emailVerification": "Email vérifié",
+    "phoneVerification": "Téléphone vérifié",
+    "identityDocument": "Pièce d'identité",
+    "idDescription": "Carte d'identité, passeport ou permis de conduire",
+    "uploadId": "Télécharger un justificatif",
+    "trustInfo": "Vos informations sont confidentielles et utilisées uniquement pour garantir la confiance au sein de notre plateforme.",
+    "verifyButton": "Vérifier mon identité",
+    "completeRequirements": "Complétez les vérifications ci-dessus",
+    "later": "Plus tard"
   }
 }
+
