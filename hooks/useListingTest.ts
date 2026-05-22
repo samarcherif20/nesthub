@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-
+import { useIdentityVerification } from "@/hooks/useIdentityVerification";
 export interface Owner {
   name: string;
   isVerified: boolean;
@@ -76,6 +76,10 @@ export interface Listing {
   weekendPriceMultiplier?: number;
   extraFees?: any[];
   seasonalRules?: any[];
+  vacationMode?: boolean;
+  vacationMessage?: string;
+  vacationStartDate?: string;
+  vacationEndDate?: string;
 }
 
 export function useListingTest(id: string) {
@@ -94,59 +98,65 @@ export function useListingTest(id: string) {
   const [pricingRules, setPricingRules] = useState<
     { startDate: string; endDate: string; fixedPrice: number }[]
   >([]);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [pendingInfoRequest, setPendingInfoRequest] = useState(false);
+  const { checkCanPerformAction } = useIdentityVerification();
+  const fetchAvailability = useCallback(async () => {
+    if (!id) return;
 
- const fetchAvailability = useCallback(async () => {
-  if (!id) return;
+    console.log("🔵 fetchAvailability: Début pour listing", id);
 
-  console.log("🔵 fetchAvailability: Début pour listing", id);
+    try {
+      const now = new Date();
+      const allBlockedDates: any[] = [];
+      const allPricingRules: any[] = [];
+      const allPendingDates: string[] = []; // ← tableau de strings
 
-  try {
-    const now = new Date();
-    const allBlockedDates: any[] = [];
-    const allPricingRules: any[] = [];
-    const allPendingDates: string[] = []; // ← tableau de strings
+      for (let i = 0; i < 12; i++) {
+        const date = new Date(now);
+        date.setMonth(now.getMonth() + i);
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
 
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(now);
-      date.setMonth(now.getMonth() + i);
-      const year = date.getFullYear();
-      const month = date.getMonth() + 1;
+        const res = await fetch(
+          `/api/listings/availability?listingId=${id}&year=${year}&month=${month}`,
+        );
 
-      const res = await fetch(
-        `/api/listings/availability?listingId=${id}&year=${year}&month=${month}`,
-      );
+        if (res.ok) {
+          const data = await res.json();
+          allBlockedDates.push(...(data.blockedDates || []));
+          allPricingRules.push(...(data.pricingRules || []));
 
-      if (res.ok) {
-        const data = await res.json();
-        allBlockedDates.push(...(data.blockedDates || []));
-        allPricingRules.push(...(data.pricingRules || []));
-        
-        // ✅ CONVERSION CORRECTE : transformer les objets en strings
-        const pendingData = data.pendingBlockedDates || [];
-        for (const item of pendingData) {
-          if (item.startDate) {
-            const dateStr = new Date(item.startDate).toISOString().split('T')[0];
-            allPendingDates.push(dateStr);
-          } else if (typeof item === "string") {
-            allPendingDates.push(item.split('T')[0]);
+          // ✅ CONVERSION CORRECTE : transformer les objets en strings
+          const pendingData = data.pendingBlockedDates || [];
+          for (const item of pendingData) {
+            if (item.startDate) {
+              const dateStr = new Date(item.startDate)
+                .toISOString()
+                .split("T")[0];
+              allPendingDates.push(dateStr);
+            } else if (typeof item === "string") {
+              allPendingDates.push(item.split("T")[0]);
+            }
           }
         }
       }
+
+      // Supprimer les doublons
+      const uniquePendingDates = [...new Set(allPendingDates)];
+
+      console.log(
+        `📊 fetchAvailability: ${allBlockedDates.length} dates ROUGES, ${uniquePendingDates.length} dates ORANGES`,
+      );
+      console.log("🟠 Dates ORANGES:", uniquePendingDates);
+
+      setBlockedDates(allBlockedDates);
+      setPendingDates(uniquePendingDates); // ← maintenant ce sont des strings !
+      setPricingRules(allPricingRules);
+    } catch (error) {
+      console.error("❌ Erreur fetchAvailability:", error);
     }
-
-    // Supprimer les doublons
-    const uniquePendingDates = [...new Set(allPendingDates)];
-    
-    console.log(`📊 fetchAvailability: ${allBlockedDates.length} dates ROUGES, ${uniquePendingDates.length} dates ORANGES`);
-    console.log("🟠 Dates ORANGES:", uniquePendingDates);
-
-    setBlockedDates(allBlockedDates);
-    setPendingDates(uniquePendingDates); // ← maintenant ce sont des strings !
-    setPricingRules(allPricingRules);
-  } catch (error) {
-    console.error("❌ Erreur fetchAvailability:", error);
-  }
-}, [id]);
+  }, [id]);
   // ✅ CORRECTION: Vérifier si une date est bloquée (utilise les données de l'API)
   const isDateBlocked = useCallback(
     (date: string) => {
@@ -261,6 +271,10 @@ export function useListingTest(id: string) {
               /^, /,
               "",
             ),
+          vacationMode: data.vacationMode || false,
+          vacationMessage: data.vacationMessage || null,
+          vacationStartDate: data.vacationStartDate,
+          vacationEndDate: data.vacationEndDate,
           governorate: data.governorate,
           delegation: data.delegation,
           street: data.street,
@@ -388,7 +402,31 @@ export function useListingTest(id: string) {
     }
     return dates;
   };
+  const checkVerificationBeforeInfoRequest = useCallback(() => {
+    const { canProceed, needsVerification } =
+      checkCanPerformAction("make_booking");
 
+    if (!canProceed || needsVerification) {
+      setPendingInfoRequest(true);
+      setShowVerificationModal(true);
+      return false;
+    }
+    return true;
+  }, [checkCanPerformAction]);
+
+  const handleVerificationComplete = useCallback(async () => {
+    setShowVerificationModal(false);
+    if (pendingInfoRequest) {
+      setPendingInfoRequest(false);
+      return true;
+    }
+    return false;
+  }, [pendingInfoRequest]);
+
+  const handleCloseVerificationModal = useCallback(() => {
+    setShowVerificationModal(false);
+    setPendingInfoRequest(false);
+  }, []);
   return {
     listing,
     loading,
@@ -416,6 +454,10 @@ export function useListingTest(id: string) {
     pendingDates,
     pricingRules,
     fetchAvailability,
+    showVerificationModal,
+    checkVerificationBeforeInfoRequest,
+    handleVerificationComplete,
+    handleCloseVerificationModal,
   };
 }
 

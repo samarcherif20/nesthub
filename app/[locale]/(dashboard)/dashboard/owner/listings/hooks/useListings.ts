@@ -1,7 +1,7 @@
 // hooks/useListings.ts
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-
+import { useIdentityVerification } from "@/hooks/useIdentityVerification";
 interface Listing {
   id: string;
   title: string;
@@ -63,6 +63,9 @@ export function useListings(pageSize: number = 6) {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [pendingNavigate, setPendingNavigate] = useState(false);
+  const { checkCanPerformAction } = useIdentityVerification();
   const [tabCounts, setTabCounts] = useState<TabCounts>({
     all: 0,
     active: 0,
@@ -319,6 +322,34 @@ export function useListings(pageSize: number = 6) {
     fetchStats();
   }, [fetchListings, fetchStats]);
 
+  const checkVerificationBeforeCreate = () => {
+    const { canProceed, needsVerification } =
+      checkCanPerformAction("create_listing");
+
+    if (!canProceed || needsVerification) {
+      setPendingNavigate(true);
+      setShowVerificationModal(true);
+      return false;
+    }
+
+    return true;
+  };
+
+  const handleVerificationComplete = async () => {
+    setShowVerificationModal(false);
+    if (pendingNavigate) {
+      setPendingNavigate(false);
+      // Rediriger vers la page de création
+      return true;
+    }
+    return false;
+  };
+
+  const handleCloseVerificationModal = () => {
+    setShowVerificationModal(false);
+    setPendingNavigate(false);
+  };
+
   useEffect(() => {
     fetchStats();
   }, [fetchStats]);
@@ -362,5 +393,9 @@ export function useListings(pageSize: number = 6) {
     handleDelete,
     resetFilters,
     refreshData,
+    showVerificationModal,
+    checkVerificationBeforeCreate,
+    handleVerificationComplete,
+    handleCloseVerificationModal,
   };
 }

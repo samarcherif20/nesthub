@@ -2,19 +2,30 @@
 
 import { useState, useEffect } from "react";
 import { IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
+import { TbBeach } from "react-icons/tb";
 
 interface AvailabilityCalendarProps {
   availability?:
     | Record<string, { available: boolean; price?: number }>
-    | { date: string; isAvailable: boolean }[];
+    | { date: string; isAvailable: boolean }[]
+    | Record<string, boolean>;
+
   blockedDates?:
     | { startDate: string; endDate: string; reason?: string }[]
     | string[];
-  pendingDates?: (string | { startDate: string; endDate: string; reason?: string })[];
+  pendingDates?: (
+    | string
+    | { startDate: string; endDate: string; reason?: string }
+  )[];
   pricingRules?: { startDate: string; endDate: string; fixedPrice: number }[];
   selectedStart?: string;
   selectedEnd?: string;
   onSelectRange?: (start: string, end: string) => void;
+  listing?: {
+    vacationMode?: boolean;
+    vacationStartDate?: string;
+    vacationEndDate?: string;
+  };
 }
 
 export default function AvailabilityCalendar({
@@ -25,6 +36,7 @@ export default function AvailabilityCalendar({
   selectedStart,
   selectedEnd,
   onSelectRange,
+  listing,
 }: AvailabilityCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [tempStart, setTempStart] = useState<string | null>(null);
@@ -84,12 +96,14 @@ export default function AvailabilityCalendar({
   const getBlockedSet = () => {
     if (!blockedDates || blockedDates.length === 0) return new Set<string>();
     const set = new Set<string>();
-    
+
     if (Array.isArray(blockedDates)) {
       blockedDates.forEach((b) => {
         if (typeof b === "string") {
           const date = new Date(b);
-          set.add(formatDate(date.getFullYear(), date.getMonth(), date.getDate()));
+          set.add(
+            formatDate(date.getFullYear(), date.getMonth(), date.getDate()),
+          );
         } else if (b.startDate && b.endDate) {
           const start = new Date(b.startDate);
           const end = new Date(b.endDate);
@@ -105,24 +119,36 @@ export default function AvailabilityCalendar({
   const getPendingSet = () => {
     if (!pendingDates || pendingDates.length === 0) return new Set<string>();
     const set = new Set<string>();
-    
+
     for (const item of pendingDates) {
       try {
         let dateStr = "";
-        
+
         if (typeof item === "string") {
           const date = new Date(item);
-          dateStr = formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+          dateStr = formatDate(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate(),
+          );
         } else if (item && typeof item === "object") {
           if (item.startDate) {
             const date = new Date(item.startDate);
-            dateStr = formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+            dateStr = formatDate(
+              date.getFullYear(),
+              date.getMonth(),
+              date.getDate(),
+            );
           } else if (item.date) {
             const date = new Date(item.date);
-            dateStr = formatDate(date.getFullYear(), date.getMonth(), date.getDate());
+            dateStr = formatDate(
+              date.getFullYear(),
+              date.getMonth(),
+              date.getDate(),
+            );
           }
         }
-        
+
         if (dateStr) {
           set.add(dateStr);
         }
@@ -130,7 +156,7 @@ export default function AvailabilityCalendar({
         console.error("Erreur parsing pending date:", item, e);
       }
     }
-    
+
     return set;
   };
 
@@ -138,7 +164,14 @@ export default function AvailabilityCalendar({
   const blockedSet = getBlockedSet();
   const pendingSet = getPendingSet();
   const pricingMap = getPricingRulesMap();
-
+  const isVacationMode = (day: number) => {
+    if (!listing?.vacationMode) return false;
+    const dateStr = formatDate(year, month, day);
+    const startDate = listing.vacationStartDate;
+    const endDate = listing.vacationEndDate;
+    if (!startDate || !endDate) return false;
+    return dateStr >= startDate && dateStr <= endDate;
+  };
   const isBlocked = (day: number) => {
     const dateStr = formatDate(year, month, day);
     return blockedSet.has(dateStr);
@@ -275,21 +308,24 @@ export default function AvailabilityCalendar({
     const inRange = isInRange(day);
     const isStart = isStartDate(day);
     const isEnd = isEndDate(day);
+    const vacation = isVacationMode(day);
 
     if (past)
       return "bg-gray-100 dark:bg-slate-800 text-gray-300 dark:text-gray-600 cursor-not-allowed";
 
-    if ((isStart || isEnd) && !blocked && !pending)
+    // ✅ PRIORITÉ MAXIMALE - MODE VACANCES (violet)
+    if (vacation)
+      return "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-400 font-semibold cursor-not-allowed line-through relative";
+
+    if ((isStart || isEnd) && !blocked && !pending && !vacation)
       return "bg-sky-500 dark:bg-sky-600 text-white font-semibold cursor-pointer hover:bg-sky-600 dark:hover:bg-sky-700";
 
-    if (inRange && !blocked && !pending)
+    if (inRange && !blocked && !pending && !vacation)
       return "bg-sky-100 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 font-semibold cursor-pointer";
 
-    // ✅ PRIORITÉ ROUGE
     if (blocked)
       return "bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-semibold cursor-not-allowed line-through";
 
-    // ✅ ORANGE seulement si non bloqué
     if (pending)
       return "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 font-semibold cursor-not-allowed border border-amber-200 dark:border-amber-800";
 
@@ -301,7 +337,6 @@ export default function AvailabilityCalendar({
 
     return "bg-white dark:bg-slate-900 text-gray-700 dark:text-gray-300 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors cursor-pointer";
   };
-
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
@@ -334,10 +369,6 @@ export default function AvailabilityCalendar({
       </div>
 
       <div className="grid grid-cols-7 gap-1">
-        {Array.from({ length: startOffset }).map((_, i) => (
-          <div key={`empty-${i}`} className="aspect-square" />
-        ))}
-
         {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((day) => {
           const pending = isPending(day);
           const special = hasSpecialPrice(day);
@@ -345,31 +376,40 @@ export default function AvailabilityCalendar({
           const blocked = isBlocked(day);
           const isStart = isStartDate(day);
           const isEnd = isEndDate(day);
+          const vacation = isVacationMode(day); // ✅ AJOUTÉ
 
           return (
             <button
               key={day}
               onClick={() => handleDateClick(day)}
-              disabled={isPast(day) || blocked || pending}
+              disabled={isPast(day) || blocked || pending || vacation} // ✅ MODIFIÉ
               className={`
-                aspect-square flex flex-col items-center justify-center rounded-xl text-sm font-medium transition-all duration-200
-                relative
-                ${getDayStyle(day)}
-              `}
+        aspect-square flex flex-col items-center justify-center rounded-xl text-sm font-medium transition-all duration-200
+        relative
+        ${getDayStyle(day)}
+      `}
             >
               <span>{day}</span>
-              {special && !blocked && !pending && (
+              {special && !blocked && !pending && !vacation && (
                 <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 mt-0.5">
                   {specialPrice} TND
                 </span>
               )}
-              {/* ✅ Point ORANGE uniquement si en attente ET PAS bloqué */}
-              {pending && !isPast(day) && !blocked && (
+              {/* ✅ AJOUTÉ - Icône mode vacances */}
+              {vacation && !isPast(day) && (
+                <TbBeach className="absolute -top-1 -right-1 text-sm"></TbBeach>
+              )}
+              {/* Point ORANGE */}
+              {pending && !isPast(day) && !blocked && !vacation && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-500" />
               )}
-              {(isStart || isEnd) && !isPast(day) && !blocked && !pending && (
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white dark:bg-white" />
-              )}
+              {(isStart || isEnd) &&
+                !isPast(day) &&
+                !blocked &&
+                !pending &&
+                !vacation && (
+                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-white dark:bg-white" />
+                )}
             </button>
           );
         })}

@@ -5,7 +5,6 @@ import Image from "next/image";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { useSSOCallback } from "./hooks/useSSOCallback";
-import { Loader2, CheckCircle, XCircle, Shield, Sparkles } from "lucide-react";
 
 export default function SSOCallbackPage() {
   const t = useTranslations("SSOCallback");
@@ -75,7 +74,6 @@ export default function SSOCallbackPage() {
             style={{ filter: "blur(20px)", opacity: 0.3 }}
           />
           <div className="relative flex items-center justify-center w-full h-full rounded-full bg-gradient-to-br from-red-500 to-rose-600 shadow-xl shadow-red-500/30">
-            <XCircle className="w-12 h-12 text-white" />
           </div>
         </div>
 
@@ -219,9 +217,7 @@ export default function SSOCallbackPage() {
             isDark ? "text-white/80" : "text-slate-700"
           }`}
         >
-          <Shield className="w-3.5 h-3.5" />
           {t("title") || "CONNEXION SÉCURISÉE"}
-          <Sparkles className="w-3.5 h-3.5" />
         </p>
         <p
           className={`text-[10px] tracking-[0.3em] uppercase transition-colors duration-300 ${
@@ -238,7 +234,6 @@ export default function SSOCallbackPage() {
         style={{ animation: "fadeInUp 0.5s ease-out both 0.4s" }}
       >
         <div className="flex items-center gap-2">
-          <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
           <span
             className={`text-xs font-medium ${
               isDark ? "text-slate-300" : "text-slate-600"
@@ -278,7 +273,6 @@ export default function SSOCallbackPage() {
         className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 dark:bg-white/5 backdrop-blur-sm"
         style={{ animation: "fadeInUp 0.5s ease-out both 0.8s" }}
       >
-        <CheckCircle className="w-3 h-3 text-emerald-500" />
         <span
           className={`text-[9px] font-medium ${
             isDark ? "text-slate-400" : "text-slate-500"

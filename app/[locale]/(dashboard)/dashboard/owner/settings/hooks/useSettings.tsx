@@ -39,6 +39,11 @@ export function useSettings() {
   const [saving, setSaving] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [vacationError, setVacationError] = useState<string | null>(null);
+  const [vacationStatus, setVacationStatus] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const [profile, setProfile] = useState({
     firstName: "",
@@ -48,9 +53,15 @@ export function useSettings() {
     preferredLocale: currentLocale,
   });
 
-  const [security, setSecurity] = useState<{ sessions: any[] }>({ sessions: [] });
-  const [vacation, setVacation] = useState({ enabled: false, message: "" });
-
+  const [security, setSecurity] = useState<{ sessions: any[] }>({
+    sessions: [],
+  });
+  const [vacation, setVacation] = useState({
+    enabled: false,
+    message: "",
+    startDate: "",
+    endDate: "",
+  });
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -63,19 +74,16 @@ export function useSettings() {
     success: false,
   });
 
-  const [notificationCategories, setNotificationCategories] = useState<NotificationCategory[]>([
-    { id: "bookings", name: "Réservations", icon: <Calendar size={16} />, iconBg: "bg-blue-100 dark:bg-blue-900/30", iconColor: "text-blue-600", enabled: true },
-    { id: "payments", name: "Paiements", icon: <CreditCard size={16} />, iconBg: "bg-purple-100 dark:bg-purple-900/30", iconColor: "text-purple-600", enabled: true },
-    { id: "messages", name: "Messages", icon: <MessageSquare size={16} />, iconBg: "bg-indigo-100 dark:bg-indigo-900/30", iconColor: "text-indigo-600", enabled: true },
-    { id: "reviews", name: "Avis", icon: <Star size={16} />, iconBg: "bg-yellow-100 dark:bg-yellow-900/30", iconColor: "text-yellow-600", enabled: true },
-    { id: "listings", name: "Annonces", icon: <Home size={16} />, iconBg: "bg-teal-100 dark:bg-teal-900/30", iconColor: "text-teal-600", enabled: true },
-    { id: "alerts", name: "Alertes", icon: <Bell size={16} />, iconBg: "bg-amber-100 dark:bg-amber-900/30", iconColor: "text-amber-600", enabled: true },
-    { id: "disputes", name: "Litiges", icon: <Shield size={16} />, iconBg: "bg-red-100 dark:bg-red-900/30", iconColor: "text-red-600", enabled: true },
-    { id: "offers", name: "Offres", icon: <Gift size={16} />, iconBg: "bg-green-100 dark:bg-green-900/30", iconColor: "text-green-600", enabled: true },
-    { id: "system", name: "Système", icon: <Settings size={16} />, iconBg: "bg-slate-100 dark:bg-slate-700/50", iconColor: "text-slate-600", enabled: true },
+  const [notificationCategories, setNotificationCategories] = useState<
+    NotificationCategory[]
+  >([
+    // ... ton code existant
   ]);
 
-  const [quietHours, setQuietHours] = useState({ start: "22:00", end: "07:00" });
+  const [quietHours, setQuietHours] = useState({
+    start: "22:00",
+    end: "07:00",
+  });
 
   // Calcul de la force du mot de passe
   const calculateStrength = useCallback((password: string) => {
@@ -89,10 +97,15 @@ export function useSettings() {
   }, []);
 
   const updatePasswordStrength = (password: string) => {
-    setPasswordForm((prev) => ({ ...prev, strength: calculateStrength(password) }));
+    setPasswordForm((prev) => ({
+      ...prev,
+      strength: calculateStrength(password),
+    }));
   };
 
-  const passwordsMatch = passwordForm.newPassword === passwordForm.confirmPassword && passwordForm.newPassword !== "";
+  const passwordsMatch =
+    passwordForm.newPassword === passwordForm.confirmPassword &&
+    passwordForm.newPassword !== "";
   const isPasswordValid = passwordForm.strength >= 4 && passwordsMatch;
 
   const passwordCriteria = {
@@ -136,6 +149,8 @@ export function useSettings() {
           setVacation({
             enabled: user.vacationMode || false,
             message: user.vacationMessage || "",
+            startDate: user.vacationStartDate?.split("T")[0] || "",
+            endDate: user.vacationEndDate?.split("T")[0] || "",
           });
         }
 
@@ -157,7 +172,7 @@ export function useSettings() {
               prev.map((cat) => ({
                 ...cat,
                 enabled: data.categories[cat.id] ?? cat.enabled,
-              }))
+              })),
             );
           }
           if (data.quietHours) setQuietHours(data.quietHours);
@@ -175,10 +190,10 @@ export function useSettings() {
   // Mettre à jour la langue
   const updateLanguage = async (locale: string) => {
     if (locale === currentLocale) return;
-    
+
     const previousLocale = currentLocale;
     setProfile((prev) => ({ ...prev, preferredLocale: locale }));
-    
+
     try {
       const token = await getToken({ template: "my-app-template" });
       const response = await fetch("/api/users/update", {
@@ -187,7 +202,10 @@ export function useSettings() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ userId: clerkUser?.id, preferredLocale: locale }),
+        body: JSON.stringify({
+          userId: clerkUser?.id,
+          preferredLocale: locale,
+        }),
       });
 
       if (!response.ok) {
@@ -206,15 +224,14 @@ export function useSettings() {
     }
   };
 
-  // Changer le mot de passe - CORRIGÉ AVEC GESTION D'ERREUR
+  // Changer le mot de passe
   const changePassword = async () => {
-    // Validations
     if (!passwordForm.currentPassword) {
       const error = new Error("Veuillez entrer votre mot de passe actuel");
       toast.error(error.message);
       throw error;
     }
-    
+
     if (!isPasswordValid) {
       const error = new Error("Le nouveau mot de passe n'est pas assez fort");
       toast.error(error.message);
@@ -228,10 +245,9 @@ export function useSettings() {
     }
 
     setPasswordForm((prev) => ({ ...prev, isSubmitting: true }));
-    
+
     try {
       const token = await getToken({ template: "my-app-template" });
-      
       const response = await fetch("/api/users/change-password", {
         method: "POST",
         headers: {
@@ -249,7 +265,6 @@ export function useSettings() {
       if (response.ok) {
         setPasswordForm((prev) => ({ ...prev, success: true }));
         toast.success("Mot de passe mis à jour avec succès !");
-        
         setTimeout(() => {
           setPasswordForm((prev) => ({
             ...prev,
@@ -261,10 +276,13 @@ export function useSettings() {
           }));
         }, 2000);
       } else {
-        // Gestion spécifique des erreurs
         const errorMsg = data.error || data.message || "Erreur lors du changement";
         toast.error(errorMsg);
-        setPasswordForm((prev) => ({ ...prev, isSubmitting: false, currentPassword: "" }));
+        setPasswordForm((prev) => ({
+          ...prev,
+          isSubmitting: false,
+          currentPassword: "",
+        }));
         throw new Error(errorMsg);
       }
     } catch (error: any) {
@@ -277,8 +295,9 @@ export function useSettings() {
     }
   };
 
-  // Basculer mode vacances
+  // ✅ UNE SEULE FONCTION toggleVacationMode
   const toggleVacationMode = async () => {
+    setVacationError(null);
     try {
       const token = await getToken({ template: "my-app-template" });
       const response = await fetch("/api/users/vacation-mode", {
@@ -290,24 +309,32 @@ export function useSettings() {
         body: JSON.stringify({
           enabled: !vacation.enabled,
           message: vacation.message,
+          startDate: vacation.startDate,
+          endDate: vacation.endDate,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Erreur lors du changement");
+        throw new Error(data.error || "Erreur lors du changement");
       }
 
       setVacation((prev) => ({ ...prev, enabled: !prev.enabled }));
-      toast.success(vacation.enabled ? "Mode vacances désactivé" : "Mode vacances activé");
+      const message = vacation.enabled ? "Mode vacances désactivé" : "Mode vacances activé";
+      setVacationStatus({ type: "success", message });
+      toast.success(message);
+      setVacationError(null);
     } catch (error: any) {
       console.error("Erreur toggle vacation mode:", error);
-      toast.error(error.message || "Erreur lors de la modification");
+      const errorMsg = error.message || "Erreur lors de la modification";
+      setVacationError(errorMsg);
+      setVacationStatus({ type: "error", message: errorMsg });
+      toast.error(errorMsg);
       throw error;
     }
   };
 
-  // Sauvegarder message vacances
   const saveVacationMessage = async () => {
     setSaving(true);
     try {
@@ -321,6 +348,8 @@ export function useSettings() {
         body: JSON.stringify({
           enabled: vacation.enabled,
           message: vacation.message,
+          startDate: vacation.startDate,
+          endDate: vacation.endDate,
         }),
       });
 
@@ -383,20 +412,20 @@ export function useSettings() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      
+
       const contentDisposition = response.headers.get("Content-Disposition");
       let filename = `nesthub_export_${format === "csv" ? "csv" : "json"}`;
       if (contentDisposition) {
         const match = contentDisposition.match(/filename="(.+)"/);
         if (match) filename = match[1];
       }
-      
+
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success(`Données exportées avec succès au format ${format.toUpperCase()}`);
     } catch (error: any) {
       console.error("Erreur exportation:", error);
@@ -438,8 +467,8 @@ export function useSettings() {
   const toggleNotificationCategory = (categoryId: string) => {
     setNotificationCategories((prev) =>
       prev.map((cat) =>
-        cat.id === categoryId ? { ...cat, enabled: !cat.enabled } : cat
-      )
+        cat.id === categoryId ? { ...cat, enabled: !cat.enabled } : cat,
+      ),
     );
 
     const savePref = async () => {
@@ -498,6 +527,9 @@ export function useSettings() {
     profile,
     security,
     vacation,
+    setVacation,
+    vacationError,
+    vacationStatus,
     passwordForm,
     passwordCriteria,
     theme,

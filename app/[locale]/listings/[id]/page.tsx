@@ -65,6 +65,9 @@ import { useListingTest as useListing } from "@/hooks/useListingTest";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
 import AvailabilityCalendar from "@/components/ui/calendar/AvailabilityCalendar";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { IdentityVerificationModal } from "@/components/ui/IdentityVerificationModal";
+import { TbBeach } from "react-icons/tb";
+import { Calendar, Plane } from "lucide-react";
 
 // Dynamically import map with no SSR
 const ListingMap = dynamic(() => import("@/components/ui/maps/ListingMap"), {
@@ -724,6 +727,10 @@ export default function ListingDetailPage() {
     blockedDates,
     pendingDates,
     pricingRules,
+    showVerificationModal,
+    checkVerificationBeforeInfoRequest,
+    handleVerificationComplete,
+    handleCloseVerificationModal,
   } = useListing(id);
   const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -779,27 +786,50 @@ export default function ListingDetailPage() {
     }
   }, [listing?.id, dark]);
 
- 
-
   const fetchNearbyPOIs = useCallback(async () => {
-    if (!listing?.latitude || !listing?.longitude) return;
+    console.log("🔍 fetchNearbyPOIs START");
+
+    if (!listing?.latitude || !listing?.longitude) {
+      console.log("❌ Pas de coordonnées pour les POIs");
+      setNearbyPOIs([]);
+      return;
+    }
+
+    console.log(
+      `📍 Chargement POIs pour: lat=${listing.latitude}, lng=${listing.longitude}`,
+    );
     setLoadingPOIs(true);
+
     try {
-      const res = await fetch(`/api/listings/${id}/pois?radius=10000`);
+      const url = `/api/listings/${id}/pois?radius=2000`;
+      console.log("🌐 Appel API:", url);
+
+      const res = await fetch(url);
+      console.log("📡 Réponse reçue, status:", res.status);
+
       const data = await res.json();
-      if (data.success) setNearbyPOIs(data.pois);
+      console.log("📦 Données POIs reçues:", data);
+
+      if (data.success && data.pois) {
+        console.log(`✅ ${data.pois.length} POIs trouvés`);
+        setNearbyPOIs(data.pois);
+      } else {
+        console.log("⚠️ Aucun POI ou erreur dans la réponse");
+        setNearbyPOIs([]);
+      }
     } catch (error) {
-      console.error("Error fetching POIs:", error);
+      console.error("❌ Erreur fetchNearbyPOIs:", error);
+      setNearbyPOIs([]);
     } finally {
       setLoadingPOIs(false);
     }
   }, [listing?.latitude, listing?.longitude, id]);
 
- useEffect(() => {
-  if (listing?.id && listing?.latitude && listing?.longitude) {
-    fetchNearbyPOIs();
-  }
-}, [fetchNearbyPOIs, listing?.id, listing?.latitude, listing?.longitude]);
+  useEffect(() => {
+    if (listing?.id && listing?.latitude && listing?.longitude) {
+      fetchNearbyPOIs();
+    }
+  }, [fetchNearbyPOIs, listing?.id, listing?.latitude, listing?.longitude]);
   const handleCalendarSelect = useCallback(
     (start: string, end: string) => {
       setCheckIn(start);
@@ -831,7 +861,7 @@ export default function ListingDetailPage() {
   };
 
   // Handle info request
-  const handleInfoRequest = async () => {
+  const sendInfoRequest = async () => {
     if (!checkIn || !checkOut) {
       showToast("Sélectionnez vos dates", "error");
       return;
@@ -863,7 +893,12 @@ export default function ListingDetailPage() {
       setInfoRequestLoading(false);
     }
   };
-
+  const handleInfoRequestWithVerification = () => {
+    const canProceed = checkVerificationBeforeInfoRequest();
+    if (canProceed) {
+      sendInfoRequest();
+    }
+  };
   const handleToggleFavorite = () => {
     const next = !isFav;
     setIsFav(next);
@@ -1151,6 +1186,44 @@ export default function ListingDetailPage() {
                 {listing.governorate}
               </p>
             </motion.div>
+            {/* ✅ AJOUTE ICI - BANDEAU MODE VACANCES */}
+            {listing.vacationMode &&
+              listing.vacationStartDate &&
+              listing.vacationEndDate && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-5 p-4 rounded-xl bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950/30 dark:to-purple-950/30 border-l-4 border-violet-500"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-900/50 flex items-center justify-center flex-shrink-0">
+                      <TbBeach
+                        size={20}
+                        className="text-violet-600 dark:text-violet-400"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-violet-800 dark:text-violet-300 flex items-center gap-2">
+                        Mode vacances
+                      </h4>
+                      <p className="text-sm text-violet-600 dark:text-violet-400">
+                        {listing.vacationMessage ||
+                          "L'hôte est actuellement en vacances."}
+                      </p>
+                      {listing.vacationEndDate && (
+                        <p className="text-xs text-violet-500 dark:text-violet-500 mt-1 flex items-center gap-1">
+                          <Calendar size={12} />
+                          Disponible à partir du{" "}
+                          {new Date(listing.vacationEndDate).toLocaleDateString(
+                            "fr-FR",
+                            { day: "numeric", month: "long", year: "numeric" },
+                          )}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
 
             {/* Quick Stats Cards */}
             <motion.div
@@ -1342,14 +1415,20 @@ export default function ListingDetailPage() {
                 className={`rounded-xl p-2 border ${dark ? "bg-slate-800/40 border-white/10" : "bg-gray-50 border-gray-200"}`}
               >
                 <AvailabilityCalendar
-                  availability={listing?.availability}
-                  blockedDates={blockedDates}
-                  pendingDates={pendingDates}
-                  pricingRules={pricingRules}
-                  selectedStart={checkIn}
-                  selectedEnd={checkOut}
-                  onSelectRange={handleCalendarSelect}
-                />
+  availability={listing?.availability}
+  blockedDates={blockedDates}
+  pendingDates={pendingDates}
+  pricingRules={pricingRules}
+  selectedStart={checkIn}
+  selectedEnd={checkOut}
+  onSelectRange={handleCalendarSelect}
+  // ✅ AJOUTE CETTE LIGNE
+  listing={{
+    vacationMode: listing.vacationMode,
+    vacationStartDate: listing.vacationStartDate,
+    vacationEndDate: listing.vacationEndDate,
+  }}
+/>
               </div>
             </Section>
 
@@ -1850,11 +1929,26 @@ export default function ListingDetailPage() {
                     )}
                     <button
                       type="button"
-                      onClick={handleInfoRequest}
-                      disabled={infoRequestLoading || !checkIn || !checkOut}
-                      className={`w-full py-3.5 rounded-xl text-sm font-extrabold transition-all disabled:opacity-20 disabled:cursor-not-allowed ${dark ? "bg-white/10 border border-white/20 text-white/60 hover:text-white/80 hover:bg-white/20" : "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/30"}`}
+                      onClick={handleInfoRequestWithVerification}
+                      disabled={
+                        infoRequestLoading ||
+                        !checkIn ||
+                        !checkOut ||
+                        listing.vacationMode
+                      }
+                      className={`w-full py-3.5 rounded-xl text-sm font-extrabold transition-all disabled:opacity-20 disabled:cursor-not-allowed ${
+                        listing.vacationMode
+                          ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+                          : dark
+                            ? "bg-white/10 border border-white/20 text-white/60 hover:text-white/80 hover:bg-white/20"
+                            : "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/30"
+                      }`}
                     >
-                      {infoRequestLoading ? (
+                      {listing.vacationMode ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <Plane size={16} /> Mode vacances - Indisponible
+                        </span>
+                      ) : infoRequestLoading ? (
                         <span className="flex items-center justify-center gap-2">
                           <span className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                           Envoi...
@@ -2097,6 +2191,18 @@ export default function ListingDetailPage() {
           </Section>
         </motion.div>
       </main>
+      {/* Modal de vérification d'identité */}
+      <IdentityVerificationModal
+        isOpen={showVerificationModal}
+        onClose={handleCloseVerificationModal}
+        onVerified={async () => {
+          const canProceed = await handleVerificationComplete();
+          if (canProceed) {
+            sendInfoRequest();
+          }
+        }}
+        requiredAction="make_booking"
+      />
     </div>
   );
 }

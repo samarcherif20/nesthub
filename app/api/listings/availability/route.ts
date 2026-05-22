@@ -84,7 +84,52 @@ export async function GET(request: NextRequest) {
           },
         }),
       ]);
+    // ✅ AJOUTE CETTE PARTIE APRÈS avoir récupéré blockedDates, bookings, pricingRules, pendingBookings
+    // (vers ligne 70-80)
 
+    // 🔥 RÉCUPÉRATION DU MODE VACANCES
+    const listingInfo = await prisma.listing.findUnique({
+      where: { id: listingId },
+      select: {
+        vacationMode: true,
+        vacationStartDate: true,
+        vacationEndDate: true,
+        vacationMessage: true,
+      },
+    });
+
+    // 🔥 GÉNÉRATION DES DATES BLOQUÉES PAR MODE VACANCES
+    let vacationBlockedDates: {
+      startDate: Date;
+      endDate: Date;
+      reason: string;
+    }[] = [];
+
+    if (
+      listingInfo?.vacationMode &&
+      listingInfo.vacationStartDate &&
+      listingInfo.vacationEndDate
+    ) {
+      const vacationStart = new Date(listingInfo.vacationStartDate);
+      const vacationEnd = new Date(listingInfo.vacationEndDate);
+      vacationStart.setHours(0, 0, 0, 0);
+      vacationEnd.setHours(0, 0, 0, 0);
+
+      for (
+        let d = new Date(vacationStart);
+        d <= vacationEnd;
+        d.setDate(d.getDate() + 1)
+      ) {
+        vacationBlockedDates.push({
+          startDate: new Date(d),
+          endDate: new Date(d),
+          reason: "🏖️ Propriétaire en vacances",
+        });
+      }
+      console.log(
+        `🏖️ Mode vacances actif: ${vacationBlockedDates.length} dates bloquées`,
+      );
+    }
     // ✅ FILTRER : Exclure les pendingBookings qui ont déjà un booking CONFIRMÉ
     const pendingBlockedDatesArray = pendingBookings
       .filter((pb) => {
@@ -136,8 +181,8 @@ export async function GET(request: NextRequest) {
     });
 
     // ✅ Fusionner les dates ROUGES (blocages manuels + réservations confirmées)
-    const redBlockedDates = [...blockedDates, ...confirmedBlockedDates];
-
+// ✅ Fusionner les dates ROUGES (blocages manuels + réservations confirmées + mode vacances)
+const redBlockedDates = [...blockedDates, ...confirmedBlockedDates, ...vacationBlockedDates];
     console.log(`📊 Résultats:`);
     console.log(`   - blockedDates (manuels): ${blockedDates.length}`);
     console.log(

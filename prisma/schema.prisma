@@ -76,6 +76,8 @@ model User {
   escalationLevel      Int?
   vacationMode         Boolean               @default(false)
   vacationMessage      String?
+   vacationStartDate DateTime?
+  vacationEndDate   DateTime?
   twoFactorEnabled     Boolean               @default(false)
   twoFactorRecoveryCodes String?
   stripeCustomerId String? @unique
@@ -680,6 +682,10 @@ model Listing {
   isBlocked   Boolean @default(false)
   blockReason String?
 
+  vacationMode      Boolean?  @default(false)
+  vacationMessage   String?
+  vacationStartDate DateTime?
+  vacationEndDate   DateTime?
   // Relations
   ownerId String
   owner   User   @relation("UserListings", fields: [ownerId], references: [id], onDelete: Cascade)

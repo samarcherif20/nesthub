@@ -32,12 +32,12 @@ function calculateReviewScoresFromList(reviews: any[]) {
       value: 4.5,
     };
   }
-  
+
   const getAvg = (field: string) => {
     const sum = reviews.reduce((acc, r) => acc + (r[field] || 0), 0);
     return +(sum / reviews.length).toFixed(1);
   };
-  
+
   return {
     cleanliness: getAvg("cleanliness") || 4.5,
     accuracy: getAvg("accuracy") || 4.5,
@@ -195,7 +195,22 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         { status: 404 },
       );
     }
+    // ✅ AJOUTE CES LIGNES ICI (après le if(!listing))
+    const ownerVacation = await prisma.user.findUnique({
+      where: { id: listing.ownerId },
+      select: {
+        vacationMode: true,
+        vacationMessage: true,
+        vacationStartDate: true,
+        vacationEndDate: true,
+      },
+    });
 
+    console.log(`🏖️ Mode vacances propriétaire:`, {
+      vacationMode: ownerVacation?.vacationMode,
+      startDate: ownerVacation?.vacationStartDate,
+      endDate: ownerVacation?.vacationEndDate,
+    });
     // ✅ Récupérer les reviews via les bookings du listing
     const bookingsWithReviews = await prisma.booking.findMany({
       where: {
@@ -223,8 +238,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     // Extraire les reviews
     const reviewsList = bookingsWithReviews
-      .filter(b => b.review)
-      .map(b => b.review);
+      .filter((b) => b.review)
+      .map((b) => b.review);
 
     console.log(`📋 Annonce trouvée:`);
     console.log(`   - Titre: ${listing.title}`);
@@ -380,7 +395,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       id: review.id,
       rating: review.rating,
       comment: review.comment,
-      author: review.reviewer?.username || review.reviewer?.firstName || "Anonyme",
+      author:
+        review.reviewer?.username || review.reviewer?.firstName || "Anonyme",
       authorAvatar: review.reviewer?.profilePictureUrl,
       createdAt: review.createdAt,
       date: new Date(review.createdAt).toLocaleDateString("fr-FR", {
@@ -457,6 +473,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       isOwner: isOwner,
       reviews: formattedReviews,
       reviewScores: calculateReviewScoresFromList(reviewsList),
+      // ✅ Mode vacances - priorité au propriétaire (global sur toutes ses annonces)
+      vacationMode:
+        ownerVacation?.vacationMode || listing.vacationMode || false,
+      vacationMessage:
+        ownerVacation?.vacationMessage || listing.vacationMessage || null,
+      vacationStartDate:
+        ownerVacation?.vacationStartDate || listing.vacationStartDate,
+      vacationEndDate:
+        ownerVacation?.vacationEndDate || listing.vacationEndDate,
     };
 
     console.log(`\n✅ RÉPONSE FINALE:`);

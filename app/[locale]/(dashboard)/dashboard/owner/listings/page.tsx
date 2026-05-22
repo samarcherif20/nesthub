@@ -6,7 +6,7 @@ import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@clerk/nextjs";
-
+import { IdentityVerificationModal } from "@/components/ui/IdentityVerificationModal";
 import {
   Home,
   Building2,
@@ -68,6 +68,7 @@ import {
   TbHomeShare,
 } from "react-icons/tb";
 import { FaEye } from "react-icons/fa";
+import { useRouter } from "next/navigation";
 
 const pip = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
@@ -573,6 +574,7 @@ export default function OwnerListingsPage({
   const { locale } = React.use(params);
   const t = useTranslations("OwnerListings");
   const { getToken } = useAuth();
+  const router = useRouter();
 
   const {
     listings,
@@ -598,6 +600,10 @@ export default function OwnerListingsPage({
     handleDelete,
     resetFilters,
     refreshData,
+    showVerificationModal,
+    checkVerificationBeforeCreate,
+    handleVerificationComplete,
+    handleCloseVerificationModal,
   } = useListings(PAGE_SIZE);
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -900,12 +906,17 @@ export default function OwnerListingsPage({
             </Tooltip>
           </div>
 
-          <Link
-            href={`/${locale}/dashboard/owner/listings/create`}
+          <button
+            onClick={() => {
+              const canProceed = checkVerificationBeforeCreate();
+              if (canProceed) {
+                router.push(`/${locale}/dashboard/owner/listings/create`);
+              }
+            }}
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-full font-semibold text-sm shadow-sm transition-all whitespace-nowrap"
           >
             <TbHomePlus size={16} /> {t("actions.addListing")}
-          </Link>
+          </button>
         </div>
       </div>
 
@@ -1130,45 +1141,49 @@ export default function OwnerListingsPage({
               </p>
             </div>
           ) : filteredListings.length === 0 ? (
-  <div className="flex flex-col items-center justify-center py-20 text-center max-w-md mx-auto">
-    <div className="relative mb-6">
-      <div className="absolute inset-0 bg-gradient-to-r from-sky-500/20 to-purple-500/20 rounded-full blur-2xl animate-pulse"></div>
-      <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center shadow-lg">
-        <TbHomeOff
-          size={48}
-          className="text-sky-500 dark:text-sky-400"
-        />
-      </div>
-    </div>
-    <h3 className="text-2xl font-headline font-bold bg-gradient-to-r from-sky-600 to-purple-600 dark:from-sky-400 dark:to-purple-400 bg-clip-text text-transparent mb-3">
-      {t("emptyState.title")}
-    </h3>
-    <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 leading-relaxed">
-      {t("emptyState.description", { platform: "NESTHUB" })}
-    </p>
-    <Link
-      href={`/${locale}/dashboard/owner/listings/create`}
-      className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
-    >
-      <TbHomePlus
-        size={18}
-        className="group-hover:rotate-12 transition-transform duration-300"
-      />
-      {t("emptyState.button")}
-      <TrendingUp
-        size={16}
-        className="group-hover:translate-x-1 transition-transform duration-300"
-      />
-    </Link>
-    <Link
-      href={`/${locale}/help`}
-      className="mt-6 text-xs text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors flex items-center gap-1"
-    >
-      <HelpCircle size={12} />
-      {t("emptyState.helpLink")}
-    </Link>
-  </div>
- 
+            <div className="flex flex-col items-center justify-center py-20 text-center max-w-md mx-auto">
+              <div className="relative mb-6">
+                <div className="absolute inset-0 bg-gradient-to-r from-sky-500/20 to-purple-500/20 rounded-full blur-2xl animate-pulse"></div>
+                <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center shadow-lg">
+                  <TbHomeOff
+                    size={48}
+                    className="text-sky-500 dark:text-sky-400"
+                  />
+                </div>
+              </div>
+              <h3 className="text-2xl font-headline font-bold bg-gradient-to-r from-sky-600 to-purple-600 dark:from-sky-400 dark:to-purple-400 bg-clip-text text-transparent mb-3">
+                {t("emptyState.title")}
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 leading-relaxed">
+                {t("emptyState.description", { platform: "NESTHUB" })}
+              </p>
+              <button
+                onClick={() => {
+                  const canProceed = checkVerificationBeforeCreate();
+                  if (canProceed) {
+                    router.push(`/${locale}/dashboard/owner/listings/create`);
+                  }
+                }}
+                className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
+              >
+                <TbHomePlus
+                  size={18}
+                  className="group-hover:rotate-12 transition-transform duration-300"
+                />
+                {t("emptyState.button")}
+                <TrendingUp
+                  size={16}
+                  className="group-hover:translate-x-1 transition-transform duration-300"
+                />
+              </button>
+              <Link
+                href={`/${locale}/help`}
+                className="mt-6 text-xs text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors flex items-center gap-1"
+              >
+                <HelpCircle size={12} />
+                {t("emptyState.helpLink")}
+              </Link>
+            </div>
           ) : viewMode === "grid" ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
               {filteredListings.map((listing) => {
@@ -1578,6 +1593,19 @@ export default function OwnerListingsPage({
           listingTitle={qrCodeListing.title}
         />
       )}
+      {/* Modal de vérification d'identité */}
+      <IdentityVerificationModal
+        isOpen={showVerificationModal}
+        onClose={handleCloseVerificationModal}
+        onVerified={() => {
+          handleVerificationComplete().then((canProceed) => {
+            if (canProceed) {
+              router.push(`/${locale}/dashboard/owner/listings/create`);
+            }
+          });
+        }}
+        requiredAction="create_listing"
+      />
     </div>
   );
 }

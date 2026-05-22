@@ -1,4 +1,4 @@
-// app/api/users/me/route.ts (version avec wrapper)
+// app/api/users/me/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
@@ -6,7 +6,7 @@ import { auth } from "@clerk/nextjs/server";
 export async function GET() {
   try {
     const { userId: clerkId } = await auth();
-    
+
     if (!clerkId) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
@@ -24,18 +24,31 @@ export async function GET() {
         isIdentityVerified: true,
         status: true,
         email: true,
-      }
+        // ✅ AJOUTE CES 4 LIGNES
+        vacationMode: true,
+        vacationMessage: true,
+        vacationStartDate: true,
+        vacationEndDate: true,
+      },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
     }
 
-    // ✅ Retourner avec wrapper { user: ... }
+    console.log("📦 Données utilisateur retournées:", {
+      vacationMode: user.vacationMode,
+      vacationMessage: user.vacationMessage,
+      vacationStartDate: user.vacationStartDate,
+      vacationEndDate: user.vacationEndDate,
+    });
+
     return NextResponse.json({ user });
-    
   } catch (error) {
-    console.error('[GET /api/users/me] Erreur:', error);
+    console.error("[GET /api/users/me] Erreur:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

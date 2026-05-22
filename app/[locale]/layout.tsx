@@ -6,11 +6,11 @@ import { notFound } from "next/navigation";
 import { isValidLocale } from "@/lib/i18n";
 import { ReactNode } from "react";
 import "../favicon.ico";
-import { ThemeProviderWrapper } from "./theme-provider-wrapper"; // Import the client wrapper
-
+import { ThemeProviderWrapper } from "./theme-provider-wrapper"; 
 // @ts-expect-error
 import "../globals.css";
 import { AutoRefreshProvider } from "@/components/ui/providers/AutoRefreshProvider";
+
 
 interface LayoutProps {
   children: ReactNode;

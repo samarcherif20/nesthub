@@ -1605,7 +1605,8 @@
       "reservations": "Réservations",
       "messages": "Messages",
       "analytics": "Statistiques",
-      "team": "Équipe"
+      "team": "Équipe",
+      "disputes":"Ligites"
     },
     "sidebar": {
       "ownerSuite": "Espace propriétaire",
@@ -3871,20 +3872,94 @@
   },
   
   "IdentityVerification": {
-    "title": "Vérification d'identité requise",
+    "title": "Affinage de",
+    "gradientText": "votre Accès",
+    "timerLabel": "Délai estimé : {time} heures",
     "description": {
-      "create_listing": "Pour créer une annonce, vous devez d'abord vérifier votre identité. Cela garantit la sécurité de notre communauté et la fiabilité des échanges.",
-      "make_booking": "Pour effectuer une réservation, vous devez d'abord vérifier votre identité. Cela garantit la sécurité de notre communauté et la fiabilité des échanges."
+      "line1": "Votre identité est en cours de raffinement par notre Conciergerie. Pour garantir l'excellence et la sécurité de notre cercle exclusif, cette étape est nécessaire avant de pouvoir créer ou réserver votre prochaine pépite.",
+      "line2": "Notre équipe vérifie minutieusement chaque dossier afin de maintenir un environnement de confiance pour tous nos membres. Vous recevrez une notification dès que votre compte sera activé."
     },
-    "emailVerification": "Email vérifié",
-    "phoneVerification": "Téléphone vérifié",
-    "identityDocument": "Pièce d'identité",
-    "idDescription": "Carte d'identité, passeport ou permis de conduire",
-    "uploadId": "Télécharger un justificatif",
-    "trustInfo": "Vos informations sont confidentielles et utilisées uniquement pour garantir la confiance au sein de notre plateforme.",
-    "verifyButton": "Vérifier mon identité",
-    "completeRequirements": "Complétez les vérifications ci-dessus",
-    "later": "Plus tard"
+    "progressLabel": "Vérification en cours...",
+    "buttonSupport": "Contacter le support",
+    "statusLabel": "Vérification active"
+  },
+  
+  "OwnerDisputes": {
+    "page": {
+      "title": "Gestion des Litiges",
+      "description": "Gérez vos différends en cours, téléchargez des preuves et suivez les médiations de vos propriétés."
+    },
+    "stats": {
+      "openDisputes": "Litiges Actifs",
+      "inReview": "En Révision",
+      "resolvedMonth": "Résolus (Mois)",
+      "totalDisputes": "Total Litiges"
+    },
+    "status": {
+      "open": "Action Requise",
+      "openDesc": "Ce litige nécessite votre attention immédiate",
+      "inReview": "En Révision",
+      "inReviewDesc": "Notre équipe analyse actuellement ce dossier",
+      "resolved": "Résolu",
+      "resolvedDesc": "Ce litige a été résolu avec succès",
+      "closed": "Clôturé",
+      "closedDesc": "Ce dossier est fermé"
+    },
+    "disputeTypes": {
+      "damage": "Dommages matériels",
+      "damageFurniture": "Dommages Mobilier Salon",
+      "payment": "Problème de paiement",
+      "paymentLate": "Retard Paiement Loyer",
+      "cancellation": "Annulation",
+      "cancellationBooking": "Annulation Réservation",
+      "other": "Autre litige"
+    },
+    "filters": {
+      "title": "Filtres",
+      "status": "Statut",
+      "allStatus": "Tous les statuts",
+      "search": "Recherche",
+      "searchPlaceholder": "ID, Propriété, Client...",
+      "reset": "Réinitialiser"
+    },
+    "tabs": {
+      "all": "Tous",
+      "open": "Actifs",
+      "inReview": "En Révision",
+      "resolved": "Résolus"
+    },
+    "actions": {
+      "exportCSV": "Exporter en CSV",
+      "refresh": "Actualiser",
+      "viewDetails": "Voir Détails",
+      "accept": "Accepter",
+      "reject": "Rejeter",
+      "escalate": "Escalader"
+    },
+    "emptyState": {
+      "title": "Aucun litige trouvé",
+      "description": "Aucun dossier ne correspond à vos critères de recherche.",
+      "helpLink": "Comment gérer un litige ?"
+    },
+    "selectDispute": "Sélectionnez un litige",
+    "selectDisputeDescription": "Choisissez un dossier dans la liste pour voir l'historique des échanges, les preuves et prendre une action.",
+    "messagePlaceholder": "Écrire un message...",
+    "messageInfo": "Ce message sera visible par l'équipe de médiation",
+    "description": "Description",
+    "lastMessage": "Dernier message",
+    "amount": "Montant",
+    "amountLabel": "Montant du litige",
+    "loading": "Chargement des litiges en cours...",
+    "alerts": {
+      "messageSent": "Message envoyé avec succès",
+      "messageError": "Erreur lors de l'envoi du message"
+    },
+    "aiTip": {
+      "title": "Astuce IA",
+      "description": "Les litiges ouverts sont généralement résolus en moins de 48h. Fournissez des preuves claires pour accélérer le processus."
+    }
   }
 }
+
+
 

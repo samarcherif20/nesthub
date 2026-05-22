@@ -34,7 +34,7 @@ import { FloatingChat } from "@/components/ui/chat/FloatingChat";
 import NotificationBell from "@/components/ui/notifications/NotificationBell";
 import { GiDuality, GiDualityMask } from "react-icons/gi";
 import { TbHomeSearch } from "react-icons/tb";
-
+import { FaGavel } from "react-icons/fa6";
 // Fonction pip pour les images Vercel Blob (avatar)
 const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
@@ -268,6 +268,11 @@ export default function OwnerLayout({
       href: `/${locale}/dashboard/owner/team`,
       icon: PiMicrosoftTeamsLogo,
     },
+    {
+      name: t("nav.disputes"),
+      href: `/${locale}/dashboard/owner/disputes`,
+      icon: FaGavel ,
+    },
   ];
 
   const isActive = (href: string) => {
@@ -455,7 +460,7 @@ export default function OwnerLayout({
         </nav>
         {/* === CARTE MESH GRADIENT - Dark & White Mode === */}
         {userRole !== "BOTH" && !sidebarCollapsed && (
-          <div className="px-3 mb-18">
+          <div className="px-3 mb-10">
             <div className="group animate-float">
               <div className="relative mesh-gradient-bg rounded-xl overflow-hidden shadow-lg border border-white/20 dark:border-white/10 transition-all duration-300 hover:shadow-xl">
                 {/* Image de fond - adaptée au mode */}
