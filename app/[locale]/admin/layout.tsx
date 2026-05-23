@@ -1,13 +1,13 @@
 // app/[locale]/admin/layout.tsx
 "use client";
 
-import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import * as React from "react";
 import { useTranslations } from "next-intl";
+import { useUser, useClerk, useAuth } from "@clerk/nextjs";
 
 // Icônes
 import { LuLayoutDashboard } from "react-icons/lu";
@@ -37,7 +37,8 @@ import { TbMessageUser } from "react-icons/tb";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { MdOutlinePendingActions } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
-
+const pipAvatar = (url: string) =>
+  `/api/users/avatar?url=${encodeURIComponent(url)}`;
 // Types
 interface Counters {
   pendingVerifications: number;
@@ -90,7 +91,11 @@ export default function AdminLayout({
   const { user, isLoaded, isSignedIn } = useUser();
   const { signOut } = useClerk();
   const router = useRouter();
-
+  const { getToken } = useAuth();
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    null,
+  );
+  const [adminName, setAdminName] = useState({ firstName: "", lastName: "" });
   // États
   const [mounted, setMounted] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -173,7 +178,32 @@ export default function AdminLayout({
     document.addEventListener("click", handleClickOutside);
     return () => document.removeEventListener("click", handleClickOutside);
   }, [mounted]);
+  // Récupérer la photo de profil depuis la DB
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
 
+    const fetchAdminProfile = async () => {
+      try {
+        const token = await getToken({ template: "my-app-template" });
+        const res = await fetch("/api/users/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const userData = data.user || data;
+          setProfilePictureUrl(userData.profilePictureUrl || null);
+          setAdminName({
+            firstName: userData.firstName || "",
+            lastName: userData.lastName || "",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching admin profile:", error);
+      }
+    };
+
+    fetchAdminProfile();
+  }, [isLoaded, isSignedIn, getToken]);
   // Fonction de recherche
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
@@ -241,7 +271,6 @@ export default function AdminLayout({
           count: counters.pendingListings,
           countColor: "bg-amber-500",
         },
-       
       ],
     },
     {
@@ -292,7 +321,7 @@ export default function AdminLayout({
 
   // Vérifier si un sous-menu est actif
   const isSubItemActive = (subItems: any[]) => {
-    return subItems.some(item => isActive(item.href));
+    return subItems.some((item) => isActive(item.href));
   };
 
   // Basculer l'ouverture du sous-menu
@@ -379,7 +408,8 @@ export default function AdminLayout({
                     <button
                       onClick={() => toggleSubMenu(item.name)}
                       className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-all relative cursor-pointer ${
-                        isActive(item.href) || isSubItemActive(item.subItems || [])
+                        isActive(item.href) ||
+                        isSubItemActive(item.subItems || [])
                           ? "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300"
                           : "text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20"
                       }`}
@@ -387,15 +417,19 @@ export default function AdminLayout({
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{item.icon}</span>
                         {isSidebarOpen && (
-                          <span className="font-medium text-sm">{item.name}</span>
-                        )}
-                        {!isSidebarOpen && item.count !== undefined && item.count > 0 && (
-                          <span
-                            className={`absolute -top-1 -right-1 ${item.countColor} text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center`}
-                          >
-                            {item.count > 9 ? "9+" : item.count}
+                          <span className="font-medium text-sm">
+                            {item.name}
                           </span>
                         )}
+                        {!isSidebarOpen &&
+                          item.count !== undefined &&
+                          item.count > 0 && (
+                            <span
+                              className={`absolute -top-1 -right-1 ${item.countColor} text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center`}
+                            >
+                              {item.count > 9 ? "9+" : item.count}
+                            </span>
+                          )}
                       </div>
                       {isSidebarOpen && (
                         <FaChevronRight
@@ -432,13 +466,16 @@ export default function AdminLayout({
                                   </span>
                                   <span>{subItem.name}</span>
                                 </div>
-                                {subItem.count !== undefined && subItem.count > 0 && (
-                                  <span
-                                    className={`${subItem.countColor} text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center`}
-                                  >
-                                    {subItem.count > 99 ? "99+" : subItem.count}
-                                  </span>
-                                )}
+                                {subItem.count !== undefined &&
+                                  subItem.count > 0 && (
+                                    <span
+                                      className={`${subItem.countColor} text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center`}
+                                    >
+                                      {subItem.count > 99
+                                        ? "99+"
+                                        : subItem.count}
+                                    </span>
+                                  )}
                               </Link>
                             </li>
                           ))}
@@ -468,13 +505,15 @@ export default function AdminLayout({
                         )}
                       </>
                     )}
-                    {!isSidebarOpen && item.count !== undefined && item.count > 0 && (
-                      <span
-                        className={`absolute -top-1 -right-1 ${item.countColor} text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center`}
-                      >
-                        {item.count > 9 ? "9+" : item.count}
-                      </span>
-                    )}
+                    {!isSidebarOpen &&
+                      item.count !== undefined &&
+                      item.count > 0 && (
+                        <span
+                          className={`absolute -top-1 -right-1 ${item.countColor} text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center`}
+                        >
+                          {item.count > 9 ? "9+" : item.count}
+                        </span>
+                      )}
                   </Link>
                 )}
               </li>
@@ -637,9 +676,17 @@ export default function AdminLayout({
                 className="flex items-center gap-1 sm:gap-3 py-1.5 pl-2 sm:pl-3 pr-2 rounded-lg hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
               >
                 <div
-                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full ${avatarColor} flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0`}
+                  className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0 ${
+                    !profilePictureUrl ? avatarColor : ""
+                  }`}
                 >
-                  {user?.imageUrl ? (
+                  {profilePictureUrl ? (
+                    <img
+                      src={pipAvatar(profilePictureUrl)}
+                      alt="Avatar"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : user?.imageUrl ? (
                     <img
                       src={user.imageUrl}
                       alt="Avatar"
@@ -647,8 +694,8 @@ export default function AdminLayout({
                     />
                   ) : (
                     <span className="text-xs sm:text-sm font-medium">
-                      {user?.firstName?.[0]}
-                      {user?.lastName?.[0]}
+                      {adminName.firstName?.[0] || user?.firstName?.[0] || ""}
+                      {adminName.lastName?.[0] || user?.lastName?.[0] || ""}
                     </span>
                   )}
                 </div>
@@ -670,9 +717,17 @@ export default function AdminLayout({
                   <div className="px-4 py-4 border-b border-slate-100 dark:border-slate-800">
                     <div className="flex items-center gap-3 mb-3">
                       <div
-                        className={`w-12 h-12 rounded-full ${avatarColor} flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0 text-lg`}
+                        className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-medium overflow-hidden flex-shrink-0 text-lg ${
+                          !profilePictureUrl ? avatarColor : ""
+                        }`}
                       >
-                        {user?.imageUrl ? (
+                        {profilePictureUrl ? (
+                          <img
+                            src={pipAvatar(profilePictureUrl)}
+                            alt="Avatar"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : user?.imageUrl ? (
                           <img
                             src={user.imageUrl}
                             alt="Avatar"
@@ -680,8 +735,12 @@ export default function AdminLayout({
                           />
                         ) : (
                           <span>
-                            {user?.firstName?.[0]}
-                            {user?.lastName?.[0]}
+                            {adminName.firstName?.[0] ||
+                              user?.firstName?.[0] ||
+                              ""}
+                            {adminName.lastName?.[0] ||
+                              user?.lastName?.[0] ||
+                              ""}
                           </span>
                         )}
                       </div>
@@ -727,7 +786,7 @@ export default function AdminLayout({
                       <span>{tLayout("myProfile")}</span>
                     </Link>
                     <Link
-                      href={`/${locale}/admin/settings/security`}
+                      href={`/${locale}/admin/profile?tab=security`}
                       className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
                     >
                       <GoShieldLock size={16} />{" "}

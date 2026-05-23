@@ -24,11 +24,15 @@ export async function GET() {
         isIdentityVerified: true,
         status: true,
         email: true,
-        // ✅ AJOUTE CES 4 LIGNES
+        phoneNumber: true,
+        bio: true,
+        createdAt: true,
+        lastLogin: true,
         vacationMode: true,
         vacationMessage: true,
         vacationStartDate: true,
         vacationEndDate: true,
+        // ✅ Ne pas inclure stats ici car les champs n'existent pas
       },
     });
 
@@ -39,14 +43,17 @@ export async function GET() {
       );
     }
 
-    console.log("📦 Données utilisateur retournées:", {
-      vacationMode: user.vacationMode,
-      vacationMessage: user.vacationMessage,
-      vacationStartDate: user.vacationStartDate,
-      vacationEndDate: user.vacationEndDate,
-    });
+    // Calculer des stats factices ou les récupérer autrement
+    const userWithStats = {
+      ...user,
+      stats: {
+        totalActions: 0,
+        actionsThisMonth: 0,
+        accessLevel: 5,
+      },
+    };
 
-    return NextResponse.json({ user });
+    return NextResponse.json({ user: userWithStats });
   } catch (error) {
     console.error("[GET /api/users/me] Erreur:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });

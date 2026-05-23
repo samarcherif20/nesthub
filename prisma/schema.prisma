@@ -74,9 +74,11 @@ model User {
   suspendedUntil       DateTime?
   failedLoginAttempts  Int                   @default(0)
   escalationLevel      Int?
+  escalationReason     String?   
+  escalatedAt          DateTime? 
   vacationMode         Boolean               @default(false)
   vacationMessage      String?
-   vacationStartDate DateTime?
+  vacationStartDate DateTime?
   vacationEndDate   DateTime?
   twoFactorEnabled     Boolean               @default(false)
   twoFactorRecoveryCodes String?

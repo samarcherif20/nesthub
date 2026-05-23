@@ -239,7 +239,15 @@ export function useListingTest(id: string) {
       try {
         const res = await fetch(`/api/listings/${id}`);
         const data = await res.json();
-
+ console.log("🔍 DATA BRUTE DE L'API:", {
+        hasElevator: data.hasElevator,
+        hasBalcony: data.hasBalcony,
+        hasGarden: data.hasGarden,
+        hasGarage: data.hasGarage,
+        isFurnished: data.isFurnished,
+        // Affiche aussi tout l'équipement pour voir
+        equipment: data.equipment,
+      });
         const images = data.photos?.map((p: any) => p.url) ?? data.images ?? [];
         const amenities = extractAmenities(data.equipment ?? {});
         const houseRules = parseHouseRules(data.houseRules, data);
@@ -312,11 +320,11 @@ export function useListingTest(id: string) {
           },
           numberOfKitchens: data.numberOfKitchens ?? 1,
           floorNumber: data.floorNumber,
-          hasElevator: data.hasElevator ?? false,
-          hasBalcony: data.hasBalcony ?? false,
-          hasGarden: data.hasGarden ?? false,
-          hasGarage: data.hasGarage ?? false,
-          isFurnished: data.isFurnished ?? false,
+          hasElevator: data.hasElevator, // peut être undefined
+          hasBalcony: data.hasBalcony, // peut être undefined
+          hasGarden: data.hasGarden, // peut être undefined
+          hasGarage: data.hasGarage, // peut être undefined
+          isFurnished: data.isFurnished, // peut être undefined
           petsAllowed: data.petsAllowed ?? false,
           smokingAllowed: data.smokingAllowed ?? false,
           services: data.services ?? {},
@@ -337,7 +345,13 @@ export function useListingTest(id: string) {
             value: 4.5,
           },
         };
-
+console.log("📦 transformedListing après création:", {
+  hasElevator: transformedListing.hasElevator,
+  hasBalcony: transformedListing.hasBalcony,
+  hasGarden: transformedListing.hasGarden,
+  hasGarage: transformedListing.hasGarage,
+  isFurnished: transformedListing.isFurnished,
+});
         setListing(transformedListing);
       } catch (error) {
         console.error("Error fetching listing:", error);

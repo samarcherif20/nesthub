@@ -533,6 +533,7 @@ export function useAdminUsers() {
     userId: string,
     level: EscalationLevel,
     reason: string,
+    notify: boolean,
   ) => {
     try {
       console.log("🚀 handleEscalate appelé avec:", { userId, level, reason });
@@ -550,6 +551,7 @@ export function useAdminUsers() {
         action: "ESCALATE",
         level,
         reason,
+        notify,
       });
       console.log("📦 Body envoyé:", body);
 

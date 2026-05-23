@@ -1267,31 +1267,56 @@ export default function ListingDetailPage() {
                   },
                   {
                     icon: <IoLeafOutline className="text-xl" />,
-                    value: listing.hasGarden ? "✓" : "X",
+                    value:
+                      listing.hasGarden === true
+                        ? "✓"
+                        : listing.hasGarden === false
+                          ? "✗"
+                          : "—",
                     unit: "JARDIN",
                   },
                   {
                     icon: <MdBalcony className="text-xl" />,
-                    value: listing.hasBalcony ? "✓" : "X",
+                    value:
+                      listing.hasBalcony === true
+                        ? "✓"
+                        : listing.hasBalcony === false
+                          ? "✗"
+                          : "—",
                     unit: "BALCON",
                   },
                   {
                     icon: <MdOutlineElevator className="text-xl" />,
-                    value: listing.hasElevator ? "✓" : "X",
+                    value:
+                      listing.hasElevator === true
+                        ? "✓"
+                        : listing.hasElevator === false
+                          ? "✗"
+                          : "—",
                     unit: "ASCENSEUR",
                   },
                   {
                     icon: <FaParking className="text-xl" />,
-                    value: listing.hasGarage ? "✓" : "X",
+                    value:
+                      listing.hasGarage === true
+                        ? "✓"
+                        : listing.hasGarage === false
+                          ? "✗"
+                          : "—",
                     unit: "PARKING",
                   },
                   {
                     icon: <IoHomeOutline className="text-xl" />,
-                    value: listing.isFurnished ? "✓" : "X",
+                    value:
+                      listing.isFurnished === true
+                        ? "✓"
+                        : listing.isFurnished === false
+                          ? "✗"
+                          : "—",
                     unit: "MEUBLÉ",
                   },
                 ]
-                  .slice(0, 6)
+                  .slice(0, 10)
                   .map((stat, idx) => (
                     <motion.div
                       key={stat.unit}
@@ -1312,9 +1337,7 @@ export default function ListingDetailPage() {
                       <p
                         className={`text-xl font-black ${dark ? "text-white/80" : "text-gray-800"}`}
                       >
-                        {stat.value !== undefined && stat.value !== ""
-                          ? stat.value
-                          : "—"}
+                        {stat.value}
                       </p>
                       <p
                         className={`text-[10px] font-medium uppercase tracking-wide ${dark ? "text-white/30" : "text-gray-400"}`}
@@ -1415,20 +1438,20 @@ export default function ListingDetailPage() {
                 className={`rounded-xl p-2 border ${dark ? "bg-slate-800/40 border-white/10" : "bg-gray-50 border-gray-200"}`}
               >
                 <AvailabilityCalendar
-  availability={listing?.availability}
-  blockedDates={blockedDates}
-  pendingDates={pendingDates}
-  pricingRules={pricingRules}
-  selectedStart={checkIn}
-  selectedEnd={checkOut}
-  onSelectRange={handleCalendarSelect}
-  // ✅ AJOUTE CETTE LIGNE
-  listing={{
-    vacationMode: listing.vacationMode,
-    vacationStartDate: listing.vacationStartDate,
-    vacationEndDate: listing.vacationEndDate,
-  }}
-/>
+                  availability={listing?.availability}
+                  blockedDates={blockedDates}
+                  pendingDates={pendingDates}
+                  pricingRules={pricingRules}
+                  selectedStart={checkIn}
+                  selectedEnd={checkOut}
+                  onSelectRange={handleCalendarSelect}
+                  // ✅ AJOUTE CETTE LIGNE
+                  listing={{
+                    vacationMode: listing.vacationMode,
+                    vacationStartDate: listing.vacationStartDate,
+                    vacationEndDate: listing.vacationEndDate,
+                  }}
+                />
               </div>
             </Section>
 
