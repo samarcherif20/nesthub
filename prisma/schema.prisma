@@ -12,8 +12,7 @@ enum UserRole {
   PROPERTY_OWNER
   TENANT
   BOTH
-  CO_HOST  // ✅ AJOUTER CETTE LIGNE
-
+  CO_HOST // ✅ AJOUTER CETTE LIGNE
 }
 
 enum AccountStatus {
@@ -32,79 +31,78 @@ enum VerificationStatus {
   PENDING
   VALIDATED
   REJECTED
-  REAPPLIED 
-
+  REAPPLIED
 }
 
 model User {
-  id                   String                @id @default(uuid())
-  clerkId              String                @unique
-  email                String                @unique
-  username             String?               @unique
-  firstName            String?
-  lastName             String?
-  dateOfBirth          DateTime?
-  governorate          String?
-  delegation           String?
-  gender               String?
-  phoneNumber          String?               @unique
-  phoneVerifiedAt      DateTime?
-  profilePictureUrl    String?
-  bio                  String?
-  spokenLanguages      String[]              @default([])
-  preferredLocale      String                @default("fr")
-  role                 UserRole              @default(TENANT)
-  profession           String?
-  availability         Json?
-  howFound             String?   // google, social, friend, ads, other
-  rib               String?
-  bankName          String?
-  accountHolder     String?
-  status               AccountStatus         @default(PENDING_VALIDATION)
-  isEmailVerified      Boolean               @default(false)
-  isPhoneVerified      Boolean               @default(false)
-  isIdentityVerified   Boolean               @default(false)
-  cinNumber            String?               @unique
-  cinData              Json?
-  verifiedAt           DateTime?
-  createdAt            DateTime              @default(now())
-  updatedAt            DateTime              @updatedAt
-  lastLogin            DateTime?
-  deletedAt            DateTime?
-  suspendedUntil       DateTime?
-  failedLoginAttempts  Int                   @default(0)
-  escalationLevel      Int?
-  escalationReason     String?   
-  escalatedAt          DateTime? 
-  vacationMode         Boolean               @default(false)
-  vacationMessage      String?
-  vacationStartDate DateTime?
-  vacationEndDate   DateTime?
-  twoFactorEnabled     Boolean               @default(false)
+  id                     String        @id @default(uuid())
+  clerkId                String        @unique
+  email                  String        @unique
+  username               String?       @unique
+  firstName              String?
+  lastName               String?
+  dateOfBirth            DateTime?
+  governorate            String?
+  delegation             String?
+  gender                 String?
+  phoneNumber            String?       @unique
+  phoneVerifiedAt        DateTime?
+  profilePictureUrl      String?
+  bio                    String?
+  spokenLanguages        String[]      @default([])
+  preferredLocale        String        @default("fr")
+  role                   UserRole      @default(TENANT)
+  profession             String?
+  availability           Json?
+  howFound               String? // google, social, friend, ads, other
+  rib                    String?
+  bankName               String?
+  accountHolder          String?
+  status                 AccountStatus @default(PENDING_VALIDATION)
+  isEmailVerified        Boolean       @default(false)
+  isPhoneVerified        Boolean       @default(false)
+  isIdentityVerified     Boolean       @default(false)
+  cinNumber              String?       @unique
+  cinData                Json?
+  verifiedAt             DateTime?
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+  lastLogin              DateTime?
+  deletedAt              DateTime?
+  suspendedUntil         DateTime?
+  failedLoginAttempts    Int           @default(0)
+  escalationLevel        Int?
+  escalationReason       String?
+  escalatedAt            DateTime?
+  vacationMode           Boolean       @default(false)
+  vacationMessage        String?
+  vacationStartDate      DateTime?
+  vacationEndDate        DateTime?
+  twoFactorEnabled       Boolean       @default(false)
   twoFactorRecoveryCodes String?
-  stripeCustomerId String? @unique
-  stripeAccountId  String? @unique // Pour Stripe Connect (versements propriétaires)
+  stripeCustomerId       String?       @unique
+  stripeAccountId        String?       @unique // Pour Stripe Connect (versements propriétaires)
   // Relations Admin
-  riskScore            Int?                    @default(50)  // ← AJOUTÉ
-  acceptsForeigners    Boolean?                
+  riskScore              Int?          @default(50) // ← AJOUTÉ
+  acceptsForeigners      Boolean?
 
-  writtenNotes         AdminNote[]           @relation("AuthorUser")
-  adminNotes           AdminNote[]           @relation("TargetUser")
-  auditLogs            AuditLog[]
-  emailLogs            EmailLog[]
-  staticPageVersions   StaticPageVersion[]   @relation("UserStaticPageVersions")
-  actionsPerformed     UserAction[]          @relation("AdminUser")
-  userActions          UserAction[]
-  loginHistory         UserLoginHistory[]
-  reportsReceived      UserReport[]          @relation("ReportedUser")
-  reportsMade          UserReport[]          @relation("Reporter")
-  stats                UserStats?
-  verificationRequests VerificationRequest[] @relation("UserVerificationRequests")
-  verifiedRequests     VerificationRequest[] @relation("AdminReviewedVerifications")
-  verificationActions  VerificationAction[]  @relation("AdminVerificationActions")
-  otpCodes             OtpCode[]
-  identityVerification IdentityVerification?
-  notificationPreferences Json?   // Stocke les préférences de l'utilisateur
+  writtenNotes            AdminNote[]           @relation("AuthorUser")
+  adminNotes              AdminNote[]           @relation("TargetUser")
+  auditLogs               AuditLog[]
+  emailLogs               EmailLog[]
+  staticPageVersions      StaticPageVersion[]   @relation("UserStaticPageVersions")
+  actionsPerformed        UserAction[]          @relation("AdminUser")
+  userActions             UserAction[]
+  loginHistory            UserLoginHistory[]
+  reportsReceived         UserReport[]          @relation("ReportedUser")
+  reportsMade             UserReport[]          @relation("Reporter")
+  stats                   UserStats?
+  verificationRequests    VerificationRequest[] @relation("UserVerificationRequests")
+  verifiedRequests        VerificationRequest[] @relation("AdminReviewedVerifications")
+  verificationActions     VerificationAction[]  @relation("AdminVerificationActions")
+  otpCodes                OtpCode[]
+  identityVerification    IdentityVerification?
+  notificationPreferences Json? // Stocke les préférences de l'utilisateur
 
   // ============================================
   // RELATIONS SPRINT 2
@@ -162,23 +160,23 @@ model User {
   teamMemberships    TeamMember[]
 
   // Conversations (chat)
-  conversationsAsOwner Conversation[] @relation("OwnerConversations")
+  conversationsAsOwner  Conversation[] @relation("OwnerConversations")
   conversationsAsTenant Conversation[] @relation("TenantConversations")
-  
- // SPRINT 3 - NOUVELLES RELATIONS
+
+  // SPRINT 3 - NOUVELLES RELATIONS
   infoRequestsAsTenant InfoRequest[] @relation("InfoRequestTenant")
   infoRequestsAsOwner  InfoRequest[] @relation("InfoRequestOwner")
   offersAsTenant       Offer[]       @relation("OfferTenant")
   offersAsOwner        Offer[]       @relation("OfferOwner")
 
-   // Pour les blocages (Block)
+  // Pour les blocages (Block)
   blocksCreated  Block[] @relation("blocks")
   blocksReceived Block[] @relation("blockedBy")
-  
+
   // Pour les signalements (Report)
-  reportsCreated Report[] @relation("reports")
-  reportReceived Report[] @relation("reported")
-  paymentTransactions PaymentTransaction[]  // 👈 Relation inverse pour PaymentTransaction
+  reportsCreated      Report[]             @relation("reports")
+  reportReceived      Report[]             @relation("reported")
+  paymentTransactions PaymentTransaction[] // 👈 Relation inverse pour PaymentTransaction
 
   @@index([email])
   @@index([status])
@@ -331,21 +329,21 @@ model UserAction {
 }
 
 model AdminNote {
-  id           String   @id @default(uuid())
-  authorId     String
-  targetUserId String
-  conversationId String? 
-  content      String
-  isPrivate    Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  author       User     @relation("AuthorUser", fields: [authorId], references: [id])
-  targetUser   User     @relation("TargetUser", fields: [targetUserId], references: [id])
-  conversation Conversation? @relation(fields: [conversationId], references: [id]) 
- 
+  id             String        @id @default(uuid())
+  authorId       String
+  targetUserId   String
+  conversationId String?
+  content        String
+  isPrivate      Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  author         User          @relation("AuthorUser", fields: [authorId], references: [id])
+  targetUser     User          @relation("TargetUser", fields: [targetUserId], references: [id])
+  conversation   Conversation? @relation(fields: [conversationId], references: [id])
+
   @@index([authorId])
   @@index([targetUserId])
-  @@index([conversationId]) 
+  @@index([conversationId])
   @@map("admin_notes")
 }
 
@@ -429,10 +427,11 @@ model UserStats {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-trustLabel        String?               // "Très fiable" | "Fiable" | "Neutre" | "Prudence" | "Risqué"
-trustBadge        String?               // "green" | "blue" | "gray" | "orange" | "red"
-scamFlags         String[]  @default([])
-lastScoredAt      DateTime? 
+  trustLabel        String? // "Très fiable" | "Fiable" | "Neutre" | "Prudence" | "Risqué"
+  trustBadge        String? // "green" | "blue" | "gray" | "orange" | "red"
+  scamFlags         String[]  @default([])
+  lastScoredAt      DateTime?
+
   @@index([userId])
   @@index([reliabilityScore])
   @@index([fraudScore])
@@ -552,24 +551,24 @@ enum PaymentStatus {
 }
 
 enum NotificationType {
-  DISPUTE_OPENED           // Un nouveau litige a été ouvert (pour l'autre partie)
-  DISPUTE_OPENED_ADMIN     // Un nouveau litige a été ouvert (pour les admins)
-  DISPUTE_MESSAGE          // Nouveau message dans un litige
-  DISPUTE_RESOLVED         // Litige résolu avec succès
-  DISPUTE_REJECTED         // Litige rejeté
-  DISPUTE_ESCALATED        // Litige escaladé (priorité haute)
+  DISPUTE_OPENED // Un nouveau litige a été ouvert (pour l'autre partie)
+  DISPUTE_OPENED_ADMIN // Un nouveau litige a été ouvert (pour les admins)
+  DISPUTE_MESSAGE // Nouveau message dans un litige
+  DISPUTE_RESOLVED // Litige résolu avec succès
+  DISPUTE_REJECTED // Litige rejeté
+  DISPUTE_ESCALATED // Litige escaladé (priorité haute)
   EXTENSION_ACCEPTED
   EXTENSION_REJECTED
-  LISTING_REVISION_APPROVED  
-  LISTING_REVISION_REJECTED  
-  LISTING_REJECTED     
-  LISTING_PENDING_REVIEW   
-  REVIEW_REMINDER  
+  LISTING_REVISION_APPROVED
+  LISTING_REVISION_REJECTED
+  LISTING_REJECTED
+  LISTING_PENDING_REVIEW
+  REVIEW_REMINDER
   BOOKING_REQUEST
   BOOKING_ACCEPTED
   BOOKING_REJECTED
   BOOKING_CANCELLED
-  BOOKING_CONFIRMED  
+  BOOKING_CONFIRMED
   PAYMENT_RECEIVED
   PAYMENT_REFUNDED
   NEW_MESSAGE
@@ -581,26 +580,25 @@ enum NotificationType {
   SEARCH_ALERT
   FAVORITE_PRICE_CHANGE
   SYSTEM_ALERT
-   // 🔄 NOUVEAUX TYPES POUR SPRINT 3
-  INFO_REQUEST_RECEIVED    // Proprio reçoit demande
-  INFO_REQUEST_ACCEPTED    // Locataire : proprio a accepté
-  INFO_REQUEST_REJECTED    // Locataire : proprio a refusé
-  INFO_REQUEST_EXPIRED     // Les deux : demande expirée
-  
-  OFFER_CREATED            // Proprio : offre reçue
-  OFFER_ACCEPTED           // Locataire : offre acceptée, paiement
-  OFFER_REJECTED           // Locataire : offre refusée
-  OFFER_COUNTERED          // Locataire : contre-offre reçue
-  OFFER_EXPIRED            // Les deux : offre expirée
-  
-  CONTRACT_SIGNATURE_REQUIRED  // Proprio doit signer
-  CONTRACT_SIGNED              // Les deux : contrat signé
-  
-  REVEALED_INFO_AVAILABLE      // Locataire : infos réelles dispo
-  
-  DEPOSIT_AUTHORIZED           // Locataire : garantie pré-autorisée
-  DEPOSIT_RELEASED             // Locataire : garantie libérée
+  // 🔄 NOUVEAUX TYPES POUR SPRINT 3
+  INFO_REQUEST_RECEIVED // Proprio reçoit demande
+  INFO_REQUEST_ACCEPTED // Locataire : proprio a accepté
+  INFO_REQUEST_REJECTED // Locataire : proprio a refusé
+  INFO_REQUEST_EXPIRED // Les deux : demande expirée
 
+  OFFER_CREATED // Proprio : offre reçue
+  OFFER_ACCEPTED // Locataire : offre acceptée, paiement
+  OFFER_REJECTED // Locataire : offre refusée
+  OFFER_COUNTERED // Locataire : contre-offre reçue
+  OFFER_EXPIRED // Les deux : offre expirée
+
+  CONTRACT_SIGNATURE_REQUIRED // Proprio doit signer
+  CONTRACT_SIGNED // Les deux : contrat signé
+
+  REVEALED_INFO_AVAILABLE // Locataire : infos réelles dispo
+
+  DEPOSIT_AUTHORIZED // Locataire : garantie pré-autorisée
+  DEPOSIT_RELEASED // Locataire : garantie libérée
 }
 
 enum NotificationChannel {
@@ -620,14 +618,14 @@ enum SearchAlertFrequency {
 // ============================================
 
 model Listing {
-  id          String        @id @default(cuid())
-  title       String        @db.VarChar(100)
-  slug        String        @unique
-  description String?       @db.Text
-  type        ListingType   @default(APARTMENT)
-  status      ListingStatus @default(DRAFT)
-  hasPendingRevision Boolean @default(false)  // ← AJOUTER CETTE LIGNE
-  pendingRevision    Json?        // ← AJOUTE CETTE LIGNE
+  id                 String        @id @default(cuid())
+  title              String        @db.VarChar(100)
+  slug               String        @unique
+  description        String?       @db.Text
+  type               ListingType   @default(APARTMENT)
+  status             ListingStatus @default(DRAFT)
+  hasPendingRevision Boolean       @default(false) // ← AJOUTER CETTE LIGNE
+  pendingRevision    Json? // ← AJOUTE CETTE LIGNE
 
   // Localisation
   governorate  String
@@ -639,40 +637,39 @@ model Listing {
   longitude    Float?
 
   // Caractéristiques
-  rooms       Int     @default(1)
-  bathrooms   Int     @default(1)
-  maxGuests   Int?     
-  surfaceArea Int
-  floorNumber Int
-  hasElevator Boolean @default(false)
+  rooms            Int        @default(1)
+  bathrooms        Int        @default(1)
+  maxGuests        Int?
+  surfaceArea      Int
+  floorNumber      Int
+  hasElevator      Boolean    @default(false)
   // ✅ NOUVEAUX CHAMPS POUR CARACTÉRISTIQUES (Step 2)
-  hasBalcony        Boolean   @default(false)  // Balcon
-  hasGarden         Boolean   @default(false)  // Jardin
-  hasGarage         Boolean   @default(false)  // Garage
-  numberOfKitchens  Int       @default(1)      // Nombre de cuisines
+  hasBalcony       Boolean    @default(false) // Balcon
+  hasGarden        Boolean    @default(false) // Jardin
+  hasGarage        Boolean    @default(false) // Garage
+  numberOfKitchens Int        @default(1) // Nombre de cuisines
   // Prix
-  rentalType      RentalType @default(SHORT_TERM)
-  pricePerNight   Float?
-  pricePerMonth   Float?
-  securityDeposit Float?
+  rentalType       RentalType @default(SHORT_TERM)
+  pricePerNight    Float?
+  pricePerMonth    Float?
+  securityDeposit  Float?
 
   // Équipements et règles
-  equipment   Json?
-  services    Json?
-  houseRules  Json?
-  customRules String?
-    // ✅ NOUVEAUX CHAMPS POUR SERVICES & RÈGLES (Step 3)
-  isFurnished       Boolean   @default(false)  // Meublé ou non (SERVICE)
-  petsAllowed       Boolean   @default(false)  // Animaux acceptés (REGLE)
-  smokingAllowed    Boolean   @default(false)  // Fumeurs acceptés (REGLE)
+  equipment      Json?
+  services       Json?
+  houseRules     Json?
+  customRules    String?
+  // ✅ NOUVEAUX CHAMPS POUR SERVICES & RÈGLES (Step 3)
+  isFurnished    Boolean @default(false) // Meublé ou non (SERVICE)
+  petsAllowed    Boolean @default(false) // Animaux acceptés (REGLE)
+  smokingAllowed Boolean @default(false) // Fumeurs acceptés (REGLE)
 
-   
   // ✅ NOUVEAUX CHAMPS À AJOUTER
-  cleaningFee           Float?        @default(0)        // Frais de ménage
-  weekendPriceMultiplier Float?       @default(1.15)     // Multiplicateur weekend
-  extraFees             Json?        @default("[]")      // Frais supplémentaires (stockés en JSON)
-  seasonalRules         Json?        @default("[]")      // Règles saisonnières (stockées en JSON)
-  
+  cleaningFee            Float? @default(0) // Frais de ménage
+  weekendPriceMultiplier Float? @default(1.15) // Multiplicateur weekend
+  extraFees              Json?  @default("[]") // Frais supplémentaires (stockés en JSON)
+  seasonalRules          Json?  @default("[]") // Règles saisonnières (stockées en JSON)
+
   // Statistiques
   viewCount      Int    @default(0)
   bookingCount   Int    @default(0)
@@ -689,44 +686,44 @@ model Listing {
   vacationStartDate DateTime?
   vacationEndDate   DateTime?
   // Relations
-  ownerId String
-  owner   User   @relation("UserListings", fields: [ownerId], references: [id], onDelete: Cascade)
+  ownerId           String
+  owner             User      @relation("UserListings", fields: [ownerId], references: [id], onDelete: Cascade)
 
-  photos         ListingMedia[]
-  availability   AvailabilityCalendar[]
-  blockedDates   BlockedDate[]
-  pricingRules   PricingRule[]
-  stats          ListingStats[]
-  bookings       Booking[]
-  favorites      Favorite[]
-  searchAlerts   SearchAlert[]          @relation("AlertListing")
-  listingReports ListingReport[]
-trustScore     Int?                  // 0-100
-trustLabel     String?               // "Excellente" | "Fiable" | "Correcte" | "Incomplète" | "Suspecte"
-trustBadge     String?               // "green" | "blue" | "gray" | "orange" | "red"
-scamProbability   Int?               // 0-100
-scamFlags       String[]  @default([])
-lastScoredAt    DateTime?    
+  photos             ListingMedia[]
+  availability       AvailabilityCalendar[]
+  blockedDates       BlockedDate[]
+  pricingRules       PricingRule[]
+  stats              ListingStats[]
+  bookings           Booking[]
+  favorites          Favorite[]
+  searchAlerts       SearchAlert[]          @relation("AlertListing")
+  listingReports     ListingReport[]
+  trustScore         Int? // 0-100
+  trustLabel         String? // "Excellente" | "Fiable" | "Correcte" | "Incomplète" | "Suspecte"
+  trustBadge         String? // "green" | "blue" | "gray" | "orange" | "red"
+  scamProbability    Int? // 0-100
+  scamFlags          String[]               @default([])
+  lastScoredAt       DateTime?
   // Relations pour les co-propriétaires et historique
   historyEntries     ListingHistory[] // Pour ListingHistory
   teamMembers        TeamMember[] // Pour TeamMember
   coOwnerInvitations CoOwnerInvitation[] // Pour CoOwnerInvitation
-  conversations Conversation[]
+  conversations      Conversation[]
   // SPRINT 3 - RELATIONS
-  infoRequests InfoRequest[]
-  offers       Offer[]
+  infoRequests       InfoRequest[]
+  offers             Offer[]
   // Timestamps
-  publishedAt DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  archivedAt  DateTime?
-  rejectionReason  String?   
-  rejectionDetails String?   
-  rejectedAt       DateTime? 
-  rejectedBy       String?   
- validatedAt   DateTime?
-  validatedBy   String?   // Référence à l'admin
-  
+  publishedAt        DateTime?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  archivedAt         DateTime?
+  rejectionReason    String?
+  rejectionDetails   String?
+  rejectedAt         DateTime?
+  rejectedBy         String?
+  validatedAt        DateTime?
+  validatedBy        String? // Référence à l'admin
+
   @@index([ownerId])
   @@index([status])
   @@index([type])
@@ -864,7 +861,7 @@ model Booking {
   owner              User?         @relation("OwnerBookings", fields: [ownerId], references: [id])
   checkIn            DateTime
   checkOut           DateTime
-  guests             Int ?          @default(1)
+  guests             Int?          @default(1)
   totalNights        Int
   pricePerNight      Float
   totalPrice         Float
@@ -890,29 +887,29 @@ model Booking {
   cancelledAt        DateTime?
   // SPRINT 3 - RELATIONS
 
-  infoRequestId  String?       @unique
-  infoRequest    InfoRequest?  @relation("BookingInfoRequest", fields: [infoRequestId], references: [id])
-  offerId        String?       @unique
-  offer          Offer?        @relation("BookingOffer", fields: [offerId], references: [id])
-  contractId     String?
-  revealedInfo   RevealedInfo?
-  contract   Contract?  @relation("BookingContract")
-  actualCheckIn  DateTime?
-  actualCheckOut DateTime?
-  depositReleasedAt DateTime?
+  infoRequestId         String?                @unique
+  infoRequest           InfoRequest?           @relation("BookingInfoRequest", fields: [infoRequestId], references: [id])
+  offerId               String?                @unique
+  offer                 Offer?                 @relation("BookingOffer", fields: [offerId], references: [id])
+  contractId            String?
+  revealedInfo          RevealedInfo?
+  contract              Contract?              @relation("BookingContract")
+  actualCheckIn         DateTime?
+  actualCheckOut        DateTime?
+  depositReleasedAt     DateTime?
   stripePaymentIntentId String?
   stripeRefundId        String?
-
- 
+  conversation          Conversation?          @relation("BookingConversation", fields: [conversationId], references: [id])
+  conversationId        String?                @unique
   // Relations
-  payments      Payment[]
-  messages      BookingMessage[]
-  coTenants     CoTenant[]
-  review        Review?
-  dispute       Dispute?
-  notifications Notification[]
+  payments              Payment[]
+  messages              BookingMessage[]
+  coTenants             CoTenant[]
+  review                Review?
+  dispute               Dispute?
+  notifications         Notification[]
   depositAuthorizations DepositAuthorization[]
-  extensions BookingExtension[]  // 👈 AJOUTEZ CETTE LIGNE dans le modèle Booking
+  extensions            BookingExtension[] // 👈 AJOUTEZ CETTE LIGNE dans le modèle Booking
 
   @@index([listingId])
   @@index([tenantId])
@@ -922,7 +919,6 @@ model Booking {
   @@index([checkIn])
   @@index([checkOut])
   @@index([reference])
-   
   @@index([infoRequestId])
   @@index([offerId])
   @@map("bookings")
@@ -1072,7 +1068,6 @@ model Notification {
   sentAt      DateTime?
   deliveredAt DateTime?
   createdAt   DateTime              @default(now())
-  
 
   user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   booking   Booking?     @relation(fields: [bookingId], references: [id])
@@ -1359,30 +1354,32 @@ model TeamMember {
 }
 
 model Conversation {
-  id          String    @id @default(cuid())
-  listingId   String
-  listing     Listing   @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  ownerId     String
-  owner       User      @relation("OwnerConversations", fields: [ownerId], references: [id])
-  tenantId    String
-  tenant      User      @relation("TenantConversations", fields: [tenantId], references: [id])
-  infoRequestId  String?   @unique  // Lien vers la demande d'info
-  infoRequest    InfoRequest? @relation(fields: [infoRequestId], references: [id])
-  
-  status         ChatStatus @default(OPEN)
-  lastMessage    String?   @db.Text
-  lastMessageAt  DateTime  @default(now())
-  
-  // Compteurs
-  unreadCountTenant Int    @default(0)
-  unreadCountOwner  Int    @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  isBlocked Boolean @default(false)
+  id            String       @id @default(cuid())
+  listingId     String
+  listing       Listing      @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  ownerId       String
+  owner         User         @relation("OwnerConversations", fields: [ownerId], references: [id])
+  tenantId      String
+  tenant        User         @relation("TenantConversations", fields: [tenantId], references: [id])
+  infoRequestId String?      @unique // Lien vers la demande d'info
+  infoRequest   InfoRequest? @relation(fields: [infoRequestId], references: [id])
 
-  messages Message[]
-  reports Report[]
-  adminNotes AdminNote[]  
+  status        ChatStatus @default(OPEN)
+  lastMessage   String?    @db.Text
+  lastMessageAt DateTime   @default(now())
+
+  // Compteurs
+  unreadCountTenant Int      @default(0)
+  unreadCountOwner  Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  isBlocked         Boolean  @default(false)
+  booking           Booking? @relation("BookingConversation")
+  bookingId         String?  @unique
+
+  reports    Report[]
+  adminNotes AdminNote[]
+  messages   Message[]
 
   @@unique([listingId, ownerId, tenantId])
   @@index([ownerId])
@@ -1392,42 +1389,42 @@ model Conversation {
 }
 
 model Message {
-  id             String    @id @default(cuid())
+  id             String       @id @default(cuid())
   conversationId String
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   senderId       String
-  sender         User      @relation("SentMessages", fields: [senderId], references: [id])
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id])
   receiverId     String
-  receiver       User      @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  content        String    @db.Text
-  isRead         Boolean   @default(false)
+  receiver       User         @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content        String       @db.Text
+  isRead         Boolean      @default(false)
   readAt         DateTime?
-  isBlocked      Boolean   @default(false)
+  isBlocked      Boolean      @default(false)
   blockedReason  String?
-  createdAt      DateTime  @default(now())
-  isSystem     Boolean   @default(false)  // Message automatique du système
-  type           String   @default("text") // text, voice
+  createdAt      DateTime     @default(now())
+  isSystem       Boolean      @default(false) // Message automatique du système
+  type           String       @default("text") // text, voice
   voiceUrl       String?
-  duration       Int?     // durée en secondes pour les messages vocaux
+  duration       Int? // durée en secondes pour les messages vocaux
+
   @@index([conversationId])
   @@index([senderId])
   @@index([receiverId])
   @@index([createdAt])
-  @@index([conversationId, createdAt])  // Pour le chargement paginé des messages
-  @@index([receiverId, isRead])         // Pour compter les messages non lus
-
+  @@index([conversationId, createdAt]) // Pour le chargement paginé des messages
+  @@index([receiverId, isRead]) // Pour compter les messages non lus
   @@map("messages")
-
 }
+
 model Block {
-  id         String   @id @default(cuid())
-  blockerId  String
-  blockedId  String
-  createdAt  DateTime @default(now())
-  
+  id        String   @id @default(cuid())
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+
   blocker User @relation("blocks", fields: [blockerId], references: [id])
   blocked User @relation("blockedBy", fields: [blockedId], references: [id])
-  
+
   @@unique([blockerId, blockedId])
 }
 
@@ -1439,11 +1436,12 @@ model Report {
   reason         String
   status         String   @default("PENDING")
   createdAt      DateTime @default(now())
-  
+
   conversation Conversation @relation(fields: [conversationId], references: [id])
   reporter     User         @relation("reports", fields: [reporterId], references: [id])
   reportedUser User         @relation("reported", fields: [reportedUserId], references: [id])
 }
+
 // ============================================
 // ENUMS SPRINT 3
 // ============================================
@@ -1493,34 +1491,35 @@ enum SecurityDepositStatus {
 // ============================================
 
 model InfoRequest {
-  id             String            @id @default(cuid())
-  reference      String            @unique
-  
-  listingId      String
-  listing        Listing           @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  tenantId       String
-  tenant         User              @relation("InfoRequestTenant", fields: [tenantId], references: [id])
-  ownerId        String
-  owner          User              @relation("InfoRequestOwner", fields: [ownerId], references: [id])
-  
-  checkIn        DateTime
-  checkOut       DateTime
-  guests         Int ?              @default(1)
-  message        String?           @db.Text
-  hasPets        Boolean           @default(false)
-  needsBabyBed   Boolean           @default(false)
-  lateCheckin    Boolean           @default(false)
-  
-  status         InfoRequestStatus @default(PENDING)
-  expiresAt      DateTime
-  respondedAt    DateTime?
-  
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
-  
-  conversation   Conversation?
-  offer          Offer?
-  booking        Booking?   @relation("BookingInfoRequest")
+  id        String @id @default(cuid())
+  reference String @unique
+
+  listingId String
+  listing   Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  tenantId  String
+  tenant    User    @relation("InfoRequestTenant", fields: [tenantId], references: [id])
+  ownerId   String
+  owner     User    @relation("InfoRequestOwner", fields: [ownerId], references: [id])
+
+  checkIn      DateTime
+  checkOut     DateTime
+  guests       Int?     @default(1)
+  message      String?  @db.Text
+  hasPets      Boolean  @default(false)
+  needsBabyBed Boolean  @default(false)
+  lateCheckin  Boolean  @default(false)
+
+  status      InfoRequestStatus @default(PENDING)
+  expiresAt   DateTime
+  respondedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  conversation Conversation?
+  offer        Offer?
+  booking      Booking?      @relation("BookingInfoRequest")
+
   @@index([listingId])
   @@index([tenantId])
   @@index([ownerId])
@@ -1530,42 +1529,43 @@ model InfoRequest {
 }
 
 model Offer {
-  id             String        @id @default(cuid())
-  reference      String        @unique
-  
-  infoRequestId  String        @unique
-  infoRequest    InfoRequest   @relation(fields: [infoRequestId], references: [id])
-  listingId      String
-  listing        Listing       @relation(fields: [listingId], references: [id])
-  tenantId       String
-  tenant         User          @relation("OfferTenant", fields: [tenantId], references: [id])
-  ownerId        String
-  owner          User          @relation("OfferOwner", fields: [ownerId], references: [id])
-  
-  checkIn        DateTime
-  checkOut       DateTime
-  guests         Int?
-  nights         Int
-  pricePerNight  Float
-  cleaningFee    Float
-  serviceFee     Float
-  totalPrice     Float
-  
-  status         OfferStatus   @default(PENDING)
-  
-  counterCount   Int           @default(0)
-  parentOfferId  String?
-  parentOffer    Offer?        @relation("CounterOffers", fields: [parentOfferId], references: [id])
-  childOffers    Offer[]       @relation("CounterOffers")
-  paymentTransactions PaymentTransaction[]  // 👈 Relation inverse pour PaymentTransaction
-  expiresAt      DateTime
-  acceptedAt     DateTime?
-  rejectedAt     DateTime?
-  
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  
-  booking        Booking?   @relation("BookingOffer")  
+  id        String @id @default(cuid())
+  reference String @unique
+
+  infoRequestId String      @unique
+  infoRequest   InfoRequest @relation(fields: [infoRequestId], references: [id])
+  listingId     String
+  listing       Listing     @relation(fields: [listingId], references: [id])
+  tenantId      String
+  tenant        User        @relation("OfferTenant", fields: [tenantId], references: [id])
+  ownerId       String
+  owner         User        @relation("OfferOwner", fields: [ownerId], references: [id])
+
+  checkIn       DateTime
+  checkOut      DateTime
+  guests        Int?
+  nights        Int
+  pricePerNight Float
+  cleaningFee   Float
+  serviceFee    Float
+  totalPrice    Float
+
+  status OfferStatus @default(PENDING)
+
+  counterCount        Int                  @default(0)
+  parentOfferId       String?
+  parentOffer         Offer?               @relation("CounterOffers", fields: [parentOfferId], references: [id])
+  childOffers         Offer[]              @relation("CounterOffers")
+  paymentTransactions PaymentTransaction[] // 👈 Relation inverse pour PaymentTransaction
+  expiresAt           DateTime
+  acceptedAt          DateTime?
+  rejectedAt          DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  booking Booking? @relation("BookingOffer")
+
   @@index([listingId])
   @@index([tenantId])
   @@index([ownerId])
@@ -1575,72 +1575,74 @@ model Offer {
 }
 
 model Contract {
-  id                String         @id @default(cuid())
-  reference         String         @unique
-  
-  bookingId         String         @unique
-  booking           Booking        @relation("BookingContract", fields: [bookingId], references: [id])
-  
-  pdfUrl            String
-  content           Json?
-  
-  status            ContractStatus @default(PENDING)
-  tenantSignedAt    DateTime?
-  ownerSignedAt     DateTime?
-  
-  securityDeposit   Float?
-  depositStatus     SecurityDepositStatus @default(AUTHORIZED)
+  id        String @id @default(cuid())
+  reference String @unique
+
+  bookingId String  @unique
+  booking   Booking @relation("BookingContract", fields: [bookingId], references: [id])
+
+  pdfUrl  String
+  content Json?
+
+  status         ContractStatus @default(PENDING)
+  tenantSignedAt DateTime?
+  ownerSignedAt  DateTime?
+
+  securityDeposit     Float?
+  depositStatus       SecurityDepositStatus @default(AUTHORIZED)
   depositAuthorizedAt DateTime?
-  depositChargedAt  DateTime?
-  depositReleasedAt DateTime?
-  
-  expiresAt         DateTime
-  
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-  
+  depositChargedAt    DateTime?
+  depositReleasedAt   DateTime?
+
+  expiresAt DateTime
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([bookingId])
   @@index([status])
   @@map("contracts")
 }
 
 model RevealedInfo {
-  id             String    @id @default(cuid())
-  bookingId      String    @unique
-  booking        Booking   @relation(fields: [bookingId], references: [id])
-  
-  exactAddress        String    @db.Text
+  id        String  @id @default(cuid())
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id])
+
+  exactAddress        String  @db.Text
   accessCode          String?
-  checkinInstructions String?   @db.Text
+  checkinInstructions String? @db.Text
   ownerPhone          String?
   emergencyPhone      String?
-  
-  revealedAt     DateTime  @default(now())
-  expiresAt      DateTime
-  
+
+  revealedAt DateTime @default(now())
+  expiresAt  DateTime
+
   viewedByTenant Boolean   @default(false)
   viewedByOwner  Boolean   @default(false)
   tenantViewedAt DateTime?
   ownerViewedAt  DateTime?
-  
+
   @@map("revealed_infos")
 }
+
 model PendingBooking {
-  id         String   @id @default(cuid())
-  offerId    String   @unique
+  id         String    @id @default(cuid())
+  offerId    String    @unique
   listingId  String
   checkIn    DateTime
   checkOut   DateTime
-  dates      Json     // Stocker les dates bloquées
+  dates      Json // Stocker les dates bloquées
   expiresAt  DateTime
-  isReleased Boolean  @default(false)
+  isReleased Boolean   @default(false)
   releasedAt DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@index([expiresAt])
   @@index([isReleased])
   @@map("pending_bookings")
 }
+
 // Ajoute à ton schema.prisma
 model PaymentTransaction {
   id                    String    @id @default(cuid())
@@ -1659,54 +1661,57 @@ model PaymentTransaction {
   paidAt                DateTime?
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
-  stripePaymentIntentId String? @unique
-  stripeSetupIntentId   String? @unique
+  stripePaymentIntentId String?   @unique
+  stripeSetupIntentId   String?   @unique
+
   @@index([offerId])
   @@index([userId])
   @@index([status])
 }
+
 // Ajoute ce nouveau modèle pour les webhooks Stripe
 model StripeWebhookEvent {
-  id            String   @id @default(cuid())
-  stripeEventId String   @unique
+  id            String    @id @default(cuid())
+  stripeEventId String    @unique
   type          String
   data          Json
-  processed     Boolean  @default(false)
+  processed     Boolean   @default(false)
   processedAt   DateTime?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
   @@index([processed])
   @@map("stripe_webhook_events")
 }
+
 // Ajoute ce modèle pour la pré-autorisation des cautions
 model DepositAuthorization {
-  id                 String   @id @default(cuid())
-  bookingId          String
-  booking            Booking  @relation(fields: [bookingId], references: [id])
-  amount             Float
-  stripeSetupIntentId String  @unique
-  status             String   @default("PENDING") // PENDING, AUTHORIZED, RELEASED, FAILED
-  authorizedAt       DateTime?
-  releasedAt         DateTime?
-  expiresAt          DateTime?
-  createdAt          DateTime @default(now())
+  id                  String    @id @default(cuid())
+  bookingId           String
+  booking             Booking   @relation(fields: [bookingId], references: [id])
+  amount              Float
+  stripeSetupIntentId String    @unique
+  status              String    @default("PENDING") // PENDING, AUTHORIZED, RELEASED, FAILED
+  authorizedAt        DateTime?
+  releasedAt          DateTime?
+  expiresAt           DateTime?
+  createdAt           DateTime  @default(now())
 
   @@map("deposit_authorizations")
 }
 
 model BookingExtension {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   bookingId         String
-  booking           Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   requestedCheckOut DateTime
-  status            String   @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  status            String    @default("PENDING") // PENDING, ACCEPTED, REJECTED
   message           String?
   rejectionReason   String?
-  additionalPrice   Float?   // Prix supplémentaire si applicable
-  requestedBy       String   // TENANT ou OWNER
-  requestedAt       DateTime @default(now())
+  additionalPrice   Float? // Prix supplémentaire si applicable
+  requestedBy       String // TENANT ou OWNER
+  requestedAt       DateTime  @default(now())
   respondedAt       DateTime?
-  
+
   @@index([bookingId])
   @@index([status])
   @@map("booking_extensions")

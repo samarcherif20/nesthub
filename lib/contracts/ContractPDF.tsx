@@ -1,5 +1,17 @@
 // components/pdf/ContractPDF.tsx
-import { Document, Page, Text, View, StyleSheet } from "@react-pdf/renderer";
+import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
+
+// ✅ AJOUT - Police qui supporte bien les caractères français
+Font.register({
+  family: "Helvetica",
+  fonts: [
+    { src: "https://fonts.gstatic.com/s/helvetica-neue/v1/HelveticaNeue.ttf", fontWeight: "normal" },
+    { src: "https://fonts.gstatic.com/s/helvetica-neue/v1/HelveticaNeue-Bold.ttf", fontWeight: "bold" },
+  ],
+});
+
+// ✅ AJOUT - Fallback pour les caractères spéciaux
+Font.registerHyphenationCallback((word) => [word]);
 
 const styles = StyleSheet.create({
   page: {
@@ -119,7 +131,6 @@ const styles = StyleSheet.create({
     fontSize: 8,
     color: "#999",
   },
-  // ✅ NOUVEAU FOOTER - Plus grand, à droite
   footer: {
     position: "absolute",
     bottom: 30,
@@ -137,7 +148,6 @@ const styles = StyleSheet.create({
     color: "#999",
     marginTop: 2,
   },
-  // ✅ Infos CIN
   cinInfo: {
     marginTop: 4,
     marginBottom: 4,
@@ -219,7 +229,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
 
         <Text style={styles.contractTitle}>CONTRAT DE LOCATION</Text>
 
-        {/* ✅ PREMIERE PARTIE - reformatée en paragraphe */}
+        {/* PREMIERE PARTIE */}
         <Text style={styles.paragraph}>
           Par le présent acte sous seing privé, Entre M. {data.owner.firstName}{" "}
           {data.owner.lastName}{" "}
@@ -238,7 +248,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
         </Text>
         <Text style={styles.paragraph}>qui accepte.</Text>
 
-        {/* Art. 2 - ✅ CORRIGÉ checkInDate */}
+        {/* Art. 2 */}
         <Text style={styles.paragraphBold}>
           Art. 2. — La présente location est consentie pour la durée de{" "}
           {data.dates.nights} nuit(s) commençant le {checkInDate}
@@ -378,7 +388,7 @@ export function ContractPDF({ data }: { data: ContractData }) {
         {/* Signature */}
         <Text style={styles.paragraph}>Fait à Tunis, le {today}.</Text>
 
-        {/* ✅ NOUVEAU FOOTER - À droite, plus grand */}
+        {/* Footer */}
         <View style={styles.footer}>
           <Text style={styles.footerText}>NESTHUB Tunisie</Text>
           <Text style={styles.footerText}>Contrat N° {data.reference}</Text>

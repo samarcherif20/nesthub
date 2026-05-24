@@ -1,8 +1,85 @@
-﻿// app/api/contracts/route.ts
+﻿// app/api/contracts/route.ts - Version corrigée
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { generateContractPDF } from "@/lib/pdf-generator";
+
+// ✅ FONCTION POUR NETTOYER LES NOMS
+function cleanName(name: string | null | undefined): string {
+  if (!name) return "";
+  // Garder uniquement les lettres (y compris accentuées) et les espaces
+  let cleaned = name.replace(/[^a-zA-Z\s\u00C0-\u00FF\u0100-\u017F\u0180-\u024F]/g, "");
+  cleaned = cleaned.replace(/\s+/g, " ").trim();
+  return cleaned;
+}
+
+// ✅ FONCTION POUR EXTRAIRE LE PRÉNOM ET NOM DEPUIS PLUSIEURS SOURCES
+function extractUserIdentity(user: any) {
+  // Essayer plusieurs sources possibles
+  let firstName = "";
+  let lastName = "";
+  let cinNumber = "";
+  
+  // 1. Vérifier si on a des données dans cinData.extractedData
+  const cinData = user?.cinData as any;
+  const extractedData = cinData?.extractedData as any;
+  
+  if (extractedData) {
+    if (extractedData.firstName && extractedData.firstName !== "UNKNOWN") {
+      firstName = extractedData.firstName;
+    }
+    if (extractedData.lastName && extractedData.lastName !== "UNKNOWN") {
+      lastName = extractedData.lastName;
+    }
+    if (extractedData.cinNumber) {
+      cinNumber = extractedData.cinNumber;
+    }
+  }
+  
+  // 2. Sinon, utiliser les champs directs de l'utilisateur
+  if (!firstName && user?.firstName) {
+    firstName = user.firstName;
+  }
+  if (!lastName && user?.lastName) {
+    lastName = user.lastName;
+  }
+  
+  // 3. Sinon, essayer cinData direct
+  if (!firstName && cinData?.firstName) {
+    firstName = cinData.firstName;
+  }
+  if (!lastName && cinData?.lastName) {
+    lastName = cinData.lastName;
+  }
+  
+  // 4. Si toujours rien, essayer fullName ou username
+  if (!firstName && !lastName && user?.fullName) {
+    const nameParts = user.fullName.split(" ");
+    firstName = nameParts[0] || "";
+    lastName = nameParts.slice(1).join(" ") || "";
+  }
+  if (!firstName && !lastName && user?.username) {
+    firstName = user.username;
+  }
+  
+  // 5. Dernier recours : extraire du CIN number
+  if (!firstName && !lastName && user?.cinNumber) {
+    cinNumber = user.cinNumber;
+    // Essayer d'extraire un nom du CIN si possible
+  }
+  
+  // Nettoyer les noms
+  firstName = cleanName(firstName);
+  lastName = cleanName(lastName);
+  
+  return {
+    firstName: firstName || "Client",
+    lastName: lastName || (firstName ? "" : "Client"),
+    cinNumber: cinNumber || user?.cinNumber || "",
+    email: user?.email || "",
+    phone: user?.phoneNumber || "",
+  };
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -61,79 +138,54 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
-    // ✅ FONCTION POUR EXTRAIRE LES DONNÉES DU CIN
-    function getIdentityFromCin(user: any) {
-      const cinData = user?.cinData as any;
-      
-      // Si cinData existe et a les bonnes propriétés
-      if (cinData && (cinData.firstName || cinData.lastName)) {
-        return {
-          firstName: cinData.firstName || user?.firstName || "",
-          lastName: cinData.lastName || user?.lastName || "",
-          cinNumber: user?.cinNumber || "",
-          dateOfBirth: cinData.dateOfBirth || user?.dateOfBirth,
-          // ❌ SUPPRIMÉ : profession, governorate, delegation
-        };
-      }
-      
-      // Fallback sur les champs normaux
-      return {
-        firstName: user?.firstName || "",
-        lastName: user?.lastName || "",
-        cinNumber: user?.cinNumber || "",
-        dateOfBirth: user?.dateOfBirth,
-      };
-    }
+    // ✅ EXTRAIRE LES IDENTITÉS CORRECTEMENT
+    const tenantIdentity = extractUserIdentity(booking.tenant);
+    const ownerIdentity = extractUserIdentity(booking.owner);
 
-    const tenantIdentity = getIdentityFromCin(booking.tenant);
-    const ownerIdentity = getIdentityFromCin(booking.owner);
-
-    console.log("📋 Tenant identity from CIN:", {
+    console.log("📋 Tenant identity extraite:", {
       firstName: tenantIdentity.firstName,
       lastName: tenantIdentity.lastName,
       cinNumber: tenantIdentity.cinNumber,
-      dateOfBirth: tenantIdentity.dateOfBirth,
     });
-    console.log("📋 Owner identity from CIN:", {
+    console.log("📋 Owner identity extraite:", {
       firstName: ownerIdentity.firstName,
       lastName: ownerIdentity.lastName,
       cinNumber: ownerIdentity.cinNumber,
-      dateOfBirth: ownerIdentity.dateOfBirth,
     });
 
-    // ✅ PRÉPARER LES DONNÉES POUR LE PDF (sans profession, governorate, delegation)
+    // Calcul des nuits
+    const totalNights = booking.totalNights || 
+      Math.ceil((new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24));
+
+    // ✅ PRÉPARER LES DONNÉES POUR LE PDF
     const contractData = {
       reference: `CTR-${Date.now().toString(36)}`,
       bookingId: booking.id,
       tenant: {
         firstName: tenantIdentity.firstName,
         lastName: tenantIdentity.lastName,
-        email: booking.tenant?.email || "",
-        phone: booking.tenant?.phoneNumber,
+        email: booking.tenant?.email || tenantIdentity.email,
+        phone: booking.tenant?.phoneNumber || tenantIdentity.phone,
         cinNumber: tenantIdentity.cinNumber,
-        dateOfBirth: tenantIdentity.dateOfBirth,
-        // ❌ SUPPRIMÉ : profession, governorate, delegation
       },
       owner: {
         firstName: ownerIdentity.firstName,
         lastName: ownerIdentity.lastName,
-        email: booking.owner?.email || "",
-        phone: booking.owner?.phoneNumber,
+        email: booking.owner?.email || ownerIdentity.email,
+        phone: booking.owner?.phoneNumber || ownerIdentity.phone,
         cinNumber: ownerIdentity.cinNumber,
-        dateOfBirth: ownerIdentity.dateOfBirth,
-        // ❌ SUPPRIMÉ : profession, governorate, delegation
       },
       dates: {
         checkIn: booking.checkIn,
         checkOut: booking.checkOut,
-        nights: booking.totalNights,
+        nights: totalNights,
       },
       price: {
-        pricePerNight: booking.pricePerNight,
-        basePrice: booking.pricePerNight * booking.totalNights,
+        pricePerNight: booking.pricePerNight || 0,
+        basePrice: (booking.pricePerNight || 0) * totalNights,
         cleaningFee: booking.cleaningFee || 0,
         serviceFee: booking.serviceFee || 0,
-        totalPrice: booking.totalPrice,
+        totalPrice: booking.totalPrice || 0,
       },
       deposit: {
         amount: booking.securityDeposit || 0,
@@ -153,7 +205,6 @@ export async function POST(req: NextRequest) {
     let contract;
 
     if (existingContract) {
-      // ✅ METTRE À JOUR le contrat existant
       contract = await prisma.contract.update({
         where: { id: existingContract.id },
         data: {
@@ -162,9 +213,8 @@ export async function POST(req: NextRequest) {
           updatedAt: new Date(),
         },
       });
-      console.log("✅ Contrat mis à jour avec les dernières données");
+      console.log("✅ Contrat mis à jour");
     } else {
-      // ✅ CRÉER un nouveau contrat
       contract = await prisma.contract.create({
         data: {
           reference: contractData.reference,

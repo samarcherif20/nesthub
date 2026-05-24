@@ -30,14 +30,6 @@ import {
   IoCallOutline,
   IoMailOutline,
   IoCalendarOutline,
-  IoCreateOutline,
-  IoPauseCircleOutline,
-  IoBanOutline,
-  IoCheckmarkCircleOutline,
-  IoWarningOutline,
-  IoArrowUpCircleOutline,
-  IoArrowUndoOutline,
-  IoEllipsisVertical,
 } from "react-icons/io5";
 import {
   FaBuilding,
@@ -47,44 +39,13 @@ import {
   FaGavel,
   FaUserCheck,
 } from "react-icons/fa";
-import { FiChevronDown } from "react-icons/fi";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-
-// Composants badges
-import UserStatusBadge from "@/components/ui/badges/UserStatusBadge";
-import UserRoleBadge from "@/components/ui/badges/UserRoleBadge";
-import UserVerificationBadge from "@/components/ui/badges/UserVerificationBadge";
-
-// Modals
-import SuspendUserModal from "@/components/ui/modals/SuspendUserModal";
-import BanUserModal from "@/components/ui/modals/BanUserModal";
-import ActivateUserModal from "@/components/ui/modals/ActivateUserModal";
-import LockUnlockModal from "@/components/ui/modals/LockUnlockModal";
-import EscalateUserModal from "@/components/ui/modals/EscalateUserModal";
-import AddNoteModal from "@/components/ui/modals/AddNoteModal";
-import WarningUserModal from "@/components/ui/modals/WarningUserModal";
-import ActionsHistoryModal from "@/components/ui/modals/ActionsHistoryModal";
 
 // ============================================
 // STYLES DU THÈME ADMIN
 // ============================================
 const block3d = "shadow-[0_6px_0_0_rgba(0,0,0,0.06),0_12px_28px_-6px_rgba(0,0,0,0.11)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.38),0_12px_28px_-6px_rgba(0,0,0,0.48)]";
 const card3d = "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
-
-// ============================================
-// COMPOSANT EMPTY STATE
-// ============================================
-function EmptyState({ icon: Icon, title, message }: { icon: React.ElementType; title: string; message: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-        <Icon className="text-3xl text-slate-400" />
-      </div>
-      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{title}</h4>
-      <p className="text-xs text-slate-400 mt-1">{message}</p>
-    </div>
-  );
-}
 
 // ============================================
 // TYPES
@@ -322,25 +283,11 @@ export default function AdminUserDetailsPage() {
   const [docSide, setDocSide] = useState<"front" | "back">("front");
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [showSessionModal, setShowSessionModal] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
-  const [showMenu, setShowMenu] = useState(false);
-  const [actions, setActions] = useState<any[]>([]);
-
-  // Modal states
-  const [showSuspendModal, setShowSuspendModal] = useState(false);
-  const [showBanModal, setShowBanModal] = useState(false);
-  const [showActivateModal, setShowActivateModal] = useState(false);
-  const [showLockUnlockModal, setShowLockUnlockModal] = useState(false);
-  const [showEscalateModal, setShowEscalateModal] = useState(false);
-  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false);
-  const [showActionsHistory, setShowActionsHistory] = useState(false);
 
   const isPropertyOwner = user?.role === "PROPERTY_OWNER" || user?.role === "BOTH";
 
   useEffect(() => {
     fetchUserDetails();
-    fetchUserActions();
   }, [userId]);
 
   const fetchUserDetails = async () => {
@@ -357,152 +304,6 @@ export default function AdminUserDetailsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const fetchUserActions = async () => {
-    try {
-      const token = await getToken();
-      const res = await fetch(`/api/admin/users/${userId}/actions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setActions(data);
-    } catch (error) {
-      console.error("Erreur:", error);
-    }
-  };
-
-  const openMenu = (event: React.MouseEvent) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setMenuPosition({
-      top: rect.bottom + window.scrollY + 5,
-      left: rect.left + window.scrollX - 160,
-    });
-    setShowMenu(true);
-  };
-
-  const closeMenu = () => setShowMenu(false);
-
-  // Handlers pour les modals
-  const handleSuspend = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "SUSPEND", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowSuspendModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleBan = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "BAN", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowBanModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleActivate = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "ACTIVATE", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowActivateModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleLock = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "LOCK", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowLockUnlockModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleUnlock = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "UNLOCK", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowLockUnlockModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleEscalate = async (userId: string, level: number, reason: string, motif: string) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "ESCALATE", level, reason, motif }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowEscalateModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleAddNote = async (userId: string, content: string, isPrivate: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content, isPrivate }),
-      });
-      setShowAddNoteModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleWarning = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "WARN", reason, motif, notify }),
-      });
-      await fetchUserActions();
-      setShowWarningModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleUndoAction = async (actionId: string) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions/${actionId}/undo`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-    } catch (error) { console.error("Erreur:", error); }
   };
 
   const viewSessionDetails = (activity: Activity) => {
@@ -551,17 +352,8 @@ export default function AdminUserDetailsPage() {
   const bookings = (user as any).tenantBookings || [];
   const documentImageUrl = getDocumentImage();
 
-  const userForModal = {
-    id: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    status: user.status,
-    escalationLevel: user.escalationLevel || 0,
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen">
       <main className="md:ml-2 min-h-screen pb-20">
         <div className="px-4 md:px-8 py-6 md:py-8 space-y-6 md:space-y-8 max-w-[1600px] mx-auto">
           
@@ -574,29 +366,20 @@ export default function AdminUserDetailsPage() {
             <span className="text-slate-700 dark:text-slate-300 font-semibold">Détails du profil</span>
           </div>
 
-          {/* Header avec actions */}
+          {/* Header avec retour seulement */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <Link href="/admin/users" className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
-                <IoArrowBackOutline className="text-lg" />
-              </Link>
+              
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Détails du profil</h2>
-                <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">Gérez les informations et actions de l'utilisateur</p>
+                <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">Consultez les informations de l'utilisateur</p>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowActionsHistory(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all text-sm font-medium">
-                <IoArrowUndoOutline className="text-base" /> Historique
-              </button>
-              <button onClick={openMenu} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-semibold shadow-sm transition-all">
-                <IoEllipsisVertical className="text-base" /> Actions <FiChevronDown className="text-xs" />
-              </button>
             </div>
           </div>
 
           {/* Section Hero */}
           <div className="grid grid-cols-12 gap-4 md:gap-6">
+            {/* Carte de profil utilisateur - avec block3d */}
             <div className={`col-span-12 lg:col-span-8 bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 md:gap-8 items-start relative overflow-hidden ${block3d}`}>
               <div className="absolute top-0 right-0 p-4 md:p-6">
                 <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-bold tracking-wider uppercase">
@@ -628,8 +411,9 @@ export default function AdminUserDetailsPage() {
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <UserRoleBadge role={user.role} />
-                  <UserStatusBadge status={user.status} suspendedUntil={user.suspendedUntil} />
+                  <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                    <FaMedal className="text-[12px] md:text-[14px]" /> {formatUserRole(user.role)}
+                  </span>
                   {user.twoFactorEnabled && (
                     <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                       <IoShieldCheckmarkOutline className="text-[12px] md:text-[14px]" /> Double authentification
@@ -646,17 +430,10 @@ export default function AdminUserDetailsPage() {
                     </span>
                   )}
                 </div>
-                <div className="pt-2 md:pt-4">
-                  <button
-                    onClick={() => setShowSuspendModal(true)}
-                    className="bg-gradient-to-br from-red-600 to-rose-600 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-full text-[11px] md:text-xs font-bold shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
-                  >
-                    <IoLockClosedOutline className="text-[14px] md:text-[18px]" /> Suspendre le compte
-                  </button>
-                </div>
               </div>
             </div>
 
+            {/* Statistiques rapides - avec card3d */}
             <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-3 md:gap-4">
               <div className={`bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-6 flex flex-col justify-between ${card3d}`}>
                 <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Score de confiance</p>
@@ -671,7 +448,7 @@ export default function AdminUserDetailsPage() {
                 <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Rang global</p>
                 <div>
                   <p className="text-2xl md:text-4xl font-display font-bold text-purple-600">#{user.stats?.globalRank || 142}</p>
-                  <p className="text-[9px] md:text-[10px] text-green-600 font-bold mt-1 md:mt-2">↑ 12 positions ce mois</p>
+                  <p className="text-[9px] md:text-[10px] text-emerald-600 font-bold mt-1 md:mt-2">↑ 12 positions ce mois</p>
                 </div>
               </div>
               <div className={`bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-6 flex flex-col justify-between ${card3d}`}>
@@ -694,7 +471,7 @@ export default function AdminUserDetailsPage() {
           {/* Section principale */}
           <div className="grid grid-cols-12 gap-6 md:gap-8">
             
-            {/* Colonne gauche */}
+            {/* Colonne gauche - Performance financière */}
             <div className="col-span-12 xl:col-span-7 space-y-5 md:space-y-6">
               {isPropertyOwner ? (
                 <>
@@ -722,6 +499,7 @@ export default function AdminUserDetailsPage() {
                         <p className="text-xl md:text-2xl font-display font-bold text-indigo-600">{Math.round(user.stats?.totalCommission || 0).toLocaleString()} <span className="text-[10px] md:text-xs opacity-50">TND</span></p>
                       </div>
                     </div>
+
                     <div className="relative h-36 md:h-48 w-full flex items-end gap-1 md:gap-2">
                       {[40, 65, 50, 85, 95, 70, 60, 45, 90, 75, 65, 55].map((height, i) => (
                         <div key={i} className={`flex-1 ${i === 4 ? "bg-indigo-400" : "bg-slate-200 dark:bg-slate-700"} rounded-t-lg transition-all duration-500 hover:bg-indigo-300 cursor-help`} style={{ height: `${height}%` }}></div>
@@ -733,40 +511,43 @@ export default function AdminUserDetailsPage() {
                     </div>
                   </div>
 
-                  {/* Réservations récentes avec EmptyState */}
+                  {/* Réservations récentes */}
                   <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <IoReceiptOutline className="text-indigo-500 text-sm" />
                         <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Réservations récentes</h5>
                       </div>
-                      <button onClick={goToUserBookings} className="text-[9px] font-semibold text-indigo-600 hover:underline">Voir tout →</button>
+                      <button onClick={goToUserBookings} className="text-[10px] md:text-xs font-bold text-indigo-600 flex items-center gap-1">
+                        Voir tout <IoChevronForwardOutline className="text-sm" />
+                      </button>
                     </div>
-                    <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden ${card3d}`}>
+                    <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-4 space-y-3 min-h-[210px] ${card3d}`}>
                       {bookings && bookings.length > 0 ? (
-                        <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                          {bookings.slice(0, 3).map((booking: Booking, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                                  <FaBuilding className="text-indigo-500" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{booking.listing?.title || "Propriété"}</p>
-                                  <p className="text-xs text-slate-400">{formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}</p>
-                                </div>
+                        bookings.slice(0, 3).map((booking: Booking, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white dark:bg-slate-900">
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
+                                <FaBuilding className="text-indigo-500 text-sm" />
                               </div>
-                              <div className="text-right">
-                                <p className="text-sm font-bold text-indigo-600">{Math.round(booking.totalPrice || 0).toLocaleString()} TND</p>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${booking.status === "COMPLETED" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
-                                  {formatBookingStatus(booking.status)}
-                                </span>
+                              <div>
+                                <p className="text-[10px] font-semibold text-slate-700 dark:text-slate-300">{booking.listing?.title || "Propriété"}</p>
+                                <p className="text-[8px] text-slate-400">{formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}</p>
                               </div>
                             </div>
-                          ))}
-                        </div>
+                            <div className="text-right">
+                              <p className="text-[10px] font-bold text-indigo-600">{Math.round(booking.totalPrice || 0).toLocaleString()} TND</p>
+                              <span className={`text-[8px] px-1.5 py-0.5 rounded-full ${booking.status === "COMPLETED" ? "bg-green-100 text-green-600" : booking.status === "PENDING" ? "bg-amber-100 text-amber-600" : "bg-slate-100 text-slate-500"}`}>
+                                {formatBookingStatus(booking.status)}
+                              </span>
+                            </div>
+                          </div>
+                        ))
                       ) : (
-                        <EmptyState icon={IoReceiptOutline} title="Aucune réservation" message="Cet utilisateur n'a pas encore de réservation" />
+                        <div className="text-center py-6">
+                          <IoReceiptOutline className="text-3xl text-slate-300 mx-auto mb-2" />
+                          <p className="text-[10px] text-slate-400">Aucune réservation</p>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -778,71 +559,34 @@ export default function AdminUserDetailsPage() {
                   </div>
                   <h4 className="text-lg font-display font-bold text-slate-700 dark:text-slate-300">Aucune donnée financière</h4>
                   <p className="text-xs text-slate-500 mt-2">Cet utilisateur est un voyageur et ne possède pas de données financières d'hôte.</p>
-                  <button onClick={goToUserBookings} className="mt-4 text-[10px] font-semibold text-indigo-600 hover:underline">Voir ses réservations →</button>
-                </div>
-              )}
-
-              {/* Propriétés gérées avec EmptyState */}
-              {isPropertyOwner && (
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Propriétés gérées</h4>
-                    <button onClick={goToUserListings} className="text-xs font-semibold text-indigo-600 hover:underline">Voir toutes les propriétés →</button>
-                  </div>
-                  <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden ${card3d}`}>
-                    {user.listings && user.listings.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-                        {user.listings.slice(0, 4).map((listing) => (
-                          <Link key={listing.id} href={`/admin/properties/${listing.id}`}>
-                            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden hover:shadow-lg transition-all">
-                              <div className="aspect-[4/3] relative">
-                                {listing.image ? (
-                                  <img className="w-full h-full object-cover" src={getImageUrl(listing.image)} alt={listing.title} />
-                                ) : (
-                                  <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                                    <FaBuilding className="text-3xl text-slate-400" />
-                                  </div>
-                                )}
-                                <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase text-white ${getStatusColor(listing.status)}`}>
-                                  {listing.status === "ACTIVE" ? "En ligne" : listing.status}
-                                </div>
-                              </div>
-                              <div className="p-3">
-                                <h5 className="font-bold text-sm truncate">{listing.title}</h5>
-                                <p className="text-[10px] text-slate-500">{listing.location}</p>
-                                <div className="flex justify-between items-center mt-2">
-                                  <span className="text-xs font-bold text-indigo-600">{listing.pricePerNight.toLocaleString()} TND / nuit</span>
-                                  <span className="text-xs text-slate-400">★ {listing.rating || "Nouveau"}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState icon={FaBuilding} title="Aucune propriété" message="Cet hôte n'a pas encore de propriété" />
-                    )}
-                  </div>
+                  <button onClick={goToUserBookings} className="mt-4 text-[10px] md:text-xs font-bold text-indigo-600 flex items-center gap-1">
+                    Voir ses réservations <IoChevronForwardOutline className="text-sm" />
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Colonne droite */}
+            {/* Colonne droite - Dossier de vérification */}
             <div className="col-span-12 xl:col-span-5 space-y-5 md:space-y-6">
-              <div>
-                <div className="flex justify-between items-end mb-4">
+              <div className="flex justify-between items-end">
+                <div>
                   <h4 className="text-lg md:text-xl font-display font-bold text-slate-900 dark:text-white">Dossier de vérification</h4>
-                  <button onClick={goToUserVerification} className="text-xs font-semibold text-indigo-600 hover:underline">Voir les détails →</button>
+                  <p className="text-xs md:text-sm text-slate-500">Pièces d'identité et conformité</p>
                 </div>
-                <div className={`bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-6 space-y-5 md:space-y-6 ${card3d}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {isPassport ? <FaPassport className="text-indigo-500" /> : <FaIdCard className="text-indigo-500" />}
-                      <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                        {isPassport ? "INFORMATIONS PASSEPORT" : "INFORMATIONS CIN"}
-                      </span>
-                    </div>
-                    <UserVerificationBadge isVerified={user.isIdentityVerified} />
+                <button onClick={goToUserVerification} className="text-[10px] md:text-xs font-bold text-indigo-600 flex items-center gap-1">
+                  Voir les détails <IoChevronForwardOutline className="text-sm" />
+                </button>
+                <span className={`px-2 py-1 rounded-md text-[9px] md:text-[10px] font-bold uppercase tracking-wider ${user.isIdentityVerified ? "bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400" : "bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400"}`}>
+                  {formatVerificationStatus(user.isIdentityVerified)}
+                </span>
+              </div>
+              <div className={`bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-6 space-y-5 md:space-y-6 ${card3d}`}>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    {isPassport ? <FaPassport className="text-indigo-500" /> : <FaIdCard className="text-indigo-500" />}
+                    <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                      {isPassport ? "INFORMATIONS PASSEPORT" : "INFORMATIONS CIN"}
+                    </span>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">
@@ -860,7 +604,11 @@ export default function AdminUserDetailsPage() {
                       </div>
                     )}
                   </div>
+                </div>
 
+                <div className="space-y-3">
+                  <p className="text-[9px] md:text-[10px] font-bold text-slate-500 uppercase">IMAGES DES DOCUMENTS</p>
+                  
                   {hasBack && (
                     <div className="flex gap-2">
                       {["front", "back"].map((s) => (
@@ -891,147 +639,180 @@ export default function AdminUserDetailsPage() {
                       </div>
                     )}
                   </div>
+                </div>
 
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300">Avis du modérateur</span>
-                      <span className="text-[9px] md:text-[10px] text-slate-400">{user.isIdentityVerified ? formatDate(new Date().toISOString()) : "En attente"}</span>
-                    </div>
-                    <p className="text-[11px] md:text-xs leading-relaxed text-slate-600 dark:text-slate-400 italic font-medium">
-                      {user.isIdentityVerified ? "Identité vérifiée dans la base nationale. Aucune anomalie détectée. L'utilisateur est autorisé pour les transactions de grande valeur." : "Vérification des documents en attente. Veuillez examiner les documents téléchargés."}
-                    </p>
-                    <div className="flex items-center gap-2 pt-2">
-                      <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">AD</div>
-                      <span className="text-[9px] md:text-[10px] font-bold text-slate-500">{user.isIdentityVerified ? "Agent de sécurité" : "En attente de révision"}</span>
-                    </div>
+                <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300">Avis du modérateur</span>
+                    <span className="text-[9px] md:text-[10px] text-slate-400">{user.isIdentityVerified ? formatDate(new Date().toISOString()) : "En attente"}</span>
+                  </div>
+                  <p className="text-[11px] md:text-xs leading-relaxed text-slate-600 dark:text-slate-400 italic font-medium">
+                    {user.isIdentityVerified ? "Identité vérifiée dans la base nationale. Aucune anomalie détectée. L'utilisateur est autorisé pour les transactions de grande valeur." : "Vérification des documents en attente. Veuillez examiner les documents téléchargés."}
+                  </p>
+                  <div className="flex items-center gap-2 pt-2">
+                    <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">AD</div>
+                    <span className="text-[9px] md:text-[10px] font-bold text-slate-500">{user.isIdentityVerified ? "Agent de sécurité" : "En attente de révision"}</span>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              {/* Activité récente avec EmptyState */}
-              <div>
-                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Activité récente</h4>
-                <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden ${card3d}`}>
-                  {user.recentActivity && user.recentActivity.length > 0 ? (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                      {user.recentActivity.slice(0, 5).map((activity) => (
-                        <div key={activity.id} className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${activity.status === "failed" ? "bg-red-500" : "bg-green-500"}`} />
-                            <div>
-                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{activity.type}</p>
-                              <p className="text-xs text-slate-400">{activity.device || "Système"}</p>
+          {/* Section des propriétés */}
+          {isPropertyOwner && (
+            <section className="space-y-5 md:space-y-6">
+              <div className="flex justify-between items-end">
+                <div>
+                  <h4 className="text-lg md:text-xl font-display font-bold text-slate-900 dark:text-white">Propriétés gérées</h4>
+                  <p className="text-xs md:text-sm text-slate-500">Aperçu des annonces de cet hôte</p>
+                </div>
+                <button onClick={goToUserListings} className="text-[10px] md:text-xs font-bold text-indigo-600 flex items-center gap-1">
+                  Voir toutes les propriétés <IoChevronForwardOutline className="text-sm" />
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {user.listings && user.listings.length > 0 ? (
+                  user.listings.map((listing) => (
+                    <Link key={listing.id} href={`/admin/properties/${listing.id}`}>
+                      <div className={`group bg-white dark:bg-slate-900 rounded-2xl overflow-hidden hover:-translate-y-1 transition-all duration-300 cursor-pointer ${card3d}`}>
+                        <div className="aspect-[4/3] relative">
+                          {listing.image ? (
+                            <img className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" src={getImageUrl(listing.image)} alt={listing.title} />
+                          ) : (
+                            <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
+                              <FaBuilding className="text-3xl md:text-4xl text-slate-400" />
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-slate-400">{formatDateTime(activity.timestamp)}</p>
-                            <button onClick={() => viewSessionDetails(activity)} className="text-[10px] font-semibold text-indigo-600 hover:underline">Détails</button>
+                          )}
+                          <div className="absolute top-3 left-3 px-3 py-1 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-full text-[9px] md:text-[10px] font-extrabold text-indigo-600">PREMIUM</div>
+                          <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-[9px] md:text-[10px] font-extrabold uppercase text-white ${getStatusColor(listing.status)}`}>
+                            {listing.status === "ACTIVE" ? "En ligne" : listing.status}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState icon={IoTimeOutline} title="Aucune activité" message="Aucune activité récente trouvée" />
-                  )}
-                </div>
-              </div>
-
-              {/* Litiges avec EmptyState */}
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">Litiges récents</h4>
-                  <button onClick={goToUserDisputes} className="text-xs font-semibold text-indigo-600 hover:underline">Voir tous les litiges →</button>
-                </div>
-                <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden ${card3d}`}>
-                  {user.disputes && user.disputes.length > 0 ? (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                      {user.disputes.slice(0, 3).map((dispute) => (
-                        <div key={dispute.id} className={`p-4 border-l-4 ${dispute.priority === "high" ? "border-l-red-500" : "border-l-amber-500"}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center gap-2">
-                              <IoAlertCircleOutline className={`text-sm ${dispute.priority === "high" ? "text-red-500" : "text-amber-500"}`} />
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${getPriorityColor(dispute.priority)}`}>
-                                {formatDisputePriority(dispute.priority)}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 font-mono">{dispute.number}</span>
+                        <div className="p-4 md:p-5 space-y-2 md:space-y-3">
+                          <div>
+                            <h5 className="font-display font-bold text-sm truncate text-slate-900 dark:text-white">{listing.title}</h5>
+                            <p className="text-[10px] md:text-[11px] text-slate-500">{listing.location}</p>
                           </div>
-                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{dispute.title}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${dispute.status === "open" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
-                              {formatDisputeStatus(dispute.status)}
-                            </span>
-                            <span className="text-[10px] text-slate-400">{formatDate(dispute.createdAt)}</span>
+                          <div className="flex justify-between items-center text-[10px] md:text-xs font-bold">
+                            <span className="text-indigo-600">{listing.pricePerNight.toLocaleString()} TND / nuit</span>
+                            <span className="text-slate-400">★ {listing.rating || "Nouveau"}</span>
                           </div>
                         </div>
-                      ))}
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <div className="col-span-4 flex flex-col items-center justify-center py-12 md:py-16 text-center">
+                    <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                      <FaBuilding className="text-2xl md:text-3xl text-slate-400 dark:text-slate-500" />
                     </div>
-                  ) : (
-                    <EmptyState icon={IoScaleOutline} title="Aucun litige" message="Cet utilisateur n'a aucun litige" />
-                  )}
+                    <p className="text-sm md:text-base font-medium text-slate-500 dark:text-slate-400">Aucune propriété trouvée</p>
+                    <p className="text-xs md:text-sm text-slate-400 dark:text-slate-500 mt-1">Cet hôte n'a pas encore de propriétés</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Journaux d'activité et litiges */}
+          <div className="grid grid-cols-12 gap-6 md:gap-8">
+            
+            {/* Journaux Sentinel */}
+            <div className="col-span-12 lg:col-span-8 space-y-5 md:space-y-6">
+              <div className="flex justify-between items-end">
+                <div>
+                  <h4 className="text-lg md:text-xl font-display font-bold text-slate-900 dark:text-white">Journaux Sentinel</h4>
+                  <p className="text-xs md:text-sm text-slate-500">Historique des connexions et interactions en temps réel</p>
                 </div>
               </div>
+              <div className={`bg-white dark:bg-slate-900 rounded-2xl overflow-hidden ${card3d}`}>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[600px]">
+                    <thead className="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                      <tr>
+                        <th className="px-4 md:px-6 py-3 md:py-4 text-[9px] md:text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Type d'événement</th>
+                        <th className="px-4 md:px-6 py-3 md:py-4 text-[9px] md:text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Appareil &amp; IP</th>
+                        <th className="px-4 md:px-6 py-3 md:py-4 text-[9px] md:text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Localisation</th>
+                        <th className="px-4 md:px-6 py-3 md:py-4 text-[9px] md:text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Date &amp; Heure</th>
+                        <th className="px-4 md:px-6 py-3 md:py-4 text-[9px] md:text-[10px] font-bold text-indigo-500 uppercase tracking-widest text-right">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {user.recentActivity && user.recentActivity.length > 0 ? (
+                        user.recentActivity.slice(0, 5).map((activity) => (
+                          <tr key={activity.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+                            <td className="px-4 md:px-6 py-3 md:py-4">
+                              <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${activity.status === "failed" ? "bg-red-500" : "bg-green-500"}`}></div>
+                                <span className="text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-300">{activity.type}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 md:px-6 py-3 md:py-4">
+                              <div className="space-y-0.5">
+                                <p className="text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-300">{activity.device || "Inconnu"}</p>
+                                <p className="text-[9px] md:text-[10px] text-slate-400">{activity.ipAddress || "-"}</p>
+                              </div>
+                            </td>
+                            <td className="px-4 md:px-6 py-3 md:py-4 text-[10px] md:text-xs font-medium text-slate-600 dark:text-slate-400">{activity.location || "-"}</td>
+                            <td className="px-4 md:px-6 py-3 md:py-4 text-[9px] md:text-[10px] font-bold text-slate-400">{formatDateTime(activity.timestamp)}</td>
+                            <td className="px-4 md:px-6 py-3 md:py-4 text-right">
+                              <button onClick={() => viewSessionDetails(activity)} className="text-[9px] md:text-[10px] font-bold text-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity">DÉTAILS</button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="px-6 py-8 text-center text-slate-400">Aucune activité trouvée</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            {/* Litiges récents */}
+            <div className="col-span-12 lg:col-span-4 space-y-5 md:space-y-6">
+              <div className="flex items-center gap-2">
+                <h4 className="text-lg md:text-xl font-display font-bold text-slate-900 dark:text-white">Litiges récents</h4>
+              </div>
+              <div className="space-y-4">
+                {user.disputes && user.disputes.length > 0 ? (
+                  user.disputes.slice(0, 3).map((dispute) => (
+                    <div key={dispute.id} className={`bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-5 border-l-4 ${dispute.priority === "high" ? "border-l-red-500" : dispute.priority === "medium" ? "border-l-amber-500" : "border-l-blue-500"} ${card3d}`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="flex items-center gap-2">
+                          <IoAlertCircleOutline className={`text-sm ${dispute.priority === "high" ? "text-red-500" : dispute.priority === "medium" ? "text-amber-500" : "text-blue-500"}`} />
+                          <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${getPriorityColor(dispute.priority)}`}>
+                            {formatDisputePriority(dispute.priority)}
+                          </span>
+                        </div>
+                        <span className="text-[9px] md:text-[10px] text-slate-400 font-mono">{dispute.number}</span>
+                      </div>
+                      <h6 className="text-[11px] md:text-xs font-bold text-slate-900 dark:text-white mb-1">{dispute.title}</h6>
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold uppercase ${dispute.status === "open" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
+                          {formatDisputeStatus(dispute.status)}
+                        </span>
+                        <span className="text-[9px] text-slate-400">{formatDate(dispute.createdAt)}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className={`bg-white dark:bg-slate-900 rounded-2xl p-8 text-center flex flex-col justify-center items-center min-h-[250px] ${card3d}`}>
+                    <IoScaleOutline className="text-3xl text-slate-400 mx-auto mb-2" />
+                    <p className="text-sm text-slate-400">Aucun litige trouvé</p>
+                    <p className="text-[10px] text-slate-500 mt-1">Cet utilisateur n'a aucun litige ouvert ou résolu</p>
+                  </div>
+                )}
+              </div>
+              <button onClick={goToUserDisputes} className="w-full py-3 md:py-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 text-[10px] md:text-xs font-bold text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all flex items-center justify-center gap-2">
+                <IoTimeOutline className="text-base md:text-[18px]" /> Voir tous les litiges
+              </button>
             </div>
           </div>
         </div>
       </main>
-
-      {/* Menu flottant d'actions */}
-      {showMenu && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={closeMenu} />
-          <div className={`fixed z-50 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 overflow-hidden ${block3d}`} style={{ top: menuPosition.top, left: menuPosition.left }}>
-            <div className="py-1">
-              <button onClick={() => { setShowAddNoteModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2.5">
-                <IoCreateOutline className="text-base text-blue-500" /> Ajouter une note
-              </button>
-              {user.status === "ACTIVE" && (
-                <button onClick={() => { setShowWarningModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2.5 border-t">
-                  <IoWarningOutline className="text-base text-amber-500" /> Avertir
-                </button>
-              )}
-              {(user.status === "TEMPORARILY_SUSPENDED" || user.status === "PERMANENTLY_BANNED" || user.status === "SECURITY_LOCKED") && (
-                <button onClick={() => { setShowActivateModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-2.5 border-t">
-                  <IoCheckmarkCircleOutline className="text-base text-emerald-500" /> Réactiver
-                </button>
-              )}
-              {user.status === "ACTIVE" && (
-                <>
-                  <button onClick={() => { setShowLockUnlockModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2.5">
-                    <IoLockClosedOutline className="text-base text-amber-500" /> Verrouiller
-                  </button>
-                  <button onClick={() => { setShowSuspendModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2.5">
-                    <IoPauseCircleOutline className="text-base text-amber-500" /> Suspendre
-                  </button>
-                </>
-              )}
-              {user.status !== "PERMANENTLY_BANNED" && (
-                <>
-                  <button onClick={() => { setShowBanModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 border-t">
-                    <IoBanOutline className="text-base text-red-500" /> Bannir
-                  </button>
-                  <button onClick={() => { setShowEscalateModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-violet-50 dark:hover:bg-violet-900/20 flex items-center gap-2.5">
-                    <IoArrowUpCircleOutline className="text-base text-violet-500" /> Escalader
-                  </button>
-                </>
-              )}
-              <button onClick={() => { setShowActionsHistory(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center gap-2.5 border-t">
-                <IoArrowUndoOutline className="text-base text-indigo-500" /> Historique
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Modals */}
-      <SuspendUserModal isOpen={showSuspendModal} onClose={() => setShowSuspendModal(false)} user={userForModal} onConfirm={handleSuspend} />
-      <BanUserModal isOpen={showBanModal} onClose={() => setShowBanModal(false)} user={userForModal} onConfirm={handleBan} />
-      <ActivateUserModal isOpen={showActivateModal} onClose={() => setShowActivateModal(false)} user={userForModal} onConfirm={handleActivate} />
-      <LockUnlockModal isOpen={showLockUnlockModal} onClose={() => setShowLockUnlockModal(false)} user={userForModal} onLock={handleLock} onUnlock={handleUnlock} />
-      <EscalateUserModal isOpen={showEscalateModal} onClose={() => setShowEscalateModal(false)} user={userForModal} onEscalate={handleEscalate} currentLevel={user.escalationLevel || 0} />
-      <AddNoteModal isOpen={showAddNoteModal} onClose={() => setShowAddNoteModal(false)} user={userForModal} onAddNote={handleAddNote} />
-      <WarningUserModal isOpen={showWarningModal} onClose={() => setShowWarningModal(false)} user={userForModal} onConfirm={handleWarning} />
-      <ActionsHistoryModal isOpen={showActionsHistory} onClose={() => setShowActionsHistory(false)} userId={user.id} actions={actions} onUndo={handleUndoAction} />
 
       {/* Session Details Modal */}
       {showSessionModal && selectedActivity && (
