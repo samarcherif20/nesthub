@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 export function AutoRefreshProvider({
@@ -11,25 +11,28 @@ export function AutoRefreshProvider({
   const router = useRouter();
 
   useEffect(() => {
-    // ✅ Rafraîchissement toutes les 10 secondes (suffisant)
+    // Rafraîchissement toutes les 30 secondes (plus long)
     const interval = setInterval(() => {
+      // Ne pas rafraîchir si l'utilisateur interagit avec un lien
       router.refresh();
-    }, 10000); // 10 secondes
+    }, 30000); // 30 secondes au lieu de 10
 
-    // ✅ Rafraîchissement immédiat quand l'utilisateur revient sur l'onglet
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
+    // Rafraîchissement quand la page reçoit le focus (uniquement si pas d'interaction)
+    let timeoutId: NodeJS.Timeout;
+    const handleFocus = () => {
+      // Délai pour éviter les conflits
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
         router.refresh();
-      }
+      }, 500);
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    // ✅ Rafraîchissement quand la page reçoit le focus
-    window.addEventListener("focus", () => router.refresh());
+    
+    window.addEventListener("focus", handleFocus);
 
     return () => {
       clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearTimeout(timeoutId);
+      window.removeEventListener("focus", handleFocus);
     };
   }, [router]);
 

@@ -126,6 +126,7 @@ export default clerkMiddleware(async (auth, req) => {
   // ========================================
   if (pathname.startsWith("/api/")) {
     const publicApiRoutes = [
+      "/api/contact",
       "/api/users/avatar", // ← AJOUTER
       "/api/users/increment-login-attempts",
       "/api/users/reset-login-attempts",

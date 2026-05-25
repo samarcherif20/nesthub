@@ -158,6 +158,7 @@ model User {
   listingHistories   ListingHistory[]
   sentInvitations    CoOwnerInvitation[] @relation("CoOwnerInvitationsSent")
   teamMemberships    TeamMember[]
+  contactMessages ContactMessage[]
 
   // Conversations (chat)
   conversationsAsOwner  Conversation[] @relation("OwnerConversations")
@@ -1715,4 +1716,26 @@ model BookingExtension {
   @@index([bookingId])
   @@index([status])
   @@map("booking_extensions")
+}
+model ContactMessage {
+  id        String   @id @default(cuid())
+  fullName  String
+  email     String
+  phone     String?
+  userId    String?  // ← AJOUTER CETTE LIGNE (pour les utilisateurs connectés)
+  message   String   @db.Text
+  status    String   @default("PENDING")
+  repliedBy String?
+  reply     String?  @db.Text
+  repliedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id]) // ← AJOUTER
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([email])
+  @@index([userId]) // ← AJOUTER
+  @@map("contact_messages")
 }

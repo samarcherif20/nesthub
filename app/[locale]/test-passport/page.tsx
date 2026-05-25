@@ -1,1096 +1,1361 @@
-// app/[locale]/admin/users/[id]/page.tsx
 "use client";
-
-import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@clerk/nextjs";
-import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { useUser, SignInButton, SignUpButton } from "@clerk/nextjs";
 import {
-  IoArrowBackOutline,
-  IoShieldCheckmarkOutline,
-  IoLocationOutline,
-  IoSearchOutline,
-  IoNotificationsOutline,
-  IoSettingsOutline,
-  IoMenuOutline,
-  IoAddOutline,
-  IoLockClosedOutline,
-  IoChevronForwardOutline,
-  IoDocumentTextOutline,
-  IoTimeOutline,
-  IoCloseOutline,
-  IoDownloadOutline,
-  IoExpandOutline,
-  IoAlertCircleOutline,
-  IoScaleOutline,
-  IoReceiptOutline,
-  IoStar,
-  IoInformationCircleOutline,
-  IoGlobeOutline,
-  IoCallOutline,
-  IoMailOutline,
-  IoCalendarOutline,
-  IoCreateOutline,
-  IoPauseCircleOutline,
-  IoBanOutline,
-  IoCheckmarkCircleOutline,
-  IoWarningOutline,
-  IoArrowUpCircleOutline,
-  IoArrowUndoOutline,
-  IoEllipsisVertical,
-} from "react-icons/io5";
-import {
-  FaBuilding,
-  FaMedal,
-  FaIdCard,
-  FaPassport,
-  FaGavel,
-  FaUserCheck,
-} from "react-icons/fa";
-import { FiChevronDown } from "react-icons/fi";
-import LoadingSpinner from "@/components/ui/LoadingSpinner";
+  BadgeCheck,
+  BedDouble,
+  Building2,
+  Camera,
+  Castle,
+  CheckCircle2,
+  ChevronRight,
+  Compass,
+  Gem,
+  Heart,
+  Home,
+  Hotel,
+  MapPin,
+  Moon,
+  Palmtree,
+  Search,
+  Send,
+  ShieldCheck,
+  Sparkles,
+  Star,
+  Sun,
+  Users,
+  Waves,
+  X,
+} from "lucide-react";
 
-// Composants badges
-import UserStatusBadge from "@/components/ui/badges/UserStatusBadge";
-import UserRoleBadge from "@/components/ui/badges/UserRoleBadge";
-import UserVerificationBadge from "@/components/ui/badges/UserVerificationBadge";
+type HeroSlide = {
+  image: string;
+  title: string;
+  subtitle: string;
+  caption: string;
+};
 
-// Modals
-import SuspendUserModal from "@/components/ui/modals/SuspendUserModal";
-import BanUserModal from "@/components/ui/modals/BanUserModal";
-import ActivateUserModal from "@/components/ui/modals/ActivateUserModal";
-import LockUnlockModal from "@/components/ui/modals/LockUnlockModal";
-import EscalateUserModal from "@/components/ui/modals/EscalateUserModal";
-import AddNoteModal from "@/components/ui/modals/AddNoteModal";
-import WarningUserModal from "@/components/ui/modals/WarningUserModal";
-import ActionsHistoryModal from "@/components/ui/modals/ActionsHistoryModal";
+type Filter = {
+  id: string;
+  label: string;
+  type: "ALL" | "VILLA" | "HOUSE" | "APARTMENT";
+  icon: React.ReactNode;
+};
 
-// ============================================
-// STYLES DU THÈME ADMIN
-// ============================================
-const block3d = "shadow-[0_6px_0_0_rgba(0,0,0,0.06),0_12px_28px_-6px_rgba(0,0,0,0.11)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.38),0_12px_28px_-6px_rgba(0,0,0,0.48)]";
-const card3d = "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
+type Listing = {
+  id: number;
+  title: string;
+  type: "VILLA" | "HOUSE" | "APARTMENT";
+  location: string;
+  region: string;
+  price: number;
+  guests: number;
+  bedrooms: number;
+  rating: number;
+  score: number;
+  image: string;
+  badge: string;
+  story: string;
+  loved: boolean;
+};
 
-// ============================================
-// COMPOSANT EMPTY STATE
-// ============================================
-function EmptyState({ icon: Icon, title, message }: { icon: React.ElementType; title: string; message: string }) {
+type Review = {
+  id: number;
+  name: string;
+  city: string;
+  avatar: string;
+  rating: number;
+  quote: string;
+  stay: string;
+};
+
+const GRAD_TEXT =
+  "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent";
+
+const HERO_SLIDES: HeroSlide[] = [
+  {
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCaT7XwAF-hcanUDn9CPBqTm-McBZAvRuAXRrubpsRZdj1-FTcTbSDqHG8hqv10BxHPmTYkKktf5hBDqFZnyjRMDkqd6TCF_c6wSSWiTX8CTDI267XzfySBTrEyddy8H1N2od4155aVb1f-b9wREDz7Nq4KananDtIcbbXc-6Ax2JtVgFOUluR6OyIBPFYD2NZzNNgmfDGB5thaH2iPgNda5Ozdq_7E1Z3P6aFzwe1Qm-aysG347qU4l_-Qs_QczTsAcVkMXEqpVL5G",
+    title: "L'Art de vivre méditerranéen, réinventé.",
+    subtitle:
+      "Des villas signatures, des dars confidentiels et des séjours qui semblent sortis d’un magazine.",
+    caption: "Sidi Bou Saïd • Hammamet • Djerba • Carthage",
+  },
+  {
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCsHm15UAFGBMD65nt7HCvZz-I2HdVEpo5ITZ6ymycXn4C_v_9--N9CN-iAQlxWtXDd13S3SJPQG6va6XNKq737OdAHhOpaEdZaZ-0Bacy6sHo58u9fwVeeSq7VTdR2DiOvviRwblVmop5z9Y58Aj64xlklQ7OgPbuKqDE77w_nqaJAggVdq2GrxxKw55fQn0UY-lClVP11zx_MjPG8uMqhEt9RJ5Ag-z8iJ7bPdzH7Ei5ddpwdkJ4EY9ACMbM3RndjRD7dNppjZ38x",
+    title: "Des propriétés qui ne se visitent pas. Elles se ressentent.",
+    subtitle:
+      "Chaque annonce est pensée comme une histoire visuelle : lumière, matière, silence, mer, architecture.",
+    caption: "Curated stays for modern travelers",
+  },
+  {
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCM98mCpyu-vG2JnyhR_lSUcwtFbt1ijmfp_Igx8N1Mv_Vdnj__A-TTHxhCJE4wMG10RTFRKyMllJgXQTl7AXazeBtHhCK6v_FohcHB_hRMh1BF4cfH5vCRZhifMnGTfUfAbPS9NCmicjvsU5JjUY9SJ_ikNWNCqKPDP6ZCKd54e5YmECWcxXZZ256UwwgbEX6R7nQGlCtp6Ys6kjdz6Ju4dgTEXzI3khGC98SJevhwLxjcLkHreFoQraeX6EB6Y3Byis6UoSDAx7NO",
+    title: "La Tunisie la plus désirable, à portée d’un clic.",
+    subtitle:
+      "Des expériences premium pour les voyageurs exigeants et les propriétaires qui veulent rayonner.",
+    caption: "Premium homes • Trusted hosts • Concierge mindset",
+  },
+];
+
+const QUICK_FILTERS: Filter[] = [
+  { id: "all", label: "Tout explorer", type: "ALL", icon: <Compass className="h-5 w-5" /> },
+  { id: "villa", label: "Villas signature", type: "VILLA", icon: <Home className="h-5 w-5" /> },
+  { id: "dar", label: "Dars de charme", type: "HOUSE", icon: <Castle className="h-5 w-5" /> },
+  { id: "sea", label: "Bord de mer", type: "VILLA", icon: <Waves className="h-5 w-5" /> },
+  { id: "apartment", label: "Appartements design", type: "APARTMENT", icon: <Building2 className="h-5 w-5" /> },
+  { id: "resort", label: "Suites & resorts", type: "HOUSE", icon: <Hotel className="h-5 w-5" /> },
+];
+
+const LISTINGS: Listing[] = [
+  {
+    id: 1,
+    title: "Villa Azure Horizon",
+    type: "VILLA",
+    location: "Sidi Bou Saïd",
+    region: "Tunis",
+    price: 980,
+    guests: 6,
+    bedrooms: 3,
+    rating: 4.9,
+    score: 97,
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCaT7XwAF-hcanUDn9CPBqTm-McBZAvRuAXRrubpsRZdj1-FTcTbSDqHG8hqv10BxHPmTYkKktf5hBDqFZnyjRMDkqd6TCF_c6wSSWiTX8CTDI267XzfySBTrEyddy8H1N2od4155aVb1f-b9wREDz7Nq4KananDtIcbbXc-6Ax2JtVgFOUluR6OyIBPFYD2NZzNNgmfDGB5thaH2iPgNda5Ozdq_7E1Z3P6aFzwe1Qm-aysG347qU4l_-Qs_QczTsAcVkMXEqpVL5G",
+    badge: "Édition Signature",
+    story: "Une villa lumineuse, sculptée entre ciel cobalt et terrasses blanches.",
+    loved: true,
+  },
+  {
+    id: 2,
+    title: "Dar El Rêve",
+    type: "HOUSE",
+    location: "Médina de Tunis",
+    region: "Tunis",
+    price: 540,
+    guests: 4,
+    bedrooms: 2,
+    rating: 4.8,
+    score: 93,
+    image:
+      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1400&q=80",
+    badge: "Patrimoine vivant",
+    story: "Patio central, zelliges, lumière douce : l’âme d’un dar contemporain.",
+    loved: false,
+  },
+  {
+    id: 3,
+    title: "Penthouse Marina Vista",
+    type: "APARTMENT",
+    location: "Lac II",
+    region: "Tunis",
+    price: 420,
+    guests: 3,
+    bedrooms: 2,
+    rating: 4.7,
+    score: 91,
+    image:
+      "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1400&q=80",
+    badge: "Business & style",
+    story: "Un refuge urbain ultramoderne avec terrasse panoramique et design minimal.",
+    loved: false,
+  },
+  {
+    id: 4,
+    title: "Villa Palm Hammamet",
+    type: "VILLA",
+    location: "Hammamet Nord",
+    region: "Nabeul",
+    price: 1250,
+    guests: 8,
+    bedrooms: 4,
+    rating: 5,
+    score: 99,
+    image:
+      "https://lh3.googleusercontent.com/aida-public/AB6AXuCsHm15UAFGBMD65nt7HCvZz-I2HdVEpo5ITZ6ymycXn4C_v_9--N9CN-iAQlxWtXDd13S3SJPQG6va6XNKq737OdAHhOpaEdZaZ-0Bacy6sHo58u9fwVeeSq7VTdR2DiOvviRwblVmop5z9Y58Aj64xlklQ7OgPbuKqDE77w_nqaJAggVdq2GrxxKw55fQn0UY-lClVP11zx_MjPG8uMqhEt9RJ5Ag-z8iJ7bPdzH7Ei5ddpwdkJ4EY9ACMbM3RndjRD7dNppjZ38x",
+    badge: "Piscine iconique",
+    story: "L’adresse parfaite pour des vacances solaires, élégantes et photogéniques.",
+    loved: true,
+  },
+  {
+    id: 5,
+    title: "Loft Marina Light",
+    type: "APARTMENT",
+    location: "La Marsa",
+    region: "Tunis",
+    price: 360,
+    guests: 2,
+    bedrooms: 1,
+    rating: 4.6,
+    score: 89,
+    image:
+      "https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1400&q=80",
+    badge: "City escape",
+    story: "Un loft délicat et lumineux pour un séjour à deux entre plage et cafés.",
+    loved: false,
+  },
+  {
+    id: 6,
+    title: "Maison Dunes & Silence",
+    type: "HOUSE",
+    location: "Tozeur",
+    region: "Sud tunisien",
+    price: 690,
+    guests: 5,
+    bedrooms: 3,
+    rating: 4.9,
+    score: 95,
+    image:
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1400&q=80",
+    badge: "Évasion rare",
+    story: "Des volumes minéraux, une lumière ocre, et la sensation d’un désert luxueux.",
+    loved: false,
+  },
+];
+
+const REVIEWS: Review[] = [
+  {
+    id: 1,
+    name: "Amira B.",
+    city: "Paris",
+    avatar: "A",
+    rating: 5,
+    quote:
+      "Enfin une plateforme qui donne envie de réserver dès la première seconde. L'annonce, le service, l'esthétique : tout est au niveau.",
+    stay: "Villa Azure Horizon",
+  },
+  {
+    id: 2,
+    name: "Karim M.",
+    city: "Montréal",
+    avatar: "K",
+    rating: 5,
+    quote:
+      "L’expérience est premium sans être compliquée. J’ai trouvé un bien exceptionnel en quelques clics seulement.",
+    stay: "Villa Palm Hammamet",
+  },
+  {
+    id: 3,
+    name: "Sofia L.",
+    city: "Lyon",
+    avatar: "S",
+    rating: 4,
+    quote:
+      "Très belle sélection. On sent une vraie direction artistique et une envie de sublimer la Tunisie.",
+    stay: "Dar El Rêve",
+  },
+  {
+    id: 4,
+    name: "Yassine T.",
+    city: "Dubaï",
+    avatar: "Y",
+    rating: 5,
+    quote:
+      "C’est plus qu’un site de location — c’est une vitrine lifestyle. Exactement ce qu’il fallait pour ce marché.",
+    stay: "Maison Dunes & Silence",
+  },
+];
+
+const FOOTER_LINKS = ["Privacy Policy", "Terms", "Support", "Press"];
+
+const DESTINATION_SPOTLIGHTS = [
+  {
+    title: "Sidi Bou Saïd",
+    mood: "Blue & white iconography",
+    image:
+      "https://images.unsplash.com/photo-1527631746610-bca00a040d60?auto=format&fit=crop&w=1400&q=80",
+    blurb: "Cliffside views, artful homes, iconic terraces and the most photogenic arrivals on the coast.",
+  },
+  {
+    title: "Hammamet",
+    mood: "Resort elegance",
+    image:
+      "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1400&q=80",
+    blurb: "Palm-lined villas, long golden afternoons and polished hospitality built for slow luxury.",
+  },
+  {
+    title: "Djerba",
+    mood: "Island serenity",
+    image:
+      "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80",
+    blurb: "Sun-bleached textures, breezy courtyards and a softer rhythm that lingers long after checkout.",
+  },
+  {
+    title: "Tozeur",
+    mood: "Desert modernism",
+    image:
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1400&q=80",
+    blurb: "Architectural retreats where silence, mineral tones and cinematic landscapes redefine escape.",
+  },
+];
+
+const TRUST_BELT = [
+  { label: "Verified premium homes", icon: BadgeCheck },
+  { label: "Cinematic visual storytelling", icon: Camera },
+  { label: "Local concierge mindset", icon: Gem },
+  { label: "Seaside & heritage destinations", icon: Waves },
+  { label: "Trusted hosts only", icon: ShieldCheck },
+  { label: "Editorial collections", icon: Sparkles },
+];
+
+function Stars({ rating }: { rating: number }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
-        <Icon className="text-3xl text-slate-400" />
-      </div>
-      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300">{title}</h4>
-      <p className="text-xs text-slate-400 mt-1">{message}</p>
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }, (_, i) => (
+        <Star
+          key={i}
+          className={`h-4 w-4 ${i < rating ? "fill-amber-400 text-amber-400" : "text-slate-300 dark:text-slate-700"}`}
+        />
+      ))}
     </div>
   );
 }
 
-// ============================================
-// TYPES
-// ============================================
-interface UserDetails {
-  id: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  fullName: string;
-  email: string;
-  phoneNumber?: string;
-  profilePictureUrl?: string;
-  governorate?: string;
-  delegation?: string;
-  role: string;
-  isIdentityVerified: boolean;
-  twoFactorEnabled: boolean;
-  status: string;
-  suspendedUntil?: string;
-  createdAt: string;
-  verificationRequestId?: string;
-  escalationLevel?: number;
-  cinData?: {
-    cinNumber?: string;
-    firstName?: string;
-    lastName?: string;
-    dateOfBirth?: string;
-    documentType?: string;
-    passportNumber?: string;
-    country?: string;
-    frontImageUrl?: string;
-    backImageUrl?: string;
-    passportUrl?: string;
-  };
-  stats: {
-    trustScore: number;
-    globalRank: number;
-    totalVolume: number;
-    activeBalance: number;
-    pendingPayout: number;
-    totalCommission: number;
-    totalListings?: number;
-    totalBookings?: number;
-    totalReviews?: number;
-    averageRating?: string;
-    responseRate?: number;
-  };
-  listings: Listing[];
-  recentActivity: Activity[];
-  disputes: Dispute[];
-  tenantBookings?: Booking[];
-}
-
-interface Listing {
-  id: string;
-  title: string;
-  location: string;
-  pricePerNight: number;
-  status: string;
-  rating: number;
-  reviewCount: number;
-  image: string;
-}
-
-interface Activity {
-  id: string;
-  type: string;
-  device?: string;
-  ipAddress?: string;
-  location?: string;
-  timestamp: string;
-  status?: string;
-}
-
-interface Dispute {
-  id: string;
-  number: string;
-  title: string;
-  type: string;
-  status: string;
-  priority: string;
-  createdAt: string;
-}
-
-interface Booking {
-  id: string;
-  listingId: string;
-  listing?: {
-    title: string;
-    governorate: string;
-  };
-  checkIn: string;
-  checkOut: string;
-  totalPrice: number;
-  status: string;
-  createdAt: string;
-}
-
-// ============================================
-// FORMATAGE DES TEXTES EN FRANÇAIS
-// ============================================
-const formatUserStatus = (status: string) => {
-  switch (status) {
-    case "ACTIVE": return "Session active";
-    case "TEMPORARILY_SUSPENDED": return "Suspendu temporairement";
-    case "PERMANENTLY_BANNED": return "Banni définitivement";
-    case "PENDING_VALIDATION": return "En attente de validation";
-    case "SECURITY_LOCKED": return "Verrouillé (sécurité)";
-    case "INACTIVE": return "Inactif";
-    case "REJECTED": return "Rejeté";
-    default: return status || "Inconnu";
-  }
-};
-
-const formatUserRole = (role: string) => {
-  switch (role) {
-    case "PROPERTY_OWNER": return "Hôte Premium";
-    case "TENANT": return "Voyageur";
-    case "ADMIN": return "Administrateur";
-    case "BOTH": return "Hôte & Voyageur";
-    case "CO_HOST": return "Co-hôte";
-    default: return role || "Membre";
-  }
-};
-
-const formatRiskLevel = (score: number) => {
-  if (score >= 90) return "Faible";
-  if (score >= 70) return "Moyen";
-  return "Élevé";
-};
-
-const formatVerificationStatus = (isVerified: boolean) => {
-  return isVerified ? "KYC Vérifié" : "Vérification en attente";
-};
-
-const formatDisputeStatus = (status: string) => {
-  switch (status?.toLowerCase()) {
-    case "open": return "Ouvert";
-    case "resolved": return "Résolu";
-    case "closed": return "Fermé";
-    case "rejected": return "Rejeté";
-    default: return status || "En cours";
-  }
-};
-
-const formatDisputePriority = (priority: string) => {
-  switch (priority?.toLowerCase()) {
-    case "high": return "Urgent";
-    case "medium": return "Moyen";
-    case "low": return "Normal";
-    default: return priority || "Normal";
-  }
-};
-
-const formatBookingStatus = (status: string) => {
-  switch (status) {
-    case "COMPLETED": return "Terminée";
-    case "PENDING": return "En attente";
-    case "CONFIRMED": return "Confirmée";
-    case "CANCELLED": return "Annulée";
-    default: return status || "En cours";
-  }
-};
-
-const getStatusColor = (status: string) => {
-  switch (status?.toLowerCase()) {
-    case "active": case "live": case "open": case "resolved": case "completed":
-      return "bg-green-500 text-white";
-    case "pending": case "pending_review":
-      return "bg-amber-500 text-white";
-    case "closed": case "rejected": case "cancelled":
-      return "bg-red-500 text-white";
-    default: return "bg-slate-500 text-white";
-  }
-};
-
-const getPriorityColor = (priority: string) => {
-  switch (priority?.toLowerCase()) {
-    case "high": case "urgent":
-      return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-    case "medium":
-      return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
-    default:
-      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-  }
-};
-
-const getRiskColor = (score: number) => {
-  if (score >= 90) return "text-emerald-600";
-  if (score >= 70) return "text-amber-600";
-  return "text-red-600";
-};
-
-const getImageUrl = (url: string) => {
-  if (!url) return "";
-  return `/api/listings/image?url=${encodeURIComponent(url)}`;
-};
-
-const getDocumentImageUrl = (url: string) => {
-  if (!url) return "";
-  return `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
-};
-
-const formatDate = (dateString: string) => {
-  if (!dateString) return "Date inconnue";
-  try {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
-      day: "numeric", month: "long", year: "numeric",
-    });
-  } catch { return "Date inconnue"; }
-};
-
-const formatDateTime = (dateString: string) => {
-  if (!dateString) return "Date inconnue";
-  try {
-    return new Date(dateString).toLocaleString("fr-FR", {
-      day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
-    });
-  } catch { return "Date inconnue"; }
-};
-
-// ============================================
-// MAIN COMPONENT
-// ============================================
-export default function AdminUserDetailsPage() {
-  const params = useParams();
-  const userId = params.id as string;
-  const { getToken } = useAuth();
-  const router = useRouter();
-
-  const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<UserDetails | null>(null);
-  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
-  const [docSide, setDocSide] = useState<"front" | "back">("front");
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
-  const [showSessionModal, setShowSessionModal] = useState(false);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>({ top: 0, left: 0 });
-  const [showMenu, setShowMenu] = useState(false);
-  const [actions, setActions] = useState<any[]>([]);
-
-  // Modal states
-  const [showSuspendModal, setShowSuspendModal] = useState(false);
-  const [showBanModal, setShowBanModal] = useState(false);
-  const [showActivateModal, setShowActivateModal] = useState(false);
-  const [showLockUnlockModal, setShowLockUnlockModal] = useState(false);
-  const [showEscalateModal, setShowEscalateModal] = useState(false);
-  const [showAddNoteModal, setShowAddNoteModal] = useState(false);
-  const [showWarningModal, setShowWarningModal] = useState(false);
-  const [showActionsHistory, setShowActionsHistory] = useState(false);
-
-  const isPropertyOwner = user?.role === "PROPERTY_OWNER" || user?.role === "BOTH";
-
-  useEffect(() => {
-    fetchUserDetails();
-    fetchUserActions();
-  }, [userId]);
-
-  const fetchUserDetails = async () => {
-    try {
-      setLoading(true);
-      const token = await getToken();
-      const res = await fetch(`/api/admin/users/${userId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setUser(data);
-    } catch (error) {
-      console.error("Erreur:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUserActions = async () => {
-    try {
-      const token = await getToken();
-      const res = await fetch(`/api/admin/users/${userId}/actions`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setActions(data);
-    } catch (error) {
-      console.error("Erreur:", error);
-    }
-  };
-
-  const openMenu = (event: React.MouseEvent) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    setMenuPosition({
-      top: rect.bottom + window.scrollY + 5,
-      left: rect.left + window.scrollX - 160,
-    });
-    setShowMenu(true);
-  };
-
-  const closeMenu = () => setShowMenu(false);
-
-  // Handlers pour les modals
-  const handleSuspend = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "SUSPEND", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowSuspendModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleBan = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "BAN", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowBanModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleActivate = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "ACTIVATE", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowActivateModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleLock = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "LOCK", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowLockUnlockModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleUnlock = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "UNLOCK", reason, motif, notify }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowLockUnlockModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleEscalate = async (userId: string, level: number, reason: string, motif: string) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "ESCALATE", level, reason, motif }),
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-      setShowEscalateModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleAddNote = async (userId: string, content: string, isPrivate: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/notes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ content, isPrivate }),
-      });
-      setShowAddNoteModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleWarning = async (userId: string, reason: string, motif: string, notify: boolean) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: "WARN", reason, motif, notify }),
-      });
-      await fetchUserActions();
-      setShowWarningModal(false);
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const handleUndoAction = async (actionId: string) => {
-    try {
-      const token = await getToken();
-      await fetch(`/api/admin/users/${userId}/actions/${actionId}/undo`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      await fetchUserDetails();
-      await fetchUserActions();
-    } catch (error) { console.error("Erreur:", error); }
-  };
-
-  const viewSessionDetails = (activity: Activity) => {
-    setSelectedActivity(activity);
-    setShowSessionModal(true);
-  };
-
-  const goToUserListings = () => router.push(`/admin/properties?userId=${userId}`);
-  const goToUserBookings = () => router.push(`/admin/transactions?userId=${userId}`);
-  const goToUserDisputes = () => router.push(`/admin/disputes?userId=${userId}`);
-  const goToUserVerification = () => {
-    if (user?.verificationRequestId) {
-      router.push(`/admin/verifications/${user.verificationRequestId}`);
-    } else {
-      router.push(`/admin/verifications?userId=${userId}`);
-    }
-  };
-
-  const getDocumentImage = () => {
-    if (isPassport) {
-      return user?.cinData?.passportUrl || user?.cinData?.frontImageUrl || null;
-    } else {
-      return docSide === "front" ? user?.cinData?.frontImageUrl : user?.cinData?.backImageUrl;
-    }
-  };
-
-  if (loading) {
-    return <LoadingSpinner fullScreen text="Chargement du profil utilisateur..." size="lg" color="primary" variant="spinner" />;
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Utilisateur non trouvé</h2>
-          <Link href="/admin/users" className="mt-4 text-indigo-600 hover:underline inline-block">Retour à la liste</Link>
-        </div>
+function SectionHeading({
+  eyebrow,
+  title,
+  text,
+}: {
+  eyebrow: string;
+  title: React.ReactNode;
+  text: string;
+}) {
+  return (
+    <div className="max-w-2xl">
+      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.24em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-indigo-500/20 dark:bg-slate-900/70 dark:text-indigo-300">
+        <Sparkles className="h-3.5 w-3.5" />
+        {eyebrow}
       </div>
+      <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-5xl">
+        {title}
+      </h2>
+      <p className="mt-4 text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
+        {text}
+      </p>
+    </div>
+  );
+}
+
+// ==================== COMPOSANT PREMIUM IMAGE POUR CLERK ====================
+function PremiumImage({ imageUrl, alt, listingTitle, listingPrice }: { 
+  imageUrl: string; 
+  alt: string; 
+  listingTitle: string;
+  listingPrice: number;
+}) {
+  const { isSignedIn } = useUser();
+  const [showModal, setShowModal] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+
+  if (isSignedIn) {
+    return (
+      <img
+        src={imageUrl}
+        alt={alt}
+        className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+      />
     );
   }
 
-  const riskColor = getRiskColor(user.stats?.trustScore || 85);
-  const trustScore = user.stats?.trustScore || 85;
-  const isPassport = user.cinData?.documentType === "PASSPORT";
-  const hasBack = !!user.cinData?.backImageUrl && !isPassport;
-  const bookings = (user as any).tenantBookings || [];
-  const documentImageUrl = getDocumentImage();
+  return (
+    <>
+      <div 
+        className="relative w-full h-full cursor-pointer overflow-hidden"
+        onClick={() => setShowModal(true)}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
+        <img
+          src={imageUrl}
+          alt={alt}
+          className={`h-full w-full object-cover transition-all duration-700 ${
+            isHovering ? 'blur-0 scale-105' : 'blur-xl'
+          }`}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        
+        <div className={`absolute bottom-0 left-0 right-0 p-4 transition-all duration-300 ${
+          isHovering ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'
+        }`}>
+          <div className="bg-black/60 backdrop-blur-md rounded-xl p-3 text-center">
+            <p className="text-white text-xs font-medium">👆 Cliquez pour découvrir</p>
+            <p className="text-amber-400 text-sm font-bold mt-1">{listingPrice} TND / nuit</p>
+          </div>
+        </div>
+        
+        <div className="absolute top-3 right-3">
+          <div className="px-2 py-1 bg-amber-500/90 backdrop-blur rounded-lg text-[10px] font-bold text-black">
+            ✨ PREMIUM
+          </div>
+        </div>
+      </div>
 
-  const userForModal = {
-    id: user.id,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    email: user.email,
-    status: user.status,
-    escalationLevel: user.escalationLevel || 0,
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative max-w-md w-full bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all animate-in zoom-in-95 duration-300">
+            <button
+              onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            
+            <div className="relative h-56">
+              <img src={imageUrl} alt={alt} className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+              <div className="absolute bottom-4 left-4">
+                <p className="text-white text-sm font-bold">{listingTitle}</p>
+                <p className="text-amber-400 text-xs">{listingPrice} TND / nuit</p>
+              </div>
+            </div>
+            
+            <div className="p-6 text-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center">
+                <Sparkles className="w-8 h-8 text-white" />
+              </div>
+              
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                Contenu exclusif
+              </h3>
+              
+              <p className="text-gray-600 mt-2 text-sm">
+                Créez un compte gratuitement pour voir toutes les photos de cette propriété d'exception
+              </p>
+              
+              <div className="mt-6 space-y-3">
+                <SignUpButton mode="modal">
+                  <button className="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all transform hover:scale-[1.02]">
+                    ✨ S'inscrire gratuitement
+                  </button>
+                </SignUpButton>
+                <SignInButton mode="modal">
+                  <button className="w-full py-3 border-2 border-gray-200 text-gray-700 font-semibold rounded-xl hover:border-amber-300 hover:text-amber-600 transition-all">
+                    🔑 Se connecter
+                  </button>
+                </SignInButton>
+              </div>
+              
+              <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-400">
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Accès immédiat</span>
+                <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                <CheckCircle2 className="w-3 h-3" />
+                <span>Sans engagement</span>
+              </div>
+              
+              <p className="text-[10px] text-gray-400 mt-4">
+                🔒 Vos données sont protégées • Désinscription en 1 clic
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+// ==================== LISTING CARD ====================
+function ListingCard({
+  listing,
+  onToggle,
+}: {
+  listing: Listing;
+  onToggle: (id: number) => void;
+}) {
+  const { isSignedIn } = useUser();
+
+  return (
+    <div className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_28px_80px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900/75">
+      <div className="relative h-72 overflow-hidden">
+        
+        <PremiumImage 
+          imageUrl={listing.image}
+          alt={listing.title}
+          listingTitle={listing.title}
+          listingPrice={listing.price}
+        />
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+
+        {isSignedIn && (
+          <button
+            type="button"
+            onClick={() => onToggle(listing.id)}
+            className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-white/85 text-slate-700 shadow-lg backdrop-blur-md transition-all hover:scale-105 dark:bg-slate-900/80 dark:text-white"
+          >
+            <Heart className={`h-5 w-5 ${listing.loved ? "fill-rose-500 text-rose-500" : ""}`} />
+          </button>
+        )}
+
+        <div className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold tracking-[0.16em] text-slate-800 shadow-md backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
+          {listing.badge}
+        </div>
+
+        <div className="absolute bottom-4 left-4 right-4 z-10 flex items-end justify-between gap-3">
+          <div>
+            <div className="mb-2 inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+              <BadgeCheck className="h-3 w-3" /> Score {listing.score}/100
+            </div>
+            <h3 className="text-2xl font-bold tracking-tight text-white">{listing.title}</h3>
+            <p className="mt-1 flex items-center gap-1 text-sm text-white/80">
+              <MapPin className="h-4 w-4" /> {listing.location}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/90 px-4 py-3 text-right shadow-lg backdrop-blur-md dark:bg-slate-900/90">
+            <p className="text-xl font-extrabold text-slate-900 dark:text-white">{listing.price}</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">TND / nuit</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-5">
+        <div className="mb-3 flex items-center justify-between">
+          <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400">
+            <span className="inline-flex items-center gap-1"><BedDouble className="h-4 w-4" /> {listing.bedrooms}</span>
+            <span className="inline-flex items-center gap-1"><Users className="h-4 w-4" /> {listing.guests}</span>
+          </div>
+          <div className="flex items-center gap-1 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {listing.rating}
+          </div>
+        </div>
+        <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{listing.story}</p>
+      </div>
+    </div>
+  );
+}
+
+function ReviewCard({ review }: { review: Review }) {
+  const gradients = [
+    "from-sky-500 to-indigo-500",
+    "from-purple-500 to-pink-500",
+    "from-emerald-500 to-teal-500",
+    "from-amber-500 to-orange-500",
+  ];
+  const grad = gradients[review.id % gradients.length];
+
+  return (
+    <div className="rounded-[28px] border border-white/70 bg-white/85 p-6 shadow-[0_16px_40px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/75">
+      <div className="mb-4 flex items-start gap-3">
+        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${grad} text-lg font-bold text-white`}>
+          {review.avatar}
+        </div>
+        <div className="flex-1">
+          <p className="font-bold text-slate-900 dark:text-white">{review.name}</p>
+          <p className="text-xs text-slate-400 dark:text-slate-500">{review.city}</p>
+        </div>
+        <Stars rating={review.rating} />
+      </div>
+      <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">“{review.quote}”</p>
+      <div className="mt-5 border-t border-slate-100 pt-3 text-xs font-semibold text-indigo-600 dark:border-slate-800 dark:text-indigo-300">
+        {review.stay}
+      </div>
+    </div>
+  );
+}
+
+export default function HomePage() {
+  const [isDark, setIsDark] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [destination, setDestination] = useState("Sidi Bou Saïd");
+  const [guests, setGuests] = useState(4);
+  const [propertyType, setPropertyType] = useState<Filter["type"]>("ALL");
+  const [newsletterEmail, setNewsletterEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+  const [listings, setListings] = useState(LISTINGS);
+  const [toast, setToast] = useState<string | null>(null);
+  const { isSignedIn } = useUser();
+
+  // Initialiser le thème clair par défaut
+  useEffect(() => {
+    // Vérifier si une préférence est sauvegardée dans localStorage
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme === "dark") {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    } else if (savedTheme === "light") {
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
+    } else {
+      // Par défaut : mode clair
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, []);
+
+  // Sauvegarder le thème quand il change
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+    }
+  }, [isDark]);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setHeroIndex((prev) => (prev + 1) % HERO_SLIDES.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 2400);
+    return () => clearTimeout(timer);
+  }, [toast]);
+
+  const filteredListings = useMemo(() => {
+    return listings.filter((listing) => {
+      const filterMatch =
+        activeFilter === "all"
+          ? true
+          : listing.type === QUICK_FILTERS.find((f) => f.id === activeFilter)?.type;
+
+      const typeMatch = propertyType === "ALL" ? true : listing.type === propertyType;
+      const destinationMatch =
+        listing.location.toLowerCase().includes(destination.toLowerCase()) ||
+        listing.region.toLowerCase().includes(destination.toLowerCase());
+      const guestMatch = listing.guests >= guests;
+
+      return filterMatch && typeMatch && destinationMatch && guestMatch;
+    });
+  }, [activeFilter, destination, guests, listings, propertyType]);
+
+  const editorialListings = filteredListings.length > 0 ? filteredListings : listings;
+  const featuredPrimary = editorialListings[0];
+  const featuredSecondary = editorialListings.slice(1, 4);
+
+  const stats = [
+    { label: "biens premium", value: "1 200+" },
+    { label: "hôtes vérifiés", value: "480" },
+    { label: "voyageurs satisfaits", value: "24k" },
+    { label: "temps moyen de réservation", value: "3 min" },
+  ];
+
+  const runSearch = () => {
+    setToast(`${filteredListings.length || listings.length} propriété(s) correspondent à votre recherche.`);
+    document.getElementById("featured")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const toggleListingLike = (id: number) => {
+    if (!isSignedIn) return;
+    setListings((prev) =>
+      prev.map((listing) =>
+        listing.id === id ? { ...listing, loved: !listing.loved } : listing,
+      ),
+    );
+  };
+
+  const toggleTheme = () => {
+    setIsDark(!isDark);
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-      <main className="md:ml-2 min-h-screen pb-20">
-        <div className="px-4 md:px-8 py-6 md:py-8 space-y-6 md:space-y-8 max-w-[1600px] mx-auto">
-          
-          {/* Fil d'Ariane */}
-          <div className="flex items-center gap-2 text-xs font-medium">
-            <Link href="/admin/dashboard" className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline">ADMIN</Link>
-            <IoChevronForwardOutline className="h-3 w-3 text-slate-400" />
-            <Link href="/admin/users" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600">Utilisateurs</Link>
-            <IoChevronForwardOutline className="h-3 w-3 text-slate-400" />
-            <span className="text-slate-700 dark:text-slate-300 font-semibold">Détails du profil</span>
-          </div>
+    <div className="min-h-screen bg-[#f9f9ff] text-slate-900 transition-colors duration-300 dark:bg-slate-950 dark:text-slate-100">
+      {toast && (
+        <div className="fixed top-6 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-slate-900/90 px-5 py-3 text-sm font-semibold text-white shadow-xl backdrop-blur-xl dark:bg-white/90 dark:text-slate-900">
+          {toast}
+        </div>
+      )}
 
-          {/* Header avec actions */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Link href="/admin/users" className="p-2 rounded-xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-all">
-                <IoArrowBackOutline className="text-lg" />
-              </Link>
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Détails du profil</h2>
-                <p className="text-slate-400 dark:text-slate-500 text-sm mt-0.5">Gérez les informations et actions de l'utilisateur</p>
-              </div>
+      <header className="sticky top-0 z-50 border-b border-white/40 bg-white/70 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/65">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6">
+          <button className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 shadow-lg shadow-blue-500/20">
+              <Building2 className="h-5 w-5 text-white" />
             </div>
-            <div className="flex items-center gap-2">
-              <button onClick={() => setShowActionsHistory(true)} className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all text-sm font-medium">
-                <IoArrowUndoOutline className="text-base" /> Historique
-              </button>
-              <button onClick={openMenu} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-semibold shadow-sm transition-all">
-                <IoEllipsisVertical className="text-base" /> Actions <FiChevronDown className="text-xs" />
-              </button>
+            <div className="text-left">
+              <p className="text-[11px] font-bold uppercase tracking-[0.3em] text-sky-500 dark:text-sky-400">NESTHUB</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Mediterranean Luxury Stays</p>
             </div>
-          </div>
+          </button>
 
-          {/* Section Hero */}
-          <div className="grid grid-cols-12 gap-4 md:gap-6">
-            <div className={`col-span-12 lg:col-span-8 bg-white dark:bg-slate-900 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 md:gap-8 items-start relative overflow-hidden ${block3d}`}>
-              <div className="absolute top-0 right-0 p-4 md:p-6">
-                <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-bold tracking-wider uppercase">
-                  {user.status === "ACTIVE" ? "Session active" : formatUserStatus(user.status)}
-                </span>
+          <nav className="hidden items-center gap-7 text-sm font-medium text-slate-500 dark:text-slate-400 md:flex">
+            {["Destinations", "Collections", "For Hosts", "Journal"].map((item) => (
+              <button key={item} className="transition-colors hover:text-slate-900 dark:hover:text-white">
+                {item}
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition-all hover:scale-105 dark:border-white/10 dark:bg-white/5 dark:text-slate-200"
+            >
+              {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            {!isSignedIn ? (
+              <SignUpButton mode="modal">
+                <button className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-gradient-to-r hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600 dark:bg-white dark:text-slate-900">
+                  Commencer
+                </button>
+              </SignUpButton>
+            ) : (
+              <button className="rounded-full bg-slate-900 px-5 py-2.5 text-sm font-bold text-white transition-all hover:bg-gradient-to-r hover:from-sky-500 hover:via-indigo-500 hover:to-purple-600 dark:bg-white dark:text-slate-900">
+                Mon compte
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <section className="relative isolate overflow-hidden">
+        <div className="absolute inset-0">
+          {HERO_SLIDES.map((slide, index) => (
+            <div
+              key={slide.title}
+              className={`absolute inset-0 transition-opacity duration-1000 ${heroIndex === index ? "opacity-100" : "opacity-0"}`}
+            >
+              <img src={slide.image} alt={slide.title} className="h-full w-full object-cover" />
+            </div>
+          ))}
+        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950/75 via-slate-950/35 to-indigo-950/60" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.22),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.28),transparent_26%),radial-gradient(circle_at_center,rgba(56,189,248,0.18),transparent_34%)]" />
+        <div className="absolute left-[-10%] top-20 h-64 w-64 rounded-full bg-sky-400/20 blur-3xl animate-pulse-soft" />
+        <div className="absolute right-[8%] top-[20%] h-56 w-56 rounded-full bg-purple-500/20 blur-3xl animate-pulse-soft" />
+
+        <div className="relative mx-auto flex min-h-[92vh] max-w-7xl items-center px-4 py-16 sm:px-6">
+          <div className="grid w-full gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="max-w-3xl pt-10 lg:pt-0">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-white/90 backdrop-blur-md">
+                <Sparkles className="h-3.5 w-3.5" />
+                The face of Tunisia's premium hospitality
               </div>
-              <div className="relative group">
-                <div className="w-24 h-24 md:w-32 md:h-32 rounded-2xl overflow-hidden ring-4 ring-indigo-100 dark:ring-indigo-950/50 group-hover:ring-indigo-300 transition-all">
-                  {user.profilePictureUrl ? (
-                    <img className="w-full h-full object-cover" src={getImageUrl(user.profilePictureUrl)} alt={user.fullName} />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-3xl md:text-4xl font-bold">
-                      {(user.fullName || user.firstName || user.email || "U").charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                <div className="absolute -bottom-2 -right-2 bg-white dark:bg-slate-800 p-1.5 rounded-lg shadow-md">
-                  <IoShieldCheckmarkOutline className="text-indigo-600 text-xl" />
-                </div>
+
+              <h1 className="text-shadow-hero text-5xl font-extrabold tracking-tight text-white md:text-7xl">
+                Extraordinary stays for a <span className="text-sky-300">Mediterranean generation.</span>
+              </h1>
+              <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/80 md:text-xl">
+                NestHub transforms property search into desire: cinematic villas, editorial listings, trusted hosts and a digital experience designed to feel unforgettable from the first scroll.
+              </p>
+
+              <div className="mt-8 flex flex-wrap gap-4">
+                <button
+                  type="button"
+                  onClick={runSearch}
+                  className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-3.5 text-sm font-bold text-slate-900 shadow-xl transition-all hover:scale-[1.02]"
+                >
+                  <Search className="h-4 w-4" />
+                  Find your stay
+                </button>
+                <button className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white backdrop-blur-md transition-all hover:bg-white/15">
+                  <Camera className="h-4 w-4" />
+                  Explore visual collections
+                </button>
               </div>
-              <div className="flex-1 space-y-3 md:space-y-4">
-                <div className="space-y-1">
-                  <h3 className="text-2xl md:text-3xl font-display font-bold text-slate-900 dark:text-white">{user.fullName}</h3>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium text-xs md:text-sm flex items-center gap-2">
-                    <IoMailOutline className="text-sm" /> {user.email}
-                  </p>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium text-xs flex items-center gap-2">
-                    <IoCalendarOutline className="text-sm" /> Membre depuis {formatDate(user.createdAt)}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <UserRoleBadge role={user.role} />
-                  <UserStatusBadge status={user.status} suspendedUntil={user.suspendedUntil} />
-                  {user.twoFactorEnabled && (
-                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                      <IoShieldCheckmarkOutline className="text-[12px] md:text-[14px]" /> Double authentification
-                    </span>
-                  )}
-                  {user.governorate && (
-                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-lg text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                      <IoLocationOutline className="text-[12px] md:text-[14px]" /> {user.governorate}
-                    </span>
-                  )}
-                  {user.isIdentityVerified && (
-                    <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-950/30 rounded-lg text-[10px] md:text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                      <FaUserCheck className="text-[12px] md:text-[14px]" /> Identité vérifiée
-                    </span>
-                  )}
-                </div>
-                <div className="pt-2 md:pt-4">
-                  <button
-                    onClick={() => setShowSuspendModal(true)}
-                    className="bg-gradient-to-br from-red-600 to-rose-600 text-white px-4 md:px-6 py-2 md:py-2.5 rounded-full text-[11px] md:text-xs font-bold shadow-lg hover:opacity-90 transition-all flex items-center gap-2"
+
+              <div className="mt-10 grid max-w-2xl grid-cols-2 gap-3 sm:grid-cols-4">
+                {stats.map((stat) => (
+                  <div
+                    key={stat.label}
+                    className="rounded-2xl border border-white/15 bg-white/10 p-4 backdrop-blur-md transition-transform hover:-translate-y-1"
                   >
-                    <IoLockClosedOutline className="text-[14px] md:text-[18px]" /> Suspendre le compte
-                  </button>
-                </div>
+                    <p className="text-2xl font-extrabold text-white">{stat.value}</p>
+                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-white/65">{stat.label}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div className="col-span-12 lg:col-span-4 grid grid-cols-2 gap-3 md:gap-4">
-              <div className={`bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-6 flex flex-col justify-between ${card3d}`}>
-                <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Score de confiance</p>
-                <div>
-                  <p className="text-2xl md:text-4xl font-display font-bold text-indigo-600">{trustScore}<span className="text-sm md:text-xl font-medium opacity-50">%</span></p>
-                  <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-2 overflow-hidden">
-                    <div className="bg-indigo-600 h-full rounded-full" style={{ width: `${trustScore}%` }}></div>
+            <div className="flex items-end lg:justify-end">
+              <div className="relative w-full max-w-xl">
+                <div className="animate-float-slow absolute -left-12 top-12 hidden w-44 rounded-[26px] border border-white/20 bg-white/14 p-3 shadow-[0_25px_80px_rgba(0,0,0,0.22)] backdrop-blur-2xl lg:block">
+                  <div className="rounded-[22px] bg-white/90 p-4 dark:bg-slate-950/85">
+                    <div className="mb-3 flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-500">Signature pick</span>
+                      <BadgeCheck className="h-4 w-4 text-emerald-500" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-white">Villa Palm Hammamet</p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">8 invités • plage privée • sunset deck</p>
+                    <div className="mt-3 flex items-center gap-2 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      4.98 / 5
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className={`bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-6 flex flex-col justify-between ${card3d}`}>
-                <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Rang global</p>
-                <div>
-                  <p className="text-2xl md:text-4xl font-display font-bold text-purple-600">#{user.stats?.globalRank || 142}</p>
-                  <p className="text-[9px] md:text-[10px] text-green-600 font-bold mt-1 md:mt-2">↑ 12 positions ce mois</p>
-                </div>
-              </div>
-              <div className={`bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-6 flex flex-col justify-between ${card3d}`}>
-                <p className="text-[9px] md:text-xs font-bold text-slate-500 uppercase tracking-widest">Volume total</p>
-                <div>
-                  <p className="text-xl md:text-2xl font-display font-bold">{Math.round(user.stats?.totalVolume || 0).toLocaleString()}<span className="text-xs md:text-sm font-medium opacity-50"> TND</span></p>
-                  <p className="text-[8px] md:text-[10px] text-slate-400 mt-1 md:mt-2">Valeur brute historique</p>
-                </div>
-              </div>
-              <div className={`bg-white dark:bg-slate-900 rounded-2xl p-4 md:p-6 flex flex-col justify-between border-2 border-indigo-200 dark:border-indigo-800 ${card3d}`}>
-                <p className="text-[9px] md:text-xs font-bold text-indigo-600 uppercase tracking-widest">Niveau de risque</p>
-                <div>
-                  <p className={`text-2xl md:text-4xl font-display font-bold ${riskColor}`}>{formatRiskLevel(user.stats?.trustScore || 85)}</p>
-                  <p className="text-[8px] md:text-[10px] text-indigo-600/70 font-bold mt-1 md:mt-2">Dernier audit : il y a 2h</p>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Section principale */}
-          <div className="grid grid-cols-12 gap-6 md:gap-8">
-            
-            {/* Colonne gauche */}
-            <div className="col-span-12 xl:col-span-7 space-y-5 md:space-y-6">
-              {isPropertyOwner ? (
-                <>
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-2">
-                    <div>
-                      <h4 className="text-lg md:text-xl font-display font-bold text-slate-900 dark:text-white">Performance financière</h4>
-                      <p className="text-xs md:text-sm text-slate-500">Analyse des revenus et santé des paiements</p>
+                <div className="animate-float-slower absolute -right-8 bottom-14 hidden w-52 rounded-[26px] border border-white/20 bg-slate-950/70 p-3 text-white shadow-[0_25px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl lg:block">
+                  <div className="rounded-[22px] border border-white/10 bg-white/10 p-4">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-300">Today's mood</p>
+                    <p className="mt-2 text-lg font-bold">Sea, silence, stone.</p>
+                    <p className="mt-1 text-xs leading-relaxed text-white/70">
+                      Travelers don't search for rooms. They search for a feeling. Build the homepage around that feeling.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="w-full overflow-hidden rounded-[32px] border border-white/20 bg-white/14 p-3 shadow-[0_30px_120px_rgba(0,0,0,0.25)] backdrop-blur-2xl">
+                  <div className="rounded-[28px] bg-white/90 p-6 dark:bg-slate-950/85">
+                    <div className="mb-5 flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-sky-500">Smart discovery</p>
+                        <h2 className="mt-1 text-2xl font-bold text-slate-900 dark:text-white">Design your perfect arrival</h2>
+                      </div>
+                      <div className="rounded-full bg-sky-50 px-3 py-1 text-xs font-bold text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+                        AI assisted
+                      </div>
                     </div>
-                    <button onClick={goToUserBookings} className="text-[10px] md:text-xs font-bold text-indigo-600 flex items-center gap-1">
-                      Voir le grand livre <IoChevronForwardOutline className="text-sm" />
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="col-span-2">
+                        <label className="mb-1 block text-xs font-semibold text-slate-500">Destination</label>
+                        <div className="relative">
+                          <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            value={destination}
+                            onChange={(e) => setDestination(e.target.value)}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                            placeholder="Sidi Bou Saïd, Hammamet, Djerba..."
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-500">Type de séjour</label>
+                        <select
+                          value={propertyType}
+                          onChange={(e) => setPropertyType(e.target.value as Filter["type"])}
+                          className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                        >
+                          <option value="ALL">Tout explorer</option>
+                          <option value="VILLA">Villa</option>
+                          <option value="HOUSE">Dar / Maison</option>
+                          <option value="APARTMENT">Appartement</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs font-semibold text-slate-500">Invités</label>
+                        <div className="relative">
+                          <Users className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="number"
+                            min={1}
+                            max={12}
+                            value={guests}
+                            onChange={(e) => setGuests(Number(e.target.value) || 1)}
+                            className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm outline-none transition-all focus:border-sky-400 focus:ring-2 focus:ring-sky-400/15 dark:border-white/10 dark:bg-white/5 dark:text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 grid grid-cols-3 gap-3">
+                      {[
+                        { label: "Instant booking", icon: CheckCircle2 },
+                        { label: "Verified hosts", icon: ShieldCheck },
+                        { label: "Editorial picks", icon: Gem },
+                      ].map(({ label, icon: Icon }) => (
+                        <div key={label} className="rounded-2xl bg-slate-50 p-3 text-center dark:bg-white/5">
+                          <Icon className="mx-auto h-4 w-4 text-indigo-500" />
+                          <p className="mt-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300">{label}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={runSearch}
+                      className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.01]"
+                    >
+                      <Search className="h-4 w-4" />
+                      Reveal extraordinary homes
                     </button>
                   </div>
-                  <div className={`bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-8 ${card3d}`}>
-                    <div className="grid grid-cols-3 gap-4 md:gap-8 mb-6 md:mb-8">
-                      <div className="space-y-1">
-                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Solde actif</p>
-                        <p className="text-xl md:text-2xl font-display font-bold text-slate-900 dark:text-white">{Math.round(user.stats?.activeBalance || 0).toLocaleString()} <span className="text-[10px] md:text-xs opacity-50">TND</span></p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Paiements en attente</p>
-                        <p className="text-xl md:text-2xl font-display font-bold text-purple-600">{Math.round(user.stats?.pendingPayout || 0).toLocaleString()} <span className="text-[10px] md:text-xs opacity-50">TND</span></p>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest">Commission totale</p>
-                        <p className="text-xl md:text-2xl font-display font-bold text-indigo-600">{Math.round(user.stats?.totalCommission || 0).toLocaleString()} <span className="text-[10px] md:text-xs opacity-50">TND</span></p>
-                      </div>
-                    </div>
-                    <div className="relative h-36 md:h-48 w-full flex items-end gap-1 md:gap-2">
-                      {[40, 65, 50, 85, 95, 70, 60, 45, 90, 75, 65, 55].map((height, i) => (
-                        <div key={i} className={`flex-1 ${i === 4 ? "bg-indigo-400" : "bg-slate-200 dark:bg-slate-700"} rounded-t-lg transition-all duration-500 hover:bg-indigo-300 cursor-help`} style={{ height: `${height}%` }}></div>
-                      ))}
-                      <div className="absolute -bottom-6 left-0 right-0 flex justify-between text-[8px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2">
-                        <span>Jan</span><span>Fév</span><span>Mar</span><span>Avr</span><span>Mai</span><span>Juin</span>
-                        <span>Juil</span><span>Aoû</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Déc</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Réservations récentes avec EmptyState */}
-                  <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <IoReceiptOutline className="text-indigo-500 text-sm" />
-                        <h5 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Réservations récentes</h5>
-                      </div>
-                      <button onClick={goToUserBookings} className="text-[9px] font-semibold text-indigo-600 hover:underline">Voir tout →</button>
-                    </div>
-                    <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden ${card3d}`}>
-                      {bookings && bookings.length > 0 ? (
-                        <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                          {bookings.slice(0, 3).map((booking: Booking, idx: number) => (
-                            <div key={idx} className="flex items-center justify-between p-4">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/50 flex items-center justify-center">
-                                  <FaBuilding className="text-indigo-500" />
-                                </div>
-                                <div>
-                                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{booking.listing?.title || "Propriété"}</p>
-                                  <p className="text-xs text-slate-400">{formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm font-bold text-indigo-600">{Math.round(booking.totalPrice || 0).toLocaleString()} TND</p>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${booking.status === "COMPLETED" ? "bg-green-100 text-green-600" : "bg-amber-100 text-amber-600"}`}>
-                                  {formatBookingStatus(booking.status)}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <EmptyState icon={IoReceiptOutline} title="Aucune réservation" message="Cet utilisateur n'a pas encore de réservation" />
-                      )}
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className={`bg-white dark:bg-slate-900 rounded-2xl p-8 text-center ${card3d}`}>
-                  <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mx-auto mb-4">
-                    <IoReceiptOutline className="text-2xl text-slate-400" />
-                  </div>
-                  <h4 className="text-lg font-display font-bold text-slate-700 dark:text-slate-300">Aucune donnée financière</h4>
-                  <p className="text-xs text-slate-500 mt-2">Cet utilisateur est un voyageur et ne possède pas de données financières d'hôte.</p>
-                  <button onClick={goToUserBookings} className="mt-4 text-[10px] font-semibold text-indigo-600 hover:underline">Voir ses réservations →</button>
-                </div>
-              )}
-
-              {/* Propriétés gérées avec EmptyState */}
-              {isPropertyOwner && (
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h4 className="text-lg font-bold text-slate-900 dark:text-white">Propriétés gérées</h4>
-                    <button onClick={goToUserListings} className="text-xs font-semibold text-indigo-600 hover:underline">Voir toutes les propriétés →</button>
-                  </div>
-                  <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden ${card3d}`}>
-                    {user.listings && user.listings.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4">
-                        {user.listings.slice(0, 4).map((listing) => (
-                          <Link key={listing.id} href={`/admin/properties/${listing.id}`}>
-                            <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden hover:shadow-lg transition-all">
-                              <div className="aspect-[4/3] relative">
-                                {listing.image ? (
-                                  <img className="w-full h-full object-cover" src={getImageUrl(listing.image)} alt={listing.title} />
-                                ) : (
-                                  <div className="w-full h-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                                    <FaBuilding className="text-3xl text-slate-400" />
-                                  </div>
-                                )}
-                                <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase text-white ${getStatusColor(listing.status)}`}>
-                                  {listing.status === "ACTIVE" ? "En ligne" : listing.status}
-                                </div>
-                              </div>
-                              <div className="p-3">
-                                <h5 className="font-bold text-sm truncate">{listing.title}</h5>
-                                <p className="text-[10px] text-slate-500">{listing.location}</p>
-                                <div className="flex justify-between items-center mt-2">
-                                  <span className="text-xs font-bold text-indigo-600">{listing.pricePerNight.toLocaleString()} TND / nuit</span>
-                                  <span className="text-xs text-slate-400">★ {listing.rating || "Nouveau"}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    ) : (
-                      <EmptyState icon={FaBuilding} title="Aucune propriété" message="Cet hôte n'a pas encore de propriété" />
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Colonne droite */}
-            <div className="col-span-12 xl:col-span-5 space-y-5 md:space-y-6">
-              <div>
-                <div className="flex justify-between items-end mb-4">
-                  <h4 className="text-lg md:text-xl font-display font-bold text-slate-900 dark:text-white">Dossier de vérification</h4>
-                  <button onClick={goToUserVerification} className="text-xs font-semibold text-indigo-600 hover:underline">Voir les détails →</button>
-                </div>
-                <div className={`bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-6 space-y-5 md:space-y-6 ${card3d}`}>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {isPassport ? <FaPassport className="text-indigo-500" /> : <FaIdCard className="text-indigo-500" />}
-                      <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                        {isPassport ? "INFORMATIONS PASSEPORT" : "INFORMATIONS CIN"}
-                      </span>
-                    </div>
-                    <UserVerificationBadge isVerified={user.isIdentityVerified} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">
-                      <p className="text-[9px] uppercase text-slate-400">N° CIN/Passeport</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{user.cinData?.cinNumber || user.cinData?.passportNumber || "-"}</p>
-                    </div>
-                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3">
-                      <p className="text-[9px] uppercase text-slate-400">Nom complet</p>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">{user.cinData?.firstName} {user.cinData?.lastName}</p>
-                    </div>
-                    {isPassport && user.cinData?.country && (
-                      <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 col-span-2">
-                        <p className="text-[9px] uppercase text-slate-400">Pays</p>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">{user.cinData.country}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {hasBack && (
-                    <div className="flex gap-2">
-                      {["front", "back"].map((s) => (
-                        <button key={s} onClick={() => setDocSide(s as "front" | "back")} className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${docSide === s ? "bg-indigo-600 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"}`}>
-                          {s === "front" ? "RECTO" : "VERSO"}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="relative">
-                    {documentImageUrl ? (
-                      <div className="relative group cursor-pointer" onClick={() => setFullscreenImage(documentImageUrl)}>
-                        <img src={getDocumentImageUrl(documentImageUrl)} alt={isPassport ? "Passeport" : "Document d'identité"} className="w-full rounded-xl shadow-md object-cover max-h-48" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center gap-3">
-                          <button onClick={(e) => { e.stopPropagation(); setFullscreenImage(documentImageUrl); }} className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition">
-                            <IoExpandOutline className="text-white text-xl" />
-                          </button>
-                          <a href={getDocumentImageUrl(documentImageUrl)} download onClick={(e) => e.stopPropagation()} className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition">
-                            <IoDownloadOutline className="text-white text-xl" />
-                          </a>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="aspect-[1.6/1] rounded-xl bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center">
-                        <IoDocumentTextOutline className="text-3xl md:text-4xl text-slate-500" />
-                        <p className="text-xs text-slate-400 ml-2">Aucune image disponible</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] md:text-xs font-bold text-slate-600 dark:text-slate-300">Avis du modérateur</span>
-                      <span className="text-[9px] md:text-[10px] text-slate-400">{user.isIdentityVerified ? formatDate(new Date().toISOString()) : "En attente"}</span>
-                    </div>
-                    <p className="text-[11px] md:text-xs leading-relaxed text-slate-600 dark:text-slate-400 italic font-medium">
-                      {user.isIdentityVerified ? "Identité vérifiée dans la base nationale. Aucune anomalie détectée. L'utilisateur est autorisé pour les transactions de grande valeur." : "Vérification des documents en attente. Veuillez examiner les documents téléchargés."}
-                    </p>
-                    <div className="flex items-center gap-2 pt-2">
-                      <div className="w-6 h-6 rounded-full bg-indigo-500 flex items-center justify-center text-white text-[10px] font-bold">AD</div>
-                      <span className="text-[9px] md:text-[10px] font-bold text-slate-500">{user.isIdentityVerified ? "Agent de sécurité" : "En attente de révision"}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Activité récente avec EmptyState */}
-              <div>
-                <h4 className="text-lg font-bold text-slate-900 dark:text-white mb-4">Activité récente</h4>
-                <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden ${card3d}`}>
-                  {user.recentActivity && user.recentActivity.length > 0 ? (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                      {user.recentActivity.slice(0, 5).map((activity) => (
-                        <div key={activity.id} className="p-4 flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-2 h-2 rounded-full ${activity.status === "failed" ? "bg-red-500" : "bg-green-500"}`} />
-                            <div>
-                              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{activity.type}</p>
-                              <p className="text-xs text-slate-400">{activity.device || "Système"}</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-xs text-slate-400">{formatDateTime(activity.timestamp)}</p>
-                            <button onClick={() => viewSessionDetails(activity)} className="text-[10px] font-semibold text-indigo-600 hover:underline">Détails</button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState icon={IoTimeOutline} title="Aucune activité" message="Aucune activité récente trouvée" />
-                  )}
-                </div>
-              </div>
-
-              {/* Litiges avec EmptyState */}
-              <div>
-                <div className="flex justify-between items-center mb-4">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">Litiges récents</h4>
-                  <button onClick={goToUserDisputes} className="text-xs font-semibold text-indigo-600 hover:underline">Voir tous les litiges →</button>
-                </div>
-                <div className={`bg-slate-50 dark:bg-slate-800/50 rounded-2xl overflow-hidden ${card3d}`}>
-                  {user.disputes && user.disputes.length > 0 ? (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
-                      {user.disputes.slice(0, 3).map((dispute) => (
-                        <div key={dispute.id} className={`p-4 border-l-4 ${dispute.priority === "high" ? "border-l-red-500" : "border-l-amber-500"}`}>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center gap-2">
-                              <IoAlertCircleOutline className={`text-sm ${dispute.priority === "high" ? "text-red-500" : "text-amber-500"}`} />
-                              <span className={`px-2 py-0.5 rounded text-[9px] font-extrabold uppercase ${getPriorityColor(dispute.priority)}`}>
-                                {formatDisputePriority(dispute.priority)}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-slate-400 font-mono">{dispute.number}</span>
-                          </div>
-                          <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{dispute.title}</p>
-                          <div className="flex items-center gap-2 mt-2">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${dispute.status === "open" ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>
-                              {formatDisputeStatus(dispute.status)}
-                            </span>
-                            <span className="text-[10px] text-slate-400">{formatDate(dispute.createdAt)}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <EmptyState icon={IoScaleOutline} title="Aucun litige" message="Cet utilisateur n'a aucun litige" />
-                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </main>
 
-      {/* Menu flottant d'actions */}
-      {showMenu && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={closeMenu} />
-          <div className={`fixed z-50 w-52 rounded-2xl bg-white dark:bg-slate-900 border border-indigo-100 dark:border-indigo-900/40 overflow-hidden ${block3d}`} style={{ top: menuPosition.top, left: menuPosition.left }}>
-            <div className="py-1">
-              <button onClick={() => { setShowAddNoteModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-blue-50 dark:hover:bg-blue-900/20 flex items-center gap-2.5">
-                <IoCreateOutline className="text-base text-blue-500" /> Ajouter une note
-              </button>
-              {user.status === "ACTIVE" && (
-                <button onClick={() => { setShowWarningModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2.5 border-t">
-                  <IoWarningOutline className="text-base text-amber-500" /> Avertir
-                </button>
-              )}
-              {(user.status === "TEMPORARILY_SUSPENDED" || user.status === "PERMANENTLY_BANNED" || user.status === "SECURITY_LOCKED") && (
-                <button onClick={() => { setShowActivateModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-emerald-50 dark:hover:bg-emerald-900/20 flex items-center gap-2.5 border-t">
-                  <IoCheckmarkCircleOutline className="text-base text-emerald-500" /> Réactiver
-                </button>
-              )}
-              {user.status === "ACTIVE" && (
-                <>
-                  <button onClick={() => { setShowLockUnlockModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2.5">
-                    <IoLockClosedOutline className="text-base text-amber-500" /> Verrouiller
-                  </button>
-                  <button onClick={() => { setShowSuspendModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 flex items-center gap-2.5">
-                    <IoPauseCircleOutline className="text-base text-amber-500" /> Suspendre
-                  </button>
-                </>
-              )}
-              {user.status !== "PERMANENTLY_BANNED" && (
-                <>
-                  <button onClick={() => { setShowBanModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2.5 border-t">
-                    <IoBanOutline className="text-base text-red-500" /> Bannir
-                  </button>
-                  <button onClick={() => { setShowEscalateModal(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-violet-50 dark:hover:bg-violet-900/20 flex items-center gap-2.5">
-                    <IoArrowUpCircleOutline className="text-base text-violet-500" /> Escalader
-                  </button>
-                </>
-              )}
-              <button onClick={() => { setShowActionsHistory(true); closeMenu(); }} className="w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 flex items-center gap-2.5 border-t">
-                <IoArrowUndoOutline className="text-base text-indigo-500" /> Historique
-              </button>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Modals */}
-      <SuspendUserModal isOpen={showSuspendModal} onClose={() => setShowSuspendModal(false)} user={userForModal} onConfirm={handleSuspend} />
-      <BanUserModal isOpen={showBanModal} onClose={() => setShowBanModal(false)} user={userForModal} onConfirm={handleBan} />
-      <ActivateUserModal isOpen={showActivateModal} onClose={() => setShowActivateModal(false)} user={userForModal} onConfirm={handleActivate} />
-      <LockUnlockModal isOpen={showLockUnlockModal} onClose={() => setShowLockUnlockModal(false)} user={userForModal} onLock={handleLock} onUnlock={handleUnlock} />
-      <EscalateUserModal isOpen={showEscalateModal} onClose={() => setShowEscalateModal(false)} user={userForModal} onEscalate={handleEscalate} currentLevel={user.escalationLevel || 0} />
-      <AddNoteModal isOpen={showAddNoteModal} onClose={() => setShowAddNoteModal(false)} user={userForModal} onAddNote={handleAddNote} />
-      <WarningUserModal isOpen={showWarningModal} onClose={() => setShowWarningModal(false)} user={userForModal} onConfirm={handleWarning} />
-      <ActionsHistoryModal isOpen={showActionsHistory} onClose={() => setShowActionsHistory(false)} userId={user.id} actions={actions} onUndo={handleUndoAction} />
-
-      {/* Session Details Modal */}
-      {showSessionModal && selectedActivity && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setShowSessionModal(false)}>
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${selectedActivity.status === "failed" ? "bg-red-500" : "bg-green-500"}`}></div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Détails de la session</h3>
+        <div className="relative z-10 mx-auto -mt-8 max-w-7xl px-4 pb-6 sm:px-6">
+          <div className="overflow-hidden rounded-full border border-white/15 bg-white/10 py-3 backdrop-blur-xl">
+            <div className="marquee-track flex items-center gap-10 px-6">
+              {[...TRUST_BELT, ...TRUST_BELT].map(({ label, icon: Icon }, index) => (
+                <div key={`${label}-${index}`} className="flex items-center gap-2 text-sm font-semibold text-white/85">
+                  <Icon className="h-4 w-4 text-sky-300" />
+                  <span>{label}</span>
                 </div>
-                <button onClick={() => setShowSessionModal(false)} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-                  <IoCloseOutline className="text-xl text-slate-500" />
-                </button>
-              </div>
-              <div className="space-y-4">
-                <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type d'événement</p>
-                  <p className="text-sm font-semibold text-slate-900 dark:text-white mt-1">{selectedActivity.type}</p>
-                </div>
-                <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Appareil / Navigateur</p>
-                  <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">{selectedActivity.device || "Inconnu"}</p>
-                </div>
-                <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Adresse IP</p>
-                  <p className="text-sm font-mono text-slate-700 dark:text-slate-300 mt-1">{selectedActivity.ipAddress || "-"}</p>
-                </div>
-                <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Localisation</p>
-                  <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">{selectedActivity.location || "-"}</p>
-                </div>
-                <div className="border-b border-slate-100 dark:border-slate-800 pb-3">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Date et heure</p>
-                  <p className="text-sm text-slate-700 dark:text-slate-300 mt-1">{formatDateTime(selectedActivity.timestamp)}</p>
-                </div>
-                <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Statut</p>
-                  <span className={`inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${selectedActivity.status === "failed" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"}`}>
-                    {selectedActivity.status === "failed" ? "Échec" : "Succès"}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-6 flex justify-end">
-                <button onClick={() => setShowSessionModal(false)} className="px-4 py-2 rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition">Fermer</button>
-              </div>
+              ))}
             </div>
           </div>
         </div>
-      )}
 
-      {fullscreenImage && (
-        <div className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center" onClick={() => setFullscreenImage(null)}>
-          <img src={getDocumentImageUrl(fullscreenImage)} alt="Document plein écran" className="max-w-[92vw] max-h-[92vh] object-contain rounded-xl shadow-2xl" onClick={(e) => e.stopPropagation()} />
-          <button onClick={() => setFullscreenImage(null)} className="absolute top-5 right-5 w-9 h-9 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors">
-            <IoCloseOutline className="text-white text-xl" />
+        <div className="relative z-10 mx-auto max-w-7xl px-4 pb-8 sm:px-6">
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              {
+                icon: ShieldCheck,
+                title: "Every listing is staged to inspire trust",
+                text: "Verified visuals, premium curation and consistent storytelling across every property.",
+              },
+              {
+                icon: Camera,
+                title: "An editorial standard, not just a marketplace",
+                text: "Photography, copy and discovery all feel like a luxury magazine come to life.",
+              },
+              {
+                icon: Compass,
+                title: "Built to convert curiosity into booking desire",
+                text: "A homepage designed as the face of the platform — cinematic, confident and unforgettable.",
+              },
+            ].map(({ icon: Icon, title, text }) => (
+              <div
+                key={title}
+                className="rounded-[28px] border border-white/70 bg-white/78 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl transition-all hover:-translate-y-1 dark:border-white/10 dark:bg-slate-900/75"
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">{title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+          <SectionHeading
+            eyebrow="Quick collections"
+            title={<>Browse with <span className={GRAD_TEXT}>desire, not filters.</span></>}
+            text="We transformed property categories into collectible moods — so every click feels like a new chapter in a Mediterranean story."
+          />
+          <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:text-indigo-300">
+            See all collections <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-      )}
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {QUICK_FILTERS.map((filter) => {
+            const active = activeFilter === filter.id;
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                onClick={() => setActiveFilter(filter.id)}
+                className={`group rounded-[28px] border px-5 py-6 text-left transition-all ${
+                  active
+                    ? "border-transparent bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-xl shadow-indigo-500/20"
+                    : "border-white/70 bg-white/85 shadow-[0_16px_40px_rgba(15,23,42,0.06)] hover:-translate-y-1 hover:border-indigo-100 dark:border-white/10 dark:bg-slate-900/75"
+                }`}
+              >
+                <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${active ? "bg-white/15" : "bg-slate-100 text-slate-700 dark:bg-white/5 dark:text-slate-200"}`}>
+                  {filter.icon}
+                </div>
+                <h3 className={`text-sm font-bold ${active ? "text-white" : "text-slate-900 dark:text-white"}`}>
+                  {filter.label}
+                </h3>
+                <p className={`mt-2 text-xs ${active ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}>
+                  {filter.id === "all"
+                    ? "L'ensemble de la collection NestHub"
+                    : "Une sélection au style très affirmé"}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="featured" className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+          <SectionHeading
+            eyebrow="Editorial picks"
+            title={<>The homepage that makes people <span className={GRAD_TEXT}>want to stay longer.</span></>}
+            text="This is not a grid of listings. It's a visual argument for taste, confidence and premium Tunisian hospitality."
+          />
+          <div className="rounded-full border border-indigo-100 bg-white px-4 py-2 text-sm font-semibold text-indigo-600 shadow-sm dark:border-indigo-500/20 dark:bg-slate-900/75 dark:text-indigo-300">
+            {editorialListings.length} résultats inspirants
+          </div>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-12">
+          {featuredPrimary && (
+            <div className="lg:col-span-7">
+              <div className="group overflow-hidden rounded-[36px] border border-white/70 bg-white/85 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+                <div className="relative h-[520px] overflow-hidden">
+                  <img
+                    src={featuredPrimary.image}
+                    alt={featuredPrimary.title}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent" />
+                  <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-800 shadow-lg backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
+                    Hero collection
+                  </div>
+                  {isSignedIn && (
+                    <button
+                      type="button"
+                      onClick={() => toggleListingLike(featuredPrimary.id)}
+                      className="absolute right-6 top-6 flex h-11 w-11 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg backdrop-blur-md dark:bg-slate-900/90 dark:text-white"
+                    >
+                      <Heart className={`h-5 w-5 ${featuredPrimary.loved ? "fill-rose-500 text-rose-500" : ""}`} />
+                    </button>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+                    <div className="mb-4 flex flex-wrap items-center gap-3">
+                      <div className="rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
+                        Trust score {featuredPrimary.score}/100
+                      </div>
+                      <div className="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white/90 backdrop-blur-sm">
+                        {featuredPrimary.type}
+                      </div>
+                    </div>
+                    <h3 className="max-w-2xl text-4xl font-extrabold tracking-tight text-white">
+                      {featuredPrimary.title}
+                    </h3>
+                    <p className="mt-3 max-w-2xl text-sm leading-relaxed text-white/80 md:text-base">
+                      {featuredPrimary.story}
+                    </p>
+                    <div className="mt-5 flex flex-wrap items-center gap-5 text-sm text-white/85">
+                      <span className="inline-flex items-center gap-2"><MapPin className="h-4 w-4" /> {featuredPrimary.location}</span>
+                      <span className="inline-flex items-center gap-2"><Users className="h-4 w-4" /> {featuredPrimary.guests} invités</span>
+                      <span className="inline-flex items-center gap-2"><BedDouble className="h-4 w-4" /> {featuredPrimary.bedrooms} chambres</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-5 lg:col-span-5">
+            {featuredSecondary.map((listing) => (
+              <div
+                key={listing.id}
+                className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80"
+              >
+                <div className="grid md:grid-cols-[220px_1fr]">
+                  <div className="relative h-56 overflow-hidden md:h-full">
+                    <img src={listing.image} alt={listing.title} className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/40 via-transparent to-transparent" />
+                  </div>
+                  <div className="p-5">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div className="rounded-full bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
+                        {listing.badge}
+                      </div>
+                      {isSignedIn && (
+                        <button
+                          type="button"
+                          onClick={() => toggleListingLike(listing.id)}
+                          className="text-slate-400 transition-colors hover:text-rose-500"
+                        >
+                          <Heart className={`h-5 w-5 ${listing.loved ? "fill-rose-500 text-rose-500" : ""}`} />
+                        </button>
+                      )}
+                    </div>
+                    <h4 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{listing.title}</h4>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{listing.story}</p>
+                    <div className="mt-5 flex items-end justify-between gap-4">
+                      <div>
+                        <p className="text-2xl font-extrabold text-slate-900 dark:text-white">{listing.price} TND</p>
+                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">per night</p>
+                      </div>
+                      <div className="flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700 dark:bg-white/5 dark:text-slate-200">
+                        <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> {listing.rating}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {editorialListings.slice(0, 3).map((listing) => (
+            <ListingCard key={`grid-${listing.id}`} listing={listing} onToggle={toggleListingLike} />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
+          <SectionHeading
+            eyebrow="Signature destinations"
+            title={<>A homepage should feel like a <span className={GRAD_TEXT}>travel editorial.</span></>}
+            text="So instead of stacking generic cards, we spotlight places like moods: sea, stone, palm, light and architecture — each one with its own emotional identity."
+          />
+          <div className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900/75 dark:text-slate-200">
+            4 curated destination worlds
+          </div>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-12">
+          <div className="relative overflow-hidden rounded-[36px] border border-white/70 bg-white/85 p-3 shadow-[0_24px_70px_rgba(15,23,42,0.10)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 lg:col-span-5">
+            <div className="relative h-full min-h-[540px] overflow-hidden rounded-[30px]">
+              <img
+                src={DESTINATION_SPOTLIGHTS[0].image}
+                alt={DESTINATION_SPOTLIGHTS[0].title}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/15 to-transparent" />
+              <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-800 shadow-lg backdrop-blur-md dark:bg-slate-900/90 dark:text-slate-100">
+                Editorial spotlight
+              </div>
+              <div className="absolute inset-x-0 bottom-0 p-6 md:p-8">
+                <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-sky-300">
+                  {DESTINATION_SPOTLIGHTS[0].mood}
+                </p>
+                <h3 className="mt-2 text-4xl font-extrabold tracking-tight text-white">
+                  {DESTINATION_SPOTLIGHTS[0].title}
+                </h3>
+                <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/80 md:text-base">
+                  {DESTINATION_SPOTLIGHTS[0].blurb}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-5 lg:col-span-7 md:grid-cols-2">
+            {DESTINATION_SPOTLIGHTS.slice(1).map((item, index) => (
+              <div
+                key={item.title}
+                className={`group overflow-hidden rounded-[32px] border border-white/70 bg-white/85 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all hover:-translate-y-1 dark:border-white/10 dark:bg-slate-900/80 ${
+                  index === 1 ? "md:translate-y-10" : ""
+                }`}
+              >
+                <div className="relative h-64 overflow-hidden">
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-sky-300">
+                      {item.mood}
+                    </p>
+                    <h3 className="mt-2 text-2xl font-bold tracking-tight text-white">{item.title}</h3>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <p className="text-sm leading-relaxed text-slate-500 dark:text-slate-400">{item.blurb}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
+          {[
+            { value: "72h", label: "editorial refresh cycle" },
+            { value: "98%", label: "visual consistency score" },
+            { value: "4x", label: "stronger hero impact" },
+            { value: "∞", label: "brand memorability ambition" },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[24px] border border-white/70 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]"
+            >
+              <p className="text-3xl font-extrabold tracking-tight">{item.value}</p>
+              <p className="mt-2 text-[11px] uppercase tracking-[0.18em] text-white/60">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        <div className="grid gap-5 lg:grid-cols-12">
+          <div className="rounded-[32px] border border-white/70 bg-white/85 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 lg:col-span-5">
+            <SectionHeading
+              eyebrow="Platform DNA"
+              title={<>Not just more listings. <span className={GRAD_TEXT}>A stronger point of view.</span></>}
+              text="Every block on this homepage is designed to sell aspiration, trust and distinction — the three things a premium marketplace needs before a single click on search."
+            />
+            <div className="mt-8 space-y-4">
+              {[
+                {
+                  icon: ShieldCheck,
+                  title: "Verified by design",
+                  text: "Profiles, stays and trust signals are embedded directly into the discovery flow.",
+                },
+                {
+                  icon: Gem,
+                  title: "Luxury without visual noise",
+                  text: "A sharp editorial system that lets each image breathe and each listing feel desirable.",
+                },
+                {
+                  icon: Palmtree,
+                  title: "Built for destination emotion",
+                  text: "More than utility: the platform should feel like arrival before booking ever happens.",
+                },
+              ].map(({ icon: Icon, title, text }) => (
+                <div key={title} className="flex items-start gap-4 rounded-2xl bg-slate-50 p-4 dark:bg-white/5">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white">{title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid gap-5 lg:col-span-7 md:grid-cols-2">
+            {[
+              {
+                title: "A homepage that feels like a cover story",
+                text: "Hero imagery, dramatic contrast, glass interfaces and layered motion cues make the platform feel premium from the first fold.",
+                icon: Camera,
+              },
+              {
+                title: "Property cards that sell desire",
+                text: "Large imagery, trust score, strong pricing hierarchy and human storytelling all work together to increase emotional engagement.",
+                icon: Home,
+              },
+              {
+                title: "Social proof with taste",
+                text: "Reviews, ratings and verification are surfaced in ways that feel elegant instead of transactional.",
+                icon: CheckCircle2,
+              },
+              {
+                title: "A visual system ready to scale",
+                text: "Collections, filters and featured editors picks can all evolve without losing cohesion or impact.",
+                icon: Compass,
+              },
+            ].map(({ title, text, icon: Icon }, index) => (
+              <div
+                key={title}
+                className={`rounded-[28px] border border-white/70 bg-white/85 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.07)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80 ${index % 2 === 1 ? "md:translate-y-8" : ""}`}
+              >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">{title}</h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-500 dark:text-slate-400">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-50/80 py-20 dark:bg-slate-900/30">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-6">
+            <SectionHeading
+              eyebrow="Verified reviews"
+              title={<>People remember how a platform <span className={GRAD_TEXT}>made them feel.</span></>}
+              text="So the testimonials shouldn't just reassure — they should amplify the brand narrative of confidence, beauty and simplicity."
+            />
+            <div className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-bold text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
+              4.9 / 5 • 2 400+ verified reviews
+            </div>
+          </div>
+
+          <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
+            <div className="rounded-[32px] border border-white/70 bg-white/85 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+              <p className="text-6xl font-extrabold leading-none text-sky-500/20">"</p>
+              <p className="-mt-6 text-2xl font-semibold leading-relaxed text-slate-900 dark:text-white">
+                NestHub doesn't look like a rental platform. It feels like the front page of a destination brand — and that changes everything.
+              </p>
+              <div className="mt-8 flex items-center gap-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-lg font-bold text-white">
+                  W
+                </div>
+                <div>
+                  <p className="font-bold text-slate-900 dark:text-white">Walid Ben Amor</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Founder's editorial note</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-1">
+              {REVIEWS.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
+        <div className="rounded-[36px] bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-[1px] shadow-[0_30px_120px_rgba(49,46,129,0.28)]">
+          <div className="grid gap-8 rounded-[inherit] bg-slate-950/95 p-8 text-white md:grid-cols-[1.15fr_0.85fr] md:p-10">
+            <div>
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.24em] text-sky-300">
+                <Send className="h-3.5 w-3.5" /> Newsletter privée
+              </div>
+              <h2 className="text-3xl font-extrabold tracking-tight md:text-5xl">
+                Keep the platform unforgettable — <span className="text-sky-300">even after they leave.</span>
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/70 md:text-base">
+                Bring travelers back with insider drops, private collections, seasonal edits and property stories that feel collectible. A premium homepage deserves premium follow-up.
+              </p>
+
+              <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                {[
+                  "Curated launches",
+                  "Private host selections",
+                  "Editorial travel notes",
+                ].map((item) => (
+                  <div key={item} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm font-semibold text-white/90">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-[30px] border border-white/10 bg-white/5 p-6 backdrop-blur-md">
+              <p className="text-sm font-bold uppercase tracking-[0.24em] text-sky-300">Get inspired</p>
+              <p className="mt-2 text-2xl font-bold">Receive the most beautiful stays before everyone else.</p>
+              <div className="mt-6 space-y-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-white/60">Adresse email</label>
+                  <input
+                    type="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="vous@exemple.com"
+                    className="w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-sky-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!newsletterEmail.trim()) return;
+                    setSubscribed(true);
+                    setToast("Merci — vous êtes maintenant abonné à l'inspiration NestHub.");
+                  }}
+                  className="w-full rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.01]"
+                >
+                  {subscribed ? "Déjà abonné" : "S'abonner à la sélection"}
+                </button>
+                <p className="text-xs leading-relaxed text-white/45">
+                  Zéro spam. Seulement des adresses extraordinaires, des histoires visuelles et des opportunités premium.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer className="border-t border-slate-200 bg-white/70 py-10 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/70">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div>
+            <p className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">NESTHUB</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">The face of extraordinary stays in Tunisia.</p>
+          </div>
+          <div className="flex flex-wrap gap-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+            {FOOTER_LINKS.map((link) => (
+              <button key={link} className="transition-colors hover:text-slate-700 dark:hover:text-white">
+                {link}
+              </button>
+            ))}
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

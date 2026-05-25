@@ -3958,8 +3958,253 @@
       "title": "Astuce IA",
       "description": "Les litiges ouverts sont généralement résolus en moins de 48h. Fournissez des preuves claires pour accélérer le processus."
     }
+  },
+  
+  "hero": {
+    "badge": "La plateforme immobilière premium en Tunisie",
+    "title": "Trouvez la propriété de vos rêves",
+    "titleHighlight": "dès aujourd'hui",
+    "subtitle": "Découvrez les plus belles villas, maisons et appartements avec des experts immobiliers de confiance.",
+    "scroll": "Défiler"
+  },
+  "header": {
+    "home": "Accueil",
+    "properties": "Propriétés",
+    "services": "Services",
+    "contact": "Contact",
+    "about": "À propos",
+    "login": "Connexion",
+    "dashboard": "Tableau de bord"
+  },
+  "trust": {
+    "premium": "Propriétés premium vérifiées",
+    "photography": "Photographie cinématographique",
+    "concierge": "Service conciergerie local",
+    "destinations": "Destinations bord de mer & patrimoine",
+    "verified": "Hôtes certifiés uniquement",
+    "editorial": "Collections éditoriales"
+  },
+  "stats": {
+    "premium": "biens premium",
+    "verified_hosts": "hôtes vérifiés",
+    "travelers": "voyageurs satisfaits",
+    "booking_time": "temps moyen de réservation"
+  },
+  "features": {
+    "badge": "Pourquoi NESTHUB",
+    "title": "Une nouvelle façon de",
+    "titleHighlight": "trouver votre chez-vous",
+    "subtitle": "NESTHUB utilise l'intelligence artificielle pour vous proposer des biens d'exception parfaitement adaptés à vos critères.",
+    "geolocation": {
+      "title": "Géolocalisation précise",
+      "desc": "Trouvez des propriétés exactement là où vous le souhaitez avec notre carte interactive."
+    },
+    "recommendations": {
+      "title": "Recommandations intelligentes",
+      "desc": "Notre IA analyse vos préférences pour vous suggérer les biens les plus adaptés."
+    },
+    "filters": {
+      "title": "Filtres de recherche avancés",
+      "desc": "Affinez votre recherche par prix, surface, commodités, quartier et plus encore."
+    },
+    "booking": {
+      "title": "Réservation express",
+      "desc": "Confirmation immédiate en quelques clics avec notre processus simplifié."
+    }
+  },
+  "services": {
+    "badge": "Notre solution",
+    "title": "Une plateforme intelligente pour",
+    "titleHighlight": "la location immobilière",
+    "subtitle": "NESTHUB révolutionne la location en Tunisie en centralisant les annonces, vérifiant les utilisateurs et sécurisant les transactions.",
+    "verification": {
+      "title": "Vérification OCR et Scoring fiabilité",
+      "desc": "Plus de comptes fictifs ni d'arnaque. Chaque utilisateur est noté automatiquement selon son historique pour une communauté 100% fiable.",
+      "badge": "Sécurité renforcée"
+    },
+    "detection": {
+      "title": "Détection de fuite par IA",
+      "desc": "Vos données personnelles protégées. L'IA bloque automatiquement les numéros et emails dans les messages. Échangez en toute tranquillité.",
+      "badge": "Confidentialité absolue"
+    },
+    "payment": {
+      "title": "Paiement sécurisé Stripe",
+      "desc": "Payez en ligne en toute confiance. Transactions sécurisées, protection des données, annulation et remboursement intégrés.",
+      "badge": "100% sécurisé"
+    },
+    "ai": {
+      "title": "IA pour tous",
+      "desc": "Pour les propriétaires : suggestion automatique du prix idéal lors du dépôt d'une annonce basée sur le marché.",
+      "badge": "Anti-fraude & personnalisation"
+    },
+    "reviews": {
+      "title": "Avis bilatéraux",
+      "desc": "Propriétaires et locataires se notent mutuellement. Construisons ensemble une communauté de confiance basée sur des avis vérifiés.",
+      "badge": "Transparence totale"
+    },
+    "dashboard": {
+      "title": "Dashboard propriétaire complet",
+      "desc": "Gérez vos annonces, consultez vos réservations et suivez vos revenus en temps réel. Tout est centralisé dans un espace dédié.",
+      "badge": "Gestion simplifiée"
+    }
+  },
+  "whyUs": {
+    "badge": "Nos atouts",
+    "title": "Pourquoi travailler",
+    "titleHighlight": "avec nous ?",
+    "subtitle": "Découvrez pourquoi des milliers de clients nous font confiance pour leurs projets immobiliers.",
+    "listings": {
+      "title": "Large sélection de propriétés premium",
+      "desc": "Villas, dars, appartements de standing : trouvez la perle rare parmi nos milliers d'annonces vérifiées en Tunisie."
+    },
+    "expert": {
+      "title": "Accompagnement expert certifié",
+      "desc": "Des conseils personnalisés et des recommandations IA pour réussir votre projet immobilier en toute sérénité."
+    },
+    "verified": {
+      "title": "100% annonces vérifiées",
+      "desc": "Photos authentiques, prix cohérents, propriétaires certifiés. Notre système anti-fraude filtre chaque annonce."
+    },
+    "fast": {
+      "title": "Service rapide et fiable",
+      "desc": "Réservez en quelques clics, confirmez instantanément, échangez en direct. Support client réactif 7j/7."
+    }
+  },
+  "featured": {
+    "badge": "Propriétés en vedette",
+    "title": "Explorez nos",
+    "titleHighlight": "propriétés d'exception",
+    "subtitle": "Les choix les plus populaires pour les voyageurs du monde entier",
+    "details": "Détails",
+    "favorite": "Connectez-vous pour ajouter aux favoris"
+  },
+  "city": {
+    "badge": "Destinations",
+    "title": "Parcourez les propriétés",
+    "titleHighlight": "par ville",
+    "subtitle": "Découvrez les plus belles villes de Tunisie et trouvez la propriété de vos rêves",
+    "properties": "propriétés",
+    "selection": "Une sélection au style très affirmé",
+    "tunis": {
+      "name": "Tunis",
+      "title": "Contraste et capitale",
+      "desc": "Une fusion vibrante entre médina ancestrale et luxe moderne."
+    },
+    "sousse": {
+      "name": "Sousse",
+      "title": "Perle du Sahel",
+      "desc": "Plages dorées, patrimoine UNESCO et médina animée."
+    },
+    "djerba": {
+      "name": "Djerba",
+      "title": "Sérénité insulaire",
+      "desc": "Textures blanchies par le soleil, cours aérées et rythme plus doux."
+    },
+    "hammamet": {
+      "name": "Hammamet",
+      "title": "Élégance balnéaire",
+      "desc": "Villas bordées de palmiers, après-midis dorés et hospitalité raffinée."
+    },
+    "mahdia": {
+      "name": "Mahdia",
+      "title": "Charme du port de pêche",
+      "desc": "Beauté côtière authentique aux eaux turquoises."
+    },
+    "monastir": {
+      "name": "Monastir",
+      "title": "Ribat & marina",
+      "desc": "Forteresses historiques, marinas modernes et plages à perte de vue."
+    },
+    "nabeul": {
+      "name": "Nabeul",
+      "title": "Céramique & agrumes",
+      "desc": "Ville colorée réputée pour sa céramique et ses vergers d'agrumes."
+    },
+    "sidibousaid": {
+      "name": "Sidi Bou Saïd",
+      "title": "Destination iconique",
+      "badge": "Destination iconique",
+      "mood": "Architecture bleu et blanc",
+      "desc": "Vues imprenables sur la falaise, demeures d'artistes, terrasses emblématiques."
+    }
+  },
+  "testimonials": {
+    "badge": "Témoignages",
+    "title": "Ce que disent nos",
+    "titleHighlight": "clients",
+    "subtitle": "Découvrez les expériences de ceux qui nous ont fait confiance",
+    "amira": {
+      "name": "Amira B.",
+      "city": "Paris",
+      "quote": "Enfin une plateforme qui donne envie de réserver dès la première seconde."
+    },
+    "karim": {
+      "name": "Karim M.",
+      "city": "Montréal",
+      "quote": "L'expérience est premium sans être compliquée."
+    },
+    "sofia": {
+      "name": "Sofia L.",
+      "city": "Lyon",
+      "quote": "Très belle sélection. On sent une vraie direction artistique."
+    },
+    "yassine": {
+      "name": "Yassine T.",
+      "city": "Dubaï",
+      "quote": "C'est plus qu'un site de location — c'est une vitrine lifestyle."
+    }
+  },
+  "contact": {
+    "badge": "Support Conciergerie",
+    "title": "Nous sommes à votre",
+    "titleHighlight": "écoute",
+    "subtitle": "Une équipe dédiée est prête à vous accompagner dans votre projet immobilier. Réponses rapides, conseils personnalisés et discrétion absolue.",
+    "fullname": "Nom complet",
+    "email": "Email",
+    "phone": "Téléphone",
+    "message": "Message",
+    "placeholder": {
+      "fullname": "Jean Dupont",
+      "email": "jean@exemple.com",
+      "phone": "+216 XX XXX XXX",
+      "message": "Parlez-nous de votre projet immobilier..."
+    },
+    "submit": "Envoyer le message"
+  },
+  "cta": {
+    "title": "L'excellence immobilière",
+    "titleHighlight": "à portée de clic",
+    "subtitle": "Découvrez les plus belles propriétés en Tunisie. Une sélection exclusive de villas, dars et appartements de prestige.",
+    "button": "Découvrir"
+  },
+  "modal": {
+    "title": "Découvrez ce bien exceptionnel",
+    "subtitle": "Créez un compte gratuitement pour voir toutes les photos et détails de cette propriété d'exception.",
+    "signup": "Créer un compte gratuit",
+    "login": "Se connecter"
+  },
+  "footer": {
+    "brand": "NESTHUB",
+    "description": "La plateforme immobilière premium pour trouver votre propriété de rêve en Tunisie.",
+    "contact": "Contact",
+    "navigation": "Navigation",
+    "account": "Compte",
+    "newsletter": "Inscrivez-vous pour recevoir les dernières annonces exclusives.",
+    "login": "Connexion",
+    "signup": "Créer un compte",
+    "rights": "Tous droits réservés",
+    "privacy": "Confidentialité",
+    "security": "Sécurité",
+    "cookies": "Cookies",
+    "terms": "Conditions",
+    "phone": "+216 71 123 456",
+    "email": "contact@nesthub.tn",
+    "address": "Centre Urbain Nord, Immeuble Noor\nTunis, Tunisie"
+  },
+  "serviceStats": {
+    "searchTime": "de recherche économisées",
+    "verified": "annonces vérifiées",
+    "risk": "risque d'arnaque",
+    "support": "support disponible"
   }
 }
-
-
-

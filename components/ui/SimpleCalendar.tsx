@@ -462,7 +462,13 @@ export function SimpleCalendar({
                     .join(" ");
 
                   // Récupérer le texte complet pour le tooltip
-                  const tooltipText = isBkd ? day?.bookingGuest : (isBlk ? day?.blockedReason : (isPrc ? `Prix spécial: ${day?.customPrice} TND` : ""));
+                  const tooltipText = isBkd
+                    ? day?.bookingGuest
+                    : isBlk
+                      ? day?.blockedReason
+                      : isPrc
+                        ? `Prix spécial: ${day?.customPrice} TND`
+                        : "";
 
                   return (
                     <div
@@ -599,7 +605,13 @@ export function SimpleCalendar({
                 {items.map((day, i) => {
                   const ev = getEventInfo(day, isDark, t);
                   const sel = isSel(day.date);
-                  const tooltipText = day.isBooked ? day.bookingGuest : (day.isBlocked ? day.blockedReason : (day.customPrice ? `Prix spécial: ${day.customPrice} TND` : ""));
+                  const tooltipText = day.isBooked
+                    ? day.bookingGuest
+                    : day.isBlocked
+                      ? day.blockedReason
+                      : day.customPrice
+                        ? `Prix spécial: ${day.customPrice} TND`
+                        : "";
                   return (
                     <tr
                       key={i}
