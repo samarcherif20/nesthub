@@ -837,26 +837,29 @@ export function ChatBox({
     });
   }, [socketMessages]);
 
- useEffect(() => {
-  if (!socket) return;
-  const handleDirectMessage = (message: Message) => {
-    if (!processedIds.current.has(message.id)) {
-      processedIds.current.add(message.id);
-      setMessages((prev) => [...prev, message]);
-      setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-      
-      // JOUER LE SON SEULEMENT SI LE MESSAGE N'EST PAS DE MOI
-      // Comparer l'ID de l'expéditeur avec recipientId
-      if (message.senderId !== recipientId && notificationSoundRef.current) {
-        notificationSoundRef.current.play().catch((err) => {
-          console.log("Son non joué:", err);
-        });
+  useEffect(() => {
+    if (!socket) return;
+    const handleDirectMessage = (message: Message) => {
+      if (!processedIds.current.has(message.id)) {
+        processedIds.current.add(message.id);
+        setMessages((prev) => [...prev, message]);
+        setTimeout(
+          () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+          100,
+        );
+
+        // JOUER LE SON SEULEMENT SI LE MESSAGE N'EST PAS DE MOI
+        // Comparer l'ID de l'expéditeur avec recipientId
+        if (message.senderId !== recipientId && notificationSoundRef.current) {
+          notificationSoundRef.current.play().catch((err) => {
+            console.log("Son non joué:", err);
+          });
+        }
       }
-    }
-  };
-  socket.on("new-message", handleDirectMessage);
-  return () => socket.off("new-message", handleDirectMessage);
-}, [socket, recipientId]);
+    };
+    socket.on("new-message", handleDirectMessage);
+    return () => socket.off("new-message", handleDirectMessage);
+  }, [socket, recipientId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -871,16 +874,16 @@ export function ChatBox({
     socket.on("message-blocked", h);
     return () => socket.off("message-blocked", h);
   }, [socket]);
-  
+
   useEffect(() => {
-  notificationSoundRef.current = new Audio("/sounds/message.mp3");
-  notificationSoundRef.current.load();
-  return () => {
-    if (notificationSoundRef.current) {
-      notificationSoundRef.current = null;
-    }
-  };
-}, []);
+    notificationSoundRef.current = new Audio("/sounds/message.mp3");
+    notificationSoundRef.current.load();
+    return () => {
+      if (notificationSoundRef.current) {
+        notificationSoundRef.current = null;
+      }
+    };
+  }, []);
   // Écouter l'état "en train d'écrire" de l'autre utilisateur
   useEffect(() => {
     if (!socket) return;
@@ -981,6 +984,98 @@ export function ChatBox({
 
   const handleSend = async () => {
     if (!input.trim() || isSending || !isConnected) return;
+
+    // ✅ VÉRIFICATION DES DISPONIBILITÉS (seulement pour le locataire)
+    if (userRole === "TENANT") {
+      try {
+        const availabilityRes = await fetch(
+          `/api/users/${recipientId}/availability`,
+        );
+        if (availabilityRes.ok) {
+          const availabilityData = await availabilityRes.json();
+
+          // Vérifier le mode vacances
+          if (availabilityData.vacationMode) {
+            showToastMsg(
+              availabilityData.vacationMessage ||
+                "Le propriétaire est actuellement en vacances.",
+              "error",
+            );
+            return;
+          }
+
+          const availability = availabilityData.availability || [];
+          if (availability.length > 0) {
+            const now = new Date();
+            const days = [
+              "dimanche",
+              "lundi",
+              "mardi",
+              "mercredi",
+              "jeudi",
+              "vendredi",
+              "samedi",
+            ];
+            const currentDay = days[now.getDay()];
+            const currentHour = now.getHours();
+            const currentMinute = now.getMinutes();
+
+            // Trouver le créneau du jour
+            const todaySlot = availability.find(
+              (slot: any) =>
+                slot.day.toLowerCase() === currentDay ||
+                (slot.day === "Lun - Ven" &&
+                  now.getDay() >= 1 &&
+                  now.getDay() <= 5),
+            );
+
+            let isAvailable = true;
+            let unavailableMessage = "";
+
+            if (!todaySlot || !todaySlot.enabled) {
+              isAvailable = false;
+              unavailableMessage =
+                "Le propriétaire n'est pas disponible aujourd'hui.";
+            } else if (todaySlot.hours === "Fermé") {
+              isAvailable = false;
+              unavailableMessage = "Le propriétaire est fermé aujourd'hui.";
+            } else if (todaySlot.hours !== "Sur rendez-vous") {
+              const hoursMatch = todaySlot.hours.match(
+                /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/,
+              );
+              if (hoursMatch) {
+                const startHour = parseInt(hoursMatch[1]);
+                const startMinute = parseInt(hoursMatch[2]);
+                const endHour = parseInt(hoursMatch[3]);
+                const endMinute = parseInt(hoursMatch[4]);
+
+                const currentTotalMinutes = currentHour * 60 + currentMinute;
+                const startTotalMinutes = startHour * 60 + startMinute;
+                const endTotalMinutes = endHour * 60 + endMinute;
+
+                if (currentTotalMinutes < startTotalMinutes) {
+                  isAvailable = false;
+                  unavailableMessage = `Le propriétaire sera disponible à ${startHour.toString().padStart(2, "0")}:${startMinute.toString().padStart(2, "0")}.`;
+                } else if (currentTotalMinutes > endTotalMinutes) {
+                  isAvailable = false;
+                  unavailableMessage =
+                    "Le propriétaire n'est plus disponible aujourd'hui.";
+                }
+              }
+            }
+
+            if (!isAvailable) {
+              showToastMsg(unavailableMessage, "error");
+              return;
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Erreur vérification disponibilité:", error);
+        // Fail-safe: on laisse passer le message
+      }
+    }
+
     setIsSending(true);
     let content = input.trim();
     if (replyTo) content = `@${replyTo.senderName}: ${content}`;
@@ -994,7 +1089,6 @@ export function ChatBox({
     );
     setIsSending(false);
   };
-
   const handleSendVoice = async (audioBlob: Blob, duration: number) => {
     setIsUploadingVoice(true);
     try {

@@ -148,7 +148,7 @@ function CircularOrbitMenu({
   );
 }
 
-// ─── User Menu Dropdown (version corrigée avec avatar comme OwnerLayout) ──
+// ─── User Menu Dropdown ──────────────────────────────────────────────
 function UserMenu({
   user,
   appUser,
@@ -157,6 +157,8 @@ function UserMenu({
   onClose,
   onLogout,
   t,
+  notificationsMuted,
+  onToggleMute,
 }: {
   user: any;
   appUser: any;
@@ -165,6 +167,8 @@ function UserMenu({
   onClose: () => void;
   onLogout: () => void;
   t: any;
+  notificationsMuted: boolean;
+  onToggleMute: () => void;
 }) {
   const { setTheme, theme } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
@@ -179,12 +183,11 @@ function UserMenu({
   }, [onClose]);
 
   const menuItems = [
-    { label: t("menu.profile") || "Profile", icon: User, href: "/profile" },
+    { label: t("menu.profile") || "Profile", icon: User, href: "/tenant/profile" },
     { label: t("menu.reservations") || "Reservations", icon: CalendarDays, href: "/reservations" },
     { label: t("menu.wallet") || "Wallet", icon: Wallet, href: "/wallet" },
     { label: t("menu.reviews") || "Reviews", icon: Star, href: "/reviews" },
-    { label: t("menu.settings") || "Settings", icon: Settings, href: "/settings" },
-    { label: t("menu.disputes") || "ligites", icon: GoLaw, href: "/disputes" },
+    { label: t("menu.disputes") || "Litiges", icon: GoLaw, href: "/disputes" },
   ];
 
   const displayName = appUser?.username || user?.username || user?.firstName || "User";
@@ -200,7 +203,6 @@ function UserMenu({
         <div className="relative p-5 pb-4 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-indigo-500/5 to-sky-500/10" />
           <div className="relative flex items-center gap-3">
-            {/* Avatar - comme dans OwnerLayout */}
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[2px] shadow-lg shadow-violet-500/20 flex-shrink-0">
               <div className="w-full h-full rounded-[14px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
                 {avatarUrl ? (
@@ -247,33 +249,63 @@ function UserMenu({
           ))}
         </div>
 
-        <div className="px-2 pb-2 border-t border-gray-100 dark:border-gray-800 pt-2">
-          <button
-            onClick={() => {
-              const newTheme = theme === "dark" ? "light" : "dark";
-              setTheme(newTheme);
-              setDark(newTheme === "dark");
-            }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
-          >
-            {dark ? (
-              <Sun className="w-4 h-4 text-amber-500" />
-            ) : (
-              <Moon className="w-4 h-4 text-indigo-500" />
-            )}
-            <span>{dark ? "Light Mode" : "Dark Mode"}</span>
-          </button>
-          <button
-            onClick={() => {
-              onLogout();
-              onClose();
-            }}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all group"
-          >
-            <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-            <span>{t("menu.logout") || "Sign Out"}</span>
-          </button>
-        </div>
+      <div className="px-2 pb-2 border-t border-gray-100 dark:border-gray-800 pt-2">
+  {/* Toggle Notifications - Style switch */}
+  <div className="flex items-center justify-between px-3 py-2.5 rounded-xl">
+    <div className="flex items-center gap-3">
+      {notificationsMuted ? (
+        <Bell className="w-4 h-4 text-gray-400" />
+      ) : (
+        <Bell className="w-4 h-4 text-indigo-500" />
+      )}
+      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        {notificationsMuted ? "Notifications désactivées" : "Notifications actives"}
+      </span>
+    </div>
+    <button
+      onClick={() => {
+        onToggleMute();
+        onClose();
+      }}
+      className={`
+        relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0
+        ${notificationsMuted ? "bg-gray-300 dark:bg-gray-600" : "bg-indigo-500"}
+      `}
+    >
+      <div
+        className={`
+          absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-all duration-300
+          ${notificationsMuted ? "left-1" : "right-1"}
+        `}
+      />
+    </button>
+  </div>
+
+  {/* Theme Toggle */}
+  <button
+    onClick={() => {
+      const newTheme = theme === "dark" ? "light" : "dark";
+      setTheme(newTheme);
+      setDark(newTheme === "dark");
+    }}
+    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+  >
+    {dark ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
+    <span>{dark ? "Light Mode" : "Dark Mode"}</span>
+  </button>
+  
+  {/* Logout */}
+  <button
+    onClick={() => {
+      onLogout();
+      onClose();
+    }}
+    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-all group"
+  >
+    <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+    <span>{t("menu.logout") || "Sign Out"}</span>
+  </button>
+</div>
       </div>
     </div>
   );
@@ -457,19 +489,28 @@ export function TenantHeader({}: TenantHeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [mounted, setMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [notificationsMuted, setNotificationsMuted] = useState(false);
   
-  // États pour l'avatar (comme dans OwnerLayout)
+  // États pour l'avatar
   const [appUser, setAppUser] = useState<any>(null);
   const [avatarError, setAvatarError] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Couleur aléatoire pour l'avatar (comme dans OwnerLayout)
+  // Couleur aléatoire pour l'avatar
   const avatarColor = React.useMemo(() => {
     const randomIndex = Math.floor(Math.random() * avatarColors.length);
     return avatarColors[randomIndex];
   }, []);
 
-  // Récupérer les données utilisateur depuis la DB (comme dans OwnerLayout)
+  // Charger la préférence de mute des notifications
+  useEffect(() => {
+    const savedMuted = localStorage.getItem("notificationsMuted");
+    if (savedMuted !== null) {
+      setNotificationsMuted(JSON.parse(savedMuted));
+    }
+  }, []);
+
+  // Récupérer les données utilisateur depuis la DB
   useEffect(() => {
     const fetchUserData = async () => {
       if (!isSignedIn || !user) {
@@ -491,12 +532,12 @@ export function TenantHeader({}: TenantHeaderProps) {
     fetchUserData();
   }, [isSignedIn, user]);
 
-  // Réinitialiser l'erreur d'avatar quand l'URL change
+  // Réinitialiser l'erreur d'avatar
   useEffect(() => {
     setAvatarError(false);
   }, [appUser?.profilePictureUrl, user?.imageUrl]);
 
-  // Fonction pour obtenir l'URL de l'avatar (comme dans OwnerLayout)
+  // Fonction pour obtenir l'URL de l'avatar
   const getAvatarUrl = () => {
     if (appUser?.profilePictureUrl && !avatarError)
       return `/api/users/avatar?url=${encodeURIComponent(appUser.profilePictureUrl)}`;
@@ -518,23 +559,77 @@ export function TenantHeader({}: TenantHeaderProps) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Mettre à jour le compteur de favoris en temps réel
   useEffect(() => {
-    setMounted(true);
-    const saved = localStorage.getItem("favorites");
-    if (saved) setFavoritesCount(JSON.parse(saved).length);
-    const updateFavs = () => {
-      const s = localStorage.getItem("favorites");
-      if (s) setFavoritesCount(JSON.parse(s).length);
+    const updateFavoritesCount = () => {
+      const saved = localStorage.getItem("favorites");
+      if (saved) {
+        try {
+          const favorites = JSON.parse(saved);
+          setFavoritesCount(favorites.length);
+        } catch (e) {
+          setFavoritesCount(0);
+        }
+      } else {
+        setFavoritesCount(0);
+      }
     };
-    window.addEventListener("favorites-updated", updateFavs);
-    return () => window.removeEventListener("favorites-updated", updateFavs);
+
+    updateFavoritesCount();
+    
+    // Écouter les changements de localStorage
+    window.addEventListener("storage", updateFavoritesCount);
+    window.addEventListener("favorites-updated", updateFavoritesCount);
+    
+    return () => {
+      window.removeEventListener("storage", updateFavoritesCount);
+      window.removeEventListener("favorites-updated", updateFavoritesCount);
+    };
   }, []);
 
+  // Mettre à jour le compteur de messages non lus en temps réel
+  const fetchUnreadCount = useCallback(async () => {
+    if (!isSignedIn) return;
+    try {
+      const res = await fetch("/api/conversations/unread-count");
+      const data = await res.json();
+      setUnreadCount(data.count ?? 0);
+    } catch (error) {
+      console.error("Erreur chargement messages non lus:", error);
+    }
+  }, [isSignedIn]);
+
   useEffect(() => {
-    fetch("/api/conversations/unread-count")
-      .then((r) => r.json())
-      .then((d) => setUnreadCount(d.count ?? 0))
-      .catch(() => {});
+    if (isSignedIn) {
+      fetchUnreadCount();
+      // Rafraîchir toutes les 30 secondes
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isSignedIn, fetchUnreadCount]);
+
+  // Toggle mute notifications
+  const toggleMuteNotifications = useCallback(async () => {
+    const newMutedState = !notificationsMuted;
+    setNotificationsMuted(newMutedState);
+    
+    // Sauvegarder la préférence dans localStorage
+    localStorage.setItem("notificationsMuted", JSON.stringify(newMutedState));
+    
+    // Optionnel: Appel API pour sauvegarder dans la BDD
+    try {
+      await fetch("/api/users/notification-preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ muted: newMutedState }),
+      });
+    } catch (error) {
+      console.error("Erreur sauvegarde préférence notifications:", error);
+    }
+  }, [notificationsMuted]);
+
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -669,13 +764,13 @@ export function TenantHeader({}: TenantHeaderProps) {
                   )}
                 </button>
 
-                {/* Notifications */}
-                <NotificationBell />
+                {/* Notifications - avec prop muted */}
+                <NotificationBell muted={notificationsMuted} />
 
                 {/* Separator */}
                 <div className="hidden md:block w-px h-5 bg-gray-200 dark:bg-gray-700" />
 
-                {/* User Menu with Avatar comme OwnerLayout */}
+                {/* User Menu */}
                 {isSignedIn ? (
                   <div className="relative">
                     <button
@@ -692,7 +787,6 @@ export function TenantHeader({}: TenantHeaderProps) {
                         }
                       `}
                     >
-                      {/* Avatar - comme dans OwnerLayout */}
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[1.5px] shadow-sm shadow-violet-500/15">
                         <div className="w-full h-full rounded-[7px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
                           {getAvatarUrl() ? (
@@ -730,6 +824,8 @@ export function TenantHeader({}: TenantHeaderProps) {
                           setShowLogoutModal(true);
                         }}
                         t={t}
+                        notificationsMuted={notificationsMuted}
+                        onToggleMute={toggleMuteNotifications}
                       />
                     )}
                   </div>

@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getAuth } from "@clerk/nextjs/server"; // ← AJOUTER
 
 export async function POST(req: NextRequest) {
   try {
+    // ← AJOUTER : Récupérer l'utilisateur connecté
+    const { userId } = getAuth(req);
+
     const body = await req.json();
-    const { fullName, email, phone, message } = body;
+    let { fullName, email, phone, message } = body;
 
     // Validation
     if (!fullName || !email || !message) {
@@ -14,18 +18,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Sauvegarde en base de données
+    // ← AJOUTER : Si utilisateur connecté, récupérer ses infos
+    let dbUser = null;
+    if (userId) {
+      dbUser = await prisma.user.findUnique({
+        where: { clerkId: userId },
+        select: { id: true, email: true, firstName: true, lastName: true },
+      });
+
+      if (dbUser) {
+        // Utiliser les infos de l'utilisateur connecté
+        fullName = `${dbUser.firstName} ${dbUser.lastName}`.trim();
+        email = dbUser.email!;
+      }
+    }
+
+    // Sauvegarde en base de données (avec userId si connecté)
     const contact = await prisma.contactMessage.create({
       data: {
         fullName,
         email,
         phone: phone || null,
+        userId: dbUser?.id || null, // ← AJOUTER : Lien avec l'utilisateur
         message,
       },
     });
 
     // Créer une notification pour les admins
-    // Récupérer tous les admins
     const admins = await prisma.user.findMany({
       where: { role: "ADMIN" },
       select: { id: true },
@@ -45,7 +64,8 @@ export async function POST(req: NextRequest) {
             fullName,
             email,
             phone,
-            message: message.substring(0, 200), // Aperçu
+            isConnected: !!dbUser, // ← AJOUTER : Indiquer si c'est un utilisateur connecté
+            message: message.substring(0, 200),
           },
         })),
       });

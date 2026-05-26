@@ -22,6 +22,8 @@ import {
   FaChevronDown,
   FaChevronRight,
 } from "react-icons/fa";
+import { MdSupportAgent } from "react-icons/md";
+
 import { MdOutlinePeopleAlt } from "react-icons/md";
 import { MdOutlineMapsHomeWork } from "react-icons/md";
 import { GrMoney } from "react-icons/gr";
@@ -325,6 +327,11 @@ const navItems = [
     // ✅ Compteur des litiges actifs
     count: counters.activeDisputes,
     countColor: "bg-amber-500",
+  },
+  {
+    name: tLayout("contact"),
+    href: `/${locale}/admin/contact-support`,
+    icon: <MdSupportAgent  size={18} />,
   },
   {
     name: tLayout("staticPages"),

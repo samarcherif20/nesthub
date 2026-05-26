@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { moderateMessage } from "@/lib/moderation";
 import { del } from "@vercel/blob";
 import { onMessageBlocked } from "@/lib/risk-scoring";
-
+import { checkOwnerAvailability } from "@/lib/availability";
 // GET - Récupérer les messages d'une conversation
 export async function GET(
   req: NextRequest,
@@ -161,6 +161,36 @@ const { content, isSystem } = await req.json();
         { error: "Conversation non trouvée" },
         { status: 404 },
       );
+    }
+// ✅ AJOUTE ICI LA VÉRIFICATION DES DISPONIBILITÉS
+    // ============================================
+    // VÉRIFICATION DES DISPONIBILITÉS DU PROPRIÉTAIRE
+    // ============================================
+    // Ne vérifier QUE si l'expéditeur est le LOCATAIRE
+    // ET que le message n'est PAS un message système
+    if (!isSystem && conversation.tenantId === user.id) {
+      try {
+        // Importer la fonction au début du fichier
+        // import { checkOwnerAvailability } from "@/lib/availability";
+        
+        const availabilityCheck = await checkOwnerAvailability(conversation.ownerId);
+        
+        if (!availabilityCheck.isAvailable) {
+          return NextResponse.json(
+            {
+              error: availabilityCheck.message,
+              nextAvailableTime: availabilityCheck.nextAvailableTime,
+              currentHours: availabilityCheck.currentHours,
+              canSend: false,
+              code: "OWNER_UNAVAILABLE"
+            },
+            { status: 403 }
+          );
+        }
+      } catch (availabilityError) {
+        console.error("❌ Erreur vérification disponibilité:", availabilityError);
+        // En cas d'erreur, on laisse passer le message (fail-safe)
+      }
     }
 
     // 🔥 ============================================

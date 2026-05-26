@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useUser } from "@clerk/nextjs";
 import { useSearch, categories, allAmenities } from "./hooks/useSearch";
+import NexusCard from "@/components/ui/NexusCard";
 import {
   FaHome,
   FaCity,
@@ -219,7 +220,22 @@ export default function SearchPage() {
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
   const [showMapPreview, setShowMapPreview] = useState(false);
-
+const [showNexusCard, setShowNexusCard] = useState(false);
+useEffect(() => {
+  const handleScroll = () => {
+    const heroSection = document.querySelector('section');
+    if (heroSection) {
+      const heroBottom = heroSection.getBoundingClientRect().bottom;
+      // Affiche la carte quand on a dépassé la hero section
+      setShowNexusCard(heroBottom < 100);
+    }
+  };
+  
+  window.addEventListener('scroll', handleScroll);
+  handleScroll(); // Vérifie au chargement
+  
+  return () => window.removeEventListener('scroll', handleScroll);
+}, []);
   useEffect(() => {
     setMounted(true);
     const interval = setInterval(() => {
@@ -330,6 +346,11 @@ export default function SearchPage() {
   }
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+      {showNexusCard && (
+        <div className="hidden xl:block fixed right-8 top-1/2 -translate-y-1/2 z-30">
+          <NexusCard />
+        </div>
+      )}
       {alert && (
         <div className="fixed top-24 right-8 z-[60] animate-in slide-in-from-top-2 fade-in duration-300">
           <AlertBanner
@@ -489,6 +510,7 @@ export default function SearchPage() {
                 </div>
               ))}
             </div>
+           
           </div>
         </section>
 
@@ -511,6 +533,7 @@ export default function SearchPage() {
                 </p>
               </div>
             ))}
+            
           </div>
         </section>
 

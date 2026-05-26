@@ -194,6 +194,7 @@
     "profileTypeRequiredForBoth": "Vous avez un compte Propriétaire ET Locataire. Veuillez choisir le type de profil que vous souhaitez utiliser aujourd'hui."
   },
   "admin": {
+    "contact": "support de contact",
     "dashboard": "Tableau de bord",
     "users": "Utilisateurs",
     "properties": "Propriétés",
@@ -1606,7 +1607,7 @@
       "messages": "Messages",
       "analytics": "Statistiques",
       "team": "Équipe",
-      "disputes":"Ligites"
+      "disputes": "Ligites"
     },
     "sidebar": {
       "ownerSuite": "Espace propriétaire",
@@ -3870,7 +3871,7 @@
     "takePhoto": "Photographier",
     "upload": "Upload"
   },
-  
+
   "IdentityVerification": {
     "title": "Affinage de",
     "gradientText": "votre Accès",
@@ -3883,7 +3884,7 @@
     "buttonSupport": "Contacter le support",
     "statusLabel": "Vérification active"
   },
-  
+
   "OwnerDisputes": {
     "page": {
       "title": "Gestion des Litiges",
@@ -3959,7 +3960,7 @@
       "description": "Les litiges ouverts sont généralement résolus en moins de 48h. Fournissez des preuves claires pour accélérer le processus."
     }
   },
-  
+
   "hero": {
     "badge": "La plateforme immobilière premium en Tunisie",
     "title": "Trouvez la propriété de vos rêves",
@@ -4206,5 +4207,337 @@
     "verified": "annonces vérifiées",
     "risk": "risque d'arnaque",
     "support": "support disponible"
+  },
+  "AdminContacts": {
+    "reply": {
+      "page": {
+        "title": "Gestion des demandes",
+        "description": "Gérez toutes les communications des utilisateurs et visiteurs"
+      },
+      "loading": {
+        "message": "Chargement du message...",
+        "error": "Impossible de charger le message"
+      },
+      "header": {
+        "back": "Retour",
+        "inquiries": "Demandes",
+        "replyTo": "Répondre à"
+      },
+      "status": {
+        "pending": "En attente",
+        "replied": "Répondu"
+      },
+      "form": {
+        "to": "À",
+        "subject": "Objet",
+        "subjectPlaceholder": "Objet du message",
+        "editorPlaceholder": "Écrivez votre réponse ici... Utilisez les outils de mise en forme pour personnaliser votre message.",
+        "cancel": "Annuler",
+        "send": "Envoyer la réponse",
+        "sending": "Envoi en cours..."
+      },
+      "info": {
+        "title": "Informations",
+        "contactCard": {
+          "receivedAt": "Reçu le",
+          "repliedAt": "Répondu le"
+        },
+        "originalMessage": "Message original",
+        "connectedUser": {
+          "title": "Utilisateur connecté",
+          "description": "Cet utilisateur recevra une notification dans l'application en plus de l'email."
+        },
+        "emailNote": {
+          "message": "La réponse sera envoyée par email.",
+          "andInApp": "L'utilisateur recevra également une notification in-app."
+        }
+      },
+      "toast": {
+        "replySent": "Réponse envoyée à",
+        "replyError": "Impossible d'envoyer la réponse",
+        "messageNotFound": "Message introuvable",
+        "writeReply": "Veuillez écrire une réponse",
+        "loadError": "Impossible de charger le message"
+      },
+      "errors": {
+        "notFound": "Message non trouvé",
+        "notFoundDescription": "Le message que vous cherchez n'existe pas ou a été supprimé.",
+        "backToList": "Retour à la liste"
+      },
+      "buttons": {
+        "backToList": "Retour à la liste",
+        "cancel": "Annuler",
+        "send": "Envoyer",
+        "sending": "Envoi...",
+        "saveDraft": "Enregistrer en brouillon"
+      },
+      "labels": {
+        "to": "À",
+        "subject": "Objet",
+        "status": "Statut",
+        "date": "Date",
+        "received": "Reçu",
+        "replied": "Répondu",
+        "originalMessage": "Message original",
+        "information": "Informations",
+        "connectedUser": "Utilisateur connecté",
+        "visitor": "Visiteur",
+        "pending": "En attente",
+        "resolved": "Résolu",
+        "reply": "Répondre",
+        "close": "Fermer"
+      },
+      "messages": {
+        "noMessage": "Aucun message trouvé",
+        "loadError": "Erreur lors du chargement",
+        "sendError": "Erreur lors de l'envoi",
+        "sendSuccess": "Message envoyé avec succès",
+        "invalidReply": "Veuillez écrire une réponse avant d'envoyer"
+      }
+    },
+
+    "page": {
+      "title": "Gestion des demandes",
+      "description": "Gérez toutes les communications des utilisateurs et visiteurs"
+    },
+    "stats": {
+      "totalInquiries": "Total demandes",
+      "pending": "En attente",
+      "responseRate": "Taux de réponse",
+      "userMessages": "Messages utilisateurs",
+      "visitorMessages": "Messages visiteurs"
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher par nom, email ou message...",
+      "type": {
+        "all": "Tous les types",
+        "user": "Utilisateur",
+        "visitor": "Visiteur"
+      },
+      "status": {
+        "all": "Tous les statuts",
+        "new": "Nouveau",
+        "resolved": "Répondu"
+      }
+    },
+    "actions": {
+      "view": "Voir et répondre",
+
+      "export": "Exporter"
+    },
+    "export": {
+      "csv": {
+        "title": "Exporter en CSV",
+        "description": "Télécharger les données"
+      },
+      "pdf": {
+        "title": "Exporter en PDF",
+        "description": "Télécharger le rapport"
+      }
+    },
+    "table": {
+      "headers": {
+        "sender": "Expéditeur",
+        "type": "Type",
+        "message": "Message",
+        "status": "Statut",
+        "date": "Date",
+        "actions": "Actions"
+      }
+    },
+    "messages": {
+      "noMessages": "Aucun message trouvé"
+    }
+  },
+
+  "AdminDashboard": {
+    "title": "Tableau de bord administrateur",
+    "subtitle": "Mission Control - Surveillance de la plateforme",
+    "globalBadge": "GLOBAL",
+    "systemsNominal": "SYSTÈMES OPÉRATIONNELS",
+    "loading": "Chargement de votre tableau de bord...",
+    "error": "Erreur",
+
+    "statusBar": {
+      "verifications": "VÉRIFICATIONS",
+      "disputes": "LITIGES",
+      "reports": "SIGNALEMENTS",
+      "newUsers": "NOUVEAUX"
+    },
+
+    "kpi": {
+      "users": "UTILISATEURS",
+      "activeListings": "ANNONCES ACTIVES",
+      "bookings": "RÉSERVATIONS",
+      "revenue": "CHIFFRE D'AFFAIRES",
+      "unit": "TND"
+    },
+
+    "charts": {
+      "stackedRevenue": "Revenus empilés",
+      "bookingTrends": "Tendances des réservations",
+      "stacked": "EMPILÉ",
+      "area": "ZONE",
+      "commissions": "Commissions",
+      "payments": "Versements",
+      "refunds": "Remboursements",
+      "completed": "Complétées",
+      "cancelled": "Annulées",
+      "pending": "En attente"
+    },
+
+    "radar": {
+      "title": "Performance Radar",
+      "live": "EN DIRECT"
+    },
+
+    "radarLabels": {
+      "users": "Utilisateurs",
+      "listings": "Annonces",
+      "bookings": "Réservations",
+      "revenue": "Revenus",
+      "trust": "Confiance",
+      "conversion": "Conversion"
+    },
+
+    "radarDatasets": {
+      "currentMonth": "Ce mois",
+      "previousMonth": "Mois dernier"
+    },
+
+    "usersTable": {
+      "title": "Registry Utilisateurs",
+      "records": "enregistrements",
+      "viewAll": "Voir tout",
+      "columns": {
+        "user": "UTILISATEUR",
+        "role": "RÔLE",
+        "status": "STATUT",
+        "risk": "RISQUE",
+        "trust": "CONFIANCE",
+        "verified": "VÉRIFIÉ",
+        "joined": "INSCRIPTION"
+      },
+      "filters": {
+        "all": "TOUS",
+        "active": "ACTIF",
+        "pending": "EN ATTENTE",
+        "suspended": "SUSPENDU"
+      }
+    },
+
+    "userDistribution": {
+      "title": "Répartition des utilisateurs",
+      "total": "Total",
+      "tenants": "Locataires",
+      "owners": "Propriétaires",
+      "both": "Les deux",
+      "coHosts": "Co-hôtes",
+      "admins": "Admins"
+    },
+
+    "regionalRevenue": {
+      "title": "Revenus par région"
+    },
+
+    "accountStatus": {
+      "title": "Statut des comptes",
+      "active": "ACTIFS",
+      "pending": "EN ATTENTE",
+      "suspended": "SUSPENDUS",
+      "locked": "VERROUILLÉS",
+      "banned": "BANNIS",
+      "inactive": "INACTIFS",
+      "users": "Utilisateurs"
+    },
+
+    "kpiRings": {
+      "title": "Indicateurs clés",
+      "occupation": "OCCUPATION",
+      "satisfaction": "SATISFACTION",
+      "activity": "ACTIVITÉ",
+      "health": "SANTÉ"
+    },
+
+    "verificationQueue": {
+      "title": "File d'attente vérification",
+      "approve": "Approuvé",
+      "reject": "Refusé",
+      "identityVerification": "Vérification d'identité",
+      "propertyVerification": "Vérification de propriété",
+      "defaultVerification": "Vérification"
+    },
+
+    "activeDisputes": {
+      "title": "Litiges actifs"
+    },
+
+    "auditTrail": {
+      "title": "Journal d'audit"
+    },
+
+    "quickActions": {
+      "title": "Actions rapides",
+      "verifications": "Vérifications",
+      "disputes": "Litiges",
+      "reports": "Signalements",
+      "listings": "Annonces",
+      "users": "Utilisateurs"
+    },
+
+    "pendingAlert": {
+      "requests": "DEMANDE(S) EN ATTENTE",
+      "waiting": "En attente depuis plus de 24h - Action requise",
+      "process": "Traiter"
+    },
+
+    "toasts": {
+      "export": "Export",
+      "csvInProgress": "Fichier CSV en cours...",
+      "actionExecuted": "Action exécutée"
+    },
+
+    "userDrawer": {
+      "title": "Détails utilisateur",
+      "status": "Statut",
+      "riskScore": "Score de risque",
+      "information": "Informations",
+      "email": "Email",
+      "id": "ID",
+      "verified": "Vérifié",
+      "lastLogin": "Dernière connexion",
+      "twoHoursAgo": "Il y a 2h",
+      "trustEvaluation": "Évaluation de confiance",
+      "identity": "Identité",
+      "payments": "Paiements",
+      "reviews": "Avis",
+      "activity": "Activité",
+      "reports": "Signalements",
+      "suspend": "Suspendre",
+      "verify": "Vérifier",
+      "notify": "Notifier",
+      "notes": "Notes",
+      "ban": "Bannir",
+      "unlock": "Déverrouiller"
+    },
+
+    "emptyStates": {
+      "noPendingVerifications": "Aucune vérification en attente",
+      "allVerificationsProcessed": "Toutes les demandes ont été traitées",
+      "noActiveDisputes": "Aucun litige actif",
+      "allDisputesResolved": "Tous les litiges sont résolus",
+      "noRecentAudits": "Aucun audit récent",
+      "noAdminActivity": "Aucune activité administrateur récente"
+    },
+
+    "footer": {
+      "copyright": "NESTHUB - tous droits réservés",
+      "userManagement": "Gestion utilisateurs"
+    },
+
+    "common": {
+      "yes": "Oui",
+      "no": "Non"
+    }
   }
 }

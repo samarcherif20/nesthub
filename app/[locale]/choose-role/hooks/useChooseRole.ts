@@ -57,10 +57,13 @@ export function useChooseRole(): UseChooseRoleReturn {
       try {
         // Utiliser Clerk si déjà connecté
         if (clerkUser) {
-          const response = await fetch(`/api/users/by-clerk-id/${clerkUser.id}`);
+          const response = await fetch(
+            `/api/users/by-clerk-id/${clerkUser.id}`,
+          );
           if (response.ok) {
             const userData = await response.json();
-            const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
+            const fullName =
+              `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
             setUser({
               id: userData.id,
               name: fullName || userData.email.split("@")[0],
@@ -73,14 +76,17 @@ export function useChooseRole(): UseChooseRoleReturn {
             return;
           }
         }
-        
+
         // Fallback: récupérer depuis sessionStorage
         const email = sessionStorage.getItem("pendingLoginEmail");
         if (email) {
-          const response = await fetch(`/api/users/by-email/${encodeURIComponent(email)}`);
+          const response = await fetch(
+            `/api/users/by-email/${encodeURIComponent(email)}`,
+          );
           if (response.ok) {
             const userData = await response.json();
-            const fullName = `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
+            const fullName =
+              `${userData.firstName || ""} ${userData.lastName || ""}`.trim();
             setUser({
               id: userData.id,
               name: fullName || userData.email.split("@")[0],
@@ -117,24 +123,25 @@ export function useChooseRole(): UseChooseRoleReturn {
     setSelected((prev) => (prev === role ? null : role));
   }, []);
 
-  // ✅ HANDLECONFIRM SIMPLIFIÉ - PAS D'APPEL API
+  // Dans useChooseRole.ts - remplace handleConfirm
   const handleConfirm = useCallback(async () => {
     if (!selected || !user) return;
 
     setSubmitting(true);
-    
+
     try {
-      // Nettoyer sessionStorage
       sessionStorage.removeItem("pendingLoginEmail");
       sessionStorage.removeItem("pendingLoginPassword");
 
-      // Stocker le choix localement si remember
+      // ⭐ STOCKER LE CHOIX DANS localStorage
       if (remember) {
         localStorage.setItem("selectedRole", selected);
+      } else {
+        localStorage.removeItem("selectedRole");
       }
 
       setTransitioning(true);
-      
+
       setTimeout(() => {
         if (selected === "owner") {
           router.push("/dashboard/owner");
@@ -153,6 +160,8 @@ export function useChooseRole(): UseChooseRoleReturn {
   const handleLogout = useCallback(async () => {
     localStorage.removeItem("rememberMe");
     localStorage.removeItem("redirectAfterLogin");
+    localStorage.removeItem("selectedRole");
+
     sessionStorage.clear();
     await signOut();
     router.push("/login");
@@ -164,7 +173,7 @@ export function useChooseRole(): UseChooseRoleReturn {
 
   const avatarUrl = useMemo(() => {
     if (user?.avatar && !avatarError) {
-      if (user.avatar.includes('vercel-storage.com')) {
+      if (user.avatar.includes("vercel-storage.com")) {
         return pipAvatar(user.avatar);
       }
       return user.avatar;

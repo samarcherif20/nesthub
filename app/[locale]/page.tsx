@@ -4,6 +4,8 @@ import { useUser, SignUpButton, SignInButton } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
+import { useUserRole } from "@/hooks/useUserRole";
+
 import { GrMapLocation } from "react-icons/gr";
 import { TbFilterSearch, TbRocket } from "react-icons/tb";
 import { MdOutlineSmartToy } from "react-icons/md";
@@ -154,106 +156,115 @@ function Counter({
 // ============================================================
 
 export default function HomePage() {
+  
   // Ajoute ces states avec les autres useState
-const [formData, setFormData] = useState({
-  fullName: "",
-  email: "",
-  phone: "",
-  message: "",
-});
-const [errors, setErrors] = useState<{
-  fullName?: string;
-  email?: string;
-  phone?: string;
-  message?: string;
-}>({});
-const [isSubmitting, setIsSubmitting] = useState(false);
-const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [formData, setFormData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+  const [errors, setErrors] = useState<{
+    fullName?: string;
+    email?: string;
+    phone?: string;
+    message?: string;
+  }>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
-// Ajoute ces fonctions
-const showToast = (type: "success" | "error", message: string) => {
-  setToast({ type, message });
-  setTimeout(() => setToast(null), 5000);
-};
+  // Ajoute ces fonctions
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 5000);
+  };
 
-const validateForm = (): boolean => {
-  const newErrors: typeof errors = {};
-  let isValid = true;
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+    let isValid = true;
 
-  if (!formData.fullName.trim()) {
-    newErrors.fullName = "Le nom complet est requis";
-    isValid = false;
-  } else if (formData.fullName.length < 2) {
-    newErrors.fullName = "Le nom doit contenir au moins 2 caractères";
-    isValid = false;
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!formData.email.trim()) {
-    newErrors.email = "L'email est requis";
-    isValid = false;
-  } else if (!emailRegex.test(formData.email)) {
-    newErrors.email = "Veuillez entrer un email valide";
-    isValid = false;
-  }
-
-  if (formData.phone && !/^[0-9+\-\s]{8,}$/.test(formData.phone)) {
-    newErrors.phone = "Veuillez entrer un numéro valide";
-    isValid = false;
-  }
-
-  if (!formData.message.trim()) {
-    newErrors.message = "Le message est requis";
-    isValid = false;
-  } else if (formData.message.length < 10) {
-    newErrors.message = "Le message doit contenir au moins 10 caractères";
-    isValid = false;
-  }
-
-  setErrors(newErrors);
-  return isValid;
-};
-
-const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-  const { name, value } = e.target;
-  setFormData((prev) => ({ ...prev, [name]: value }));
-  if (errors[name as keyof typeof errors]) {
-    setErrors((prev) => ({ ...prev, [name]: undefined }));
-  }
-};
-
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  if (!validateForm()) {
-    showToast("error", "Veuillez corriger les erreurs dans le formulaire");
-    return;
-  }
-
-  setIsSubmitting(true);
-
-  try {
-    const response = await fetch("/api/contact", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-      showToast("success", " Message envoyé avec succès ! Nous vous répondrons rapidement.");
-      setFormData({ fullName: "", email: "", phone: "", message: "" });
-      setErrors({});
-    } else {
-      showToast("error", data.error || "Une erreur est survenue");
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = "Le nom complet est requis";
+      isValid = false;
+    } else if (formData.fullName.length < 2) {
+      newErrors.fullName = "Le nom doit contenir au moins 2 caractères";
+      isValid = false;
     }
-  } catch (error) {
-    showToast("error", "Erreur réseau. Veuillez réessayer.");
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim()) {
+      newErrors.email = "L'email est requis";
+      isValid = false;
+    } else if (!emailRegex.test(formData.email)) {
+      newErrors.email = "Veuillez entrer un email valide";
+      isValid = false;
+    }
+
+    if (formData.phone && !/^[0-9+\-\s]{8,}$/.test(formData.phone)) {
+      newErrors.phone = "Veuillez entrer un numéro valide";
+      isValid = false;
+    }
+
+    if (!formData.message.trim()) {
+      newErrors.message = "Le message est requis";
+      isValid = false;
+    } else if (formData.message.length < 10) {
+      newErrors.message = "Le message doit contenir au moins 10 caractères";
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name as keyof typeof errors]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      showToast("error", "Veuillez corriger les erreurs dans le formulaire");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast(
+          "success",
+          " Message envoyé avec succès ! Nous vous répondrons rapidement.",
+        );
+        setFormData({ fullName: "", email: "", phone: "", message: "" });
+        setErrors({});
+      } else {
+        showToast("error", data.error || "Une erreur est survenue");
+      }
+    } catch (error) {
+      showToast("error", "Erreur réseau. Veuillez réessayer.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   const t = useTranslations();
   const [heroIndex, setHeroIndex] = useState(0);
   const [scrolled, setScrolled] = useState(false);
@@ -261,6 +272,8 @@ const handleSubmit = async (e: React.FormEvent) => {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState<any>(null);
   const { isSignedIn } = useUser();
+  const { role: userRole, loading: roleLoading } = useUserRole();
+
   const router = useRouter();
   const pathname = usePathname();
   const locale = pathname?.split("/")[1] || "fr";
@@ -512,7 +525,15 @@ const handleSubmit = async (e: React.FormEvent) => {
   ];
 
   // ====== EFFETS ======
+useEffect(() => {
+    if (!isSignedIn || roleLoading) return;
 
+    if (userRole === "tenant") {
+      router.push("/search");
+    } else if (userRole === "owner") {
+      router.push("/dashboard/owner");
+    }
+  }, [isSignedIn, userRole, roleLoading, router]);
   useEffect(() => {
     const id = setInterval(() => {
       setHeroIndex((prev) => (prev + 1) % HERO_SLIDES.length);
@@ -761,45 +782,65 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div className="flex items-center gap-3">
               <LanguageSelector />
               <ThemeSwitcher />
-              {!isSignedIn ? (
-                <button
-                  onClick={handleLogin}
-                  className="rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:scale-105"
-                >
-                  {t("header.login")}
-                </button>
-              ) : (
-                <button
-                  onClick={handleDashboard}
-                  className="rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:scale-105"
-                >
-                  {t("header.dashboard")}
-                </button>
-              )}
+            {!isSignedIn ? (
+  <button
+    onClick={handleLogin}
+    className="rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:scale-105"
+  >
+    {t("header.login")}
+  </button>
+) : roleLoading ? (
+  <button
+    disabled
+    className="rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white opacity-70 cursor-wait"
+  >
+    Chargement...
+  </button>
+) : (
+  <button
+    onClick={() => {
+      if (userRole === "tenant") {
+        router.push("/search");
+      } else if (userRole === "owner") {
+        router.push("/dashboard/owner");
+      } else {
+        router.push("/choose-role");
+      }
+    }}
+    className="rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg transition-all hover:scale-105"
+  >
+    {userRole === "tenant" ? "Explorer" : userRole === "owner" ? "Tableau de bord" : "Choisir"}
+  </button>
+)}
             </div>
           </div>
         </header>
       </div>
-{/* Toast Notification */}
-{toast && (
-  <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
-      toast.type === "success" 
-        ? "bg-green-500 text-white" 
-        : "bg-red-500 text-white"
-    }`}>
-      {toast.type === "success" ? (
-        <CheckCircle className="w-5 h-5" />
-      ) : (
-        <AlertCircle className="w-5 h-5" />
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
-      <span className="text-sm font-medium">{toast.message}</span>
-      <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70">
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  </div>
-)}
       {/* ====== SECTION HERO ====== */}
       <section
         id="hero"
@@ -833,8 +874,6 @@ const handleSubmit = async (e: React.FormEvent) => {
 
         <div className="relative mx-auto flex h-full max-w-7xl items-center px-4 sm:px-6">
           <div className="max-w-3xl mx-auto text-center mt-10">
-           
-
             <h1
               key={`title-${heroIndex}`}
               className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight text-white leading-tight animate-in fade-in slide-in-from-bottom-6 duration-1000 delay-100 fill-mode-forwards"
@@ -949,7 +988,8 @@ const handleSubmit = async (e: React.FormEvent) => {
           {servicesData.map((service, index) => (
             <div
               key={service.title}
-className="group border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/30 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl p-6"            >
+              className="group border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/30 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl p-6"
+            >
               <div className="mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-500/10 flex items-center justify-center transition-all duration-300 group-hover:scale-110">
                   <service.icon
@@ -979,7 +1019,7 @@ className="group border border-slate-200 dark:border-slate-700 bg-white dark:bg-
           {statsServices.map((stat) => (
             <div
               key={stat.label}
-              className="text-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl group hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
+              className="text-center p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl group hover:bg-slate-100 dark:hover:bg-slate-800 transition-all pulse-soft"
             >
               <stat.icon className="w-5 h-5 mx-auto mb-2 text-sky-500" />
               <p className="text-xl font-bold text-slate-900 dark:text-white">
@@ -1077,7 +1117,7 @@ className="group border border-slate-200 dark:border-slate-700 bg-white dark:bg-
           <div className="relative">
             <button
               ref={prevBtnRef}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl hover:shadow-2xl transition-all flex items-center justify-center cursor-pointer border border-slate-200 dark:border-slate-700"
+              className="absolute -ml-25 top-1/2 -translate-y-1/2 -translate-x-4 z-10 w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center cursor-pointer border border-slate-200 dark:border-slate-700 hover-glow"
             >
               <svg
                 className="w-5 h-5 text-slate-600 dark:text-slate-300"
@@ -1103,7 +1143,8 @@ className="group border border-slate-200 dark:border-slate-700 bg-white dark:bg-
                 <div
                   key={property.id}
                   onClick={() => openPropertyModal(property)}
-className="flex-shrink-0 w-[280px] md:w-[340px] group cursor-pointer bg-white dark:bg-slate-800/50 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"                >
+                  className="flex-shrink-0 w-[280px] md:w-[340px] group cursor-pointer bg-white dark:bg-slate-800/50 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-2 overflow-hidden"
+                >
                   <div className="relative h-64 overflow-hidden">
                     <img
                       src={property.image}
@@ -1171,7 +1212,7 @@ className="flex-shrink-0 w-[280px] md:w-[340px] group cursor-pointer bg-white da
 
             <button
               ref={nextBtnRef}
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl hover:shadow-2xl transition-all flex items-center justify-center cursor-pointer border border-slate-200 dark:border-slate-700"
+              className="absolute ml-335 top-1/2 -translate-y-1/2 translate-x-4 z-10 w-12 h-12 rounded-full bg-white dark:bg-slate-800 shadow-xl hover:shadow-2xl transition-all flex items-center justify-center cursor-pointer border border-slate-200 dark:border-slate-700"
             >
               <svg
                 className="w-5 h-5 text-slate-600 dark:text-slate-300"
@@ -1499,350 +1540,420 @@ className="flex-shrink-0 w-[280px] md:w-[340px] group cursor-pointer bg-white da
       </section>
 
       {/* ====== SECTION CONTACT ====== */}
-<section
-  id="contact-section"
-  className="relative py-20 px-6 md:px-20 overflow-hidden bg-white dark:bg-slate-900"
->
-  <div className="relative z-10 max-w-7xl mx-auto">
-    <div className="grid lg:grid-cols-2 gap-12 items-center">
-      <div>
-        <span className="inline-block text-sky-500 font-bold tracking-[0.2em] uppercase text-xs mb-6">
-          {t("contact.badge")}
-        </span>
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-4 leading-tight whitespace-nowrap">
-          {t("contact.title")}{" "}
-          <span className="bg-gradient-to-r from-sky-500 to-indigo-600 bg-clip-text text-transparent">
-            {t("contact.titleHighlight")}
-          </span>
-        </h2>
-        <p className="text-slate-600 dark:text-slate-400 text-lg mb-8 leading-relaxed">
-          {t("contact.subtitle")}
-        </p>
-
-        <div className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/30 shadow-xl p-6 md:p-8">
-          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {t("contact.fullname")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className={`w-full bg-slate-50 dark:bg-slate-800/50 border ${
-                    errors.fullName ? "border-red-500 focus:ring-red-500" : "border-slate-200 dark:border-slate-700 focus:ring-sky-500"
-                  } px-4 py-3 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all`}
-                  placeholder={t("contact.placeholder.fullname")}
-                  type="text"
-                />
-                {errors.fullName && (
-                  <p className="text-xs text-red-500 mt-1">{errors.fullName}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  {t("contact.email")} <span className="text-red-500">*</span>
-                </label>
-                <input
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className={`w-full bg-slate-50 dark:bg-slate-800/50 border ${
-                    errors.email ? "border-red-500 focus:ring-red-500" : "border-slate-200 dark:border-slate-700 focus:ring-sky-500"
-                  } px-4 py-3 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all`}
-                  placeholder={t("contact.placeholder.email")}
-                  type="email"
-                />
-                {errors.email && (
-                  <p className="text-xs text-red-500 mt-1">{errors.email}</p>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                {t("contact.phone")} <span className="text-slate-400 text-[9px]">(optionnel)</span>
-              </label>
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className={`w-full bg-slate-50 dark:bg-slate-800/50 border ${
-                  errors.phone ? "border-red-500 focus:ring-red-500" : "border-slate-200 dark:border-slate-700 focus:ring-sky-500"
-                } px-4 py-3 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all`}
-                placeholder={t("contact.placeholder.phone")}
-                type="tel"
-              />
-              {errors.phone && (
-                <p className="text-xs text-red-500 mt-1">{errors.phone}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                {t("contact.message")} <span className="text-red-500">*</span>
-              </label>
-              <textarea
-                name="message"
-                value={formData.message}
-                onChange={handleChange}
-                className={`w-full bg-slate-50 dark:bg-slate-800/50 border ${
-                  errors.message ? "border-red-500 focus:ring-red-500" : "border-slate-200 dark:border-slate-700 focus:ring-sky-500"
-                } px-4 py-3 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all resize-none`}
-                placeholder={t("contact.placeholder.message")}
-                rows={4}
-              ></textarea>
-              {errors.message && (
-                <p className="text-xs text-red-500 mt-1">{errors.message}</p>
-              )}
-              <p className="text-right text-[10px] text-slate-400">
-                {formData.message.length}/500 caractères
+      <section
+        id="contact-section"
+        className="relative py-20 px-6 md:px-20 overflow-hidden bg-white dark:bg-slate-900"
+      >
+        <div className="relative z-10 max-w-7xl mx-auto">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <span className="inline-block text-sky-500 font-bold tracking-[0.2em] uppercase text-xs mb-6">
+                {t("contact.badge")}
+              </span>
+              <h2 className="text-4xl md:text-5xl lg:text-6xl font-black text-slate-900 dark:text-white mb-4 leading-tight whitespace-nowrap">
+                {t("contact.title")}{" "}
+                <span className="bg-gradient-to-r from-sky-500 to-indigo-600 bg-clip-text text-transparent">
+                  {t("contact.titleHighlight")}
+                </span>
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 text-lg mb-8 leading-relaxed">
+                {t("contact.subtitle")}
               </p>
+
+              <div className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800/30 shadow-xl p-6 md:p-8">
+                <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        {t("contact.fullname")}{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        name="fullName"
+                        value={formData.fullName}
+                        onChange={handleChange}
+                        className={`w-full bg-slate-50 dark:bg-slate-800/50 border ${
+                          errors.fullName
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-slate-200 dark:border-slate-700 focus:ring-sky-500"
+                        } px-4 py-3 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all`}
+                        placeholder={t("contact.placeholder.fullname")}
+                        type="text"
+                      />
+                      {errors.fullName && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.fullName}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                        {t("contact.email")}{" "}
+                        <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className={`w-full bg-slate-50 dark:bg-slate-800/50 border ${
+                          errors.email
+                            ? "border-red-500 focus:ring-red-500"
+                            : "border-slate-200 dark:border-slate-700 focus:ring-sky-500"
+                        } px-4 py-3 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all`}
+                        placeholder={t("contact.placeholder.email")}
+                        type="email"
+                      />
+                      {errors.email && (
+                        <p className="text-xs text-red-500 mt-1">
+                          {errors.email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      {t("contact.phone")}{" "}
+                      <span className="text-slate-400 text-[9px]">
+                        (optionnel)
+                      </span>
+                    </label>
+                    <input
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className={`w-full bg-slate-50 dark:bg-slate-800/50 border ${
+                        errors.phone
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-200 dark:border-slate-700 focus:ring-sky-500"
+                      } px-4 py-3 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all`}
+                      placeholder={t("contact.placeholder.phone")}
+                      type="tel"
+                    />
+                    {errors.phone && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.phone}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                      {t("contact.message")}{" "}
+                      <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      className={`w-full bg-slate-50 dark:bg-slate-800/50 border ${
+                        errors.message
+                          ? "border-red-500 focus:ring-red-500"
+                          : "border-slate-200 dark:border-slate-700 focus:ring-sky-500"
+                      } px-4 py-3 focus:ring-2 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none transition-all resize-none`}
+                      placeholder={t("contact.placeholder.message")}
+                      rows={4}
+                    ></textarea>
+                    {errors.message && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.message}
+                      </p>
+                    )}
+                    <p className="text-right text-[10px] text-slate-400">
+                      {formData.message.length}/500 caractères
+                    </p>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white px-6 py-3 font-bold hover:shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <svg
+                          className="animate-spin h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        {t("contact.submit")}
+                        <Send className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white px-6 py-3 font-bold hover:shadow-2xl hover:shadow-indigo-500/30 transition-all duration-300 transform hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Envoi en cours...
-                </>
-              ) : (
-                <>
-                  {t("contact.submit")}
-                  <Send className="w-4 h-4" />
-                </>
-              )}
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <div className="hidden lg:block relative left-25">
-        <img
-          src="/images/support.png"
-          alt="Support Team"
-          className="w-full h-auto object-cover translate-y-28"
-        />
-      </div>
-    </div>
-  </div>
-</section>
-
-     {/* ====== FOOTER ====== */}
-<footer className="bg-indigo-200/80 dark:bg-indigo-900/70 backdrop-blur-sm border-t border-indigo-300/50 dark:border-slate-800 pt-16 pb-8 px-6 md:px-20">
-  <div className="max-w-7xl mx-auto">
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-      {/* Brand & Social */}
-      <div>
-        <div className="flex items-center gap-2.5 mb-6">
-          <div className="relative w-10 h-10">
-            <Image
-              src="/logo/logo.png"
-              alt="NestHub Logo"
-              fill
-              className="object-contain scale-350"
-            />
+            <div className="hidden lg:block relative left-25">
+              <img
+                src="/images/support.png"
+                alt="Support Team"
+                className="w-full h-auto object-cover translate-y-28 float-element-delayed"
+              />
+            </div>
           </div>
-          <span className="text-xl font-bold bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
-            {t("footer.brand")}
-          </span>
         </div>
-        <p className="text-slate-700 dark:text-slate-400 mb-6 leading-relaxed text-sm">
-          {t("footer.description")}
-        </p>
-        <div className="flex space-x-3">
-          <a
-            href="https://facebook.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-[#1877F2] hover:text-white transition-all duration-300 hover:scale-110"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-            </svg>
-          </a>
-          <a
-            href="https://instagram.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#d62976] hover:to-[#962fbf] hover:text-white transition-all duration-300 hover:scale-110"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z" />
-            </svg>
-          </a>
-          <a
-            href="https://x.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-black hover:text-white transition-all duration-300 hover:scale-110"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-          </a>
-          <a
-            href="https://linkedin.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-[#0077B5] hover:text-white transition-all duration-300 hover:scale-110"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C0.792 0 0 0.774 0 1.729v20.542C0 23.227 0.792 24 1.771 24h20.451c0.979 0 1.771-0.773 1.771-1.729V1.729C24 0.774 23.208 0 22.225 0z" />
-            </svg>
-          </a>
-          <a
-            href="https://youtube.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-[#FF0000] hover:text-white transition-all duration-300 hover:scale-110"
-          >
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.073 0 12 0 12s0 3.927.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.927 24 12 24 12s0-3.927-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-            </svg>
-          </a>
+      </section>
+
+      {/* ====== FOOTER ====== */}
+      <footer className="bg-indigo-200/80 dark:bg-indigo-900/70 backdrop-blur-sm border-t border-indigo-300/50 dark:border-slate-800 pt-16 pb-8 px-6 md:px-20">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            {/* Brand & Social */}
+            <div>
+              <div className="flex items-center gap-2.5 mb-6">
+                <div className="relative w-10 h-10">
+                  <Image
+                    src="/logo/logo.png"
+                    alt="NestHub Logo"
+                    fill
+                    className="object-contain scale-350"
+                  />
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent">
+                  {t("footer.brand")}
+                </span>
+              </div>
+              <p className="text-slate-700 dark:text-slate-400 mb-6 leading-relaxed text-sm">
+                {t("footer.description")}
+              </p>
+              <div className="flex space-x-3">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-[#1877F2] hover:text-white transition-all duration-300 hover:scale-110"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-gradient-to-tr hover:from-[#f09433] hover:via-[#d62976] hover:to-[#962fbf] hover:text-white transition-all duration-300 hover:scale-110"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://x.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-black hover:text-white transition-all duration-300 hover:scale-110"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://linkedin.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-[#0077B5] hover:text-white transition-all duration-300 hover:scale-110"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C0.792 0 0 0.774 0 1.729v20.542C0 23.227 0.792 24 1.771 24h20.451c0.979 0 1.771-0.773 1.771-1.729V1.729C24 0.774 23.208 0 22.225 0z" />
+                  </svg>
+                </a>
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-8 h-8 rounded-full bg-white/50 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-[#FF0000] hover:text-white transition-all duration-300 hover:scale-110"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.073 0 12 0 12s0 3.927.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.927 24 12 24 12s0-3.927-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <h5 className="text-lg font-bold mb-6 text-slate-800 dark:text-white">
+                {t("footer.contact")}
+              </h5>
+              <ul className="space-y-4 text-slate-600 dark:text-slate-400 text-sm">
+                <li className="flex items-center space-x-3 group">
+                  <Phone className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                  <span className="group-hover:text-slate-900 dark:group-hover:text-white transition">
+                    {t("footer.phone")}
+                  </span>
+                </li>
+                <li className="flex items-center space-x-3 group">
+                  <Mail className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                  <a
+                    href="mailto:contact@nesthub.tn"
+                    className="group-hover:text-slate-900 dark:group-hover:text-white transition"
+                  >
+                    {t("footer.email")}
+                  </a>
+                </li>
+                <li className="flex items-start space-x-3 group">
+                  <MapPin className="w-4 h-4 text-sky-600 dark:text-sky-400 mt-0.5" />
+                  <span className="group-hover:text-slate-900 dark:group-hover:text-white transition whitespace-pre-line text-sm">
+                    {t("footer.address")}
+                  </span>
+                </li>
+              </ul>
+              <button
+                onClick={() => scrollToSection("contact-section")}
+                className="w-full py-2.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-semibold text-sm hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 mt-3"
+              >
+                {t("header.contact")}
+                <ChevronRight className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* Navigation */}
+            <div>
+              <h5 className="text-lg font-bold mb-6 text-slate-800 dark:text-white">
+                {t("footer.navigation")}
+              </h5>
+              <ul className="space-y-3 text-slate-600 dark:text-slate-400 text-sm">
+                <li>
+                  <button
+                    onClick={() => scrollToSection("hero")}
+                    className="hover:text-slate-900 dark:hover:text-white transition"
+                  >
+                    {t("header.home")}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection("services")}
+                    className="hover:text-slate-900 dark:hover:text-white transition"
+                  >
+                    {t("header.services")}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection("properties")}
+                    className="hover:text-slate-900 dark:hover:text-white transition"
+                  >
+                    {t("header.properties")}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection("about")}
+                    className="hover:text-slate-900 dark:hover:text-white transition"
+                  >
+                    {t("header.about")}
+                  </button>
+                </li>
+                <li>
+                  <button
+                    onClick={() => scrollToSection("contact-section")}
+                    className="hover:text-slate-900 dark:hover:text-white transition"
+                  >
+                    {t("header.contact")}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Compte */}
+            <div>
+              <h5 className="text-lg font-bold mb-6 text-slate-800 dark:text-white">
+                {t("footer.account")}
+              </h5>
+              <p className="text-slate-600 dark:text-slate-400 mb-5 text-sm">
+                {t("footer.newsletter")}
+              </p>
+              <div className="space-y-3">
+                <button
+                  onClick={handleLogin}
+                  className="w-full py-2.5 border border-sky-500 text-sky-600 dark:text-sky-400 font-semibold text-sm hover:bg-sky-500 hover:text-white transition-all duration-300"
+                >
+                  {t("footer.login")}
+                </button>
+                <button
+                  onClick={handleDashboard}
+                  className="w-full py-2.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-semibold text-sm hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-indigo-500/25"
+                >
+                  {t("footer.signup")}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-indigo-300/50 dark:border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 dark:text-slate-500 text-xs">
+            <p>© 2026 NESTHUB. {t("footer.rights")}</p>
+            <div className="flex space-x-5 mt-4 md:mt-0">
+              <a
+                href="#"
+                className="hover:text-slate-900 dark:hover:text-white transition"
+              >
+                {t("footer.privacy")}
+              </a>
+              <a
+                href="#"
+                className="hover:text-slate-900 dark:hover:text-white transition"
+              >
+                {t("footer.security")}
+              </a>
+              <a
+                href="#"
+                className="hover:text-slate-900 dark:hover:text-white transition"
+              >
+                {t("footer.cookies")}
+              </a>
+              <a
+                href="#"
+                className="hover:text-slate-900 dark:hover:text-white transition"
+              >
+                {t("footer.terms")}
+              </a>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Contact */}
-      <div>
-        <h5 className="text-lg font-bold mb-6 text-slate-800 dark:text-white">
-          {t("footer.contact")}
-        </h5>
-        <ul className="space-y-4 text-slate-600 dark:text-slate-400 text-sm">
-          <li className="flex items-center space-x-3 group">
-            <Phone className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-            <span className="group-hover:text-slate-900 dark:group-hover:text-white transition">
-              {t("footer.phone")}
-            </span>
-          </li>
-          <li className="flex items-center space-x-3 group">
-            <Mail className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-            <a
-              href="mailto:contact@nesthub.tn"
-              className="group-hover:text-slate-900 dark:group-hover:text-white transition"
-            >
-              {t("footer.email")}
-            </a>
-          </li>
-          <li className="flex items-start space-x-3 group">
-            <MapPin className="w-4 h-4 text-sky-600 dark:text-sky-400 mt-0.5" />
-            <span className="group-hover:text-slate-900 dark:group-hover:text-white transition whitespace-pre-line text-sm">
-              {t("footer.address")}
-            </span>
-          </li>
-        </ul>
-        <button
-          onClick={() => scrollToSection("contact-section")}
-          className="w-full py-2.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-semibold text-sm hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 mt-3"
-        >              
-          {t("header.contact")}
-          <ChevronRight className="w-3 h-3" />
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <div>
-        <h5 className="text-lg font-bold mb-6 text-slate-800 dark:text-white">
-          {t("footer.navigation")}
-        </h5>
-        <ul className="space-y-3 text-slate-600 dark:text-slate-400 text-sm">
-          <li>
-            <button
-              onClick={() => scrollToSection("hero")}
-              className="hover:text-slate-900 dark:hover:text-white transition"
-            >
-              {t("header.home")}
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => scrollToSection("services")}
-              className="hover:text-slate-900 dark:hover:text-white transition"
-            >
-              {t("header.services")}
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => scrollToSection("properties")}
-              className="hover:text-slate-900 dark:hover:text-white transition"
-            >
-              {t("header.properties")}
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => scrollToSection("about")}
-              className="hover:text-slate-900 dark:hover:text-white transition"
-            >
-              {t("header.about")}
-            </button>
-          </li>
-          <li>
-            <button
-              onClick={() => scrollToSection("contact-section")}
-              className="hover:text-slate-900 dark:hover:text-white transition"
-            >
-              {t("header.contact")}
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      {/* Compte */}
-      <div>
-        <h5 className="text-lg font-bold mb-6 text-slate-800 dark:text-white">
-          {t("footer.account")}
-        </h5>
-        <p className="text-slate-600 dark:text-slate-400 mb-5 text-sm">
-          {t("footer.newsletter")}
-        </p>
-        <div className="space-y-3">
-          <button
-            onClick={handleLogin}
-            className="w-full py-2.5 border border-sky-500 text-sky-600 dark:text-sky-400 font-semibold text-sm hover:bg-sky-500 hover:text-white transition-all duration-300"
-          >
-            {t("footer.login")}
-          </button>
-          <button
-            onClick={handleDashboard}
-            className="w-full py-2.5 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 text-white font-semibold text-sm hover:scale-[1.02] transition-all duration-300 shadow-lg shadow-indigo-500/25"
-          >
-            {t("footer.signup")}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <div className="border-t border-indigo-300/50 dark:border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-slate-500 dark:text-slate-500 text-xs">
-      <p>© 2026 NESTHUB. {t("footer.rights")}</p>
-      <div className="flex space-x-5 mt-4 md:mt-0">
-        <a href="#" className="hover:text-slate-900 dark:hover:text-white transition">
-          {t("footer.privacy")}
-        </a>
-        <a href="#" className="hover:text-slate-900 dark:hover:text-white transition">
-          {t("footer.security")}
-        </a>
-        <a href="#" className="hover:text-slate-900 dark:hover:text-white transition">
-          {t("footer.cookies")}
-        </a>
-        <a href="#" className="hover:text-slate-900 dark:hover:text-white transition">
-          {t("footer.terms")}
-        </a>
-      </div>
-    </div>
-  </div>
-</footer>
+      </footer>
 
       {/* ====== BOUTON RETOUR EN HAUT ====== */}
       {showScrollTop && (
@@ -1949,6 +2060,90 @@ className="flex-shrink-0 w-[280px] md:w-[340px] group cursor-pointer bg-white da
         }
         .fill-mode-forwards {
           animation-fill-mode: forwards;
+        } /* NOUVELLES ANIMATIONS */
+        .shimmer-text {
+          background: linear-gradient(
+            90deg,
+            #0ea5e9,
+            #6366f1,
+            #a855f7,
+            #6366f1,
+            #0ea5e9
+          );
+          background-size: 200% auto;
+          animation: shimmer 3s linear infinite;
+          background-clip: text;
+          -webkit-background-clip: text;
+          color: transparent;
+        }
+
+        @keyframes shimmer {
+          0% {
+            background-position: -200% 0;
+          }
+          100% {
+            background-position: 200% 0;
+          }
+        }
+
+        @keyframes float {
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+
+        .float-element {
+          animation: float 4s ease-in-out infinite;
+        }
+
+        .float-element-delayed {
+          animation: float 5s ease-in-out infinite;
+          animation-delay: 1s;
+        }
+
+        @keyframes softPulse {
+          0%,
+          100% {
+            opacity: 0.7;
+          }
+          50% {
+            opacity: 1;
+          }
+        }
+
+        .pulse-soft {
+          animation: softPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes cardGlow {
+          0% {
+            box-shadow: 0 0 0 0 rgba(14, 165, 233, 0);
+          }
+          100% {
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.3);
+          }
+        }
+
+        .hover-glow:hover {
+          animation: cardGlow 0.5s ease-out forwards;
+        }
+
+        @keyframes rotateSlow {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        .rotate-slow {
+          animation: rotateSlow 10s linear infinite;
+          display: inline-block;
         }
       `}</style>
     </div>
