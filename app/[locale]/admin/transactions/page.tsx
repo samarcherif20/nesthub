@@ -1,10 +1,12 @@
 // app/[locale]/admin/transactions/page.tsx
 "use client";
+import { useState } from "react";  
 
+import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Alert from "@/components/ui/Alert";
 import Pagination from "@/components/ui/Pagination";
+import { CheckCircle, AlertCircle, X } from "lucide-react";
 import {
   IoSearchOutline,
   IoDownloadOutline,
@@ -21,6 +23,7 @@ import {
   IoRefreshCircleOutline,
   IoPersonOutline,
   IoMailOutline,
+  IoAlertCircleOutline,
 } from "react-icons/io5";
 import { MdOutlinePercent, MdOutlinePayment } from "react-icons/md";
 import { BsFiletypeCsv, BsFiletypePdf, BsBank2 } from "react-icons/bs";
@@ -37,8 +40,223 @@ const block3d =
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
 
+// Composant Modal de confirmation de remboursement
+function RefundModal({
+  isOpen,
+  transaction,
+  amount,
+  onConfirm,
+  onCancel,
+  onAmountChange,
+  onReasonChange,
+  isLoading,
+  t,
+}: {
+  isOpen: boolean;
+  transaction: any;
+  amount: number;
+  onConfirm: () => void;
+  onCancel: () => void;
+  onAmountChange: (amount: number) => void;
+  onReasonChange: (reason: string) => void;
+  isLoading: boolean;
+  t: any;
+}) {
+  const [showFullRefund, setShowFullRefund] = useState(true);
+  const [customAmount, setCustomAmount] = useState(amount);
+  const [reason, setReason] = useState("");
+
+  if (!isOpen || !transaction) return null;
+
+  const handleFullRefund = () => {
+    setShowFullRefund(true);
+    onAmountChange(transaction.amount);
+  };
+
+  const handlePartialRefund = () => {
+    setShowFullRefund(false);
+  };
+
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = parseFloat(e.target.value);
+    if (!isNaN(val) && val <= transaction.amount && val > 0) {
+      setCustomAmount(val);
+      onAmountChange(val);
+    }
+  };
+
+  const handleReasonChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setReason(e.target.value);
+    onReasonChange(e.target.value);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+              <IoRefreshCircleOutline className="text-red-600 dark:text-red-400 text-xl" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              {t("refundModalTitle")}
+            </h3>
+          </div>
+          <button
+            onClick={onCancel}
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-5 space-y-4">
+          {/* Transaction Info */}
+          <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-500 dark:text-slate-400">
+                {t("refundTransactionRef")}
+              </span>
+              <span className="font-mono text-xs text-gray-700 dark:text-slate-300">
+                {transaction.reference}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-500 dark:text-slate-400">
+                {t("refundOriginalAmount")}
+              </span>
+              <span className="font-bold text-gray-900 dark:text-white">
+                {transaction.amount.toFixed(2)} TND
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 dark:text-slate-400">
+                {t("refundProperty")}
+              </span>
+              <span className="text-gray-700 dark:text-slate-300 truncate max-w-[200px]">
+                {transaction.property.title}
+              </span>
+            </div>
+          </div>
+
+          {/* Refund Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+              {t("refundTypeLabel")}
+            </label>
+            <div className="flex gap-3">
+              <button
+                onClick={handleFullRefund}
+                className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  showFullRefund
+                    ? "bg-red-600 text-white shadow-md"
+                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200"
+                }`}
+              >
+                {t("refundFull")}
+              </button>
+              <button
+                onClick={handlePartialRefund}
+                className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                  !showFullRefund
+                    ? "bg-amber-600 text-white shadow-md"
+                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200"
+                }`}
+              >
+                {t("refundPartial")}
+              </button>
+            </div>
+          </div>
+
+          {/* Partial Refund Amount */}
+          {!showFullRefund && (
+            <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+              <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                {t("refundAmountLabel")}
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-slate-400">
+                  TND
+                </span>
+                <input
+                  type="number"
+                  value={customAmount}
+                  onChange={handleAmountChange}
+                  min="0.01"
+                  max={transaction.amount}
+                  step="0.01"
+                  className="w-full pl-12 pr-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all"
+                />
+              </div>
+              <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                {t("refundMaxAmount")}: {transaction.amount.toFixed(2)} TND
+              </p>
+            </div>
+          )}
+
+          {/* Refund Reason */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+              {t("refundReasonLabel")}{" "}
+              <span className="text-gray-400">({t("optional")})</span>
+            </label>
+            <textarea
+              value={reason}
+              onChange={handleReasonChange}
+              placeholder={t("refundReasonPlaceholder")}
+              rows={3}
+              className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none transition-all resize-none"
+            />
+          </div>
+
+          {/* Warning Message */}
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+            <div className="flex items-start gap-2">
+              <IoAlertCircleOutline className="text-amber-600 dark:text-amber-400 text-base mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                {t("refundWarning")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex gap-3 p-5 border-t border-gray-100 dark:border-slate-800">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            {t("cancel")}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading || (!showFullRefund && customAmount <= 0)}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <IoRefreshCircleOutline className="text-lg" />
+            )}
+            {t("confirmRefund")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminTransactionsPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
   const t = useTranslations("AdminTransactions");
+
   const {
     transactions,
     kpis,
@@ -52,7 +270,9 @@ export default function AdminTransactionsPage() {
     dateRange,
     showDatePicker,
     showExport,
-    alert,
+    toast,
+    refundModal,
+    refundLoading,
     PAGE_SIZE,
     setSearch,
     setStatusFilter,
@@ -61,32 +281,39 @@ export default function AdminTransactionsPage() {
     setDateRange,
     setShowDatePicker,
     setShowExport,
-    setAlert,
     fetchTransactions,
     handleExport,
-    handleRefund,
+    openRefundModal,
+    closeRefundModal,
+    confirmRefund,
     resetFilters,
-  } = useAdminTransactions();
+  } = useAdminTransactions(locale);
 
   const formatAmount = (n: number) =>
-    n.toLocaleString("fr-FR", {
+    n.toLocaleString(locale === "fr" ? "fr-FR" : "en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
+    return new Date(date).toLocaleDateString(
+      locale === "fr" ? "fr-FR" : "en-US",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      },
+    );
   };
 
   const formatTime = (date: string) => {
-    return new Date(date).toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return new Date(date).toLocaleTimeString(
+      locale === "fr" ? "fr-FR" : "en-US",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+      },
+    );
   };
 
   const StatusBadge = ({ status }: { status: string }) => {
@@ -167,15 +394,46 @@ export default function AdminTransactionsPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-6 gap-6">
-      {alert && (
-        <div className="fixed top-20 right-5 z-[60] w-full max-w-sm">
-          <Alert
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-          />
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={fetchTransactions}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Refund Modal */}
+      <RefundModal
+        isOpen={refundModal.isOpen}
+        transaction={refundModal.transaction}
+        amount={refundModal.amount}
+        onConfirm={confirmRefund}
+        onCancel={closeRefundModal}
+        onAmountChange={(amount) => {
+          const modal = refundModal;
+          modal.amount = amount;
+        }}
+        onReasonChange={(reason) => {
+          const modal = refundModal;
+          modal.reason = reason;
+        }}
+        isLoading={refundLoading}
+        t={t}
+      />
 
       {/* Header */}
       <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -238,9 +496,8 @@ export default function AdminTransactionsPage() {
         </div>
       </div>
 
-      {/* Stats Cards Top - Toutes dynamiques */}
+      {/* Stats Cards Top */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 flex-shrink-0">
-        {/* Carte Total - Dynamique */}
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -257,7 +514,6 @@ export default function AdminTransactionsPage() {
           </div>
         </div>
 
-        {/* Carte Succès - Dynamique */}
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -282,7 +538,6 @@ export default function AdminTransactionsPage() {
           </div>
         </div>
 
-        {/* Carte Remboursements - Dynamique */}
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl border border-red-100 dark:border-red-900/40 p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -302,7 +557,6 @@ export default function AdminTransactionsPage() {
           </div>
         </div>
 
-        {/* Carte En attente - Dynamique */}
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl border border-amber-100 dark:border-amber-900/40 p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -322,7 +576,6 @@ export default function AdminTransactionsPage() {
           </div>
         </div>
 
-        {/* Carte Taux succès - Dégradé Dynamique */}
         <div
           className={`bg-gradient-to-br from-sky-500 to-purple-600 rounded-2xl p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -473,7 +726,7 @@ export default function AdminTransactionsPage() {
                     className="hover:bg-indigo-50/20 dark:hover:bg-indigo-900/10 transition-colors"
                   >
                     <td className="px-4 py-3.5 text-xs text-slate-600 dark:text-slate-400 whitespace-nowrap">
-                      {formatDate(tx.date)} à {formatTime(tx.date)}
+                      {formatDate(tx.date)} {t("at")} {formatTime(tx.date)}
                     </td>
                     <td className="px-4 py-3.5 whitespace-nowrap">
                       <div className="font-bold text-slate-900 dark:text-white">
@@ -555,9 +808,10 @@ export default function AdminTransactionsPage() {
                       <div className="flex flex-col gap-1">
                         {tx.status === "SUCCESS" && tx.type === "PAYMENT" && (
                           <button
-                            onClick={() => handleRefund(tx.id)}
-                            className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium text-left"
+                            onClick={() => openRefundModal(tx)}
+                            className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium text-left flex items-center gap-1"
                           >
+                            <IoRefreshCircleOutline className="text-xs" />{" "}
                             {t("refundButton")}
                           </button>
                         )}
@@ -593,9 +847,8 @@ export default function AdminTransactionsPage() {
         )}
       </div>
 
-      {/* Stats Cards Bottom - Détails dynamiques */}
+      {/* Stats Cards Bottom */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Volume total */}
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
         >
@@ -644,7 +897,6 @@ export default function AdminTransactionsPage() {
           </div>
         </div>
 
-        {/* Commissions */}
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
         >
@@ -695,7 +947,6 @@ export default function AdminTransactionsPage() {
           </div>
         </div>
 
-        {/* Remboursements */}
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
         >

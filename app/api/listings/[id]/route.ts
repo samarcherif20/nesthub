@@ -20,7 +20,6 @@ interface FormattedBooking {
   totalPrice: number;
 }
 
-// Fonction helper pour calculer les scores des avis
 function calculateReviewScoresFromList(reviews: any[]) {
   if (!reviews || reviews.length === 0) {
     return {
@@ -48,24 +47,18 @@ function calculateReviewScoresFromList(reviews: any[]) {
   };
 }
 
-// Fonction utilitaire pour fusionner les données originales avec la révision en attente
 function mergeWithPendingRevision(original: any, pending: any): any {
-  console.log(`🔧 [mergeWithPendingRevision] DEBUT`);
-  console.log(
-    `🔧 Original - title: ${original?.title}, pricePerNight: ${original?.pricePerNight}`,
-  );
-  console.log(
-    `🔧 Pending - title: ${pending?.title}, pricePerNight: ${pending?.pricePerNight}`,
-  );
+  console.log(`[mergeWithPendingRevision] DEBUT`);
+  console.log(`Original - title: ${original?.title}, pricePerNight: ${original?.pricePerNight}`);
+  console.log(`Pending - title: ${pending?.title}, pricePerNight: ${pending?.pricePerNight}`);
 
   if (!pending) {
-    console.log(`🔧 Aucune donnée pending, retour original`);
+    console.log(`Aucune donnee pending, retour original`);
     return original;
   }
 
   const merged = { ...original };
 
-  // Champs de base à fusionner
   const fieldsToMerge = [
     "title",
     "description",
@@ -107,35 +100,76 @@ function mergeWithPendingRevision(original: any, pending: any): any {
       const oldValue = merged[field];
       const newValue = pending[field];
       if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-        console.log(
-          `🔧 Fusion du champ "${field}": ${JSON.stringify(oldValue)} -> ${JSON.stringify(newValue)}`,
-        );
+        console.log(`Fusion du champ "${field}": ${JSON.stringify(oldValue)} -> ${JSON.stringify(newValue)}`);
       }
       merged[field] = pending[field];
     }
   }
 
-  // Gérer les photos de la révision
   if (pending.photos && pending.photos.length > 0) {
-    console.log(`🔧 Fusion des photos: ${pending.photos.length} photos`);
+    console.log(`Fusion des photos: ${pending.photos.length} photos`);
     merged.photos = pending.photos;
   }
 
-  console.log(
-    `🔧 [mergeWithPendingRevision] FIN - merged title: ${merged.title}, pricePerNight: ${merged.pricePerNight}`,
-  );
+  console.log(`[mergeWithPendingRevision] FIN - merged title: ${merged.title}, pricePerNight: ${merged.pricePerNight}`);
   return merged;
 }
 
-// GET - Récupère TOUTES les données d'une annonce (avec fusion des révisions en attente)
+async function sendNotificationToOwner(
+  ownerId: string,
+  title: string,
+  content: string,
+  type: string,
+  listingId: string,
+  listingTitle: string,
+) {
+  try {
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+      select: { id: true, email: true, firstName: true, lastName: true },
+    });
+
+    if (!owner) {
+      console.log(`Proprietaire non trouve: ${ownerId}`);
+      return;
+    }
+
+    const notification = await prisma.notification.create({
+      data: {
+        userId: ownerId,
+        type: type as any,
+        title: title,
+        content: content,
+        channels: ["IN_APP", "EMAIL"],
+        data: {
+          listingId,
+          listingTitle,
+          actionBy: "admin",
+          actionAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    console.log(`[NOTIFICATION] Envoyee au proprietaire ${owner.email || ownerId}:`);
+    console.log(`   - Titre: ${title}`);
+    console.log(`   - Type: ${type}`);
+    console.log(`   - Contenu: ${content}`);
+
+    return notification;
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de la notification:", error);
+  }
+}
+
+// GET - Recupere TOUTES les donnees d'une annonce (avec fusion des revisions en attente)
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { userId: clerkId } = getAuth(request);
     const { id } = await params;
 
     console.log(`\n${"=".repeat(60)}`);
-    console.log(`🔍 [GET] Récupération de l'annonce: ${id}`);
-    console.log(`👤 Utilisateur: ${clerkId || "non authentifié"}`);
+    console.log(`[GET] Recuperation de l'annonce: ${id}`);
+    console.log(`Utilisateur: ${clerkId || "non authentifie"}`);
     console.log(`${"=".repeat(60)}`);
 
     let shouldIncrementViews = true;
@@ -154,14 +188,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         if (listingOwner) {
           shouldIncrementViews = false;
           isOwner = true;
-          console.log(`✅ Utilisateur est le PROPRIÉTAIRE de l'annonce`);
+          console.log(`Utilisateur est le PROPRIETAIRE de l'annonce`);
         } else {
-          console.log(`👤 Utilisateur n'est PAS le propriétaire`);
+          console.log(`Utilisateur n'est PAS le proprietaire`);
         }
       }
     }
 
-    // ✅ Récupérer l'annonce SANS reviews (car pas de relation directe)
     const listing = await prisma.listing.findUnique({
       where: { id },
       include: {
@@ -189,13 +222,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
     if (!listing) {
-      console.log(`❌ Annonce non trouvée: ${id}`);
+      console.log(`Annonce non trouvee: ${id}`);
       return NextResponse.json(
-        { error: "Annonce non trouvée" },
+        { error: "Annonce non trouvee" },
         { status: 404 },
       );
     }
-    // ✅ AJOUTE CES LIGNES ICI (après le if(!listing))
+
     const ownerVacation = await prisma.user.findUnique({
       where: { id: listing.ownerId },
       select: {
@@ -206,12 +239,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    console.log(`🏖️ Mode vacances propriétaire:`, {
+    console.log(`Mode vacances proprietaire:`, {
       vacationMode: ownerVacation?.vacationMode,
       startDate: ownerVacation?.vacationStartDate,
       endDate: ownerVacation?.vacationEndDate,
     });
-    // ✅ Récupérer les reviews via les bookings du listing
+
     const bookingsWithReviews = await prisma.booking.findMany({
       where: {
         listingId: id,
@@ -236,46 +269,36 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       take: 10,
     });
 
-    // Extraire les reviews
     const reviewsList = bookingsWithReviews
       .filter((b) => b.review)
       .map((b) => b.review);
 
-    console.log(`📋 Annonce trouvée:`);
+    console.log(`Annonce trouvee:`);
     console.log(`   - Titre: ${listing.title}`);
     console.log(`   - Statut: ${listing.status}`);
     console.log(`   - hasPendingRevision: ${listing.hasPendingRevision}`);
     console.log(`   - Nombre de reviews: ${reviewsList.length}`);
 
-    // 🔥 CRUCIAL: Fusionner avec les données en attente de révision
     let displayData = { ...listing };
 
     if (listing.hasPendingRevision && listing.pendingRevision) {
-      console.log(
-        `\n📝 [GET] Annonce ${id} a des modifications EN ATTENTE de validation`,
-      );
+      console.log(`\n[GET] Annonce ${id} a des modifications EN ATTENTE de validation`);
       const pendingData = listing.pendingRevision;
       displayData = mergeWithPendingRevision(displayData, pendingData);
-      console.log(
-        `✅ Données fusionnées - nouveau titre: ${displayData.title}`,
-      );
+      console.log(`Donnees fusionnees - nouveau titre: ${displayData.title}`);
     } else {
-      console.log(`📝 Aucune révision en attente pour cette annonce`);
+      console.log(`Aucune revision en attente pour cette annonce`);
     }
 
-    // Incrémenter les vues (sauf pour le propriétaire)
     if (shouldIncrementViews) {
       await prisma.listing.update({
         where: { id },
         data: { viewCount: { increment: 1 } },
       });
       displayData.viewCount += 1;
-      console.log(
-        `👁️ Vue incrémentée - nouveau total: ${displayData.viewCount}`,
-      );
+      console.log(`Vue incrementee - nouveau total: ${displayData.viewCount}`);
     }
 
-    // Récupérer le nombre de réservations
     const bookingCount = await prisma.booking.count({
       where: {
         listingId: id,
@@ -283,7 +306,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    // Récupérer le revenu total
     const totalRevenueResult = await prisma.booking.aggregate({
       where: {
         listingId: id,
@@ -293,7 +315,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
     const totalRevenue = totalRevenueResult._sum.totalPrice || 0;
 
-    // Récupérer les dates bloquées
     const pendingBookings = await prisma.pendingBooking.findMany({
       where: {
         listingId: id,
@@ -316,7 +337,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       (bd) => bd.startDate.toISOString().split("T")[0],
     );
 
-    // Récupérer les réservations (seulement pour le propriétaire)
     let upcomingBookings: FormattedBooking[] = [];
     let pastBookings: FormattedBooking[] = [];
 
@@ -390,13 +410,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }));
     }
 
-    // Formater les reviews pour la réponse
     const formattedReviews = reviewsList.map((review: any) => ({
       id: review.id,
       rating: review.rating,
       comment: review.comment,
-      author:
-        review.reviewer?.username || review.reviewer?.firstName || "Anonyme",
+      author: review.reviewer?.username || review.reviewer?.firstName || "Anonyme",
       authorAvatar: review.reviewer?.profilePictureUrl,
       createdAt: review.createdAt,
       date: new Date(review.createdAt).toLocaleDateString("fr-FR", {
@@ -406,7 +424,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }),
     }));
 
-    // 🔥 CONSTRUIRE LA RÉPONSE
     const response = {
       id: displayData.id,
       title: displayData.title,
@@ -473,22 +490,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       isOwner: isOwner,
       reviews: formattedReviews,
       reviewScores: calculateReviewScoresFromList(reviewsList),
-      // ✅ Mode vacances - priorité au propriétaire (global sur toutes ses annonces)
-      vacationMode:
-        ownerVacation?.vacationMode || listing.vacationMode || false,
-      vacationMessage:
-        ownerVacation?.vacationMessage || listing.vacationMessage || null,
-      vacationStartDate:
-        ownerVacation?.vacationStartDate || listing.vacationStartDate,
-      vacationEndDate:
-        ownerVacation?.vacationEndDate || listing.vacationEndDate,
+      vacationMode: ownerVacation?.vacationMode || listing.vacationMode || false,
+      vacationMessage: ownerVacation?.vacationMessage || listing.vacationMessage || null,
+      vacationStartDate: ownerVacation?.vacationStartDate || listing.vacationStartDate,
+      vacationEndDate: ownerVacation?.vacationEndDate || listing.vacationEndDate,
     };
 
-    console.log(`\n✅ RÉPONSE FINALE:`);
+    console.log(`\nREPONSE FINALE:`);
     console.log(`   - Titre: ${response.title}`);
     console.log(`   - Statut: ${response.status}`);
     console.log(`   - Prix par nuit: ${response.pricePerNight}`);
-    console.log(`   - Révision en attente: ${response.hasPendingRevision}`);
+    console.log(`   - Revision en attente: ${response.hasPendingRevision}`);
     console.log(`   - Nombre de reviews: ${response.reviews.length}`);
     console.log(`${"=".repeat(60)}\n`);
 
@@ -498,14 +510,15 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
-// PUT - Mise à jour complète
+
+// PUT - Mise a jour complete
 export const PUT = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;
     const { id } = await params;
     const body = await request.json();
 
-    console.log(`\n📝 [PUT] Début - ID: ${id}, User: ${user.id}`);
+    console.log(`\n[PUT] Debut - ID: ${id}, User: ${user.id}`);
 
     const convertNullToUndefined = (obj: any): any => {
       const result: any = {};
@@ -527,7 +540,7 @@ export const PUT = withAuth(
     const validationResult = updateListingSchema.safeParse(updateData);
     if (!validationResult.success) {
       return NextResponse.json(
-        { error: "Données invalides", details: validationResult.error.issues },
+        { error: "Donnees invalides", details: validationResult.error.issues },
         { status: 400 },
       );
     }
@@ -559,7 +572,7 @@ export const PUT = withAuth(
       }
     }
 
-    console.log(`✅ [PUT] Annonce mise à jour avec succès`);
+    console.log(`[PUT] Annonce mise a jour avec succes`);
     return NextResponse.json(listing);
   },
   {
@@ -578,13 +591,25 @@ export const DELETE = withAuth(
 
     if (permanent) {
       await prisma.listing.delete({ where: { id } });
-      return NextResponse.json({ message: "Annonce supprimée définitivement" });
+      return NextResponse.json({ message: "Annonce supprimee definitivement" });
     } else {
       const listing = await prisma.listing.update({
         where: { id },
         data: { status: "ARCHIVED", archivedAt: new Date() },
       });
-      return NextResponse.json({ message: "Annonce archivée", listing });
+
+      if (listing.ownerId) {
+        await sendNotificationToOwner(
+          listing.ownerId,
+          "Annonce archivee",
+          `Votre annonce "${listing.title}" a ete archivee par l'administrateur.`,
+          "SYSTEM_ALERT",
+          id,
+          listing.title,
+        );
+      }
+
+      return NextResponse.json({ message: "Annonce archivee", listing });
     }
   },
   {
@@ -592,9 +617,8 @@ export const DELETE = withAuth(
     requiredPermission: "edit",
   },
 );
-// app/api/listings/[id]/route.ts - PARTIE PATCH CORRIGÉE
 
-// PATCH - Changer le statut ou mettre à jour partiellement (AVEC GESTION DES RÉVISIONS)
+// PATCH - Changer le statut ou mettre a jour partiellement (AVEC NOTIFICATIONS)
 export const PATCH = withAuth(
   async (request: NextRequest, { params }: RouteParams) => {
     const user = (request as any).user;
@@ -603,32 +627,49 @@ export const PATCH = withAuth(
     const { status, action, isRevision, ...updateFields } = body;
 
     console.log(`\n${"=".repeat(60)}`);
-    console.log(`📝 [PATCH] Début - ID: ${id}, User: ${user.id}`);
+    console.log(`[PATCH] Debut - ID: ${id}, User:`, user);
+    console.log(`User.id (UUID): ${user.id}`);
+    console.log(`User.clerkId: ${user.clerkId}`);
     console.log(`${"=".repeat(60)}`);
 
-    // Récupérer l'annonce actuelle
-    const existingListing = await prisma.listing.findFirst({
-      where: { id, ownerId: user.id },
+    const existingListing = await prisma.listing.findUnique({
+      where: { id },
     });
 
     if (!existingListing) {
-      console.log(`❌ Annonce non trouvée`);
+      console.log(`Annonce non trouvee pour l'ID: ${id}`);
       return NextResponse.json(
-        { error: "Annonce non trouvée" },
+        { error: "Annonce non trouvee" },
         { status: 404 },
       );
     }
 
-    console.log(`📋 Annonce existante:`);
+    const isAdmin = user.role === "ADMIN";
+    const isOwner = existingListing.ownerId === user.id;
+
+    console.log(`Annonce existante:`);
     console.log(`   - Titre: ${existingListing.title}`);
     console.log(`   - Statut: ${existingListing.status}`);
-    console.log(
-      `   - hasPendingRevision: ${existingListing.hasPendingRevision}`,
-    );
+    console.log(`   - OwnerId: ${existingListing.ownerId}`);
+    console.log(`   - isAdmin: ${isAdmin}`);
+    console.log(`   - isOwner: ${isOwner}`);
+
+    if (!isAdmin && !isOwner) {
+      console.log(`Acces refuse - n'est ni admin ni proprietaire`);
+      return NextResponse.json(
+        { error: "Acces non autorise" },
+        { status: 403 },
+      );
+    }
+
+    console.log(`   - hasPendingRevision: ${existingListing.hasPendingRevision}`);
 
     let result;
+    let notificationTitle = "";
+    let notificationContent = "";
+    let notificationType = "";
+    let shouldNotify = false;
 
-    // 🔥 CHAMPS AUTORISÉS POUR LA MODIFICATION DIRECTE (ceux que Prisma accepte)
     const allowedDirectFields = [
       "title",
       "description",
@@ -665,40 +706,6 @@ export const PATCH = withAuth(
       "seasonalRules",
     ];
 
-    // 🔥 CHAMPS À EXCLURE (ne pas envoyer à Prisma)
-    const excludedFields = [
-      "id",
-      "slug",
-      "createdAt",
-      "updatedAt",
-      "publishedAt",
-      "archivedAt",
-      "viewCount",
-      "bookingCount",
-      "favoriteCount",
-      "conversionRate",
-      "isArchived",
-      "isBlocked",
-      "blockReason",
-      "ownerId",
-      "photos",
-      "owner",
-      "stats",
-      "blockedDates",
-      "pendingDates",
-      "upcomingBookings",
-      "pastBookings",
-      "isOwner",
-      "totalBookings",
-      "totalRevenue",
-      "hasPendingRevision",
-      "rejectionReason",
-      "rejectionDetails",
-      "rejectedAt",
-      "rejectedBy",
-    ];
-
-    // 🔥 Filtrer les champs pour garder uniquement ceux autorisés
     const filterAllowedFields = (fields: any) => {
       const filtered: any = {};
       for (const key of allowedDirectFields) {
@@ -709,41 +716,72 @@ export const PATCH = withAuth(
       return filtered;
     };
 
-    // 🔥 CAS 1: Changement de statut (admin)
-    if (status) {
-      console.log(`📝 CAS 1: Changement de statut vers ${status}`);
+    // CAS 1: Changement de statut par ADMIN
+    if (status && isAdmin) {
+      const oldStatus = existingListing.status;
+      const newStatus = status;
+
+      console.log(`CAS 1: ADMIN change le statut: ${oldStatus} -> ${newStatus}`);
+      
       result = await prisma.listing.update({ where: { id }, data: { status } });
+      
       await prisma.listingHistory.create({
         data: {
           listingId: id,
-          actionType: "STATUS_CHANGE",
-          oldValue: { status: existingListing.status },
-          newValue: { status },
+          actionType: "STATUS_CHANGE_BY_ADMIN",
+          oldValue: { status: oldStatus },
+          newValue: { status: newStatus },
           changedBy: user.id,
         },
       });
-      console.log(`✅ Statut changé`);
+
+      if (oldStatus === "PENDING_REVIEW" && newStatus === "ACTIVE") {
+        notificationTitle = "Annonce validee";
+        notificationContent = `Votre annonce "${existingListing.title}" a ete validee par l'administrateur et est maintenant en ligne.`;
+        notificationType = "LISTING_ACTIVATED";
+        shouldNotify = true;
+      } else if (oldStatus === "PENDING_REVIEW" && newStatus === "REJECTED") {
+        notificationTitle = "Annonce rejetee";
+        notificationContent = `Votre annonce "${existingListing.title}" a ete rejetee par l'administrateur. Veuillez la modifier et la soumettre a nouveau.`;
+        notificationType = "LISTING_REJECTED";
+        shouldNotify = true;
+      } else if (newStatus === "ACTIVE" && oldStatus !== "ACTIVE") {
+        notificationTitle = "Annonce activee";
+        notificationContent = `Votre annonce "${existingListing.title}" a ete activee par l'administrateur.`;
+        notificationType = "LISTING_ACTIVATED";
+        shouldNotify = true;
+      } else if (newStatus === "INACTIVE") {
+        notificationTitle = "Annonce desactivee";
+        notificationContent = `Votre annonce "${existingListing.title}" a ete desactivee par l'administrateur.`;
+        notificationType = "LISTING_SUSPENDED";
+        shouldNotify = true;
+      } else if (newStatus === "ARCHIVED") {
+        notificationTitle = "Annonce archivee";
+        notificationContent = `Votre annonce "${existingListing.title}" a ete archivee par l'administrateur.`;
+        notificationType = "SYSTEM_ALERT";
+        shouldNotify = true;
+      }
+
+      console.log(`Statut change par ADMIN: ${oldStatus} -> ${newStatus}`);
     }
-    // 🔥 CAS 2: Mise à jour d'une annonce ACTIVE → CRÉER UNE RÉVISION
+    // CAS 2: Mise a jour d'une annonce ACTIVE → CREER UNE REVISION
     else if (
       existingListing.status === "ACTIVE" &&
       Object.keys(updateFields).length > 0
     ) {
-      console.log(`📝 CAS 2: Annonce ACTIVE - Création d'une révision`);
+      console.log(`CAS 2: Annonce ACTIVE - Creation d'une revision`);
 
-      // Filtrer les champs pour la révision
       const revisionData = filterAllowedFields(updateFields);
-      console.log(`📝 Champs pour révision:`, Object.keys(revisionData));
+      console.log(`Champs pour revision:`, Object.keys(revisionData));
 
       if (Object.keys(revisionData).length === 0) {
-        console.log(`⚠️ Aucun champ valide à réviser`);
+        console.log(`Aucun champ valide a reviser`);
         return NextResponse.json(
-          { error: "Aucun champ valide à modifier" },
+          { error: "Aucun champ valide a modifier" },
           { status: 400 },
         );
       }
 
-      // Sauvegarder les modifications dans pendingRevision
       result = await prisma.listing.update({
         where: { id },
         data: {
@@ -753,22 +791,19 @@ export const PATCH = withAuth(
         },
       });
 
-      console.log(`✅ Révision créée - hasPendingRevision: true`);
+      console.log(`Revision creee - hasPendingRevision: true`);
     }
-    // 🔥 CAS 3: Mise à jour d'une annonce non-ACTIVE → modification directe
+    // CAS 3: Mise a jour d'une annonce non-ACTIVE → modification directe
     else if (Object.keys(updateFields).length > 0) {
-      console.log(
-        `📝 CAS 3: Annonce ${existingListing.status} - Modification directe`,
-      );
+      console.log(`CAS 3: Annonce ${existingListing.status} - Modification directe`);
 
-      // Filtrer les champs autorisés
       const directData = filterAllowedFields(updateFields);
-      console.log(`📝 Champs à modifier directement:`, Object.keys(directData));
+      console.log(`Champs a modifier directement:`, Object.keys(directData));
 
       if (Object.keys(directData).length === 0) {
-        console.log(`⚠️ Aucun champ valide à modifier`);
+        console.log(`Aucun champ valide a modifier`);
         return NextResponse.json(
-          { error: "Aucun champ valide à modifier" },
+          { error: "Aucun champ valide a modifier" },
           { status: 400 },
         );
       }
@@ -780,35 +815,45 @@ export const PATCH = withAuth(
           updatedAt: new Date(),
         },
       });
-      console.log(`✅ Modification directe effectuée`);
+      console.log(`Modification directe effectuee`);
     }
-    // 🔥 CAS 4: Action RESTORE
+    // CAS 4: Action RESTORE
     else if (action === "RESTORE") {
-      console.log(`📝 CAS 4: Action RESTORE`);
+      console.log(`CAS 4: Action RESTORE`);
       result = await prisma.listing.update({
         where: { id },
         data: { status: "INACTIVE", archivedAt: null },
       });
     }
-    // 🔥 CAS 5: Action TOGGLE_STATUS
+    // CAS 5: Action TOGGLE_STATUS
     else if (action === "TOGGLE_STATUS") {
-      console.log(`📝 CAS 5: Action TOGGLE_STATUS`);
-      const newStatus =
-        existingListing.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+      console.log(`CAS 5: Action TOGGLE_STATUS`);
+      const newStatus = existingListing.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
       result = await prisma.listing.update({
         where: { id },
         data: { status: newStatus },
       });
-      console.log(`✅ Statut togglé vers ${newStatus}`);
+      console.log(`Statut toggled vers ${newStatus}`);
     } else {
-      console.log(`❌ Aucune modification fournie`);
+      console.log(`Aucune modification fournie`);
       return NextResponse.json(
         { error: "Aucune modification fournie" },
         { status: 400 },
       );
     }
 
-    console.log(`✅ [PATCH] Terminé avec succès`);
+    if (shouldNotify && existingListing.ownerId) {
+      await sendNotificationToOwner(
+        existingListing.ownerId,
+        notificationTitle,
+        notificationContent,
+        notificationType,
+        id,
+        existingListing.title,
+      );
+    }
+
+    console.log(`[PATCH] Termine avec succes`);
     console.log(`${"=".repeat(60)}\n`);
 
     return NextResponse.json(result);

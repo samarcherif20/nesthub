@@ -1,9 +1,11 @@
 // app/[locale]/admin/listings/validation/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useAuth } from "@clerk/nextjs";
+import React, { useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { CheckCircle, AlertCircle, X } from "lucide-react";
 import {
   IoSearchOutline,
   IoHourglassOutline,
@@ -24,287 +26,92 @@ import {
 import { formatDistanceToNow, format } from "date-fns";
 import { fr } from "date-fns/locale";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import AlertBanner from "@/components/ui/Alert";
 import Pagination from "@/components/ui/Pagination";
+import { useAdminListingsValidation } from "./hooks/useAdminListingsValidation";
+
+interface Toast {
+  type: "success" | "error";
+  message: string;
+}
 
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
 
-interface ListingValidation {
-  id: string;
-  title: string;
-  description: string;
-  type: string;
-  governorate: string;
-  delegation: string;
-  street: string;
-  pricePerNight: number | null;
-  pricePerMonth: number | null;
-  images: string[];
-  rooms: number;
-  bathrooms: number;
-  surfaceArea: number;
-  floorNumber: number;
-  maxGuests: number;
-  hasElevator: boolean;
-  hasBalcony: boolean;
-  hasGarden: boolean;
-  hasGarage: boolean;
-  isFurnished: boolean;
-  petsAllowed: boolean;
-  smokingAllowed: boolean;
-  status: string;
-  hasPendingRevision: boolean;
-  rejectionReason?: string | null;
-  validatedAt?: Date | null;
-  rejectedAt?: Date | null;
-  owner: {
-    id: string;
-    firstName: string;
-    lastName: string;
-    username: string;
-    profilePictureUrl: string | null;
-    email: string;
-  };
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface PaginationData {
-  page: number;
-  limit: number;
-  totalCount: number;
-  totalPages: number;
-}
-
-interface StatsData {
-  total: number;
-  pending: number;
-  revisions: number;
-  processedToday: number;
-  avgResponseTime: number;
-  validated: number;
-  rejected: number;
-}
-
-const getAvatarUrl = (url: string | null | undefined): string => {
-  if (!url) return "";
-  return `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
-};
-
-const getListingImageUrl = (imageUrl: string | undefined): string => {
-  if (!imageUrl) return "";
-  return `/api/listings/image?url=${encodeURIComponent(imageUrl)}`;
-};
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(handler);
-  }, [value, delay]);
-  return debouncedValue;
-}
-
 export default function ListingsValidationPage() {
-  const { getToken } = useAuth();
-  const [listings, setListings] = useState<ListingValidation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<
-    "all" | "pending" | "revisions" | "history"
-  >("all");
-  const [pagination, setPagination] = useState<PaginationData>({
-    page: 1,
-    limit: 10,
-    totalCount: 0,
-    totalPages: 1,
-  });
-  const [search, setSearch] = useState("");
-  const [tempSearch, setTempSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 500);
-  const [alert, setAlert] = useState<{
-    type: "success" | "error" | "info";
-    message: string;
-  } | null>(null);
-  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [stats, setStats] = useState<StatsData>({
-    total: 0,
-    pending: 0,
-    revisions: 0,
-    processedToday: 0,
-    avgResponseTime: 0,
-    validated: 0,
-    rejected: 0,
-  });
-  const isInitialMount = useRef(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
+  const t = useTranslations("AdminListingsValidation");
+  const [toast, setToast] = useState<Toast | null>(null);
 
-  const showAlert = (type: "success" | "error" | "info", message: string) => {
-    setAlert({ type, message });
-    setTimeout(() => setAlert(null), 3000);
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
   };
 
-  const fetchStats = useCallback(async () => {
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const response = await fetch(`/api/admin/listings/stats`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data);
-      }
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-    }
-  }, [getToken]);
-
-  const fetchListings = useCallback(async () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    const controller = new AbortController();
-    abortControllerRef.current = controller;
-
-    setLoading(true);
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const params = new URLSearchParams({
-        page: pagination.page.toString(),
-        limit: pagination.limit.toString(),
-        type: activeTab,
-        search: debouncedSearch,
-      });
-
-      const response = await fetch(`/api/admin/listings?${params}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors du chargement");
-      }
-
-      const data = await response.json();
-      setListings(data.listings || []);
-      setPagination(
-        data.pagination || { page: 1, limit: 10, totalCount: 0, totalPages: 1 }
-      );
-    } catch (error) {
-      if (error instanceof Error && error.name !== "AbortError") {
-        console.error(error);
-        showAlert("error", "Erreur lors du chargement des annonces");
-        setListings([]);
-      }
-    } finally {
-      setLoading(false);
-      setInitialLoading(false);
-    }
-  }, [getToken, pagination.page, pagination.limit, activeTab, debouncedSearch]);
-
-  useEffect(() => {
-    fetchStats();
-    fetchListings();
-    return () => {
-      if (abortControllerRef.current) abortControllerRef.current.abort();
-    };
-  }, []);
-
-  const handleTabChange = (tab: typeof activeTab) => {
-    if (tab === activeTab) return;
-    setActiveTab(tab);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-    setSearch("");
-    setTempSearch("");
-  };
-
-  const handleSearchSubmit = () => {
-    setSearch(tempSearch);
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handleSearchClear = () => {
-    setTempSearch("");
-    setSearch("");
-    setPagination((prev) => ({ ...prev, page: 1 }));
-  };
-
-  const handlePageChange = (page: number) => {
-    if (page === pagination.page) return;
-    setPagination((prev) => ({ ...prev, page }));
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  useEffect(() => {
-    if (!isInitialMount.current && debouncedSearch !== "") {
-      setPagination((prev) => ({ ...prev, page: 1 }));
-    }
-  }, [debouncedSearch]);
-
-  useEffect(() => {
-    if (!isInitialMount.current) {
-      fetchListings();
-    }
-    isInitialMount.current = false;
-  }, [fetchListings, pagination.page, activeTab, debouncedSearch]);
-
-  const getListingTypeLabel = (type: string) => {
-    const types: Record<string, string> = {
-      APARTMENT: "Appartement",
-      VILLA: "Villa",
-      HOUSE: "Maison",
-      STUDIO: "Studio",
-      DUPLEX: "Duplex",
-      LAND: "Terrain",
-      COMMERCIAL: "Commercial",
-    };
-    return types[type] || type;
-  };
+  const {
+    listings,
+    loading,
+    initialLoading,
+    activeTab,
+    pagination,
+    tempSearch,
+    stats,
+    imageErrors,
+    setTempSearch,
+    handleTabChange,
+    handleSearchSubmit,
+    handleSearchClear,
+    handlePageChange,
+    handleLimitChange,
+    handleImageError,
+    getAvatarUrl,
+    getListingImageUrl,
+    getListingTypeLabel,
+    formatPrice,
+  } = useAdminListingsValidation(locale);
 
   const getStatusBadge = (status: string, hasPendingRevision: boolean) => {
     if (status === "PENDING_REVIEW" && !hasPendingRevision) {
       return (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 flex items-center gap-1">
-          <IoHourglassOutline size={10} /> Nouvelle
+          {t("badgeNew")}
         </span>
       );
     }
     if (status === "ACTIVE" && hasPendingRevision) {
       return (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 flex items-center gap-1">
-          <IoGitBranchOutline size={10} /> Modification
+          {t("badgeModification")}
         </span>
       );
     }
     if (status === "ACTIVE" && !hasPendingRevision) {
       return (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center gap-1">
-          <IoCheckmarkCircle size={10} /> Publiée
+          {t("badgePublished")}
         </span>
       );
     }
     if (status === "REJECTED") {
       return (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 flex items-center gap-1">
-          <IoCloseCircleOutline size={10} /> Rejetée
+           {t("badgeRejected")}
         </span>
       );
     }
     return (
       <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-        En attente
+        {t("badgePending")}
       </span>
     );
   };
 
-  const getHistoryBadge = (listing: ListingValidation) => {
+  const getHistoryBadge = (listing: any) => {
     if (listing.status === "ACTIVE") {
       return (
         <div className="flex items-center gap-2">
           <span className="px-2 py-1 rounded-full text-[9px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-            Validée
+            {t("badgeValidated")}
           </span>
           {listing.validatedAt && (
             <span className="text-[9px] text-slate-400 flex items-center gap-1">
@@ -320,7 +127,7 @@ export default function ListingsValidationPage() {
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="px-2 py-1 rounded-full text-[9px] font-bold uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
-              Rejetée
+              {t("badgeRejected")}
             </span>
             {listing.rejectedAt && (
               <span className="text-[9px] text-slate-400 flex items-center gap-1">
@@ -331,7 +138,7 @@ export default function ListingsValidationPage() {
           </div>
           {listing.rejectionReason && (
             <p className="text-[9px] text-red-600 dark:text-red-400 max-w-[200px] truncate">
-              Motif: {listing.rejectionReason}
+              {t("reasonPrefix")} {listing.rejectionReason}
             </p>
           )}
         </div>
@@ -340,14 +147,11 @@ export default function ListingsValidationPage() {
     return null;
   };
 
-  const handleImageError = (listingId: string) =>
-    setImageErrors((prev) => ({ ...prev, [listingId]: true }));
-
   const tabs = [
-    { id: "all" as const, label: "Toutes", icon: IoHourglassOutline, count: stats.total },
-    { id: "pending" as const, label: "Nouvelles annonces", icon: IoCreateOutline, count: stats.pending },
-    { id: "revisions" as const, label: "Modifications", icon: IoGitBranchOutline, count: stats.revisions },
-    { id: "history" as const, label: "Historique", icon: IoTimeOutline, count: stats.validated + stats.rejected },
+    { id: "all" as const, label: t("tabAll"), icon: IoHourglassOutline, count: stats.total },
+    { id: "pending" as const, label: t("tabNew"), icon: IoCreateOutline, count: stats.pending },
+    { id: "revisions" as const, label: t("tabRevisions"), icon: IoGitBranchOutline, count: stats.revisions },
+    { id: "history" as const, label: t("tabHistory"), icon: IoTimeOutline, count: stats.validated + stats.rejected },
   ];
 
   if (initialLoading) {
@@ -360,28 +164,24 @@ export default function ListingsValidationPage() {
 
   return (
     <div className="min-h-screen flex flex-col overflow-x-hidden">
-      {alert && (
-        <div className="fixed top-20 right-8 z-50 animate-in slide-in-from-top-2 fade-in duration-300">
-          <AlertBanner
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-          />
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
+            {toast.type === "success" ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70"><X className="w-4 h-4" /></button>
+          </div>
         </div>
       )}
 
       <div className="flex-1">
         <div className="p-6">
-
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Validation des annonces
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
-                Gérez et validez les annonces en attente de publication
-              </p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t("title")}</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{t("description")}</p>
             </div>
           </div>
 
@@ -393,14 +193,14 @@ export default function ListingsValidationPage() {
                   <IoHourglassOutline className="text-orange-600 dark:text-orange-400 text-lg" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">En attente</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">{t("statsPending")}</p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
                 </div>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center text-orange-500 text-[11px] font-semibold">
                   <IoTrendingUpOutline className="text-sm mr-1" />
-                  <span>{stats.pending} nouvelles, {stats.revisions} modifications</span>
+                  <span>{stats.pending} {t("newListings")}, {stats.revisions} {t("modifications")}</span>
                 </div>
               </div>
             </div>
@@ -411,7 +211,7 @@ export default function ListingsValidationPage() {
                   <IoCheckmarkCircle className="text-emerald-600 dark:text-emerald-400 text-lg" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Traités aujourd'hui</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">{t("statsProcessedToday")}</p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.processedToday}</p>
                 </div>
               </div>
@@ -420,17 +220,17 @@ export default function ListingsValidationPage() {
             <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-purple-100 dark:border-purple-900/40 p-4 ${card3d}`}>
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                  <IoTimeOutline className="text-purple-600 dark:text-purple-400 text-lg" />
+                  <IoTimeIcon className="text-purple-600 dark:text-purple-400 text-lg" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Temps moyen</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">{t("statsAvgTime")}</p>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.avgResponseTime}h</p>
                 </div>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center text-slate-500 text-[11px] font-semibold">
                   <IoTimeIcon className="text-sm mr-1" />
-                  <span>Objectif: &lt; 4 heures</span>
+                  <span>{t("statsTarget")}</span>
                 </div>
               </div>
             </div>
@@ -441,7 +241,7 @@ export default function ListingsValidationPage() {
                   <IoCheckmarkDoneCircleOutline className="text-blue-600 dark:text-blue-400 text-lg" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Historique</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">{t("statsHistory")}</p>
                   <div className="flex items-center gap-2">
                     <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{stats.validated}</span>
                     <span className="text-slate-400">/</span>
@@ -458,7 +258,7 @@ export default function ListingsValidationPage() {
                     />
                   </div>
                   <span className="text-[9px] text-slate-500">
-                    {Math.round((stats.validated / (stats.validated + stats.rejected || 1)) * 100)}% validées
+                    {Math.round((stats.validated / (stats.validated + stats.rejected || 1)) * 100)}% {t("statsValidated")}
                   </span>
                 </div>
               </div>
@@ -507,7 +307,7 @@ export default function ListingsValidationPage() {
                     value={tempSearch}
                     onChange={(e) => setTempSearch(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
-                    placeholder="Rechercher par titre, propriétaire..."
+                    placeholder={t("searchPlaceholder")}
                     className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors text-slate-900 dark:text-slate-100"
                   />
                   {tempSearch && (
@@ -524,7 +324,7 @@ export default function ListingsValidationPage() {
                   disabled={loading}
                   className="px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? "Chargement..." : "Appliquer"}
+                  {loading ? t("searchLoading") : t("searchButton")}
                 </button>
               </div>
             </div>
@@ -535,24 +335,21 @@ export default function ListingsValidationPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {pagination.totalCount > 0 ? (
                 <>
-                  Affichage de{" "}
+                  {t("showing")}{" "}
                   <span className="font-semibold text-slate-900 dark:text-white">{listings.length}</span>{" "}
-                  sur{" "}
+                  {t("of")}{" "}
                   <span className="font-semibold text-slate-900 dark:text-white">{pagination.totalCount}</span>{" "}
-                  annonces
+                  {t("properties")}
                 </>
               ) : (
-                "Aucune annonce trouvée"
+                t("noResults")
               )}
             </p>
             <div className="flex items-center gap-2">
-              <label className="text-sm text-slate-500 dark:text-slate-400">Afficher:</label>
+              <label className="text-sm text-slate-500 dark:text-slate-400">{t("show")}</label>
               <select
                 value={pagination.limit}
-                onChange={(e) => {
-                  const newLimit = parseInt(e.target.value);
-                  setPagination((prev) => ({ ...prev, limit: newLimit, page: 1 }));
-                }}
+                onChange={(e) => handleLimitChange(parseInt(e.target.value))}
                 className="px-2 py-1 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm text-slate-900 dark:text-slate-100"
               >
                 <option value={5}>5</option>
@@ -570,35 +367,34 @@ export default function ListingsValidationPage() {
                 <thead>
                   <tr className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b border-indigo-100 dark:border-indigo-900/30">
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
-                      Propriétaire
+                      {t("tableHeaderOwner")}
                     </th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
-                      Annonce
+                      {t("tableHeaderListing")}
                     </th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
-                      Type
+                      {t("tableHeaderType")}
                     </th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
-                      Prix
+                      {t("tableHeaderPrice")}
                     </th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
-                      Date
+                      {t("tableHeaderDate")}
                     </th>
                     <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
-                      Statut
+                      {t("tableHeaderStatus")}
                     </th>
                     <th className="px-4 py-3 text-center text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider whitespace-nowrap">
-                      Actions
+                      {t("tableHeaderActions")}
                     </th>
                   </tr>
-                  {/* ↑ THE FIX: was <tr> instead of </tr> */}
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                   {loading && listings.length === 0 ? (
                     <tr>
                       <td colSpan={7} className="px-4 py-12 text-center">
                         <LoadingSpinner size="md" color="primary" />
-                      </td>
+                       </td>
                     </tr>
                   ) : listings.length === 0 ? (
                     <tr>
@@ -606,24 +402,10 @@ export default function ListingsValidationPage() {
                         <div className="flex flex-col items-center justify-center">
                           <IoHomeOutline className="w-12 h-12 text-slate-400 mb-3" />
                           <p className="text-slate-500 dark:text-slate-400">
-                            {activeTab === "history"
-                              ? "Aucune annonce dans l'historique"
-                              : "Aucune annonce trouvée"}
+                            {activeTab === "history" ? t("noHistory") : t("noResults")}
                           </p>
-                          {(search || activeTab !== "all") && (
-                            <button
-                              onClick={() => {
-                                setSearch("");
-                                setTempSearch("");
-                                setActiveTab("all");
-                              }}
-                              className="mt-3 text-sm text-indigo-600 hover:text-indigo-700"
-                            >
-                              Réinitialiser les filtres
-                            </button>
-                          )}
                         </div>
-                      </td>
+                       </td>
                     </tr>
                   ) : (
                     listings.map((listing) => {
@@ -631,7 +413,7 @@ export default function ListingsValidationPage() {
                       const proxiedUrl = getListingImageUrl(listingImageUrl);
                       const hasImageError = imageErrors[listing.id];
                       const displayPrice = listing.pricePerNight || listing.pricePerMonth;
-                      const priceUnit = listing.pricePerNight ? "/nuit" : "/mois";
+                      const priceUnit = listing.pricePerNight ? t("pricePerNight") : t("pricePerMonth");
 
                       return (
                         <tr
@@ -664,7 +446,7 @@ export default function ListingsValidationPage() {
                                 </p>
                               </div>
                             </div>
-                          </td>
+                           </td>
 
                           {/* Listing */}
                           <td className="px-4 py-3.5">
@@ -695,28 +477,28 @@ export default function ListingsValidationPage() {
                                 </p>
                               </div>
                             </div>
-                          </td>
+                           </td>
 
                           {/* Type */}
                           <td className="px-4 py-3.5 whitespace-nowrap">
                             <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                               {getListingTypeLabel(listing.type)}
                             </span>
-                          </td>
+                           </td>
 
                           {/* Price */}
                           <td className="px-4 py-3.5 whitespace-nowrap">
                             {displayPrice ? (
                               <div>
                                 <p className="text-sm font-bold text-slate-800 dark:text-white">
-                                  {displayPrice.toLocaleString()} TND
+                                  {formatPrice(displayPrice)}
                                 </p>
                                 <p className="text-[9px] text-slate-400">{priceUnit}</p>
                               </div>
                             ) : (
                               <span className="text-xs text-slate-400">—</span>
                             )}
-                          </td>
+                           </td>
 
                           {/* Date */}
                           <td className="px-4 py-3.5 whitespace-nowrap">
@@ -726,36 +508,26 @@ export default function ListingsValidationPage() {
                             <p className="text-[10px] text-slate-400">
                               {formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true, locale: fr })}
                             </p>
-                          </td>
+                           </td>
 
                           {/* Status */}
-                          <td className="px-4 py-3.5 whitespace-nowrap">
+                          <td className="px-4 py-3.5">
                             {activeTab === "history"
                               ? getHistoryBadge(listing)
                               : getStatusBadge(listing.status, listing.hasPendingRevision)}
-                          </td>
+                           </td>
 
                           {/* Actions */}
                           <td className="px-4 py-3.5 text-center whitespace-nowrap">
-                            {activeTab === "history" ? (
-                              <Link
-                                href={`/admin/listings/validation/${listing.id}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-500 hover:bg-slate-600 text-white text-xs font-semibold rounded-lg transition-all"
-                              >
-                                <IoEyeOutline className="text-sm" />
-                                Voir détails
-                              </Link>
-                            ) : (
-                              <Link
-                                href={`/admin/listings/validation/${listing.id}`}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-all"
-                              >
-                                <IoEyeOutline className="text-sm" />
-                                Traiter
-                              </Link>
-                            )}
-                          </td>
-                        </tr>
+                            <Link
+                              href={`/${locale}/admin/listings/validation/${listing.id}`}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-all"
+                            >
+                              <IoEyeOutline className="text-sm" />
+                              {activeTab === "history" ? t("actionView") : t("actionProcess")}
+                            </Link>
+                           </td>
+                         </tr>
                       );
                     })
                   )}
@@ -775,7 +547,6 @@ export default function ListingsValidationPage() {
               </div>
             )}
           </div>
-
         </div>
       </div>
     </div>

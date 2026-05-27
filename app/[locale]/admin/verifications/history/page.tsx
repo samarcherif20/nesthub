@@ -1,19 +1,21 @@
+// app/[locale]/admin/verifications/history/page.tsx
 "use client";
 
-import React from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
+import { CheckCircle, AlertCircle, X } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Alert from "@/components/ui/Alert";
-import SearchBar from "@/components/ui/SearchBar";
 import Pagination from "@/components/ui/Pagination";
 import {
-  MdOutlineArrowBack,
   MdOutlineVisibility,
   MdOutlineCheckCircle,
   MdOutlineShield,
   MdOutlineChevronRight,
 } from "react-icons/md";
+import { IoIosSearch } from "react-icons/io";
+
 import {
   TbRefresh,
   TbShieldCheck,
@@ -28,6 +30,11 @@ import {
   VerificationRequest,
 } from "./hooks/useVerificationsHistory";
 
+interface Toast {
+  type: "success" | "error";
+  message: string;
+}
+
 // ── design tokens ──────────────────────────────────────────────────────────
 const block3d =
   "shadow-[0_6px_0_0_rgba(0,0,0,0.06),0_12px_28px_-6px_rgba(0,0,0,0.11)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.38),0_12px_28px_-6px_rgba(0,0,0,0.48)]";
@@ -35,30 +42,30 @@ const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
 
 // ── sub-components ────────────────────────────────────────────────────────
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({ status, t }: { status: string; t: any }) => {
   if (status === "VALIDATED")
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800">
         <IoCheckmarkCircle className="text-sm shrink-0" />
-        Validée
+        {t("validated")}
       </span>
     );
   if (status === "REJECTED")
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-800">
         <IoCloseCircle className="text-sm shrink-0" />
-        Rejetée
+        {t("rejected")}
       </span>
     );
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800">
       <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
-      En attente
+      {t("pending")}
     </span>
   );
 };
 
-const DateCell = ({ date }: { date?: string }) => {
+const DateCell = ({ date, locale }: { date?: string; locale: string }) => {
   if (!date)
     return (
       <span className="text-sm text-slate-400 dark:text-slate-600">—</span>
@@ -67,28 +74,38 @@ const DateCell = ({ date }: { date?: string }) => {
   return (
     <div className="flex flex-col leading-tight">
       <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-        {d.toLocaleDateString("fr-FR", {
+        {d.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
           day: "2-digit",
           month: "2-digit",
           year: "numeric",
         })}
       </span>
       <span className="text-[10px] text-slate-400 dark:text-slate-500 tabular-nums">
-        {d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+        {d.toLocaleTimeString(locale === "fr" ? "fr-FR" : "en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
       </span>
     </div>
   );
 };
 
 // ── page ──────────────────────────────────────────────────────────────────
-export default function VerificationsHistoryPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = React.use(params);
+export default function VerificationsHistoryPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
   const t = useTranslations("VerificationsHistory");
 
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [tempSearch, setTempSearch] = useState("");
+  const [localSearch, setLocalSearch] = useState("");
+
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  // ✅ APPEL SANS search - comme avant
   const {
     requests,
     loading,
@@ -98,13 +115,42 @@ export default function VerificationsHistoryPage({
     totalPages,
     totalItems,
     statusFilter,
-    globalStats, // ← real counts, unaffected by active filter
+    globalStats,
     refresh,
     changePage,
     changeStatusFilter,
     changeSearch,
     setError,
-  } = useVerificationsHistory({ itemsPerPage: 10 });
+  } = useVerificationsHistory({ itemsPerPage: 10, locale, showToast });
+
+  // Gérer les erreurs du hook
+  useEffect(() => {
+    if (error) {
+      showToast("error", error);
+      setError(null);
+    }
+  }, [error, setError]);
+
+  // ✅ FILTRAGE LOCAL (recherche)
+  const filteredRequests = useMemo(() => {
+    if (!localSearch.trim()) return requests;
+    const searchLower = localSearch.toLowerCase();
+    return requests.filter((req) => {
+      const fullName = `${req.user.firstName} ${req.user.lastName}`.toLowerCase();
+      const email = req.user.email?.toLowerCase() || "";
+      return fullName.includes(searchLower) || email.includes(searchLower);
+    });
+  }, [requests, localSearch]);
+
+  // Pagination locale
+  const itemsPerPage = 10;
+  const paginatedRequests = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredRequests.slice(start, end);
+  }, [filteredRequests, currentPage, itemsPerPage]);
+
+  const localTotalPages = Math.ceil(filteredRequests.length / itemsPerPage);
 
   // ── helpers ────────────────────────────────────────────────────────────
   const getFullName = (f: string, l: string) =>
@@ -125,6 +171,18 @@ export default function VerificationsHistoryPage({
     processed > 0
       ? Math.round(((globalStats?.validatedCount ?? 0) / processed) * 100)
       : 0;
+
+  // Search handlers
+  const handleSearchSubmit = () => {
+    setLocalSearch(tempSearch);
+    changePage(1);
+  };
+
+  const handleSearchClear = () => {
+    setTempSearch("");
+    setLocalSearch("");
+    changePage(1);
+  };
 
   // ── stat cards ────────────────────────────────────────────────────────
   const stats = [
@@ -194,7 +252,8 @@ export default function VerificationsHistoryPage({
     t("table.notes"),
     t("table.action"),
   ];
-  const Breadcrumb = ({ locale, t }: { locale: string; t: any }) => (
+
+  const Breadcrumb = () => (
     <div className="flex items-center gap-2 text-sm mb-4">
       <Link
         href={`/${locale}/admin/verifications`}
@@ -208,14 +267,40 @@ export default function VerificationsHistoryPage({
       </span>
     </div>
   );
+
+  // Determine which requests to show in table
+  const displayRequests = localSearch ? paginatedRequests : requests;
+  const displayTotalPages = localSearch ? localTotalPages : totalPages;
+  const displayTotalItems = localSearch ? filteredRequests.length : totalItems;
+
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-6 gap-6">
-      <Breadcrumb locale={locale} t={t} />
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      <Breadcrumb />
 
       {/* ══ HEADER ══════════════════════════════════════════════════════ */}
       <div className="shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-2 -mt-5">
-        {/* left */}
-
         <div className="flex items-center gap-2">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">
@@ -269,18 +354,17 @@ export default function VerificationsHistoryPage({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-            Journal d'audit chiffré · Conservation 7 ans
+            {t("auditBanner.title")}
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-            NESTHUB maintient une piste d'audit chiffrée de toutes les activités
-            conformément aux normes réglementaires.
+            {t("auditBanner.description")}
           </p>
         </div>
         <div className="flex items-center gap-4 shrink-0">
           {[
-            { label: "AES-256", dot: "bg-emerald-500" },
-            { label: "RGPD", dot: "bg-indigo-500" },
-            { label: "7 ans", dot: "bg-violet-500" },
+            { label: t("auditBanner.aes"), dot: "bg-emerald-500" },
+            { label: t("auditBanner.gdpr"), dot: "bg-indigo-500" },
+            { label: t("auditBanner.retention"), dot: "bg-violet-500" },
           ].map(({ label, dot }) => (
             <div key={label} className="flex items-center gap-1.5">
               <span
@@ -300,12 +384,15 @@ export default function VerificationsHistoryPage({
       >
         {/* ── toolbar ── */}
         <div className="shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-5 py-4 border-b border-indigo-50 dark:border-indigo-900/30 bg-gradient-to-r from-indigo-50/40 to-violet-50/20 dark:from-indigo-900/10 dark:to-violet-900/5">
-          {/* filter pills — counts use globalStats */}
+          {/* filter pills */}
           <div className="flex gap-1.5">
             {filterTabs.map(({ key, label, count, active }) => (
               <button
                 key={key}
-                onClick={() => changeStatusFilter(key)}
+                onClick={() => {
+                  changeStatusFilter(key);
+                  handleSearchClear();
+                }}
                 className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold border transition-all ${
                   statusFilter === key
                     ? active
@@ -326,15 +413,26 @@ export default function VerificationsHistoryPage({
             ))}
           </div>
 
-          {/* search + refresh */}
+          {/* search + refresh - Search Bar personnalisée */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <div className="flex-1 sm:w-72">
-              <SearchBar
-                value={search}
-                onChange={changeSearch}
+            <div className="relative flex-1 min-w-[200px]">
+              <IoIosSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-base" />
+              <input
+                type="text"
+                value={tempSearch}
+                onChange={(e) => setTempSearch(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
                 placeholder={t("searchPlaceholder")}
-                className="w-full"
+                className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors text-slate-900 dark:text-slate-100 placeholder:text-indigo-300 dark:placeholder:text-indigo-700"
               />
+              {tempSearch && (
+                <button
+                  onClick={handleSearchClear}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <X size={18} />
+                </button>
+              )}
             </div>
             <button
               onClick={refresh}
@@ -352,16 +450,7 @@ export default function VerificationsHistoryPage({
             <div className="flex items-center justify-center py-24">
               <LoadingSpinner />
             </div>
-          ) : error ? (
-            <div className="p-6">
-              <Alert
-                type="error"
-                message={error}
-                onClose={() => setError(null)}
-              />
-            </div>
-          ) : requests.length === 0 ? (
-            /* empty state */
+          ) : displayRequests.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 px-4">
               <div className="relative mb-8">
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-400/15 to-violet-400/15 rounded-full blur-3xl scale-150" />
@@ -381,21 +470,30 @@ export default function VerificationsHistoryPage({
                 </div>
               </div>
               <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-3 text-center">
-                {t("empty.title")}
+                {localSearch ? t("empty.noResults") : t("empty.title")}
               </h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm max-w-sm text-center mb-8 leading-relaxed">
-                {t("empty.description")}
+                {localSearch ? t("empty.tryDifferent") : t("empty.description")}
               </p>
-              <Link
-                href={`/${locale}/admin/verifications`}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold text-sm shadow-sm transition-all active:scale-[0.98]"
-              >
-                <TbLayoutDashboard size={15} />
-                {t("backToPending")}
-              </Link>
+              {localSearch ? (
+                <button
+                  onClick={handleSearchClear}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold text-sm shadow-sm transition-all"
+                >
+                  <X size={15} />
+                  {t("clearSearch")}
+                </button>
+              ) : (
+                <Link
+                  href={`/${locale}/admin/verifications`}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white font-bold text-sm shadow-sm transition-all"
+                >
+                  <TbLayoutDashboard size={15} />
+                  {t("backToPending")}
+                </Link>
+              )}
             </div>
           ) : (
-            /* table */
             <table className="w-full text-left">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-indigo-50/50 dark:bg-indigo-900/10 border-b border-indigo-100 dark:border-indigo-900/30">
@@ -415,22 +513,18 @@ export default function VerificationsHistoryPage({
               </thead>
 
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
-                {requests.map((req) => (
+                {displayRequests.map((req) => (
                   <tr
                     key={req.id}
                     className="hover:bg-indigo-50/25 dark:hover:bg-indigo-900/10 transition-colors"
                   >
-                    {/* submitted */}
                     <td className="px-5 py-3.5 whitespace-nowrap">
-                      <DateCell date={req.submittedAt} />
+                      <DateCell date={req.submittedAt} locale={locale} />
                     </td>
-
-                    {/* user + email stacked */}
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-2.5">
                         <div className="w-9 h-9 rounded-full overflow-hidden shrink-0 bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40">
                           {req.user.profilePictureUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
                             <img
                               src={`/api/admin/serve-image?url=${encodeURIComponent(req.user.profilePictureUrl)}`}
                               alt={req.user.firstName}
@@ -453,25 +547,17 @@ export default function VerificationsHistoryPage({
                         </div>
                       </div>
                     </td>
-
-                    {/* status */}
                     <td className="px-5 py-3.5 whitespace-nowrap">
-                      <StatusBadge status={req.status} />
+                      <StatusBadge status={req.status} t={t} />
                     </td>
-
-                    {/* processed at */}
                     <td className="px-5 py-3.5 whitespace-nowrap">
-                      <DateCell date={req.processedAt} />
+                      <DateCell date={req.processedAt} locale={locale} />
                     </td>
-
-                    {/* processed by */}
                     <td className="px-5 py-3.5">
                       <span className="text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
                         {getProcessedBy(req)}
                       </span>
                     </td>
-
-                    {/* notes */}
                     <td className="px-5 py-3.5 max-w-[200px]">
                       {getNotes(req) ? (
                         <p
@@ -490,8 +576,6 @@ export default function VerificationsHistoryPage({
                         </span>
                       )}
                     </td>
-
-                    {/* action */}
                     <td className="px-5 py-3.5 text-right whitespace-nowrap">
                       <Link
                         href={`/${locale}/admin/verifications/${req.id}`}
@@ -509,23 +593,23 @@ export default function VerificationsHistoryPage({
         </div>
 
         {/* ── pagination ── */}
-        {totalPages > 1 && (
+        {displayTotalPages > 1 && (
           <div className="shrink-0 border-t border-indigo-50 dark:border-indigo-900/30 px-5 py-3 flex items-center justify-between bg-gradient-to-r from-indigo-50/30 to-violet-50/10 dark:from-indigo-900/5 dark:to-violet-900/5">
             <p className="text-xs text-slate-400 dark:text-slate-500">
               {t("pagination.showing")}{" "}
               <span className="font-semibold text-slate-600 dark:text-slate-400">
-                {requests.length}
+                {displayRequests.length}
               </span>{" "}
               {t("pagination.of")}{" "}
               <span className="font-semibold text-slate-600 dark:text-slate-400">
-                {totalItems}
+                {displayTotalItems}
               </span>{" "}
               {t("pagination.results")}
             </p>
             <Pagination
               currentPage={currentPage}
-              totalPages={totalPages}
-              totalItems={totalItems}
+              totalPages={displayTotalPages}
+              totalItems={displayTotalItems}
               pageSize={10}
               onPageChange={changePage}
             />

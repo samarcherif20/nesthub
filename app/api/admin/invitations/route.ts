@@ -5,88 +5,103 @@ import { prisma } from "@/lib/prisma";
 import { invitationEmailService } from "@/lib/services/invitation-email.service";
 import { randomUUID } from "crypto";
 
-// POST /api/admin/invitations — Créer et envoyer une invitation
+// POST /api/admin/invitations — Creer et envoyer une invitation
 export async function POST(req: NextRequest) {
-  console.log("📨 POST /api/admin/invitations - Début");
-  
   try {
     const { userId } = getAuth(req);
     if (!userId) {
-      console.log("❌ Non authentifié");
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      console.log("Non authentifie");
+      return NextResponse.json({ errorCode: "UNAUTHENTICATED" }, { status: 401 });
     }
 
-    // Vérifier que c'est un admin
-    const admin = await prisma.user.findUnique({ 
+    const admin = await prisma.user.findUnique({
       where: { clerkId: userId },
-      select: { firstName: true, lastName: true, email: true, role: true }
+      select: { firstName: true, lastName: true, email: true, role: true },
     });
-    
+
     if (!admin || admin.role !== "ADMIN") {
-      console.log("❌ Accès refusé - rôle:", admin?.role);
-      return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+      console.log("Acces refuse - role:", admin?.role);
+      return NextResponse.json({ errorCode: "ACCESS_DENIED" }, { status: 403 });
     }
 
     const { email } = await req.json();
     if (!email || !email.includes("@")) {
-      console.log("❌ Email invalide:", email);
-      return NextResponse.json({ error: "Email invalide" }, { status: 400 });
+      console.log("Email invalide:", email);
+      return NextResponse.json({ errorCode: "INVALID_EMAIL" }, { status: 400 });
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    console.log("📧 Invitation pour:", normalizedEmail);
+    console.log("Invitation pour:", normalizedEmail);
 
-    // Vérifier si l'email est déjà admin
-    const existingUser = await prisma.user.findUnique({ 
-      where: { email: normalizedEmail },
-      select: { role: true, email: true }
+    const existingAcceptedInvitation = await prisma.adminInvitation.findFirst({
+      where: {
+        email: normalizedEmail,
+        acceptedAt: { not: null },
+      },
     });
-    
-    if (existingUser && existingUser.role === "ADMIN") {
-      console.log("❌ Utilisateur déjà admin:", normalizedEmail);
-      return NextResponse.json({ 
-        error: "Cet utilisateur est déjà administrateur" 
-      }, { status: 409 });
+
+    if (existingAcceptedInvitation) {
+      console.log("Utilisateur a deja accepte une invitation:", normalizedEmail);
+      return NextResponse.json(
+        { errorCode: "ALREADY_ACCEPTED_INVITATION" },
+        { status: 409 },
+      );
     }
 
-    // Vérifier s'il existe déjà une invitation ACTIVE (non révoquée, non acceptée, non expirée)
+    const existingUser = await prisma.user.findUnique({
+      where: { email: normalizedEmail },
+      select: { role: true, email: true },
+    });
+
+    if (existingUser && existingUser.role === "ADMIN") {
+      console.log("Utilisateur deja admin:", normalizedEmail);
+      return NextResponse.json(
+        { errorCode: "USER_ALREADY_ADMIN" },
+        { status: 409 },
+      );
+    }
+
     const existingActiveInvitation = await prisma.adminInvitation.findFirst({
       where: {
         email: normalizedEmail,
         acceptedAt: null,
         revokedAt: null,
-        expiresAt: { gt: new Date() }
-      }
+        expiresAt: { gt: new Date() },
+      },
     });
 
     if (existingActiveInvitation) {
-      console.log("⚠️ Invitation active existante pour:", normalizedEmail);
-      return NextResponse.json({ 
-        error: "Une invitation active existe déjà pour cet email",
-        invitation: {
-          id: existingActiveInvitation.id,
-          expiresAt: existingActiveInvitation.expiresAt
-        }
-      }, { status: 409 });
+      console.log("Invitation active existante pour:", normalizedEmail);
+      return NextResponse.json(
+        {
+          errorCode: "ACTIVE_INVITATION_EXISTS",
+          invitation: {
+            id: existingActiveInvitation.id,
+            expiresAt: existingActiveInvitation.expiresAt,
+          },
+        },
+        { status: 409 },
+      );
     }
 
-    // Vérifier s'il existe une invitation RÉVOQUÉE pour cet email
     const existingRevokedInvitation = await prisma.adminInvitation.findFirst({
       where: {
         email: normalizedEmail,
-        revokedAt: { not: null }
-      }
+        revokedAt: { not: null },
+      },
     });
 
     let invitation;
     const token = randomUUID();
     const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
-    console.log("🔑 Token créé:", token);
-    console.log("⏰ Expire le:", expiresAt);
+    console.log("Token cree:", token);
+    console.log("Expire le:", expiresAt);
 
     if (existingRevokedInvitation) {
-      // Mettre à jour l'invitation révoquée au lieu d'en créer une nouvelle
-      console.log("🔄 Invitation révoquée trouvée, mise à jour:", existingRevokedInvitation.id);
+      console.log(
+        "Invitation revoquee trouvee, mise a jour:",
+        existingRevokedInvitation.id,
+      );
       invitation = await prisma.adminInvitation.update({
         where: { id: existingRevokedInvitation.id },
         data: {
@@ -94,22 +109,20 @@ export async function POST(req: NextRequest) {
           expiresAt,
           revokedAt: null,
           acceptedAt: null,
-        }
+        },
       });
-      console.log("✅ Invitation révoquée mise à jour, ID:", invitation.id);
+      console.log("Invitation revoquee mise a jour, ID:", invitation.id);
     } else {
-      // Supprimer les anciennes invitations expirées
-      await prisma.adminInvitation.deleteMany({ 
-        where: { 
+      await prisma.adminInvitation.deleteMany({
+        where: {
           email: normalizedEmail,
           expiresAt: { lt: new Date() },
           acceptedAt: null,
-          revokedAt: null
-        } 
+          revokedAt: null,
+        },
       });
-      console.log("🗑️ Anciennes invitations expirées supprimées");
+      console.log("Anciennes invitations expirees supprimees");
 
-      // Créer une nouvelle invitation
       invitation = await prisma.adminInvitation.create({
         data: {
           email: normalizedEmail,
@@ -119,17 +132,17 @@ export async function POST(req: NextRequest) {
           role: "ADMIN",
         },
       });
-      console.log("✅ Nouvelle invitation créée en DB, ID:", invitation.id);
+      console.log("Nouvelle invitation creee en DB, ID:", invitation.id);
     }
 
-    // Construire le lien
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-const inviteLink = `${baseUrl}/fr/accept-invite?token=${token}&type=admin`;
-    console.log("🔗 Lien d'invitation:", inviteLink);
+    const inviteLink = `${baseUrl}/${req.nextUrl.locale || "fr"}/accept-invite?token=${token}&type=admin`;
+    console.log("Lien d'invitation:", inviteLink);
 
-    // Envoyer l'email
-    const adminName = `${admin.firstName || ""} ${admin.lastName || ""}`.trim() || "Un administrateur";
-    
+    const adminName =
+      `${admin.firstName || ""} ${admin.lastName || ""}`.trim() ||
+      "Un administrateur";
+
     try {
       await invitationEmailService.sendInvitation({
         toEmail: normalizedEmail,
@@ -138,77 +151,142 @@ const inviteLink = `${baseUrl}/fr/accept-invite?token=${token}&type=admin`;
         inviteLink,
         expiresAt,
       });
-      console.log("📧 Email envoyé avec succès à:", normalizedEmail);
+      console.log("Email envoye avec succes a:", normalizedEmail);
     } catch (emailError) {
-      console.error("❌ Erreur lors de l'envoi de l'email:", emailError);
-      return NextResponse.json({ 
-        success: false, 
-        error: "L'invitation a été créée mais l'envoi de l'email a échoué. Veuillez réessayer.",
-        invitation: { id: invitation.id, email: invitation.email, expiresAt }
-      }, { status: 500 });
+      console.error("Erreur lors de l'envoi de l'email:", emailError);
+      return NextResponse.json(
+        {
+          success: false,
+          errorCode: "EMAIL_SEND_FAILED",
+          invitation: { id: invitation.id, email: invitation.email, expiresAt },
+        },
+        { status: 500 },
+      );
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      invitation: { 
-        id: invitation.id, 
-        email: invitation.email, 
-        expiresAt 
-      }
+    return NextResponse.json({
+      success: true,
+      invitation: {
+        id: invitation.id,
+        email: invitation.email,
+        expiresAt,
+      },
     });
-    
   } catch (error: any) {
-    console.error("[POST /api/admin/invitations] Erreur détaillée:", error);
-    
-    if (error.code === 'P2002') {
-      return NextResponse.json({ 
-        error: "Erreur de contrainte unique"
-      }, { status: 409 });
+    console.error("[POST /api/admin/invitations] Erreur detaillee:", error);
+
+    if (error.code === "P2002") {
+      return NextResponse.json(
+        { errorCode: "UNIQUE_CONSTRAINT_ERROR" },
+        { status: 409 },
+      );
     }
-    
-    return NextResponse.json({ 
-      error: "Erreur serveur: " + (error.message || "Veuillez réessayer plus tard") 
-    }, { status: 500 });
+
+    return NextResponse.json(
+      { errorCode: "SERVER_ERROR", message: error.message },
+      { status: 500 },
+    );
   }
 }
 
-// GET /api/admin/invitations — Liste des invitations
+// GET /api/admin/invitations — Liste des invitations avec pagination et filtres
 export async function GET(req: NextRequest) {
-  console.log("📋 GET /api/admin/invitations - Début");
-  
+  console.log("GET /api/admin/invitations - Debut");
+
   try {
     const { userId } = getAuth(req);
     if (!userId) {
-      console.log("❌ Non authentifié");
-      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+      console.log("Non authentifie");
+      return NextResponse.json({ errorCode: "UNAUTHENTICATED" }, { status: 401 });
     }
 
-    const admin = await prisma.user.findUnique({ 
+    const admin = await prisma.user.findUnique({
       where: { clerkId: userId },
-      select: { role: true }
+      select: { role: true },
     });
-    
+
     if (!admin || admin.role !== "ADMIN") {
-      console.log("❌ Accès refusé - rôle:", admin?.role);
-      return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
+      console.log("Acces refuse - role:", admin?.role);
+      return NextResponse.json({ errorCode: "ACCESS_DENIED" }, { status: 403 });
     }
+
+    const searchParams = req.nextUrl.searchParams;
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "5");
+    const statusFilter = searchParams.get("status");
+    const searchFilter = searchParams.get("search");
+
+    const skip = (page - 1) * limit;
+
+    const allInvitations = await prisma.adminInvitation.findMany();
+    const now = new Date();
+
+    const pendingCount = allInvitations.filter((i) => {
+      return !i.revokedAt && !i.acceptedAt && i.expiresAt > now;
+    }).length;
+    const expiredCount = allInvitations.filter((i) => {
+      return !i.revokedAt && !i.acceptedAt && i.expiresAt < now;
+    }).length;
+    const acceptedCount = allInvitations.filter(
+      (i) => i.acceptedAt !== null,
+    ).length;
+    const revokedCount = allInvitations.filter(
+      (i) => i.revokedAt !== null,
+    ).length;
+
+    let whereCondition: any = {};
+
+    if (statusFilter && statusFilter !== "all") {
+      if (statusFilter === "pending") {
+        whereCondition = {
+          ...whereCondition,
+          acceptedAt: null,
+          revokedAt: null,
+          expiresAt: { gt: now },
+        };
+      } else if (statusFilter === "expired") {
+        whereCondition = {
+          ...whereCondition,
+          acceptedAt: null,
+          revokedAt: null,
+          expiresAt: { lt: now },
+        };
+      } else if (statusFilter === "accepted") {
+        whereCondition = { ...whereCondition, acceptedAt: { not: null } };
+      } else if (statusFilter === "revoked") {
+        whereCondition = { ...whereCondition, revokedAt: { not: null } };
+      }
+    }
+
+    if (searchFilter && searchFilter.trim()) {
+      whereCondition = {
+        ...whereCondition,
+        email: {
+          contains: searchFilter.toLowerCase().trim(),
+          mode: "insensitive",
+        },
+      };
+    }
+
+    const total = await prisma.adminInvitation.count({ where: whereCondition });
+    const totalPages = Math.max(1, Math.ceil(total / limit));
 
     const invitations = await prisma.adminInvitation.findMany({
+      where: whereCondition,
       orderBy: { createdAt: "desc" },
+      skip,
+      take: limit,
     });
-    console.log(`📊 ${invitations.length} invitations trouvées`);
 
-    const inviterIds = [...new Set(invitations.map(i => i.invitedBy))];
+    const inviterIds = [...new Set(invitations.map((i) => i.invitedBy))];
     const inviters = await prisma.user.findMany({
       where: { clerkId: { in: inviterIds } },
       select: { clerkId: true, firstName: true, lastName: true, email: true },
     });
-    
-    const inviterMap = Object.fromEntries(inviters.map(u => [u.clerkId, u]));
 
-    const enriched = invitations.map(inv => {
-      const now = new Date();
-      
+    const inviterMap = Object.fromEntries(inviters.map((u) => [u.clerkId, u]));
+
+    const enriched = invitations.map((inv) => {
       let status = "pending";
       if (inv.revokedAt) {
         status = "revoked";
@@ -217,35 +295,52 @@ export async function GET(req: NextRequest) {
       } else if (now > inv.expiresAt) {
         status = "expired";
       }
-      
+
       return {
-        ...inv,
-        invitedByUser: inviterMap[inv.invitedBy] || null,
+        id: inv.id,
+        email: inv.email,
+        role: inv.role,
+        invitedBy: inv.invitedBy,
+        token: inv.token,
+        expiresAt: inv.expiresAt.toISOString(),
+        createdAt: inv.createdAt.toISOString(),
+        acceptedAt: inv.acceptedAt?.toISOString() || null,
         status,
+        invitedByUser: inviterMap[inv.invitedBy] || null,
         isExpired: status === "expired",
         isAccepted: status === "accepted",
         isRevoked: status === "revoked",
-        daysRemaining: status === "pending" 
-          ? Math.ceil((inv.expiresAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-          : 0
+        daysRemaining:
+          status === "pending"
+            ? Math.ceil(
+                (inv.expiresAt.getTime() - now.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              )
+            : 0,
       };
     });
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       invitations: enriched,
-      counts: {
-        total: enriched.length,
-        pending: enriched.filter(i => i.status === "pending").length,
-        accepted: enriched.filter(i => i.status === "accepted").length,
-        expired: enriched.filter(i => i.status === "expired").length,
-        revoked: enriched.filter(i => i.status === "revoked").length
-      }
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages,
+      },
+      stats: {
+        active: pendingCount,
+        expired: expiredCount,
+        accepted: acceptedCount,
+        revoked: revokedCount,
+        total: allInvitations.length,
+      },
     });
-    
   } catch (error: any) {
     console.error("[GET /api/admin/invitations] Erreur:", error);
-    return NextResponse.json({ 
-      error: "Erreur serveur: " + (error.message || "Veuillez réessayer plus tard") 
-    }, { status: 500 });
+    return NextResponse.json(
+      { errorCode: "SERVER_ERROR", message: error.message },
+      { status: 500 },
+    );
   }
 }

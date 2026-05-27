@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { decodeJWT } from "@/lib/utils/jwt";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Alert from "@/components/ui/Alert";
 import Pagination from "@/components/ui/Pagination";
 import { Loader2 } from "lucide-react";
 import { IoDocumentTextOutline, IoSearchOutline } from "react-icons/io5";
@@ -28,7 +27,13 @@ import {
 import { MdOutlineCheckCircle, MdOutlineDangerous } from "react-icons/md";
 import { BsClockHistory } from "react-icons/bs";
 import { FiInbox } from "react-icons/fi";
+import { CheckCircle, AlertCircle, X } from "lucide-react";
 import { useInvitations } from "./hooks/useInvitations";
+
+interface Toast {
+  type: "success" | "error";
+  message: string;
+}
 
 // ─── Ombres ─────────────────────────────────────────────────
 const block3d =
@@ -68,6 +73,8 @@ export default function AdminInvitationsPage() {
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
   const router = useRouter();
+  const params = useParams();
+  const locale = params?.locale || "fr";
   const {
     invitations,
     stats,
@@ -79,15 +86,14 @@ export default function AdminInvitationsPage() {
     copyLink,
     revokeInvitation,
     resendInvitation,
+    updateFilters,
+    filters,
   } = useInvitations();
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
-  const [alertState, setAlertState] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [touched, setTouched] = useState({ email: false });
   const [emailError, setEmailError] = useState<string | undefined>();
@@ -96,20 +102,19 @@ export default function AdminInvitationsPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchFilter, setSearchFilter] = useState<string>("");
 
-  const showAlert = (type: "success" | "error", msg: string) =>
-    setAlertState({ type, message: msg });
-  const closeAlert = () => setAlertState(null);
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
-  // Filter invitations
-  const filteredInvitations = invitations.filter((inv) => {
-    if (statusFilter !== "all" && inv.status !== statusFilter) return false;
-    if (
-      searchFilter &&
-      !inv.email.toLowerCase().includes(searchFilter.toLowerCase())
-    )
-      return false;
-    return true;
-  });
+  // Synchroniser les filtres de la page avec le hook
+  useEffect(() => {
+    if (isAdmin) {
+      // Convertir 'active' en 'pending' pour l'API
+      const apiStatus = statusFilter === "active" ? "pending" : statusFilter;
+      updateFilters({ status: apiStatus, search: searchFilter });
+    }
+  }, [statusFilter, searchFilter, isAdmin, updateFilters]);
 
   useEffect(() => {
     const check = async () => {
@@ -132,8 +137,8 @@ export default function AdminInvitationsPage() {
   }, [isUserLoaded, clerkUser, getToken]);
 
   useEffect(() => {
-    if (isAdmin === false) router.push("/");
-  }, [isAdmin, router]);
+    if (isAdmin === false) router.push(`/${locale}`);
+  }, [isAdmin, router, locale]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -145,6 +150,16 @@ export default function AdminInvitationsPage() {
   const validateEmail = (v: string) => {
     if (!v.trim()) return t("emailRequired");
     if (!v.includes("@") || !v.includes(".")) return t("emailInvalid");
+
+    const existingActiveInvitation = invitations.find(
+      (inv) =>
+        inv.email.toLowerCase() === v.toLowerCase() && inv.status === "pending",
+    );
+
+    if (existingActiveInvitation) {
+      return t("invitationAlreadyExists", { email: v });
+    }
+
     return undefined;
   };
 
@@ -159,45 +174,87 @@ export default function AdminInvitationsPage() {
     setEmailError(validateEmail(email));
   };
 
-  const handleCreateInvitation = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setTouched({ email: true });
-    const err = validateEmail(email);
-    setEmailError(err);
-    if (err) return;
+ const handleCreateInvitation = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setTouched({ email: true });
+  const err = validateEmail(email);
+  setEmailError(err);
+  if (err) return;
 
+  try {
+    await createInvitation(email, "ADMIN");
+    showToast("success", t("invitationSent", { email }));
+    setEmail("");
+    setTouched({ email: false });
+    setEmailError(undefined);
+  } catch (err: any) {
+    let errorMessage = err.message;
+    
     try {
-      await createInvitation(email, "ADMIN");
-      showAlert("success", t("invitationSent", { email }));
-      setEmail("");
-      setTouched({ email: false });
-      setEmailError(undefined);
-    } catch (err: any) {
-      showAlert("error", err.message);
+      const parsed = JSON.parse(err.message);
+      if (parsed.errorCode) {
+        switch (parsed.errorCode) {
+          case "UNAUTHENTICATED":
+            errorMessage = t("errorUnauthenticated");
+            break;
+          case "ACCESS_DENIED":
+            errorMessage = t("errorAccessDenied");
+            break;
+          case "INVALID_EMAIL":
+            errorMessage = t("errorInvalidEmail");
+            break;
+          case "ALREADY_ACCEPTED_INVITATION":
+            errorMessage = t("errorAlreadyAcceptedInvitation");
+            break;
+          case "USER_ALREADY_ADMIN":
+            errorMessage = t("errorUserAlreadyAdmin");
+            break;
+          case "ACTIVE_INVITATION_EXISTS":
+            errorMessage = t("errorActiveInvitationExists");
+            break;
+          case "EMAIL_SEND_FAILED":
+            errorMessage = t("errorEmailSendFailed");
+            break;
+          default:
+            errorMessage = t("errorUnknown");
+        }
+      }
+    } catch {
+      // Si ce n'est pas du JSON, garder le message original
+      if (
+        err.message?.includes("already exists") ||
+        err.message?.includes("déjà") ||
+        err.message?.includes("déjà administrateur")
+      ) {
+        errorMessage = t("errorActiveInvitationExists");
+      }
     }
-  };
-
+    
+    showToast("error", errorMessage);
+  }
+};
   const handleCopyLink = async (token: string) => {
     await copyLink(token);
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), 2000);
+    showToast("success", t("linkCopied"));
   };
 
   const handleRevoke = async (id: string) => {
     try {
       await revokeInvitation(id);
-      showAlert("success", t("invitationRevoked"));
+      showToast("success", t("invitationRevoked"));
     } catch {
-      showAlert("error", t("revokeError"));
+      showToast("error", t("revokeError"));
     }
   };
 
   const handleResend = async (invEmail: string) => {
     try {
       await resendInvitation(invEmail, "ADMIN");
-      showAlert("success", t("invitationResent", { email: invEmail }));
+      showToast("success", t("invitationResent", { email: invEmail }));
     } catch (err: any) {
-      showAlert("error", err.message);
+      showToast("error", err.message);
     }
   };
 
@@ -228,14 +285,29 @@ export default function AdminInvitationsPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-6 gap-6">
-      {alertState && (
-        <div className="fixed top-5 right-5 z-[60] w-full max-w-sm">
-          <Alert
-            type={alertState.type}
-            message={alertState.message}
-            onClose={closeAlert}
-            autoClose={4000}
-          />
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -277,7 +349,6 @@ export default function AdminInvitationsPage() {
               onSubmit={handleCreateInvitation}
               className="p-5 flex flex-col gap-4 flex-1"
             >
-              {/* Email */}
               <div>
                 <label className="block text-xs font-semibold text-primary dark:text-violet-300 mb-1.5">
                   {t("newAdminEmail")}
@@ -306,7 +377,6 @@ export default function AdminInvitationsPage() {
                 )}
               </div>
 
-              {/* BANDE D'INFORMATION */}
               <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
                   <IoShieldCheckmarkOutline className="text-emerald-600 dark:text-emerald-400 text-base" />
@@ -322,7 +392,6 @@ export default function AdminInvitationsPage() {
                 <IoCheckmarkCircleOutline className="text-emerald-500 text-lg flex-shrink-0" />
               </div>
 
-              {/* Info expiration */}
               <div className="flex items-start gap-2.5 p-3 bg-indigo-50/50 dark:bg-indigo-900/15 rounded-xl border border-indigo-200/50 dark:border-indigo-800/50">
                 <IoInformationCircleOutline className="text-indigo-500 text-sm mt-0.5 flex-shrink-0" />
                 <p className="text-[11px] text-indigo-500 dark:text-indigo-400 leading-relaxed">
@@ -336,11 +405,10 @@ export default function AdminInvitationsPage() {
 
               <div className="flex-1" />
 
-              {/* Submit */}
               <button
                 type="submit"
-                disabled={submitting}
-                className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-600 hover:from-violet-600 hover:via-indigo-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 text-sm"
+                disabled={submitting || (touched.email && !!emailError)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 bg-gradient-to-r from-violet-500 via-indigo-500 to-blue-600 hover:from-violet-600 hover:via-indigo-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-sm transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed text-sm"
               >
                 {submitting ? (
                   <>
@@ -358,7 +426,7 @@ export default function AdminInvitationsPage() {
           </div>
 
           {/* Cartes de statistiques */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 flex-shrink-0">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-shrink-0">
             {[
               {
                 label: t("activeLinks"),
@@ -375,14 +443,6 @@ export default function AdminInvitationsPage() {
                 Icon: IoTimerOutline,
                 grad: "from-rose-400 to-red-500",
                 bg: "border-rose-100 dark:border-rose-900/40",
-              },
-              {
-                label: t("revoked"),
-                count: stats.revoked,
-                countCls: "text-orange-500",
-                Icon: IoCloseCircleOutline,
-                grad: "from-orange-400 to-orange-600",
-                bg: "border-orange-100 dark:border-orange-900/40",
               },
               {
                 label: t("accepted"),
@@ -415,12 +475,11 @@ export default function AdminInvitationsPage() {
           </div>
         </section>
 
-        {/* ── DROITE : tableau avec filtres et refresh sur la même ligne ── */}
+        {/* ── DROITE : tableau avec filtres ── */}
         <section className="xl:col-span-2 flex flex-col">
           <div
             className={`flex-1 bg-white dark:bg-slate-900 rounded-2xl border border-indigo-100 dark:border-indigo-900/40 overflow-hidden flex flex-col ${block3d}`}
           >
-            {/* En-tête du tableau - Titre + stats */}
             <div className="flex-shrink-0 px-5 pt-4 pb-2 border-b border-indigo-50 dark:border-indigo-900/30 bg-gradient-to-r from-indigo-50/40 to-violet-50/30 dark:from-indigo-900/10 dark:to-violet-900/10">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-sm">
@@ -431,69 +490,60 @@ export default function AdminInvitationsPage() {
                     {t("currentInvitations")}
                   </h3>
                   <p className="text-[11px] text-gray-800 dark:text-white">
-                    {filteredInvitations.length} / {invitations.length}{" "}
-                    {t("displayed")}
+                    {invitations.length} /{" "}
+                    {pagination.total || invitations.length} {t("displayed")}
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Barre de filtres + Refresh sur la MÊME LIGNE */}
+            {/* Barre de filtres */}
             <div className="flex-shrink-0 px-5 py-3 border-b border-indigo-50 dark:border-indigo-900/30 bg-white dark:bg-slate-900">
-                {/* Barre de filtres + Refresh alignés à DROITE */}
-<div className="flex-shrink-0 px-5 py-3 border-b border-indigo-50 dark:border-indigo-900/30 bg-white dark:bg-slate-900">
-  <div className="flex items-center justify-end gap-3 flex-wrap">
-    {/* Status Filter */}
-    <div className="relative">
-      <IoFilterOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-sm" />
-      <select
-        value={statusFilter}
-        onChange={(e) => setStatusFilter(e.target.value)}
-        className="pl-9 pr-8 py-2 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 cursor-pointer appearance-none"
-      >
-        <option value="all">{t("allStatus")}</option>
-        <option value="active">{t("active")}</option>
-        <option value="expired">{t("expired")}</option>
-        <option value="revoked">{t("revoked")}</option>
-        <option value="accepted">{t("accepted")}</option>
-      </select>
-    </div>
+              <div className="flex items-center justify-end gap-3 flex-wrap">
+                <div className="relative">
+                  <IoFilterOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-sm" />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="pl-9 pr-8 py-2 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 cursor-pointer appearance-none"
+                  >
+                    <option value="all">{t("allStatus")}</option>
+                    <option value="active">{t("active")}</option>
+                    <option value="expired">{t("expired")}</option>
+                    <option value="revoked">{t("revoked")}</option>
+                    <option value="accepted">{t("accepted")}</option>
+                  </select>
+                </div>
 
-    {/* Search Filter */}
-    <div className="relative">
-      <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-sm" />
-      <input
-        type="text"
-        value={searchFilter}
-        onChange={(e) => setSearchFilter(e.target.value)}
-        placeholder={t("searchByEmail")}
-        className="pl-9 pr-4 py-2 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 w-full sm:w-56"
-      />
-    </div>
+                <div className="relative">
+                  <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-indigo-400 text-sm" />
+                  <input
+                    type="text"
+                    value={searchFilter}
+                    onChange={(e) => setSearchFilter(e.target.value)}
+                    placeholder={t("searchByEmail")}
+                    className="pl-9 pr-4 py-2 bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400/50 focus:border-indigo-400 w-full sm:w-56"
+                  />
+                </div>
 
-    {/* Clear Filters Button */}
-    {(statusFilter !== "all" || searchFilter) && (
-      <button
-        onClick={clearFilters}
-        className="px-3 py-2 text-sm text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl transition-colors"
-      >
-        <IoCloseCircleOutline className="text-sm" />
-        {t("clearFilters")}
-      </button>
-    )}
+                {(statusFilter !== "all" || searchFilter) && (
+                  <button
+                    onClick={clearFilters}
+                    className="px-3 py-2 text-sm text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1.5 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl transition-colors"
+                  >
+                    <IoCloseCircleOutline className="text-sm" />
+                    {t("clearFilters")}
+                  </button>
+                )}
 
-    
-
-    {/* Refresh Button */}
-    <button
-      onClick={() => fetchInvitations(pagination.page)}
-      className="p-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all"
-      title={t("refresh")}
-    >
-      <IoRefreshOutline className="text-base" />
-    </button>
-  </div>
-</div>
+                <button
+                  onClick={() => fetchInvitations(pagination.page)}
+                  className="p-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all"
+                  title={t("refresh")}
+                >
+                  <IoRefreshOutline className="text-base" />
+                </button>
+              </div>
             </div>
 
             {/* Corps du tableau */}
@@ -521,13 +571,12 @@ export default function AdminInvitationsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
-                    {filteredInvitations.map((inv) => {
+                    {invitations.map((inv) => {
                       const time = getTimeRemaining(inv.expiresAt);
                       const isExpired = inv.status === "expired";
                       const isAcc = inv.status === "accepted";
                       const isRevoked = inv.status === "revoked";
-                      const isActive =
-                        inv.status === "active" || inv.status === "pending";
+                      const isActive = inv.status === "pending";
 
                       return (
                         <tr
@@ -641,7 +690,7 @@ export default function AdminInvitationsPage() {
                       );
                     })}
 
-                    {filteredInvitations.length === 0 && (
+                    {invitations.length === 0 && (
                       <tr>
                         <td colSpan={4} className="px-6 py-16 text-center">
                           <FiInbox className="text-5xl text-indigo-200 dark:text-indigo-800 mb-3 mx-auto" />
@@ -664,20 +713,23 @@ export default function AdminInvitationsPage() {
             </div>
 
             {/* ── PAGINATION ── */}
-            {filteredInvitations.length > 0 && (
+            {/* ── PAGINATION ── */}
+            {pagination.totalPages > 1 && (
               <Pagination
                 currentPage={pagination.page}
                 totalPages={pagination.totalPages}
                 totalItems={pagination.total}
                 pageSize={pagination.limit}
-                onPageChange={fetchInvitations}
+                onPageChange={(newPage) => {
+                  fetchInvitations(newPage);
+                }}
               />
             )}
           </div>
         </section>
       </div>
 
-      {/* ── PIED DE PAGE SÉCURITÉ ── */}
+      {/* ── PIED DE PAGE SÉCURITÉ AVEC LIEN POLITIQUE ── */}
       <div className="bg-slate-900 dark:bg-slate-950 text-slate-400 rounded-2xl p-5 flex flex-col md:flex-row items-center gap-4 overflow-hidden relative border border-slate-800">
         <div className="absolute right-0 top-0 h-full w-1/3 opacity-10 pointer-events-none">
           <svg
@@ -719,7 +771,7 @@ export default function AdminInvitationsPage() {
             <IoDocumentTextOutline className="text-xl" />
           </div>
           <a
-            href="#"
+            href={`/${locale}/terms`}
             className="text-[10px] font-bold text-slate-300 hover:text-white underline decoration-indigo-500 transition-colors"
           >
             {t("policy")}

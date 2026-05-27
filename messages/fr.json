@@ -250,11 +250,15 @@
       },
       "filters": {
         "searchPlaceholder": "Rechercher par nom, email, téléphone...",
+        "advancedMode": "AVANCÉ",
+
         "role": {
           "all": "Tous les rôles",
           "admin": "Admin",
           "property_owner": "Propriétaire",
-          "tenant": "Locataire"
+          "tenant": "Locataire",
+          "both": "Les deux",
+          "co_host": "Co-hôte"
         },
         "status": {
           "all": "Tous les statuts",
@@ -292,6 +296,7 @@
           "status": "Statut",
           "verification": "Vérification",
           "reliability": "Fiabilité",
+          "fraud": "FRAUDE",
           "registration": "Inscription",
           "actions": "Actions"
         },
@@ -336,7 +341,33 @@
       },
       "messages": {
         "noUsers": "Aucun utilisateur trouvé",
-        "loading": "Chargement..."
+        "loading": "Chargement...",
+        "errors": {
+          "noToken": "Token non disponible",
+          "loading": "Erreur de chargement des utilisateurs",
+          "suspend": "Erreur lors de la suspension",
+          "ban": "Erreur lors du bannissement",
+          "activate": "Erreur lors de la réactivation",
+          "lock": "Erreur lors du blocage",
+          "unlock": "Erreur lors du déblocage",
+          "escalate": "Erreur lors de l'escalade",
+          "warning": "Erreur lors de l'envoi de l'avertissement",
+          "note": "Erreur lors de l'ajout de la note",
+          "undo": "Erreur lors de l'annulation",
+          "export": "Erreur lors de l'export"
+        },
+        "success": {
+          "suspend": "Utilisateur suspendu avec succès",
+          "ban": "Utilisateur banni avec succès",
+          "activate": "Compte réactivé avec succès",
+          "lock": "Compte bloqué avec succès",
+          "unlock": "Compte débloqué avec succès",
+          "escalate": "Sanction niveau {level} appliquée",
+          "warning": "Avertissement envoyé avec succès",
+          "note": "Note ajoutée avec succès",
+          "undo": "Action annulée avec succès",
+          "export": "Export réalisé avec succès"
+        }
       },
       "activateModal": {
         "title": "Réactiver le compte",
@@ -1230,7 +1261,7 @@
     "description": "Invitez de nouveaux administrateurs — liens sécurisés valides 48h",
     "inviteAdmin": "Inviter un administrateur",
     "secureLink": "Lien sécurisé · expire dans 48h",
-    "newAdminEmail": "Email du nouvel admin",
+    "newAdminEmail": "Email du nouvel administrateur",
     "infoText": "Un lien unique sera envoyé par email et expirera dans",
     "sending": "Envoi en cours",
     "generateInvitation": "Générer l'invitation",
@@ -1244,34 +1275,47 @@
     "accepted": "Acceptée",
     "active": "Active",
     "copyLink": "Copier le lien",
-    "copied": "Copié !",
+    "copied": "Copié",
     "revoke": "Révoquer",
     "resend": "Renvoyer",
     "noInvitations": "Aucune invitation en cours",
     "createInvitationHint": "Utilisez le formulaire à gauche pour en créer une",
     "unauthorized": "Accès non autorisé",
-    "emailRequired": "L'email est requis",
-    "emailInvalid": "Email invalide",
-    "invitationSent": "Invitation envoyée à {email} ✓",
+    "emailRequired": "L'adresse email est requise",
+    "emailInvalid": "Adresse email invalide",
+    "invitationSent": "Invitation envoyée à {email}",
     "invitationRevoked": "Invitation révoquée",
     "revokeError": "Erreur lors de la révocation",
-    "invitationResent": "Invitation renvoyée à {email} ✓",
+    "invitationResent": "Invitation renvoyée à {email}",
     "currentInvitations": "Invitations en cours",
     "realTimeExpiry": "Suivi de l'expiration en temps réel",
     "expiryApplication": "Application de l'expiration 48h",
-    "securityText": "NESTHUB's zero-trust invitation system generates transient access tokens. If an invitee does not complete registration within the 48-hour window, the encrypted token is automatically purged from the gateway cache. This prevents long-standing unauthorized link reuse.",
+    "securityText": "Le système d'invitation zéro-confiance de NESTHUB génère des jetons d'accès temporaires. Si un invité ne finalise pas son inscription dans les 48 heures, le jeton crypté est automatiquement supprimé du cache de la passerelle. Cela empêche toute réutilisation non autorisée des liens.",
     "refresh": "Rafraîchir les données",
-    "autoPurge": "Purge auto",
+    "autoPurge": "Purge automatique",
     "limitedAccess": "Accès limité",
-    "policy": "Politique",
-    "fullAccessTitle": "Accès Administrateur Complet",
+    "policy": "Politique de sécurité",
+    "fullAccessTitle": "Accès administrateur complet",
     "fullAccessDescription": "Tous les administrateurs invités auront un accès complet à toutes les fonctionnalités et paramètres du système. Aucune restriction de rôle ne s'applique.",
     "allStatus": "Tous",
     "searchByEmail": "Rechercher par email",
-    "clearFilters": "Effacer",
+    "clearFilters": "Effacer les filtres",
     "displayed": "affichés",
     "noResults": "Aucun résultat trouvé",
-    "tryDifferentFilters": "Essayez d'autres filtres"
+    "tryDifferentFilters": "Essayez d'autres filtres",
+    "invitationAlreadyExists": "Une invitation active existe déjà pour {email}. Veuillez attendre son expiration ou la révoquer.",
+    "linkCopied": "Lien copié dans le presse-papier",
+    "invitationExpiredButCanResend": "L'invitation pour {email} a expiré. Utilisez le bouton 'Renvoyer' dans le tableau.",
+    "invitationAlreadyAccepted": "{email} a déjà accepté son invitation.",
+    "invitationRevokedButCanResend": "L'invitation pour {email} a été révoquée. Utilisez le bouton 'Renvoyer' pour en créer une nouvelle.",
+    "errorUnauthenticated": "Vous devez être connecté",
+    "errorAccessDenied": "Accès non autorisé",
+    "errorInvalidEmail": "Email invalide",
+    "errorAlreadyAcceptedInvitation": "Cet utilisateur a déjà accepté une invitation",
+    "errorUserAlreadyAdmin": "Cet utilisateur est déjà administrateur",
+    "errorActiveInvitationExists": "Une invitation active existe déjà pour cet email",
+    "errorEmailSendFailed": "L'invitation a été créée mais l'envoi de l'email a échoué",
+    "errorUnknown": "Une erreur est survenue, veuillez réessayer"
   },
 
   "AdminContent": {
@@ -1392,6 +1436,12 @@
     "propertiesListed": "propriétés listées",
     "userId": "ID UTILISATEUR",
     "tier1Account": "COMPTE TIER 1",
+    "rejectionReasons": {
+      "blurry": "Image floue",
+      "expired": "Document expiré",
+      "wrongPerson": "Mauvaise personne",
+      "incomplete": "Document incomplet"
+    },
     "stats": {
       "pending": "En attente",
       "processedToday": "Traité aujourd'hui",
@@ -1413,57 +1463,7 @@
       "viewHistory": "Voir l'historique"
     }
   },
-  "Verifications": {
-    "documentType": {
-      "cin": "CIN",
-      "passport": "PASSEPORT"
-    },
-    "unauthorized": "Accès non autorisé",
-    "adminRequired": "Vous devez être administrateur.",
-    "title": "File de vérification",
-    "description": "Gérez les demandes de validation d'identité",
-    "searchPlaceholder": "Rechercher un utilisateur...",
-    "refresh": "Actualiser",
-    "processRequest": "Traiter la demande",
-    "justNow": "À l'instant",
-    "minutesAgo": "Il y a {count} min",
-    "oneHourAgo": "Il y a 1 heure",
-    "hoursAgo": "Il y a {count} heures",
-    "daysAgo": "Il y a {count} jours",
-    "stats": {
-      "pending": "En attente",
-      "processedToday": "Traités ajd",
-      "documents": "dossiers",
-      "averageTime": "Temps moyen",
-      "minutes": "min"
-    },
-    "table": {
-      "user": "Utilisateur",
-      "role": "Rôle",
-      "date": "Date",
-      "status": "Statut",
-      "documentType": "TYPE DOCUMENT",
-      "action": "Action"
-    },
-    "role": {
-      "owner": "PROPRIÉTAIRE",
-      "tenant": "LOCATAIRE"
-    },
-    "empty": {
-      "title": "Toutes les vérifications sont terminées !",
-      "description": "Félicitations, votre file d'attente est vide. Vous serez notifié dès qu'un nouveau propriétaire soumettra ses documents.",
-      "backToDashboard": "Retour au tableau de bord",
-      "viewHistory": "Voir l'historique"
-    },
-    "status": {
-      "pending": "En attente",
-
-      "all": "Tous les statuts",
-      "approved": "Approuvée",
-      "rejected": "Rejetée"
-    },
-    "resetFilters": "Réinitialiser"
-  },
+  
 
   "SSOCallback": {
     "title": "CONNEXION SÉCURISÉE",
@@ -1528,58 +1528,67 @@
     "strengthMedium": "Moyen",
     "strengthStrong": "Fort"
   },
+ 
   "VerificationsHistory": {
-    "verifications": "VÉRIFICATIONS",
-    "history": "HISTORIQUE",
     "title": "Historique des vérifications",
-    "subtitle": "Consultez toutes les demandes de vérification déjà traitées",
-    "backToPending": "Retour aux demandes en attente",
+    "subtitle": "Consultez l'historique complet des demandes de vérification traitées",
+    "verifications": "Vérifications",
+    "history": "Historique",
     "refresh": "Actualiser",
-    "searchPlaceholder": "Rechercher par nom ou email...",
-
-    "status": {
-      "validated": "Validée",
-      "rejected": "Rejetée",
-      "pending": "En attente"
+    "searchPlaceholder": "Rechercher par nom, email...",
+    "backToPending": "Retour aux demandes en attente",
+    
+    "validated": "Validée",
+    "rejected": "Rejetée",
+    "pending": "En attente",
+    
+    "stats": {
+      "total": "Total",
+      "approvalRate": "Taux d'approbation",
+      "rejected": "Rejetées"
     },
-
+    
     "filters": {
       "all": "Toutes",
       "validated": "Validées",
       "rejected": "Rejetées"
     },
-
-    "stats": {
-      "total": "Total des vérifications",
-      "totalDescription": "Historique complet",
-      "approvalRate": "Taux d'approbation",
-      "rejected": "Demandes rejetées",
-      "rejectedDescription": "Nécessitent une attention"
-    },
-
+    
     "table": {
-      "submittedAt": "Date de soumission",
-      "user": "Utilisateur",
-      "email": "Email",
-      "status": "Statut",
-      "processedAt": "Date de traitement",
-      "processedBy": "Traité par",
-      "notes": "Motif / Commentaire",
-      "action": "Action",
+      "submittedAt": "DATE DE SOUMISSION",
+      "user": "UTILISATEUR",
+      "status": "STATUT",
+      "processedAt": "DATE DE TRAITEMENT",
+      "processedBy": "TRAITÉ PAR",
+      "notes": "NOTES",
+      "action": "ACTION",
       "view": "Voir"
     },
-
-    "empty": {
-      "title": "Aucune demande traitée",
-      "description": "Les demandes validées ou rejetées apparaîtront ici"
-    },
-
+    
     "pagination": {
       "showing": "Affichage de",
       "of": "sur",
       "results": "résultats"
-    }
-  },
+    },
+    
+    
+    
+    "auditBanner": {
+      "title": "Journal d'audit chiffré · Conservation 7 ans",
+      "description": "NESTHUB maintient une piste d'audit chiffrée de toutes les activités conformément aux normes réglementaires.",
+      "aes": "AES-256",
+      "gdpr": "RGPD",
+      "retention": "7 ans"
+    },
+     "empty": {
+      "title": "Aucune vérification dans l'historique",
+      "description": "Toutes les demandes de vérification d'identité seront affichées ici une fois traitées.",
+      "noResults": "Aucun résultat trouvé",
+      "tryDifferent": "Essayez d'autres termes de recherche"
+    },
+    "clearSearch": "Effacer la recherche"
+  }
+,
 
   "OwnerLayout": {
     "roleSwitcher": {
@@ -1802,7 +1811,7 @@
       "tip4": "Montrez chaque pièce importante : salon, chambres, cuisine, salle de bain",
       "uploading": "Téléchargement en cours...",
       "uploadError": "Le téléchargement a échoué, veuillez réessayer",
-      "clickStarToSetMain": "⭐ Cliquez sur l'étoile pour définir la photo principale",
+      "clickStarToSetMain": " Cliquez sur l'étoile pour définir la photo principale",
       "setAsMain": "Définir comme photo principale",
       "mainPhotoSet": "Photo principale définie avec succès"
     },
@@ -3316,7 +3325,7 @@
     "noResults": "Aucun résultat trouvé",
     "searchDirectly": "Rechercher directement"
   },
-  "AdminProperties": {
+"AdminProperties": {
     "title": "Gestion des Propriétés",
     "description": "Contrôlez et modérez l'inventaire immobilier de NESTHUB.",
     "refresh": "Actualiser",
@@ -3394,75 +3403,43 @@
     "error": "Erreur",
     "loading": "Chargement...",
     "unauthorized": "Non autorisé",
-    "all": "Tous"
-  },
+    "all": "Tous",
+    "emptyProperties": "Aucune propriété trouvée",
+    "emptySearch": "Aucun résultat ne correspond à votre recherche",
+    "emptyPropertiesDesc": "Commencez par ajouter votre première propriété pour la voir apparaître ici",
+    "emptyMapDesc": "Les propriétés avec des coordonnées géographiques apparaîtront sur cette carte",
+    "emptyAlertsDesc": "Les notifications importantes concernant les propriétés apparaîtront ici",
+    "tryDifferentFilters": "Essayez d'autres critères de recherche",
+    "quickPreview": "Aperçu rapide",
+    "viewFullListing": "Voir l'annonce complète",
+    "close": "Fermer",
+    "autoRefreshOn": "Auto-refresh activé",
+    "autoRefreshOff": "Auto-refresh désactivé",
+    "filterOwnerEmail": "Email du propriétaire",
+    "ownerEmailPlaceholder": "exemple@email.com",
+    "filterDateFrom": "Créé après le",
+    "filterDateTo": "Créé avant le",
+    
+    "activerConfirmTitle": "Activer l'annonce",
+    "activerConfirmMessage": "Êtes-vous sûr de vouloir activer cette annonce ? Elle sera visible par tous.",
+    "desactiverConfirmTitle": "Désactiver l'annonce",
+    "desactiverConfirmMessage": "Êtes-vous sûr de vouloir désactiver cette annonce ? Elle ne sera plus visible.",
+    "archiverConfirmTitle": "Archiver l'annonce",
+    "archiverConfirmMessage": "Êtes-vous sûr de vouloir archiver cette annonce ? Vous pourrez la réactiver plus tard.",
+    "validerConfirmTitle": "Valider l'annonce",
+    "validerConfirmMessage": "Êtes-vous sûr de vouloir valider cette annonce ? Elle sera publiée.",
+    "rejeterConfirmTitle": "Rejeter l'annonce",
+    "rejeterConfirmMessage": "Êtes-vous sûr de vouloir rejeter cette annonce ? L'utilisateur en sera informé.",
+    
+    "activerBatchConfirmMessage": "Êtes-vous sûr de vouloir activer {count} annonce(s) ?",
+    "desactiverBatchConfirmMessage": "Êtes-vous sûr de vouloir désactiver {count} annonce(s) ?",
+    "archiverBatchConfirmMessage": "Êtes-vous sûr de vouloir archiver {count} annonce(s) ?",
+    
+    "supprimerConfirmTitle": "Supprimer l'annonce",
+    "supprimerConfirmMessage": "Êtes-vous sûr de vouloir supprimer définitivement cette annonce ? Cette action est irréversible."
+},
 
-  "AdminTransactions": {
-    "title": "Transactions",
-    "description": "Suivez et gérez toutes les transactions de la plateforme",
-    "export": "Exporter",
-    "exportCSV": "Export CSV",
-    "exportPDF": "Export PDF",
-    "refresh": "Actualiser",
-    "searchPlaceholder": "Rechercher par référence, client, email...",
-    "allStatus": "Tous statuts",
-    "statusSuccess": "Réussies",
-    "statusPending": "En attente",
-    "statusRefunded": "Remboursées",
-    "statusFailed": "Échouées",
-    "allTypes": "Tous types",
-    "typePayment": "Paiements",
-    "typeRefund": "Remboursements",
-    "typeCommission": "Commissions",
-    "typePayout": "Virements",
-    "statsTotal": "Total",
-    "statsSuccess": "Réussis",
-    "statsRefunded": "Remboursés",
-    "statsPending": "En attente",
-    "statsSuccessRate": "Taux succès",
-    "transactionsCount": "transactions",
-    "vsLastMonth": "vs mois dernier",
-    "totalVolume": "Volume total",
-    "totalVolumeDesc": "Toutes transactions confondues",
-    "commissions": "Commissions",
-    "commissionsDesc": "10% sur chaque transaction",
-    "refunds": "Remboursements",
-    "refundsDesc": "Transactions remboursées",
-    "tableDate": "Date et heure",
-    "tableAmount": "Montant",
-    "tableStatus": "État",
-    "tablePaymentMethod": "Moyen de paiement",
-    "tableDescription": "Description",
-    "tableCustomer": "Client",
-    "tableActions": "Actions",
-    "statusSuccessLabel": "Réussie",
-    "statusPendingLabel": "En attente",
-    "statusRefundedLabel": "Remboursée",
-    "statusFailedLabel": "Échouée",
-    "typePaymentLabel": "Paiement",
-    "typeRefundLabel": "Remboursement",
-    "booking": "Réservation",
-    "commission": "Commission",
-    "refundButton": "Rembourser",
-    "viewOnStripe": "Voir sur Stripe",
-    "noTransactions": "Aucune transaction trouvée",
-    "successRate": "Taux de succès",
-    "successfulTransactions": "Transactions réussies",
-    "conversionRate": "Taux de conversion",
-    "averageCommission": "Commission moyenne",
-    "commissionRate": "Taux de commission",
-    "averageRefund": "Remboursement moyen",
-    "refundRate": "Taux de remboursement",
-    "ofTotalVolume": "du volume total",
-    "apply": "Appliquer",
-    "previousMonth": "vs mois dernier",
-    "confirmRefund": "Voulez-vous vraiment rembourser cette transaction ?",
-    "refundSuccess": "Remboursement effectué avec succès",
-    "refundError": "Erreur lors du remboursement",
-    "csvFormat": "Format CSV pour tableur",
-    "pdfFormat": "Format PDF imprimable",
-    "percentageOfTotal": "Soit"
-  },
+
 
   "Moderation": {
     "title": "Modération des Conversations",
@@ -4539,5 +4516,463 @@
       "yes": "Oui",
       "no": "Non"
     }
+  },
+
+  "AdminBookings": {
+    "title": "Gestion des Réservations",
+    "description": "Supervisez l'activité de location en temps réel sur toute la plateforme",
+
+    "statTotalBookings": "Total Réservations",
+    "statActiveStays": "Séjours Actifs",
+    "statRevenueThisMonth": "Revenus du Mois",
+    "statCancellationRate": "Taux d'Annulation",
+
+    "searchPlaceholder": "ID, propriété ou voyageur...",
+    "advancedFilters": "Filtres avancés",
+    "resetFilters": "Réinitialiser",
+    "dateFromLabel": "Date de début",
+    "dateToLabel": "Date de fin",
+    "minAmountLabel": "Montant minimum (TND)",
+
+    "colBookingId": "ID Réservation",
+    "colProperty": "Propriété",
+    "colHostGuest": "Hôte / Voyageur",
+    "colDates": "Dates",
+    "colAmount": "Montant",
+    "colStatus": "Statut",
+    "colPayment": "Paiement",
+    "colActions": "Actions",
+
+    "statusAll": "Tous les statuts",
+    "statusConfirmed": "Confirmée",
+    "statusPending": "En attente",
+    "statusCompleted": "Terminée",
+    "statusCancelled": "Annulée",
+    "statusCheckedIn": "En cours",
+
+    "paymentPaid": "Payé",
+    "paymentPending": "En attente",
+    "paymentRefunded": "Remboursé",
+
+    "hostLabel": "Hôte",
+    "guestLabel": "Voyageur",
+    "checkInLabel": "Arrivée",
+    "checkOutLabel": "Départ",
+    "propertyUnknown": "Propriété",
+
+    "actionViewDetails": "Voir les détails",
+    "actionContact": "Contacter",
+    "actionConfirm": "Confirmer la réservation",
+    "actionDelete": "Supprimer la réservation",
+
+    "noBookings": "Aucune réservation trouvée",
+
+    "modalConfirmTitle": "Confirmer la réservation",
+    "modalCancelTitle": "Annuler la réservation",
+    "modalDeleteTitle": "Supprimer la réservation",
+    "modalConfirmMessage": "Êtes-vous sûr de vouloir confirmer cette réservation ?",
+    "modalCancelMessage": "Êtes-vous sûr de vouloir annuler cette réservation ?",
+    "modalDeleteMessage": "Êtes-vous sûr de vouloir supprimer cette réservation ? Cette action est irréversible.",
+    "modalConfirmButton": "Confirmer",
+    "modalCancelButton": "Annuler",
+    "modalDeleteButton": "Supprimer",
+    "modalCancel": "Fermer",
+    "modalDeleteRule": " Règle de suppression : Seules les réservations terminées ou annulées depuis plus de 2 mois peuvent être supprimées définitivement.",
+
+    "toastConfirmSuccess": "Réservation confirmée avec succès",
+    "toastCancelSuccess": "Réservation annulée avec succès",
+    "toastDeleteSuccess": "Réservation supprimée avec succès",
+    "toastExportSuccess": "Export CSV réussi",
+    "toastExportError": "Erreur lors de l'export",
+
+    "errorUnknown": "Une erreur est survenue, veuillez réessayer",
+    "deleteNotAvailableTooltip": "Suppression disponible uniquement pour les réservations de plus de 2 mois",
+
+    "paginationInfo": "Affichage {start} à {end} sur {total} entrées",
+
+    "footerOperational": "Systèmes Opérationnels",
+    "footerLastUpdate": "Dernière mise à jour :",
+    "footerCopyright": "© 2026 NESTHUB Administrateur"
+  },
+  "AdminBookingDetail": {
+    "title": "Détails de la réservation",
+    "createdOn": "Créée le",
+    "notFound": "Réservation non trouvée",
+    "backToList": "Retour à la liste",
+    "breadcrumbBookings": "Réservations",
+
+    "statusConfirmed": "Confirmée",
+    "statusPending": "En attente",
+    "statusCompleted": "Terminée",
+    "statusCancelled": "Annulée",
+
+    "calendarTitle": "Calendrier",
+    "checkIn": "Arrivée",
+    "checkOut": "Départ",
+    "beforeCheckout": "Avant 11:00",
+    "stayDuration": "Durée du séjour",
+    "nights": "nuits",
+    "guests": "Nombre de voyageurs",
+    "person": " personne",
+    "person_plural": "{count} personnes",
+
+    "participantsTitle": "Participants",
+    "guest": "Voyageur",
+    "host": "Hôte",
+    "contactButton": "Contacter",
+
+    "financeTitle": "Finance",
+    "stayCost": "Séjour ({nights} nuits)",
+    "cleaningFee": "Frais de ménage",
+    "serviceFee": "Frais de service",
+    "total": "Total",
+    "paymentMade": "Paiement effectué",
+    "paidOn": "Le",
+
+    "auditTitle": "Journal d'audit",
+    "by": "Par",
+    "noAudit": "Aucun événement d'audit",
+
+    "notesTitle": "Notes internes",
+    "notePlaceholder": "Ajouter une note de suivi...",
+    "addNote": "Ajouter",
+    "adding": "Ajout...",
+    "noNotes": "Aucune note",
+
+    "receiptButton": "Reçu",
+    "printButton": "Imprimer",
+    "contractButton": "Contrat",
+    "generating": "Génération...",
+
+    "toastNoteAdded": "Note ajoutée avec succès",
+    "toastNoteError": "Erreur lors de l'ajout de la note",
+    "toastContractSuccess": "Contrat généré avec succès",
+    "toastContractError": "Erreur lors de la génération du contrat",
+    "toastReceiptSuccess": "Reçu téléchargé avec succès",
+    "toastReceiptError": "Erreur lors du téléchargement du reçu",
+    "emptyProperties": "Aucune propriété trouvée",
+    "emptySearch": "Aucun résultat ne correspond à votre recherche",
+    "emptyPropertiesDesc": "Commencez par ajouter votre première propriété pour la voir apparaître ici",
+    "emptyMapDesc": "Les propriétés avec des coordonnées géographiques apparaîtront sur cette carte",
+    "emptyAlertsDesc": "Les notifications importantes concernant les propriétés apparaîtront ici",
+    "tryDifferentFilters": "Essayez d'autres critères de recherche"
+  },
+  
+  "AdminListingsValidation": {
+    "title": "Validation des annonces",
+    "description": "Gérez et validez les annonces en attente de publication",
+    
+    "statsPending": "En attente",
+    "statsProcessedToday": "Traités aujourd'hui",
+    "statsAvgTime": "Temps moyen",
+    "statsHistory": "Historique",
+    "statsTarget": "Objectif: < 4 heures",
+    "statsValidated": "validées",
+    
+    "newListings": "nouvelles",
+    "modifications": "modifications",
+    
+    "tabAll": "Toutes",
+    "tabNew": "Nouvelles annonces",
+    "tabRevisions": "Modifications",
+    "tabHistory": "Historique",
+    
+    "searchPlaceholder": "Rechercher par titre, propriétaire...",
+    "searchButton": "Appliquer",
+    "searchLoading": "Chargement...",
+    
+    "showing": "Affichage de",
+    "of": "sur",
+    "properties": "annonces",
+    "noResults": "Aucune annonce trouvée",
+    "noHistory": "Aucune annonce dans l'historique",
+    "show": "Afficher:",
+    
+    "badgeNew": "Nouvelle",
+    "badgeModification": "Modification",
+    "badgePublished": "Publiée",
+    "badgeRejected": "Rejetée",
+    "badgePending": "En attente",
+    "badgeValidated": "Validée",
+    
+    "tableHeaderOwner": "Propriétaire",
+    "tableHeaderListing": "Annonce",
+    "tableHeaderType": "Type",
+    "tableHeaderPrice": "Prix",
+    "tableHeaderDate": "Date",
+    "tableHeaderStatus": "Statut",
+    "tableHeaderActions": "Actions",
+    
+    "pricePerNight": "/nuit",
+    "pricePerMonth": "/mois",
+    
+    "actionView": "Voir détails",
+    "actionProcess": "Traiter",
+    
+    "reasonPrefix": "Motif:"
+  },
+ 
+  "AdminListingDetail": {
+    "loading": "Chargement de l'annonce...",
+    "notFound": "Annonce non trouvée",
+    "goBack": "Retour",
+    
+    "breadcrumbProperties": "PROPRIÉTÉS",
+    "breadcrumbValidations": "VALIDATIONS",
+    "breadcrumbModification": "MODIFICATION",
+    "breadcrumbNewListing": "NOUVELLE ANNONCE",
+    
+    "badgeModification": "MODIFICATION",
+    "badgeNewListing": "NOUVELLE ANNONCE",
+    
+    "status_ACTIVE": "ACTIVE",
+    "status_INACTIVE": "INACTIVE",
+    "status_DRAFT": "BROUILLON",
+    "status_ARCHIVED": "ARCHIVÉE",
+    "status_PENDING_REVIEW": "EN ATTENTE",
+    "status_SUSPENDED": "SUSPENDUE",
+    "status_REJECTED": "REJETÉE",
+    
+    "viewOnSite": "VOIR SUR LE SITE",
+    
+    "statsViews": "VUES",
+    "statsBookings": "RÉSERVATIONS",
+    "statsFavorites": "FAVORIS",
+    "statsRevenue": "REVENUS",
+    
+    "revisionTitle": "MODIFICATION EN ATTENTE",
+    "revisionDescription": "Le propriétaire souhaite modifier son annonce active.",
+    "revisionHide": "MASQUER",
+    "revisionView": "VOIR LES CHANGEMENTS",
+    "revisionField": "CHAMP",
+    "revisionBefore": "AVANT",
+    "revisionAfter": "APRÈS",
+    
+    "galleryZoom": "AGRANDIR",
+    
+    "propSurface": "SURFACE",
+    "propBedrooms": "CHAMBRES",
+    "propBathrooms": "SALLES DE BAIN",
+    "propMaxGuests": "VOYAGEURS MAX",
+    "propKitchens": "CUISINE(S)",
+    "propType": "TYPE",
+    "propGarden": "JARDIN",
+    "propBalcony": "BALCON",
+    "propElevator": "ASCENSEUR",
+    "propParking": "PARKING",
+    "propFurnished": "MEUBLÉ",
+    
+    "sectionEquipment": "ÉQUIPEMENTS & SERVICES",
+    "sectionHouseRules": "RÈGLEMENT INTÉRIEUR",
+    "sectionDescription": "DESCRIPTION",
+    "sectionLocation": "LOCALISATION",
+    "sectionPricing": "TARIFICATION",
+    "sectionOwner": "PROPRIÉTAIRE",
+    "sectionDates": "DATES",
+    
+    "pricePerNight": "Prix / nuit",
+    "pricePerMonth": "Prix / mois",
+    "cleaningFee": "Frais de ménage",
+    "securityDeposit": "Caution",
+    "rentalType": "TYPE DE LOCATION",
+    
+    "validateModificationTitle": "VALIDATION DE MODIFICATION",
+    "validateListingTitle": "VALIDATION D'ANNONCE",
+    "validateModificationDesc": "Le propriétaire souhaite modifier son annonce active.",
+    "validateListingDesc": "Nouvelle annonce nécessitant votre validation.",
+    
+    "btnApproveModification": "APPROUVER LA MODIFICATION",
+    "btnApproveListing": "APPROUVER L'ANNONCE",
+    "btnRejectModification": "REJETER LA MODIFICATION",
+    "btnRejectListing": "REJETER L'ANNONCE",
+    
+    "rejectionReasonLabel": "MOTIF DU REJET",
+    "rejectionDetailsLabel": "PRÉCISIONS (OPTIONNEL)",
+    "rejectionDetailsPlaceholder": "Ajoutez des détails pour aider le propriétaire...",
+    "clear": "EFFACER",
+    
+    "revisionNote": "L'annonce restera active avec ses informations actuelles en cas de rejet.",
+    "validationNote": "Le propriétaire sera notifié par e-mail.",
+    
+    "memberSince": "Membre depuis",
+    "verified": "VÉRIFIÉ",
+    "notProvided": "Non renseigné",
+    
+    "dateCreated": "CRÉÉE",
+    "datePublished": "PUBLIÉE",
+    "previousRejectionReason": "MOTIF REJET PRÉCÉDENT",
+    
+    "yes": "✓",
+    "no": "✗",
+    "noCoordinates": "Coordonnées non définies",
+      "fetchError": "Échec du chargement de l'annonce",
+    "rejectionRequired": "Veuillez sélectionner un motif de rejet",
+    "modificationApproved": "Modification approuvée avec succès",
+    "modificationRejected": "Modification rejetée avec succès",
+    "listingApproved": "Annonce approuvée avec succès",
+    "listingRejected": "Annonce rejetée avec succès",
+    "operationError": "Une erreur est survenue lors de l'opération",
+    "rejectionReasons": {
+      "poorPhotos": "Photos de mauvaise qualité",
+      "incompleteDesc": "Description incomplète",
+      "inconsistentPrice": "Prix incohérent",
+      "nonCompliantRules": "Règlement non conforme",
+      "missingInfo": "Informations manquantes",
+      "duplicate": "Doublon détecté"
+    }
+  },
+  "AdminTransactions": {
+    "title": "Transactions",
+    "description": "Gérez et suivez toutes les transactions financières",
+    "refresh": "Actualiser",
+    "export": "Exporter",
+    "exportCSV": "Exporter en CSV",
+    "exportPDF": "Exporter en PDF",
+    "csvFormat": "Format tableur",
+    "pdfFormat": "Format document",
+    "searchPlaceholder": "Rechercher par référence, client...",
+    "allStatus": "Tous les statuts",
+    "allTypes": "Tous les types",
+    "apply": "Appliquer",
+    "noTransactions": "Aucune transaction trouvée",
+    "at": "à",
+    "commission": "Commission",
+    "booking": "Réservation",
+    
+    "statsTotal": "Total",
+    "statsSuccess": "Succès",
+    "statsRefunded": "Remboursées",
+    "statsPending": "En attente",
+    "statsSuccessRate": "Taux de succès",
+    "transactionsCount": "transaction(s)",
+    "vsLastMonth": "vs mois dernier",
+    
+    "statusSuccess": "Succès",
+    "statusPending": "En attente",
+    "statusRefunded": "Remboursée",
+    "statusFailed": "Échouée",
+    "statusSuccessLabel": "Succès",
+    "statusPendingLabel": "En attente",
+    "statusRefundedLabel": "Remboursée",
+    "statusFailedLabel": "Échouée",
+    
+    "typePayment": "Paiement",
+    "typeRefund": "Remboursement",
+    "typePaymentLabel": "Paiement",
+    "typeRefundLabel": "Remboursement",
+    
+    "tableDate": "DATE",
+    "tableAmount": "MONTANT",
+    "tableStatus": "STATUT",
+    "tablePaymentMethod": "MOYEN DE PAIEMENT",
+    "tableDescription": "DESCRIPTION",
+    "tableCustomer": "CLIENT",
+    "tableActions": "ACTIONS",
+    
+    "totalVolume": "Volume total",
+    "totalVolumeDesc": "Volume total des transactions",
+    "commissions": "Commissions",
+    "commissionsDesc": "Total des commissions perçues",
+    "refunds": "Remboursements",
+    "refundsDesc": "Total des remboursements effectués",
+    "successfulTransactions": "Transactions réussies",
+    "conversionRate": "Taux de conversion",
+    "averageCommission": "Commission moyenne",
+    "commissionRate": "Taux de commission",
+    "averageRefund": "Remboursement moyen",
+    "refundRate": "Taux de remboursement",
+    "refundButton": "Rembourser",
+    "viewOnStripe": "Voir sur Stripe",
+    "refundConfirm": "Voulez-vous vraiment rembourser cette transaction ?",
+    
+    
+     "refundModalTitle": "Confirmation de remboursement",
+    "refundTransactionRef": "Référence",
+    "refundOriginalAmount": "Montant original",
+    "refundProperty": "Propriété",
+    "refundTypeLabel": "Type de remboursement",
+    "refundFull": "Remboursement total",
+    "refundPartial": "Remboursement partiel",
+    "refundAmountLabel": "Montant à rembourser",
+    "refundMaxAmount": "Montant maximum",
+    "refundReasonLabel": "Motif du remboursement",
+    "optional": "Optionnel",
+    "refundReasonPlaceholder": "Expliquez la raison de ce remboursement...",
+    "refundWarning": "Attention : Cette action est irréversible. Le montant sera déduit des revenus du propriétaire et remboursé au client.",
+    "confirmRefund": "Confirmer le remboursement",
+    "cancel": "Annuler",
+    "refundDefaultReason": "Remboursement demandé par l'administrateur",
+    
+    "loadError": "Erreur de chargement",
+    "connectionError": "Erreur de connexion",
+    "exportSuccess": "Export généré avec succès",
+    "exportError": "Export non disponible",
+    "exportFailed": "Erreur lors de l'export",
+    "refundSuccess": "Remboursement effectué avec succès",
+    "refundError": "Erreur lors du remboursement"
+  },
+  "Verifications": {
+    "title": "Vérifications d'identité",
+    "description": "Gérez et vérifiez les demandes de validation d'identité des utilisateurs",
+    "refresh": "Actualiser",
+    "filters": "Filtres",
+    "resetFilters": "Réinitialiser",
+    "searchPlaceholder": "Rechercher par nom, email...",
+    
+    "stats": {
+      "pending": "En attente",
+      "processedToday": "Traitées aujourd'hui"
+    },
+    
+    "filterDocumentType": "Type de document",
+    "filterStatus": "Statut",
+    "allDocuments": "Tous les documents",
+    "allStatus": "Tous les statuts",
+    
+    "document": {
+      "cin": "CIN",
+      "passport": "PASSEPORT"
+    },
+    
+    "status": {
+      "pending": "En attente",
+      "validated": "Validée",
+      "rejected": "Rejetée"
+    },
+    
+    "table": {
+      "user": "UTILISATEUR",
+      "role": "RÔLE",
+      "documentType": "TYPE DE DOCUMENT",
+      "date": "DATE",
+      "status": "STATUT",
+      "action": "ACTION"
+    },
+    
+    "role": {
+      "owner": "PROPRIÉTAIRE",
+      "tenant": "LOCATAIRE"
+    },
+    
+    "processRequest": "Traiter la demande",
+    
+    "empty": {
+      "title": "Aucune demande en attente",
+      "description": "Toutes les vérifications d'identité ont été traitées. Revenez plus tard pour de nouvelles demandes.",
+      "backToDashboard": "Retour au tableau de bord",
+      "viewHistory": "Voir l'historique"
+    },
+    
+    "unauthorized": "Accès non autorisé",
+    "adminRequired": "Cette page est réservée aux administrateurs.",
+    
+    "justNow": "à l'instant",
+    "minutesAgo": "il y a {count} minute|il y a {count} minutes",
+    "oneHourAgo": "il y a 1 heure",
+    "hoursAgo": "il y a {count} heure|il y a {count} heures",
+    "daysAgo": "il y a {count} jour|il y a {count} jours"
   }
 }
+
+
+

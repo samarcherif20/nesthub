@@ -62,16 +62,119 @@ export async function GET(request: NextRequest) {
 
     // Construction WHERE
     const where: Prisma.UserWhereInput = {};
+    let hasAdvancedSearch = false;
 
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: Prisma.QueryMode.insensitive } },
-        { firstName: { contains: search, mode: Prisma.QueryMode.insensitive } },
-        { lastName: { contains: search, mode: Prisma.QueryMode.insensitive } },
-        { username: { contains: search, mode: Prisma.QueryMode.insensitive } },
-        { phoneNumber: { contains: search } },
-        { cinNumber: { contains: search } },
-      ];
+      // Mapping des termes français vers les valeurs de la base de données
+      const mapSearchTerm = (
+        term: string,
+      ): { field: string; value: string } | null => {
+        const normalizedTerm = term.toLowerCase().trim();
+
+        // Mapping des statuts (français → valeur DB)
+        const statusMap: Record<string, string> = {
+          actif: "ACTIVE",
+          actifs: "ACTIVE",
+          active: "ACTIVE",
+          suspendu: "TEMPORARILY_SUSPENDED",
+          suspendus: "TEMPORARILY_SUSPENDED",
+          suspendue: "TEMPORARILY_SUSPENDED",
+          banni: "PERMANENTLY_BANNED",
+          bannis: "PERMANENTLY_BANNED",
+          bannie: "PERMANENTLY_BANNED",
+          "en attente": "PENDING_VALIDATION",
+          attente: "PENDING_VALIDATION",
+          verrouillé: "SECURITY_LOCKED",
+          verrouillés: "SECURITY_LOCKED",
+          bloqué: "MANUALLY_BLOCKED",
+          bloqués: "MANUALLY_BLOCKED",
+          rejeté: "REJECTED",
+          rejetés: "REJECTED",
+          inactif: "INACTIVE",
+          inactifs: "INACTIVE",
+        };
+
+        // Mapping des rôles (français → valeur DB)
+        const roleMap: Record<string, string> = {
+          admin: "ADMIN",
+          administrateur: "ADMIN",
+          propriétaire: "PROPERTY_OWNER",
+          prop: "PROPERTY_OWNER",
+          locataire: "TENANT",
+          tenant: "TENANT",
+          "les deux": "BOTH",
+          both: "BOTH",
+          "co-hôte": "CO_HOST",
+          cohôte: "CO_HOST",
+        };
+
+        if (statusMap[normalizedTerm]) {
+          return { field: "status", value: statusMap[normalizedTerm] };
+        }
+
+        if (roleMap[normalizedTerm]) {
+          return { field: "role", value: roleMap[normalizedTerm] };
+        }
+
+        return null;
+      };
+
+      const searchTerms = search.split(/\s+/);
+
+      const statusConditions: any[] = [];
+      const roleConditions: any[] = [];
+      const textConditions: any[] = [];
+
+      for (const term of searchTerms) {
+        const mapped = mapSearchTerm(term);
+        if (mapped && mapped.field === "status") {
+          statusConditions.push({ status: mapped.value });
+        } else if (mapped && mapped.field === "role") {
+          roleConditions.push({ role: mapped.value });
+        } else if (term.length > 0) {
+          textConditions.push(
+            { email: { contains: term, mode: Prisma.QueryMode.insensitive } },
+            {
+              firstName: { contains: term, mode: Prisma.QueryMode.insensitive },
+            },
+            {
+              lastName: { contains: term, mode: Prisma.QueryMode.insensitive },
+            },
+            {
+              username: { contains: term, mode: Prisma.QueryMode.insensitive },
+            },
+            { phoneNumber: { contains: term } },
+            { cinNumber: { contains: term } },
+          );
+        }
+      }
+
+      // Construction de la clause WHERE combinée
+      const andConditions: any[] = [];
+
+      if (statusConditions.length > 0) {
+        andConditions.push({ AND: statusConditions });
+      }
+
+      if (roleConditions.length > 0) {
+        andConditions.push({ AND: roleConditions });
+      }
+
+      if (textConditions.length > 0) {
+        andConditions.push({ OR: textConditions });
+      }
+
+      // Déterminer si c'est une recherche avancée
+      for (const term of searchTerms) {
+        if (mapSearchTerm(term) !== null) {
+          hasAdvancedSearch = true;
+          break;
+        }
+      }
+
+      if (andConditions.length > 0) {
+        where.AND = andConditions;
+      }
     }
 
     if (roleFilter && roleFilter !== "ALL") {
@@ -80,12 +183,14 @@ export async function GET(request: NextRequest) {
 
     if (statusFilter && statusFilter !== "ALL") {
       if (statusFilter === "INACTIVE") {
-        where.lastLogin = { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
+        where.lastLogin = {
+          lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        };
         where.status = "ACTIVE";
       } else if (statusFilter === "LOCKED") {
         where.OR = [
           { status: "SECURITY_LOCKED" },
-          { status: "MANUALLY_BLOCKED" }
+          { status: "MANUALLY_BLOCKED" },
         ];
       } else {
         where.status = statusFilter as AccountStatus;
@@ -106,7 +211,7 @@ export async function GET(request: NextRequest) {
       } else if (verificationStatus === "NON_VERIFIE") {
         where.isIdentityVerified = false;
         where.verificationRequests = {
-          none: { status: { in: ["PENDING", "REJECTED"] } }
+          none: { status: { in: ["PENDING", "REJECTED"] } },
         };
       }
     }
@@ -125,6 +230,28 @@ export async function GET(request: NextRequest) {
       if (maxFraud) {
         where.stats.fraudScore = { lte: parseInt(maxFraud) };
       }
+    }
+
+    // Récupérer les paramètres de tri depuis l'URL
+    const sortField = searchParams.get("sort") || "createdAt";
+    const sortOrder = searchParams.get("order") === "asc" ? "asc" : "desc";
+
+    let orderBy: any = {};
+    
+    switch (sortField) {
+      case "firstName":
+        orderBy = { firstName: sortOrder };
+        break;
+      case "reliabilityScore":
+        orderBy = { stats: { reliabilityScore: sortOrder } };
+        break;
+      case "fraudScore":
+        orderBy = { stats: { fraudScore: sortOrder } };
+        break;
+      case "createdAt":
+      default:
+        orderBy = { createdAt: sortOrder };
+        break;
     }
 
     // Récupérer les utilisateurs
@@ -177,7 +304,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy: { createdAt: "desc" },
+        orderBy,
         skip,
         take: limit,
       }),
@@ -187,8 +314,10 @@ export async function GET(request: NextRequest) {
     // Fonction pour déterminer le statut de vérification
     const getVerificationStatus = (user: any) => {
       if (user.isIdentityVerified) return "VERIFIED";
-      if (user.verificationRequests?.[0]?.status === "PENDING") return "PENDING";
-      if (user.verificationRequests?.[0]?.status === "REJECTED") return "REJECTED";
+      if (user.verificationRequests?.[0]?.status === "PENDING")
+        return "PENDING";
+      if (user.verificationRequests?.[0]?.status === "REJECTED")
+        return "REJECTED";
       return "NON_VERIFIE";
     };
 
@@ -225,7 +354,7 @@ export async function GET(request: NextRequest) {
     // STATISTIQUES CORRIGÉES AVEC TOUS LES STATUTS
     // ===========================================
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    
+
     const [
       newUsers30d,
       verifiedUsers,
@@ -237,7 +366,7 @@ export async function GET(request: NextRequest) {
       securityLockedUsers,
       manuallyBlockedUsers,
       rejectedUsers,
-      inactiveUsers
+      inactiveUsers,
     ] = await Promise.all([
       prisma.user.count({ where: { createdAt: { gte: thirtyDaysAgo } } }),
       prisma.user.count({ where: { isIdentityVerified: true } }),
@@ -249,16 +378,17 @@ export async function GET(request: NextRequest) {
       prisma.user.count({ where: { status: "SECURITY_LOCKED" } }),
       prisma.user.count({ where: { status: "MANUALLY_BLOCKED" } }),
       prisma.user.count({ where: { status: "REJECTED" } }),
-      prisma.user.count({ 
-        where: { 
+      prisma.user.count({
+        where: {
           status: "ACTIVE",
-          lastLogin: { lt: thirtyDaysAgo }
-        } 
+          lastLogin: { lt: thirtyDaysAgo },
+        },
       }),
     ]);
 
     const totalLocked = securityLockedUsers + manuallyBlockedUsers;
-    const totalSuspended = suspendedUsers + bannedUsers + totalLocked + rejectedUsers;
+    const totalSuspended =
+      suspendedUsers + bannedUsers + totalLocked + rejectedUsers;
 
     return NextResponse.json({
       users: transformedUsers,
@@ -272,17 +402,19 @@ export async function GET(request: NextRequest) {
         totalUsers: totalCount,
         newUsers30d,
         activeUsers,
-        pendingValidationUsers,  // Utilisateurs en attente de validation email
-        pendingUsers: pendingRequests, // Demandes de vérification en attente
+        pendingValidationUsers,
+        pendingUsers: pendingRequests,
         suspendedUsers,
         bannedUsers,
         lockedUsers: totalLocked,
         rejectedUsers,
         inactiveUsers,
-        verifiedIdentity: totalCount > 0 ? Math.round((verifiedUsers / totalCount) * 100) : 0,
+        verifiedIdentity:
+          totalCount > 0 ? Math.round((verifiedUsers / totalCount) * 100) : 0,
         pendingApprovals: pendingRequests,
         averageReliability: 75,
       },
+      hasAdvancedSearch,
     });
   } catch (error) {
     console.error("Error fetching users:", error);
@@ -331,7 +463,7 @@ export async function PATCH(request: NextRequest) {
 
     // Récupérer l'utilisateur pour connaître son statut actuel
     const user = await prisma.user.findUnique({
-      where: { id: targetUserId }
+      where: { id: targetUserId },
     });
 
     if (!user) {
@@ -452,9 +584,14 @@ export async function PATCH(request: NextRequest) {
         actionType,
         performedBy: auth.userId,
         previousStatus,
-        newStatus: action === "SUSPEND" ? "TEMPORARILY_SUSPENDED" : 
-                  action === "BAN" ? "PERMANENTLY_BANNED" :
-                  action === "ACTIVATE" ? "ACTIVE" : undefined,
+        newStatus:
+          action === "SUSPEND"
+            ? "TEMPORARILY_SUSPENDED"
+            : action === "BAN"
+              ? "PERMANENTLY_BANNED"
+              : action === "ACTIVATE"
+                ? "ACTIVE"
+                : undefined,
         motif: motif || null,
         duration: duration || null,
         suspendedUntil,
@@ -471,9 +608,14 @@ export async function PATCH(request: NextRequest) {
         targetId: targetUserId,
         details: {
           previousStatus,
-          newStatus: action === "SUSPEND" ? "TEMPORARILY_SUSPENDED" : 
-                     action === "BAN" ? "PERMANENTLY_BANNED" :
-                     action === "ACTIVATE" ? "ACTIVE" : undefined,
+          newStatus:
+            action === "SUSPEND"
+              ? "TEMPORARILY_SUSPENDED"
+              : action === "BAN"
+                ? "PERMANENTLY_BANNED"
+                : action === "ACTIVATE"
+                  ? "ACTIVE"
+                  : undefined,
           duration,
           suspendedUntil: suspendedUntil?.toISOString(),
         } as Prisma.JsonValue,

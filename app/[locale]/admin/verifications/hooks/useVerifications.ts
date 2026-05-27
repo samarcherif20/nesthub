@@ -1,4 +1,6 @@
 // app/[locale]/admin/verifications/hooks/useVerifications.ts
+"use client";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
 
@@ -9,8 +11,8 @@ export interface VerificationRequest {
   documentFrontUrl: string;
   documentBackUrl: string | null;
   extractedData: any;
-    documentType?: "cin" | "passport";  
-  cinData?: { 
+  documentType?: "cin" | "passport";
+  cinData?: {
     documentType?: string;
   };
   user: {
@@ -92,7 +94,7 @@ export function useVerifications() {
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, pagination.page]);
 
   // Chargement des demandes
   const fetchRequests = useCallback(async () => {
@@ -171,7 +173,6 @@ export function useVerifications() {
   }, []);
 
   return {
-    // États
     requests,
     stats,
     pagination,
@@ -181,7 +182,6 @@ export function useVerifications() {
     statusFilter,
     isAdmin,
     isUserLoaded,
-    // Actions
     setSearch,
     setStatusFilter,
     setPage,

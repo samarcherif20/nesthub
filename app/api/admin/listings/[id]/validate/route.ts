@@ -70,12 +70,10 @@ export async function PATCH(
         });
 
         notificationType = "LISTING_REVISION_APPROVED";
-        notificationTitle = "✅ Modification approuvée";
+        notificationTitle = "Modification approuvée";
         notificationContent = `Votre demande de modification pour l'annonce "${listing.title}" a été approuvée et les changements sont maintenant en ligne.`;
 
-        console.log(
-          `✅ [REVISION] Modification approuvée pour l'annonce ${id}`,
-        );
+        console.log(`[REVISION] Modification approuvée pour l'annonce ${id}`);
       } else {
         // Rejeter la modification - L'annonce reste ACTIVE
         updatedListing = await prisma.listing.update({
@@ -88,10 +86,10 @@ export async function PATCH(
         });
 
         notificationType = "LISTING_REVISION_REJECTED";
-        notificationTitle = "❌ Modification refusée";
+        notificationTitle = " Modification refusée";
         notificationContent = `Votre demande de modification pour l'annonce "${listing.title}" a été refusée.\n\nMotif: ${rejectionReason || "Non spécifié"}${rejectionDetails ? `\nDétails: ${rejectionDetails}` : ""}\n\nVotre annonce reste active avec ses informations actuelles.`;
 
-        console.log(`❌ [REVISION] Modification rejetée pour l'annonce ${id}`);
+        console.log(` [REVISION] Modification rejetée pour l'annonce ${id}`);
       }
     } else {
       // ========== CAS 2: NOUVELLE ANNONCE ==========
@@ -110,11 +108,11 @@ export async function PATCH(
           },
         });
 
-        notificationType = "LISTING_ACTIVATED  ";
-        notificationTitle = "✅ Annonce approuvée";
+        notificationType = "LISTING_ACTIVATED";
+        notificationTitle = "Annonce approuvée";
         notificationContent = `Félicitations ! Votre annonce "${listing.title}" a été validée et est maintenant en ligne.`;
 
-        console.log(`✅ [NEW] Nouvelle annonce approuvée: ${id}`);
+        console.log(`[NEW] Nouvelle annonce approuvée: ${id}`);
       } else {
         updatedListing = await prisma.listing.update({
           where: { id },
@@ -128,10 +126,10 @@ export async function PATCH(
         });
 
         notificationType = "LISTING_REJECTED";
-        notificationTitle = "❌ Annonce refusée";
+        notificationTitle = " Annonce refusée";
         notificationContent = `Votre annonce "${listing.title}" a été refusée.\n\nMotif: ${rejectionReason || "Non spécifié"}${rejectionDetails ? `\nDétails: ${rejectionDetails}` : ""}\n\nVeuillez modifier votre annonce et la soumettre à nouveau.`;
 
-        console.log(`❌ [NEW] Nouvelle annonce rejetée: ${id}`);
+        console.log(` [NEW] Nouvelle annonce rejetée: ${id}`);
       }
     }
 

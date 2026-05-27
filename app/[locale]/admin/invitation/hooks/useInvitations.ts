@@ -1,6 +1,7 @@
 // hooks/useInvitations.ts
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useParams } from "next/navigation";
 
 export interface Invitation {
   id: string;
@@ -11,7 +12,7 @@ export interface Invitation {
   expiresAt: string;
   createdAt: string;
   acceptedAt: string | null;
-  status: "active" | "expired" | "accepted" | "revoked";
+  status: "pending" | "expired" | "accepted" | "revoked";
 }
 
 export interface InvitationStats {
@@ -36,10 +37,11 @@ export interface FilterOptions {
 
 export function useInvitations() {
   const { getToken } = useAuth();
+  const params = useParams();
+  const locale = params?.locale || "fr";
+  const isMounted = useRef(true);
+
   const [invitations, setInvitations] = useState<Invitation[]>([]);
-  const [filteredInvitations, setFilteredInvitations] = useState<Invitation[]>(
-    [],
-  );
   const [stats, setStats] = useState<InvitationStats>({
     active: 0,
     expired: 0,
@@ -49,7 +51,7 @@ export function useInvitations() {
   });
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
-    limit: 10,
+    limit: 5,
     total: 0,
     totalPages: 1,
   });
@@ -59,93 +61,77 @@ export function useInvitations() {
     status: "all",
     search: "",
   });
+  const fetchInvitations = useCallback(
+    async (page = 1) => {
+      console.log(" fetchInvitations appelée avec page:", page);
 
-  const applyFilters = useCallback(
-    (invitationsList: Invitation[]) => {
-      let filtered = [...invitationsList];
+      setLoading(true);
 
-      // Filter by status
-      if (filters.status !== "all") {
-        filtered = filtered.filter((inv) => inv.status === filters.status);
-      }
+      try {
+        const token = await getToken({ template: "my-app-template" });
 
-      // Filter by search (email)
-      if (filters.search.trim()) {
-        const searchTerm = filters.search.toLowerCase().trim();
-        filtered = filtered.filter((inv) =>
-          inv.email.toLowerCase().includes(searchTerm),
+        const urlParams = new URLSearchParams();
+        urlParams.append("page", page.toString());
+        urlParams.append("limit", "5");
+
+        if (filters.status !== "all") {
+          urlParams.append("status", filters.status);
+        }
+        if (filters.search.trim()) {
+          urlParams.append("search", filters.search.trim());
+        }
+
+        console.log(
+          " Envoi requête API page:",
+          page,
+          "URL:",
+          urlParams.toString(),
         );
+
+        const response = await fetch(
+          `/api/admin/invitations?${urlParams.toString()}`,
+          { headers: { Authorization: `Bearer ${token}` } },
+        );
+
+        if (!response.ok) throw new Error();
+        const data = await response.json();
+
+        console.log(
+          " Réception page:",
+          page,
+          "nb invitations:",
+          data.invitations?.length,
+        );
+
+        const invs: Invitation[] = Array.isArray(data.invitations)
+          ? data.invitations
+          : [];
+
+        setInvitations(invs);
+
+        if (data.stats) {
+          setStats(data.stats);
+        }
+
+        if (data.pagination) {
+          console.log(" Nouvelle pagination:", data.pagination);
+          setPagination(data.pagination);
+        } else {
+          setPagination({
+            page: page,
+            limit: 5,
+            total: invs.length,
+            totalPages: Math.max(1, Math.ceil(invs.length / 5)),
+          });
+        }
+      } catch (error) {
+        console.error("Erreur chargement invitations:", error);
+      } finally {
+        setLoading(false);
       }
-
-      setFilteredInvitations(filtered);
-
-      // Update pagination based on filtered results
-      setPagination((prev) => ({
-        ...prev,
-        total: filtered.length,
-        totalPages: Math.max(1, Math.ceil(filtered.length / prev.limit)),
-        page: 1, // Reset to first page when filtering
-      }));
-
-      return filtered;
     },
-    [filters],
+    [getToken, filters],
   );
-
-  const fetchInvitations = async (page = 1) => {
-    setLoading(true);
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const response = await fetch(
-        `/api/admin/invitations?page=${page}&limit=10`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      if (!response.ok) throw new Error();
-      const data = await response.json();
-
-      const invs: Invitation[] = Array.isArray(data.invitations)
-        ? data.invitations
-        : [];
-
-      setInvitations(invs);
-
-      // Calculate stats from all invitations
-      const activeCount = invs.filter(
-        (i) => i.status === "active" || i.status === "pending",
-      ).length;
-      const expiredCount = invs.filter((i) => i.status === "expired").length;
-      const revokedCount = invs.filter((i) => i.status === "revoked").length;
-      const acceptedCount = invs.filter((i) => i.status === "accepted").length;
-
-      setStats({
-        active: activeCount,
-        expired: expiredCount,
-        revoked: revokedCount,
-        accepted: acceptedCount,
-        total: invs.length,
-      });
-
-      setPagination(
-        data.pagination && typeof data.pagination.total === "number"
-          ? data.pagination
-          : {
-              page: 1,
-              limit: 10,
-              total: invs.length,
-              totalPages: Math.max(1, Math.ceil(invs.length / 10)),
-            },
-      );
-
-      // Apply filters
-      applyFilters(invs);
-    } catch (error) {
-      console.error("Erreur chargement invitations:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const createInvitation = async (
     email: string,
@@ -164,7 +150,7 @@ export function useInvitations() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Erreur");
-      await fetchInvitations(pagination.page);
+      await fetchInvitations(1);
       return true;
     } catch (error: any) {
       throw new Error(error.message);
@@ -174,7 +160,7 @@ export function useInvitations() {
   };
 
   const copyLink = async (token: string): Promise<string> => {
-    const inviteLink = `${window.location.origin}/fr/accept-invite?token=${token}`;
+    const inviteLink = `${window.location.origin}/${locale}/accept-invite?token=${token}`;
     await navigator.clipboard.writeText(inviteLink);
     return inviteLink;
   };
@@ -206,26 +192,35 @@ export function useInvitations() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Erreur");
-      await fetchInvitations(pagination.page);
+      await fetchInvitations(1);
     } finally {
       setSubmitting(false);
     }
   };
 
-  const updateFilters = (newFilters: Partial<FilterOptions>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters }));
-  };
+  const updateFilters = useCallback((newFilters: Partial<FilterOptions>) => {
+    setFilters((prev) => {
+      const updated = { ...prev, ...newFilters };
+      return updated;
+    });
+  }, []);
 
-  // Apply filters whenever they change or invitations change
+  // Fetch quand les filtres changent
   useEffect(() => {
-    if (invitations.length > 0) {
-      applyFilters(invitations);
+    if (isMounted.current) {
+      fetchInvitations(1);
     }
-  }, [filters, invitations, applyFilters]);
+  }, [filters]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   return {
-    invitations: filteredInvitations, // Return filtered invitations instead
-    allInvitations: invitations, // Keep original if needed
+    invitations,
     stats,
     pagination,
     loading,

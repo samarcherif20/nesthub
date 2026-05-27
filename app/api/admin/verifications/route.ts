@@ -1,3 +1,4 @@
+// app/api/admin/verifications/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAdminAuth, isAuthError } from "@/lib/auth-admin";
@@ -14,10 +15,29 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
+    const search = searchParams.get("search") || "";
+    const statusFilter = searchParams.get("status") || "PENDING";
+
+    // Construction du where clause
+    const where: any = {};
+    
+    // Filtre par statut
+    if (statusFilter !== "ALL") {
+      where.status = statusFilter;
+    }
+
+    // Filtre par recherche (nom, email)
+    if (search) {
+      where.OR = [
+        { user: { firstName: { contains: search, mode: "insensitive" } } },
+        { user: { lastName: { contains: search, mode: "insensitive" } } },
+        { user: { email: { contains: search, mode: "insensitive" } } },
+      ];
+    }
 
     const [requests, totalCount] = await Promise.all([
       prisma.verificationRequest.findMany({
-        where: { status: "PENDING" },
+        where,
         include: {
           user: {
             select: {
@@ -36,8 +56,13 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.verificationRequest.count({ where: { status: "PENDING" } }),
+      prisma.verificationRequest.count({ where }),
     ]);
+
+    // Statistiques pour l'affichage (uniquement les en attente)
+    const pendingCount = await prisma.verificationRequest.count({
+      where: { status: "PENDING" },
+    });
 
     const processedToday = await prisma.verificationRequest.count({
       where: {
@@ -46,7 +71,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // Transformer la réponse pour inclure cinData au niveau supérieur
+    // Transformer la réponse
     const formattedRequests = requests.map((req) => ({
       ...req,
       cinData: req.user?.cinData,
@@ -61,8 +86,8 @@ export async function GET(request: NextRequest) {
         totalPages: Math.ceil(totalCount / limit),
       },
       stats: {
-        pendingCount: totalCount,
-        estimatedWaitTime: totalCount * 5,
+        pendingCount,
+        estimatedWaitTime: pendingCount * 5,
         processedToday,
       },
     });

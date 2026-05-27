@@ -10,9 +10,14 @@ import {
   EscalationLevel,
 } from "@/lib/types/user";
 import { useEmailNotification } from "@/hooks/useEmailNotifications";
+import { useTranslations } from "next-intl";
 
-export function useAdminUsers() {
+export function useAdminUsers(sortBy?: {
+  field: string;
+  order: "asc" | "desc";
+}) {
   const { getToken } = useAuth();
+  const t = useTranslations("admin.usersManagement.messages");
   const { sendNotification } = useEmailNotification();
 
   // États données
@@ -32,6 +37,8 @@ export function useAdminUsers() {
   const [selectedUserForHistory, setSelectedUserForHistory] = useState<
     string | undefined
   >(undefined);
+  const [hasAdvancedSearch, setHasAdvancedSearch] = useState(false);
+
   // Filtres
   const [filters, setFilters] = useState<UserFilters>({
     search: "",
@@ -65,7 +72,7 @@ export function useAdminUsers() {
     setError(null);
     try {
       const token = await getToken({ template: "my-app-template" });
-      if (!token) throw new Error("Token non disponible");
+      if (!token) throw new Error(t("errors.noToken"));
 
       const activeFilters = Object.fromEntries(
         Object.entries(filters).filter(
@@ -78,8 +85,14 @@ export function useAdminUsers() {
         limit: pagination.limit.toString(),
         ...activeFilters,
       });
+      if (sortBy && sortBy.field !== "createdAt") {
+        params.set("sort", sortBy.field);
+      }
+      if (sortBy && sortBy.order !== "desc") {
+        params.set("order", sortBy.order);
+      }
 
-      console.log("📡 fetchUsers URL:", `/api/admin/users?${params}`);
+      console.log(" fetchUsers URL:", `/api/admin/users?${params}`);
 
       const res = await fetch(`/api/admin/users?${params}`, {
         credentials: "include",
@@ -89,15 +102,15 @@ export function useAdminUsers() {
         },
       });
 
-      console.log("📡 fetchUsers status:", res.status);
+      console.log(" fetchUsers status:", res.status);
 
-      if (!res.ok) throw new Error("Erreur chargement");
+      if (!res.ok) throw new Error(t("errors.loading"));
       const data = await res.json();
-      console.log("✅ fetchUsers data:", data);
+      console.log(" fetchUsers data:", data);
 
       data.users.forEach((u: User) => {
         if (u.email === "samar.cherif11@gmail.com") {
-          console.log("🔍 UTILISATEUR CIBLÉ:", {
+          console.log(" UTILISATEUR CIBLÉ:", {
             id: u.id,
             email: u.email,
             escalationLevel: u.escalationLevel,
@@ -109,21 +122,21 @@ export function useAdminUsers() {
       setUsers(data.users);
       setPagination(data.pagination);
       setStats(data.stats);
+      setHasAdvancedSearch(data.hasAdvancedSearch || false);
     } catch (err) {
-      console.error("❌ fetchUsers error:", err);
-      setError(err instanceof Error ? err.message : "Erreur de chargement");
+      console.error(" fetchUsers error:", err);
+      setError(err instanceof Error ? err.message : t("errors.loading"));
     } finally {
       setLoading(false);
     }
-  }, [getToken, filters, pagination.page, pagination.limit]);
-
+  }, [getToken, filters, pagination.page, pagination.limit, t, sortBy]);
   // 2. MODIFIE la fonction fetchActions pour accepter un userId
   const fetchActions = useCallback(
     async (page = 1, limit = 10, actionType?: string, userId?: string) => {
       try {
         const token = await getToken({ template: "my-app-template" });
         if (!token) {
-          console.error("❌ Token non disponible pour fetchActions");
+          console.error(" Token non disponible pour fetchActions");
           return;
         }
 
@@ -136,16 +149,13 @@ export function useAdminUsers() {
           params.append("actionType", actionType);
         }
 
-        // ✅ AJOUTE CETTE LIGNE - Filtrer par userId si présent
+        //  AJOUTE CETTE LIGNE - Filtrer par userId si présent
         const targetUserId = userId || selectedUserForHistory;
         if (targetUserId) {
           params.append("userId", targetUserId);
         }
 
-        console.log(
-          "📡 fetchActions URL:",
-          `/api/admin/users/actions?${params}`,
-        );
+        console.log(" fetchActions URL:", `/api/admin/users/actions?${params}`);
 
         const res = await fetch(`/api/admin/users/actions?${params}`, {
           headers: {
@@ -156,14 +166,14 @@ export function useAdminUsers() {
 
         if (res.ok) {
           const data = await res.json();
-          console.log("✅ Actions reçues:", data);
+          console.log(" Actions reçues:", data);
           setActions(data.actions);
         } else {
           const error = await res.text();
-          console.error("❌ Erreur fetchActions:", error);
+          console.error(" Erreur fetchActions:", error);
         }
       } catch (error) {
-        console.error("❌ Exception fetchActions:", error);
+        console.error(" Exception fetchActions:", error);
       }
     },
     [getToken, selectedUserForHistory],
@@ -189,7 +199,7 @@ export function useAdminUsers() {
     notify: boolean,
   ) => {
     try {
-      console.log("🚀 handleSuspend appelé avec:", {
+      console.log(" handleSuspend appelé avec:", {
         userId,
         duration,
         reason,
@@ -198,10 +208,10 @@ export function useAdminUsers() {
       });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
@@ -213,7 +223,7 @@ export function useAdminUsers() {
         motif,
         notify,
       });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch("/api/admin/users/actions", {
         method: "POST",
@@ -224,14 +234,14 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
         if (notify) {
           try {
@@ -242,41 +252,41 @@ export function useAdminUsers() {
               motif,
               duration,
             });
-            console.log("📧 Notification de suspension envoyée");
+            console.log(" Notification de suspension envoyée");
           } catch (emailError) {
-            console.error("❌ Erreur envoi email suspension:", emailError);
+            console.error(" Erreur envoi email suspension:", emailError);
           }
         }
 
-        setSuccess("Utilisateur suspendu avec succès");
+        setSuccess(t("success.suspend"));
         refresh();
         setShowSuspendModal(false);
       } else {
-        let errorMessage = "Erreur lors de la suspension";
+        let errorMessage = t("errors.suspend");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.suspend"));
     }
   };
 
   const handleBan = async (userId: string, reason: string, motif: string) => {
     try {
-      console.log("🚀 handleBan appelé avec:", { userId, reason, motif });
+      console.log(" handleBan appelé avec:", { userId, reason, motif });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
@@ -287,7 +297,7 @@ export function useAdminUsers() {
         motif,
         notify: true,
       });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch("/api/admin/users/actions", {
         method: "POST",
@@ -298,14 +308,14 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
         try {
           await sendNotification({
@@ -314,45 +324,45 @@ export function useAdminUsers() {
             reason,
             motif,
           });
-          console.log("📧 Notification de bannissement envoyée");
+          console.log(" Notification de bannissement envoyée");
         } catch (emailError) {
-          console.error("❌ Erreur envoi email bannissement:", emailError);
+          console.error(" Erreur envoi email bannissement:", emailError);
         }
 
-        setSuccess("Utilisateur banni avec succès");
+        setSuccess(t("success.ban"));
         refresh();
         setShowBanModal(false);
       } else {
-        let errorMessage = "Erreur lors du bannissement";
+        let errorMessage = t("errors.ban");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.ban"));
     }
   };
 
   const handleActivate = async (userId: string) => {
     try {
-      console.log("🚀 handleActivate appelé avec:", { userId });
+      console.log(" handleActivate appelé avec:", { userId });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
       const body = JSON.stringify({ userId, action: "ACTIVATE" });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch("/api/admin/users/actions", {
         method: "POST",
@@ -363,59 +373,59 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
         try {
           await sendNotification({
             userId,
             actionType: "ACTIVATE",
           });
-          console.log("📧 Notification de réactivation envoyée");
+          console.log(" Notification de réactivation envoyée");
         } catch (emailError) {
-          console.error("❌ Erreur envoi email réactivation:", emailError);
+          console.error(" Erreur envoi email réactivation:", emailError);
         }
 
-        setSuccess("Compte réactivé avec succès");
+        setSuccess(t("success.activate"));
         refresh();
         setShowActivateModal(false);
       } else {
-        let errorMessage = "Erreur lors de la réactivation";
+        let errorMessage = t("errors.activate");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.activate"));
     }
   };
 
   const handleLock = async (userId: string, reason: string) => {
     try {
-      console.log("🚀 handleLock appelé avec:", { userId, reason });
+      console.log(" handleLock appelé avec:", { userId, reason });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
       const body = JSON.stringify({ userId, action: "LOCK", reason });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch("/api/admin/users/actions", {
         method: "POST",
@@ -426,14 +436,14 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
         try {
           await sendNotification({
@@ -441,45 +451,45 @@ export function useAdminUsers() {
             actionType: "LOCK",
             reason,
           });
-          console.log("📧 Notification de blocage envoyée");
+          console.log(" Notification de blocage envoyée");
         } catch (emailError) {
-          console.error("❌ Erreur envoi email blocage:", emailError);
+          console.error(" Erreur envoi email blocage:", emailError);
         }
 
-        setSuccess("Compte bloqué avec succès");
+        setSuccess(t("success.lock"));
         refresh();
         setShowLockUnlockModal(false);
       } else {
-        let errorMessage = "Erreur lors du blocage";
+        let errorMessage = t("errors.lock");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.lock"));
     }
   };
 
   const handleUnlock = async (userId: string) => {
     try {
-      console.log("🚀 handleUnlock appelé avec:", { userId });
+      console.log(" handleUnlock appelé avec:", { userId });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
       const body = JSON.stringify({ userId, action: "UNLOCK" });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch("/api/admin/users/actions", {
         method: "POST",
@@ -490,42 +500,42 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
         try {
           await sendNotification({
             userId,
             actionType: "UNLOCK",
           });
-          console.log("📧 Notification de déblocage envoyée");
+          console.log(" Notification de déblocage envoyée");
         } catch (emailError) {
-          console.error("❌ Erreur envoi email déblocage:", emailError);
+          console.error(" Erreur envoi email déblocage:", emailError);
         }
 
-        setSuccess("Compte débloqué avec succès");
+        setSuccess(t("success.unlock"));
         refresh();
         setShowLockUnlockModal(false);
       } else {
-        let errorMessage = "Erreur lors du déblocage";
+        let errorMessage = t("errors.unlock");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.unlock"));
     }
   };
 
@@ -536,13 +546,13 @@ export function useAdminUsers() {
     notify: boolean,
   ) => {
     try {
-      console.log("🚀 handleEscalate appelé avec:", { userId, level, reason });
+      console.log(" handleEscalate appelé avec:", { userId, level, reason });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
@@ -553,7 +563,7 @@ export function useAdminUsers() {
         reason,
         notify,
       });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch("/api/admin/users/actions", {
         method: "POST",
@@ -564,14 +574,14 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
         try {
           await sendNotification({
@@ -580,28 +590,28 @@ export function useAdminUsers() {
             reason,
             level,
           });
-          console.log("📧 Notification d'escalade envoyée");
+          console.log(" Notification d'escalade envoyée");
         } catch (emailError) {
-          console.error("❌ Erreur envoi email escalade:", emailError);
+          console.error(" Erreur envoi email escalade:", emailError);
         }
 
-        setSuccess(`Sanction niveau ${level} appliquée`);
+        setSuccess(t("success.escalate", { level }));
         refresh();
         setShowEscalateModal(false);
       } else {
-        let errorMessage = "Erreur lors de l'escalade";
+        let errorMessage = t("errors.escalate");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.escalate"));
     }
   };
 
@@ -612,7 +622,7 @@ export function useAdminUsers() {
     notify: boolean,
   ) => {
     try {
-      console.log("🚀 handleWarning appelé avec:", {
+      console.log(" handleWarning appelé avec:", {
         userId,
         reason,
         motif,
@@ -620,10 +630,10 @@ export function useAdminUsers() {
       });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
@@ -634,7 +644,7 @@ export function useAdminUsers() {
         motif,
         notify,
       });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch("/api/admin/users/actions", {
         method: "POST",
@@ -645,14 +655,14 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
         if (notify) {
           try {
@@ -662,46 +672,46 @@ export function useAdminUsers() {
               reason,
               motif,
             });
-            console.log("📧 Notification d'avertissement envoyée");
+            console.log(" Notification d'avertissement envoyée");
           } catch (emailError) {
-            console.error("❌ Erreur envoi email avertissement:", emailError);
+            console.error(" Erreur envoi email avertissement:", emailError);
           }
         }
 
-        setSuccess("Avertissement envoyé avec succès");
+        setSuccess(t("success.warning"));
         refresh();
         setShowWarningModal(false);
       } else {
-        let errorMessage = "Erreur lors de l'envoi de l'avertissement";
+        let errorMessage = t("errors.warning");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.warning"));
     }
   };
 
   const handleAddNote = async (userId: string, content: string) => {
     try {
-      console.log("🚀 handleAddNote appelé avec:", { userId, content });
+      console.log(" handleAddNote appelé avec:", { userId, content });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
       const body = JSON.stringify({ userId, action: "NOTE", content });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch("/api/admin/users/actions", {
         method: "POST",
@@ -712,43 +722,43 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
-        setSuccess("Note ajoutée avec succès");
+        setSuccess(t("success.note"));
         setShowAddNoteModal(false);
       } else {
-        let errorMessage = "Erreur lors de l'ajout de la note";
+        let errorMessage = t("errors.note");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.note"));
     }
   };
 
   const handleUndoAction = async (actionId: string) => {
     try {
-      console.log("🚀 handleUndoAction appelé avec:", { actionId });
+      console.log(" handleUndoAction appelé avec:", { actionId });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
@@ -757,48 +767,48 @@ export function useAdminUsers() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       const responseText = await res.text();
-      console.log("📡 Réponse brute:", responseText);
+      console.log(" Réponse brute:", responseText);
 
       if (res.ok) {
         const data = JSON.parse(responseText);
-        console.log("✅ Succès:", data);
+        console.log(" Succès:", data);
 
-        setSuccess("Action annulée avec succès");
+        setSuccess(t("success.undo"));
         refresh();
       } else {
-        let errorMessage = "Erreur lors de l'annulation";
+        let errorMessage = t("errors.undo");
         try {
           const error = JSON.parse(responseText);
           errorMessage = error.error || errorMessage;
         } catch {
           errorMessage = responseText || errorMessage;
         }
-        console.log("❌ Erreur API:", errorMessage);
+        console.log(" Erreur API:", errorMessage);
         setError(errorMessage);
       }
     } catch (err) {
-      console.log("💥 Erreur catch:", err);
-      setError(err instanceof Error ? err.message : "Erreur");
+      console.log(" Erreur catch:", err);
+      setError(err instanceof Error ? err.message : t("errors.undo"));
     }
   };
 
   const handleExport = async (format: "csv" | "pdf") => {
     try {
-      console.log("🚀 handleExport appelé avec:", { format });
+      console.log(" handleExport appelé avec:", { format });
 
       const token = await getToken({ template: "my-app-template" });
-      console.log("🔑 Token récupéré:", token ? "OK" : "NULL");
+      console.log(" Token récupéré:", token ? "OK" : "NULL");
 
       if (!token) {
-        setError("Token non disponible");
+        setError(t("errors.noToken"));
         return;
       }
 
       const body = JSON.stringify({ filters, selectedUsers });
-      console.log("📦 Body envoyé:", body);
+      console.log(" Body envoyé:", body);
 
       const res = await fetch(`/api/admin/users/export?format=${format}`, {
         method: "POST",
@@ -810,12 +820,12 @@ export function useAdminUsers() {
         body: body,
       });
 
-      console.log("📡 Réponse status:", res.status);
+      console.log(" Réponse status:", res.status);
 
       if (!res.ok) {
         const errorText = await res.text();
-        console.error("❌ Erreur export:", errorText);
-        throw new Error("Erreur export");
+        console.error(" Erreur export:", errorText);
+        throw new Error(t("errors.export"));
       }
 
       const contentDisposition = res.headers.get("Content-Disposition");
@@ -830,10 +840,10 @@ export function useAdminUsers() {
       a.download = filename;
       a.click();
       setShowExportOptions(false);
-      console.log("✅ Export réussi");
+      console.log(" Export réussi");
     } catch (err) {
-      console.log("💥 Erreur catch export:", err);
-      setError(err instanceof Error ? err.message : "Erreur export");
+      console.log(" Erreur catch export:", err);
+      setError(err instanceof Error ? err.message : t("errors.export"));
     }
   };
 
@@ -922,7 +932,7 @@ export function useAdminUsers() {
     setShowWarningModal(false);
     setShowActionsHistory(false);
     setShowExportOptions(false);
-    setSelectedUserForHistory(undefined); // ✅ AJOUTE CETTE LIGNE
+    setSelectedUserForHistory(undefined); //  AJOUTE CETTE LIGNE
   };
 
   return {
@@ -936,6 +946,7 @@ export function useAdminUsers() {
     success,
     setSuccess,
     setError,
+    hasAdvancedSearch,
 
     // Filtres
     filters,

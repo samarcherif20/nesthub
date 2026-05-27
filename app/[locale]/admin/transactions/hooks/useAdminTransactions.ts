@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
+import { useTranslations } from "next-intl";
 
 export interface Transaction {
   id: string;
@@ -45,8 +46,16 @@ export interface DateRange {
   end: string;
 }
 
-export function useAdminTransactions() {
+export interface RefundModalState {
+  isOpen: boolean;
+  transaction: Transaction | null;
+  amount: number;
+  reason: string;
+}
+
+export function useAdminTransactions(locale: string = "fr") {
   const { getToken } = useAuth();
+  const t = useTranslations("AdminTransactions");
   const PAGE_SIZE = 10;
 
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -70,7 +79,7 @@ export function useAdminTransactions() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [alert, setAlert] = useState<{
+  const [toast, setToast] = useState<{
     type: "success" | "error";
     message: string;
   } | null>(null);
@@ -82,6 +91,20 @@ export function useAdminTransactions() {
     end: new Date().toISOString().split("T")[0],
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  // États pour la modale de remboursement
+  const [refundModal, setRefundModal] = useState<RefundModalState>({
+    isOpen: false,
+    transaction: null,
+    amount: 0,
+    reason: "",
+  });
+  const [refundLoading, setRefundLoading] = useState(false);
+
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const authFetch = useCallback(
     async (url: string, options: RequestInit = {}) => {
@@ -120,14 +143,11 @@ export function useAdminTransactions() {
         if (data.kpis) setKpis(data.kpis);
       } else {
         const error = await res.json();
-        setAlert({
-          type: "error",
-          message: error.error || "Erreur de chargement",
-        });
+        showToast("error", error.error || t("loadError"));
       }
     } catch (error) {
       console.error(error);
-      setAlert({ type: "error", message: "Erreur de connexion" });
+      showToast("error", t("connectionError"));
     } finally {
       setLoading(false);
     }
@@ -139,17 +159,16 @@ export function useAdminTransactions() {
     typeFilter,
     dateRange,
     PAGE_SIZE,
+    t,
   ]);
 
   useEffect(() => {
     fetchTransactions();
   }, [fetchTransactions]);
+
   const handleExport = async (format: "csv" | "pdf") => {
     setShowExport(false);
     try {
-      const token = await getToken({ template: "my-app-template" });
-
-      // ✅ Construire les paramètres
       const params = new URLSearchParams({
         format,
         ...(statusFilter !== "ALL" && { status: statusFilter }),
@@ -159,7 +178,6 @@ export function useAdminTransactions() {
         ...(dateRange.end && { endDate: dateRange.end }),
       });
 
-      // ✅ Appel à l'API avec les paramètres dans l'URL
       const response = await authFetch(
         `/api/admin/transactions/export?${params}`,
       );
@@ -170,7 +188,6 @@ export function useAdminTransactions() {
         const a = document.createElement("a");
         a.href = url;
 
-        // ✅ Extraire le nom du fichier du header Content-Disposition
         const contentDisposition = response.headers.get("Content-Disposition");
         let filename = `transactions_${new Date().toISOString().split("T")[0]}.${format}`;
         if (contentDisposition) {
@@ -186,44 +203,68 @@ export function useAdminTransactions() {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
 
-        setAlert({ type: "success", message: "Export généré avec succès" });
+        showToast("success", t("exportSuccess"));
       } else {
         const data = await response.json().catch(() => ({}));
-        setAlert({
-          type: "error",
-          message: data.error || "Export non disponible",
-        });
+        showToast("error", data.error || t("exportError"));
       }
     } catch (error) {
       console.error("Export error:", error);
-      setAlert({ type: "error", message: "Erreur lors de l'export" });
+      showToast("error", t("exportFailed"));
     }
   };
-  const handleRefund = async (transactionId: string) => {
-    if (!confirm("Voulez-vous vraiment rembourser cette transaction ?")) return;
 
+  // Ouvrir la modale de remboursement
+  const openRefundModal = (transaction: Transaction) => {
+     console.log("💰 Transaction:", transaction); // ✅ AJOUTE CE LOG
+  console.log("💰 Montant original:", transaction.amount); // ✅ AJOUTE CE LOG
+    setRefundModal({
+      isOpen: true,
+      transaction,
+      amount: transaction.amount,
+      reason: "",
+    });
+  };
+
+  // Fermer la modale de remboursement
+  const closeRefundModal = () => {
+    setRefundModal({
+      isOpen: false,
+      transaction: null,
+      amount: 0,
+      reason: "",
+    });
+  };
+
+  // Confirmer le remboursement
+  const confirmRefund = async () => {
+    if (!refundModal.transaction) return;
+
+    setRefundLoading(true);
     try {
       const res = await authFetch(
-        `/api/admin/transactions/${transactionId}/refund`,
+        `/api/admin/transactions/${refundModal.transaction.id}/refund`,
         {
           method: "POST",
-        },
+          body: JSON.stringify({
+            reason: refundModal.reason || t("refundDefaultReason"),
+            amount: refundModal.amount,
+          }),
+        }
       );
+
       if (res.ok) {
-        setAlert({
-          type: "success",
-          message: "Remboursement effectué avec succès",
-        });
+        showToast("success", t("refundSuccess"));
         fetchTransactions();
+        closeRefundModal();
       } else {
         const error = await res.json();
-        setAlert({
-          type: "error",
-          message: error.error || "Erreur lors du remboursement",
-        });
+        showToast("error", error.error || t("refundError"));
       }
     } catch {
-      setAlert({ type: "error", message: "Erreur de connexion" });
+      showToast("error", t("connectionError"));
+    } finally {
+      setRefundLoading(false);
     }
   };
 
@@ -254,7 +295,9 @@ export function useAdminTransactions() {
     dateRange,
     showDatePicker,
     showExport,
-    alert,
+    toast,
+    refundModal,
+    refundLoading,
     PAGE_SIZE,
     // Setters
     setSearch,
@@ -264,11 +307,13 @@ export function useAdminTransactions() {
     setDateRange,
     setShowDatePicker,
     setShowExport,
-    setAlert,
     // Actions
     fetchTransactions,
     handleExport,
-    handleRefund,
+    openRefundModal,
+    closeRefundModal,
+    confirmRefund,
     resetFilters,
+    showToast,
   };
 }

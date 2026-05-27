@@ -57,7 +57,11 @@ interface VerificationRequest {
   };
 }
 
-export function useVerificationDetail(requestId: string) {
+export function useVerificationDetail(
+  requestId: string,
+  locale: string = "fr",
+  showToast?: (type: "success" | "error", message: string) => void
+) {
   const { getToken } = useAuth();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -74,7 +78,9 @@ export function useVerificationDetail(requestId: string) {
 
   const fetchRequest = useCallback(async () => {
     if (!requestId) {
-      setError("ID de demande manquant");
+      const msg = "ID de demande manquant";
+      setError(msg);
+      if (showToast) showToast("error", msg);
       setLoading(false);
       return;
     }
@@ -102,11 +108,13 @@ export function useVerificationDetail(requestId: string) {
       if (data.adminComment) setAdminComment(data.adminComment);
     } catch (err) {
       console.error("[fetchRequest] Erreur:", err);
-      setError(err instanceof Error ? err.message : "Erreur de chargement");
+      const errorMsg = err instanceof Error ? err.message : "Erreur de chargement";
+      setError(errorMsg);
+      if (showToast) showToast("error", errorMsg);
     } finally {
       setLoading(false);
     }
-  }, [requestId, getToken]);
+  }, [requestId, getToken, showToast]);
 
   useEffect(() => {
     if (requestId) {
@@ -129,12 +137,16 @@ export function useVerificationDetail(requestId: string) {
 
   const confirmDecision = useCallback(async () => {
     if (!selectedAction) {
-      setError("Veuillez sélectionner une action (Valider ou Rejeter)");
+      const msg = "Veuillez sélectionner une action (Valider ou Rejeter)";
+      setError(msg);
+      if (showToast) showToast("error", msg);
       return;
     }
 
     if (selectedAction === "reject" && !rejectionMotif) {
-      setError("Veuillez fournir un motif de rejet");
+      const msg = "Veuillez fournir un motif de rejet";
+      setError(msg);
+      if (showToast) showToast("error", msg);
       return;
     }
 
@@ -175,13 +187,15 @@ export function useVerificationDetail(requestId: string) {
           : "Demande rejetée avec succès !";
 
       setSuccess(message);
+      if (showToast) showToast("success", message);
 
       setTimeout(() => {
-        const locale = window.location.pathname.split("/")[1] || "fr";
         router.push(`/${locale}/admin/verifications`);
       }, 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur");
+      const errorMsg = err instanceof Error ? err.message : "Erreur";
+      setError(errorMsg);
+      if (showToast) showToast("error", errorMsg);
     } finally {
       setSubmitting(false);
     }
@@ -192,6 +206,8 @@ export function useVerificationDetail(requestId: string) {
     rejectionMotif,
     adminComment,
     router,
+    locale,
+    showToast,
   ]);
 
   const resetError = useCallback(() => setError(null), []);

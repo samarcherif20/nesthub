@@ -23,7 +23,7 @@ export async function DELETE(
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    // ✅ MODIFIER: Marquer comme révoqué au lieu de supprimer
+    //  MODIFIER: Marquer comme révoqué au lieu de supprimer
     await prisma.adminInvitation.update({ 
       where: { id: id },
       data: { revokedAt: new Date() }

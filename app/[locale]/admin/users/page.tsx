@@ -12,7 +12,6 @@ import SearchBar from "@/components/ui/SearchBar";
 import DateRangePicker from "@/components/ui/DateRangePicker";
 import Pagination from "@/components/ui/Pagination";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Alert from "@/components/ui/Alert";
 
 import UserStatusBadge from "@/components/ui/badges/UserStatusBadge";
 import UserRoleBadge from "@/components/ui/badges/UserRoleBadge";
@@ -26,6 +25,7 @@ import EscalateUserModal from "@/components/ui/modals/EscalateUserModal";
 import AddNoteModal from "@/components/ui/modals/AddNoteModal";
 import ActionsHistoryModal from "@/components/ui/modals/ActionsHistoryModal";
 import WarningUserModal from "@/components/ui/modals/WarningUserModal";
+import { CheckCircle, AlertCircle, X, ArrowUp, ArrowDown } from "lucide-react";
 
 import {
   IoDownloadOutline,
@@ -57,6 +57,12 @@ const block3d =
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
 
+// Interface pour le toast
+interface ToastMessage {
+  type: "success" | "error";
+  message: string;
+}
+
 export default function AdminUsersPage() {
   const pathname = usePathname();
   const locale = pathname?.split("/")[1] || "fr";
@@ -68,7 +74,17 @@ export default function AdminUsersPage() {
 
   const [isAdmin, setIsAdmin] = React.useState<boolean | null>(null);
   const [showFilters, setShowFilters] = useState(false);
+  // Tri des colonnes
+  const [sortBy, setSortBy] = useState<{
+    field: string;
+    order: "asc" | "desc";
+  }>({
+    field: "createdAt",
+    order: "desc",
+  });
+
   const [avatarErrors, setAvatarErrors] = useState<Record<string, boolean>>({});
+  const [toast, setToast] = useState<ToastMessage | null>(null);
   const [menuPosition, setMenuPosition] = useState<{
     top: number;
     left: number;
@@ -78,6 +94,14 @@ export default function AdminUsersPage() {
     left: 0,
     userId: null,
   });
+
+  // Auto-hide toast after 3 seconds
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
@@ -158,7 +182,23 @@ export default function AdminUsersPage() {
     handleUndoAction,
     handleExport,
     selectedUserForHistory,
-  } = useAdminUsers();
+    hasAdvancedSearch,
+  } = useAdminUsers(sortBy);;
+
+  // Convert error/success to toast
+  useEffect(() => {
+    if (error) {
+      setToast({ type: "error", message: error });
+      setError(null);
+    }
+  }, [error, setError]);
+
+  useEffect(() => {
+    if (success) {
+      setToast({ type: "success", message: success });
+      setSuccess(null);
+    }
+  }, [success, setSuccess]);
 
   const openMenu = (event: React.MouseEvent, userId: string) => {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -170,8 +210,15 @@ export default function AdminUsersPage() {
   };
 
   const closeMenu = () => setMenuPosition({ top: 0, left: 0, userId: null });
-
-  // ✅ Fonction pour obtenir les initiales de l'utilisateur
+  
+  const handleSort = (field: string) => {
+    setSortBy((prev) => ({
+      field,
+      order: prev.field === field && prev.order === "desc" ? "asc" : "desc",
+    }));
+  };
+  
+  // Fonction pour obtenir les initiales de l'utilisateur
   const getUserInitials = (user: any) => {
     const first = user.firstName?.charAt(0) || "";
     const last = user.lastName?.charAt(0) || "";
@@ -205,6 +252,8 @@ export default function AdminUsersPage() {
     { value: "ADMIN", label: t("filters.role.admin") },
     { value: "PROPERTY_OWNER", label: t("filters.role.property_owner") },
     { value: "TENANT", label: t("filters.role.tenant") },
+    { value: "BOTH", label: t("filters.role.both") },
+    { value: "CO_HOST", label: t("filters.role.co_host") },
   ];
 
   const statusOptions = [
@@ -221,19 +270,29 @@ export default function AdminUsersPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-6 gap-6">
-      {/* Alerts */}
-      {error && (
-        <div className="fixed top-5 right-5 z-[60] w-full max-w-sm">
-          <Alert type="error" message={error} onClose={() => setError(null)} />
-        </div>
-      )}
-      {success && (
-        <div className="fixed top-5 right-5 z-[60] w-full max-w-sm">
-          <Alert
-            type="success"
-            message={success}
-            onClose={() => setSuccess(null)}
-          />
+      {/* TOAST NOTIFICATION - Dark/White mode compatible */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-emerald-500 dark:bg-emerald-600 text-white"
+                : "bg-red-500 dark:bg-red-600 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70 transition-opacity"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -377,6 +436,12 @@ export default function AdminUsersPage() {
                 placeholder={t("filters.searchPlaceholder")}
                 className="w-full pl-9 pr-4 py-2 bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 rounded-xl text-sm outline-none focus:border-indigo-500 transition-colors text-slate-900 dark:text-slate-100 placeholder:text-indigo-300 dark:placeholder:text-indigo-700"
               />
+              {/* Indicateur de recherche avancée */}
+              {filters.search && hasAdvancedSearch && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-mono bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded">
+                  {t("filters.advancedMode")}
+                </span>
+              )}
             </div>
             <select
               value={filters.role}
@@ -411,6 +476,7 @@ export default function AdminUsersPage() {
               <IoFilterOutline className="text-sm" />
               {t("actions.advancedFilters")}
             </button>
+
             <button
               onClick={resetFilters}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-slate-500 hover:text-indigo-600 transition-colors"
@@ -490,23 +556,107 @@ export default function AdminUsersPage() {
                       className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     />
                   </th>
-                  {[
-                    t("table.headers.user"),
-                    t("table.headers.contact"),
-                    t("table.headers.role"),
-                    t("table.headers.status"),
-                    t("table.headers.verification"),
-                    t("table.headers.reliability"),
-                    t("table.headers.registration"),
-                    t("table.headers.actions"),
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider"
-                    >
-                      {h}
-                    </th>
-                  ))}
+                  
+                  {/* Colonne UTILISATEUR */}
+                  <th
+                    onClick={() => handleSort("firstName")}
+                    className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider cursor-pointer hover:text-indigo-600 group"
+                  >
+                    <div className="flex items-center gap-1">
+                      {t("table.headers.user")}
+                      {sortBy.field === "firstName" ? (
+                        sortBy.order === "desc" ? (
+                          <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUp className="w-3 h-3" />
+                        )
+                      ) : (
+                        <div className="opacity-0 group-hover:opacity-30 transition-opacity">
+                          <ArrowUp className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+                  </th>
+                  
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
+                    {t("table.headers.contact")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
+                    {t("table.headers.role")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
+                    {t("table.headers.status")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
+                    {t("table.headers.verification")}
+                  </th>
+                  
+                  {/* Colonne FIABILITÉ */}
+                  <th
+                    onClick={() => handleSort("reliabilityScore")}
+                    className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider cursor-pointer hover:text-indigo-600 group"
+                  >
+                    <div className="flex items-center gap-1">
+                      {t("table.headers.reliability")}
+                      {sortBy.field === "reliabilityScore" ? (
+                        sortBy.order === "desc" ? (
+                          <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUp className="w-3 h-3" />
+                        )
+                      ) : (
+                        <div className="opacity-0 group-hover:opacity-30 transition-opacity">
+                          <ArrowUp className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+                  </th>
+                  
+                  {/* Colonne FRAUDE */}
+                  <th
+                    onClick={() => handleSort("fraudScore")}
+                    className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider cursor-pointer hover:text-indigo-600 group"
+                  >
+                    <div className="flex items-center gap-1">
+                      {t("table.headers.fraud")}
+                      {sortBy.field === "fraudScore" ? (
+                        sortBy.order === "desc" ? (
+                          <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUp className="w-3 h-3" />
+                        )
+                      ) : (
+                        <div className="opacity-0 group-hover:opacity-30 transition-opacity">
+                          <ArrowUp className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+                  </th>
+                  
+                  {/* Colonne INSCRIPTION */}
+                  <th
+                    onClick={() => handleSort("createdAt")}
+                    className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider cursor-pointer hover:text-indigo-600 group"
+                  >
+                    <div className="flex items-center gap-1">
+                      {t("table.headers.registration")}
+                      {sortBy.field === "createdAt" ? (
+                        sortBy.order === "desc" ? (
+                          <ArrowDown className="w-3 h-3" />
+                        ) : (
+                          <ArrowUp className="w-3 h-3" />
+                        )
+                      ) : (
+                        <div className="opacity-0 group-hover:opacity-30 transition-opacity">
+                          <ArrowUp className="w-3 h-3" />
+                        </div>
+                      )}
+                    </div>
+                  </th>
+                  
+                  <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
+                    {t("table.headers.actions")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60">
@@ -616,6 +766,21 @@ export default function AdminUsersPage() {
                         </div>
                         <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                           {user.reliabilityScore || 0}%
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* Fraud Score */}
+                    <td className="px-4 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${(user.fraudScore || 0) <= 30 ? "bg-gradient-to-r from-emerald-400 to-teal-500" : (user.fraudScore || 0) <= 60 ? "bg-gradient-to-r from-amber-400 to-orange-400" : "bg-gradient-to-r from-red-400 to-rose-500"}`}
+                            style={{ width: `${user.fraudScore || 0}%` }}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          {user.fraudScore || 0}%
                         </span>
                       </div>
                     </td>
@@ -854,7 +1019,7 @@ export default function AdminUsersPage() {
       <ActionsHistoryModal
         isOpen={showActionsHistory}
         onClose={closeModals}
-        userId={selectedUserForHistory} // ← AJOUTE CETTE LIGNE
+        userId={selectedUserForHistory}
         actions={actions}
         onUndo={handleUndoAction}
       />

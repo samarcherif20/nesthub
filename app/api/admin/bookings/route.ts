@@ -262,7 +262,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE - Supprimer une réservation (seulement si COMPLETED ou CANCELLED)
+// DELETE - Supprimer une réservation (seulement si COMPLETED ou CANCELLED ET vieille de +2 mois)
 export async function DELETE(request: NextRequest) {
   try {
     const { userId: clerkUserId } = await auth();
@@ -283,20 +283,46 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID de réservation requis" }, { status: 400 });
     }
 
-    // Vérifier que la réservation est bien COMPLETED ou CANCELLED avant suppression
+    // Vérifier que la réservation existe et récupérer les informations nécessaires
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      select: { status: true },
+      select: { 
+        status: true, 
+        checkOut: true,
+        updatedAt: true
+      },
     });
 
     if (!booking) {
       return NextResponse.json({ error: "Réservation non trouvée" }, { status: 404 });
     }
 
+    // Vérifier que le statut est COMPLETED ou CANCELLED
     if (booking.status !== "COMPLETED" && booking.status !== "CANCELLED") {
-      return NextResponse.json({ error: "Seules les réservations terminées ou annulées peuvent être supprimées" }, { status: 403 });
+      return NextResponse.json({ 
+        error: "Seules les réservations terminées ou annulées peuvent être supprimées" 
+      }, { status: 403 });
     }
 
+    // Calculer la date limite (2 mois avant aujourd'hui)
+    const twoMonthsAgo = new Date();
+    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+
+    // Utiliser checkOut comme date de référence pour la règle des 2 mois
+    const referenceDate = booking.checkOut || booking.updatedAt;
+    
+    if (referenceDate && new Date(referenceDate) > twoMonthsAgo) {
+      return NextResponse.json({ 
+        error: "Cette réservation est trop récente (moins de 2 mois). Seules les réservations de plus de 2 mois peuvent être supprimées." 
+      }, { status: 403 });
+    }
+
+    // Supprimer d'abord les paiements associés
+    await prisma.payment.deleteMany({
+      where: { bookingId: bookingId },
+    });
+
+    // Supprimer la réservation
     await prisma.booking.delete({
       where: { id: bookingId },
     });

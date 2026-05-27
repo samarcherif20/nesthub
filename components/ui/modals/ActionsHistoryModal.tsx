@@ -31,7 +31,6 @@ interface ActionsHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId?: string;
-  onUndo?: (actionId: string) => Promise<void>;
 }
 
 interface UserAction {

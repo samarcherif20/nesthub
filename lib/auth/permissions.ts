@@ -22,12 +22,21 @@ export async function getUserPermissions(
 
     if (!user) return null;
 
-    // Propriétaire ou Admin
-    if (
-      user.role === "PROPERTY_OWNER" ||
-      user.role === "BOTH" ||
-      user.role === "ADMIN"
-    ) {
+    // ✅ CORRECTION: ADMIN doit avoir le rôle "ADMIN", pas "OWNER"
+    if (user.role === "ADMIN") {
+      return {
+        userId: user.id,
+        role: "ADMIN",
+        canEditListing: async () => true,
+        canViewListing: async () => true,
+        canManageBookings: async () => true,
+        canViewRevenue: async () => true,
+        canManageTeam: async () => true,
+      };
+    }
+
+    // Propriétaire
+    if (user.role === "PROPERTY_OWNER" || user.role === "BOTH") {
       return {
         userId: user.id,
         role: "OWNER",
@@ -115,7 +124,12 @@ export async function checkListingAccess(
       };
     }
 
-    // Propriétaire
+    // ✅ CORRECTION: ADMIN a toujours accès à tout
+    if (permissions.role === "ADMIN") {
+      return { allowed: true, userPermissions: permissions };
+    }
+
+    // Propriétaire - vérifier que c'est bien son annonce
     if (permissions.role === "OWNER") {
       const listing = await prisma.listing.findFirst({
         where: { id: listingId, ownerId: permissions.userId },
