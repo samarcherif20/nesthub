@@ -1,37 +1,71 @@
-// hooks/useIdentityVerification.ts
+// hooks/useIdentityVerification.ts - CORRIGÉ
 import { useState, useEffect, useCallback } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 
 export function useIdentityVerification() {
-  const { user, isLoaded } = useUser();
+  const { getToken, isLoaded } = useAuth();
   const [isVerified, setIsVerified] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (isLoaded && user) {
-      // Vérifier si l'identité est déjà vérifiée
-      const verified = user.unsafeMetadata?.identityVerified === true;
-      setIsVerified(verified);
-    }
-    setIsLoading(false);
-  }, [isLoaded, user]);
+    async function fetchVerificationStatus() {
+      if (!isLoaded) {
+        return;
+      }
 
-  const checkCanPerformAction = useCallback((action: "create_listing" | "make_booking") => {
-    if (!isLoaded) return { canProceed: false, needsVerification: false };
-    
-    // Si déjà vérifié, on peut procéder
-    if (isVerified) return { canProceed: true, needsVerification: false };
-    
-    // Vérifier si l'email et le téléphone sont vérifiés
-    const emailVerified = user?.emailAddresses[0]?.verification?.status === "verified";
-    const phoneVerified = user?.phoneNumbers[0]?.verification?.status === "verified";
-    
-    if (emailVerified && phoneVerified) {
-      return { canProceed: true, needsVerification: true };
+      try {
+        const token = await getToken({ template: "my-app-template" });
+        const response = await fetch("/api/users/me", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const verified = data.user?.isIdentityVerified === true;
+          setIsVerified(verified);
+          console.log("[API] isIdentityVerified:", verified);
+        } else {
+          console.error("Erreur API /users/me:", response.status);
+          setIsVerified(false);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la vérification:", error);
+        setIsVerified(false);
+      } finally {
+        setIsLoading(false);
+      }
     }
-    
-    return { canProceed: false, needsVerification: true };
-  }, [isLoaded, isVerified, user]);
+
+    fetchVerificationStatus();
+  }, [isLoaded, getToken]);
+
+  const checkCanPerformAction = useCallback(
+    (action: "create_listing" | "make_booking") => {
+      console.log(
+        " checkCanPerformAction - isVerified:",
+        isVerified,
+        "isLoaded:",
+        isLoaded,
+      );
+
+      if (!isLoaded || isLoading) {
+        return { canProceed: false, needsVerification: false };
+      }
+
+      //  Vérifié dans la BDD
+      if (isVerified === true) {
+        console.log(" Identité vérifiée (BDD)");
+        return { canProceed: true, needsVerification: false };
+      }
+
+      //  Non vérifié
+      console.log(" Identité non vérifiée (BDD)");
+      return { canProceed: false, needsVerification: true };
+    },
+    [isLoaded, isLoading, isVerified],
+  );
 
   return {
     isVerified,

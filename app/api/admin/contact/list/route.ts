@@ -33,12 +33,40 @@ export async function GET(req: NextRequest) {
         orderBy: { createdAt: "desc" },
         skip,
         take: limit,
+        include: {
+          user: {  // ✅ AJOUTER CETTE SECTION - inclure les infos utilisateur
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              profilePictureUrl: true, // ← IMAGE DE PROFIL
+            },
+          },
+        },
       }),
       prisma.contactMessage.count({ where }),
     ]);
 
+    // ✅ Formater les messages avec les infos utilisateur
+    const formattedMessages = messages.map((msg) => ({
+      id: msg.id,
+      fullName: msg.fullName,
+      email: msg.email,
+      phone: msg.phone,
+      userId: msg.userId,
+      userProfilePictureUrl: msg.user?.profilePictureUrl || null, // ← CLÉ POUR L'IMAGE
+      userFirstName: msg.user?.firstName || null,
+      userLastName: msg.user?.lastName || null,
+      message: msg.message,
+      status: msg.status,
+      reply: msg.reply,
+      repliedAt: msg.repliedAt,
+      createdAt: msg.createdAt,
+    }));
+
     return NextResponse.json({
-      messages,
+      messages: formattedMessages, // ← UTILISER LES MESSAGES FORMATÉS
       pagination: {
         page,
         limit,

@@ -194,31 +194,34 @@
     "profileTypeRequiredForBoth": "Vous avez un compte Propriétaire ET Locataire. Veuillez choisir le type de profil que vous souhaitez utiliser aujourd'hui."
   },
   "admin": {
-    "contact": "support de contact",
     "dashboard": "Tableau de bord",
     "users": "Utilisateurs",
+    "invitations": "Invitations",
+    "bookings": "Réservations",
     "properties": "Propriétés",
     "transactions": "Transactions",
     "verifications": "Vérifications",
-    "reports": "Signalements",
+    "moderation": "Modération",
     "disputes": "Litiges",
-    "staticPages": "Pages Statiques",
+    "contact": "Support",
+    "staticPages": "Pages statiques",
     "settings": "Paramètres",
-    "adminPanel": "Panneau d'administration",
-    "administrator": "Administrateur",
     "logout": "Déconnexion",
-    "searchPlaceholder": "Rechercher...",
-    "searching": "Recherche...",
-    "results": "résultats",
-    "noResults": "Aucun résultat trouvé",
-    "notifications": "Notifications",
-    "new": "nouvelle(s)",
-    "viewAll": "Voir toutes les notifications",
-    "myProfile": "Mon Profil",
+    "adminPanel": "Panel Admin",
+    "allProperties": "Toutes les propriétés",
+    "pendingValidations": "Validations en attente",
+    "myProfile": "Mon profil",
     "security": "Sécurité",
-    "confirmLogout": "Confirmation de déconnexion",
+    "confirmLogout": "Confirmer la déconnexion",
     "logoutMessage": "Êtes-vous sûr de vouloir vous déconnecter ?",
     "cancel": "Annuler",
+    "searchPlaceholder": "Rechercher...",
+    "noResults": "Aucun résultat trouvé",
+    "searching": "Recherche...",
+    "resultsCount": "{count} résultat(s)",
+    "reportedBy": "Signalé par:",
+    "adminBadge": "ADMIN",
+    "adminRole": "Administrateur",
     "invitationDesAdmins": "Invitation des admins",
     "usersManagement": {
       "unauthorized": "Accès non autorisé",
@@ -1319,46 +1322,65 @@
   },
 
   "AdminContent": {
-    "title": "Gestion du contenu statique",
-    "description": "Modifier et gérer vos pages juridiques et informatives.",
-    "unauthorized": "Accès non autorisé",
-    "adminRequired": "Vous devez être administrateur.",
+    "title": "Gestion du contenu",
+    "description": "Gérez les pages statiques du site",
     "allPages": "Toutes",
     "published": "Publiées",
     "drafts": "Brouillons",
     "noPagesFound": "Aucune page trouvée",
-    "pageTitlePlaceholder": "Titre de la page…",
-    "editorPlaceholder": "Écrivez votre contenu ici…",
-    "restoring": "Restauration en cours…",
+    "selectPage": "Sélectionnez une page",
+    "selectPageHint": "Choisissez une page dans la liste de gauche",
+    "pageTitlePlaceholder": "Titre de la page...",
+    "editorPlaceholder": "Écrivez votre contenu ici...",
     "history": "Historique",
     "draft": "Brouillon",
     "publish": "Publier",
     "cancel": "Annuler",
-    "selectPage": "Sélectionnez une page",
-    "selectPageHint": "Cliquez sur une page à gauche pour commencer l'édition",
+    "saveError": "Erreur lors de la sauvegarde",
+    "deleteError": "Erreur lors de la suppression",
+    "restoreError": "Erreur lors de la restauration",
+    "pagePublished": "Page publiée avec succès",
+    "draftSaved": "Brouillon sauvegardé",
+    "pageDeleted": "Page supprimée avec succès",
+    "versionRestored": "Version {version} restaurée avec succès",
     "versionHistory": "Historique des versions",
     "versionHistoryDesc": "Consultez et restaurez les versions précédentes",
     "currentVersion": "Version actuelle",
-    "versionRestoredBadge": "Version restaurée",
     "previousVersions": "Versions précédentes ({count})",
     "noPreviousVersions": "Aucune version précédente",
+    "restoreThisVersion": "Restaurer cette version",
+    "restoring": "Restauration",
     "restored": "Restaurée",
+    "showAll": "Afficher tout ({count})",
+    "showLess": "Afficher moins",
     "titleLabel": "Titre",
     "contentLabel": "Contenu",
-    "contentModified": "modifié",
-    "restoreThisVersion": "Restaurer cette version",
-    "showLess": "Voir moins",
-    "showAll": "Voir tout ({count} de plus)",
+    "contentModified": "Contenu modifié",
+    "versionRestoredBadge": "Restaurée",
+    "unauthorized": "Accès non autorisé",
+    "adminRequired": "Vous devez être administrateur pour accéder à cette page",
     "deletePage": "Supprimer la page",
-    "deleteConfirmation": "Cette action est irréversible.",
+    "deleteConfirmation": "Êtes-vous sûr de vouloir supprimer cette page ? Cette action est irréversible.",
     "delete": "Supprimer",
-    "pagePublished": "Page publiée avec succès ✓",
-    "draftSaved": "Brouillon enregistré ✓",
-    "saveError": "Erreur lors de l'enregistrement",
-    "pageDeleted": "Page supprimée avec succès",
-    "deleteError": "Erreur lors de la suppression",
-    "versionRestored": "Version {version} restaurée avec succès ✓",
-    "restoreError": "Erreur lors de la restauration"
+    "unknownUser": "Utilisateur inconnu",
+    "pages": {
+      "privacy": "Confidentialité",
+      "terms": "CGU",
+      "cookies": "Cookies",
+      "about": "À propos",
+      "default": "Page"
+    },
+    "status": {
+      "draft": "Brouillon",
+      "restored": "Restaurée",
+      "published": "Publié"
+    },
+    "actions": {
+      "update": "Mise à jour",
+      "create": "Création",
+      "delete": "Suppression",
+      "restore": "Restauration"
+    }
   },
 
   "VerificationDetail": {
@@ -1463,7 +1485,6 @@
       "viewHistory": "Voir l'historique"
     }
   },
-  
 
   "SSOCallback": {
     "title": "CONNEXION SÉCURISÉE",
@@ -1528,7 +1549,7 @@
     "strengthMedium": "Moyen",
     "strengthStrong": "Fort"
   },
- 
+
   "VerificationsHistory": {
     "title": "Historique des vérifications",
     "subtitle": "Consultez l'historique complet des demandes de vérification traitées",
@@ -1537,23 +1558,23 @@
     "refresh": "Actualiser",
     "searchPlaceholder": "Rechercher par nom, email...",
     "backToPending": "Retour aux demandes en attente",
-    
+
     "validated": "Validée",
     "rejected": "Rejetée",
     "pending": "En attente",
-    
+
     "stats": {
       "total": "Total",
       "approvalRate": "Taux d'approbation",
       "rejected": "Rejetées"
     },
-    
+
     "filters": {
       "all": "Toutes",
       "validated": "Validées",
       "rejected": "Rejetées"
     },
-    
+
     "table": {
       "submittedAt": "DATE DE SOUMISSION",
       "user": "UTILISATEUR",
@@ -1564,15 +1585,13 @@
       "action": "ACTION",
       "view": "Voir"
     },
-    
+
     "pagination": {
       "showing": "Affichage de",
       "of": "sur",
       "results": "résultats"
     },
-    
-    
-    
+
     "auditBanner": {
       "title": "Journal d'audit chiffré · Conservation 7 ans",
       "description": "NESTHUB maintient une piste d'audit chiffrée de toutes les activités conformément aux normes réglementaires.",
@@ -1580,16 +1599,14 @@
       "gdpr": "RGPD",
       "retention": "7 ans"
     },
-     "empty": {
+    "empty": {
       "title": "Aucune vérification dans l'historique",
       "description": "Toutes les demandes de vérification d'identité seront affichées ici une fois traitées.",
       "noResults": "Aucun résultat trouvé",
       "tryDifferent": "Essayez d'autres termes de recherche"
     },
     "clearSearch": "Effacer la recherche"
-  }
-,
-
+  },
   "OwnerLayout": {
     "roleSwitcher": {
       "owner": "Propriétaire",
@@ -1649,10 +1666,9 @@
   },
 
   "CreateListing": {
-    "breadcrumb": {
-      "myListings": "MES ANNONCES",
-      "newListing": "NOUVELLE ANNONCE"
-    },
+    "title": "Créer une annonce",
+    "loading": "Chargement...",
+    "stepInfo": "Étape {step} sur {total} · {title}",
     "pageTitle": "Créer une annonce",
     "stepOf": "Étape {current} sur {total}",
     "saving": "Sauvegarde en cours...",
@@ -1662,6 +1678,33 @@
     "confirmLeave": "Vous avez des modifications non sauvegardées. Êtes-vous certain de vouloir quitter cette page ?",
     "required": "Champ obligatoire",
 
+    "breadcrumb": {
+      "myListings": "Mes annonces",
+      "newListing": "Nouvelle annonce"
+    },
+
+    "button": {
+      "draft": "Brouillon",
+      "saving": "Sauvegarde...",
+      "publish": "Publier",
+      "publishing": "Publication..."
+    },
+
+    "tooltip": {
+      "saveDraft": "Sauvegarder le brouillon",
+      "required": "Requis"
+    },
+
+    "navigation": {
+      "previous": "Précédent",
+      "continue": "Continuer"
+    },
+
+    "nav": {
+      "previous": "Précédent",
+      "continue": "Continuer"
+    },
+
     "steps": {
       "typeLocation": "Type & Lieu",
       "characteristics": "Caractéristiques",
@@ -1669,11 +1712,6 @@
       "photos": "Photos",
       "pricing": "Tarification",
       "preview": "Aperçu"
-    },
-
-    "nav": {
-      "previous": "Précédent",
-      "continue": "Continuer"
     },
 
     "units": {
@@ -1703,6 +1741,16 @@
       "ROOM": "Chambre"
     },
 
+    "propertyType": {
+      "title": "Type de logement",
+      "apartment": "Appartement",
+      "villa": "Villa",
+      "studio": "Studio",
+      "duplex": "Duplex",
+      "house": "Maison",
+      "property": "Logement"
+    },
+
     "step1": {
       "typeTitle": "Quel type de bien proposez-vous ?",
       "titleSectionTitle": "Donnez un nom à votre annonce",
@@ -1721,7 +1769,33 @@
       "adjustMap": "Ajuster la position",
       "exactLocation": "Emplacement exact",
       "positionSelected": "Position sélectionnée",
-      "mapClickHint": "Cliquez sur la carte pour indiquer l'emplacement précis de votre propriété"
+      "mapClickHint": "Cliquez sur la carte pour indiquer l'emplacement précis de votre propriété",
+      "helpText": "Appuyez sur",
+      "enterKey": "Entrée",
+      "helpTextEnd": "pour localiser l'adresse sur la carte",
+      "exactPosition": "Position exacte"
+    },
+
+    "titleAndDescription": {
+      "title": "Titre et description",
+      "listingTitle": "Titre de l'annonce",
+      "titlePlaceholder": "Ex: Superbe appartement en bord de mer",
+      "description": "Description",
+      "descriptionPlaceholder": "Décrivez votre logement en détail..."
+    },
+
+    "location": {
+      "title": "Localisation",
+      "governorate": "Gouvernorat",
+      "delegation": "Délégation",
+      "street": "Rue / Quartier",
+      "select": "Sélectionner",
+      "delegationPlaceholder": "Ex: Hammamet",
+      "streetPlaceholder": "Ex: Avenue Habib Bourguiba",
+      "helpText": "Appuyez sur",
+      "enterKey": "Entrée",
+      "helpTextEnd": "pour localiser l'adresse sur la carte",
+      "exactPosition": "Position exacte"
     },
 
     "step2": {
@@ -1741,6 +1815,29 @@
       "parking": "Parking privé"
     },
 
+    "characteristics": {
+      "title": "Caractéristiques",
+      "bedrooms": "Chambres",
+      "bathrooms": "Salles de bain",
+      "kitchens": "Cuisines",
+      "guestCapacity": "Capacité voyageurs",
+      "optional": "Optionnel",
+      "clear": "Effacer",
+      "balcony": "Balcon ou terrasse",
+      "garden": "Jardin",
+      "garage": "Garage ou Parking",
+      "surface": "Surface (m²)",
+      "floor": "Étage",
+      "floorPlaceholder": "RDC = 0",
+      "elevator": "Ascenseur",
+      "bedroomsShort": "ch.",
+      "bathroomsShort": "sdb",
+      "kitchensShort": "cuis.",
+      "guests": "pers.",
+      "groundFloor": "RDC",
+      "floorAbbr": "ét."
+    },
+
     "step3": {
       "equipmentTitle": "Équipements proposés",
       "servicesTitle": "Services inclus",
@@ -1750,18 +1847,21 @@
     },
 
     "equipment": {
-      "wifi": "Connexion Wi-Fi",
+      "title": "Équipements",
+      "wifi": "Wi-Fi",
       "ac": "Climatisation",
-      "heating": "Chauffage central",
-      "kitchen": "Cuisine entièrement équipée",
-      "parking": "Stationnement privé",
+      "heating": "Chauffage",
+      "kitchen": "Cuisine équipée",
+      "parking": "Parking",
       "pool": "Piscine",
-      "gym": "Espace fitness",
-      "washer": "Machine à laver",
-      "tv": "Télévision écran plat",
-      "balcony": "Balcon ou terrasse",
+      "gym": "Salle de sport",
+      "washer": "Lave-linge",
+      "tv": "Télévision",
       "dishwasher": "Lave-vaisselle",
       "dryer": "Sèche-linge",
+      "furnished": "Meublé",
+      "furnishedDesc": "Logement équipé et meublé",
+      "balcony": "Balcon ou terrasse",
       "elevator": "Ascenseur",
       "airConditioning": "Climatisation réversible",
       "workspace": "Espace de travail dédié"
@@ -1783,10 +1883,12 @@
     },
 
     "houseRules": {
-      "noParties": "Événements et fêtes non autorisés",
+      "noParties": "Pas de fêtes",
+      "quietHours": "Silence après 22h",
+      "petsAllowed": "Animaux acceptés",
+      "smokingAllowed": "Fumeurs acceptés",
       "noSmoke": "Logement non-fumeur",
       "noPets": "Animaux non acceptés",
-      "quietAfter22": "Tranquillité assurée après 22h",
       "checkInAfter": "Arrivée à partir de 14h",
       "checkOutBefore": "Départ avant 11h"
     },
@@ -1811,15 +1913,28 @@
       "tip4": "Montrez chaque pièce importante : salon, chambres, cuisine, salle de bain",
       "uploading": "Téléchargement en cours...",
       "uploadError": "Le téléchargement a échoué, veuillez réessayer",
-      "clickStarToSetMain": " Cliquez sur l'étoile pour définir la photo principale",
+      "clickStarToSetMain": "Cliquez sur l'étoile pour définir la photo principale",
       "setAsMain": "Définir comme photo principale",
       "mainPhotoSet": "Photo principale définie avec succès"
     },
 
+    "photos": {
+      "title": "Photos",
+      "dropzone": "Déposez vos photos ici",
+      "formatInfo": "PNG, JPG jusqu'à 20 photos",
+      "uploading": "Upload en cours...",
+      "photos": "photos",
+      "clickStar": "Cliquez sur l'étoile pour définir la photo principale",
+      "main": "Principale",
+      "setMain": "Définir comme principale",
+      "delete": "Supprimer",
+      "add": "Ajouter"
+    },
+
     "step5": {
       "rentalTypeTitle": "Type de location",
-      "SHORT_TERM": "Location courte durée",
-      "LONG_TERM": "Location longue durée",
+      "SHORT_TERM": "Courte durée",
+      "LONG_TERM": "Longue durée",
       "BOTH": "Les deux formules",
       "pricesTitle": "Définissez vos tarifs",
       "pricePerNight": "Tarif par nuitée",
@@ -1849,6 +1964,34 @@
       "serviceFee": "Frais de service"
     },
 
+    "rentalType": {
+      "title": "Type de location",
+      "short_term": "Courte durée",
+      "long_term": "Longue durée",
+      "both": "Les deux"
+    },
+
+    "pricing": {
+      "title": "Tarifs",
+      "aiRecommendation": "IA Recommendation",
+      "yourPrice": "Votre prix",
+      "perNight": "TND / nuit",
+      "perNightShort": "/nuit",
+      "perMonth": "TND / mois",
+      "perMonthShort": "/mois",
+      "estimate": "Estimer",
+      "calculating": "Calcul...",
+      "apply": "Appliquer"
+    },
+
+    "additionalFees": {
+      "title": "Frais supplémentaires",
+      "securityDeposit": "Caution de sécurité",
+      "securityDepositDesc": "Montant remboursable",
+      "cleaningFee": "Frais de ménage",
+      "cleaningFeeDesc": "Nettoyage inclus"
+    },
+
     "preview": {
       "noTitle": "Titre de l'annonce",
       "rooms": "chambres",
@@ -1861,7 +2004,8 @@
       "equipment": "Équipements disponibles",
       "services": "Services proposés",
       "rules": "Règlement intérieur",
-      "location": "Localisation"
+      "location": "Localisation",
+      "untitled": "Sans titre"
     },
 
     "sidebar": {
@@ -1877,26 +2021,67 @@
       "benefit4": "Assurance responsabilité civile incluse pour chaque réservation"
     },
 
+    "tips": {
+      "title": "Conseils",
+      "qualityPhotos": "Des photos de qualité augmentent les réservations",
+      "catchyTitle": "Un titre accrocheur attire plus de voyageurs",
+      "quickResponses": "Répondez rapidement aux demandes",
+      "competitivePrice": "Un prix compétitif augmente vos chances",
+      "moreBookings": "+35% de réservations"
+    },
+
+    "benefits": {
+      "securePayment": "Paiement sécurisé",
+      "support247": "Assistance 24/7",
+      "insurance": "Assurance incluse",
+      "maxVisibility": "Visibilité maximale"
+    },
+
     "validation": {
-      "titleRequired": "Le titre de l'annonce est requis",
-      "titleMin": "Le titre doit contenir au moins 3 caractères",
+      "titleRequired": "Le titre est requis",
+      "titleMinLength": "Le titre doit contenir au moins 5 caractères",
       "descriptionRequired": "La description est requise",
-      "descriptionMin": "La description doit contenir au moins 20 caractères",
-      "governorateRequired": "Veuillez sélectionner un gouvernorat",
+      "descriptionMinLength": "La description doit contenir au moins 20 caractères",
+      "governorateRequired": "Le gouvernorat est requis",
       "delegationRequired": "La délégation est requise",
       "streetRequired": "La rue est requise",
       "locationRequired": "La localisation sur la carte est requise",
       "roomsRequired": "Au moins 1 chambre est requise",
       "bathroomsRequired": "Au moins 1 salle de bain est requise",
-      "maxGuestsRequired": "Au moins 1 voyageur est requis",
+      "kitchensRequired": "Au moins 1 cuisine est requise",
+      "surfaceRequired": "La surface est requise",
+      "floorRequired": "Le numéro d'étage est requis",
       "photosRequired": "Au moins une photo est requise",
       "mainPhotoRequired": "Veuillez définir une photo principale",
+      "pricePerNightRequired": "Le prix par nuit est requis",
+      "pricePerMonthRequired": "Le prix par mois est requis",
+      "titleMin": "Le titre doit contenir au moins 3 caractères",
+      "descriptionMin": "La description doit contenir au moins 20 caractères",
+      "maxGuestsRequired": "Au moins 1 voyageur est requis",
       "photosMin": "Ajoutez au moins 5 photos pour valoriser votre bien",
       "priceRequired": "Le tarif est requis",
       "pricePositive": "Le tarif doit être supérieur à zéro",
-      "pricePerNightRequired": "Le prix par nuit est requis",
-      "pricePerMonthRequired": "Le prix par mois est requis",
       "descriptionMax": "La description ne peut pas dépasser 2000 caractères"
+    },
+
+    "toast": {
+      "tooManyRequests": "Trop de requêtes. Veuillez patienter.",
+      "addressNotFound": "Adresse non trouvée, veuillez ajuster la position manuellement",
+      "priceRecommendation": "Prix nuit: {night} TND | Prix mois: {month} TND",
+      "selectGovernorateFirst": "Veuillez d'abord sélectionner un gouvernorat",
+      "fillDelegationFirst": "Veuillez d'abord remplir la délégation",
+      "fillStreetFirst": "Veuillez d'abord remplir la rue/quartier",
+      "positionFound": " Position trouvée sur la carte !",
+      "positionAndAddressFound": " Position et adresse trouvées !",
+      "draftSaved": "Brouillon sauvegardé",
+      "saveError": "Erreur lors de la sauvegarde",
+      "publishing": "Publication en cours...",
+      "published": "Annonce soumise pour validation !",
+      "publishError": "Erreur lors de la publication",
+      "uploadFailed": "Échec upload photo",
+      "uploadError": "Erreur lors de l'upload",
+      "photoRemoved": "Photo supprimée",
+      "mainPhotoSet": "Photo principale définie"
     },
 
     "success": {
@@ -1912,9 +2097,51 @@
       "publishFailed": "La publication de votre annonce a échoué. Veuillez vérifier tous les champs obligatoires.",
       "networkError": "Problème de connexion réseau. Vérifiez votre connexion internet.",
       "timeoutError": "La requête a expiré. Veuillez réessayer."
+    },
+
+    "aria": {
+      "decrease": "Diminuer la valeur",
+      "increase": "Augmenter la valeur",
+      "disable": "Désactiver",
+      "enable": "Activer"
+    },
+
+    "alerts": {
+      "unsavedChanges": "Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?"
     }
   },
+
   "OwnerListingDetail": {
+    "toast": {
+      "networkError": "Erreur de connexion",
+      "listingDeleted": "Annonce supprimée avec succès",
+      "deleteFailed": "Erreur lors de la suppression",
+      "listingActivated": "Annonce activée avec succès",
+      "listingHidden": "Annonce masquée avec succès",
+      "statusChangeFailed": "Erreur lors du changement de statut",
+      "availabilityUpdated": "Disponibilité mise à jour",
+      "availabilityUpdateFailed": "Erreur lors de la mise à jour"
+    },
+    "modals": {
+      "deleteConfirm": "Êtes-vous sûr de vouloir supprimer cette annonce ?",
+      "hideTitle": "Masquer l'annonce",
+      "publishTitle": "Publier l'annonce",
+      "hideDescription": "Cette annonce ne sera plus visible par les voyageurs. Vous pourrez la réactiver à tout moment.",
+      "publishDescription": "Cette annonce sera visible par tous les voyageurs sur la plateforme.",
+      "cancel": "Annuler",
+      "hideButton": "Masquer",
+      "publishButton": "Publier"
+    },
+    "houseRules": {
+      "noParties": "Pas de fêtes ou d'événements",
+      "noSmoking": "Logement non-fumeur",
+      "noPets": "Animaux non acceptés",
+      "quietAfter22": "Silence après 22h",
+      "checkInAfter": "Arrivée à partir de",
+      "checkOutBefore": "Départ avant",
+      "defaultCheckIn": "Arrivée à partir de 15h00",
+      "defaultCheckOut": "Départ avant 11h00"
+    },
     "equipment": {
       "wifi": "WiFi",
       "ac": "Climatisation",
@@ -1940,7 +2167,6 @@
     "currency": {
       "tnd": "TND"
     },
-
     "tooltips": {
       "viewPublic": "Voir l'annonce sur le site public",
       "edit": "Modifier l'annonce",
@@ -1956,7 +2182,8 @@
     "status": {
       "active": "Publiée",
       "inactive": "Masquée",
-      "draft": "Brouillon"
+      "draft": "Brouillon",
+      "pending_review":"en atente de validation"
     },
     "bookingStatus": {
       "pending": "En attente",
@@ -1971,8 +2198,7 @@
       "views": "Vues",
       "bookings": "Réservations",
       "occupancy": "Taux d'occupation",
-      "revenue": "Revenu total",
-      "revenueValue": "0.000 TND"
+      "revenue": "Revenu total"
     },
     "quickStats": {
       "views": "Vues",
@@ -2038,14 +2264,8 @@
       "previousMonth": "Mois précédent",
       "nextMonth": "Mois suivant",
       "days": "L,M,M,J,V,S,D"
-    },
-    "modals": {
-      "delete": {
-        "confirm": "Êtes-vous sûr de vouloir supprimer cette annonce ?"
-      }
     }
   },
-
   "ListingHistory": {
     "user": {
       "default": "Utilisateur"
@@ -2196,7 +2416,7 @@
       "priceRange": "Fourchette de prix",
       "minRooms": "Nombre minimum de chambres",
       "reset": "Réinitialiser les filtres",
-      "aiTitre": "Conseil AI",
+      "aiTitre": "Conseil pour vous ",
       "aiTip": "Utilisez les filtres pour trouver rapidement vos annonces les plus performantes.",
       "searchPlaceholder": "Rechercher une annonce par titre ou description...",
       "dateFilter": "Filtrer par date",
@@ -3325,7 +3545,7 @@
     "noResults": "Aucun résultat trouvé",
     "searchDirectly": "Rechercher directement"
   },
-"AdminProperties": {
+  "AdminProperties": {
     "title": "Gestion des Propriétés",
     "description": "Contrôlez et modérez l'inventaire immobilier de NESTHUB.",
     "refresh": "Actualiser",
@@ -3419,7 +3639,10 @@
     "ownerEmailPlaceholder": "exemple@email.com",
     "filterDateFrom": "Créé après le",
     "filterDateTo": "Créé avant le",
-    
+    "confirmModalDescription": "Cette action nécessite une confirmation",
+    "confirmLabel": "Pour confirmer, tapez",
+    "processing": "Traitement...",
+    "bulkWarning": "Cette action affectera plusieurs éléments et est irréversible.",
     "activerConfirmTitle": "Activer l'annonce",
     "activerConfirmMessage": "Êtes-vous sûr de vouloir activer cette annonce ? Elle sera visible par tous.",
     "desactiverConfirmTitle": "Désactiver l'annonce",
@@ -3430,16 +3653,14 @@
     "validerConfirmMessage": "Êtes-vous sûr de vouloir valider cette annonce ? Elle sera publiée.",
     "rejeterConfirmTitle": "Rejeter l'annonce",
     "rejeterConfirmMessage": "Êtes-vous sûr de vouloir rejeter cette annonce ? L'utilisateur en sera informé.",
-    
+
     "activerBatchConfirmMessage": "Êtes-vous sûr de vouloir activer {count} annonce(s) ?",
     "desactiverBatchConfirmMessage": "Êtes-vous sûr de vouloir désactiver {count} annonce(s) ?",
     "archiverBatchConfirmMessage": "Êtes-vous sûr de vouloir archiver {count} annonce(s) ?",
-    
+
     "supprimerConfirmTitle": "Supprimer l'annonce",
     "supprimerConfirmMessage": "Êtes-vous sûr de vouloir supprimer définitivement cette annonce ? Cette action est irréversible."
-},
-
-
+  },
 
   "Moderation": {
     "title": "Modération des Conversations",
@@ -3470,7 +3691,7 @@
       "status": "Statut",
       "actions": "Actions",
       "noMessage": "Aucun message",
-      "reports": "signalement"
+      "reports": "signalement(s)"
     },
     "participants": {
       "owner": "Propriétaire",
@@ -3485,19 +3706,75 @@
       "unflagged": "Signalement retiré avec succès",
       "closed": "Conversation fermée avec succès",
       "reopened": "Conversation réouverte avec succès",
-      "success": "Action effectuée avec succès"
+      "success": "Action effectuée avec succès",
+      "bulkFlagged": "{count} conversation(s) signalée(s) avec succès",
+      "bulkClosed": "{count} conversation(s) fermée(s) avec succès"
     },
     "errors": {
       "loadFailed": "Erreur lors du chargement des conversations",
-      "actionFailed": "Erreur lors de l'action"
+      "actionFailed": "Erreur lors de l'action",
+      "bulkActionFailed": "Erreur lors de l'action groupée"
     },
     "footer": {
-      "autoModeration": "Modération Automatique",
-      "autoDescription": "Notre IA a signalé des conversations potentiellement problématiques.",
-      "runAudit": "Lancer l'audit",
-      "communityRules": "Règles Communautaires",
-      "rulesDescription": "Assurez-vous que toutes les interactions respectent les normes Nesthub.",
-      "viewPolicy": "Voir la politique"
+      "autoModeration": "Signalements en attente",
+      "autoDescription": "Consultez et traitez les conversations signalées par les utilisateurs.",
+      "runAudit": "Voir les signalements",
+      "communityRules": "Procédure de modération",
+      "rulesDescription": "Suivez notre guide pour une modération efficace et cohérente.",
+      "viewPolicy": "Consulter le guide",
+
+      "rule1": "Signaler les comportements inappropriés et le spam",
+      "rule2": "Vérifier l'authenticité des annonces et des utilisateurs",
+      "rule3": "Protéger les données personnelles des utilisateurs"
+    },
+    "tooltips": {
+      "view": "Voir la conversation",
+      "flag": "Signaler",
+      "unflag": "Retirer le signalement",
+      "close": "Fermer",
+      "reopen": "Rouvrir"
+    },
+    "dateFilter": {
+      "all": "Toutes les dates",
+      "today": "Aujourd'hui",
+      "week": "7 derniers jours",
+      "month": "30 derniers jours"
+    },
+    "bulk": {
+      "selected": "sélectionnée(s)",
+      "flag": "Signaler",
+      "close": "Fermer",
+      "clear": "Effacer"
+    },
+    "confirm": {
+      "title": "Confirmer l'action",
+      "modalDescription": "Cette action nécessite une confirmation",
+      "flagTitle": "Signaler la conversation",
+      "flagDescription": "Êtes-vous sûr de vouloir signaler cette conversation ? Elle sera marquée comme suspecte.",
+      "unflagTitle": "Retirer le signalement",
+      "unflagDescription": "Êtes-vous sûr de vouloir retirer le signalement de cette conversation ?",
+      "closeTitle": "Fermer la conversation",
+      "closeDescription": "Êtes-vous sûr de vouloir fermer cette conversation ? Les participants ne pourront plus envoyer de messages.",
+      "reopenTitle": "Rouvrir la conversation",
+      "reopenDescription": "Êtes-vous sûr de vouloir rouvrir cette conversation ? Les participants pourront à nouveau échanger.",
+      "bulkFlagTitle": "Signaler {count} conversations",
+      "bulkFlagDescription": "Êtes-vous sûr de vouloir signaler {count} conversation(s) ? Elles seront marquées comme suspectes.",
+      "bulkCloseTitle": "Fermer {count} conversations",
+      "bulkCloseDescription": "Êtes-vous sûr de vouloir fermer {count} conversation(s) ? Les participants ne pourront plus envoyer de messages.",
+      "bulkWarning": "Cette action est irréversible et affectera plusieurs conversations.",
+      "confirmLabel": "Pour confirmer, tapez",
+      "cancel": "Annuler",
+      "processing": "Traitement...",
+      "confirm": "Confirmer",
+      "defaultTitle": "Confirmer l'action",
+      "defaultDescription": "Êtes-vous sûr de vouloir effectuer cette action ?",
+      "flag": "Êtes-vous sûr de vouloir signaler cette conversation ?",
+      "unflag": "Êtes-vous sûr de vouloir retirer le signalement de cette conversation ?",
+      "close": "Êtes-vous sûr de vouloir fermer cette conversation ?",
+      "reopen": "Êtes-vous sûr de vouloir rouvrir cette conversation ?",
+      "bulkFlag": "Êtes-vous sûr de vouloir signaler {count} conversation(s) ?",
+      "bulkClose": "Êtes-vous sûr de vouloir fermer {count} conversation(s) ?",
+      "default": "Êtes-vous sûr de vouloir effectuer cette action ?"
     }
   },
   "ConversationDetail": {
@@ -3528,10 +3805,19 @@
     "quickActions": "Actions Rapides",
     "removeFlag": "Retirer le signalement",
     "flag": "Signaler",
+    "unflag": "Débloquer",
     "close": "Clôturer",
     "reopen": "Rouvrir",
     "backToList": "Retour",
     "notFound": "Conversation non trouvée",
+    "iaAlerts": "Alertes IA - Fuites détectées",
+    "blockedMessages": "Messages bloqués par l'IA",
+    "messagesBlocked": "message(s) bloqué(s)",
+    "coordinateLeaks": "Tentatives de fuite de coordonnées",
+    "attempts": "tentative(s)",
+    "suspiciousPayment": "Paiement externe suspect",
+    "noAlerts": "Aucune alerte détectée",
+    "conversationSecure": "Cette conversation semble sécurisée",
     "errors": {
       "loadFailed": "Erreur lors du chargement de la conversation",
       "noteFailed": "Erreur lors de l'ajout de la note",
@@ -3546,10 +3832,38 @@
       "actionDone": "Action effectuée avec succès"
     }
   },
-
   "Disputes": {
+    "confirmResolveTitle": "Résoudre le litige",
+    "confirmResolveDescription": "Êtes-vous sûr de vouloir résoudre ce litige ? Les deux parties seront notifiées.",
+    "confirmResolve": " Résoudre",
+    "confirmRejectTitle": "Rejeter le litige",
+    "confirmRejectDescription": "Êtes-vous sûr de vouloir rejeter ce litige ? La demande sera refusée.",
+    "confirmReject": " Rejeter",
+    "resolveWarning": "La résolution sera communiquée aux deux parties. Aucune action financière ne sera effectuée automatiquement.",
+    "rejectWarning": "Le rejet sera communiqué au demandeur. Cette action est irréversible.",
+    "resolutionNoteLabel": "Note de résolution (optionnelle)",
+    "rejectionNoteLabel": "Motif du rejet (optionnel)",
+    "resolutionPlaceholder": "Ex: Après examen, nous recommandons un geste commercial...",
+    "rejectionPlaceholder": "Ex: Le litige ne correspond pas à nos conditions...",
+    "resolutionNoteHint": "Cette note sera visible par les deux parties.",
+    "rejectionNoteHint": "Ce motif aidera le demandeur à comprendre la décision.",
+    "notePlaceholder": "Ajoutez une note explicative...",
+    "confirmModalDescription": "Cette action nécessite une confirmation",
+    "resolution": {
+      "resolved": "Litige résolu",
+      "resolvedMessage": "Le litige a été résolu par l'administrateur. Les deux parties ont été informées.",
+      "rejected": "Litige rejeté",
+      "rejectedMessage": "Le litige a été rejeté par l'administrateur. La demande n'a pas été acceptée."
+    },
+    "refundTypeLabel": "Type de remboursement",
+    "refundFull": "Remboursement total",
+    "refundPartial": "Remboursement partiel",
+    "refundAmountLabel": "Montant du remboursement",
+    "refundMaxAmount": "Montant maximum",
+    "refundWarning": "Cette action est irréversible et un remboursement sera effectué.",
+    "resolveDispute": "Résoudre le litige",
+    "rejectDispute": "Rejeter le litige",
     "title": "Gestion des Litiges",
-    "description": "Examinez et résolvez les litiges signalés sur la plateforme.",
     "refresh": "Actualiser",
     "tabs": {
       "active": "Actifs",
@@ -3591,7 +3905,6 @@
     "description": "Description du problème",
     "noDescription": "Aucune description fournie.",
     "evidence": "Preuves jointes",
-    "resolution": "Résolution",
     "refundGranted": "Remboursé",
     "conversation": "Fil de discussion",
     "messageCount": "messages",
@@ -3613,7 +3926,25 @@
     "disputesCount": "litige(s)",
     "noDisputes": "Aucun litige trouvé",
     "selectDispute": "Sélectionnez un litige pour voir les détails",
-    "enlargedEvidence": "Preuve agrandie"
+    "enlargedEvidence": "Preuve agrandie",
+
+    "bookingInfo": "Informations de réservation",
+    "plaintiff": "Demandeur",
+    "defendant": "Défendeur",
+    "replyToBoth": " Répondre aux deux",
+    "replyToOwner": " Répondre au propriétaire",
+    "replyToTenant": " Répondre au locataire",
+    "replyToBothPlaceholder": "Écrire un message qui sera envoyé aux deux parties...",
+    "replyToOwnerPlaceholder": "Écrire un message privé au propriétaire...",
+    "replyToTenantPlaceholder": "Écrire un message privé au locataire...",
+    "toBoth": "aux deux",
+    "toOwner": "au propriétaire",
+    "toTenant": "au locataire",
+    "send": "Envoyer",
+    "confirmTitle": "Confirmation",
+    "confirmDescription": "Êtes-vous sûr de vouloir effectuer cette action ?",
+    "processing": "Traitement en cours...",
+    "cancel": "Annuler"
   },
   "Settings": {
     "title": "Paramètres de l'Application",
@@ -4211,7 +4542,10 @@
         "editorPlaceholder": "Écrivez votre réponse ici... Utilisez les outils de mise en forme pour personnaliser votre message.",
         "cancel": "Annuler",
         "send": "Envoyer la réponse",
-        "sending": "Envoi en cours..."
+        "sending": "Envoi en cours...",
+        "alreadyRepliedMessage": "Une réponse a déjà été envoyée pour ce message.",
+        "alreadyRepliedPlaceholder": "Vous ne pouvez pas modifier une réponse déjà envoyée.",
+        "previousReply": "Réponse précédente :"
       },
       "info": {
         "title": "Informations",
@@ -4234,7 +4568,8 @@
         "replyError": "Impossible d'envoyer la réponse",
         "messageNotFound": "Message introuvable",
         "writeReply": "Veuillez écrire une réponse",
-        "loadError": "Impossible de charger le message"
+        "loadError": "Impossible de charger le message",
+        "alreadyReplied": "Ce message a déjà reçu une réponse. Vous ne pouvez pas répondre à nouveau."
       },
       "errors": {
         "notFound": "Message non trouvé",
@@ -4297,21 +4632,6 @@
         "resolved": "Répondu"
       }
     },
-    "actions": {
-      "view": "Voir et répondre",
-
-      "export": "Exporter"
-    },
-    "export": {
-      "csv": {
-        "title": "Exporter en CSV",
-        "description": "Télécharger les données"
-      },
-      "pdf": {
-        "title": "Exporter en PDF",
-        "description": "Télécharger le rapport"
-      }
-    },
     "table": {
       "headers": {
         "sender": "Expéditeur",
@@ -4324,9 +4644,38 @@
     },
     "messages": {
       "noMessages": "Aucun message trouvé"
+    },
+    "actions": {
+      "view": "Voir et répondre",
+      "export": "Exporter"
+    },
+    "userType": "Utilisateur",
+    "visitorType": "Visiteur",
+    "statusNew": "Nouveau",
+    "statusReplied": "Répondu",
+    "exportCSV": "CSV",
+    "exportPDF": "PDF",
+    "csvFormat": "Format tableur",
+    "pdfFormat": "Format document",
+    "refresh": "Actualiser",
+    "resetFilters": "Réinitialiser",
+    "viewAndReply": "Voir et répondre",
+    "exportSuccess": "Export réussi",
+    "exportFailed": "Erreur lors de l'export",
+    "errors": {
+      "loadFailed": "Erreur lors du chargement des messages"
+    },
+    "export": {
+      "csv": {
+        "title": "Exporter en CSV",
+        "description": "Télécharger les données"
+      },
+      "pdf": {
+        "title": "Exporter en PDF",
+        "description": "Télécharger le rapport"
+      }
     }
   },
-
   "AdminDashboard": {
     "title": "Tableau de bord administrateur",
     "subtitle": "Mission Control - Surveillance de la plateforme",
@@ -4657,44 +5006,44 @@
     "emptyAlertsDesc": "Les notifications importantes concernant les propriétés apparaîtront ici",
     "tryDifferentFilters": "Essayez d'autres critères de recherche"
   },
-  
+
   "AdminListingsValidation": {
     "title": "Validation des annonces",
     "description": "Gérez et validez les annonces en attente de publication",
-    
+
     "statsPending": "En attente",
     "statsProcessedToday": "Traités aujourd'hui",
     "statsAvgTime": "Temps moyen",
     "statsHistory": "Historique",
     "statsTarget": "Objectif: < 4 heures",
     "statsValidated": "validées",
-    
+
     "newListings": "nouvelles",
     "modifications": "modifications",
-    
+
     "tabAll": "Toutes",
     "tabNew": "Nouvelles annonces",
     "tabRevisions": "Modifications",
     "tabHistory": "Historique",
-    
+
     "searchPlaceholder": "Rechercher par titre, propriétaire...",
     "searchButton": "Appliquer",
     "searchLoading": "Chargement...",
-    
+
     "showing": "Affichage de",
     "of": "sur",
     "properties": "annonces",
     "noResults": "Aucune annonce trouvée",
     "noHistory": "Aucune annonce dans l'historique",
     "show": "Afficher:",
-    
+
     "badgeNew": "Nouvelle",
     "badgeModification": "Modification",
     "badgePublished": "Publiée",
     "badgeRejected": "Rejetée",
     "badgePending": "En attente",
     "badgeValidated": "Validée",
-    
+
     "tableHeaderOwner": "Propriétaire",
     "tableHeaderListing": "Annonce",
     "tableHeaderType": "Type",
@@ -4702,29 +5051,79 @@
     "tableHeaderDate": "Date",
     "tableHeaderStatus": "Statut",
     "tableHeaderActions": "Actions",
-    
+
     "pricePerNight": "/nuit",
     "pricePerMonth": "/mois",
-    
+
     "actionView": "Voir détails",
     "actionProcess": "Traiter",
-    
+
     "reasonPrefix": "Motif:"
   },
- 
+
   "AdminListingDetail": {
+    "rentalTypeLabel": "Type de location",
+    "rentalType": {
+      "SHORT_TERM": "Location courte durée",
+      "LONG_TERM": "Location longue durée",
+      "BOTH": "Mixte (court et long terme)"
+    },
+    "equipment": {
+      "wifi": "Wi-Fi haut débit",
+      "pool": "Piscine",
+      "ac": "Climatisation réversible",
+      "kitchen": "Cuisine entièrement équipée",
+      "parking": "Parking privé",
+      "terrace": "Terrasse aménagée",
+      "washer": "Lave-linge",
+      "tv": "Télévision LED",
+      "garden": "Jardin paysager",
+      "bbq": "Barbecue",
+      "elevator": "Ascenseur",
+      "balcony": "Balcon",
+      "shower": "Douche",
+      "gym": "Salle de sport",
+      "safe": "Coffre-fort",
+      "heating": "Chauffage central",
+      "dryer": "Sèche-linge",
+      "dishwasher": "Lave-vaisselle",
+      "microwave": "Four micro-ondes",
+      "oven": "Four",
+      "coffeeMaker": "Machine à café",
+      "garage": "Garage",
+      "seaView": "Vue sur mer",
+      "mountainView": "Vue sur montagne",
+      "cityView": "Vue sur ville",
+      "refrigerator": "Réfrigérateur",
+      "hairDryer": "Sèche-cheveux",
+      "iron": "Fer à repasser",
+      "workspace": "Espace bureau"
+    },
+    "rules": {
+      "noSmoking": "Interdiction de fumer dans tout le logement",
+      "noPets": "Animaux domestiques non autorisés",
+      "noParties": "Fêtes et événements interdits",
+      "childrenAllowed": "Enfants bienvenus",
+      "petsAllowed": "Animaux acceptés sur demande",
+      "smokingAllowed": "Fumeurs acceptés (extérieur uniquement)"
+    },
+    "propertyType": {
+      "APARTMENT": "Appartement de standing",
+      "VILLA": "Villa de prestige",
+      "STUDIO": "Studio moderne",
+      "DUPLEX": "Duplex spacieux",
+      "HOUSE": "Maison individuelle",
+      "ROOM": "Chambre privée"
+    },
     "loading": "Chargement de l'annonce...",
     "notFound": "Annonce non trouvée",
     "goBack": "Retour",
-    
     "breadcrumbProperties": "PROPRIÉTÉS",
     "breadcrumbValidations": "VALIDATIONS",
     "breadcrumbModification": "MODIFICATION",
     "breadcrumbNewListing": "NOUVELLE ANNONCE",
-    
     "badgeModification": "MODIFICATION",
     "badgeNewListing": "NOUVELLE ANNONCE",
-    
     "status_ACTIVE": "ACTIVE",
     "status_INACTIVE": "INACTIVE",
     "status_DRAFT": "BROUILLON",
@@ -4732,14 +5131,11 @@
     "status_PENDING_REVIEW": "EN ATTENTE",
     "status_SUSPENDED": "SUSPENDUE",
     "status_REJECTED": "REJETÉE",
-    
     "viewOnSite": "VOIR SUR LE SITE",
-    
     "statsViews": "VUES",
     "statsBookings": "RÉSERVATIONS",
     "statsFavorites": "FAVORIS",
     "statsRevenue": "REVENUS",
-    
     "revisionTitle": "MODIFICATION EN ATTENTE",
     "revisionDescription": "Le propriétaire souhaite modifier son annonce active.",
     "revisionHide": "MASQUER",
@@ -4747,9 +5143,7 @@
     "revisionField": "CHAMP",
     "revisionBefore": "AVANT",
     "revisionAfter": "APRÈS",
-    
     "galleryZoom": "AGRANDIR",
-    
     "propSurface": "SURFACE",
     "propBedrooms": "CHAMBRES",
     "propBathrooms": "SALLES DE BAIN",
@@ -4761,7 +5155,6 @@
     "propElevator": "ASCENSEUR",
     "propParking": "PARKING",
     "propFurnished": "MEUBLÉ",
-    
     "sectionEquipment": "ÉQUIPEMENTS & SERVICES",
     "sectionHouseRules": "RÈGLEMENT INTÉRIEUR",
     "sectionDescription": "DESCRIPTION",
@@ -4769,43 +5162,34 @@
     "sectionPricing": "TARIFICATION",
     "sectionOwner": "PROPRIÉTAIRE",
     "sectionDates": "DATES",
-    
     "pricePerNight": "Prix / nuit",
     "pricePerMonth": "Prix / mois",
     "cleaningFee": "Frais de ménage",
     "securityDeposit": "Caution",
-    "rentalType": "TYPE DE LOCATION",
-    
     "validateModificationTitle": "VALIDATION DE MODIFICATION",
     "validateListingTitle": "VALIDATION D'ANNONCE",
     "validateModificationDesc": "Le propriétaire souhaite modifier son annonce active.",
     "validateListingDesc": "Nouvelle annonce nécessitant votre validation.",
-    
     "btnApproveModification": "APPROUVER LA MODIFICATION",
     "btnApproveListing": "APPROUVER L'ANNONCE",
     "btnRejectModification": "REJETER LA MODIFICATION",
     "btnRejectListing": "REJETER L'ANNONCE",
-    
     "rejectionReasonLabel": "MOTIF DU REJET",
     "rejectionDetailsLabel": "PRÉCISIONS (OPTIONNEL)",
     "rejectionDetailsPlaceholder": "Ajoutez des détails pour aider le propriétaire...",
     "clear": "EFFACER",
-    
     "revisionNote": "L'annonce restera active avec ses informations actuelles en cas de rejet.",
     "validationNote": "Le propriétaire sera notifié par e-mail.",
-    
     "memberSince": "Membre depuis",
     "verified": "VÉRIFIÉ",
     "notProvided": "Non renseigné",
-    
     "dateCreated": "CRÉÉE",
     "datePublished": "PUBLIÉE",
     "previousRejectionReason": "MOTIF REJET PRÉCÉDENT",
-    
     "yes": "✓",
     "no": "✗",
     "noCoordinates": "Coordonnées non définies",
-      "fetchError": "Échec du chargement de l'annonce",
+    "fetchError": "Échec du chargement de l'annonce",
     "rejectionRequired": "Veuillez sélectionner un motif de rejet",
     "modificationApproved": "Modification approuvée avec succès",
     "modificationRejected": "Modification rejetée avec succès",
@@ -4838,7 +5222,7 @@
     "at": "à",
     "commission": "Commission",
     "booking": "Réservation",
-    
+
     "statsTotal": "Total",
     "statsSuccess": "Succès",
     "statsRefunded": "Remboursées",
@@ -4846,7 +5230,7 @@
     "statsSuccessRate": "Taux de succès",
     "transactionsCount": "transaction(s)",
     "vsLastMonth": "vs mois dernier",
-    
+
     "statusSuccess": "Succès",
     "statusPending": "En attente",
     "statusRefunded": "Remboursée",
@@ -4855,12 +5239,12 @@
     "statusPendingLabel": "En attente",
     "statusRefundedLabel": "Remboursée",
     "statusFailedLabel": "Échouée",
-    
+
     "typePayment": "Paiement",
     "typeRefund": "Remboursement",
     "typePaymentLabel": "Paiement",
     "typeRefundLabel": "Remboursement",
-    
+
     "tableDate": "DATE",
     "tableAmount": "MONTANT",
     "tableStatus": "STATUT",
@@ -4868,7 +5252,7 @@
     "tableDescription": "DESCRIPTION",
     "tableCustomer": "CLIENT",
     "tableActions": "ACTIONS",
-    
+
     "totalVolume": "Volume total",
     "totalVolumeDesc": "Volume total des transactions",
     "commissions": "Commissions",
@@ -4884,9 +5268,8 @@
     "refundButton": "Rembourser",
     "viewOnStripe": "Voir sur Stripe",
     "refundConfirm": "Voulez-vous vraiment rembourser cette transaction ?",
-    
-    
-     "refundModalTitle": "Confirmation de remboursement",
+
+    "refundModalTitle": "Confirmation de remboursement",
     "refundTransactionRef": "Référence",
     "refundOriginalAmount": "Montant original",
     "refundProperty": "Propriété",
@@ -4902,7 +5285,7 @@
     "confirmRefund": "Confirmer le remboursement",
     "cancel": "Annuler",
     "refundDefaultReason": "Remboursement demandé par l'administrateur",
-    
+
     "loadError": "Erreur de chargement",
     "connectionError": "Erreur de connexion",
     "exportSuccess": "Export généré avec succès",
@@ -4918,28 +5301,28 @@
     "filters": "Filtres",
     "resetFilters": "Réinitialiser",
     "searchPlaceholder": "Rechercher par nom, email...",
-    
+
     "stats": {
       "pending": "En attente",
       "processedToday": "Traitées aujourd'hui"
     },
-    
+
     "filterDocumentType": "Type de document",
     "filterStatus": "Statut",
     "allDocuments": "Tous les documents",
     "allStatus": "Tous les statuts",
-    
+
     "document": {
       "cin": "CIN",
       "passport": "PASSEPORT"
     },
-    
+
     "status": {
       "pending": "En attente",
       "validated": "Validée",
       "rejected": "Rejetée"
     },
-    
+
     "table": {
       "user": "UTILISATEUR",
       "role": "RÔLE",
@@ -4948,31 +5331,199 @@
       "status": "STATUT",
       "action": "ACTION"
     },
-    
+
     "role": {
       "owner": "PROPRIÉTAIRE",
       "tenant": "LOCATAIRE"
     },
-    
+
     "processRequest": "Traiter la demande",
-    
+
     "empty": {
       "title": "Aucune demande en attente",
       "description": "Toutes les vérifications d'identité ont été traitées. Revenez plus tard pour de nouvelles demandes.",
       "backToDashboard": "Retour au tableau de bord",
       "viewHistory": "Voir l'historique"
     },
-    
+
     "unauthorized": "Accès non autorisé",
     "adminRequired": "Cette page est réservée aux administrateurs.",
-    
+
     "justNow": "à l'instant",
     "minutesAgo": "il y a {count} minute|il y a {count} minutes",
     "oneHourAgo": "il y a 1 heure",
     "hoursAgo": "il y a {count} heure|il y a {count} heures",
     "daysAgo": "il y a {count} jour|il y a {count} jours"
+  },
+  "AdminProfile": {
+    "title": "Mon Profil",
+    "description": "Gérez vos informations personnelles et paramètres de sécurité",
+    "roleAdmin": "Super-Admin",
+    "memberSince": "Membre depuis",
+    "accountStatus": "Statut du compte",
+    "active": "Actif",
+    "lastLogin": "Dernière connexion",
+    "never": "Jamais",
+    "accessLevel": "Niveau d'accès",
+    "level": "Niveau",
+    "fullAccess": "Accès complet",
+    "totalActions": "Actions totales",
+    "actionsThisMonth": "actions ce mois",
+    "editProfile": "Modifier le profil",
+    "cancel": "Annuler",
+    "save": "Sauvegarder",
+    "saving": "Sauvegarde…",
+    "updating": "Mise à jour…",
+    "accountDetails": "Détails du compte",
+    "editInstructions": "Modifiez vos informations personnelles",
+    "viewInstructions": "Vos informations personnelles",
+    "systemId": "Identifiant Système",
+    "nonModifiable": "Non modifiable",
+    "registrationDate": "Date d'inscription",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "bio": "Bio / Note",
+    "bioPlaceholder": "Ajoutez une note...",
+    "notProvided": "Non renseigné",
+    "changePassword": "Changer le mot de passe",
+    "passwordInstructions": "Mettez à jour votre mot de passe régulièrement",
+    "currentPassword": "Mot de passe actuel",
+    "newPassword": "Nouveau mot de passe",
+    "newPasswordPlaceholder": "Entrez un nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez le nouveau mot de passe",
+    "updatePassword": "Mettre à jour le mot de passe",
+    "activeSessions": "Sessions Actives",
+    "sessionsDescription": "Gérez vos sessions connectées",
+    "logoutAllDevices": "Déconnecter tous les appareils",
+    "currentSession": "Actuelle",
+    "lastActivity": "Dernière activité",
+    "logout": "Déconnecter",
+    "language": "Langue",
+    "languageDescription": "Choisissez votre langue préférée",
+    "appearance": "Apparence",
+    "appearanceDescription": "Bascule entre mode clair et sombre",
+    "light": "Clair",
+    "dark": "Sombre",
+    "unknown": "Date inconnue",
+    "tabs": {
+      "general": "Informations Générales",
+      "security": "Sécurité & Accès",
+      "preferences": "Préférences"
+    },
+    "strength": {
+      "label": "Force",
+      "veryWeak": "Très faible",
+      "weak": "Faible",
+      "medium": "Moyen",
+      "strong": "Fort",
+      "veryStrong": "Très fort",
+      "minChars": "Min. 8 caractères"
+    },
+    "tooltips": {
+      "enableEditForPhoto": "Activez le mode édition pour modifier la photo",
+      "changePhoto": "Changer la photo de profil"
+    },
+    "success": {
+      "profileUpdated": "Profil mis à jour avec succès",
+      "passwordUpdated": "Mot de passe mis à jour avec succès",
+      "avatarUpdated": "Photo de profil mise à jour avec succès",
+      "languageUpdated": "Langue mise à jour"
+    },
+    "errors": {
+      "profileNotFound": "Profil non trouvé",
+      "imageTooLarge": "Image trop volumineuse. Taille maximale : 5 Mo",
+      "invalidImage": "Veuillez sélectionner un fichier image (JPG, PNG)",
+      "avatarUploadFailed": "Échec du téléchargement de la photo",
+      "passwordsMismatch": "Les mots de passe ne correspondent pas",
+      "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères"
+    },
+    "languages": {
+      "fr": "Français",
+      "en": "Englais",
+      "ar": "Arabe",
+      "it": "Italien",
+      "es": "Españole",
+      "de": "Allemand"
+    }
+  },
+  "ownerAnalytics": {
+    "title": "Tableau de Bord Analytique",
+    "subtitle": "Performances immobilières en temps réel",
+    "pro": "PRO",
+    "refresh": "Actualiser",
+    "dataRefreshed": "Données actualisées",
+    "loading": "Chargement...",
+    "errorLoading": "Erreur de chargement",
+    "retry": "Réessayer",
+    "totalRevenue": "Revenus Totaux",
+    "occupancyRate": "Taux d'Occupation",
+    "totalBookings": "Réservations",
+    "averageRating": "Note Moyenne",
+    "monthlyRevenue": "Revenus Mensuels",
+    "yearComparison": "Comparaison annuelle",
+    "thisYear": "Cette année",
+    "previousYear": "Année précédente",
+    "travelerTypes": "Types de Voyageurs",
+    "stayDistribution": "Répartition des séjours",
+    "totalTravelers": "Total",
+    "professional": "Professionnel",
+    "student": "Étudiant",
+    "longStay": "Long séjour",
+    "shortStay": "Court séjour",
+    "standardStay": "Standard",
+    "listingPerformance": "Performance des Annonces",
+    "topPerformers": "{count} propriétés actives",
+    "property": "Propriété",
+    "views": "Vues",
+    "bookings": "Réservations",
+    "occupancy": "Occupation",
+    "revenue": "Revenus",
+    "rating": "Note",
+    "growth": "Croissance",
+    "upcomingPayments": "Paiements à Venir",
+    "thisMonth": "Ce mois-ci",
+    "todo": "À Faire",
+    "pendingTasks": "tâches en attente",
+    "urgent": "URGENT",
+    "taskUpdated": "Tâche mise à jour",
+    "recentActivity": "Activité Récente",
+    "latestActions": "Dernières actions",
+    "confirmed": "Confirmé",
+    "pending": "En attente",
+    "processing": "En cours",
+    "paid": "Payé",
+    "cancelled": "Annulé",
+    "completed": "Terminé",
+    "evolutionViewsBookings": "Évolution Vues & Réservations",
+    "dailyRevenue": "Revenus Journaliers",
+    "multiPerformance": "Performance Globale",
+    "detailedMetrics": "Analyse détaillée",
+    "curves": "Courbes",
+    "bars": "Barres",
+    "radar": "Radar",
+    "30days": "30 jours",
+    "90days": "3 mois",
+    "year": "Année",
+    "lastUpdate": "Dernière mise à jour",
+    "conversion": "Conversion",
+    "viewsToBookings": "des vues en réservations",
+    "dailyRate": "Tarif Journalier",
+    "avgPricePerNight": "prix moyen par nuit",
+    "activeProperties": "Propriétés Actives",
+    "activeListings": "annonces en ligne",
+    "superhost": "superhost",
+    "bestCity": "Meilleure Ville",
+    "performanceByCity": "Performance par Ville",
+    "geographicDistribution": "Répartition géographique",
+    "ofTotal": "du total",
+    "vsLastMonth": "vs mois dernier",
+    "realTimeData": "Données en temps réel",
+    "connected": "Connecté",
+    "footer": "Tableau de bord propriétaire",
+    "marketAvg": "Moyenne du marché",
+    "performance": "Performance"
   }
 }
-
-
-

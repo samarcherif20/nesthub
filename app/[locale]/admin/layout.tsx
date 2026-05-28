@@ -1,8 +1,7 @@
 // app/[locale]/admin/layout.tsx
 "use client";
 
-import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, usePathname, useParams } from "next/navigation";import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import * as React from "react";
@@ -23,6 +22,7 @@ import {
   FaChevronRight,
 } from "react-icons/fa";
 import { MdSupportAgent } from "react-icons/md";
+import { MdOutlineHolidayVillage } from "react-icons/md";
 
 import { MdOutlinePeopleAlt } from "react-icons/md";
 import { MdOutlineMapsHomeWork } from "react-icons/md";
@@ -92,8 +92,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
-  const locale = pathname?.split("/")[1] || "fr";
+ const params = useParams();
+const locale = (params?.locale as string) || "fr";
+const pathname = usePathname();
   const tLayout = useTranslations("admin");
 
   const { user, isLoaded, isSignedIn } = useUser();
@@ -244,34 +245,28 @@ export default function AdminLayout({
     router.push(`/${locale}/login`);
   };
 
-  // Navigation items
- // Navigation items - Version avec compteurs sur les bons liens
-const navItems = [
+ const navItems = [
   {
     name: tLayout("dashboard"),
     href: `/${locale}/admin/dashboard`,
     icon: <LuLayoutDashboard size={18} />,
-    // Pas de compteur pour le dashboard
   },
   {
     name: tLayout("users"),
     href: `/${locale}/admin/users`,
     icon: <MdOutlinePeopleAlt size={18} />,
-    // Pas de compteur pour les utilisateurs
   },
   {
-    name: "Invitations",
+    name: tLayout("invitations"),
     href: `/${locale}/admin/invitation`,
     icon: <TiUserAddOutline size={18} />,
-    // ✅ Compteur d'invitations en attente
     count: counters.pendingInvitations,
     countColor: "bg-amber-500",
   },
   {
-    name: "Réservations",
+    name: tLayout("bookings"),
     href: `/${locale}/admin/booking`,
-    icon: <PiGavel size={18} />,
-    // ✅ Compteur des réservations EN ATTENTE seulement
+    icon: <MdOutlineHolidayVillage  size={18} />,
     count: counters.pendingBookings,
     countColor: "bg-amber-500",
   },
@@ -280,17 +275,16 @@ const navItems = [
     href: `/${locale}/admin/properties`,
     icon: <MdOutlineMapsHomeWork size={18} />,
     hasSubMenu: true,
-    // ✅ Compteur des propriétés en attente de validation
     count: counters.pendingListings,
     countColor: "bg-amber-500",
     subItems: [
       {
-        name: "Toutes les propriétés",
+        name: tLayout("allProperties"),
         href: `/${locale}/admin/properties`,
         icon: <MdOutlineMapsHomeWork size={14} />,
       },
       {
-        name: "Validations en attente",
+        name: tLayout("pendingValidations"),
         href: `/${locale}/admin/listings/validation`,
         icon: <MdOutlinePendingActions size={14} />,
         count: counters.pendingListings,
@@ -302,21 +296,18 @@ const navItems = [
     name: tLayout("transactions"),
     href: `/${locale}/admin/transactions`,
     icon: <GrMoney size={18} />,
-    // Pas de compteur
   },
   {
     name: tLayout("verifications"),
     href: `/${locale}/admin/verifications`,
     icon: <MdOutlineVerified size={18} />,
-    // ✅ Compteur des vérifications en attente
     count: counters.pendingVerifications,
-    countColor: "bg-primary", // Bleu
+    countColor: "bg-primary",
   },
   {
-    name: "modération",
+    name: tLayout("moderation"),
     href: `/${locale}/admin/moderation`,
     icon: <TbMessageUser size={18} />,
-    // ✅ Compteur des signalements en attente
     count: counters.pendingReports,
     countColor: "bg-red-500",
   },
@@ -324,26 +315,18 @@ const navItems = [
     name: tLayout("disputes"),
     href: `/${locale}/admin/disputes`,
     icon: <PiGavelBold size={18} />,
-    // ✅ Compteur des litiges actifs
     count: counters.activeDisputes,
     countColor: "bg-amber-500",
   },
   {
     name: tLayout("contact"),
     href: `/${locale}/admin/contact-support`,
-    icon: <MdSupportAgent  size={18} />,
+    icon: <MdSupportAgent size={18} />,
   },
   {
     name: tLayout("staticPages"),
     href: `/${locale}/admin/static-page`,
     icon: <PiFilesDuotone size={18} />,
-    // Pas de compteur
-  },
-  {
-    name: tLayout("settings"),
-    href: `/${locale}/admin/settings`,
-    icon: <RiSettings3Line size={18} />,
-    // Pas de compteur
   },
 ];
 
@@ -639,9 +622,9 @@ const navItems = [
   <div className="absolute right-0 mt-2 w-[450px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
     <div className="px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-slate-200 dark:border-slate-800">
       <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-        {isSearching
-          ? "Recherche..."
-          : `${searchResults.length} résultat(s)`}
+       {isSearching
+  ? tLayout("searching")
+  : tLayout("resultsCount", { count: searchResults.length })}
       </p>
     </div>
     <div className="max-h-[400px] overflow-y-auto">
@@ -698,8 +681,7 @@ const navItems = [
                   {result.type === "transaction" && `${result.amount} - ${result.status}`}
                   {result.type === "verification" && result.user}
                   {result.type === "dispute" && result.bookingRef}
-                  {result.type === "report" && `Signalé par: ${result.reporter}`}
-                </p>
+{result.type === "report" && `${tLayout("reportedBy")} ${result.reporter}`}                </p>
               </div>
               {result.badgeColor && (
                 <span
@@ -768,8 +750,8 @@ const navItems = [
                     {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-                    Administrateur
-                  </p>
+  {tLayout("adminRole")}
+</p>
                 </div>
                 <FaChevronDown
                   className={`hidden sm:block text-slate-400 text-xs transition-transform ${isProfileDropdownOpen ? "rotate-180" : ""}`}
@@ -813,9 +795,9 @@ const navItems = [
                           {user?.firstName} {user?.lastName}
                         </p>
                         <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
-                            ADMIN
-                          </span>
+                        <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
+  {tLayout("adminBadge")}
+</span>
                         </div>
                       </div>
                     </div>
@@ -856,13 +838,7 @@ const navItems = [
                       <GoShieldLock size={16} />{" "}
                       <span>{tLayout("security")}</span>
                     </Link>
-                    <Link
-                      href={`/${locale}/admin/settings`}
-                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
-                    >
-                      <IoSettingsOutline size={16} />{" "}
-                      <span>{tLayout("settings")}</span>
-                    </Link>
+                    
                   </div>
                   <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
                     <button

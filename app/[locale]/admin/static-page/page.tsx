@@ -1,12 +1,14 @@
+// app/[locale]/admin/content/page.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import { useParams } from "next/navigation";
 import { useAdminContent } from "./hooks/useAdminContent";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import Alert from "@/components/ui/Alert";
+import { CheckCircle, AlertCircle, X } from "lucide-react";
 import { decodeJWT } from "@/lib/utils/jwt";
 import RichTextEditor from "@/components/ui/editor";
 
@@ -23,7 +25,7 @@ import { IoCloseCircleOutline } from "react-icons/io5";
 import { FiUser, FiCalendar } from "react-icons/fi";
 import { BsCheckCircleFill, BsClockHistory } from "react-icons/bs";
 import { format, formatDistanceToNow, parseISO } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale";
 
 // ─── Types ───────────────────────────────────────────────────
 interface StaticPage {
@@ -65,40 +67,49 @@ interface Version {
   } | null;
 }
 
-// ─── Page type metadata ──────────────────────────────────────
-const PAGE_META = {
-  PRIVACY: { label: "Confidentialité", Icon: RiFileLockLine,    grad: "from-blue-500 to-indigo-500",    labelCls: "text-blue-500 dark:text-blue-400"    },
-  TERMS:   { label: "CGU",             Icon: RiFileShieldLine,  grad: "from-indigo-500 to-violet-500",  labelCls: "text-indigo-500 dark:text-indigo-400" },
-  COOKIES: { label: "Cookies",         Icon: RiCakeLine,        grad: "from-violet-500 to-purple-500",  labelCls: "text-violet-500 dark:text-violet-400" },
-  ABOUT:   { label: "À propos",        Icon: RiFileInfoLine,    grad: "from-purple-500 to-indigo-500",  labelCls: "text-purple-500 dark:text-purple-400" },
-  DEFAULT: { label: "Page",            Icon: RiEditBoxLine,     grad: "from-blue-400 to-indigo-500",    labelCls: "text-blue-400 dark:text-blue-400"    },
-} as const;
+interface ToastState {
+  type: "success" | "error";
+  message: string;
+}
 
-type PageType = keyof typeof PAGE_META;
-const getPageMeta = (t: string) => PAGE_META[t as PageType] || PAGE_META.DEFAULT;
+// ─── Page type metadata (avec traductions dynamiques) ──────────────────────────────────────
+const getPageMeta = (type: string, t: any) => {
+  const metaMap = {
+    PRIVACY: { Icon: RiFileLockLine, grad: "from-blue-500 to-indigo-500", labelCls: "text-blue-500 dark:text-blue-400", label: () => t("pages.privacy") },
+    TERMS:   { Icon: RiFileShieldLine, grad: "from-indigo-500 to-violet-500", labelCls: "text-indigo-500 dark:text-indigo-400", label: () => t("pages.terms") },
+    COOKIES: { Icon: RiCakeLine, grad: "from-violet-500 to-purple-500", labelCls: "text-violet-500 dark:text-violet-400", label: () => t("pages.cookies") },
+    ABOUT:   { Icon: RiFileInfoLine, grad: "from-purple-500 to-indigo-500", labelCls: "text-purple-500 dark:text-purple-400", label: () => t("pages.about") },
+  };
+  return metaMap[type as keyof typeof metaMap] || { 
+    Icon: RiEditBoxLine, 
+    grad: "from-blue-400 to-indigo-500", 
+    labelCls: "text-blue-400 dark:text-blue-400",
+    label: () => t("pages.default") 
+  };
+};
 
-// ─── Status config ────────────────────────────────────────────
-const STATUS_CFG = {
-  draft:     { label: "Brouillon", Icon: MdEditNote,            cls: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-400" },
-  restored:  { label: "Restaurée", Icon: MdRestore,             cls: "border-purple-200 bg-purple-50 text-purple-600 dark:border-purple-700 dark:bg-purple-900/20 dark:text-purple-400" },
-  published: { label: "Publié",    Icon: MdPublishedWithChanges, cls: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400" },
-} as const;
+// ─── Status config (avec traductions dynamiques) ────────────────────────────────────────────
+const getStatusCfg = (status: string, t: any) => {
+  const statusMap = {
+    draft:     { Icon: MdEditNote, cls: "border-amber-200 bg-amber-50 text-amber-600 dark:border-amber-700 dark:bg-amber-900/20 dark:text-amber-400", label: () => t("status.draft") },
+    restored:  { Icon: MdRestore, cls: "border-purple-200 bg-purple-50 text-purple-600 dark:border-purple-700 dark:bg-purple-900/20 dark:text-purple-400", label: () => t("status.restored") },
+    published: { Icon: MdPublishedWithChanges, cls: "border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400", label: () => t("status.published") },
+  };
+  return statusMap[status as keyof typeof statusMap] || statusMap.published;
+};
 
-type StatusType = keyof typeof STATUS_CFG;
-const getSt = (s: string) => STATUS_CFG[s as StatusType] || STATUS_CFG.published;
-
-// ─── Action config ────────────────────────────────────────────
-const ACTION_CFG = {
-  UPDATE_STATIC_PAGE: { label: "Mise à jour",  cls: "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20" },
-  CREATE_STATIC_PAGE: { label: "Création",     cls: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20" },
-  DELETE_STATIC_PAGE: { label: "Suppression",  cls: "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" },
-  RESTORE_VERSION:    { label: "Restauration", cls: "text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/20" },
-} as const;
-
-type ActionType = keyof typeof ACTION_CFG;
-const getAct = (action: string) => ACTION_CFG[action as ActionType] || { 
-  label: action, 
-  cls: "text-slate-500 bg-slate-100" 
+// ─── Action config (avec traductions dynamiques) ────────────────────────────────────────────
+const getActionCfg = (action: string, t: any) => {
+  const actionMap = {
+    UPDATE_STATIC_PAGE: { label: () => t("actions.update"), cls: "text-indigo-600 bg-indigo-50 dark:text-indigo-400 dark:bg-indigo-900/20" },
+    CREATE_STATIC_PAGE: { label: () => t("actions.create"), cls: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/20" },
+    DELETE_STATIC_PAGE: { label: () => t("actions.delete"), cls: "text-red-600 bg-red-50 dark:text-red-400 dark:bg-red-900/20" },
+    RESTORE_VERSION:    { label: () => t("actions.restore"), cls: "text-violet-600 bg-violet-50 dark:text-violet-400 dark:bg-violet-900/20" },
+  };
+  return actionMap[action as keyof typeof actionMap] || { 
+    label: () => action, 
+    cls: "text-slate-500 bg-slate-100" 
+  };
 };
 
 // ─── 3D shadow helpers ────────────────────────────────────────
@@ -107,11 +118,14 @@ const card3dSel = "shadow-[0_3px_0_0_rgba(var(--primary-rgb),0.3),0_6px_20px_-4p
 const block3d   = "shadow-[0_6px_0_0_rgba(0,0,0,0.07),0_12px_28px_-6px_rgba(0,0,0,0.12)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.4),0_12px_28px_-6px_rgba(0,0,0,0.5)]";
 
 export default function AdminContentPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
   const t = useTranslations("AdminContent");
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
   const router = useRouter();
 
+  const [toast, setToast] = useState<ToastState | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const {
     pages = [], loading, error: hookError,
@@ -132,26 +146,29 @@ export default function AdminContentPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [lastRestoredId, setLastRestoredId] = useState<string | null>(null);
   const [pageToDelete, setPageToDelete] = useState<string | null>(null);
-  const [alertState, setAlertState] = useState<{ type: "success" | "error"; message: string } | null>(null);
   
   const PREVIEW = 4;
 
-  // ─── Helpers ─────────────────────────────────────────────────
-  const showAlert = (type: "success" | "error", message: string) => setAlertState({ type, message });
-  const closeAlert = () => setAlertState(null);
+  // ✅ Helper pour locale date-fns
+  const getDateLocale = () => (locale === "fr" ? fr : enUS);
+
+  const showToastMessage = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const fDate = (s: string) => { 
-    try { return format(parseISO(s), "dd MMM yyyy", { locale: fr }); } 
+    try { return format(parseISO(s), "dd MMM yyyy", { locale: getDateLocale() }); } 
     catch { return "—"; } 
   };
   
   const fDT = (s: string) => { 
-    try { return format(parseISO(s), "dd MMM yyyy HH:mm", { locale: fr }); } 
+    try { return format(parseISO(s), "dd MMM yyyy HH:mm", { locale: getDateLocale() }); } 
     catch { return "—"; } 
   };
   
   const fRel = (s: string) => { 
-    try { return formatDistanceToNow(parseISO(s), { addSuffix: true, locale: fr }); } 
+    try { return formatDistanceToNow(parseISO(s), { addSuffix: true, locale: getDateLocale() }); } 
     catch { return "—"; } 
   };
 
@@ -163,10 +180,9 @@ export default function AdminContentPage() {
   };
 
   const getVersionUserDisplay = (version: Version): string => {
-    return version.createdBy || "Utilisateur inconnu";
+    return version.createdBy || t("unknownUser");
   };
 
-  // Nouvelle fonction pour formater les numéros de version
   const formatVersionNumber = (version: Version | null, isCurrent: boolean = false): string => {
     if (!version) return "";
     return `v${version.version}`;
@@ -177,13 +193,11 @@ export default function AdminContentPage() {
     return `v${selectedPage.version}`;
   };
 
-  // ─── Memoized values ─────────────────────────────────────────
   const visibleVersions = useMemo(() => 
     showFullHistory ? versions : versions.slice(0, PREVIEW),
     [versions, showFullHistory, PREVIEW]
   );
 
-  // ─── Effects ─────────────────────────────────────────────────
   // Admin check
   useEffect(() => {
     const check = async () => {
@@ -215,7 +229,6 @@ export default function AdminContentPage() {
     }
   }, [selectedPage]);
 
-  // ─── Actions ─────────────────────────────────────────────────
   const closeEditor = () => {
     setSelectedPage(null); 
     setEditorContent(""); 
@@ -241,10 +254,10 @@ export default function AdminContentPage() {
       status: publish ? "published" : "draft",
     });
     if (result.success) {
-      showAlert("success", publish ? t("pagePublished") : t("draftSaved"));
+      showToastMessage("success", publish ? t("pagePublished") : t("draftSaved"));
       closeEditor();
     } else {
-      showAlert("error", result.error || t("saveError"));
+      showToastMessage("error", result.error || t("saveError"));
     }
     setSaving(false);
   };
@@ -256,13 +269,13 @@ export default function AdminContentPage() {
       setShowDeleteModal(false); 
       setPageToDelete(null);
       if (selectedPage?.id === pageToDelete) closeEditor();
-      showAlert("success", t("pageDeleted"));
+      showToastMessage("success", t("pageDeleted"));
     } else {
-      showAlert("error", result.error || t("deleteError"));
+      showToastMessage("error", result.error || t("deleteError"));
     }
   };
 
-  const handleRestoreVersion = async (version: Version) => {
+const handleRestoreVersion = async (version: Version) => {
     if (!selectedPage) return;
     setRestoring(version.id);
     setEditorLoading(true);
@@ -292,9 +305,9 @@ export default function AdminContentPage() {
       setShowVersions(false);
       setShowFullHistory(false);
       
-      showAlert("success", t("versionRestored", { version: restoredVersion }));
+      showToastMessage("success", t("versionRestored", { version: restoredVersion }));
     } else {
-      showAlert("error", result.error || t("restoreError"));
+      showToastMessage("error", result.error || t("restoreError"));
     }
     setEditorLoading(false);
     setRestoring(null);
@@ -318,15 +331,29 @@ export default function AdminContentPage() {
   // ─── Render ──────────────────────────────────────────────────
   return (
     <>
-      {/* Alert */}
-      {alertState && (
-        <div className="fixed top-5 right-5 z-[60] w-full max-w-sm">
-          <Alert type={alertState.type} message={alertState.message} onClose={closeAlert} autoClose={4000} />
-        </div>
-      )}
-      {hookError && (
-        <div className="fixed top-5 right-5 z-[60] w-full max-w-sm">
-          <Alert type="error" message={hookError} onClose={() => {}} />
+      {/* ✅ Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -386,8 +413,8 @@ export default function AdminContentPage() {
               ) : (
                 <div className="p-3 space-y-2">
                   {filteredPages.map((page) => {
-                    const meta = getPageMeta(page.type);
-                    const st = getSt(page.status);
+                    const meta = getPageMeta(page.type, t);
+                    const st = getStatusCfg(page.status, t);
                     const sel = selectedPage?.id === page.id;
                     const { Icon: PageIcon } = meta;
                     const { Icon: StIcon } = st;
@@ -416,11 +443,11 @@ export default function AdminContentPage() {
                                 {page.title}
                               </span>
                               <span className={`flex-shrink-0 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold border ${st.cls}`}>
-                                <StIcon className="text-[9px]" />{st.label}
+                                <StIcon className="text-[9px]" />{st.label()}
                               </span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <span className={`text-[10px] font-semibold ${meta.labelCls}`}>{meta.label}</span>
+                              <span className={`text-[10px] font-semibold ${meta.labelCls}`}>{meta.label()}</span>
                               <span className="text-slate-300 dark:text-slate-600">·</span>
                               <span className="text-[11px] text-slate-400">{fDate(page.updatedAt)}</span>
                             </div>
@@ -479,11 +506,11 @@ export default function AdminContentPage() {
                 <div className="flex-shrink-0 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 px-4 py-2.5 flex items-center gap-3">
                   <div className="flex items-center gap-2 text-[11px] text-slate-400 flex-1 min-w-0">
                     {(() => {
-                      const m = getPageMeta(selectedPage.type);
+                      const m = getPageMeta(selectedPage.type, t);
                       const { Icon: I } = m;
                       return (
                         <span className={`flex items-center gap-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-gradient-to-r ${m.grad} text-white flex-shrink-0 shadow-sm`}>
-                          <I className="text-xs" />{m.label}
+                          <I className="text-xs" />{m.label()}
                         </span>
                       );
                     })()}
@@ -512,11 +539,11 @@ export default function AdminContentPage() {
                     </button>
 
                     {(() => {
-                      const s = getSt(selectedPage.status);
+                      const s = getStatusCfg(selectedPage.status, t);
                       const { Icon: I } = s;
                       return (
                         <span className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold border ${s.cls}`}>
-                          <I className="text-xs" />{s.label}
+                          <I className="text-xs" />{s.label()}
                         </span>
                       );
                     })()}
@@ -645,7 +672,7 @@ export default function AdminContentPage() {
                 <div className="space-y-2.5">
                   {visibleVersions.map((version) => {
                     const isRestoringThis = restoring === version.id;
-                    const act = getAct(version.action);
+                    const act = getActionCfg(version.action, t);
                     const isLast = lastRestoredId === version.id;
                     
                     return (
@@ -664,7 +691,7 @@ export default function AdminContentPage() {
                             {formatVersionNumber(version)}
                           </span>
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${act.cls}`}>
-                            {act.label}
+                            {act.label()}
                           </span>
                           {isLast && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400">

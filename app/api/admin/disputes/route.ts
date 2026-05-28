@@ -10,7 +10,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    const admin = await prisma.user.findUnique({ where: { clerkId: userId } });
+    const admin = await prisma.user.findUnique({ 
+      where: { clerkId: userId },
+      select: { role: true }
+    });
+    
     if (admin?.role !== "ADMIN") {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
@@ -19,177 +23,157 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status") || "OPEN,IN_REVIEW";
     const search = searchParams.get("search") || "";
 
+    const statusArray = status.split(",");
     const where: any = {
-      status: { in: status.split(",") as any },
+      status: { in: statusArray },
     };
 
     if (search) {
       where.OR = [
-        {
-          booking: {
-            listing: { title: { contains: search, mode: "insensitive" } },
-          },
-        },
-        {
-          booking: {
-            tenant: { firstName: { contains: search, mode: "insensitive" } },
-          },
-        },
-        {
-          booking: {
-            owner: { firstName: { contains: search, mode: "insensitive" } },
-          },
-        },
+        { booking: { listing: { title: { contains: search, mode: "insensitive" } } } },
+        { booking: { tenant: { firstName: { contains: search, mode: "insensitive" } } } },
+        { booking: { tenant: { lastName: { contains: search, mode: "insensitive" } } } },
+        { booking: { owner: { firstName: { contains: search, mode: "insensitive" } } } },
+        { booking: { owner: { lastName: { contains: search, mode: "insensitive" } } } },
       ];
     }
 
-    const disputes = await prisma.dispute.findMany({
-      where,
-      include: {
-        booking: {
-          include: {
-            listing: {
-              select: {
-                id: true,
-                title: true,
-                governorate: true,
-                delegation: true,
+    const [disputes, statsCounts] = await Promise.all([
+      prisma.dispute.findMany({
+        where,
+        include: {
+          booking: {
+            include: {
+              listing: {
+                select: {
+                  id: true,
+                  title: true,
+                  governorate: true,
+                  delegation: true,
+                },
               },
-            },
-            tenant: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profilePictureUrl: true,
+              tenant: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  profilePictureUrl: true,
+                },
               },
-            },
-            owner: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profilePictureUrl: true,
-              },
-            },
-          },
-        },
-        openedByUser: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profilePictureUrl: true,
-          },
-        },
-        messages: {
-          // ✅ AJOUTÉ : récupère les messages
-          include: {
-            sender: {
-              select: {
-                firstName: true,
-                lastName: true,
-                role: true,
+              owner: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  profilePictureUrl: true,
+                },
               },
             },
           },
-          orderBy: { createdAt: "asc" },
+          openedByUser: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profilePictureUrl: true,
+            },
+          },
+          messages: {
+            include: {
+              sender: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  role: true,
+                  profilePictureUrl: true,
+                },
+              },
+            },
+            orderBy: { createdAt: "asc" },
+          },
         },
-      },
-      orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: "desc" },
+      }),
+      prisma.dispute.groupBy({
+        by: ['status'],
+        _count: true,
+      }),
+    ]);
+
+    const statsMap: Record<string, number> = {};
+    statsCounts.forEach((stat) => {
+      statsMap[stat.status] = stat._count;
     });
 
-    // Statistiques avec comptage par statut
-    const allDisputes = await prisma.dispute.findMany({
-      select: { status: true },
+    const openCount = statsMap["OPEN"] || 0;
+    const inReviewCount = statsMap["IN_REVIEW"] || 0;
+    const resolvedCount = statsMap["RESOLVED"] || 0;
+    const rejectedCount = statsMap["REJECTED"] || 0;
+
+    const formattedDisputes = disputes.map((dispute) => {
+      const isReporterOwner = dispute.openedBy === dispute.booking?.owner?.id;
+      const reporter = isReporterOwner ? dispute.booking?.owner : dispute.booking?.tenant;
+      const respondent = !isReporterOwner ? dispute.booking?.owner : dispute.booking?.tenant;
+
+      return {
+        id: dispute.id,
+        reference: dispute.id.slice(-8),
+        description: dispute.description || "",
+        evidence: (dispute.evidence as string[]) || [],
+        resolution: dispute.resolution || null,
+        reporter: {
+          id: reporter?.id,
+          firstName: reporter?.firstName,
+          lastName: reporter?.lastName,
+          image: reporter?.profilePictureUrl,
+        },
+        respondent: {
+          id: respondent?.id,
+          firstName: respondent?.firstName,
+          lastName: respondent?.lastName,
+          image: respondent?.profilePictureUrl,
+        },
+        type: dispute.type,
+        status: dispute.status,
+        severity: dispute.priority === "HIGH" ? "HIGH" : dispute.priority === "MEDIUM" ? "MEDIUM" : "LOW",
+        createdAt: dispute.createdAt,
+        listing: dispute.booking?.listing ? {
+          id: dispute.booking.listing.id,
+          title: dispute.booking.listing.title,
+          location: `${dispute.booking.listing.governorate || ""}, ${dispute.booking.listing.delegation || ""}`,
+          governorate: dispute.booking.listing.governorate,
+          delegation: dispute.booking.listing.delegation,
+        } : null,
+        booking: dispute.booking ? {
+          id: dispute.booking.id,
+          checkIn: dispute.booking.checkIn,
+          checkOut: dispute.booking.checkOut,
+          totalPrice: dispute.booking.totalPrice,
+          nights: Math.ceil(
+            (new Date(dispute.booking.checkOut).getTime() - new Date(dispute.booking.checkIn).getTime()) / (1000 * 3600 * 24)
+          ),
+        } : null,
+        messages: dispute.messages.map((msg) => ({
+          id: msg.id,
+          senderId: msg.senderId,
+          senderName: `${msg.sender.firstName || ""} ${msg.sender.lastName || ""}`.trim(),
+          senderRole: msg.sender.role === "ADMIN" ? "ADMIN" : msg.sender.role === "PROPERTY_OWNER" ? "OWNER" : "TENANT",
+          content: msg.content,
+          attachments: msg.attachments,
+          createdAt: msg.createdAt.toISOString(),
+        })),
+      };
     });
-
-    const openCount = allDisputes.filter((d) => d.status === "OPEN").length;
-    const inReviewCount = allDisputes.filter(
-      (d) => d.status === "IN_REVIEW",
-    ).length;
-    const resolvedCount = allDisputes.filter(
-      (d) => d.status === "RESOLVED",
-    ).length;
-
-    const totalRefund = await prisma.dispute.aggregate({
-      where: { status: "RESOLVED" },
-      _sum: { refundAmount: true },
-    });
-
-    // ✅ FORMATAGE COMPLET avec TOUTES les données
-    const formattedDisputes = disputes.map((dispute) => ({
-      id: dispute.id,
-      reference: dispute.id.slice(-8),
-      description: dispute.description || "", // ✅ AJOUTÉ
-      evidence: (dispute.evidence as string[]) || [], // ✅ AJOUTÉ (les preuves !)
-      resolution: dispute.resolution || null, // ✅ AJOUTÉ
-      reporter: {
-        id: dispute.openedByUser?.id,
-        firstName: dispute.openedByUser?.firstName,
-        lastName: dispute.openedByUser?.lastName,
-        image: dispute.openedByUser?.profilePictureUrl,
-      },
-      type: dispute.type,
-      status: dispute.status,
-      severity:
-        dispute.priority === "HIGH"
-          ? "HIGH"
-          : dispute.priority === "MEDIUM"
-            ? "MEDIUM"
-            : "LOW",
-      createdAt: dispute.createdAt,
-      listing: dispute.booking?.listing
-        ? {
-            id: dispute.booking.listing.id,
-            title: dispute.booking.listing.title,
-            location: `${dispute.booking.listing.governorate}, ${dispute.booking.listing.delegation}`,
-            governorate: dispute.booking.listing.governorate,
-            delegation: dispute.booking.listing.delegation,
-          }
-        : null,
-      booking: dispute.booking
-        ? {
-            // ✅ AJOUTÉ (détails du séjour)
-            id: dispute.booking.id,
-            checkIn: dispute.booking.checkIn,
-            checkOut: dispute.booking.checkOut,
-            totalPrice: dispute.booking.totalPrice,
-            nights: Math.ceil(
-              (new Date(dispute.booking.checkOut).getTime() -
-                new Date(dispute.booking.checkIn).getTime()) /
-                (1000 * 3600 * 24),
-            ),
-          }
-        : null,
-      refundAmount: dispute.refundAmount,
-      resolvedAmount: dispute.resolvedAmount,
-      messages: dispute.messages.map((msg) => ({
-        // ✅ AJOUTÉ (messages)
-        id: msg.id,
-        senderId: msg.senderId,
-        senderName:
-          `${msg.sender.firstName || ""} ${msg.sender.lastName || ""}`.trim(),
-        senderRole:
-          msg.sender.role === "ADMIN"
-            ? "ADMIN"
-            : msg.sender.role === "PROPERTY_OWNER"
-              ? "OWNER"
-              : "TENANT",
-        content: msg.content,
-        attachments: msg.attachments,
-        createdAt: msg.createdAt.toISOString(),
-      })),
-    }));
 
     return NextResponse.json({
       disputes: formattedDisputes,
       stats: {
-        total: allDisputes.length,
-        totalRefund: totalRefund._sum.resolvedAmount || 0,
+        total: openCount + inReviewCount + resolvedCount + rejectedCount,
         open: openCount,
         inReview: inReviewCount,
         resolved: resolvedCount,
+        rejected: rejectedCount,
       },
     });
   } catch (error) {

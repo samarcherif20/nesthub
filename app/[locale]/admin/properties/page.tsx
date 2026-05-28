@@ -40,6 +40,7 @@ import { PiHouseLine } from "react-icons/pi";
 import { FiChevronDown } from "react-icons/fi";
 
 import { useAdminProperties, SortField, SortOrder } from "./hooks/useAdminProperties";
+import ConfirmActionModal from "@/components/ui/modals/ConfirmActionPropertiesModal";
 
 interface Toast {
   type: "success" | "error";
@@ -286,12 +287,13 @@ export default function AdminPropertiesPage() {
   const t = useTranslations("AdminProperties");
 
   const [toast, setToast] = useState<Toast | null>(null);
-  const [confirmModal, setConfirmModal] = useState<{
-    isOpen: boolean;
-    type: string;
-    id?: string;
-    isBatch?: boolean;
-  }>({ isOpen: false, type: "" });
+const [modalState, setModalState] = useState<{
+  isOpen: boolean;
+  action: "ACTIVATE" | "DEACTIVATE" | "ARCHIVE" | "VALIDATE" | "REJECT" | "DELETE" | "BULK_ACTIVATE" | "BULK_DEACTIVATE" | "BULK_ARCHIVE" | null;
+  id?: string;
+  ids?: string[];
+  title?: string;
+}>({ isOpen: false, action: null });
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -377,31 +379,57 @@ export default function AdminPropertiesPage() {
     return sortOrder === "asc" ? <IoArrowUp className="inline ml-1 text-xs" /> : <IoArrowDown className="inline ml-1 text-xs" />;
   };
 
-  const handleActionWithConfirm = (type: string, id?: string) => {
-    setConfirmModal({ isOpen: true, type, id, isBatch: !id });
-  };
+ const handleActionWithConfirm = (action: string, id?: string) => {
+  const listing = id ? listings.find(l => l.id === id) : null;
+  let mappedAction: any = null;
+  
+  if (action === "activer") mappedAction = id ? "ACTIVATE" : "BULK_ACTIVATE";
+  else if (action === "desactiver") mappedAction = id ? "DEACTIVATE" : "BULK_DEACTIVATE";
+  else if (action === "archiver") mappedAction = id ? "ARCHIVE" : "BULK_ARCHIVE";
+  else if (action === "valider") mappedAction = "VALIDATE";
+  else if (action === "rejeter") mappedAction = "REJECT";
+  else if (action === "supprimer") mappedAction = "DELETE";
+  
+  setModalState({
+    isOpen: true,
+    action: mappedAction,
+    id,
+    ids: !id && selectedIds.size > 0 ? Array.from(selectedIds) : undefined,
+    title: listing?.title,
+  });
+};
 
-  const executeAction = async () => {
-    const { type, id, isBatch } = confirmModal;
-    let result;
-    
-    if (isBatch) {
-      result = await handleBatchAction(type);
-    } else if (id) {
-      result = await handleAction(type, id);
-    } else {
-      setConfirmModal({ isOpen: false, type: "" });
-      return;
-    }
+const executeAction = async () => {
+  const { action, id, ids } = modalState;
+  let result;
+  let actionType = "";
+  
+  if (action === "ACTIVATE") actionType = "activer";
+  else if (action === "DEACTIVATE") actionType = "desactiver";
+  else if (action === "ARCHIVE") actionType = "archiver";
+  else if (action === "VALIDATE") actionType = "valider";
+  else if (action === "REJECT") actionType = "rejeter";
+  else if (action === "DELETE") actionType = "supprimer";
+  else if (action === "BULK_ACTIVATE") actionType = "activer";
+  else if (action === "BULK_DEACTIVATE") actionType = "desactiver";
+  else if (action === "BULK_ARCHIVE") actionType = "archiver";
+  
+  if (ids && ids.length > 0) {
+    result = await handleBatchAction(actionType);
+  } else if (id) {
+    result = await handleAction(actionType, id);
+  } else {
+    setModalState({ isOpen: false, action: null });
+    return;
+  }
 
-    if (result.success && result.message) {
-      showToast("success", result.message);
-    } else if (!result.success && result.message) {
-      showToast("error", result.message);
-    }
-    setConfirmModal({ isOpen: false, type: "" });
-  };
-
+  if (result.success && result.message) {
+    showToast("success", result.message);
+  } else if (!result.success && result.message) {
+    showToast("error", result.message);
+  }
+  setModalState({ isOpen: false, action: null });
+};
   const showPagination = totalPages > 1 && totalCount > 0;
 
   return (
@@ -418,37 +446,16 @@ export default function AdminPropertiesPage() {
       )}
 
       {/* Confirm Modal */}
-      <ConfirmModal
-  isOpen={confirmModal.isOpen}
-  title={
-    confirmModal.type === "activer" ? t("activerConfirmTitle") :
-    confirmModal.type === "desactiver" ? t("desactiverConfirmTitle") :
-    confirmModal.type === "archiver" ? t("archiverConfirmTitle") :
-    confirmModal.type === "valider" ? t("validerConfirmTitle") :
-    confirmModal.type === "rejeter" ? t("rejeterConfirmTitle") :
-    confirmModal.type === "supprimer" ? t("supprimerConfirmTitle") :
-    t("confirm")
-  }
-  message={
-    confirmModal.isBatch ? 
-      (confirmModal.type === "activer" ? t("activerBatchConfirmMessage", { count: selectedIds.size }) :
-       confirmModal.type === "desactiver" ? t("desactiverBatchConfirmMessage", { count: selectedIds.size }) :
-       confirmModal.type === "archiver" ? t("archiverBatchConfirmMessage", { count: selectedIds.size }) :
-       t("confirm"))
-    :
-      (confirmModal.type === "activer" ? t("activerConfirmMessage") :
-       confirmModal.type === "desactiver" ? t("desactiverConfirmMessage") :
-       confirmModal.type === "archiver" ? t("archiverConfirmMessage") :
-       confirmModal.type === "valider" ? t("validerConfirmMessage") :
-       confirmModal.type === "rejeter" ? t("rejeterConfirmMessage") :
-       confirmModal.type === "supprimer" ? t("supprimerConfirmMessage") :
-       t("confirm"))
-  }
-  confirmText={t("confirm")}
-  cancelText={t("cancel")}
+ <ConfirmActionModal
+  isOpen={modalState.isOpen}
+  onClose={() => setModalState({ isOpen: false, action: null })}
+  action={modalState.action}
+  itemId={modalState.id}
+  itemIds={modalState.ids}
+  itemTitle={modalState.title}
   onConfirm={executeAction}
-  onCancel={() => setConfirmModal({ isOpen: false, type: "" })}
-  isDanger={confirmModal.type === "supprimer"}
+  loading={false}
+  namespace="AdminProperties"
 />
       {/* Preview Modal */}
       {previewListing && (

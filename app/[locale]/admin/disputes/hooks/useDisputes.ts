@@ -27,6 +27,12 @@ export interface Dispute {
     lastName: string;
     image?: string;
   };
+  respondent?: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    image?: string;
+  };
   type: string;
   status: DisputeStatus;
   severity: Severity;
@@ -58,7 +64,14 @@ export interface DisputeStats {
   open: number;
   inReview: number;
   resolved: number;
+  rejected: number;
   totalRefund: number;
+}
+
+export interface ActionResult {
+  success: boolean;
+  message?: string;
+  error?: string;
 }
 
 export function useDisputes() {
@@ -72,84 +85,121 @@ export function useDisputes() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"active" | "archive">("active");
-  const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [stats, setStats] = useState<DisputeStats>({
     open: 0,
     inReview: 0,
     resolved: 0,
+    rejected: 0,
     totalRefund: 0,
   });
 
-  const showAlert = (type: "success" | "error", message: string) => {
-    setAlert({ type, message });
-    setTimeout(() => setAlert(null), 3000);
-  };
+  const fetchStats = useCallback(async () => {
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const res = await fetch("/api/admin/disputes/stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setStats({
+          open: data.open || 0,
+          inReview: data.inReview || 0,
+          resolved: data.resolved || 0,
+          rejected: data.rejected || 0,
+          totalRefund: data.totalRefund || 0,
+        });
+        return { success: true };
+      }
+      return { success: false, error: "Failed to fetch stats" };
+    } catch (error) {
+      console.error("Error fetching stats:", error);
+      return { success: false, error: String(error) };
+    }
+  }, [getToken]);
 
   const fetchDisputes = useCallback(async () => {
     setLoading(true);
     try {
       const token = await getToken({ template: "my-app-template" });
-      const params = new URLSearchParams({
-        status: tab === "active" ? "OPEN,IN_REVIEW" : "RESOLVED,REJECTED",
-        ...(search && { search }),
-      });
+      const params = new URLSearchParams();
+
+      if (tab === "active") {
+        params.append("status", "OPEN,IN_REVIEW");
+      } else {
+        params.append("status", "RESOLVED,REJECTED");
+      }
+
+      if (search) {
+        params.append("search", search);
+      }
+
       const res = await fetch(`/api/admin/disputes?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+
       if (res.ok) {
         const data = await res.json();
         setDisputes(data.disputes || []);
-        if (data.stats) {
-          setStats({
-            open: data.stats.open || 0,
-            inReview: data.stats.inReview || 0,
-            resolved: data.stats.resolved || 0,
-            totalRefund: data.stats.totalRefund || 0,
-          });
-        }
+
         if (data.disputes?.length > 0 && !selectedDispute) {
           setSelectedDispute(data.disputes[0]);
+        } else if (data.disputes?.length === 0) {
+          setSelectedDispute(null);
         }
+        return { success: true };
       }
+      return { success: false, error: "Failed to fetch disputes" };
     } catch (error) {
       console.error(error);
-      showAlert("error", t("errors.fetchFailed"));
+      return { success: false, error: String(error) };
     } finally {
       setLoading(false);
     }
-  }, [getToken, tab, search, t]);
+  }, [getToken, tab, search, selectedDispute]);
+
+  const refreshAll = useCallback(async () => {
+    const [disputesResult, statsResult] = await Promise.all([fetchDisputes(), fetchStats()]);
+    return { disputesResult, statsResult };
+  }, [fetchDisputes, fetchStats]);
+
+  useEffect(() => {
+    refreshAll();
+  }, [refreshAll]);
 
   useEffect(() => {
     fetchDisputes();
-  }, [fetchDisputes]);
+  }, [tab, search]);
 
-  const handleResolve = async (disputeId: string, resolvedAmount?: number) => {
-    setActionLoading(disputeId);
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const res = await fetch(`/api/admin/disputes/${disputeId}/resolve`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          resolution: t("resolutions.adminResolved"),
-          resolvedAmount,
-        }),
-      });
-      if (res.ok) {
-        showAlert("success", t("success.resolved"));
-        fetchDisputes();
-      }
-    } catch (error) {
-      showAlert("error", t("errors.resolveFailed"));
-    } finally {
-      setActionLoading(null);
+ // Version sans argent (recommandée)
+const handleResolve = async (disputeId: string): Promise<ActionResult> => {
+  console.log("🔵 [HOOK] handleResolve appelé - disputeId:", disputeId);
+  setActionLoading(disputeId);
+  try {
+    const token = await getToken({ template: "my-app-template" });
+    const res = await fetch(`/api/admin/disputes/${disputeId}/resolve`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({}), // ← body vide
+    });
+    
+    if (res.ok) {
+      await refreshAll();
+      return { success: true, message: t("resolveSuccess") };
+    } else {
+      const data = await res.json();
+      return { success: false, error: data.error || t("resolveError") };
     }
-  };
+  } catch (error) {
+    return { success: false, error: t("connectionError") };
+  } finally {
+    setActionLoading(null);
+  }
+};
 
-  const handleReject = async (disputeId: string) => {
+  const handleReject = async (disputeId: string): Promise<ActionResult> => {
     setActionLoading(disputeId);
     try {
       const token = await getToken({ template: "my-app-template" });
@@ -159,20 +209,28 @@ export function useDisputes() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ reason: t("resolutions.adminRejected") }),
       });
+      
       if (res.ok) {
-        showAlert("success", t("success.rejected"));
-        fetchDisputes();
+        await refreshAll();
+        return { success: true, message: t("rejectSuccess") };
+      } else {
+        const data = await res.json();
+        return { success: false, error: data.error || t("rejectError") };
       }
     } catch (error) {
-      showAlert("error", t("errors.rejectFailed"));
+      console.error(error);
+      return { success: false, error: t("connectionError") };
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleSendMessage = async (disputeId: string, content: string) => {
+  const handleSendMessage = async (
+    disputeId: string,
+    content: string,
+    recipient: "BOTH" | "OWNER" | "TENANT" = "BOTH",
+  ): Promise<ActionResult> => {
     setSendingMessage(true);
     try {
       const token = await getToken({ template: "my-app-template" });
@@ -182,29 +240,30 @@ export function useDisputes() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ content, recipient }),
       });
+      
       if (res.ok) {
-        const msg = await res.json();
+        const newMsg = await res.json();
         setSelectedDispute((prev) =>
-          prev ? { ...prev, messages: [...prev.messages, msg] } : prev,
+          prev ? { ...prev, messages: [...prev.messages, newMsg] } : prev,
         );
-        fetchDisputes();
+        await fetchDisputes();
+        return { success: true };
       }
+      return { success: false, error: "Failed to send message" };
     } catch (error) {
       console.error(error);
-      showAlert("error", t("errors.messageFailed"));
+      return { success: false, error: String(error) };
     } finally {
       setSendingMessage(false);
     }
   };
 
-  const clearAlert = () => setAlert(null);
-
   const totalActive = stats.open + stats.inReview;
+  const totalArchived = stats.resolved + stats.rejected;
 
   return {
-    // États
     disputes,
     selectedDispute,
     loading,
@@ -212,18 +271,15 @@ export function useDisputes() {
     sendingMessage,
     search,
     tab,
-    alert,
     stats,
     totalActive,
-    // Setters
+    totalArchived,
     setSelectedDispute,
     setSearch,
     setTab,
-    // Actions
-    fetchDisputes,
+    fetchDisputes: refreshAll,
     handleResolve,
     handleReject,
     handleSendMessage,
-    clearAlert,
   };
 }

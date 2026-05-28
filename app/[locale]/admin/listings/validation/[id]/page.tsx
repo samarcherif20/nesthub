@@ -286,60 +286,7 @@ function Section({
   );
 }
 
-// 🇫🇷 TRADUCTIONS DES ÉQUIPEMENTS EN FRANÇAIS PROFESSIONNEL
-const EQUIPMENT_FRENCH: Record<string, string> = {
-  wifi: "Wi-Fi haut débit",
-  tv: "Télévision LED",
-  smartTv: "Smart TV",
-  netflix: "Netflix inclus",
-  ac: "Climatisation réversible",
-  airConditioning: "Climatisation",
-  heating: "Chauffage central",
-  kitchen: "Cuisine entièrement équipée",
-  washer: "Lave-linge",
-  dryer: "Sèche-linge",
-  dishwasher: "Lave-vaisselle",
-  microwave: "Four micro-ondes",
-  oven: "Four",
-  coffeeMaker: "Machine à café",
-  parking: "Parking privé",
-  garage: "Garage",
-  pool: "Piscine",
-  swimmingPool: "Piscine",
-  garden: "Jardin paysager",
-  terrace: "Terrasse aménagée",
-  balcony: "Balcon",
-  gym: "Salle de sport",
-  elevator: "Ascenseur",
-  bbq: "Barbecue",
-  seaView: "Vue sur mer",
-  mountainView: "Vue sur montagne",
-  cityView: "Vue sur ville",
-  refrigerator: "Réfrigérateur",
-  hairDryer: "Sèche-cheveux",
-  iron: "Fer à repasser",
-  safe: "Coffre-fort",
-  workspace: "Espace bureau",
-  babyChair: "Chaise bébé",
-  babyBed: "Lit bébé",
-  beachEssentials: "Équipements de plage",
-  cleaningProducts: "Produits d'entretien",
-  firstAidKit: "Trousse de secours",
-  fireExtinguisher: "Extincteur",
-  smokeDetector: "Détecteur de fumée",
-};
-
-// 🇫🇷 TRADUCTIONS DES RÈGLES
-const RULES_FRENCH: Record<string, string> = {
-  noSmoking: "Interdiction de fumer dans tout le logement",
-  noPets: "Animaux domestiques non autorisés",
-  noParties: "Fêtes et événements interdits",
-  childrenAllowed: "Enfants bienvenus",
-  petsAllowed: "Animaux acceptés sur demande",
-  smokingAllowed: "Fumeurs acceptés (extérieur uniquement)",
-};
-
-// 🇫🇷 TRADUCTIONS DES TYPES D'ÉQUIPEMENT (icônes)
+// ✅ GARDER SEULEMENT LES ICÔNES (pas les textes)
 const EQUIP_ICONS: Record<string, React.ReactNode> = {
   wifi: <IoWifiOutline />,
   pool: <FaSwimmingPool />,
@@ -358,23 +305,6 @@ const EQUIP_ICONS: Record<string, React.ReactNode> = {
   restaurant: <IoRestaurantOutline />,
   safe: <IoLockClosedOutline />,
   heating: <IoFlameOutline />,
-};
-
-// 🇫🇷 TRADUCTIONS DES TYPES DE BIEN
-const TYPE_TRANSLATIONS: Record<string, string> = {
-  APARTMENT: "Appartement de standing",
-  VILLA: "Villa de prestige",
-  STUDIO: "Studio moderne",
-  DUPLEX: "Duplex spacieux",
-  HOUSE: "Maison individuelle",
-  ROOM: "Chambre privée",
-};
-
-// 🇫🇷 TRADUCTIONS DES TYPES DE LOCATION
-const RENTAL_TYPE_TRANSLATIONS: Record<string, string> = {
-  SHORT_TERM: "Location courte durée (minimum 2 nuits)",
-  LONG_TERM: "Location longue durée (mensuelle)",
-  BOTH: "Mixte (court et long terme)",
 };
 
 export default function AdminListingDetailPage() {
@@ -425,7 +355,7 @@ export default function AdminListingDetailPage() {
   } = useAdminListingDetail(listingId, locale);
 
   // Liste des URLs d'images pour la lightbox
-  const imageUrls = displayPhotos.map(p => p.url).filter(Boolean);
+  const imageUrls = displayPhotos.map((p) => p.url).filter(Boolean);
 
   if (loading) {
     return (
@@ -674,114 +604,116 @@ export default function AdminListingDetailPage() {
           </div>
         )}
 
-      {/* Main Grid */}
-<div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start">
-  {/* LEFT COLUMN */}
-  <div className="space-y-6 min-w-0">
-    {/* Gallery - 1 grande + 4 petites, +X sur la dernière petite */}
-    <div className="grid grid-cols-4 gap-2 h-[340px] lg:h-[480px] rounded-2xl overflow-hidden">
-      {/* Grande image principale (colspan 2, rowspan 2) */}
-      <div
-        className="col-span-2 row-span-2 relative overflow-hidden cursor-pointer group bg-gray-100"
-        onClick={() => displayPhotos[0] && setLightboxIndex(0)}
-      >
-        {displayPhotos[0] ? (
-          <img
-            src={getImageUrl(displayPhotos[0].url)}
-            alt={listing.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <IoHomeOutline className="text-5xl text-gray-300" />
-          </div>
-        )}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-        <span className="absolute bottom-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-          <IoExpandOutline className="text-xs" /> {t("galleryZoom")}
-        </span>
-      </div>
-
-      {/* 1ère petite image (top right) */}
-      <div
-        className="relative overflow-hidden cursor-pointer group bg-gray-100"
-        onClick={() => displayPhotos[1] && setLightboxIndex(1)}
-      >
-        {displayPhotos[1] ? (
-          <img
-            src={getImageUrl(displayPhotos[1].url)}
-            alt=""
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <IoHomeOutline className="text-2xl text-gray-300" />
-          </div>
-        )}
-      </div>
-
-      {/* 2ème petite image (middle right) */}
-      <div
-        className="relative overflow-hidden cursor-pointer group bg-gray-100"
-        onClick={() => displayPhotos[2] && setLightboxIndex(2)}
-      >
-        {displayPhotos[2] ? (
-          <img
-            src={getImageUrl(displayPhotos[2].url)}
-            alt=""
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <IoHomeOutline className="text-2xl text-gray-300" />
-          </div>
-        )}
-      </div>
-
-      {/* 3ème petite image (middle right 2) */}
-      <div
-        className="relative overflow-hidden cursor-pointer group bg-gray-100"
-        onClick={() => displayPhotos[3] && setLightboxIndex(3)}
-      >
-        {displayPhotos[3] ? (
-          <img
-            src={getImageUrl(displayPhotos[3].url)}
-            alt=""
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <IoHomeOutline className="text-2xl text-gray-300" />
-          </div>
-        )}
-      </div>
-
-      {/* 4ème petite image (bottom right) - Celle avec le +X */}
-      <div
-        className="relative overflow-hidden cursor-pointer group bg-gray-100"
-        onClick={() => displayPhotos[4] && setLightboxIndex(4)}
-      >
-        {displayPhotos[4] ? (
-          <>
-            <img
-              src={getImageUrl(displayPhotos[4].url)}
-              alt=""
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-            {/* Overlay avec compteur "+X" sur la 4ème petite image */}
-            {listing.photos && listing.photos.length > 5 && (
-              <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
-                <p className="text-white font-bold text-xl">+{listing.photos.length - 5}</p>
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start">
+          {/* LEFT COLUMN */}
+          <div className="space-y-6 min-w-0">
+            {/* Gallery - 1 grande + 4 petites, +X sur la dernière petite */}
+            <div className="grid grid-cols-4 gap-2 h-[340px] lg:h-[480px] rounded-2xl overflow-hidden">
+              {/* Grande image principale (colspan 2, rowspan 2) */}
+              <div
+                className="col-span-2 row-span-2 relative overflow-hidden cursor-pointer group bg-gray-100"
+                onClick={() => displayPhotos[0] && setLightboxIndex(0)}
+              >
+                {displayPhotos[0] ? (
+                  <img
+                    src={getImageUrl(displayPhotos[0].url)}
+                    alt={listing.title}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <IoHomeOutline className="text-5xl text-gray-300" />
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                <span className="absolute bottom-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  <IoExpandOutline className="text-xs" /> {t("galleryZoom")}
+                </span>
               </div>
-            )}
-          </>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <IoHomeOutline className="text-2xl text-gray-300" />
-          </div>
-        )}
-      </div>
-    </div>
+
+              {/* 1ère petite image (top right) */}
+              <div
+                className="relative overflow-hidden cursor-pointer group bg-gray-100"
+                onClick={() => displayPhotos[1] && setLightboxIndex(1)}
+              >
+                {displayPhotos[1] ? (
+                  <img
+                    src={getImageUrl(displayPhotos[1].url)}
+                    alt=""
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <IoHomeOutline className="text-2xl text-gray-300" />
+                  </div>
+                )}
+              </div>
+
+              {/* 2ème petite image (middle right) */}
+              <div
+                className="relative overflow-hidden cursor-pointer group bg-gray-100"
+                onClick={() => displayPhotos[2] && setLightboxIndex(2)}
+              >
+                {displayPhotos[2] ? (
+                  <img
+                    src={getImageUrl(displayPhotos[2].url)}
+                    alt=""
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <IoHomeOutline className="text-2xl text-gray-300" />
+                  </div>
+                )}
+              </div>
+
+              {/* 3ème petite image (middle right 2) */}
+              <div
+                className="relative overflow-hidden cursor-pointer group bg-gray-100"
+                onClick={() => displayPhotos[3] && setLightboxIndex(3)}
+              >
+                {displayPhotos[3] ? (
+                  <img
+                    src={getImageUrl(displayPhotos[3].url)}
+                    alt=""
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <IoHomeOutline className="text-2xl text-gray-300" />
+                  </div>
+                )}
+              </div>
+
+              {/* 4ème petite image (bottom right) - Celle avec le +X */}
+              <div
+                className="relative overflow-hidden cursor-pointer group bg-gray-100"
+                onClick={() => displayPhotos[4] && setLightboxIndex(4)}
+              >
+                {displayPhotos[4] ? (
+                  <>
+                    <img
+                      src={getImageUrl(displayPhotos[4].url)}
+                      alt=""
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    {/* Overlay avec compteur "+X" sur la 4ème petite image */}
+                    {listing.photos && listing.photos.length > 5 && (
+                      <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
+                        <p className="text-white font-bold text-xl">
+                          +{listing.photos.length - 5}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <IoHomeOutline className="text-2xl text-gray-300" />
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Quick Props */}
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
@@ -852,7 +784,9 @@ export default function AdminListingDetailPage() {
                     {t("propType")}
                   </p>
                   <p className="text-sm font-bold text-gray-900 dark:text-white">
-                    {TYPE_TRANSLATIONS[listing.type] ?? listing.type}
+                    {t(`propertyType.${listing.type}`, {
+                      defaultValue: listing.type,
+                    })}
                   </p>
                 </div>
               </div>
@@ -935,7 +869,9 @@ export default function AdminListingDetailPage() {
                           <IoCheckmarkCircleOutline className="text-sm" />
                         )}
                       </span>
-                      {EQUIPMENT_FRENCH[item.icon?.toLowerCase()] || item.name}
+                      {t(`equipment.${item.icon?.toLowerCase()}`, {
+                        defaultValue: item.name,
+                      })}
                     </div>
                   ))}
                 </div>
@@ -955,7 +891,7 @@ export default function AdminListingDetailPage() {
                       className="flex items-center gap-2.5 text-xs text-gray-500 dark:text-slate-400"
                     >
                       <IoTimeOutline className="text-sm text-gray-300 dark:text-slate-500 flex-shrink-0" />
-                      <span>{RULES_FRENCH[rule] || rule}</span>
+                      <span>{t(`rules.${rule}`, { defaultValue: rule })}</span>
                     </div>
                   ))}
                 </div>
@@ -1043,11 +979,12 @@ export default function AdminListingDetailPage() {
                 )}
                 <div className="flex items-center justify-between pt-1">
                   <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                    {t("rentalType")}
+                    {t("rentalTypeLabel")}
                   </span>
                   <span className="text-xs font-medium text-gray-700 px-2 py-0.5 rounded-lg bg-gray-100">
-                    {RENTAL_TYPE_TRANSLATIONS[listing.rentalType] ||
-                      listing.rentalType}
+                    {t(`rentalType.${listing.rentalType}`, {
+                      defaultValue: listing.rentalType,
+                    })}
                   </span>
                 </div>
               </div>

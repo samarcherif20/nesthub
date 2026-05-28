@@ -52,7 +52,7 @@ export interface AlertState {
   message: string;
 }
 
-export function useModeration() {
+export function useModeration(dateFilter?: string) {
   const t = useTranslations("Moderation");
   const { getToken } = useAuth();
   
@@ -68,6 +68,7 @@ export function useModeration() {
   const [search, setSearch] = useState("");
   const [alert, setAlert] = useState<AlertState | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const isInitialMount = useRef(true);
   
@@ -96,6 +97,11 @@ export function useModeration() {
         status: filter,
         search: debouncedSearch,
       });
+      
+      // Ajout du filtre date si présent
+      if (dateFilter && dateFilter !== "all") {
+  params.append("dateRange", dateFilter);  
+      }
 
       const response = await fetch(`/api/admin/conversations?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -112,12 +118,12 @@ export function useModeration() {
     } finally {
       setLoading(false);
     }
-  }, [getToken, pagination.page, pagination.limit, filter, debouncedSearch, t, showAlert]);
+  }, [getToken, pagination.page, pagination.limit, filter, debouncedSearch, dateFilter, t, showAlert]);
 
   // Initial load
   useEffect(() => {
     fetchConversations();
-  }, []);
+  }, [fetchConversations]);
 
   // Reset page on filter/search change
   useEffect(() => {
@@ -127,14 +133,14 @@ export function useModeration() {
     }
     setPagination(prev => ({ ...prev, page: 1 }));
     fetchConversations();
-  }, [debouncedSearch, filter]);
+  }, [debouncedSearch, filter, dateFilter, fetchConversations]);
 
   // Fetch on page change
   useEffect(() => {
     if (!isInitialMount.current) {
       fetchConversations();
     }
-  }, [pagination.page]);
+  }, [pagination.page, fetchConversations]);
 
   const handleAction = useCallback(async (conversationId: string, action: string, reason?: string) => {
     setActionLoading(conversationId);
@@ -167,6 +173,39 @@ export function useModeration() {
     }
   }, [getToken, t, showAlert, fetchConversations]);
 
+  // Nouvelle fonction pour les actions groupées
+  const handleBulkAction = useCallback(async (conversationIds: string[], action: string, reason?: string) => {
+    setBulkActionLoading(true);
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const response = await fetch("/api/admin/conversations/bulk", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ conversationIds, action, reason }),
+      });
+      
+      if (!response.ok) throw new Error("Erreur lors de l'action groupée");
+      
+      const result = await response.json();
+      
+      let successMessage = "";
+      if (action === "FLAG") successMessage = t("actions.bulkFlagged", { count: conversationIds.length });
+      else if (action === "CLOSE") successMessage = t("actions.bulkClosed", { count: conversationIds.length });
+      else successMessage = t("actions.success");
+      
+      showAlert("success", successMessage);
+      fetchConversations();
+    } catch (error) {
+      console.error(error);
+      showAlert("error", t("errors.bulkActionFailed"));
+    } finally {
+      setBulkActionLoading(false);
+    }
+  }, [getToken, t, showAlert, fetchConversations]);
+
   const handlePageChange = useCallback((page: number) => {
     setPagination((prev) => ({ ...prev, page }));
   }, []);
@@ -187,6 +226,7 @@ export function useModeration() {
     search,
     alert,
     actionLoading,
+    bulkActionLoading,
     imageErrors,
     totalActive,
     totalFlagged,
@@ -194,6 +234,7 @@ export function useModeration() {
     setFilter,
     setSearch,
     handleAction,
+    handleBulkAction,
     handlePageChange,
     handleImageError,
     setAlert,

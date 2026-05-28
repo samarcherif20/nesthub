@@ -50,13 +50,13 @@ import {
   Activity,
   Download,
   CalendarDays,
+  CheckCircle2,
 } from "lucide-react";
 import { PiHouseLine } from "react-icons/pi";
 import { IoWalletOutline } from "react-icons/io5";
 import Pagination from "@/components/ui/Pagination";
 import DeleteListingModal from "@/components/ui/modals/DeleteListingModal";
 import QRCodeModal from "@/components/ui/modals/QRCodeModal";
-import AlertBanner from "@/components/ui/Alert";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { PriceRangeSlider } from "@/components/ui/PriceRangeSlider";
 import { useListings } from "./hooks/useListings";
@@ -72,7 +72,7 @@ import { useRouter } from "next/navigation";
 
 const pip = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 5;
 
 // Styles
 const block3d =
@@ -548,12 +548,7 @@ function MenuDropdown({
             <TbHomeShare size={14} /> {t("actions.viewPublic")}
           </Link>
         )}
-        <Link
-          href={`/${locale}/dashboard/owner/listings/${listingId}/analytics`}
-          className="w-full text-left px-4 py-2.5 text-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-slate-700 dark:text-slate-300 hover:text-indigo-600 flex items-center gap-2.5 border-t border-slate-100 dark:border-slate-800 transition-colors"
-        >
-          <BarChart3 size={14} /> {t("actions.analytics")}
-        </Link>
+
         <button
           onClick={() => onAction("DELETE", listingId)}
           className="w-full text-left px-4 py-2.5 text-sm hover:bg-rose-50 dark:hover:bg-rose-900/20 text-slate-700 dark:text-slate-300 hover:text-rose-600 flex items-center gap-2.5 border-t border-slate-100 dark:border-slate-800 transition-colors"
@@ -594,8 +589,7 @@ export default function OwnerListingsPage({
     setFilters,
     priceRange,
     actionLoading,
-    alert,
-    setAlert,
+
     updateStatus,
     handleDelete,
     resetFilters,
@@ -645,7 +639,10 @@ export default function OwnerListingsPage({
     "Médenine",
     "Tataouine",
   ];
-
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const mainPhoto = (l: any) => {
     const p = l.photos?.find((p: any) => p.isMain) ?? l.photos?.[0];
     return p?.url ? pip(p.url) : null;
@@ -660,14 +657,14 @@ export default function OwnerListingsPage({
     } else {
       try {
         await updateStatus(id, action);
-        setAlert({
+        setToast({
           type: "success",
           message: t(
             `alerts.${action === "ACTIVE" ? "statusActivated" : action === "INACTIVE" ? "statusDeactivated" : "statusArchived"}`,
           ),
         });
       } catch (error) {
-        setAlert({
+        setToast({
           type: "error",
           message: t("alerts.statusChangeFailed"),
         });
@@ -678,12 +675,12 @@ export default function OwnerListingsPage({
   const handleRefresh = async () => {
     try {
       await refreshData();
-      setAlert({
+      setToast({
         type: "success",
         message: t("alerts.dataRefreshed"),
       });
     } catch (error) {
-      setAlert({
+      setToast({
         type: "error",
         message: t("alerts.refreshFailed"),
       });
@@ -728,7 +725,7 @@ export default function OwnerListingsPage({
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
-        setAlert({
+        setToast({
           type: "success",
           message: t("alerts.exportSuccess"),
         });
@@ -738,7 +735,7 @@ export default function OwnerListingsPage({
       }
     } catch (error) {
       console.error("Export error:", error);
-      setAlert({
+      setToast({
         type: "error",
         message: t("alerts.exportFailed"),
       });
@@ -842,13 +839,28 @@ export default function OwnerListingsPage({
   return (
     <div className="flex-1 flex flex-col overflow-x-hidden overflow-y-auto p-6 gap-6 ">
       {/* Alerts */}
-      {alert && (
-        <div className="fixed top-5 right-5 z-[60] w-full max-w-sm animate-in slide-in-from-top-2 fade-in duration-300">
-          <AlertBanner
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-          />
+      {toast && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl backdrop-blur-sm ${
+              toast.type === "success"
+                ? "bg-emerald-500 text-white"
+                : "bg-rose-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70 transition-opacity"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -1573,7 +1585,7 @@ export default function OwnerListingsPage({
             handleDelete(deleteId, withCancelBookings || false);
             setDeleteId(null);
             setDeleteTitle("");
-            setAlert({
+            setToast({
               type: "success",
               message: t("alerts.listingDeleted"),
             });

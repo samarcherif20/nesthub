@@ -166,11 +166,11 @@ const initial: ListingFormData = {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 const propertyTypes = [
-  { value: "APARTMENT", icon: Building2, label: "Appartement" },
-  { value: "VILLA", icon: Home, label: "Villa" },
-  { value: "STUDIO", icon: Hotel, label: "Studio" },
-  { value: "DUPLEX", icon: Layers, label: "Duplex" },
-  { value: "HOUSE", icon: Home, label: "Maison" },
+  { value: "APARTMENT", icon: Building2, labelKey: "apartment" },
+  { value: "VILLA", icon: Home, labelKey: "villa" },
+  { value: "STUDIO", icon: Hotel, labelKey: "studio" },
+  { value: "DUPLEX", icon: Layers, labelKey: "duplex" },
+  { value: "HOUSE", icon: Home, labelKey: "house" },
 ];
 
 const governorates = [
@@ -201,17 +201,17 @@ const governorates = [
 ];
 
 const equipmentIds = [
-  { id: "wifi", label: "Wi-Fi" },
-  { id: "ac", label: "Climatisation" },
-  { id: "heating", label: "Chauffage" },
-  { id: "kitchen", label: "Cuisine équipée" },
-  { id: "parking", label: "Parking" },
-  { id: "pool", label: "Piscine" },
-  { id: "gym", label: "Salle de sport" },
-  { id: "washer", label: "Lave-linge" },
-  { id: "tv", label: "Télévision" },
-  { id: "dishwasher", label: "Lave-vaisselle" },
-  { id: "dryer", label: "Sèche-linge" },
+  { id: "wifi", labelKey: "wifi" },
+  { id: "ac", labelKey: "ac" },
+  { id: "heating", labelKey: "heating" },
+  { id: "kitchen", labelKey: "kitchen" },
+  { id: "parking", labelKey: "parking" },
+  { id: "pool", labelKey: "pool" },
+  { id: "gym", labelKey: "gym" },
+  { id: "washer", labelKey: "washer" },
+  { id: "tv", labelKey: "tv" },
+  { id: "dishwasher", labelKey: "dishwasher" },
+  { id: "dryer", labelKey: "dryer" },
 ];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -220,17 +220,19 @@ function Stepper({
   min = 1,
   max = 20,
   onChange,
+  t,
 }: {
   value: number;
   min?: number;
   max?: number;
   onChange: (v: number) => void;
+  t: (key: string) => string;
 }) {
   return (
     <div className="flex items-center bg-white dark:bg-slate-800 rounded-lg px-2 py-1 shadow-sm border border-slate-100 dark:border-slate-700">
       <button
         type="button"
-        aria-label="Diminuer la valeur" // ← AJOUTER
+        aria-label={t("aria.decrease")}
         onClick={() => onChange(Math.max(min, value - 1))}
         className="w-9 h-9 flex items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all active:scale-90 cursor-pointer"
       >
@@ -241,7 +243,7 @@ function Stepper({
       </span>
       <button
         type="button"
-        aria-label="Augmenter la valeur" // ← AJOUTER
+        aria-label={t("aria.increase")}
         onClick={() => onChange(Math.min(max, value + 1))}
         className="w-9 h-9 flex items-center justify-center rounded-lg text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all active:scale-90 cursor-pointer"
       >
@@ -254,15 +256,17 @@ function Stepper({
 function Toggle({
   checked,
   onChange,
+  t,
 }: {
   checked: boolean;
   onChange: (v: boolean) => void;
+  t: (key: string) => string;
 }) {
   return (
     <button
       type="button"
       role="switch"
-      aria-label={checked ? "Désactiver" : "Activer"} // ← AJOUTER
+      aria-label={checked ? t("aria.disable") : t("aria.enable")}
       onClick={() => onChange(!checked)}
       className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-sky-500/40 cursor-pointer ${checked ? "bg-sky-600" : "bg-slate-200 dark:bg-slate-700"}`}
     >
@@ -317,6 +321,7 @@ function Tooltip({
 // ═══════════════════════════════════════════════════════════════════
 const geocodeAddress = async (
   address: string,
+  t: (key: string) => string,
 ): Promise<{ lat: number; lng: number } | null> => {
   try {
     console.log("🔍 [GEOCODAGE] Appel API pour:", address);
@@ -327,8 +332,7 @@ const geocodeAddress = async (
     );
 
     if (!response.ok) {
-      if (response.status === 429)
-        toast.error("Trop de requêtes. Veuillez patienter.");
+      if (response.status === 429) toast.error(t("toast.tooManyRequests"));
       return null;
     }
 
@@ -339,9 +343,7 @@ const geocodeAddress = async (
       return { lat: firstResult.lat, lng: firstResult.lon };
     }
 
-    toast.warning(
-      "Adresse non trouvée, veuillez ajuster la position manuellement",
-    );
+    toast.warning(t("toast.addressNotFound"));
     return null;
   } catch (error) {
     console.error("❌ [GEOCODAGE] Erreur:", error);
@@ -360,13 +362,16 @@ export default function CreateListingPage({
   const { locale } = React.use(params);
   const router = useRouter();
   const { user } = useUser();
-  const { getRecommendation, loading } = usePriceRecommendation();
+  const { getRecommendation, loading: aiLoading } = usePriceRecommendation();
   const [recommendedPrice, setRecommendedPrice] = useState<number | null>(null);
   const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<
     number | null
   >(null);
   const t = useTranslations("CreateListing");
 
+  // ============================================
+  // TOUS LES useState
+  // ============================================
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<ListingFormData>(initial);
   const [saving, setSaving] = useState(false);
@@ -382,45 +387,95 @@ export default function CreateListingPage({
   const [uploadCount, setUploadCount] = useState(0);
   const [uploadedCount, setUploadedCount] = useState(0);
   const [isPageLoading, setIsPageLoading] = useState(true);
+
+  // ============================================
+  // TOUS LES useEffect (AVANT le return)
+  // ============================================
   useEffect(() => {
-    // Simuler un chargement (ou attendre des données)
     const timer = setTimeout(() => setIsPageLoading(false), 500);
     return () => clearTimeout(timer);
   }, []);
 
-  // Ajouter juste avant le return principal (vers ligne ~900)
-  if (isPageLoading) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="text-center">
-          <LoadingSpinner className=" mx-auto mb-4" />
-          <p className="text-slate-500 dark:text-slate-400">Chargement...</p>
-        </div>
-      </div>
-    );
-  }
-  // Ajouter après les useState, vers ligne 550
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [step]); // ← Se déclenche quand 'step' change
+  }, [step]);
+
   useEffect(() => {
     formRef.current = form;
   }, [form]);
 
+  // Charger brouillon
+  useEffect(() => {
+    try {
+      const draft = localStorage.getItem("listing_draft");
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        setForm((p) => ({ ...p, ...parsed }));
+        if (parsed.id) setListingId(parsed.id);
+      }
+    } catch {}
+  }, []);
+
+  // Nettoyer URLs blob
+  useEffect(() => {
+    return () => {
+      form.photos.forEach((photo) => {
+        if (photo.url?.startsWith("blob:")) URL.revokeObjectURL(photo.url);
+        if (photo.thumbnailUrl?.startsWith("blob:"))
+          URL.revokeObjectURL(photo.thumbnailUrl);
+      });
+      if (geocodeTimeoutRef.current) clearTimeout(geocodeTimeoutRef.current);
+    };
+  }, [form.photos]);
+
+  // Détecter modifications non sauvegardées
+  useEffect(() => {
+    const hasChanges =
+      form.title !== "" ||
+      form.description !== "" ||
+      form.photos.length > 0 ||
+      form.governorate !== "" ||
+      form.delegation !== "" ||
+      form.street !== "";
+    setHasUnsavedChanges(hasChanges);
+  }, [form]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = t("alerts.unsavedChanges");
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [hasUnsavedChanges, t]);
+
+  // ============================================
+  // STEPS
+  // ============================================
   const STEPS = [
     {
       id: 1,
       key: "typeLocation",
       icon: Building2,
-      title: "Type & Localisation",
+      title: t("steps.typeLocation"),
     },
-    { id: 2, key: "characteristics", icon: Ruler, title: "Caractéristiques" },
-    { id: 3, key: "equipment", icon: Wifi, title: "Équipements" },
-    { id: 4, key: "photos", icon: Camera, title: "Photos" },
-    { id: 5, key: "pricing", icon: Sparkles, title: "Tarifs" },
-    { id: 6, key: "preview", icon: Eye, title: "Aperçu" },
+    {
+      id: 2,
+      key: "characteristics",
+      icon: Ruler,
+      title: t("steps.characteristics"),
+    },
+    { id: 3, key: "equipment", icon: Wifi, title: t("steps.equipment") },
+    { id: 4, key: "photos", icon: Camera, title: t("steps.photos") },
+    { id: 5, key: "pricing", icon: Sparkles, title: t("steps.pricing") },
+    { id: 6, key: "preview", icon: Eye, title: t("steps.preview") },
   ];
 
+  // ============================================
+  // TOUS LES useCallback et useMemo
+  // ============================================
   const upd = useCallback(
     (u: Partial<ListingFormData>) => setForm((p) => ({ ...p, ...u })),
     [],
@@ -430,55 +485,53 @@ export default function CreateListingPage({
     (field: string, value: any): string | null => {
       switch (field) {
         case "title":
-          if (!value?.trim()) return "Le titre est requis";
-          if (value.length < 5)
-            return "Le titre doit contenir au moins 5 caractères";
+          if (!value?.trim()) return t("validation.titleRequired");
+          if (value.length < 5) return t("validation.titleMinLength");
           return null;
         case "description":
-          if (!value?.trim()) return "La description est requise";
-          if (value.length < 20)
-            return "La description doit contenir au moins 20 caractères";
+          if (!value?.trim()) return t("validation.descriptionRequired");
+          if (value.length < 20) return t("validation.descriptionMinLength");
           return null;
         case "governorate":
-          if (!value) return "Le gouvernorat est requis";
+          if (!value) return t("validation.governorateRequired");
           return null;
         case "delegation":
-          if (!value?.trim()) return "La délégation est requise";
+          if (!value?.trim()) return t("validation.delegationRequired");
           return null;
         case "street":
-          if (!value?.trim()) return "La rue est requise";
+          if (!value?.trim()) return t("validation.streetRequired");
           return null;
         case "location":
           if (form.latitude === null || form.longitude === null)
-            return "La localisation sur la carte est requise";
+            return t("validation.locationRequired");
           return null;
         case "rooms":
-          if (value < 1) return "Au moins 1 chambre est requise";
+          if (value < 1) return t("validation.roomsRequired");
           return null;
         case "bathrooms":
-          if (value < 1) return "Au moins 1 salle de bain est requise";
+          if (value < 1) return t("validation.bathroomsRequired");
           return null;
         case "numberOfKitchens":
-          if (value < 1) return "Au moins 1 cuisine est requise";
+          if (value < 1) return t("validation.kitchensRequired");
           return null;
         case "surfaceArea":
-          if (!value || value <= 0) return "La surface est requise";
+          if (!value || value <= 0) return t("validation.surfaceRequired");
           return null;
         case "floorNumber":
           if (value === null || value === undefined)
-            return "Le numéro d'étage est requis";
+            return t("validation.floorRequired");
           return null;
         case "photos":
-          if (form.photos.length === 0) return "Au moins une photo est requise";
+          if (form.photos.length === 0) return t("validation.photosRequired");
           if (!form.photos.some((p) => p.isMain))
-            return "Veuillez définir une photo principale";
+            return t("validation.mainPhotoRequired");
           return null;
         case "pricePerNight":
           if (
             (form.rentalType === "SHORT_TERM" || form.rentalType === "BOTH") &&
             (!value || value <= 0)
           ) {
-            return "Le prix par nuit est requis";
+            return t("validation.pricePerNightRequired");
           }
           return null;
         case "pricePerMonth":
@@ -486,7 +539,7 @@ export default function CreateListingPage({
             (form.rentalType === "LONG_TERM" || form.rentalType === "BOTH") &&
             (!value || value <= 0)
           ) {
-            return "Le prix par mois est requis";
+            return t("validation.pricePerMonthRequired");
           }
           return null;
         default:
@@ -499,6 +552,7 @@ export default function CreateListingPage({
       form.photos.length,
       form.photos,
       form.rentalType,
+      t,
     ],
   );
 
@@ -521,6 +575,7 @@ export default function CreateListingPage({
     },
     [fieldErrors],
   );
+
   const handleAIPriceRecommendation = async () => {
     const result = await getRecommendation({
       governorate: form.governorate,
@@ -541,26 +596,27 @@ export default function CreateListingPage({
       setRecommendedPrice(result.pricePerNight);
       setRecommendedPriceMonth(result.pricePerMonth);
       toast.success(
-        `Prix nuit: ${result.pricePerNight} TND | Prix mois: ${result.pricePerMonth} TND`,
+        t("toast.priceRecommendation", {
+          night: result.pricePerNight,
+          month: result.pricePerMonth,
+        }),
       );
     }
   };
-  // ═══════════════════════════════════════════════════════════════════
-  // GÉOCODAGE SUR ENTER AVEC DEBOUNCE
-  // ═══════════════════════════════════════════════════════════════════
+
   const handleGeocodeOnEnter = useCallback(async () => {
     const currentForm = formRef.current;
 
     if (!currentForm.governorate?.trim()) {
-      toast.warning("Veuillez d'abord sélectionner un gouvernorat");
+      toast.warning(t("toast.selectGovernorateFirst"));
       return;
     }
     if (!currentForm.delegation?.trim()) {
-      toast.warning("Veuillez d'abord remplir la délégation");
+      toast.warning(t("toast.fillDelegationFirst"));
       return;
     }
     if (!currentForm.street?.trim()) {
-      toast.warning("Veuillez d'abord remplir la rue/quartier");
+      toast.warning(t("toast.fillStreetFirst"));
       return;
     }
 
@@ -572,7 +628,7 @@ export default function CreateListingPage({
 
       setIsGeocoding(true);
       try {
-        const coords = await geocodeAddress(fullAddress);
+        const coords = await geocodeAddress(fullAddress, t);
         if (coords) {
           upd({ latitude: coords.lat, longitude: coords.lng });
           setTimeout(() => {
@@ -581,7 +637,7 @@ export default function CreateListingPage({
               setFieldErrors((prev) =>
                 prev.filter((e) => e.field !== "location"),
               );
-            toast.success("📍 Position trouvée sur la carte !");
+            toast.success(t("toast.positionFound"));
           }, 100);
         }
       } catch (error) {
@@ -591,31 +647,7 @@ export default function CreateListingPage({
         geocodeTimeoutRef.current = null;
       }
     }, 800);
-  }, [upd, validateField]);
-
-  // Détecter modifications non sauvegardées
-  useEffect(() => {
-    const hasChanges =
-      form.title !== "" ||
-      form.description !== "" ||
-      form.photos.length > 0 ||
-      form.governorate !== "" ||
-      form.delegation !== "" ||
-      form.street !== "";
-    setHasUnsavedChanges(hasChanges);
-  }, [form]);
-
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (hasUnsavedChanges) {
-        e.preventDefault();
-        e.returnValue =
-          "Vous avez des modifications non sauvegardées. Voulez-vous vraiment quitter ?";
-      }
-    };
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [hasUnsavedChanges]);
+  }, [upd, validateField, t]);
 
   const validateStep = useCallback((): boolean => {
     const errors: FieldError[] = [];
@@ -740,30 +772,6 @@ export default function CreateListingPage({
     [form],
   );
 
-  // Charger brouillon
-  useEffect(() => {
-    try {
-      const draft = localStorage.getItem("listing_draft");
-      if (draft) {
-        const parsed = JSON.parse(draft);
-        setForm((p) => ({ ...p, ...parsed }));
-        if (parsed.id) setListingId(parsed.id);
-      }
-    } catch {}
-  }, []);
-
-  // Nettoyer URLs blob
-  useEffect(() => {
-    return () => {
-      form.photos.forEach((photo) => {
-        if (photo.url?.startsWith("blob:")) URL.revokeObjectURL(photo.url);
-        if (photo.thumbnailUrl?.startsWith("blob:"))
-          URL.revokeObjectURL(photo.thumbnailUrl);
-      });
-      if (geocodeTimeoutRef.current) clearTimeout(geocodeTimeoutRef.current);
-    };
-  }, [form.photos]);
-
   const uploadSinglePhoto = useCallback(
     async (file: File): Promise<{ url: string; thumbnailUrl: string }> => {
       const formData = new FormData();
@@ -772,11 +780,11 @@ export default function CreateListingPage({
         method: "POST",
         body: formData,
       });
-      if (!uploadRes.ok) throw new Error("Échec upload photo");
+      if (!uploadRes.ok) throw new Error(t("toast.uploadFailed"));
       const data = await uploadRes.json();
       return { url: data.url, thumbnailUrl: data.thumbnailUrl || data.url };
     },
-    [],
+    [t],
   );
 
   const uploadPhotos = useCallback(
@@ -829,15 +837,15 @@ export default function CreateListingPage({
           localStorage.setItem("listing_draft", JSON.stringify(draft));
         }
         setLastSaved(new Date());
-        toast.success("Brouillon sauvegardé");
+        toast.success(t("toast.draftSaved"));
       }
     } catch (e) {
       console.error(e);
-      toast.error("Erreur lors de la sauvegarde");
+      toast.error(t("toast.saveError"));
     } finally {
       setSaving(false);
     }
-  }, [form, listingId, saving, uploadPhotos]);
+  }, [form, listingId, saving, uploadPhotos, t]);
 
   const goToNextStep = () => {
     if (validateStep()) setStep((s) => Math.min(STEPS.length, s + 1));
@@ -847,7 +855,11 @@ export default function CreateListingPage({
   const handlePublish = async () => {
     if (!validateStep()) return;
     setSaving(true);
-    const loadingToast = toast.loading("Publication en cours...");
+
+    const loadingId = toast.loading(t("toast.publishing"), {
+      position: "top-center",
+    });
+
     try {
       const uploadedPhotos = await uploadPhotos(form.photos);
       const formWithUrls = {
@@ -864,25 +876,32 @@ export default function CreateListingPage({
       });
       const data = await response.json();
 
+      toast.dismiss(loadingId);
+
       if (response.ok) {
         localStorage.removeItem("listing_draft");
-        toast.dismiss(loadingToast);
-        toast.success("Annonce soumise pour validation !"); // ← Changement du message
-        router.push(`/${locale}/dashboard/owner/listings`); // ← direct, sans délai
+        toast.success(t("toast.published"), {
+          duration: 3000,
+          position: "top-center",
+        });
+        router.push(`/${locale}/dashboard/owner/listings`);
       } else {
-        toast.dismiss(loadingToast);
-        toast.error(
-          data.details || data.error || "Erreur lors de la publication",
-        );
+        toast.error(data.details || data.error || t("toast.publishError"), {
+          duration: 4000,
+          position: "top-center",
+        });
       }
     } catch (e) {
-      toast.dismiss(loadingToast);
-      toast.error("Erreur lors de la publication");
+      toast.dismiss(loadingId);
+      console.error("Erreur publication:", e);
+      toast.error(t("toast.publishError"), {
+        duration: 4000,
+        position: "top-center",
+      });
     } finally {
       setSaving(false);
     }
   };
-
   const handleFiles = async (files: FileList | null) => {
     if (!files) return;
 
@@ -906,7 +925,7 @@ export default function CreateListingPage({
         setUploadedCount(i + 1);
       } catch (error) {
         console.error("Erreur upload:", error);
-        toast.error(`Erreur lors de l'upload`);
+        toast.error(t("toast.uploadError"));
       }
     }
 
@@ -923,11 +942,12 @@ export default function CreateListingPage({
     if (newPhotos.length > 0 && !newPhotos.some((p) => p.isMain))
       newPhotos[0].isMain = true;
     upd({ photos: newPhotos });
+    toast.success(t("toast.photoRemoved"));
   };
 
   const setMainPhoto = (idx: number) => {
     upd({ photos: form.photos.map((p, i) => ({ ...p, isMain: i === idx })) });
-    toast.success("Photo principale définie");
+    toast.success(t("toast.mainPhotoSet"));
   };
 
   const progress = ((step - 1) / (STEPS.length - 1)) * 100;
@@ -947,8 +967,25 @@ export default function CreateListingPage({
     dryer: Fan,
   };
 
+  // ============================================
+  // RETURN CONDITIONNEL (APRÈS TOUS LES HOOKS)
+  // ============================================
+  if (isPageLoading) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <LoadingSpinner className="mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">{t("loading")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================
+  // RENDER PRINCIPAL
+  // ============================================
   return (
-    <div className="h-full flex flex-col  overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
       <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
@@ -957,22 +994,28 @@ export default function CreateListingPage({
               href={`/${locale}/dashboard/owner/listings`}
               className="hover:text-indigo-600 transition-colors"
             >
-              Mes annonces
+              {t("breadcrumb.myListings")}
             </Link>
             <ChevronRight size={12} />
-            <span className="text-black dark:text-white">Nouvelle annonce</span>
+            <span className="text-black dark:text-white">
+              {t("breadcrumb.newListing")}
+            </span>
           </div>
 
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-                Créer une annonce
+                {t("title")}
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                Étape {step} sur {STEPS.length} · {STEPS[step - 1].title}
+                {t("stepInfo", {
+                  step,
+                  total: STEPS.length,
+                  title: STEPS[step - 1].title,
+                })}
               </p>
             </div>
-            <Tooltip text="Sauvegarder le brouillon">
+            <Tooltip text={t("tooltip.saveDraft")}>
               <button
                 type="button"
                 onClick={saveDraft}
@@ -984,10 +1027,10 @@ export default function CreateListingPage({
                 ) : (
                   <Save size={14} />
                 )}
-                {saving ? "Sauvegarde..." : "Brouillon"}
+                {saving ? t("button.saving") : t("button.draft")}
                 {lastSaved && !saving && (
                   <span className="text-xs text-slate-400">
-                    {lastSaved.toLocaleTimeString("fr-FR", {
+                    {lastSaved.toLocaleTimeString(locale, {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
@@ -1011,25 +1054,46 @@ export default function CreateListingPage({
               const Icon = s.icon;
               const isComplete =
                 stepCompletion[s.id as keyof typeof stepCompletion];
+              const isCurrentStep = s.id === step;
+              const isPastStep = s.id < step;
+
               return (
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => s.id < step && setStep(s.id)}
+                  onClick={() => isPastStep && setStep(s.id)}
                   className={`flex flex-col items-center gap-1 transition-all ${s.id <= step ? "cursor-pointer" : "cursor-default"} relative`}
                 >
                   <div className="relative">
                     <div
-                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${s.id < step ? "bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600 text-white shadow-md" : s.id === step ? "bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600 text-white shadow-md" : "bg-slate-200 dark:bg-slate-700 text-slate-400"}`}
+                      className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all ${
+                        isPastStep
+                          ? "bg-emerald-500 text-white shadow-md"
+                          : isCurrentStep
+                            ? "bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600 text-white shadow-md"
+                            : "bg-slate-200 dark:bg-slate-700 text-slate-400"
+                      }`}
                     >
-                      {s.id < step ? <Check size={14} /> : <Icon size={14} />}
+                      {/* ✅ Icône verte (✓) seulement sur l'étape actuelle si complétée */}
+                      {isCurrentStep && isComplete ? (
+                        <Check size={14} />
+                      ) : isPastStep ? (
+                        <Check size={14} />
+                      ) : (
+                        <Icon size={14} />
+                      )}
                     </div>
-                    {isComplete && s.id !== step && (
+                    {/* ✅ Pastille verte uniquement sur l'étape actuelle si complétée */}
+                    {isCurrentStep && isComplete && (
                       <div className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900" />
                     )}
                   </div>
                   <span
-                    className={`hidden md:block text-[10px] font-bold uppercase tracking-wider ${s.id <= step ? "text-sky-600 dark:text-sky-400" : "text-slate-400"}`}
+                    className={`hidden md:block text-[10px] font-bold uppercase tracking-wider ${
+                      s.id <= step
+                        ? "text-sky-600 dark:text-sky-400"
+                        : "text-slate-400"
+                    }`}
                   >
                     {s.title}
                   </span>
@@ -1040,20 +1104,17 @@ export default function CreateListingPage({
         </div>
       </div>
 
-      {/* Contenu scrollable */}
+      {/* Contenu scrollable - LE RESTE DE TON JSX */}
+      {/* ... (le reste du JSX reste identique, avec t() pour toutes les traductions) ... */}
       <div className="flex-1 overflow-y-auto py-8 transition-all duration-300 animate-fadeIn">
-        {" "}
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              {/* ═══════════════════════════════════════════════════════════════ */}
               {/* STEP 1 : TYPE & LOCALISATION */}
-              {/* ═══════════════════════════════════════════════════════════════ */}
               {step === 1 && (
                 <>
-                  {/* Type de propriété */}
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle num={1} title="Type de logement" />
+                    <SectionTitle num={1} title={t("propertyType.title")} />
                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
                       {propertyTypes.map((pt) => {
                         const Icon = pt.icon;
@@ -1080,7 +1141,7 @@ export default function CreateListingPage({
                               <span
                                 className={`text-xs font-bold text-center ${form.type === pt.value ? "text-sky-700" : "text-slate-500"}`}
                               >
-                                {pt.label}
+                                {t(`propertyType.${pt.labelKey}`)}
                               </span>
                             </div>
                           </label>
@@ -1089,16 +1150,18 @@ export default function CreateListingPage({
                     </div>
                   </div>
 
-                  {/* Titre et description */}
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle num={2} title="Titre et description" />
+                    <SectionTitle
+                      num={2}
+                      title={t("titleAndDescription.title")}
+                    />
                     <div className="space-y-4">
                       <div>
                         <div className="flex items-center gap-1 mb-1.5">
                           <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                            Titre de l'annonce
+                            {t("titleAndDescription.listingTitle")}
                           </label>
-                          <Tooltip text="Requis">
+                          <Tooltip text={t("tooltip.required")}>
                             <span className="text-rose-500 text-xs">*</span>
                           </Tooltip>
                         </div>
@@ -1107,7 +1170,9 @@ export default function CreateListingPage({
                           value={form.title}
                           onChange={(e) => upd({ title: e.target.value })}
                           onBlur={() => handleBlur("title", form.title)}
-                          placeholder="Ex: Superbe appartement en bord de mer"
+                          placeholder={t(
+                            "titleAndDescription.titlePlaceholder",
+                          )}
                           maxLength={100}
                           className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none ${getFieldError("title") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
                         />
@@ -1120,25 +1185,35 @@ export default function CreateListingPage({
                       <div>
                         <div className="flex items-center gap-1 mb-1.5">
                           <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                            Description
+                            {t("titleAndDescription.description")}
                           </label>
+                        </div>
+                        <div className="relative">
+                          <textarea
+                            value={form.description}
+                            onChange={(e) =>
+                              upd({ description: e.target.value })
+                            }
+                            onBlur={() =>
+                              handleBlur("description", form.description)
+                            }
+                            placeholder={t(
+                              "titleAndDescription.descriptionPlaceholder",
+                            )}
+                            rows={4}
+                            maxLength={2000}
+                            className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none resize-none ${getFieldError("description") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
+                          />
                           <span
-                            className={`text-[10px] ${form.description.length > 1800 ? "text-amber-500" : "text-slate-400"}`}
+                            className={`absolute bottom-3 right-3 text-[10px] ${
+                              form.description.length > 1800
+                                ? "text-amber-500 font-semibold"
+                                : "text-slate-400"
+                            }`}
                           >
                             {form.description.length}/2000
                           </span>
                         </div>
-                        <textarea
-                          value={form.description}
-                          onChange={(e) => upd({ description: e.target.value })}
-                          onBlur={() =>
-                            handleBlur("description", form.description)
-                          }
-                          placeholder="Décrivez votre logement en détail..."
-                          rows={4}
-                          maxLength={2000}
-                          className={`w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 text-base focus:ring-2 focus:ring-sky-500/30 outline-none resize-none ${getFieldError("description") ? "border-rose-500" : "border-slate-200 dark:border-slate-700"}`}
-                        />
                         {getFieldError("description") && (
                           <p className="text-xs text-rose-500 mt-1">
                             {getFieldError("description")}
@@ -1148,14 +1223,13 @@ export default function CreateListingPage({
                     </div>
                   </div>
 
-                  {/* Localisation */}
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle num={3} title="Localisation" />
-
+                    <SectionTitle num={3} title={t("location.title")} />
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                          Gouvernorat <span className="text-rose-500">*</span>
+                          {t("location.governorate")}{" "}
+                          <span className="text-rose-500">*</span>
                         </label>
                         <select
                           value={form.governorate}
@@ -1165,7 +1239,7 @@ export default function CreateListingPage({
                           }
                           className="w-full appearance-none bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-8 text-base focus:ring-2 focus:ring-sky-500/30 outline-none"
                         >
-                          <option value="">Sélectionner</option>
+                          <option value="">{t("location.select")}</option>
                           {governorates.map((g) => (
                             <option key={g} value={g}>
                               {g}
@@ -1178,10 +1252,10 @@ export default function CreateListingPage({
                           </p>
                         )}
                       </div>
-
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                          Délégation <span className="text-rose-500">*</span>
+                          {t("location.delegation")}{" "}
+                          <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
                           <input
@@ -1199,7 +1273,7 @@ export default function CreateListingPage({
                                 handleGeocodeOnEnter();
                               }
                             }}
-                            placeholder="Ex: Hammamet"
+                            placeholder={t("location.delegationPlaceholder")}
                             className="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-10 text-base focus:ring-2 focus:ring-sky-500/30 outline-none"
                           />
                           {isGeocoding && (
@@ -1215,10 +1289,9 @@ export default function CreateListingPage({
                           </p>
                         )}
                       </div>
-
                       <div>
                         <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                          Rue / Quartier{" "}
+                          {t("location.street")}{" "}
                           <span className="text-rose-500">*</span>
                         </label>
                         <div className="relative">
@@ -1233,7 +1306,7 @@ export default function CreateListingPage({
                                 handleGeocodeOnEnter();
                               }
                             }}
-                            placeholder="Ex: Avenue Habib Bourguiba"
+                            placeholder={t("location.streetPlaceholder")}
                             className="w-full bg-slate-50 dark:bg-slate-800 border rounded-lg py-3 px-4 pr-10 text-base focus:ring-2 focus:ring-sky-500/30 outline-none"
                           />
                           {isGeocoding && (
@@ -1251,28 +1324,24 @@ export default function CreateListingPage({
                       </div>
                     </div>
 
-                    {/* Aide */}
                     <div className="mb-4">
                       <p className="text-xs text-slate-400 flex items-center gap-1.5">
                         <Lightbulb
                           size={12}
                           className="text-sky-500 shrink-0"
                         />
-                        <span>Appuyez sur</span>
+                        <span>{t("location.helpText")}</span>
                         <kbd className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-700 rounded text-[10px] font-mono font-bold">
-                          "Entrée"
+                          {t("location.enterKey")}
                         </kbd>
-                        <span>
-                          dans les champs "Délégation" ou "Rue" pour localiser
-                          l'adresse sur la carte
-                        </span>
+                        <span>{t("location.helpTextEnd")}</span>
                       </p>
                     </div>
 
-                    {/* Carte */}
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1.5">
-                        Position exacte <span className="text-rose-500">*</span>
+                        {t("location.exactPosition")}{" "}
+                        <span className="text-rose-500">*</span>
                       </label>
                       <div className="h-64 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700">
                         <MapPickerWrapper
@@ -1283,11 +1352,8 @@ export default function CreateListingPage({
                             upd({ latitude: lat, longitude: lng });
                             handleBlur("location", null);
                           }}
-                          // ✅ AJOUTE CETTE PROP
                           onLocationDetected={(lat, lng, addressData) => {
                             if (addressData) {
-                              console.log(" Adresse détectée:", addressData);
-
                               upd({
                                 governorate:
                                   addressData.governorate || form.governorate,
@@ -1297,7 +1363,6 @@ export default function CreateListingPage({
                                 latitude: lat,
                                 longitude: lng,
                               });
-
                               if (addressData.governorate)
                                 handleBlur(
                                   "governorate",
@@ -1311,8 +1376,7 @@ export default function CreateListingPage({
                               if (addressData.street)
                                 handleBlur("street", addressData.street);
                               handleBlur("location", null);
-
-                              toast.success(" Position et adresse trouvées !");
+                              toast.success(t("toast.positionAndAddressFound"));
                             }
                           }}
                           onAddressChange={(address) =>
@@ -1336,27 +1400,27 @@ export default function CreateListingPage({
               {/* STEP 2 : Caractéristiques */}
               {step === 2 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                  <SectionTitle title="Caractéristiques" />
+                  <SectionTitle title={t("characteristics.title")} />
                   <div className="space-y-4">
                     {[
                       {
                         key: "rooms",
                         icon: Bed,
-                        label: "Chambres",
+                        label: t("characteristics.bedrooms"),
                         value: form.rooms,
                         set: (v: number) => upd({ rooms: v }),
                       },
                       {
                         key: "bathrooms",
                         icon: Bath,
-                        label: "Salles de bain",
+                        label: t("characteristics.bathrooms"),
                         value: form.bathrooms,
                         set: (v: number) => upd({ bathrooms: v }),
                       },
                       {
                         key: "numberOfKitchens",
                         icon: Utensils,
-                        label: "Cuisines",
+                        label: t("characteristics.kitchens"),
                         value: form.numberOfKitchens,
                         set: (v: number) => upd({ numberOfKitchens: v }),
                       },
@@ -1381,13 +1445,13 @@ export default function CreateListingPage({
                             min={1}
                             max={10}
                             onChange={row.set}
+                            t={t}
                           />
                         </div>
                       );
                     })}
                   </div>
 
-                  {/* Capacité voyageurs */}
                   <div className="mt-4 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
@@ -1397,8 +1461,12 @@ export default function CreateListingPage({
                         />
                       </div>
                       <div>
-                        <p className="font-bold text-sm">Capacité voyageurs</p>
-                        <p className="text-xs text-slate-500">Optionnel</p>
+                        <p className="font-bold text-sm">
+                          {t("characteristics.guestCapacity")}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {t("characteristics.optional")}
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -1430,38 +1498,43 @@ export default function CreateListingPage({
                         onClick={() => upd({ maxGuests: null })}
                         className="ml-1 px-2 py-1 text-xs text-red-500 hover:bg-red-50 rounded cursor-pointer"
                       >
-                        Effacer
+                        {t("characteristics.clear")}
                       </button>
                     </div>
                   </div>
-                  {/* Équipements extérieurs */}
+
                   <div className="grid grid-cols-1 gap-3 mt-4">
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Trees size={16} className="text-emerald-500" />
                       <span className="font-bold text-sm">
-                        Balcon ou terrasse{" "}
+                        {t("characteristics.balcony")}
                       </span>
                       <Toggle
                         checked={form.hasBalcony}
                         onChange={(v) => upd({ hasBalcony: v })}
+                        t={t}
                       />
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Trees size={16} className="text-emerald-500" />
-                      <span className="font-bold text-sm">Jardin</span>
+                      <span className="font-bold text-sm">
+                        {t("characteristics.garden")}
+                      </span>
                       <Toggle
                         checked={form.hasGarden}
                         onChange={(v) => upd({ hasGarden: v })}
+                        t={t}
                       />
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Car size={16} className="text-emerald-500" />
                       <span className="font-bold text-sm">
-                        Garage ou Parking
+                        {t("characteristics.garage")}
                       </span>
                       <Toggle
                         checked={form.hasGarage}
                         onChange={(v) => upd({ hasGarage: v })}
+                        t={t}
                       />
                     </div>
                   </div>
@@ -1469,7 +1542,7 @@ export default function CreateListingPage({
                   <div className="grid grid-cols-2 gap-4 mt-4">
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
-                        Surface (m²)
+                        {t("characteristics.surface")}
                       </label>
                       <div className="relative">
                         <input
@@ -1500,7 +1573,7 @@ export default function CreateListingPage({
                     </div>
                     <div>
                       <label className="block text-xs font-bold uppercase tracking-widest text-slate-500 mb-1.5">
-                        Étage
+                        {t("characteristics.floor")}
                       </label>
                       <div className="relative">
                         <input
@@ -1516,7 +1589,7 @@ export default function CreateListingPage({
                           onBlur={() =>
                             handleBlur("floorNumber", form.floorNumber)
                           }
-                          placeholder="RDC = 0"
+                          placeholder={t("characteristics.floorPlaceholder")}
                           className="w-full bg-slate-50 border rounded-lg py-3 px-4 pr-10 outline-none"
                         />
                         <ArrowUp
@@ -1534,18 +1607,22 @@ export default function CreateListingPage({
 
                   <div className="mt-4 flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                     <ArrowUp size={16} className="text-violet-600" />
-                    <span className="font-bold text-sm">Ascenseur</span>
+                    <span className="font-bold text-sm">
+                      {t("characteristics.elevator")}
+                    </span>
                     <Toggle
                       checked={form.hasElevator}
                       onChange={(v) => upd({ hasElevator: v })}
+                      t={t}
                     />
                   </div>
                 </div>
               )}
 
+              {/* STEP 3 : Équipements */}
               {step === 3 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                  <SectionTitle title="Équipements" />
+                  <SectionTitle title={t("equipment.title")} />
                   <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-3">
                     {equipmentIds.map((equip) => {
                       const active = !!form.equipment[equip.id];
@@ -1579,11 +1656,9 @@ export default function CreateListingPage({
                               }
                             />
                             <span
-                              className={`text-[10px] font-semibold text-center ${
-                                active ? "text-sky-700" : "text-slate-500"
-                              }`}
+                              className={`text-[10px] font-semibold text-center ${active ? "text-sky-700" : "text-slate-500"}`}
                             >
-                              {equip.label}
+                              {t(`equipment.${equip.labelKey}`)}
                             </span>
                           </div>
                         </label>
@@ -1594,14 +1669,17 @@ export default function CreateListingPage({
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Sparkles size={16} className="text-violet-600" />
                       <div className="text-center">
-                        <p className="font-semibold text-sm">Meublé</p>
+                        <p className="font-semibold text-sm">
+                          {t("equipment.furnished")}
+                        </p>
                         <p className="text-xs text-slate-500">
-                          Logement équipé et meublé
+                          {t("equipment.furnishedDesc")}
                         </p>
                       </div>
                       <Toggle
                         checked={form.isFurnished}
                         onChange={(v) => upd({ isFurnished: v })}
+                        t={t}
                       />
                     </div>
                   </div>
@@ -1610,7 +1688,7 @@ export default function CreateListingPage({
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <PartyPopper size={16} className="text-slate-500" />
                       <span className="font-semibold text-sm">
-                        Pas de fêtes
+                        {t("houseRules.noParties")}
                       </span>
                       <Toggle
                         checked={!!form.houseRules.noParties}
@@ -1619,12 +1697,13 @@ export default function CreateListingPage({
                             houseRules: { ...form.houseRules, noParties: v },
                           })
                         }
+                        t={t}
                       />
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Moon size={16} className="text-slate-500" />
                       <span className="font-semibold text-sm">
-                        Silence après 22h
+                        {t("houseRules.quietHours")}
                       </span>
                       <Toggle
                         checked={!!form.houseRules.quietAfter22}
@@ -1633,38 +1712,39 @@ export default function CreateListingPage({
                             houseRules: { ...form.houseRules, quietAfter22: v },
                           })
                         }
+                        t={t}
                       />
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Dog size={16} className="text-slate-500" />
                       <span className="font-semibold text-sm">
-                        Animaux acceptés
+                        {t("houseRules.petsAllowed")}
                       </span>
                       <Toggle
                         checked={form.petsAllowed}
                         onChange={(v) => upd({ petsAllowed: v })}
+                        t={t}
                       />
                     </div>
                     <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                       <Ban size={16} className="text-slate-500" />
                       <span className="font-semibold text-sm">
-                        Fumeurs acceptés
+                        {t("houseRules.smokingAllowed")}
                       </span>
                       <Toggle
                         checked={form.smokingAllowed}
                         onChange={(v) => upd({ smokingAllowed: v })}
+                        t={t}
                       />
                     </div>
                   </div>
                 </div>
               )}
-              {/* STEP 4 : Photos */}
 
+              {/* STEP 4 : Photos */}
               {step === 4 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                  <SectionTitle title="Photos" />
-
-                  {/* Zone de drop avec état d'upload */}
+                  <SectionTitle title={t("photos.title")} />
                   <div
                     onDragOver={(e) => {
                       e.preventDefault();
@@ -1695,7 +1775,6 @@ export default function CreateListingPage({
                       disabled={uploadCount > 0}
                     />
 
-                    {/* 🟢 SPINNER GLOBAL PENDANT L'UPLOAD */}
                     {uploadCount > 0 ? (
                       <div className="flex flex-col items-center gap-3">
                         <Loader2
@@ -1704,10 +1783,10 @@ export default function CreateListingPage({
                         />
                         <div className="text-center">
                           <p className="font-bold text-base text-sky-600 dark:text-sky-400">
-                            Upload en cours...
+                            {t("photos.uploading")}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
-                            {uploadedCount} / {uploadCount} photos
+                            {uploadedCount} / {uploadCount} {t("photos.photos")}
                           </p>
                         </div>
                         <div className="w-48 h-1.5 bg-sky-200 dark:bg-sky-900 rounded-full overflow-hidden">
@@ -1723,10 +1802,10 @@ export default function CreateListingPage({
                       <>
                         <Camera size={28} className="text-sky-500 mb-2" />
                         <p className="font-bold text-base">
-                          Déposez vos photos ici
+                          {t("photos.dropzone")}
                         </p>
                         <p className="text-xs text-slate-500 text-center mt-1">
-                          PNG, JPG jusqu'à 20 photos
+                          {t("photos.formatInfo")}
                         </p>
                       </>
                     )}
@@ -1745,7 +1824,7 @@ export default function CreateListingPage({
                   {form.photos.length > 0 && (
                     <div className="mt-5">
                       <p className="text-xs text-slate-500 mb-3">
-                        Cliquez sur l'étoile pour définir la photo principale
+                        {t("photos.clickStar")}
                       </p>
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
                         {form.photos.map((photo, idx) => (
@@ -1761,14 +1840,14 @@ export default function CreateListingPage({
                             {photo.isMain && (
                               <div className="absolute top-2 left-2">
                                 <span className="bg-sky-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
-                                  Principale
+                                  {t("photos.main")}
                                 </span>
                               </div>
                             )}
                             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors" />
                             <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                               {!photo.isMain && (
-                                <Tooltip text="Définir comme principale">
+                                <Tooltip text={t("photos.setMain")}>
                                   <button
                                     type="button"
                                     onClick={() => setMainPhoto(idx)}
@@ -1778,7 +1857,7 @@ export default function CreateListingPage({
                                   </button>
                                 </Tooltip>
                               )}
-                              <Tooltip text="Supprimer">
+                              <Tooltip text={t("photos.delete")}>
                                 <button
                                   type="button"
                                   onClick={() => removePhoto(idx)}
@@ -1798,7 +1877,7 @@ export default function CreateListingPage({
                           >
                             <Plus size={20} />
                             <span className="text-[9px] font-bold">
-                              Ajouter
+                              {t("photos.add")}
                             </span>
                           </button>
                         )}
@@ -1812,7 +1891,7 @@ export default function CreateListingPage({
               {step === 5 && (
                 <div className="space-y-5">
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title="Type de location" />
+                    <SectionTitle title={t("rentalType.title")} />
                     <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-lg gap-1">
                       {["SHORT_TERM", "LONG_TERM", "BOTH"].map((rt) => (
                         <button
@@ -1821,20 +1900,15 @@ export default function CreateListingPage({
                           onClick={() => upd({ rentalType: rt })}
                           className={`flex-1 py-2 rounded-md text-sm font-bold transition-all cursor-pointer ${form.rentalType === rt ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm" : "text-slate-500"}`}
                         >
-                          {rt === "SHORT_TERM"
-                            ? "Courte durée"
-                            : rt === "LONG_TERM"
-                              ? "Longue durée"
-                              : "Les deux"}
+                          {t(`rentalType.${rt.toLowerCase()}`)}
                         </button>
                       ))}
                     </div>
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title="Tarifs" />
+                    <SectionTitle title={t("pricing.title")} />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* CARTE IA - COURT TERME */}
                       {(form.rentalType === "SHORT_TERM" ||
                         form.rentalType === "BOTH") && (
                         <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-sky-50 via-indigo-50/30 to-sky-50 dark:from-sky-950/20 dark:via-indigo-950/10 dark:to-sky-950/20 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-sky-200/50 dark:hover:shadow-sky-900/20">
@@ -1845,7 +1919,7 @@ export default function CreateListingPage({
                                 <Sparkles size={14} className="text-white" />
                               </div>
                               <span className="text-[10px] font-black uppercase tracking-wider text-sky-600 dark:text-sky-400">
-                                IA Recommendation
+                                {t("pricing.aiRecommendation")}
                               </span>
                             </div>
                             <div className="flex items-baseline gap-1">
@@ -1853,22 +1927,24 @@ export default function CreateListingPage({
                                 {recommendedPrice || "—"}
                               </span>
                               <span className="text-xs font-bold text-slate-400">
-                                TND / nuit
+                                {t("pricing.perNight")}
                               </span>
                             </div>
                             <div className="flex gap-2 mt-3">
                               <button
                                 type="button"
                                 onClick={handleAIPriceRecommendation}
-                                disabled={loading}
+                                disabled={aiLoading}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-sky-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-sky-200 dark:border-sky-800 hover:bg-sky-50 dark:hover:bg-sky-900/30 transition-all disabled:opacity-50"
                               >
-                                {loading ? (
+                                {aiLoading ? (
                                   <Loader2 size={12} className="animate-spin" />
                                 ) : (
                                   <Sparkles size={12} />
                                 )}
-                                {loading ? "Calcul..." : "Estimer"}
+                                {aiLoading
+                                  ? t("pricing.calculating")
+                                  : t("pricing.estimate")}
                               </button>
                               {recommendedPrice && (
                                 <button
@@ -1878,8 +1954,7 @@ export default function CreateListingPage({
                                   }
                                   className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
                                 >
-                                  <Check size={12} />
-                                  Appliquer
+                                  <Check size={12} /> {t("pricing.apply")}
                                 </button>
                               )}
                             </div>
@@ -1887,7 +1962,6 @@ export default function CreateListingPage({
                         </div>
                       )}
 
-                      {/* PRIX PROPRIÉTAIRE - COURT TERME */}
                       {(form.rentalType === "SHORT_TERM" ||
                         form.rentalType === "BOTH") && (
                         <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 transition-all hover:shadow-md">
@@ -1896,9 +1970,9 @@ export default function CreateListingPage({
                               <Sun size={14} className="text-amber-500" />
                             </div>
                             <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                              Votre prix
+                              {t("pricing.yourPrice")}
                             </label>
-                            <Tooltip text="Requis">
+                            <Tooltip text={t("tooltip.required")}>
                               <span className="text-rose-500 text-[10px]">
                                 *
                               </span>
@@ -1922,7 +1996,7 @@ export default function CreateListingPage({
                               className="w-full text-2xl font-black bg-transparent border-none outline-none"
                             />
                             <span className="text-xs font-bold text-slate-400">
-                              TND / nuit
+                              {t("pricing.perNightShort")}
                             </span>
                           </div>
                           {getFieldError("pricePerNight") && (
@@ -1933,7 +2007,6 @@ export default function CreateListingPage({
                         </div>
                       )}
 
-                      {/* CARTE IA - LONG TERME */}
                       {(form.rentalType === "LONG_TERM" ||
                         form.rentalType === "BOTH") && (
                         <div className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-purple-50 via-indigo-50/30 to-purple-50 dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-purple-950/20 p-4 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-900/20">
@@ -1944,7 +2017,7 @@ export default function CreateListingPage({
                                 <Sparkles size={14} className="text-white" />
                               </div>
                               <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                                IA Recommendation
+                                {t("pricing.aiRecommendation")}
                               </span>
                             </div>
                             <div className="flex items-baseline gap-1">
@@ -1952,22 +2025,24 @@ export default function CreateListingPage({
                                 {recommendedPriceMonth || "—"}
                               </span>
                               <span className="text-xs font-bold text-slate-400">
-                                TND / mois
+                                {t("pricing.perMonth")}
                               </span>
                             </div>
                             <div className="flex gap-2 mt-3">
                               <button
                                 type="button"
                                 onClick={handleAIPriceRecommendation}
-                                disabled={loading}
+                                disabled={aiLoading}
                                 className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-purple-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all disabled:opacity-50"
                               >
-                                {loading ? (
+                                {aiLoading ? (
                                   <Loader2 size={12} className="animate-spin" />
                                 ) : (
                                   <Sparkles size={12} />
                                 )}
-                                {loading ? "Calcul..." : "Estimer"}
+                                {aiLoading
+                                  ? t("pricing.calculating")
+                                  : t("pricing.estimate")}
                               </button>
                               {recommendedPriceMonth && (
                                 <button
@@ -1979,8 +2054,7 @@ export default function CreateListingPage({
                                   }
                                   className="flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-emerald-600 bg-white/70 dark:bg-slate-800/70 rounded-lg border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-all"
                                 >
-                                  <Check size={12} />
-                                  Appliquer
+                                  <Check size={12} /> {t("pricing.apply")}
                                 </button>
                               )}
                             </div>
@@ -1988,7 +2062,6 @@ export default function CreateListingPage({
                         </div>
                       )}
 
-                      {/* PRIX PROPRIÉTAIRE - LONG TERME */}
                       {(form.rentalType === "LONG_TERM" ||
                         form.rentalType === "BOTH") && (
                         <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-4 transition-all hover:shadow-md">
@@ -1997,9 +2070,9 @@ export default function CreateListingPage({
                               <Calendar size={14} className="text-purple-500" />
                             </div>
                             <label className="text-[10px] font-black uppercase tracking-wider text-slate-500">
-                              Votre prix
+                              {t("pricing.yourPrice")}
                             </label>
-                            <Tooltip text="Requis">
+                            <Tooltip text={t("tooltip.required")}>
                               <span className="text-rose-500 text-[10px]">
                                 *
                               </span>
@@ -2023,7 +2096,7 @@ export default function CreateListingPage({
                               className="w-full text-2xl font-black bg-transparent border-none outline-none"
                             />
                             <span className="text-xs font-bold text-slate-400">
-                              TND / mois
+                              {t("pricing.perMonthShort")}
                             </span>
                           </div>
                           {getFieldError("pricePerMonth") && (
@@ -2037,16 +2110,16 @@ export default function CreateListingPage({
                   </div>
 
                   <div className="bg-white dark:bg-slate-900 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                    <SectionTitle title="Frais supplémentaires" />
+                    <SectionTitle title={t("additionalFees.title")} />
                     <div className="space-y-3">
                       <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                         <Shield size={16} className="text-emerald-500" />
                         <div>
                           <p className="font-bold text-sm">
-                            Caution de sécurité
+                            {t("additionalFees.securityDeposit")}
                           </p>
                           <p className="text-xs text-slate-500">
-                            Montant remboursable
+                            {t("additionalFees.securityDepositDesc")}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2065,15 +2138,18 @@ export default function CreateListingPage({
                             onChange={(v) =>
                               upd({ securityDeposit: v ? 500 : null })
                             }
+                            t={t}
                           />
                         </div>
                       </div>
                       <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg">
                         <Sparkles size={16} className="text-sky-500" />
                         <div>
-                          <p className="font-bold text-sm">Frais de ménage</p>
+                          <p className="font-bold text-sm">
+                            {t("additionalFees.cleaningFee")}
+                          </p>
                           <p className="text-xs text-slate-500">
-                            Nettoyage inclus
+                            {t("additionalFees.cleaningFeeDesc")}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -2092,6 +2168,7 @@ export default function CreateListingPage({
                             onChange={(v) =>
                               upd({ cleaningFee: v ? 50 : null })
                             }
+                            t={t}
                           />
                         </div>
                       </div>
@@ -2103,8 +2180,7 @@ export default function CreateListingPage({
               {/* STEP 6 : Aperçu */}
               {step === 6 && (
                 <div className="bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-800">
-                  {/* Hero Image - PLUS HAUTE */}
-                  <div className="relative h-64  bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600">
+                  <div className="relative h-64 bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600">
                     {(() => {
                       const mainPhoto =
                         form.photos.find((p) => p.isMain) || form.photos[0];
@@ -2127,10 +2203,14 @@ export default function CreateListingPage({
                       <div>
                         <span className="inline-block bg-white/20 text-white text-[9px] font-bold px-2 py-0.5 rounded-full mb-1">
                           {propertyTypes.find((p) => p.value === form.type)
-                            ?.label || "Logement"}
+                            ?.labelKey
+                            ? t(
+                                `propertyType.${propertyTypes.find((p) => p.value === form.type)!.labelKey}`,
+                              )
+                            : t("propertyType.property")}
                         </span>
                         <h3 className="text-white text-base font-bold">
-                          {form.title || "Sans titre"}
+                          {form.title || t("preview.untitled")}
                         </h3>
                         <div className="flex items-center gap-1 text-white/70 text-xs mt-0.5">
                           <MapPin size={12} />
@@ -2144,31 +2224,33 @@ export default function CreateListingPage({
                           TND
                         </p>
                         <p className="text-[9px] text-slate-500">
-                          {form.rentalType === "LONG_TERM" ? "/mois" : "/nuit"}
+                          {form.rentalType === "LONG_TERM"
+                            ? t("pricing.perMonthShort")
+                            : t("pricing.perNightShort")}
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* TOUTES LES CARACTÉRISTIQUES */}
                   <div className="p-4 space-y-3">
-                    {/* Métriques principales */}
                     <div className="flex flex-wrap gap-4 text-xs text-slate-500 pb-3 border-b border-slate-100">
                       <span className="flex items-center gap-1.5">
                         <Bed size={14} className="text-slate-400" />{" "}
-                        {form.rooms} ch.
+                        {form.rooms} {t("characteristics.bedroomsShort")}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Bath size={14} className="text-slate-400" />{" "}
-                        {form.bathrooms} sdb
+                        {form.bathrooms} {t("characteristics.bathroomsShort")}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Utensils size={14} className="text-slate-400" />{" "}
-                        {form.numberOfKitchens} cuis.
+                        {form.numberOfKitchens}{" "}
+                        {t("characteristics.kitchensShort")}
                       </span>
                       <span className="flex items-center gap-1.5">
                         <Users size={14} className="text-slate-400" />{" "}
-                        {form.maxGuests === null ? "—" : form.maxGuests} pers.
+                        {form.maxGuests === null ? "—" : form.maxGuests}{" "}
+                        {t("characteristics.guests")}
                       </span>
                       {form.surfaceArea && (
                         <span className="flex items-center gap-1.5">
@@ -2180,13 +2262,12 @@ export default function CreateListingPage({
                         <span className="flex items-center gap-1.5">
                           <ArrowUp size={14} className="text-slate-400" />{" "}
                           {form.floorNumber === 0
-                            ? "RDC"
-                            : `${form.floorNumber} ét.`}
+                            ? t("characteristics.groundFloor")
+                            : `${form.floorNumber} ${t("characteristics.floorAbbr")}`}
                         </span>
                       )}
                     </div>
 
-                    {/* Équipements clés (max 4) */}
                     {Object.keys(form.equipment).filter(
                       (key) => form.equipment[key],
                     ).length > 0 && (
@@ -2204,7 +2285,8 @@ export default function CreateListingPage({
                                 key={key}
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-800 rounded-md text-[11px] font-medium"
                               >
-                                <Icon size={12} /> {equip?.label || key}
+                                <Icon size={12} />{" "}
+                                {equip ? t(`equipment.${equip.labelKey}`) : key}
                               </span>
                             );
                           })}
@@ -2220,7 +2302,6 @@ export default function CreateListingPage({
                         )}
                       </div>
                     )}
-                    {/* Description courte */}
                     {form.description && (
                       <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 pt-1">
                         {form.description}
@@ -2234,14 +2315,13 @@ export default function CreateListingPage({
             {/* Sidebar conseils */}
             <div className="hidden lg:block">
               <div className="sticky top-4 space-y-5">
-                {/* Carte Conseils */}
                 <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-sky-100 dark:border-sky-900/40">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center">
                       <Lightbulb size={14} className="text-white" />
                     </div>
                     <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                      Conseils
+                      {t("tips.title")}
                     </h3>
                   </div>
                   <ul className="space-y-2">
@@ -2250,46 +2330,37 @@ export default function CreateListingPage({
                         size={12}
                         className="text-sky-500 shrink-0 mt-0.5"
                       />
-                      <span className="text-slate-600 dark:text-slate-300">
-                        Des photos de qualité augmentent les réservations
-                      </span>
+                      {t("tips.qualityPhotos")}
                     </li>
                     <li className="flex items-start gap-2 text-xs">
                       <Check
                         size={12}
                         className="text-sky-500 shrink-0 mt-0.5"
                       />
-                      <span className="text-slate-600 dark:text-slate-300">
-                        Un titre accrocheur attire plus de voyageurs
-                      </span>
+                      {t("tips.catchyTitle")}
                     </li>
                     <li className="flex items-start gap-2 text-xs">
                       <Check
                         size={12}
                         className="text-sky-500 shrink-0 mt-0.5"
                       />
-                      <span className="text-slate-600 dark:text-slate-300">
-                        Répondez rapidement aux demandes
-                      </span>
+                      {t("tips.quickResponses")}
                     </li>
                     <li className="flex items-start gap-2 text-xs">
                       <Check
                         size={12}
                         className="text-sky-500 shrink-0 mt-0.5"
                       />
-                      <span className="text-slate-600 dark:text-slate-300">
-                        Un prix compétitif augmente vos chances
-                      </span>
+                      {t("tips.competitivePrice")}
                     </li>
                   </ul>
                   <div className="mt-3 pt-2 border-t border-sky-100 dark:border-sky-800/50">
                     <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400">
-                      +35% de réservations
+                      {t("tips.moreBookings")}
                     </span>
                   </div>
                 </div>
 
-                {/* Carte Pourquoi NestHub */}
                 <div className="relative overflow-hidden rounded-xl p-5 text-white">
                   <div className="absolute inset-0 bg-gradient-to-br from-sky-400 via-indigo-500 to-violet-600" />
                   <div className="relative z-10">
@@ -2301,16 +2372,16 @@ export default function CreateListingPage({
                     </div>
                     <ul className="space-y-1.5">
                       <li className="flex items-center gap-2 text-xs text-white/90">
-                        <Shield size={11} /> Paiement sécurisé
+                        <Shield size={11} /> {t("benefits.securePayment")}
                       </li>
                       <li className="flex items-center gap-2 text-xs text-white/90">
-                        <Headphones size={11} /> Assistance 24/7
+                        <Headphones size={11} /> {t("benefits.support247")}
                       </li>
                       <li className="flex items-center gap-2 text-xs text-white/90">
-                        <Sparkles size={11} /> Assurance incluse
+                        <Sparkles size={11} /> {t("benefits.insurance")}
                       </li>
                       <li className="flex items-center gap-2 text-xs text-white/90">
-                        <Rocket size={11} /> Visibilité maximale
+                        <Rocket size={11} /> {t("benefits.maxVisibility")}
                       </li>
                     </ul>
                   </div>
@@ -2330,7 +2401,7 @@ export default function CreateListingPage({
             disabled={step === 1}
             className="flex items-center gap-2 px-5 py-2 text-sm font-semibold text-slate-600 disabled:opacity-30 hover:text-slate-900 transition-colors"
           >
-            <ChevronLeft size={16} /> Précédent
+            <ChevronLeft size={16} /> {t("navigation.previous")}
           </button>
           <div className="flex items-center gap-1.5">
             {STEPS.map((s) => (
@@ -2352,26 +2423,25 @@ export default function CreateListingPage({
               ) : (
                 <Rocket size={14} />
               )}
-              {saving ? "Publication..." : "Publier"}
+              {saving ? t("button.publishing") : t("button.publish")}
             </button>
           ) : (
-            // Remplacer le bouton Continuer par :
             <button
               type="button"
               onClick={goToNextStep}
-              disabled={!isStepValid || uploadCount > 0} // ← AJOUTER uploadCount > 0
+              disabled={!isStepValid || uploadCount > 0}
               className={`flex items-center gap-2 px-6 py-2 rounded-lg font-bold text-sm transition-all ${
-                isStepValid && uploadCount === 0 // ← MODIFIER cette condition
+                isStepValid && uploadCount === 0
                   ? "bg-gradient-to-r from-sky-400 via-indigo-500 to-violet-600 hover:from-sky-500 hover:via-indigo-600 hover:to-violet-700 text-white shadow-md"
                   : "bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 cursor-not-allowed"
               }`}
             >
-              {uploadCount > 0 ? ( // ← AJOUTER cette condition
+              {uploadCount > 0 ? (
                 <Loader2 size={14} className="animate-spin" />
               ) : (
                 <ChevronRight size={14} />
               )}
-              Continuer
+              {t("navigation.continue")}
             </button>
           )}
         </div>

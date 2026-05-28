@@ -1,9 +1,11 @@
+// app/[locale]/admin/profile/page.tsx
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@clerk/nextjs";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { CheckCircle, AlertCircle, X, Loader2 } from "lucide-react";
 import {
   IoPersonOutline,
   IoShieldOutline,
@@ -30,7 +32,11 @@ import {
 } from "react-icons/io5";
 import { useAdminProfile } from "./hooks/useAdminProfile";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { useSearchParams } from "next/navigation";
+
+interface ToastState {
+  type: "success" | "error";
+  message: string;
+}
 
 function classNames(...classes: (string | boolean | undefined)[]) {
   return classes.filter(Boolean).join(" ");
@@ -43,45 +49,6 @@ function DeviceIcon({ device }: { device: string }) {
   if (l.includes("macbook") || l.includes("laptop"))
     return <IoLaptopOutline className="w-5 h-5" />;
   return <IoDesktopOutline className="w-5 h-5" />;
-}
-
-function Toast({
-  msg,
-  ok,
-  onClose,
-}: {
-  msg: string;
-  ok: boolean;
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3800);
-    return () => clearTimeout(t);
-  }, [onClose]);
-  return (
-    <div
-      className={classNames(
-        "fixed top-5 right-5 z-[999] flex items-center gap-3 pl-4 pr-3 py-3 rounded-2xl shadow-2xl text-sm font-semibold border backdrop-blur-xl",
-        ok
-          ? "bg-white/95 dark:bg-slate-900/95 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300"
-          : "bg-white/95 dark:bg-slate-900/95 border-rose-200 dark:border-rose-800/60 text-rose-700 dark:text-rose-300",
-      )}
-      style={{ animation: "slideIn 0.35s cubic-bezier(0.22,1,0.36,1) both" }}
-    >
-      {ok ? (
-        <IoCheckmarkCircle className="text-lg text-emerald-500 flex-shrink-0" />
-      ) : (
-        <IoAlertCircle className="text-lg text-rose-500 flex-shrink-0" />
-      )}
-      <span className="max-w-xs">{msg}</span>
-      <button
-        onClick={onClose}
-        className="ml-1 p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/5"
-      >
-        <IoCloseOutline />
-      </button>
-    </div>
-  );
 }
 
 function Tooltip({
@@ -205,7 +172,25 @@ function SectionHead({ title, sub }: { title: string; sub?: string }) {
 }
 
 export default function AdminProfilePage() {
+  const params = useParams();
+  const router = useRouter();
+  const locale = (params?.locale as string) || "fr";
+  const t = useTranslations("AdminProfile");
   const { getToken } = useAuth();
+
+  const [toast, setToast] = useState<ToastState | null>(null);
+  const [tab, setTab] = useState<"general" | "security" | "preferences">(
+    "general",
+  );
+  const [editing, setEditing] = useState(false);
+  const [savingPw, setSavingPw] = useState(false);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(
+    null,
+  );
+  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const {
     profile,
     sessions,
@@ -219,30 +204,10 @@ export default function AdminProfilePage() {
     terminateSession,
     terminateAllSessions,
     updateLanguage,
-    toggleTheme,
     theme,
     setTheme,
     refresh,
   } = useAdminProfile();
-
-  const searchParams = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const [tab, setTab] = useState<"general" | "security" | "preferences">(
-    "general",
-  );
-  const [editing, setEditing] = useState(false);
-  const [toastMsg, setToastMsg] = useState<{ msg: string; ok: boolean } | null>(
-    null,
-  );
-  const [savingPw, setSavingPw] = useState(false);
-
-  // Avatar states
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingPicture, setUploadingPicture] = useState(false);
-  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(
-    null,
-  );
-  const [localAvatarUrl, setLocalAvatarUrl] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -254,6 +219,11 @@ export default function AdminProfilePage() {
   const [pw, setPw] = useState({ current: "", new: "", confirm: "" });
   const [strength, setStrength] = useState(0);
 
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const calcStrength = (p: string) => {
     let s = 0;
     if (p.length >= 8) s++;
@@ -263,7 +233,13 @@ export default function AdminProfilePage() {
     setStrength(s);
   };
 
-  const SLABELS = ["Très faible", "Faible", "Moyen", "Fort", "Très fort"];
+  const SLABELS = [
+    t("strength.veryWeak"),
+    t("strength.weak"),
+    t("strength.medium"),
+    t("strength.strong"),
+    t("strength.veryStrong"),
+  ];
   const SCOLORS = [
     "bg-slate-300",
     "bg-rose-500",
@@ -282,6 +258,28 @@ export default function AdminProfilePage() {
   const pipAvatar = (url: string) =>
     `/api/users/avatar?url=${encodeURIComponent(url)}`;
 
+  const formatDate = (date: string | null | undefined) => {
+    if (!date) return t("unknown");
+    const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
+    return new Date(date).toLocaleDateString(dateLocale, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const formatDateTime = (date: string | null | undefined) => {
+    if (!date) return t("never");
+    const dateLocale = locale === "fr" ? "fr-FR" : "en-US";
+    return new Date(date).toLocaleString(dateLocale, {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const handleProfilePictureChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -289,11 +287,11 @@ export default function AdminProfilePage() {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image trop volumineuse. Taille maximale : 5 Mo.");
+      showToast("error", t("errors.imageTooLarge"));
       return;
     }
     if (!file.type.startsWith("image/")) {
-      toast.error("Veuillez sélectionner un fichier image (JPG, PNG).");
+      showToast("error", t("errors.invalidImage"));
       return;
     }
 
@@ -318,35 +316,22 @@ export default function AdminProfilePage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        if (data.profilePictureUrl) {
-          await refresh();
-        }
+        await refresh();
         setLocalAvatarUrl(null);
         setProfilePictureFile(null);
-        toast.success("Photo de profil mise à jour avec succès !");
+        showToast("success", t("success.avatarUpdated"));
         return true;
       } else {
         throw new Error("Upload failed");
       }
     } catch (error) {
       console.error("Error uploading picture:", error);
-      toast.error("Échec du téléchargement de la photo");
+      showToast("error", t("errors.avatarUploadFailed"));
       return false;
     } finally {
       setUploadingPicture(false);
     }
   };
-
-  useEffect(() => {
-    if (tabParam === "security") {
-      setTab("security");
-    } else if (tabParam === "preferences") {
-      setTab("preferences");
-    } else {
-      setTab("general");
-    }
-  }, [tabParam]);
 
   useEffect(() => {
     if (profile) {
@@ -360,8 +345,6 @@ export default function AdminProfilePage() {
     }
   }, [profile]);
 
-  const showT = (msg: string, ok = true) => setToastMsg({ msg, ok });
-
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     await updateProfile(form);
@@ -371,37 +354,46 @@ export default function AdminProfilePage() {
     }
 
     setEditing(false);
-    showT("Profil mis à jour avec succès");
+    showToast("success", t("success.profileUpdated"));
   };
 
   const handleSavePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pw.new !== pw.confirm) {
-      showT("Les mots de passe ne correspondent pas", false);
+      showToast("error", t("errors.passwordsMismatch"));
       return;
     }
     if (pw.new.length < 8) {
-      showT("Le mot de passe doit contenir au moins 8 caractères", false);
+      showToast("error", t("errors.passwordTooShort"));
       return;
     }
     setSavingPw(true);
-    await updatePassword(pw.current, pw.new);
+    const result = await updatePassword(pw.current, pw.new);
+    if (result) {
+      setPw({ current: "", new: "", confirm: "" });
+      setStrength(0);
+      showToast("success", t("success.passwordUpdated"));
+    }
     setSavingPw(false);
-    setPw({ current: "", new: "", confirm: "" });
-    setStrength(0);
-    showT("Mot de passe mis à jour");
+  };
+
+  const handleUpdateLanguage = async (langCode: string) => {
+    await updateLanguage(langCode);
+    // ✅ Rediriger vers la nouvelle locale
+    router.push(`/${langCode}/admin/profile`);
+    showToast("success", t("success.languageUpdated"));
   };
 
   useEffect(() => {
     if (error) {
-      showT(error, false);
+      showToast("error", error);
       setError(null);
     }
   }, [error, setError]);
 
   useEffect(() => {
     if (success) {
-      showT(success, true);
+      showToast("success", success);
     }
   }, [success]);
 
@@ -418,7 +410,7 @@ export default function AdminProfilePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center p-8 bg-white dark:bg-slate-900 rounded-xl shadow-lg">
           <h1 className="text-2xl font-bold text-red-600 mb-4">
-            Profil non trouvé
+            {t("errors.profileNotFound")}
           </h1>
         </div>
       </div>
@@ -426,56 +418,66 @@ export default function AdminProfilePage() {
   }
 
   return (
-    <div className="min-h-screen ">
-      <style>{`
-        @keyframes slideIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes fadeUp  { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
-        .fu { animation: fadeUp 0.5s cubic-bezier(0.22,1,0.36,1) both; }
-        .d1{animation-delay:.04s}.d2{animation-delay:.08s}.d3{animation-delay:.12s}
-        .d4{animation-delay:.16s}.d5{animation-delay:.2s}
-      `}</style>
-
-      {toastMsg && (
-        <Toast
-          msg={toastMsg.msg}
-          ok={toastMsg.ok}
-          onClose={() => setToastMsg(null)}
-        />
+    <div className="min-h-screen">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
 
       <div className="px-4 md:px-14 py-6 space-y-6">
         {/* Page header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 fu">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-              Mon Profil
+              {t("title")}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              Gérez vos informations personnelles et paramètres de sécurité
+              {t("description")}
             </p>
           </div>
           <span className="w-fit px-3 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider bg-violet-50 dark:bg-violet-900/20 text-violet-700 dark:text-violet-400 border border-violet-200 dark:border-violet-800/40">
-            {profile.role === "ADMIN" ? "Super-Admin" : profile.role}
+            {profile.role === "ADMIN" ? t("roleAdmin") : profile.role}
           </span>
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-slate-200 dark:border-slate-800 fu d1">
+        <div className="border-b border-slate-200 dark:border-slate-800">
           <div className="flex gap-6">
             {[
               {
                 id: "general",
-                label: "Informations Générales",
+                label: t("tabs.general"),
                 icon: <IoPersonOutline className="w-4 h-4" />,
               },
               {
                 id: "security",
-                label: "Sécurité & Accès",
+                label: t("tabs.security"),
                 icon: <IoShieldOutline className="w-4 h-4" />,
               },
               {
                 id: "preferences",
-                label: "Préférences",
+                label: t("tabs.preferences"),
                 icon: <IoSettingsOutline className="w-4 h-4" />,
               },
             ].map((t) => (
@@ -500,7 +502,7 @@ export default function AdminProfilePage() {
         {tab === "general" && (
           <div className="space-y-5">
             {/* Profile card */}
-            <Section className="fu d1">
+            <Section>
               <div
                 className="h-28 relative overflow-hidden"
                 style={{
@@ -528,7 +530,6 @@ export default function AdminProfilePage() {
 
               <div className="px-6 pb-6">
                 <div className="flex flex-col md:flex-row md:items-end gap-5 -mt-12 mb-4">
-                  {/* Avatar avec upload - version corrigée */}
                   <div className="relative inline-block">
                     <div
                       className="w-24 h-24 rounded-2xl border-4 border-white dark:border-[#111827] shadow-xl bg-gradient-to-br from-violet-400 to-indigo-600 flex items-center justify-center text-white text-2xl font-black overflow-hidden"
@@ -550,8 +551,8 @@ export default function AdminProfilePage() {
                     <Tooltip
                       text={
                         !editing
-                          ? "Activez le mode édition pour modifier la photo"
-                          : "Changer la photo de profil"
+                          ? t("tooltips.enableEditForPhoto")
+                          : t("tooltips.changePhoto")
                       }
                     >
                       <button
@@ -582,17 +583,9 @@ export default function AdminProfilePage() {
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       ID:{" "}
                       <span className="font-mono">{profile.id?.slice(-8)}</span>
-                      {" · "}Inscrit depuis{" "}
-                      {profile.createdAt
-                        ? new Date(profile.createdAt).toLocaleDateString(
-                            "fr-FR",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            },
-                          )
-                        : "Date inconnue"}
+                      {" · "}
+                      {t("memberSince")}{" "}
+                      {formatDate(profile.createdAt)}
                     </p>
                   </div>
                   <button
@@ -604,7 +597,7 @@ export default function AdminProfilePage() {
                         : "bg-violet-600 text-white shadow-lg shadow-violet-600/25 hover:bg-violet-700 hover:-translate-y-px",
                     )}
                   >
-                    {editing ? "Annuler" : "Modifier le profil"}
+                    {editing ? t("cancel") : t("editProfile")}
                   </button>
                 </div>
               </div>
@@ -612,101 +605,83 @@ export default function AdminProfilePage() {
 
             {/* Stats row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-100 dark:border-slate-800/60 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 fu d2">
+              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-100 dark:border-slate-800/60 p-5 shadow-sm">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-4">
                   <IoLockOpenOutline className="w-5 h-5" />
                 </div>
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-1">
-                  Statut du compte
+                  {t("accountStatus")}
                 </p>
                 <p className="text-2xl font-black text-emerald-500 dark:text-emerald-400">
-                  {profile.status === "ACTIVE" ? "Actif" : profile.status}
+                  {profile.status === "ACTIVE" ? t("active") : profile.status}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Dernière connexion:{" "}
-                  {profile.lastLogin && profile.lastLogin !== "Invalid Date"
-                    ? new Date(profile.lastLogin).toLocaleString("fr-FR", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "Jamais"}
+                  {t("lastLogin")}: {formatDateTime(profile.lastLogin)}
                 </p>
               </div>
-              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-100 dark:border-slate-800/60 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 fu d3">
+              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-100 dark:border-slate-800/60 p-5 shadow-sm">
                 <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-900/15 text-violet-600 dark:text-violet-400 flex items-center justify-center mb-4">
                   <IoShieldOutline className="w-5 h-5" />
                 </div>
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-1">
-                  Niveau d'accès
+                  {t("accessLevel")}
                 </p>
                 <p className="text-2xl font-black text-slate-900 dark:text-white">
-                  Niveau {profile.stats?.accessLevel || 5}
+                  {t("level")} {profile.stats?.accessLevel || 5}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  Accès complet à toutes les zones
+                  {t("fullAccess")}
                 </p>
               </div>
-              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-100 dark:border-slate-800/60 p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 fu d4">
+              <div className="bg-white dark:bg-[#111827] rounded-2xl border border-slate-100 dark:border-slate-800/60 p-5 shadow-sm">
                 <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-900/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center mb-4">
                   <IoTimeOutline className="w-5 h-5" />
                 </div>
                 <p className="text-[10px] font-extrabold uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-1">
-                  Actions totales
+                  {t("totalActions")}
                 </p>
                 <p className="text-2xl font-black text-slate-900 dark:text-white">
-                  {(profile.stats?.totalActions || 0).toLocaleString("fr-FR")}
+                  {(profile.stats?.totalActions || 0).toLocaleString(
+                    locale === "fr" ? "fr-FR" : "en-US",
+                  )}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                  {profile.stats?.actionsThisMonth || 0} modifications ce mois
+                  {profile.stats?.actionsThisMonth || 0} {t("actionsThisMonth")}
                 </p>
               </div>
             </div>
 
             {/* Form */}
-            <Section className="fu d4">
+            <Section>
               <SectionHead
-                title="Détails du compte"
+                title={t("accountDetails")}
                 sub={
                   editing
-                    ? "Modifiez vos informations personnelles"
-                    : "Vos informations personnelles"
+                    ? t("editInstructions")
+                    : t("viewInstructions")
                 }
               />
               <form onSubmit={handleSaveProfile} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <FieldLabel>Identifiant Système</FieldLabel>
+                    <FieldLabel>{t("systemId")}</FieldLabel>
                     <ReadField
                       value={profile.id?.slice(-8)}
                       icon={<IoLockClosedOutline className="w-4 h-4" />}
                     />
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-                      Non modifiable
+                      {t("nonModifiable")}
                     </p>
                   </div>
                   <div>
-                    <FieldLabel>Date d'inscription</FieldLabel>
+                    <FieldLabel>{t("registrationDate")}</FieldLabel>
                     <ReadField
-                      value={
-                        profile.createdAt
-                          ? new Date(profile.createdAt).toLocaleDateString(
-                              "fr-FR",
-                              {
-                                day: "numeric",
-                                month: "long",
-                                year: "numeric",
-                              },
-                            )
-                          : "Date inconnue"
-                      }
+                      value={formatDate(profile.createdAt)}
                       icon={<IoTimeOutline className="w-4 h-4" />}
                     />
                   </div>
                   <div>
-                    <FieldLabel>Prénom</FieldLabel>
+                    <FieldLabel>{t("firstName")}</FieldLabel>
                     <EditField
                       value={form.firstName}
                       onChange={(v) => setForm((p) => ({ ...p, firstName: v }))}
@@ -714,7 +689,7 @@ export default function AdminProfilePage() {
                     />
                   </div>
                   <div>
-                    <FieldLabel>Nom</FieldLabel>
+                    <FieldLabel>{t("lastName")}</FieldLabel>
                     <EditField
                       value={form.lastName}
                       onChange={(v) => setForm((p) => ({ ...p, lastName: v }))}
@@ -722,7 +697,7 @@ export default function AdminProfilePage() {
                     />
                   </div>
                   <div>
-                    <FieldLabel>Email</FieldLabel>
+                    <FieldLabel>{t("email")}</FieldLabel>
                     <EditField
                       value={form.email}
                       onChange={(v) => setForm((p) => ({ ...p, email: v }))}
@@ -732,7 +707,7 @@ export default function AdminProfilePage() {
                     />
                   </div>
                   <div>
-                    <FieldLabel>Téléphone</FieldLabel>
+                    <FieldLabel>{t("phone")}</FieldLabel>
                     <EditField
                       value={form.phoneNumber}
                       onChange={(v) =>
@@ -741,11 +716,11 @@ export default function AdminProfilePage() {
                       disabled={!editing}
                       type="tel"
                       icon={<IoCallOutline />}
-                      placeholder="Non renseigné"
+                      placeholder={t("notProvided")}
                     />
                   </div>
                   <div className="md:col-span-2">
-                    <FieldLabel>Bio / Note</FieldLabel>
+                    <FieldLabel>{t("bio")}</FieldLabel>
                     <textarea
                       value={form.bio}
                       onChange={(e) =>
@@ -753,7 +728,7 @@ export default function AdminProfilePage() {
                       }
                       disabled={!editing}
                       rows={3}
-                      placeholder="Ajoutez une note..."
+                      placeholder={t("bioPlaceholder")}
                       className={classNames(
                         "w-full px-4 py-3 rounded-xl text-sm font-medium border-2 transition-all duration-200 outline-none resize-none",
                         editing
@@ -770,7 +745,7 @@ export default function AdminProfilePage() {
                       onClick={() => setEditing(false)}
                       className="px-5 py-2.5 text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
                     >
-                      Annuler
+                      {t("cancel")}
                     </button>
                     <button
                       type="submit"
@@ -785,7 +760,7 @@ export default function AdminProfilePage() {
                       ) : (
                         <IoSaveOutline className="w-4 h-4" />
                       )}
-                      {saving ? "Sauvegarde…" : "Sauvegarder"}
+                      {saving ? t("saving") : t("save")}
                     </button>
                   </div>
                 )}
@@ -797,15 +772,14 @@ export default function AdminProfilePage() {
         {/* SECURITY TAB */}
         {tab === "security" && (
           <div className="space-y-5">
-            {/* Password */}
-            <Section className="fu d1">
+            <Section>
               <SectionHead
-                title="Changer le mot de passe"
-                sub="Mettez à jour votre mot de passe régulièrement"
+                title={t("changePassword")}
+                sub={t("passwordInstructions")}
               />
               <form onSubmit={handleSavePassword} className="p-6 space-y-5">
                 <div>
-                  <FieldLabel>Mot de passe actuel</FieldLabel>
+                  <FieldLabel>{t("currentPassword")}</FieldLabel>
                   <EditField
                     value={pw.current}
                     onChange={(v) => setPw((p) => ({ ...p, current: v }))}
@@ -817,7 +791,7 @@ export default function AdminProfilePage() {
                 </div>
 
                 <div>
-                  <FieldLabel>Nouveau mot de passe</FieldLabel>
+                  <FieldLabel>{t("newPassword")}</FieldLabel>
                   <EditField
                     value={pw.new}
                     onChange={(v) => {
@@ -826,14 +800,14 @@ export default function AdminProfilePage() {
                     }}
                     disabled={false}
                     type="password"
-                    placeholder="Entrez un nouveau mot de passe"
+                    placeholder={t("newPasswordPlaceholder")}
                     showToggle
                   />
                   {pw.new && (
                     <div className="mt-2.5">
                       <div className="flex justify-between items-center mb-1.5 text-[10px]">
                         <span className="text-slate-500 dark:text-slate-400">
-                          Force :{" "}
+                          {t("strength.label")}:{" "}
                           <span
                             className={classNames(
                               "font-extrabold",
@@ -844,7 +818,7 @@ export default function AdminProfilePage() {
                           </span>
                         </span>
                         <span className="text-slate-400">
-                          Min. 8 caractères
+                          {t("strength.minChars")}
                         </span>
                       </div>
                       <div className="flex gap-1 h-1.5">
@@ -865,19 +839,19 @@ export default function AdminProfilePage() {
                 </div>
 
                 <div>
-                  <FieldLabel>Confirmer le nouveau mot de passe</FieldLabel>
+                  <FieldLabel>{t("confirmPassword")}</FieldLabel>
                   <EditField
                     value={pw.confirm}
                     onChange={(v) => setPw((p) => ({ ...p, confirm: v }))}
                     disabled={false}
                     type="password"
-                    placeholder="Confirmez le nouveau mot de passe"
+                    placeholder={t("confirmPasswordPlaceholder")}
                     showToggle
                   />
                   {pw.confirm && pw.new !== pw.confirm && (
                     <p className="text-[11px] text-rose-500 font-semibold mt-1.5 flex items-center gap-1">
-                      <IoAlertCircle className="text-xs" /> Les mots de passe ne
-                      correspondent pas
+                      <IoAlertCircle className="text-xs" />{" "}
+                      {t("errors.passwordsMismatch")}
                     </p>
                   )}
                 </div>
@@ -902,23 +876,21 @@ export default function AdminProfilePage() {
                     ) : (
                       <IoKeyOutline className="w-4 h-4" />
                     )}
-                    {savingPw
-                      ? "Mise à jour…"
-                      : "Mettre à jour le mot de passe"}
+                    {savingPw ? t("updating") : t("updatePassword")}
                   </button>
                 </div>
               </form>
             </Section>
 
             {/* Sessions */}
-            <Section className="fu d3">
+            <Section>
               <div className="px-6 py-5 border-b border-slate-100 dark:border-slate-800/60 flex items-center justify-between">
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white">
-                    Sessions Actives
+                    {t("activeSessions")}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    Gérez vos sessions connectées
+                    {t("sessionsDescription")}
                   </p>
                 </div>
                 {sessions.length > 1 && (
@@ -926,7 +898,7 @@ export default function AdminProfilePage() {
                     onClick={terminateAllSessions}
                     className="text-xs font-bold text-rose-500 hover:text-rose-600 bg-rose-50 dark:bg-rose-900/10 border border-rose-100 dark:border-rose-800/20 px-3 py-1.5 rounded-xl transition-colors flex items-center gap-1.5"
                   >
-                    Déconnecter tous les appareils
+                    {t("logoutAllDevices")}
                   </button>
                 )}
               </div>
@@ -953,13 +925,13 @@ export default function AdminProfilePage() {
                         </span>
                         {s.isCurrent && (
                           <span className="text-[9px] font-extrabold uppercase tracking-wider text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800/20 px-1.5 py-0.5 rounded-md">
-                            Actuelle
+                            {t("currentSession")}
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-slate-400 dark:text-slate-500">
                         <IoGlobeOutline className="inline w-3 h-3 mr-1" />
-                        {s.location} · IP: {s.ip} · Dernière activité:{" "}
+                        {s.location} · IP: {s.ip} · {t("lastActivity")}:{" "}
                         {s.lastActive}
                       </p>
                     </div>
@@ -973,7 +945,7 @@ export default function AdminProfilePage() {
                           : "text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-900/15 border border-transparent hover:border-rose-100 dark:hover:border-rose-800/20 opacity-0 group-hover:opacity-100",
                       )}
                     >
-                      {s.isCurrent ? "Session actuelle" : "Déconnecter"}
+                      {s.isCurrent ? t("currentSession") : t("logout")}
                     </button>
                   </div>
                 ))}
@@ -985,29 +957,29 @@ export default function AdminProfilePage() {
         {/* PREFERENCES TAB */}
         {tab === "preferences" && (
           <div className="space-y-5">
-            {/* Langue */}
-            <Section className="fu d1">
-              <div className="p-6 flex items-center justify-between">
+            {/* Language */}
+            <Section>
+              <div className="p-6 flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white">
-                    Langue
+                    {t("language")}
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Choisissez votre langue préférée
+                    {t("languageDescription")}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   {[
-                    { code: "fr", label: "Français" },
-                    { code: "en", label: "English" },
-                    { code: "ar", label: "العربية" },
-                    { code: "it", label: "Italien" },
-                    { code: "es", label: "Espagnol" },
-                    { code: "de", label: "Allemand" },
+                    { code: "fr", label: t("languages.fr") },
+                    { code: "en", label: t("languages.en") },
+                    { code: "ar", label: t("languages.ar") },
+                    { code: "it", label: t("languages.it") },
+                    { code: "es", label: t("languages.es") },
+                    { code: "de", label: t("languages.de") },
                   ].map((lang) => (
                     <button
                       key={lang.code}
-                      onClick={() => updateLanguage(lang.code)}
+                      onClick={() => handleUpdateLanguage(lang.code)}
                       className={classNames(
                         "px-4 py-2 rounded-xl text-sm font-medium transition-all",
                         (profile?.preferredLocale || "fr") === lang.code
@@ -1022,15 +994,15 @@ export default function AdminProfilePage() {
               </div>
             </Section>
 
-            {/* Thème */}
-            <Section className="fu d2">
-              <div className="p-6 flex items-center justify-between">
+            {/* Theme */}
+            <Section>
+              <div className="p-6 flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white">
-                    Apparence
+                    {t("appearance")}
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Bascule entre mode clair et sombre
+                    {t("appearanceDescription")}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -1044,7 +1016,7 @@ export default function AdminProfilePage() {
                     )}
                   >
                     <IoSunnyOutline className="w-4 h-4" />
-                    Clair
+                    {t("light")}
                   </button>
                   <button
                     onClick={() => setTheme("dark")}
@@ -1056,7 +1028,7 @@ export default function AdminProfilePage() {
                     )}
                   >
                     <IoMoonOutline className="w-4 h-4" />
-                    Sombre
+                    {t("dark")}
                   </button>
                 </div>
               </div>

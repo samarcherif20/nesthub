@@ -25,11 +25,34 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status") || "all";
     const search = searchParams.get("search") || "";
+    const dateRange = searchParams.get("dateRange") || "all";
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "6");
     const skip = (page - 1) * limit;
 
     const where: any = {};
+
+    // 🔥 FILTRE PAR DATE AJOUTÉ 🔥
+    if (dateRange && dateRange !== "all") {
+      const now = new Date();
+      let startDate: Date;
+      
+      switch (dateRange) {
+        case "today":
+          startDate = new Date(now.setHours(0, 0, 0, 0));
+          break;
+        case "week":
+          startDate = new Date(now.setDate(now.getDate() - 7));
+          break;
+        case "month":
+          startDate = new Date(now.setDate(now.getDate() - 30));
+          break;
+        default:
+          startDate = new Date(0);
+      }
+      
+      where.updatedAt = { gte: startDate };
+    }
 
     if (status === "active") {
       where.status = "OPEN";

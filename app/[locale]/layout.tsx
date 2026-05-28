@@ -10,6 +10,7 @@ import { ThemeProviderWrapper } from "./theme-provider-wrapper";
 // @ts-expect-error
 import "../globals.css";
 import { AutoRefreshProvider } from "@/components/ui/providers/AutoRefreshProvider";
+import { Toaster } from "sonner";
 
 
 interface LayoutProps {
@@ -42,6 +43,7 @@ export default async function LocaleLayout({ children, params }: LayoutProps) {
           <ThemeProviderWrapper>
             <NextIntlClientProvider messages={messages} locale={locale}>
               <AutoRefreshProvider>{children}</AutoRefreshProvider>
+
             </NextIntlClientProvider>
           </ThemeProviderWrapper>
         </body>

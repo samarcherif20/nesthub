@@ -29,13 +29,17 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const pageSize = parseInt(searchParams.get("pageSize") || "10");
     const search = searchParams.get("search") || "";
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    const minRooms = searchParams.get("minRooms");
+    const governorate = searchParams.get("governorate");
 
     // Construction du WHERE
     let where: any = {
       ownerId: user.id,
     };
 
-    // Mapper les statuts
+    // Mapper les statuts (selon l'enum ListingStatus)
     let statusFilter = null;
     switch (statusParam) {
       case "ALL":
@@ -57,6 +61,9 @@ export async function GET(request: NextRequest) {
       case "PENDING_REVIEW":
         statusFilter = "PENDING_REVIEW";
         break;
+      case "REJECTED":
+        statusFilter = "REJECTED";
+        break;
       default:
         statusFilter = null;
     }
@@ -73,9 +80,34 @@ export async function GET(request: NextRequest) {
       ];
     }
 
+    // Filtre par prix (pricePerNight ou pricePerMonth)
+    if (minPrice || maxPrice) {
+      where.AND = [];
+      const min = minPrice ? parseFloat(minPrice) : 0;
+      const max = maxPrice ? parseFloat(maxPrice) : 999999;
+
+      where.AND.push({
+        OR: [
+          { pricePerNight: { gte: min, lte: max } },
+          { pricePerMonth: { gte: min, lte: max } },
+        ],
+      });
+    }
+
+    // Filtre par nombre de pièces
+    if (minRooms && minRooms !== "") {
+      where.rooms = { gte: parseInt(minRooms) };
+    }
+
+    // Filtre par gouvernorat
+    if (governorate && governorate !== "") {
+      where.governorate = governorate;
+    }
+
     const skip = (page - 1) * pageSize;
 
-    const [listings, totalCount] = await Promise.all([
+    // Récupérer les annonces avec TOUTES les données
+    const [listings, totalCount, priceRangeResult] = await Promise.all([
       prisma.listing.findMany({
         where,
         select: {
@@ -83,7 +115,15 @@ export async function GET(request: NextRequest) {
           title: true,
           type: true,
           governorate: true,
+          delegation: true,
           status: true,
+          viewCount: true,
+          favoriteCount: true,
+          pricePerNight: true,
+          pricePerMonth: true,
+          rooms: true,
+          createdAt: true,
+          publishedAt: true,
           photos: {
             where: { isMain: true },
             take: 1,
@@ -95,19 +135,77 @@ export async function GET(request: NextRequest) {
         take: pageSize,
       }),
       prisma.listing.count({ where }),
+      prisma.listing.aggregate({
+        where: { ownerId: user.id },
+        _min: { pricePerNight: true, pricePerMonth: true },
+        _max: { pricePerNight: true, pricePerMonth: true },
+      }),
     ]);
+
+    // Récupérer les réservations pour chaque annonce (en une seule requête)
+    const listingIds = listings.map((l) => l.id);
+    const bookings = await prisma.booking.findMany({
+      where: { listingId: { in: listingIds } },
+      select: {
+        listingId: true,
+        status: true,
+        totalWithFees: true,
+      },
+    });
+
+    // Grouper les réservations par annonce
+    const bookingsByListing = new Map();
+    for (const booking of bookings) {
+      if (!bookingsByListing.has(booking.listingId)) {
+        bookingsByListing.set(booking.listingId, {
+          total: 0,
+          count: 0,
+          revenue: 0,
+        });
+      }
+      const stats = bookingsByListing.get(booking.listingId);
+      stats.count++;
+      if (booking.status === "COMPLETED" || booking.status === "CONFIRMED") {
+        stats.revenue += booking.totalWithFees;
+      }
+    }
+
+    // Construire la réponse avec les données enrichies
+    const listingsWithStats = listings.map((listing) => {
+      const bookingStats = bookingsByListing.get(listing.id) || {
+        count: 0,
+        revenue: 0,
+      };
+      return {
+        ...listing,
+        bookingCount: bookingStats.count,
+        totalRevenue: bookingStats.revenue,
+      };
+    });
+
+    // Calculer la plage de prix
+    const minNight = priceRangeResult._min.pricePerNight || 0;
+    const minMonth = priceRangeResult._min.pricePerMonth || 0;
+    const maxNight = priceRangeResult._max.pricePerNight || 0;
+    const maxMonth = priceRangeResult._max.pricePerMonth || 0;
+    const minPriceAll = Math.min(minNight, minMonth);
+    const maxPriceAll = Math.max(maxNight, maxMonth);
 
     console.log(
       `📊 ${listings.length} annonces trouvées pour l'utilisateur ${user.id}`,
     );
 
     return NextResponse.json({
-      listings,
+      listings: listingsWithStats,
       pagination: {
         page,
         pageSize,
         totalCount,
         totalPages: Math.ceil(totalCount / pageSize),
+      },
+      priceRange: {
+        min: minPriceAll,
+        max: maxPriceAll,
       },
     });
   } catch (error) {

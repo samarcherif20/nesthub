@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // ✅ Vérifier le rôle dans la base de données (comme dans l'API invitations)
+    // ✅ Vérifier le rôle dans la base de données
     const admin = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { role: true, id: true, email: true, firstName: true, lastName: true }
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
     console.log(`🔍 [API SEARCH] Recherche pour: "${query}"`);
 
-    // ✅ Recherche dans TOUTES les tables selon votre Prisma
+    // ✅ Recherche dans TOUTES les tables
     const [users, listings, bookings, payments, verificationRequests, disputes, userReports] = await Promise.all([
       // 1. UTILISATEURS
       prisma.user.findMany({
@@ -231,9 +231,9 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    // ✅ Formater les résultats
+    // ✅ Formater les résultats avec les bons liens
     const results = [
-      // Utilisateurs
+      // 1. Utilisateurs
       ...users.map((user) => ({
         type: "user",
         id: user.id,
@@ -254,10 +254,10 @@ export async function GET(req: NextRequest) {
             : user.role === "BOTH"
               ? "bg-green-100 text-green-700"
               : "bg-gray-100 text-gray-700",
-        badgeText: user.role === "PROPERTY_OWNER" ? "Propriétaire" : user.role,
+        badgeText: user.role === "PROPERTY_OWNER" ? "Propriétaire" : user.role === "ADMIN" ? "Admin" : "Utilisateur",
       })),
 
-      // Propriétés
+      // 2. Propriétés
       ...listings.map((listing) => ({
         type: "property",
         id: listing.id,
@@ -273,9 +273,10 @@ export async function GET(req: NextRequest) {
             : listing.status === "SUSPENDED"
               ? "bg-red-100 text-red-700"
               : "bg-gray-100 text-gray-700",
+        badgeText: listing.status === "ACTIVE" ? "Active" : listing.status === "PENDING_REVIEW" ? "En attente" : listing.status,
       })),
 
-      // Réservations
+      // 3. Réservations
       ...bookings.map((booking) => ({
         type: "booking",
         id: booking.id,
@@ -286,19 +287,20 @@ export async function GET(req: NextRequest) {
         dates: `${new Date(booking.checkIn).toLocaleDateString("fr")} → ${new Date(booking.checkOut).toLocaleDateString("fr")}`,
         status: booking.status,
         amount: `${booking.totalPrice} TND`,
-        href: `/admin/bookings/${booking.id}`,
-        badgeColor: booking.status === "CONFIRMED"
+        href: `/admin/booking/${booking.id}`,
+        badgeColor: booking.status === "CONFIRMED" || booking.status === "PAID"
           ? "bg-green-100 text-green-700"
           : booking.status === "PENDING"
             ? "bg-amber-100 text-amber-700"
-            : booking.status === "CANCELLED"
+            : booking.status === "CANCELLED" || booking.status === "REJECTED"
               ? "bg-red-100 text-red-700"
               : booking.status === "COMPLETED"
                 ? "bg-blue-100 text-blue-700"
                 : "bg-gray-100 text-gray-700",
+        badgeText: booking.status === "CONFIRMED" ? "Confirmée" : booking.status === "PENDING" ? "En attente" : booking.status === "CANCELLED" ? "Annulée" : booking.status,
       })),
 
-      // Paiements
+      // 4. Paiements / Transactions
       ...payments.map((payment) => ({
         type: "transaction",
         id: payment.id,
@@ -308,16 +310,17 @@ export async function GET(req: NextRequest) {
         type: payment.type,
         bookingRef: payment.booking?.reference,
         href: `/admin/transactions/${payment.id}`,
-        badgeColor: payment.status === "PAID"
+        badgeColor: payment.status === "PAID" || payment.status === "SUCCESS"
           ? "bg-green-100 text-green-700"
           : payment.status === "PENDING"
             ? "bg-amber-100 text-amber-700"
             : payment.status === "REFUNDED"
               ? "bg-blue-100 text-blue-700"
               : "bg-red-100 text-red-700",
+        badgeText: payment.status === "PAID" ? "Payé" : payment.status === "PENDING" ? "En attente" : payment.status === "REFUNDED" ? "Remboursé" : payment.status,
       })),
 
-      // Vérifications
+      // 5. Vérifications
       ...verificationRequests.map((vr) => ({
         type: "verification",
         id: vr.id,
@@ -326,11 +329,15 @@ export async function GET(req: NextRequest) {
         status: vr.status,
         submittedAt: vr.submittedAt,
         href: `/admin/verifications/${vr.id}`,
-        badgeColor: "bg-amber-100 text-amber-700",
-        badgeText: "En attente",
+        badgeColor: vr.status === "PENDING"
+          ? "bg-amber-100 text-amber-700"
+          : vr.status === "VALIDATED"
+            ? "bg-green-100 text-green-700"
+            : "bg-red-100 text-red-700",
+        badgeText: vr.status === "PENDING" ? "En attente" : vr.status === "VALIDATED" ? "Validé" : "Rejeté",
       })),
 
-      // Litiges
+      // 6. Litiges
       ...disputes.map((dispute) => ({
         type: "dispute",
         id: dispute.id,
@@ -346,9 +353,10 @@ export async function GET(req: NextRequest) {
           : dispute.priority === "MEDIUM"
             ? "bg-amber-100 text-amber-700"
             : "bg-blue-100 text-blue-700",
+        badgeText: dispute.priority === "HIGH" ? "Urgent" : dispute.priority === "MEDIUM" ? "Moyen" : "Normal",
       })),
 
-      // Signalements UserReport
+      // 7. Signalements (Modération)
       ...userReports.map((report) => ({
         type: "report",
         id: report.id,
@@ -357,12 +365,14 @@ export async function GET(req: NextRequest) {
         reported: `${report.reportedUser.firstName || ""} ${report.reportedUser.lastName || ""}`.trim() || report.reportedUser.email,
         reason: report.reason,
         priority: report.priority,
+        status: report.status,
         href: `/admin/moderation/${report.id}`,
         badgeColor: report.priority === "HIGH"
           ? "bg-red-100 text-red-700"
           : report.priority === "MEDIUM"
             ? "bg-amber-100 text-amber-700"
             : "bg-blue-100 text-blue-700",
+        badgeText: report.priority === "HIGH" ? "Urgent" : report.priority === "MEDIUM" ? "Moyen" : "Normal",
       })),
     ];
 

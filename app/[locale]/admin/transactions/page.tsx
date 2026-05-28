@@ -1,6 +1,6 @@
 // app/[locale]/admin/transactions/page.tsx
 "use client";
-import { useState } from "react";  
+import { useState } from "react";
 
 import { useParams } from "next/navigation";
 import { useTranslations } from "next-intl";

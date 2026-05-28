@@ -49,8 +49,12 @@ function calculateReviewScoresFromList(reviews: any[]) {
 
 function mergeWithPendingRevision(original: any, pending: any): any {
   console.log(`[mergeWithPendingRevision] DEBUT`);
-  console.log(`Original - title: ${original?.title}, pricePerNight: ${original?.pricePerNight}`);
-  console.log(`Pending - title: ${pending?.title}, pricePerNight: ${pending?.pricePerNight}`);
+  console.log(
+    `Original - title: ${original?.title}, pricePerNight: ${original?.pricePerNight}`,
+  );
+  console.log(
+    `Pending - title: ${pending?.title}, pricePerNight: ${pending?.pricePerNight}`,
+  );
 
   if (!pending) {
     console.log(`Aucune donnee pending, retour original`);
@@ -100,7 +104,9 @@ function mergeWithPendingRevision(original: any, pending: any): any {
       const oldValue = merged[field];
       const newValue = pending[field];
       if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
-        console.log(`Fusion du champ "${field}": ${JSON.stringify(oldValue)} -> ${JSON.stringify(newValue)}`);
+        console.log(
+          `Fusion du champ "${field}": ${JSON.stringify(oldValue)} -> ${JSON.stringify(newValue)}`,
+        );
       }
       merged[field] = pending[field];
     }
@@ -111,7 +117,9 @@ function mergeWithPendingRevision(original: any, pending: any): any {
     merged.photos = pending.photos;
   }
 
-  console.log(`[mergeWithPendingRevision] FIN - merged title: ${merged.title}, pricePerNight: ${merged.pricePerNight}`);
+  console.log(
+    `[mergeWithPendingRevision] FIN - merged title: ${merged.title}, pricePerNight: ${merged.pricePerNight}`,
+  );
   return merged;
 }
 
@@ -150,7 +158,9 @@ async function sendNotificationToOwner(
       },
     });
 
-    console.log(`[NOTIFICATION] Envoyee au proprietaire ${owner.email || ownerId}:`);
+    console.log(
+      `[NOTIFICATION] Envoyee au proprietaire ${owner.email || ownerId}:`,
+    );
     console.log(`   - Titre: ${title}`);
     console.log(`   - Type: ${type}`);
     console.log(`   - Contenu: ${content}`);
@@ -282,7 +292,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     let displayData = { ...listing };
 
     if (listing.hasPendingRevision && listing.pendingRevision) {
-      console.log(`\n[GET] Annonce ${id} a des modifications EN ATTENTE de validation`);
+      console.log(
+        `\n[GET] Annonce ${id} a des modifications EN ATTENTE de validation`,
+      );
       const pendingData = listing.pendingRevision;
       displayData = mergeWithPendingRevision(displayData, pendingData);
       console.log(`Donnees fusionnees - nouveau titre: ${displayData.title}`);
@@ -314,7 +326,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       _sum: { totalPrice: true },
     });
     const totalRevenue = totalRevenueResult._sum.totalPrice || 0;
-
+    const totalBookedDaysResult = await prisma.booking.aggregate({
+      where: {
+        listingId: id,
+        status: { in: ["CONFIRMED", "COMPLETED", "ACCEPTED", "PAID"] },
+      },
+      _sum: { totalNights: true },
+    });
+    const totalBookedDays = totalBookedDaysResult._sum.totalNights || 0;
+    const realOccupancyRate = Math.min(
+      Math.round((totalBookedDays / 365) * 100),
+      100,
+    );
     const pendingBookings = await prisma.pendingBooking.findMany({
       where: {
         listingId: id,
@@ -355,6 +378,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
               firstName: true,
               lastName: true,
               username: true,
+              email: true, // ✅ AJOUTER email pour fallback
+
               profilePictureUrl: true,
             },
           },
@@ -375,6 +400,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
               firstName: true,
               lastName: true,
               username: true,
+              email: true, // ✅ AJOUTER email pour fallback
+
               profilePictureUrl: true,
             },
           },
@@ -385,9 +412,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
       upcomingBookings = upcomingBookingsRaw.map((b) => ({
         id: b.id,
-        tenantName: b.tenant?.firstName
-          ? `${b.tenant.firstName} ${b.tenant.lastName || ""}`.trim()
-          : b.tenant?.username || "Locataire",
+        tenantName: b.tenant?.username
+          ? `@${b.tenant.username}`
+          : b.tenant?.email?.split("@")[0] || "Voyageur",
         tenantAvatar: b.tenant?.profilePictureUrl || null,
         checkIn: b.checkIn,
         checkOut: b.checkOut,
@@ -398,9 +425,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
       pastBookings = pastBookingsRaw.map((b) => ({
         id: b.id,
-        tenantName: b.tenant?.firstName
-          ? `${b.tenant.firstName} ${b.tenant.lastName || ""}`.trim()
-          : b.tenant?.username || "Locataire",
+        tenantName: b.tenant?.username
+          ? `@${b.tenant.username}`
+          : b.tenant?.email?.split("@")[0] || "Voyageur",
         tenantAvatar: b.tenant?.profilePictureUrl || null,
         checkIn: b.checkIn,
         checkOut: b.checkOut,
@@ -414,7 +441,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       id: review.id,
       rating: review.rating,
       comment: review.comment,
-      author: review.reviewer?.username || review.reviewer?.firstName || "Anonyme",
+      author:
+        review.reviewer?.username || review.reviewer?.firstName || "Anonyme",
       authorAvatar: review.reviewer?.profilePictureUrl,
       createdAt: review.createdAt,
       date: new Date(review.createdAt).toLocaleDateString("fr-FR", {
@@ -482,6 +510,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       archivedAt: displayData.archivedAt,
       totalBookings: bookingCount,
       totalRevenue: totalRevenue,
+      realOccupancyRate: realOccupancyRate, 
+
       owner: displayData.owner,
       blockedDates: blockedDates,
       pendingDates: pendingDates,
@@ -490,10 +520,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       isOwner: isOwner,
       reviews: formattedReviews,
       reviewScores: calculateReviewScoresFromList(reviewsList),
-      vacationMode: ownerVacation?.vacationMode || listing.vacationMode || false,
-      vacationMessage: ownerVacation?.vacationMessage || listing.vacationMessage || null,
-      vacationStartDate: ownerVacation?.vacationStartDate || listing.vacationStartDate,
-      vacationEndDate: ownerVacation?.vacationEndDate || listing.vacationEndDate,
+      vacationMode:
+        ownerVacation?.vacationMode || listing.vacationMode || false,
+      vacationMessage:
+        ownerVacation?.vacationMessage || listing.vacationMessage || null,
+      vacationStartDate:
+        ownerVacation?.vacationStartDate || listing.vacationStartDate,
+      vacationEndDate:
+        ownerVacation?.vacationEndDate || listing.vacationEndDate,
     };
 
     console.log(`\nREPONSE FINALE:`);
@@ -662,7 +696,9 @@ export const PATCH = withAuth(
       );
     }
 
-    console.log(`   - hasPendingRevision: ${existingListing.hasPendingRevision}`);
+    console.log(
+      `   - hasPendingRevision: ${existingListing.hasPendingRevision}`,
+    );
 
     let result;
     let notificationTitle = "";
@@ -721,10 +757,12 @@ export const PATCH = withAuth(
       const oldStatus = existingListing.status;
       const newStatus = status;
 
-      console.log(`CAS 1: ADMIN change le statut: ${oldStatus} -> ${newStatus}`);
-      
+      console.log(
+        `CAS 1: ADMIN change le statut: ${oldStatus} -> ${newStatus}`,
+      );
+
       result = await prisma.listing.update({ where: { id }, data: { status } });
-      
+
       await prisma.listingHistory.create({
         data: {
           listingId: id,
@@ -795,7 +833,9 @@ export const PATCH = withAuth(
     }
     // CAS 3: Mise a jour d'une annonce non-ACTIVE → modification directe
     else if (Object.keys(updateFields).length > 0) {
-      console.log(`CAS 3: Annonce ${existingListing.status} - Modification directe`);
+      console.log(
+        `CAS 3: Annonce ${existingListing.status} - Modification directe`,
+      );
 
       const directData = filterAllowedFields(updateFields);
       console.log(`Champs a modifier directement:`, Object.keys(directData));
@@ -828,7 +868,8 @@ export const PATCH = withAuth(
     // CAS 5: Action TOGGLE_STATUS
     else if (action === "TOGGLE_STATUS") {
       console.log(`CAS 5: Action TOGGLE_STATUS`);
-      const newStatus = existingListing.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+      const newStatus =
+        existingListing.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
       result = await prisma.listing.update({
         where: { id },
         data: { status: newStatus },

@@ -24,7 +24,7 @@ import {
   IoCalendarOutline,
 } from "react-icons/io5";
 import { formatDistanceToNow, format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { fr, enUS } from "date-fns/locale"; // ✅ Importer les deux
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Pagination from "@/components/ui/Pagination";
 import { useAdminListingsValidation } from "./hooks/useAdminListingsValidation";
@@ -38,6 +38,9 @@ const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.05),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.28),0_8px_16px_-4px_rgba(0,0,0,0.32)]";
 
 export default function ListingsValidationPage() {
+  const getDateLocale = () => {
+    return locale === "fr" ? fr : enUS;
+  };
   const params = useParams();
   const locale = (params?.locale as string) || "fr";
   const t = useTranslations("AdminListingsValidation");
@@ -95,7 +98,7 @@ export default function ListingsValidationPage() {
     if (status === "REJECTED") {
       return (
         <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 flex items-center gap-1">
-           {t("badgeRejected")}
+          {t("badgeRejected")}
         </span>
       );
     }
@@ -116,7 +119,9 @@ export default function ListingsValidationPage() {
           {listing.validatedAt && (
             <span className="text-[9px] text-slate-400 flex items-center gap-1">
               <IoCalendarOutline size={9} />
-              {format(new Date(listing.validatedAt), "dd/MM/yyyy", { locale: fr })}
+              {format(new Date(listing.validatedAt), "dd/MM/yyyy", {
+                locale: getDateLocale(),
+              })}
             </span>
           )}
         </div>
@@ -132,7 +137,9 @@ export default function ListingsValidationPage() {
             {listing.rejectedAt && (
               <span className="text-[9px] text-slate-400 flex items-center gap-1">
                 <IoCalendarOutline size={9} />
-                {format(new Date(listing.rejectedAt), "dd/MM/yyyy", { locale: fr })}
+                {format(new Date(listing.rejectedAt), "dd/MM/yyyy", {
+                  locale: getDateLocale(),
+                })}
               </span>
             )}
           </div>
@@ -148,10 +155,30 @@ export default function ListingsValidationPage() {
   };
 
   const tabs = [
-    { id: "all" as const, label: t("tabAll"), icon: IoHourglassOutline, count: stats.total },
-    { id: "pending" as const, label: t("tabNew"), icon: IoCreateOutline, count: stats.pending },
-    { id: "revisions" as const, label: t("tabRevisions"), icon: IoGitBranchOutline, count: stats.revisions },
-    { id: "history" as const, label: t("tabHistory"), icon: IoTimeOutline, count: stats.validated + stats.rejected },
+    {
+      id: "all" as const,
+      label: t("tabAll"),
+      icon: IoHourglassOutline,
+      count: stats.total,
+    },
+    {
+      id: "pending" as const,
+      label: t("tabNew"),
+      icon: IoCreateOutline,
+      count: stats.pending,
+    },
+    {
+      id: "revisions" as const,
+      label: t("tabRevisions"),
+      icon: IoGitBranchOutline,
+      count: stats.revisions,
+    },
+    {
+      id: "history" as const,
+      label: t("tabHistory"),
+      icon: IoTimeOutline,
+      count: stats.validated + stats.rejected,
+    },
   ];
 
   if (initialLoading) {
@@ -167,10 +194,21 @@ export default function ListingsValidationPage() {
       {/* Toast Notification */}
       {toast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}>
-            {toast.type === "success" ? <CheckCircle className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
             <span className="text-sm font-medium">{toast.message}</span>
-            <button onClick={() => setToast(null)} className="ml-2 hover:opacity-70"><X className="w-4 h-4" /></button>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -180,51 +218,76 @@ export default function ListingsValidationPage() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{t("title")}</h2>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">{t("description")}</p>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                {t("title")}
+              </h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mt-0.5">
+                {t("description")}
+              </p>
             </div>
           </div>
 
           {/* KPIs */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-orange-100 dark:border-orange-900/40 p-4 ${card3d}`}>
+            <div
+              className={`bg-white dark:bg-slate-900 rounded-2xl border border-orange-100 dark:border-orange-900/40 p-4 ${card3d}`}
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
                   <IoHourglassOutline className="text-orange-600 dark:text-orange-400 text-lg" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">{t("statsPending")}</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.total}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">
+                    {t("statsPending")}
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {stats.total}
+                  </p>
                 </div>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
                 <div className="flex items-center text-orange-500 text-[11px] font-semibold">
                   <IoTrendingUpOutline className="text-sm mr-1" />
-                  <span>{stats.pending} {t("newListings")}, {stats.revisions} {t("modifications")}</span>
+                  <span>
+                    {stats.pending} {t("newListings")}, {stats.revisions}{" "}
+                    {t("modifications")}
+                  </span>
                 </div>
               </div>
             </div>
 
-            <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 p-4 ${card3d}`}>
+            <div
+              className={`bg-white dark:bg-slate-900 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 p-4 ${card3d}`}
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
                   <IoCheckmarkCircle className="text-emerald-600 dark:text-emerald-400 text-lg" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">{t("statsProcessedToday")}</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.processedToday}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">
+                    {t("statsProcessedToday")}
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {stats.processedToday}
+                  </p>
                 </div>
               </div>
             </div>
 
-            <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-purple-100 dark:border-purple-900/40 p-4 ${card3d}`}>
+            <div
+              className={`bg-white dark:bg-slate-900 rounded-2xl border border-purple-100 dark:border-purple-900/40 p-4 ${card3d}`}
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                   <IoTimeIcon className="text-purple-600 dark:text-purple-400 text-lg" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">{t("statsAvgTime")}</p>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.avgResponseTime}h</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">
+                    {t("statsAvgTime")}
+                  </p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                    {stats.avgResponseTime}h
+                  </p>
                 </div>
               </div>
               <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -235,17 +298,25 @@ export default function ListingsValidationPage() {
               </div>
             </div>
 
-            <div className={`bg-white dark:bg-slate-900 rounded-2xl border border-blue-100 dark:border-blue-900/40 p-4 ${card3d}`}>
+            <div
+              className={`bg-white dark:bg-slate-900 rounded-2xl border border-blue-100 dark:border-blue-900/40 p-4 ${card3d}`}
+            >
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <IoCheckmarkDoneCircleOutline className="text-blue-600 dark:text-blue-400 text-lg" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">{t("statsHistory")}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">
+                    {t("statsHistory")}
+                  </p>
                   <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{stats.validated}</span>
+                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                      {stats.validated}
+                    </span>
                     <span className="text-slate-400">/</span>
-                    <span className="text-lg font-bold text-red-600 dark:text-red-400">{stats.rejected}</span>
+                    <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                      {stats.rejected}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -254,11 +325,18 @@ export default function ListingsValidationPage() {
                   <div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className="h-full bg-emerald-500 rounded-full"
-                      style={{ width: `${(stats.validated / (stats.validated + stats.rejected || 1)) * 100}%` }}
+                      style={{
+                        width: `${(stats.validated / (stats.validated + stats.rejected || 1)) * 100}%`,
+                      }}
                     />
                   </div>
                   <span className="text-[9px] text-slate-500">
-                    {Math.round((stats.validated / (stats.validated + stats.rejected || 1)) * 100)}% {t("statsValidated")}
+                    {Math.round(
+                      (stats.validated /
+                        (stats.validated + stats.rejected || 1)) *
+                        100,
+                    )}
+                    % {t("statsValidated")}
                   </span>
                 </div>
               </div>
@@ -283,11 +361,13 @@ export default function ListingsValidationPage() {
                   <Icon size={14} />
                   {tab.label}
                   {tab.count > 0 && (
-                    <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-                    }`}>
+                    <span
+                      className={`ml-1 px-1.5 py-0.5 rounded-full text-[10px] ${
+                        isActive
+                          ? "bg-white/20 text-white"
+                          : "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                      }`}
+                    >
                       {tab.count}
                     </span>
                   )}
@@ -336,9 +416,13 @@ export default function ListingsValidationPage() {
               {pagination.totalCount > 0 ? (
                 <>
                   {t("showing")}{" "}
-                  <span className="font-semibold text-slate-900 dark:text-white">{listings.length}</span>{" "}
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {listings.length}
+                  </span>{" "}
                   {t("of")}{" "}
-                  <span className="font-semibold text-slate-900 dark:text-white">{pagination.totalCount}</span>{" "}
+                  <span className="font-semibold text-slate-900 dark:text-white">
+                    {pagination.totalCount}
+                  </span>{" "}
                   {t("properties")}
                 </>
               ) : (
@@ -346,7 +430,9 @@ export default function ListingsValidationPage() {
               )}
             </p>
             <div className="flex items-center gap-2">
-              <label className="text-sm text-slate-500 dark:text-slate-400">{t("show")}</label>
+              <label className="text-sm text-slate-500 dark:text-slate-400">
+                {t("show")}
+              </label>
               <select
                 value={pagination.limit}
                 onChange={(e) => handleLimitChange(parseInt(e.target.value))}
@@ -394,7 +480,7 @@ export default function ListingsValidationPage() {
                     <tr>
                       <td colSpan={7} className="px-4 py-12 text-center">
                         <LoadingSpinner size="md" color="primary" />
-                       </td>
+                      </td>
                     </tr>
                   ) : listings.length === 0 ? (
                     <tr>
@@ -402,18 +488,23 @@ export default function ListingsValidationPage() {
                         <div className="flex flex-col items-center justify-center">
                           <IoHomeOutline className="w-12 h-12 text-slate-400 mb-3" />
                           <p className="text-slate-500 dark:text-slate-400">
-                            {activeTab === "history" ? t("noHistory") : t("noResults")}
+                            {activeTab === "history"
+                              ? t("noHistory")
+                              : t("noResults")}
                           </p>
                         </div>
-                       </td>
+                      </td>
                     </tr>
                   ) : (
                     listings.map((listing) => {
                       const listingImageUrl = listing.images?.[0];
                       const proxiedUrl = getListingImageUrl(listingImageUrl);
                       const hasImageError = imageErrors[listing.id];
-                      const displayPrice = listing.pricePerNight || listing.pricePerMonth;
-                      const priceUnit = listing.pricePerNight ? t("pricePerNight") : t("pricePerMonth");
+                      const displayPrice =
+                        listing.pricePerNight || listing.pricePerMonth;
+                      const priceUnit = listing.pricePerNight
+                        ? t("pricePerNight")
+                        : t("pricePerMonth");
 
                       return (
                         <tr
@@ -426,10 +517,14 @@ export default function ListingsValidationPage() {
                               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 overflow-hidden flex items-center justify-center">
                                 {listing.owner.profilePictureUrl ? (
                                   <img
-                                    src={getAvatarUrl(listing.owner.profilePictureUrl)}
+                                    src={getAvatarUrl(
+                                      listing.owner.profilePictureUrl,
+                                    )}
                                     alt=""
                                     className="w-full h-full object-cover"
-                                    onError={(e) => (e.currentTarget.style.display = "none")}
+                                    onError={(e) =>
+                                      (e.currentTarget.style.display = "none")
+                                    }
                                   />
                                 ) : (
                                   <span className="text-indigo-600 dark:text-indigo-400 font-bold text-xs">
@@ -439,14 +534,15 @@ export default function ListingsValidationPage() {
                               </div>
                               <div>
                                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-                                  {listing.owner.firstName} {listing.owner.lastName}
+                                  {listing.owner.firstName}{" "}
+                                  {listing.owner.lastName}
                                 </p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
                                   {listing.owner.email}
                                 </p>
                               </div>
                             </div>
-                           </td>
+                          </td>
 
                           {/* Listing */}
                           <td className="px-4 py-3.5">
@@ -477,14 +573,14 @@ export default function ListingsValidationPage() {
                                 </p>
                               </div>
                             </div>
-                           </td>
+                          </td>
 
                           {/* Type */}
                           <td className="px-4 py-3.5 whitespace-nowrap">
                             <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
                               {getListingTypeLabel(listing.type)}
                             </span>
-                           </td>
+                          </td>
 
                           {/* Price */}
                           <td className="px-4 py-3.5 whitespace-nowrap">
@@ -493,29 +589,46 @@ export default function ListingsValidationPage() {
                                 <p className="text-sm font-bold text-slate-800 dark:text-white">
                                   {formatPrice(displayPrice)}
                                 </p>
-                                <p className="text-[9px] text-slate-400">{priceUnit}</p>
+                                <p className="text-[9px] text-slate-400">
+                                  {priceUnit}
+                                </p>
                               </div>
                             ) : (
                               <span className="text-xs text-slate-400">—</span>
                             )}
-                           </td>
+                          </td>
 
                           {/* Date */}
                           <td className="px-4 py-3.5 whitespace-nowrap">
                             <p className="text-sm text-slate-900 dark:text-white">
-                              {format(new Date(listing.createdAt), "dd MMM yyyy", { locale: fr })}
+                              {format(
+                                new Date(listing.createdAt),
+                                "dd/MM/yyyy",
+                                {
+                                  locale: getDateLocale(),
+                                },
+                              )}
                             </p>
                             <p className="text-[10px] text-slate-400">
-                              {formatDistanceToNow(new Date(listing.createdAt), { addSuffix: true, locale: fr })}
+                              {formatDistanceToNow(
+                                new Date(listing.createdAt),
+                                {
+                                  addSuffix: true,
+                                  locale: getDateLocale(),
+                                },
+                              )}
                             </p>
-                           </td>
+                          </td>
 
                           {/* Status */}
                           <td className="px-4 py-3.5">
                             {activeTab === "history"
                               ? getHistoryBadge(listing)
-                              : getStatusBadge(listing.status, listing.hasPendingRevision)}
-                           </td>
+                              : getStatusBadge(
+                                  listing.status,
+                                  listing.hasPendingRevision,
+                                )}
+                          </td>
 
                           {/* Actions */}
                           <td className="px-4 py-3.5 text-center whitespace-nowrap">
@@ -524,10 +637,12 @@ export default function ListingsValidationPage() {
                               className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-lg transition-all"
                             >
                               <IoEyeOutline className="text-sm" />
-                              {activeTab === "history" ? t("actionView") : t("actionProcess")}
+                              {activeTab === "history"
+                                ? t("actionView")
+                                : t("actionProcess")}
                             </Link>
-                           </td>
-                         </tr>
+                          </td>
+                        </tr>
                       );
                     })
                   )}

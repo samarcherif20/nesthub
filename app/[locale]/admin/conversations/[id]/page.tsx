@@ -1,17 +1,15 @@
 // app/[locale]/admin/conversations/[id]/page.tsx
 "use client";
 
-import { useRef, useEffect,useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import AlertBanner from "@/components/ui/Alert";
+import { CheckCircle, AlertCircle, X } from "lucide-react";
 import {
   IoChevronForwardOutline,
-  IoWarningOutline,
   IoCheckmarkCircleOutline,
   IoSendOutline,
   IoChatbubbleOutline,
@@ -26,16 +24,38 @@ import {
   IoCardOutline,
 } from "react-icons/io5";
 import { useConversationDetail } from "./hooks/useConversationDetail";
+import ConfirmActionModal from "@/components/ui/modals/ConfirmActionModal";
+
+interface Toast {
+  type: "success" | "error";
+  message: string;
+}
+
+interface ConfirmModalState {
+  isOpen: boolean;
+  action: "FLAG" | "UNFLAG" | "CLOSE" | "REOPEN" | null;
+  conversationId?: string;
+  conversationTitle?: string;
+}
 
 export default function ConversationDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const locale = (params?.locale as string) || "fr";
   const conversationId = params.id as string;
   const t = useTranslations("ConversationDetail");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [openBlocked, setOpenBlocked] = useState(false);
   const [openLeak, setOpenLeak] = useState(false);
   const [openPayment, setOpenPayment] = useState(false);
+  const [toast, setToast] = useState<Toast | null>(null);
+  const [modalState, setModalState] = useState<ConfirmModalState>({ isOpen: false, action: null });
+
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const {
     conversation,
     loading,
@@ -49,7 +69,15 @@ export default function ConversationDetailPage() {
     handleAction,
     cleanSystemMessage,
     getImageUrl,
-  } = useConversationDetail(conversationId);
+  } = useConversationDetail(conversationId, showToast);
+
+  // Convertir les Alert du hook en Toast
+  useEffect(() => {
+    if (alert) {
+      showToast(alert.type === "success" ? "success" : "error", alert.message);
+      setAlert(null);
+    }
+  }, [alert, setAlert]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -58,6 +86,29 @@ export default function ConversationDetailPage() {
   useEffect(() => {
     if (conversation) setTimeout(scrollToBottom, 100);
   }, [conversation]);
+
+  const formatTime = (date: Date) => {
+    return format(new Date(date), "HH:mm");
+  };
+
+  const openConfirmModal = (action: ConfirmModalState["action"]) => {
+    setModalState({
+      isOpen: true,
+      action,
+      conversationId: conversation?.id,
+      conversationTitle: conversation?.listing?.title,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setModalState({ isOpen: false, action: null });
+  };
+
+  const handleConfirmAction = async () => {
+    if (!modalState.action || !conversation) return;
+    await handleAction(modalState.action);
+    closeConfirmModal();
+  };
 
   if (loading) {
     return (
@@ -73,7 +124,7 @@ export default function ConversationDetailPage() {
         <div className="text-center">
           <p className="text-slate-400 dark:text-slate-500">{t("notFound")}</p>
           <button
-            onClick={() => router.push("/admin/moderation")}
+            onClick={() => router.push(`/${locale}/admin/moderation`)}
             className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg"
           >
             {t("backToList")}
@@ -87,7 +138,6 @@ export default function ConversationDetailPage() {
   const isFlagged = conversation.isBlocked;
   const hasReports = conversation.reportCount > 0;
 
-  // Fonction pour obtenir la classe de couleur en fonction du score
   const getScoreColor = (score: number) => {
     if (score >= 70) return "emerald";
     if (score >= 40) return "amber";
@@ -96,28 +146,55 @@ export default function ConversationDetailPage() {
 
   return (
     <div className="h-full flex flex-col">
-      {alert && (
-        <div className="fixed top-20 right-8 z-50">
-          <AlertBanner
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-          />
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success" 
+                ? "bg-green-500 text-white" 
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Confirm Action Modal */}
+      <ConfirmActionModal
+        isOpen={modalState.isOpen}
+        onClose={closeConfirmModal}
+        action={modalState.action}
+        conversationId={modalState.conversationId}
+        conversationTitle={modalState.conversationTitle}
+        onConfirm={handleConfirmAction}
+        loading={submitting}
+      />
 
       {/* Breadcrumb */}
       <div className="flex-shrink-0 mb-4 pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center justify-between">
           <nav className="flex items-center gap-2">
             <Link
-              href="/admin/moderation"
-              className="text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase text-[10px] font-bold tracking-wider"
+              href={`/${locale}/admin/moderation`}
+              className="text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors uppercase text-[12px] font-bold tracking-wider"
             >
               {t("moderation")}
             </Link>
-            <IoChevronForwardOutline className="text-slate-400 dark:text-slate-600 text-[9px]" />
-            <span className="text-indigo-600 dark:text-indigo-400 font-semibold uppercase text-[10px] tracking-wider">
+            <IoChevronForwardOutline className="text-slate-400 dark:text-slate-600 text-[12px]" />
+            <span className="text-indigo-600 dark:text-indigo-400 font-semibold uppercase text-[12px] tracking-wider">
               {t("conversationNumber")} {conversation.id.slice(-8)}
             </span>
           </nav>
@@ -211,7 +288,7 @@ export default function ConversationDetailPage() {
             </div>
           </div>
 
-          {/* Messages — SEULE PARTIE QUI SCROLL */}
+          {/* Messages */}
           <div className="flex-1 overflow-y-auto p-5 space-y-4 bg-slate-50 dark:bg-slate-800/30">
             {conversation.messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center">
@@ -280,9 +357,7 @@ export default function ConversationDetailPage() {
                       className={`flex items-center gap-1 px-1 ${!isOwner ? "flex-row-reverse" : ""}`}
                     >
                       <span className="text-[9px] text-slate-400 dark:text-slate-500">
-                        {format(new Date(message.createdAt), "HH:mm", {
-                          locale: fr,
-                        })}
+                        {formatTime(new Date(message.createdAt))}
                       </span>
                       {message.isRead && (
                         <IoCheckmarkDoneOutline className="text-[9px] text-indigo-500 dark:text-indigo-400" />
@@ -295,7 +370,7 @@ export default function ConversationDetailPage() {
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Note input — STICKY at bottom */}
+          {/* Note input */}
           <div className="flex-shrink-0 p-3 bg-white dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700">
             <div className="flex gap-2">
               <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 flex items-center gap-2 focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
@@ -393,256 +468,254 @@ export default function ConversationDetailPage() {
               </div>
             </div>
 
-{/* IA DETECTION - ALERTES DE FUITE */}
-<div>
-  <h3 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
-    <IoShieldOutline className="text-base" />
-    Alertes IA - Fuites détectées
-  </h3>
-  <div className="space-y-3">
-    
-    {/* 1. MESSAGES BLOQUÉS PAR L'IA (DÉJÀ BLOQUÉS) */}
-    {(() => {
-      const blockedMessages = conversation.messages.filter(
-        (m) => !m.isSystem && m.content.startsWith("[Message bloqué")
-      );
-      if (blockedMessages.length === 0) return null;
-      return (
-        <div className="bg-violet-50/50 dark:bg-violet-950/20 rounded-xl border border-violet-200 dark:border-violet-800/40 overflow-hidden">
-          <button
-            onClick={() => setOpenBlocked(!openBlocked)}
-            className="w-full p-3 flex items-center justify-between hover:bg-violet-100/40 dark:hover:bg-violet-900/20 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-violet-100 dark:bg-violet-900/40 rounded-full flex items-center justify-center">
-                <IoFlagOutline className="text-violet-500 text-sm" />
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold text-violet-700 dark:text-violet-300">
-                  Messages bloqués par l'IA
-                </p>
-                <p className="text-[10px] text-violet-500">
-                  {blockedMessages.length} message{blockedMessages.length > 1 ? 's' : ''} bloqué{blockedMessages.length > 1 ? 's' : ''}
-                </p>
-              </div>
-            </div>
-            <IoChevronForwardOutline
-              className={`text-violet-400 text-sm transition-transform duration-200 ${openBlocked ? "rotate-90" : ""}`}
-            />
-          </button>
-          {openBlocked && (
-            <div className="px-3 pb-3 pt-0 border-t border-violet-100 dark:border-violet-800/40 space-y-2">
-              {blockedMessages.map((msg) => (
-                <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <p className="text-[10px] font-medium text-violet-700 dark:text-violet-400">
-                      {msg.senderName}
-                    </p>
-                    <span className="text-[9px] text-violet-400">
-                      {format(new Date(msg.createdAt), "HH:mm", { locale: fr })}
-                    </span>
+            {/* IA DETECTION */}
+            <div>
+              <h3 className="text-xs font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <IoShieldOutline className="text-base" />
+                {t("iaAlerts")}
+              </h3>
+              <div className="space-y-3">
+                
+                {/* 1. MESSAGES BLOQUÉS */}
+                {(() => {
+                  const blockedMessages = conversation.messages.filter(
+                    (m) => !m.isSystem && m.content.startsWith("[Message bloqué")
+                  );
+                  if (blockedMessages.length === 0) return null;
+                  return (
+                    <div className="bg-violet-50/50 dark:bg-violet-950/20 rounded-xl border border-violet-200 dark:border-violet-800/40 overflow-hidden">
+                      <button
+                        onClick={() => setOpenBlocked(!openBlocked)}
+                        className="w-full p-3 flex items-center justify-between hover:bg-violet-100/40 dark:hover:bg-violet-900/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-violet-100 dark:bg-violet-900/40 rounded-full flex items-center justify-center">
+                            <IoFlagOutline className="text-violet-500 text-sm" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-xs font-semibold text-violet-700 dark:text-violet-300">
+                              {t("blockedMessages")}
+                            </p>
+                            <p className="text-[10px] text-violet-500">
+                              {blockedMessages.length} {t("messagesBlocked")}
+                            </p>
+                          </div>
+                        </div>
+                        <IoChevronForwardOutline
+                          className={`text-violet-400 text-sm transition-transform duration-200 ${openBlocked ? "rotate-90" : ""}`}
+                        />
+                      </button>
+                      {openBlocked && (
+                        <div className="px-3 pb-3 pt-0 border-t border-violet-100 dark:border-violet-800/40 space-y-2">
+                          {blockedMessages.map((msg) => (
+                            <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
+                              <div className="flex justify-between items-start">
+                                <p className="text-[10px] font-medium text-violet-700 dark:text-violet-400">
+                                  {msg.senderName}
+                                </p>
+                                <span className="text-[9px] text-violet-400">
+                                  {formatTime(new Date(msg.createdAt))}
+                                </span>
+                              </div>
+                              <p className="text-[9px] text-violet-600 dark:text-violet-300 mt-0.5 italic">
+                                {msg.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* 2. FUITE DE COORDONNÉES */}
+                {(() => {
+                  const leakMessages = conversation.messages.filter(
+                    (m) =>
+                      !m.isSystem &&
+                      !m.content.startsWith("[Message bloqué") &&
+                      (m.content.includes("+216") ||
+                        m.content.includes("00216") ||
+                        /\b[2579]\d{7}\b/.test(m.content) ||
+                        /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(m.content) ||
+                        m.content.toLowerCase().includes("whatsapp") ||
+                        m.content.toLowerCase().includes("telegram"))
+                  );
+                  if (leakMessages.length === 0) return null;
+                  return (
+                    <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 overflow-hidden">
+                      <button
+                        onClick={() => setOpenLeak(!openLeak)}
+                        className="w-full p-3 flex items-center justify-between hover:bg-amber-100/40 dark:hover:bg-amber-900/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center">
+                            <IoCallOutline className="text-amber-500 text-sm" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                              {t("coordinateLeaks")}
+                            </p>
+                            <p className="text-[10px] text-amber-500">
+                              {leakMessages.length} {t("attempts")}
+                            </p>
+                          </div>
+                        </div>
+                        <IoChevronForwardOutline
+                          className={`text-amber-400 text-sm transition-transform duration-200 ${openLeak ? "rotate-90" : ""}`}
+                        />
+                      </button>
+                      {openLeak && (
+                        <div className="px-3 pb-3 pt-0 border-t border-amber-100 dark:border-amber-800/40 space-y-2">
+                          {leakMessages.map((msg) => (
+                            <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
+                              <div className="flex justify-between items-start">
+                                <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                                  {msg.senderName}
+                                </p>
+                                <span className="text-[9px] text-amber-400">
+                                  {formatTime(new Date(msg.createdAt))}
+                                </span>
+                              </div>
+                              <p className="text-[9px] text-slate-600 dark:text-slate-400 mt-0.5">
+                                {msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* 3. PAIEMENT EXTERNE */}
+                {(() => {
+                  const paymentMessages = conversation.messages.filter(
+                    (m) =>
+                      !m.isSystem &&
+                      !m.content.startsWith("[Message bloqué") &&
+                      (m.content.toLowerCase().includes("paypal") ||
+                        m.content.toLowerCase().includes("western") ||
+                        m.content.toLowerCase().includes("virement") ||
+                        m.content.includes("hors plateforme") ||
+                        m.content.includes("barra"))
+                  );
+                  if (paymentMessages.length === 0) return null;
+                  return (
+                    <div className="bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-800/40 overflow-hidden">
+                      <button
+                        onClick={() => setOpenPayment(!openPayment)}
+                        className="w-full p-3 flex items-center justify-between hover:bg-purple-100/40 dark:hover:bg-purple-900/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
+                            <IoCardOutline className="text-purple-500 text-sm" />
+                          </div>
+                          <div className="text-left">
+                            <p className="text-xs font-semibold text-purple-700 dark:text-purple-300">
+                              {t("suspiciousPayment")}
+                            </p>
+                            <p className="text-[10px] text-purple-500">
+                              {paymentMessages.length} {t("attempts")}
+                            </p>
+                          </div>
+                        </div>
+                        <IoChevronForwardOutline
+                          className={`text-purple-400 text-sm transition-transform duration-200 ${openPayment ? "rotate-90" : ""}`}
+                        />
+                      </button>
+                      {openPayment && (
+                        <div className="px-3 pb-3 pt-0 border-t border-purple-100 dark:border-purple-800/40 space-y-2">
+                          {paymentMessages.map((msg) => (
+                            <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
+                              <div className="flex justify-between items-start">
+                                <p className="text-[10px] font-medium text-purple-700 dark:text-purple-400">
+                                  {msg.senderName}
+                                </p>
+                                <span className="text-[9px] text-purple-400">
+                                  {formatTime(new Date(msg.createdAt))}
+                                </span>
+                              </div>
+                              <p className="text-[9px] text-slate-600 dark:text-slate-400 mt-0.5">
+                                {msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                {/* 4. AUCUNE ALERTE */}
+                {conversation.messages.filter(
+                  (m) =>
+                    !m.isSystem &&
+                    (m.content.startsWith("[Message bloqué") ||
+                      m.content.includes("+216") ||
+                      /\b[2579]\d{7}\b/.test(m.content) ||
+                      /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(m.content) ||
+                      m.content.toLowerCase().includes("whatsapp") ||
+                      m.content.toLowerCase().includes("paypal"))
+                ).length === 0 && (
+                  <div className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
+                    <div className="flex items-center gap-2 p-3">
+                      <div className="w-7 h-7 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center">
+                        <IoCheckmarkCircleOutline className="text-emerald-500 text-sm" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                          {t("noAlerts")}
+                        </p>
+                        <p className="text-[10px] text-emerald-500">
+                          {t("conversationSecure")}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-[9px] text-violet-600 dark:text-violet-300 mt-0.5 italic">
-                    {msg.content}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    })()}
-
-    {/* 2. TENTATIVES DE FUITE DE COORDONNÉES (NON BLOQUÉES) */}
-    {(() => {
-      const leakMessages = conversation.messages.filter(
-        (m) =>
-          !m.isSystem &&
-          !m.content.startsWith("[Message bloqué") &&
-          (m.content.includes("+216") ||
-            m.content.includes("00216") ||
-            /\b[2579]\d{7}\b/.test(m.content) ||
-            /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(m.content) ||
-            m.content.toLowerCase().includes("whatsapp") ||
-            m.content.toLowerCase().includes("telegram"))
-      );
-      if (leakMessages.length === 0) return null;
-      return (
-        <div className="bg-amber-50/50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800/40 overflow-hidden">
-          <button
-            onClick={() => setOpenLeak(!openLeak)}
-            className="w-full p-3 flex items-center justify-between hover:bg-amber-100/40 dark:hover:bg-amber-900/20 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-amber-100 dark:bg-amber-900/40 rounded-full flex items-center justify-center">
-                <IoCallOutline className="text-amber-500 text-sm" />
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                  Tentatives de fuite de coordonnées
-                </p>
-                <p className="text-[10px] text-amber-500">
-                  {leakMessages.length} tentative{leakMessages.length > 1 ? 's' : ''}
-                </p>
+                )}
               </div>
             </div>
-            <IoChevronForwardOutline
-              className={`text-amber-400 text-sm transition-transform duration-200 ${openLeak ? "rotate-90" : ""}`}
-            />
-          </button>
-          {openLeak && (
-            <div className="px-3 pb-3 pt-0 border-t border-amber-100 dark:border-amber-800/40 space-y-2">
-              {leakMessages.map((msg) => (
-                <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <p className="text-[10px] font-medium text-amber-700 dark:text-amber-400">
-                      {msg.senderName}
-                    </p>
-                    <span className="text-[9px] text-amber-400">
-                      {format(new Date(msg.createdAt), "HH:mm", { locale: fr })}
-                    </span>
-                  </div>
-                  <p className="text-[9px] text-slate-600 dark:text-slate-400 mt-0.5">
-                    {msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    })()}
 
-    {/* 3. PAIEMENT EXTERNE SUSPECT */}
-    {(() => {
-      const paymentMessages = conversation.messages.filter(
-        (m) =>
-          !m.isSystem &&
-          !m.content.startsWith("[Message bloqué") &&
-          (m.content.toLowerCase().includes("paypal") ||
-            m.content.toLowerCase().includes("western") ||
-            m.content.toLowerCase().includes("virement") ||
-            m.content.includes("hors plateforme") ||
-            m.content.includes("barra"))
-      );
-      if (paymentMessages.length === 0) return null;
-      return (
-        <div className="bg-purple-50/50 dark:bg-purple-950/20 rounded-xl border border-purple-200 dark:border-purple-800/40 overflow-hidden">
-          <button
-            onClick={() => setOpenPayment(!openPayment)}
-            className="w-full p-3 flex items-center justify-between hover:bg-purple-100/40 dark:hover:bg-purple-900/20 transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 bg-purple-100 dark:bg-purple-900/40 rounded-full flex items-center justify-center">
-                <IoCardOutline className="text-purple-500 text-sm" />
-              </div>
-              <div className="text-left">
-                <p className="text-xs font-semibold text-purple-700 dark:text-purple-300">
-                  Paiement externe suspect
-                </p>
-                <p className="text-[10px] text-purple-500">
-                  {paymentMessages.length} tentative{paymentMessages.length > 1 ? 's' : ''}
-                </p>
+            {/* Quick Actions */}
+            <div className="space-y-3">
+              <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                {t("quickActions")}
+              </h3>
+              <div className="grid grid-cols-1 gap-2">
+                
+                <button
+                  onClick={() => openConfirmModal(isFlagged ? "UNFLAG" : "FLAG")}
+                  className={`w-full py-2 rounded-full text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md ${
+                    isFlagged
+                      ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20"
+                      : "bg-red-500 hover:bg-red-600 text-white shadow-red-500/20"
+                  }`}
+                >
+                  <IoFlagOutline className="text-sm" />
+                  {isFlagged ? t("unflag") : t("flag")}
+                </button>
+
+                <button
+                  onClick={() => openConfirmModal("CLOSE")}
+                  className="w-full py-2 rounded-full bg-slate-700 hover:bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-slate-700/20"
+                >
+                  <IoCheckmarkCircleOutline className="text-sm" />
+                  {t("close")}
+                </button>
+
+                {conversation.status !== "OPEN" && (
+                  <button
+                    onClick={() => openConfirmModal("REOPEN")}
+                    className="w-full py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
+                  >
+                    <IoRefreshOutline className="text-sm" />
+                    {t("reopen")}
+                  </button>
+                )}
+
               </div>
             </div>
-            <IoChevronForwardOutline
-              className={`text-purple-400 text-sm transition-transform duration-200 ${openPayment ? "rotate-90" : ""}`}
-            />
-          </button>
-          {openPayment && (
-            <div className="px-3 pb-3 pt-0 border-t border-purple-100 dark:border-purple-800/40 space-y-2">
-              {paymentMessages.map((msg) => (
-                <div key={msg.id} className="bg-white/50 dark:bg-slate-800/30 p-2 rounded-lg">
-                  <div className="flex justify-between items-start">
-                    <p className="text-[10px] font-medium text-purple-700 dark:text-purple-400">
-                      {msg.senderName}
-                    </p>
-                    <span className="text-[9px] text-purple-400">
-                      {format(new Date(msg.createdAt), "HH:mm", { locale: fr })}
-                    </span>
-                  </div>
-                  <p className="text-[9px] text-slate-600 dark:text-slate-400 mt-0.5">
-                    {msg.content.length > 100 ? msg.content.substring(0, 100) + "..." : msg.content}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    })()}
-
-    {/* 4. AUCUNE ALERTE */}
-    {conversation.messages.filter(
-      (m) =>
-        !m.isSystem &&
-        (m.content.startsWith("[Message bloqué") ||
-          m.content.includes("+216") ||
-          /\b[2579]\d{7}\b/.test(m.content) ||
-          /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/.test(m.content) ||
-          m.content.toLowerCase().includes("whatsapp") ||
-          m.content.toLowerCase().includes("paypal"))
-    ).length === 0 && (
-      <div className="bg-emerald-50/50 dark:bg-emerald-950/20 rounded-xl border border-emerald-200 dark:border-emerald-800/40">
-        <div className="flex items-center gap-2 p-3">
-          <div className="w-7 h-7 bg-emerald-100 dark:bg-emerald-900/40 rounded-full flex items-center justify-center">
-            <IoCheckmarkCircleOutline className="text-emerald-500 text-sm" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-              Aucune alerte détectée
-            </p>
-            <p className="text-[10px] text-emerald-500">
-              Cette conversation semble sécurisée
-            </p>
-          </div>
-        </div>
-      </div>
-    )}
-  </div>
-</div>
-{/* Quick Actions - Style inspiré UI */}
-<div className="space-y-3">
-  <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-    Actions Rapides
-  </h3>
-  <div className="grid grid-cols-1 gap-2">
-    
-    {/* BOUTON FLAG / UNFLAG */}
-    <button
-      onClick={() => handleAction(isFlagged ? "UNFLAG" : "FLAG")}
-      className={`w-full py-2 rounded-full text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md ${
-        isFlagged
-          ? "bg-amber-500 hover:bg-amber-600 text-white shadow-amber-500/20"
-          : "bg-red-500 hover:bg-red-600 text-white shadow-red-500/20"
-      }`}
-    >
-      <IoFlagOutline className="text-sm" />
-      {isFlagged ? "Débloquer" : "Bloquer"}
-    </button>
-
-    {/* BOUTON CLOSE */}
-    <button
-      onClick={() => handleAction("CLOSE")}
-      className="w-full py-2 rounded-full bg-slate-700 hover:bg-slate-800 text-white text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-slate-700/20"
-    >
-      <IoCheckmarkCircleOutline className="text-sm" />
-      Fermer
-    </button>
-
-    {/* BOUTON REOPEN (conditionnel) */}
-    {conversation.status !== "OPEN" && (
-      <button
-        onClick={() => handleAction("REOPEN")}
-        className="w-full py-2 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-bold uppercase tracking-wide transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20"
-      >
-        <IoRefreshOutline className="text-sm" />
-        Réouvrir
-      </button>
-    )}
-
-  </div>
-</div>
           </div>
         </div>
       </div>

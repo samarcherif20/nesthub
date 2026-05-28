@@ -178,7 +178,8 @@ model User {
   reportsCreated      Report[]             @relation("reports")
   reportReceived      Report[]             @relation("reported")
   paymentTransactions PaymentTransaction[] // 👈 Relation inverse pour PaymentTransaction
-
+  groupConversations GroupConversationParticipant[]
+  groupMessages       GroupConversationMessage[]
   @@index([email])
   @@index([status])
   @@index([role])
@@ -724,6 +725,7 @@ model Listing {
   rejectedBy         String?
   validatedAt        DateTime?
   validatedBy        String? // Référence à l'admin
+  groupConversations GroupConversation[]
 
   @@index([ownerId])
   @@index([status])
@@ -1157,6 +1159,7 @@ model Dispute {
   openedByUser  User             @relation("OpenedDisputes", fields: [openedBy], references: [id])
   assignedAdmin User?            @relation("AssignedDisputes", fields: [assignedTo], references: [id])
   messages      DisputeMessage[]
+  groupConversation GroupConversation?
 
   @@index([bookingId])
   @@index([status])
@@ -1738,4 +1741,61 @@ model ContactMessage {
   @@index([email])
   @@index([userId]) // ← AJOUTER
   @@map("contact_messages")
+}// ============================================
+// GROUP CONVERSATIONS (pour les litiges)
+// ============================================
+
+model GroupConversation {
+  id          String   @id @default(cuid())
+  name        String?                           // Nom du groupe (ex: "Litige: Villa à Hammamet")
+  listingId   String
+  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  disputeId   String?   @unique                 // Lien unique vers le litige
+  dispute     Dispute?  @relation(fields: [disputeId], references: [id])
+  status      String   @default("ACTIVE")       // ACTIVE, CLOSED, ARCHIVED
+  lastMessage String?  @db.Text
+  lastMessageAt DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  participants GroupConversationParticipant[]
+  messages     GroupConversationMessage[]
+
+  @@index([listingId])
+  @@index([disputeId])
+  @@map("group_conversations")
+}
+
+model GroupConversationParticipant {
+  id          String   @id @default(cuid())
+  groupId     String
+  group       GroupConversation @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  unreadCount Int      @default(0)
+  joinedAt    DateTime @default(now())
+  leftAt      DateTime?
+
+  @@unique([groupId, userId])
+  @@index([groupId])
+  @@index([userId])
+  @@map("group_conversation_participants")
+}
+
+model GroupConversationMessage {
+  id          String   @id @default(cuid())
+  groupId     String
+  group       GroupConversation @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  senderId    String
+  sender      User     @relation(fields: [senderId], references: [id])
+  content     String   @db.Text
+  attachments Json?    @default("[]")
+  isSystem    Boolean  @default(false)
+  readBy      Json?    @default("[]")           // IDs des utilisateurs qui ont lu
+  createdAt   DateTime @default(now())
+
+  @@index([groupId])
+  @@index([createdAt])
+  @@index([senderId])
+  @@map("group_conversation_messages")
 }

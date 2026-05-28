@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useIdentityVerification } from "@/hooks/useIdentityVerification";
+
 interface Listing {
   id: string;
   title: string;
@@ -10,7 +11,13 @@ interface Listing {
   delegation: string;
   pricePerNight: number | null;
   pricePerMonth: number | null;
-  status: "ACTIVE" | "INACTIVE" | "DRAFT" | "ARCHIVED" | "PENDING_REVIEW";
+  status:
+    | "ACTIVE"
+    | "INACTIVE"
+    | "DRAFT"
+    | "ARCHIVED"
+    | "PENDING_REVIEW"
+    | "REJECTED";
   viewCount: number;
   bookingCount: number;
   favoriteCount?: number;
@@ -24,7 +31,7 @@ interface TabCounts {
   active: number;
   inactive: number;
   draft: number;
-  pending: number; // 🔥 AJOUTÉ
+  pending: number;
   archived: number;
 }
 
@@ -50,7 +57,7 @@ interface Filters {
   governorate: string;
 }
 
-export function useListings(pageSize: number = 6) {
+export function useListings(pageSize: number = 5) {
   const { getToken } = useAuth();
 
   const [listings, setListings] = useState<Listing[]>([]);
@@ -123,7 +130,6 @@ export function useListings(pageSize: number = 6) {
   );
 
   const buildListingsUrl = useCallback(() => {
-    // 🔥 CORRECTION: convertir pending en PENDING_REVIEW pour l'API
     let statusParam = "";
     if (activeTab === "all") {
       statusParam = "ALL";
@@ -176,10 +182,11 @@ export function useListings(pageSize: number = 6) {
     }
   }, [authFetch, buildListingsUrl, showAlert]);
 
+  // ✅ CORRIGÉ : fetchStats avec calculs réels des croissances
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
     try {
-      // 🔥 CORRECTION: utiliser PENDING_REVIEW pour le compteur
+      // Récupérer les compteurs par statut
       const statuses = [
         "ALL",
         "ACTIVE",
@@ -214,13 +221,16 @@ export function useListings(pageSize: number = 6) {
         archived: archivedData.pagination?.totalCount ?? 0,
       });
 
+      // ✅ CORRIGÉ : Récupérer TOUTES les annonces pour les stats (pageSize=1000)
       const allListingsRes = await authFetch(
-        `/api/listings/my?status=ALL&page=1&pageSize=100`,
+        `/api/listings/my?status=ALL&page=1&pageSize=1000`,
       );
+
       if (allListingsRes.ok) {
         const data = await allListingsRes.json();
         const items: Listing[] = data.listings || [];
 
+        // Calcul des stats de base
         const totalRevenue = items.reduce(
           (s, l) =>
             s +
@@ -232,6 +242,7 @@ export function useListings(pageSize: number = 6) {
           (s, l) => s + (l.bookingCount ?? 0),
           0,
         );
+        const activeCount = items.filter((l) => l.status === "ACTIVE").length;
         const occupancyRate =
           items.length > 0
             ? Math.min(
@@ -240,14 +251,88 @@ export function useListings(pageSize: number = 6) {
               )
             : 0;
 
+        // ✅ CALCUL DES CROISSANCES RÉELLES
+        const now = new Date();
+        const lastMonthStart = new Date(
+          now.getFullYear(),
+          now.getMonth() - 1,
+          1,
+        );
+        const twoMonthsAgoStart = new Date(
+          now.getFullYear(),
+          now.getMonth() - 2,
+          1,
+        );
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+        let lastMonthRevenue = 0;
+        let prevMonthRevenue = 0;
+        let lastMonthViews = 0;
+        let prevMonthViews = 0;
+        let lastMonthBookings = 0;
+        let prevMonthBookings = 0;
+
+        for (const item of items) {
+          const createdAt = new Date(item.createdAt);
+          const revenue =
+            (item.pricePerNight ?? item.pricePerMonth ?? 0) *
+            (item.bookingCount ?? 0);
+          const views = item.viewCount ?? 0;
+          const bookings = item.bookingCount ?? 0;
+
+          if (createdAt >= lastMonthStart && createdAt < thisMonthStart) {
+            lastMonthRevenue += revenue;
+            lastMonthViews += views;
+            lastMonthBookings += bookings;
+          } else if (
+            createdAt >= twoMonthsAgoStart &&
+            createdAt < lastMonthStart
+          ) {
+            prevMonthRevenue += revenue;
+            prevMonthViews += views;
+            prevMonthBookings += bookings;
+          }
+        }
+
+        const revenueGrowth =
+          prevMonthRevenue > 0
+            ? Math.round(
+                ((lastMonthRevenue - prevMonthRevenue) / prevMonthRevenue) *
+                  100 *
+                  10,
+              ) / 10
+            : lastMonthRevenue > 0
+              ? 100
+              : 0;
+
+        const viewsGrowth =
+          prevMonthViews > 0
+            ? Math.round(
+                ((lastMonthViews - prevMonthViews) / prevMonthViews) * 100 * 10,
+              ) / 10
+            : lastMonthViews > 0
+              ? 100
+              : 0;
+
+        const occupancyGrowth =
+          prevMonthBookings > 0
+            ? Math.round(
+                ((lastMonthBookings - prevMonthBookings) / prevMonthBookings) *
+                  100 *
+                  10,
+              ) / 10
+            : lastMonthBookings > 0
+              ? 100
+              : 0;
+
         setGlobalStats({
           totalRevenue,
-          activeCount: activeData.pagination?.totalCount ?? 0,
+          activeCount,
           totalViews,
           occupancyRate,
-          revenueGrowth: totalRevenue > 0 ? 12.5 : 0,
-          viewsGrowth: totalViews > 0 ? 8.2 : 0,
-          occupancyGrowth: occupancyRate > 0 ? 2.1 : 0,
+          revenueGrowth,
+          viewsGrowth,
+          occupancyGrowth,
         });
       }
     } catch (e) {
@@ -331,7 +416,6 @@ export function useListings(pageSize: number = 6) {
       setShowVerificationModal(true);
       return false;
     }
-
     return true;
   };
 
@@ -339,7 +423,6 @@ export function useListings(pageSize: number = 6) {
     setShowVerificationModal(false);
     if (pendingNavigate) {
       setPendingNavigate(false);
-      // Rediriger vers la page de création
       return true;
     }
     return false;

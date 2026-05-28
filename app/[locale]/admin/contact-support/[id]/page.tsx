@@ -1,7 +1,6 @@
-// app/admin/contacts/[id]/page.tsx
+// app/[locale]/admin/contacts/[id]/page.tsx
 "use client";
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { FaChevronRight, FaPaperPlane, FaTimes, FaUser, FaPhone, FaEnvelope, FaCheckCircle, FaExclamationTriangle, FaInfoCircle, FaArrowLeft } from "react-icons/fa";
@@ -9,21 +8,11 @@ import { LuBadgeInfo } from "react-icons/lu";
 import { RiDoubleQuotesR } from "react-icons/ri";
 import { MdVerified, MdMarkEmailRead } from "react-icons/md";
 import { Loader2 } from "lucide-react";
+import { CheckCircle, AlertCircle, X } from "lucide-react";
+
 import RichTextEditor from "@/components/ui/editor/RichTextEditor";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-
-interface ContactMessage {
-  id: string;
-  fullName: string;
-  email: string;
-  phone: string | null;
-  userId: string | null;
-  message: string;
-  status: string;
-  reply: string | null;
-  repliedAt: string | null;
-  createdAt: string;
-}
+import { useContactReply } from "./hooks/useContactReply";
 
 interface ToastState {
   type: "success" | "error";
@@ -31,98 +20,45 @@ interface ToastState {
 }
 
 export default function AdminContactReplyPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
+  const id = params.id as string;
   const router = useRouter();
   const t = useTranslations("AdminContacts.reply");
-  const [message, setMessage] = useState<ContactMessage | null>(null);
-  const [replyText, setReplyText] = useState("");
-  const [replySubject, setReplySubject] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
+  
   const [toast, setToast] = useState<ToastState | null>(null);
 
-  useEffect(() => {
-    fetchMessage();
-  }, [id]);
+  const {
+    message,
+    replyText,
+    replySubject,
+    sending,
+    loading,
+    hasProfileImage,
+    profileImageUrl,
+    isAlreadyReplied,
+    setReplyText,
+    setReplySubject,
+    sendReply,
+    formatDate,
+    handleImageError,
+  } = useContactReply(id, locale);
 
-  useEffect(() => {
-    if (toast) {
-      const timer = setTimeout(() => setToast(null), 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [toast]);
-
-  const fetchMessage = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/admin/contact/list`);
-      if (!res.ok) throw new Error(t("loading.error"));
-      const data = await res.json();
-      const found = data.messages.find((m: ContactMessage) => m.id === id);
-      
-      if (!found) throw new Error(t("errors.notFound"));
-      
-      setMessage(found);
-      setReplyText(found?.reply || "");
-      setReplySubject(`Re: ${found?.fullName} - ${t("page.title")}`);
-    } catch (error) {
-      setToast({ type: "error", message: t("toast.loadError") });
-      setTimeout(() => router.push("/admin/contact-support"), 2000);
-    } finally {
-      setLoading(false);
-    }
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
   };
 
   const handleSendReply = async () => {
-    if (!message) {
-      setToast({ type: "error", message: t("toast.messageNotFound") });
-      return;
+    const result = await sendReply();
+    if (result.success) {
+      showToast("success", result.message || t("toast.replySent"));
+      setTimeout(() => {
+        router.push(`/${locale}/admin/contacts`);
+      }, 2000);
+    } else {
+      showToast("error", result.error || t("toast.replyError"));
     }
-    
-    if (!replyText.trim()) {
-      setToast({ type: "error", message: t("toast.writeReply") });
-      return;
-    }
-
-    setSending(true);
-
-    try {
-      const res = await fetch("/api/admin/contact/reply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contactId: message.id,
-          replyMessage: replyText,
-          subject: replySubject,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok) {
-        setToast({ type: "success", message: `${t("toast.replySent")} ${message.email}` });
-        
-        setTimeout(() => {
-          router.push("/admin/contact-support");
-        }, 2000);
-      } else {
-        throw new Error(data.error || t("toast.replyError"));
-      }
-    } catch (error) {
-      setToast({ type: "error", message: t("toast.replyError") });
-    } finally {
-      setSending(false);
-    }
-  };
-
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString("fr-FR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
   };
 
   if (loading) {
@@ -145,7 +81,7 @@ export default function AdminContactReplyPage() {
           <p className="text-sm">{t("errors.notFoundDescription")}</p>
         </div>
         <button
-          onClick={() => router.push("/admin/contact-support")}
+          onClick={() => router.push(`/${locale}/admin/contacts`)}
           className="mt-4 px-4 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 transition-colors"
         >
           {t("errors.backToList")}
@@ -156,6 +92,7 @@ export default function AdminContactReplyPage() {
 
   return (
     <>
+      {/* Toast Notification */}
       {toast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
           <div
@@ -166,22 +103,23 @@ export default function AdminContactReplyPage() {
             }`}
           >
             {toast.type === "success" ? (
-              <FaCheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-5 h-5" />
             ) : (
-              <FaExclamationTriangle className="w-5 h-5" />
+              <AlertCircle className="w-5 h-5" />
             )}
             <span className="text-sm font-medium">{toast.message}</span>
             <button
               onClick={() => setToast(null)}
               className="ml-2 hover:opacity-70"
             >
-              <FaTimes className="w-4 h-4" />
+              <X className="w-4 h-4" />
             </button>
           </div>
         </div>
       )}
       
       <div className="flex-1 flex flex-col h-full">
+        {/* Header */}
         <div className="flex-shrink-0 border-b border-slate-200 dark:border-slate-800 px-6 py-4 sticky top-0 z-10 bg-white dark:bg-slate-900">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -190,11 +128,12 @@ export default function AdminContactReplyPage() {
                 className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 dark:text-slate-400 group"
                 aria-label={t("header.back")}
               >
+                <FaArrowLeft className="w-4 h-4" />
               </button>
               
               <div className="flex items-center gap-2 text-sm">
                 <button
-                  onClick={() => router.push("/admin/contact-support")}
+                  onClick={() => router.push(`/${locale}/admin/contacts`)}
                   className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   {t("header.inquiries")}
@@ -227,6 +166,7 @@ export default function AdminContactReplyPage() {
         </div>
 
         <div className="flex-1 flex overflow-hidden">
+          {/* LEFT COLUMN - Reply Form */}
           <div className="flex-1 flex flex-col overflow-y-auto p-6 bg-slate-50 dark:bg-slate-950">
             <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col h-full">
               <div className="border-b border-slate-200 dark:border-slate-800 px-5 py-4">
@@ -249,22 +189,41 @@ export default function AdminContactReplyPage() {
                     type="text"
                     value={replySubject}
                     onChange={(e) => setReplySubject(e.target.value)}
-                    className="flex-1 bg-transparent border-none text-sm text-slate-900 dark:text-white focus:outline-none font-medium"
+                    disabled={isAlreadyReplied}
+                    className={`flex-1 bg-transparent border-none text-sm focus:outline-none font-medium ${
+                      isAlreadyReplied 
+                        ? "text-slate-400 cursor-not-allowed" 
+                        : "text-slate-900 dark:text-white"
+                    }`}
                     placeholder={t("form.subjectPlaceholder")}
                   />
                 </div>
               </div>
 
               <div className="flex-1 flex flex-col min-h-[500px]">
-                <RichTextEditor
-                  value={replyText}
-                  onChange={setReplyText}
-                  placeholder={t("form.editorPlaceholder")}
-                  compact={false}
-                />
+                {isAlreadyReplied ? (
+                  <div className="flex-1 flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-800/30">
+                    <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-4">
+                      <FaCheckCircle className="text-emerald-500 text-2xl" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {t("form.alreadyRepliedMessage")}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                      {t("form.alreadyRepliedPlaceholder")}
+                    </p>
+                  </div>
+                ) : (
+                  <RichTextEditor
+                    value={replyText}
+                    onChange={setReplyText}
+                    placeholder={t("form.editorPlaceholder")}
+                    compact={false}
+                  />
+                )}
               </div>
 
-              <div className="border-t border-slate-200 dark:border-slate-800 px-5 py-4 flex justify-end gap-3 bg-slate-50 dark:bg-slate-800/30">
+              <div className="border-t border-slate-200 dark:border-slate-800 px-5 py-4 flex justify-end gap-3 bg-slate-50 dark:bg-slate-800/30 -mt-5">
                 <button
                   onClick={() => router.back()}
                   className="px-5 py-2 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-sm font-medium flex items-center gap-2"
@@ -274,7 +233,7 @@ export default function AdminContactReplyPage() {
                 </button>
                 <button
                   onClick={handleSendReply}
-                  disabled={sending || !replyText.trim()}
+                  disabled={sending || !replyText.trim() || isAlreadyReplied}
                   className="px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-semibold shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all"
                 >
                   {sending ? (
@@ -293,6 +252,7 @@ export default function AdminContactReplyPage() {
             </div>
           </div>
 
+          {/* RIGHT COLUMN - Info Sidebar */}
           <div className="w-[380px] flex-shrink-0 border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-y-auto">
             <div className="p-5">
               <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-5 flex items-center gap-2">
@@ -302,8 +262,17 @@ export default function AdminContactReplyPage() {
 
               <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 flex items-center justify-center">
-                    <FaUser className="text-indigo-600 dark:text-indigo-400 text-lg" />
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {hasProfileImage ? (
+                      <img
+                        src={profileImageUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={() => handleImageError(message.id)}
+                      />
+                    ) : (
+                      <FaUser className="text-indigo-600 dark:text-indigo-400 text-lg" />
+                    )}
                   </div>
                   <div>
                     <h4 className="font-semibold text-slate-900 dark:text-white">
@@ -314,6 +283,7 @@ export default function AdminContactReplyPage() {
                     </p>
                     {message.phone && (
                       <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                        <FaPhone className="text-[10px]" />
                         {message.phone}
                       </p>
                     )}

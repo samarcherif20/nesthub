@@ -5,6 +5,7 @@ import * as React from "react";
 import Link from "next/link";
 import { createPortal } from "react-dom";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 import {
   ChevronRight,
   MapPin,
@@ -50,6 +51,10 @@ import {
   Music,
   BookOpen,
   ArrowUp,
+  Lock,
+  Dog,
+  Ban,
+  Loader2,
 } from "lucide-react";
 
 import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
@@ -60,6 +65,7 @@ import { TbHomeEdit, TbHomeOff, TbHomeShare, TbMapShare } from "react-icons/tb";
 import { PiCalendarSlashDuotone } from "react-icons/pi";
 import { LiaMapMarkedAltSolid } from "react-icons/lia";
 import { useListingDetail } from "./hooks/useListingDetail";
+import { useRouter } from "next/navigation";
 
 // Tooltip component
 function Tooltip({
@@ -182,7 +188,7 @@ function StatusBadge({ status, t }: { status: string; t: any }) {
   const Icon = cfg.icon;
   return (
     <span
-      className={`px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text} text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit mt-3.5`}
+      className={`px-3 py-1.5 rounded-full ${cfg.bg} ${cfg.text} text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 w-fit mt-2`}
     >
       <Icon className="w-3.5 h-3.5" />
       {t(`status.${status.toLowerCase()}`)}
@@ -251,6 +257,15 @@ export default function OwnerListingDetailPage({
   const slideshowRef = React.useRef<NodeJS.Timeout | null>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null);
+  const [toast, setToast] = React.useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
+
+  // États pour le modal de changement de statut
+  const [showStatusModal, setShowStatusModal] = React.useState(false);
+  const [pendingStatus, setPendingStatus] = React.useState<string | null>(null);
+  const [isStatusChanging, setIsStatusChanging] = React.useState(false);
 
   const {
     listing,
@@ -273,7 +288,6 @@ export default function OwnerListingDetailPage({
     handleEdit,
     handleDeleteClick,
     handleConfirmDelete,
-    handleToggleStatus,
     nextPhoto,
     prevPhoto,
     toggleSlideshow,
@@ -288,15 +302,75 @@ export default function OwnerListingDetailPage({
     availability,
     updateAvailability,
     loadingAvailability,
-    occupancyRate, // ✅ AJOUTÉ
-    totalRevenue, // ✅ AJOUTÉ
-    conversionRate, // ✅ AJOUTÉ
-  } = useListingDetail(id, locale, setError);
-  // À ajouter dans le composant, avant le return JSX
-  // À la place de la ligne actuelle
+    occupancyRate,
+    totalRevenue,
+    conversionRate,
+    getHouseRulesList,
+    setListing,
+  } = useListingDetail(id, locale, setError, t);
+
+  // Fonction pour ouvrir le modal de changement de statut
+  const handleToggleStatusClick = () => {
+    if (!listing) return;
+    const newStatus = listing.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    setPendingStatus(newStatus);
+    setShowStatusModal(true);
+  };
+
+  const handleConfirmStatusChange = async () => {
+    if (!pendingStatus || !listing) return;
+
+    setIsStatusChanging(true);
+    try {
+      const res = await fetch(`/api/listings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "TOGGLE_STATUS",
+          status: pendingStatus,
+        }),
+      });
+
+      if (res.ok) {
+        // ✅ Mettre à jour l'état local
+        setListing({ ...listing, status: pendingStatus });
+
+        // ✅ Afficher le toast personnalisé
+        setToast({
+          type: "success",
+          message:
+            pendingStatus === "ACTIVE"
+              ? t("toast.listingActivated")
+              : t("toast.listingHidden"),
+        });
+
+        // Fermer le modal
+        setShowStatusModal(false);
+        setPendingStatus(null);
+
+        // Masquer le toast après 3 secondes
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        const error = await res.json();
+        setToast({
+          type: "error",
+          message: error.error || t("toast.statusChangeFailed"),
+        });
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      setToast({
+        type: "error",
+        message: t("toast.networkError"),
+      });
+      setTimeout(() => setToast(null), 3000);
+    } finally {
+      setIsStatusChanging(false);
+    }
+  };
   const pendingDatesFromAvailability = Object.entries(availability || {})
     .filter(([date, data]) => {
-      // ✅ Exclure les dates qui sont déjà dans blockedDates (ROUGE)
       const isInBlockedDates = blockedDates?.some((bd) => {
         const blockedDate = new Date(bd.startDate).toISOString().split("T")[0];
         return blockedDate === date;
@@ -304,10 +378,10 @@ export default function OwnerListingDetailPage({
       return data.available === false && !isInBlockedDates;
     })
     .map(([date]) => date);
+
   const pip = (url: string) =>
     `/api/listings/image?url=${encodeURIComponent(url)}`;
 
-  // Afficher le skeleton pendant le chargement
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950">
@@ -333,7 +407,7 @@ export default function OwnerListingDetailPage({
       <div className="fixed inset-0 bg-white dark:bg-slate-950 flex items-center justify-center p-4">
         <div className="text-center max-w-md mx-auto">
           <div className="relative mb-5">
-            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-purple-500/20 rounded-2xl blur-2xl animate-pulse"></div>
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-purple-500/20 rounded-2xl blur-2xl animate-pulse" />
             <div className="relative w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950/50 dark:to-purple-950/50 mx-auto flex items-center justify-center shadow-lg">
               <TbHomeOff className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
             </div>
@@ -365,6 +439,8 @@ export default function OwnerListingDetailPage({
       </div>
     );
   }
+
+  const houseRulesList = getHouseRulesList();
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 font-body text-on-surface dark:text-slate-200 antialiased">
@@ -414,7 +490,7 @@ export default function OwnerListingDetailPage({
             </div>
           </div>
 
-          {/* Action Buttons avec Tooltips */}
+          {/* Action Buttons */}
           <div className="flex items-center gap-3">
             <Tooltip text={t("actions.viewPublic")}>
               <Link
@@ -440,9 +516,8 @@ export default function OwnerListingDetailPage({
           </div>
         </header>
 
-        {/* ✅ KPIs Cards - CORRIGÉ AVEC VALEURS DYNAMIQUES */}
+        {/* KPIs Cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Vues */}
           <div
             className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-indigo-100 dark:border-indigo-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
           >
@@ -461,7 +536,6 @@ export default function OwnerListingDetailPage({
             </div>
           </div>
 
-          {/* Réservations */}
           <div
             className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-rose-100 dark:border-rose-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
           >
@@ -480,7 +554,6 @@ export default function OwnerListingDetailPage({
             </div>
           </div>
 
-          {/* Taux d'occupation - DYNAMIQUE */}
           <div
             className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-teal-100 dark:border-teal-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
           >
@@ -499,7 +572,6 @@ export default function OwnerListingDetailPage({
             </div>
           </div>
 
-          {/* Revenus - DYNAMIQUE */}
           <div
             className={`bg-white dark:bg-slate-900 rounded-2xl p-4 border border-emerald-100 dark:border-emerald-900/40 group hover:shadow-md transition-all duration-300 ${card3d}`}
           >
@@ -519,7 +591,7 @@ export default function OwnerListingDetailPage({
           </div>
         </section>
 
-        {/* Main Grid - reste identique */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
@@ -598,6 +670,7 @@ export default function OwnerListingDetailPage({
                 </button>
               )}
 
+              {/* Caractéristiques */}
               <div className="flex flex-wrap gap-2.5 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
                   <Bed className="w-4 h-4" /> {listing.rooms} {t("specs.rooms")}
@@ -607,13 +680,69 @@ export default function OwnerListingDetailPage({
                   {t("specs.bathrooms")}
                 </div>
                 <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
-                  <Users className="w-4 h-4" /> {listing.maxGuests}{" "}
-                  {t("specs.guests")}
+                  <Utensils className="w-4 h-4" />{" "}
+                  {listing.numberOfKitchens || 1} cuisine(s)
+                </div>
+                <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
+                  <Users className="w-4 h-4" />{" "}
+                  {listing.maxGuests ? listing.maxGuests : "Non spécifié"}
                 </div>
                 {listing.surfaceArea && (
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
                     <Square className="w-4 h-4" /> {listing.surfaceArea}{" "}
                     {t("units.sqm")}
+                  </div>
+                )}
+              </div>
+
+              {/* Caractéristiques supplémentaires */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                {listing.hasBalcony && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <Trees className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      Balcon
+                    </span>
+                  </div>
+                )}
+                {listing.hasGarden && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <Trees className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      Jardin
+                    </span>
+                  </div>
+                )}
+                {listing.hasGarage && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <Car className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      Garage/Parking
+                    </span>
+                  </div>
+                )}
+                {listing.isFurnished && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <Home className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      Meublé
+                    </span>
+                  </div>
+                )}
+                {listing.petsAllowed && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <Dog className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      Animaux acceptés
+                    </span>
+                  </div>
+                )}
+                {listing.smokingAllowed && (
+                  <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
+                    <Ban className="w-4 h-4 text-emerald-500" />
+                    <span className="text-xs text-slate-600 dark:text-slate-400">
+                      Fumeurs acceptés
+                    </span>
                   </div>
                 )}
               </div>
@@ -646,6 +775,32 @@ export default function OwnerListingDetailPage({
                 </button>
               )}
             </section>
+
+            {/* House Rules */}
+            {houseRulesList.length > 0 && (
+              <section
+                className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
+              >
+                <h2 className="text-lg font-headline font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                  Règlement intérieur
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {houseRulesList.map((rule: string, index: number) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-2.5 p-2 rounded-lg"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-900/30 dark:to-orange-900/30 flex items-center justify-center shrink-0">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      </div>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">
+                        {rule}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* Location */}
             <section className="space-y-3">
@@ -690,7 +845,7 @@ export default function OwnerListingDetailPage({
             </section>
           </div>
 
-          {/* Right Column - reste identique */}
+          {/* Right Column */}
           <div className="lg:col-span-1 space-y-5">
             {/* Next Bookings */}
             <section
@@ -702,10 +857,10 @@ export default function OwnerListingDetailPage({
                   {t("sections.nextBookings")}
                 </h2>
                 <Link
-                  href={`/${locale}/dashboard/owner/listings/${id}/bookings`}
+                  href={`/${locale}/dashboard/owner/reservations`}
                   className="text-purple-700 dark:text-purple-400 text-xs font-bold hover:underline"
                 >
-                  {t("actions.viewAll")}
+                  Voir toutes les réservations
                 </Link>
               </div>
               <div className="space-y-2">
@@ -757,6 +912,12 @@ export default function OwnerListingDetailPage({
                   <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   {t("sections.availability")}
                 </h2>
+                <Link
+                  href={`/${locale}/dashboard/owner/calendar`}
+                  className="text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:underline"
+                >
+                  Voir le calendrier
+                </Link>
               </div>
 
               {loadingAvailability ? (
@@ -764,28 +925,15 @@ export default function OwnerListingDetailPage({
                   <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
                 </div>
               ) : (
-                <>
-                  {/* LOGS DE DÉBOGAGE */}
-                  {console.log(
-                    "🔴 blockedDates reçues:",
-                    JSON.stringify(blockedDates, null, 2),
-                  )}
-                  {console.log(
-                    "🟡 pendingDatesFromAvailability:",
-                    pendingDatesFromAvailability,
-                  )}
-                  {console.log("📊 blockedDates.length:", blockedDates?.length)}
-
-                  <AvailabilityCalendar
-                    blockedDates={blockedDates || []}
-                    pendingDates={pendingDatesFromAvailability}
-                    pricingRules={[]}
-                    onSelectRange={(start, end) => {
-                      console.log("Dates sélectionnées: ", start, end);
-                      setSelectedDate(new Date(start));
-                    }}
-                  />
-                </>
+                <AvailabilityCalendar
+                  blockedDates={blockedDates || []}
+                  pendingDates={pendingDatesFromAvailability}
+                  pricingRules={[]}
+                  onSelectRange={(start, end) => {
+                    console.log("Dates sélectionnées: ", start, end);
+                    setSelectedDate(new Date(start));
+                  }}
+                />
               )}
             </section>
           </div>
@@ -829,7 +977,10 @@ export default function OwnerListingDetailPage({
               </div>
               <div>
                 <p className="font-bold text-xs text-slate-900 dark:text-white">
-                  {listing.owner?.username || t("sections.ownerDefault")}
+                  @
+                  {listing.owner?.username ||
+                    listing.owner?.firstName ||
+                    "hôte"}
                 </p>
                 <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
                   {t("sections.mainOwner")}
@@ -862,7 +1013,7 @@ export default function OwnerListingDetailPage({
               }
             >
               <button
-                onClick={handleToggleStatus}
+                onClick={handleToggleStatusClick}
                 className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-xl transition-colors uppercase tracking-wider"
               >
                 {listing.status === "ACTIVE" ? (
@@ -888,8 +1039,32 @@ export default function OwnerListingDetailPage({
           </div>
         </footer>
       </main>
-
-      {/* Gallery Modal - reste identique */}
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle2 className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+      {/* Gallery Modal */}
       {showGalleryModal && listing && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex flex-col">
           <div className="flex justify-between items-center p-4 border-b border-white/10">
@@ -1024,6 +1199,65 @@ export default function OwnerListingDetailPage({
           />,
           document.body,
         )}
+
+      {/* Status Change Modal (Masquer/Activer) */}
+      {showStatusModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-2xl p-6 text-center border border-slate-200 dark:border-slate-800">
+            <div
+              className={`w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 ${
+                pendingStatus === "INACTIVE"
+                  ? "bg-amber-100 dark:bg-amber-900/20"
+                  : "bg-emerald-100 dark:bg-emerald-900/20"
+              }`}
+            >
+              {pendingStatus === "INACTIVE" ? (
+                <EyeOff className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              ) : (
+                <Eye className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+              )}
+            </div>
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              {pendingStatus === "INACTIVE"
+                ? t("modals.hideTitle")
+                : t("modals.publishTitle")}
+            </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+              {pendingStatus === "INACTIVE"
+                ? t("modals.hideDescription")
+                : t("modals.publishDescription")}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  setShowStatusModal(false);
+                  setPendingStatus(null);
+                }}
+                disabled={isStatusChanging}
+                className="flex-1 py-2.5 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium text-sm transition-colors disabled:opacity-50"
+              >
+                {t("modals.cancel")}
+              </button>
+              <button
+                onClick={handleConfirmStatusChange}
+                disabled={isStatusChanging}
+                className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
+                  pendingStatus === "INACTIVE"
+                    ? "bg-amber-600 hover:bg-amber-700 text-white"
+                    : "bg-emerald-600 hover:bg-emerald-700 text-white"
+                }`}
+              >
+                {isStatusChanging && (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                )}
+                {pendingStatus === "INACTIVE"
+                  ? t("modals.hideButton")
+                  : t("modals.publishButton")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
