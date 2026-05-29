@@ -37,7 +37,7 @@ async function detectAndFixImageFile(
     }
     return { buffer, mimeType: "image/jpeg", extension: "jpg" };
   } else {
-    console.log("⚠️ Type non détecté, fallback à JPEG");
+    console.log(" Type non détecté, fallback à JPEG");
     return { buffer, mimeType: "image/jpeg", extension: "jpg" };
   }
 }
@@ -50,12 +50,12 @@ async function uploadToVercelBlob(
 ): Promise<string> {
   const { buffer, mimeType, extension } = await detectAndFixImageFile(file);
   const filename = `nesthub/users/${userId}/cin/${label}_${Date.now()}.${extension}`;
-  console.log(`📤 Upload Blob: ${filename} (type: ${mimeType})`);
+  console.log(` Upload Blob: ${filename} (type: ${mimeType})`);
   const blob = await put(filename, buffer, {
     access: "private",
     contentType: mimeType,
   });
-  console.log(`✅ Blob URL: ${blob.url}`);
+  console.log(` Blob URL: ${blob.url}`);
   return blob.url;
 }
 
@@ -69,7 +69,7 @@ async function fileToBase64(file: File): Promise<string> {
 async function callGoogleVision(base64Image: string): Promise<string> {
   const apiKey = process.env.GOOGLE_CLOUD_API_KEY;
   if (!apiKey) {
-    console.warn("⚠️ GOOGLE_CLOUD_API_KEY non configurée");
+    console.warn(" GOOGLE_CLOUD_API_KEY non configurée");
     throw new Error("GOOGLE_CLOUD_API_KEY manquante dans .env.local");
   }
 
@@ -91,7 +91,7 @@ async function callGoogleVision(base64Image: string): Promise<string> {
 
   if (!res.ok) {
     const err = await res.text();
-    console.error("❌ Google Vision error:", err);
+    console.error(" Google Vision error:", err);
     throw new Error(`Google Vision error: ${err}`);
   }
 
@@ -127,7 +127,7 @@ function parseRecto(text: string): {
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
-  console.log("📝 Parsing recto, lignes reçues:", lines.length);
+  console.log(" Parsing recto, lignes reçues:", lines.length);
 
   let cinNumber: string | undefined;
   let lastName: string | undefined;
@@ -138,7 +138,7 @@ function parseRecto(text: string): {
   const allNumbers = text.match(/\b(\d{8})\b/g);
   if (allNumbers && allNumbers.length > 0) {
     cinNumber = allNumbers[0];
-    console.log("  ✅ CIN trouvé:", cinNumber);
+    console.log("   CIN trouvé:", cinNumber);
   }
 
   // 2. Date de naissance
@@ -151,7 +151,7 @@ function parseRecto(text: string): {
     const year = dateMatch[3];
     if (month) {
       dateOfBirth = `${year}-${month}-${day}`;
-      console.log("  ✅ Date naissance:", dateOfBirth);
+      console.log("   Date naissance:", dateOfBirth);
     }
   }
 
@@ -179,14 +179,14 @@ function parseRecto(text: string): {
       let nameValue = line.replace(/اللقب\s*:?\s*/, "").trim();
       if (nameValue && nameValue.length >= 2 && !isIgnoredLine(nameValue)) {
         lastName = nameValue;
-        console.log("  ✅ Nom trouvé (اللقب):", lastName);
+        console.log("   Nom trouvé (اللقب):", lastName);
       } else if (
         i + 1 < lines.length &&
         !isIgnoredLine(lines[i + 1]) &&
         !lines[i + 1].includes("الاسم")
       ) {
         lastName = lines[i + 1];
-        console.log("  ✅ Nom trouvé (ligne suivante):", lastName);
+        console.log("   Nom trouvé (ligne suivante):", lastName);
       }
     }
 
@@ -195,10 +195,10 @@ function parseRecto(text: string): {
       let nameValue = line.replace(/الاسم\s*:?\s*/, "").trim();
       if (nameValue && nameValue.length >= 2 && !isIgnoredLine(nameValue)) {
         firstName = nameValue;
-        console.log("  ✅ Prénom trouvé (الاسم):", firstName);
+        console.log("   Prénom trouvé (الاسم):", firstName);
       } else if (i + 1 < lines.length && !isIgnoredLine(lines[i + 1])) {
         firstName = lines[i + 1];
-        console.log("  ✅ Prénom trouvé (ligne suivante):", firstName);
+        console.log("   Prénom trouvé (ligne suivante):", firstName);
       }
     }
   }
@@ -210,7 +210,7 @@ function parseRecto(text: string): {
     const words = namePart.split(/\s+/);
     if (words.length > 0) {
       lastName = words.slice(0, Math.min(3, words.length)).join(" ");
-      console.log("  ✅ Nom composé trouvé (entre اللقب والاسم):", lastName);
+      console.log("   Nom composé trouvé (entre اللقب والاسم):", lastName);
     }
   }
 
@@ -244,7 +244,7 @@ function parseVerso(text: string): { profession?: string; cinNumber?: string } {
   let profession: string | undefined;
   let cinNumber: string | undefined;
 
-  console.log("📝 Parsing verso, lignes reçues:", lines.length);
+  console.log(" Parsing verso, lignes reçues:", lines.length);
 
   // 1. Numéro CIN (8 chiffres)
   const cinMatch = text.match(/\b(\d{8})\b/);
@@ -265,7 +265,7 @@ function parseVerso(text: string): { profession?: string; cinNumber?: string } {
     const match = text.match(pattern);
     if (match && match[1] && match[1].trim().length > 0) {
       profession = match[1].trim();
-      console.log("  ✅ Profession trouvée (pattern):", profession);
+      console.log("   Profession trouvée (pattern):", profession);
       break;
     }
   }
@@ -279,7 +279,7 @@ function parseVerso(text: string): { profession?: string; cinNumber?: string } {
         line.includes("المهنة") ||
         line.toUpperCase().includes("PROFESSION")
       ) {
-        console.log("🔍 Trouvé profession à la ligne", i);
+        console.log(" Trouvé profession à la ligne", i);
 
         let profPart = line
           .replace(/المهنة\s*:?\s*/i, "")
@@ -306,7 +306,7 @@ function parseVerso(text: string): { profession?: string; cinNumber?: string } {
     if (profession.length > 100) profession = profession.substring(0, 100);
   }
 
-  console.log("✅ Résultat verso - CIN:", cinNumber, "Profession:", profession);
+  console.log(" Résultat verso - CIN:", cinNumber, "Profession:", profession);
   return { profession, cinNumber };
 }
 
@@ -336,7 +336,7 @@ function cleanName(name: string | undefined): string | null {
 // ─── Route principale ─────────────────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   try {
-    console.log("📮 POST /api/registration/upload-cin reçu");
+    console.log(" POST /api/registration/upload-cin reçu");
 
     const { userId } = getAuth(request);
 
@@ -351,14 +351,14 @@ export async function POST(request: NextRequest) {
     const profileFile = formData.get("profilePhoto") as File | null;
 
     if (!cinRectoFile || !cinVersoFile || !profileFile) {
-      console.error("❌ Fichiers manquants");
+      console.error(" Fichiers manquants");
       return NextResponse.json(
         { error: "Les 3 fichiers sont requis" },
         { status: 400 },
       );
     }
 
-    console.log("📤 Début uploads Vercel Blob...");
+    console.log(" Début uploads Vercel Blob...");
 
     const [cinRectoUrl, cinVersoUrl, profilePhotoUrl] = await Promise.all([
       uploadToVercelBlob(cinRectoFile, userId, "cin_recto"),
@@ -366,9 +366,9 @@ export async function POST(request: NextRequest) {
       uploadToVercelBlob(profileFile, userId, "profile"),
     ]);
 
-    console.log("✅ Tous les fichiers uploadés sur Blob");
+    console.log(" Tous les fichiers uploadés sur Blob");
 
-    console.log("🔍 Début OCR Google Vision...");
+    console.log(" Début OCR Google Vision...");
 
     let rectoText = "";
     let versoText = "";
@@ -385,19 +385,19 @@ export async function POST(request: NextRequest) {
         callGoogleVision(versoBase64),
       ]);
 
-      console.log(`📄 Recto OCR: ${rectoText.length} caractères`);
-      console.log(`📄 Verso OCR: ${versoText.length} caractères`);
+      console.log(` Recto OCR: ${rectoText.length} caractères`);
+      console.log(` Verso OCR: ${versoText.length} caractères`);
 
       if (rectoText.length > 10) {
-        console.log("📄 Extrait Recto:", rectoText.substring(0, 500));
+        console.log(" Extrait Recto:", rectoText.substring(0, 500));
       }
       if (versoText.length > 10) {
-        console.log("📄 Extrait Verso:", versoText.substring(0, 500));
+        console.log(" Extrait Verso:", versoText.substring(0, 500));
       }
 
       ocrSuccess = rectoText.length > 10;
     } catch (ocrError) {
-      console.error("⚠️ OCR échoué (non bloquant):", ocrError);
+      console.error(" OCR échoué (non bloquant):", ocrError);
       ocrSuccess = false;
     }
 
@@ -416,7 +416,7 @@ export async function POST(request: NextRequest) {
       profession: versoData.profession ?? null,
     };
 
-    console.log("✅ Extraction terminée:", extracted);
+    console.log(" Extraction terminée:", extracted);
 
     return NextResponse.json({
       success: true,
@@ -429,7 +429,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("❌ Erreur upload-cin:", error);
+    console.error(" Erreur upload-cin:", error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Erreur interne" },
       { status: 500 },

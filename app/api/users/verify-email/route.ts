@@ -6,7 +6,7 @@ export async function POST(req: Request) {
     // Récupérer l'userId envoyé depuis le frontend
     const { userId } = await req.json();
     
-    console.log("📦 API verify-email - Données reçues:", { userId });
+    console.log(" API verify-email - Données reçues:", { userId });
 
     // Vérifier que l'userId est présent
     if (!userId) {
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log("✅ Email marqué comme vérifié pour l'utilisateur:", user.id);
+    console.log(" Email marqué comme vérifié pour l'utilisateur:", user.id);
     
     // Retourner une réponse de succès
     return NextResponse.json({ 
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     });
     
   } catch (error: any) {
-    console.error("❌ Erreur API verify-email:", error);
+    console.error(" Erreur API verify-email:", error);
     
     // Si l'utilisateur n'est pas trouvé
     if (error.code === 'P2025') {

@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
-    console.log("🔑 [UPGRADE] userId:", userId);
+    console.log(" [UPGRADE] userId:", userId);
 
     if (!userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -35,24 +35,23 @@ export async function POST(req: NextRequest) {
       data: { role: "BOTH" },
     });
 
-    console.log("✅ [UPGRADE] Nouveau rôle:", updatedUser.role);
+    console.log(" [UPGRADE] Nouveau rôle:", updatedUser.role);
 
-    // ✅ CORRECTION : Ajout du champ 'content' requis
     try {
       await prisma.notification.create({
         data: {
           userId: user.id,
-          type: "SYSTEM_ALERT", // Utilisez un type existant
+          type: "SYSTEM_ALERT", 
           title: "Mode Double Identité activé !",
           content:
             "Félicitations ! Vous pouvez maintenant utiliser NESTHUB en tant que Locataire ET Propriétaire.", // ← AJOUTÉ !
           isRead: false,
         },
       });
-      console.log("✅ Notification créée");
+      console.log(" Notification créée");
     } catch (notifError) {
       // Ignorer l'erreur de notification si la table a des contraintes
-      console.log("⚠️ Notification non créée:", notifError);
+      console.log(" Notification non créée:", notifError);
     }
 
     return NextResponse.json({
@@ -61,7 +60,7 @@ export async function POST(req: NextRequest) {
       message: "Mode Double Identité activé avec succès",
     });
   } catch (error) {
-    console.error("❌ Erreur upgrade:", error);
+    console.error(" Erreur upgrade:", error);
     return NextResponse.json(
       { error: "Erreur serveur lors de l'upgrade" },
       { status: 500 },

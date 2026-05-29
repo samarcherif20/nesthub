@@ -56,10 +56,10 @@ export async function POST(req: Request) {
   const payload = await req.json();
   const body = JSON.stringify(payload);
 
-  // ✅ SOLUTION: En développement, on ignore la vérification
+  //  SOLUTION: En développement, on ignore la vérification
   if (process.env.NODE_ENV === "development") {
-    console.log("🔧 Mode développement: vérification webhook ignorée");
-    console.log("📦 Payload reçu:", payload);
+    console.log(" Mode développement: vérification webhook ignorée");
+    console.log(" Payload reçu:", payload);
 
     // Traiter directement le payload
     try {
@@ -194,7 +194,7 @@ async function handleUserChange(data: CustomUserData) {
     const isIdentityVerified = isAdmin;
     const verifiedAt = isAdmin ? new Date() : null;
 
-    // ✅ Helper to sync role to Clerk public metadata
+    //  Helper to sync role to Clerk public metadata
     const syncClerkMetadata = async () => {
       try {
         const { clerkClient } = await import("@clerk/nextjs/server");
@@ -202,10 +202,10 @@ async function handleUserChange(data: CustomUserData) {
         await client.users.updateUser(realClerkId, {
           publicMetadata: { role },
         });
-        console.log(`✅ Clerk public metadata updated: role=${role}`);
+        console.log(` Clerk public metadata updated: role=${role}`);
       } catch (clerkError) {
         console.error(
-          "⚠️ Failed to update Clerk metadata (non-blocking):",
+          "Failed to update Clerk metadata (non-blocking):",
           clerkError,
         );
       }
@@ -223,7 +223,7 @@ async function handleUserChange(data: CustomUserData) {
       });
 
       if (existingUser) {
-        console.log(`🔍 Found existing user by email: ${email}`);
+        console.log(` Found existing user by email: ${email}`);
         console.log(`   Old clerkId: ${existingUser.clerkId}`);
         console.log(`   New clerkId: ${realClerkId}`);
       }
@@ -253,15 +253,15 @@ async function handleUserChange(data: CustomUserData) {
           updatedAt: new Date(),
         },
       });
-      // ✅ Vérifier si l'email vient d'être vérifié
+      //  Vérifier si l'email vient d'être vérifié
       if (isEmailVerified && !wasEmailVerified) {
-        console.log(`📧 Email fraîchement vérifié pour ${existingUser.id}`);
+        console.log(` Email fraîchement vérifié pour ${existingUser.id}`);
         await onUserVerified(existingUser.id);
       }
-      // ✅ Sync role to Clerk public metadata
+      //  Sync role to Clerk public metadata
       await syncClerkMetadata();
 
-      console.log(`✅ User updated successfully!`);
+      console.log(` User updated successfully!`);
       console.log(`   ID: ${existingUser.id}`);
       console.log(`   clerkId: ${realClerkId} (was ${existingUser.clerkId})`);
       console.log(`   Email: ${email}`);
@@ -269,7 +269,7 @@ async function handleUserChange(data: CustomUserData) {
       console.log(`   Status: ${accountStatus}`);
     } else {
       console.log(
-        `⚠️ No existing user found for email ${email}, creating new record`,
+        ` No existing user found for email ${email}, creating new record`,
       );
       await prisma.user.create({
         data: {
@@ -292,10 +292,10 @@ async function handleUserChange(data: CustomUserData) {
         },
       });
 
-      // ✅ Sync role to Clerk public metadata
+      //  Sync role to Clerk public metadata
       await syncClerkMetadata();
 
-      console.log(`✅ New user created: ${realClerkId}`);
+      console.log(` New user created: ${realClerkId}`);
     }
   } catch (error) {
     console.error(`Error upserting user ${realClerkId}:`, error);
@@ -315,7 +315,7 @@ async function handleUserDeleted(data: DeletedObjectJSON) {
     await prisma.user.delete({
       where: { clerkId: id },
     });
-    console.log(`✅ User ${id} deleted from database`);
+    console.log(` User ${id} deleted from database`);
   } catch (error) {
     if (error instanceof PrismaClientKnownRequestError) {
       if (error.code === "P2025") {

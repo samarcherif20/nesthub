@@ -4,25 +4,23 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { 
-      listingId,  // NOUVEAU : ID de l'annonce pour l'historique
-      governorate, 
-      type, 
-      rooms, 
-      bathrooms, 
+    const {
+      listingId,
+      governorate,
+      type,
+      rooms,
+      bathrooms,
       surfaceArea,
-      equipment, 
-      hasBalcony, 
-      hasGarden, 
-      hasGarage, 
+      equipment,
+      hasBalcony,
+      hasGarden,
+      hasGarage,
       hasElevator,
-      isFurnished, 
-      rentalType 
+      isFurnished,
+      rentalType,
     } = body;
 
-    // ============================================
     // 1. RÉCUPÉRATION DES ANNONCES SIMILAIRES
-    // ============================================
     const similarListings = await prisma.listing.findMany({
       where: {
         status: "ACTIVE",
@@ -30,133 +28,148 @@ export async function POST(req: NextRequest) {
         type,
         rooms: { gte: Math.max(1, (rooms || 1) - 1), lte: (rooms || 1) + 1 },
       },
-      select: { 
-        pricePerNight: true, 
-        pricePerMonth: true, 
-        surfaceArea: true, 
-        rooms: true, 
+      select: {
+        pricePerNight: true,
+        pricePerMonth: true,
+        surfaceArea: true,
+        rooms: true,
         isFurnished: true,
-        bookingCount: true,      // NOUVEAU
-        favoriteCount: true,     // NOUVEAU
-        viewCount: true          // NOUVEAU
+        bookingCount: true,
+        favoriteCount: true,
+        viewCount: true,
       },
       take: 10,
     });
 
-    // ============================================
     // 2. DÉTECTION DE LA SAISON PAR DATE
-    // ============================================
     const now = new Date();
     const month = now.getMonth();
-    const isHighSeason = [5, 6, 7, 8].includes(month); // Juin, Juillet, Août, Septembre
-    const isMediumSeason = [3, 4, 9, 10].includes(month); // Avril, Mai, Octobre
+    const isHighSeason = [5, 6, 7, 8].includes(month);
+    const isMediumSeason = [3, 4, 9, 10].includes(month);
     const seasonMultiplier = isHighSeason ? 1.25 : isMediumSeason ? 1.1 : 0.95;
-    const seasonText = isHighSeason ? "Haute saison (juin-septembre)" : isMediumSeason ? "Moyenne saison" : "Basse saison";
+    const seasonText = isHighSeason
+      ? "Haute saison (juin-septembre)"
+      : isMediumSeason
+        ? "Moyenne saison"
+        : "Basse saison";
 
-    // ============================================
     // 3. RÉCUPÉRATION DU SCORE DE FIABILITÉ DU PROPRIÉTAIRE
-    // ============================================
     let ownerStats = null;
     let trustMultiplier = 1;
     let averageRating = null;
-    
+
     if (listingId) {
       const listing = await prisma.listing.findUnique({
         where: { id: listingId },
-        select: { ownerId: true }
+        select: { ownerId: true },
       });
-      
+
       if (listing?.ownerId) {
         ownerStats = await prisma.userStats.findUnique({
           where: { userId: listing.ownerId },
-          select: { reliabilityScore: true, totalBookings: true, averageRating: true }
+          select: {
+            reliabilityScore: true,
+            totalBookings: true,
+            averageRating: true,
+          },
         });
         // Score 100 = +10%, Score 0 = -10%
-        trustMultiplier = ownerStats?.reliabilityScore 
-          ? 1 + ((ownerStats.reliabilityScore - 50) / 500)
+        trustMultiplier = ownerStats?.reliabilityScore
+          ? 1 + (ownerStats.reliabilityScore - 50) / 500
           : 1;
       }
-      
+
       // Récupérer la note moyenne du bien
       const reviews = await prisma.review.findMany({
         where: { targetId: listing.ownerId },
-        select: { rating: true }
+        select: { rating: true },
       });
       if (reviews.length > 0) {
-        averageRating = reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
+        averageRating =
+          reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length;
       }
     }
 
-    // ============================================
     // 4. RÉCUPÉRATION DE L'HISTORIQUE DES PRIX
-    // ============================================
     let historicalAveragePrice = null;
     let pastBookings = [];
-    
+
     if (listingId) {
       pastBookings = await prisma.booking.findMany({
         where: {
           listingId: listingId,
           status: { in: ["COMPLETED", "CONFIRMED"] },
-          createdAt: { gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) }
+          createdAt: { gte: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) },
         },
-        select: { pricePerNight: true, totalPrice: true, totalNights: true }
+        select: { pricePerNight: true, totalPrice: true, totalNights: true },
       });
-      
+
       if (pastBookings.length > 0) {
-        const avgPrice = pastBookings.reduce((acc, b) => acc + b.pricePerNight, 0) / pastBookings.length;
+        const avgPrice =
+          pastBookings.reduce((acc, b) => acc + b.pricePerNight, 0) /
+          pastBookings.length;
         historicalAveragePrice = avgPrice;
       }
     }
 
-    // ============================================
     // 5. CALCUL DE LA POPULARITÉ
-    // ============================================
     let popularityMultiplier = 1;
     let totalPopularity = 0;
-    
+
     if (similarListings.length > 0) {
-      const avgBookingCount = similarListings.reduce((acc, l) => acc + (l.bookingCount || 0), 0) / similarListings.length;
-      const avgFavoriteCount = similarListings.reduce((acc, l) => acc + (l.favoriteCount || 0), 0) / similarListings.length;
+      const avgBookingCount =
+        similarListings.reduce((acc, l) => acc + (l.bookingCount || 0), 0) /
+        similarListings.length;
+      const avgFavoriteCount =
+        similarListings.reduce((acc, l) => acc + (l.favoriteCount || 0), 0) /
+        similarListings.length;
       totalPopularity = avgBookingCount + avgFavoriteCount;
-      popularityMultiplier = totalPopularity > 50 ? 1.1 : totalPopularity > 20 ? 1.05 : 1;
+      popularityMultiplier =
+        totalPopularity > 50 ? 1.1 : totalPopularity > 20 ? 1.05 : 1;
     }
 
-    // ============================================
     // 6. CONSTRUCTION DU CONTEXTE MARCHÉ
-    // ============================================
-    const marketContext = similarListings.length > 0
-      ? `Annonces réelles sur la plateforme : ${similarListings.map(l =>
-          `${l.rooms}ch, ${l.surfaceArea}m², meublé:${l.isFurnished}, ${l.pricePerNight ?? "N/A"}TND/nuit, ${l.pricePerMonth ?? "N/A"}TND/mois, ${l.bookingCount || 0} réservations, ${l.favoriteCount || 0} favoris`
-        ).join(" | ")}`
-      : "Aucune annonce similaire, base toi sur le marché tunisien.";
+    const marketContext =
+      similarListings.length > 0
+        ? `Annonces réelles sur la plateforme : ${similarListings
+            .map(
+              (l) =>
+                `${l.rooms}ch, ${l.surfaceArea}m², meublé:${l.isFurnished}, ${l.pricePerNight ?? "N/A"}TND/nuit, ${l.pricePerMonth ?? "N/A"}TND/mois, ${l.bookingCount || 0} réservations, ${l.favoriteCount || 0} favoris`,
+            )
+            .join(" | ")}`
+        : "Aucune annonce similaire, base toi sur le marché tunisien.";
 
     const equipmentList = equipment
-      ? Object.entries(equipment).filter(([, v]) => v).map(([k]) => k).join(", ") || "aucun"
+      ? Object.entries(equipment)
+          .filter(([, v]) => v)
+          .map(([k]) => k)
+          .join(", ") || "aucun"
       : "aucun";
 
     const jsonFormat =
-      rentalType === "SHORT_TERM" ? `{"pricePerNight": 80}` :
-      rentalType === "LONG_TERM" ? `{"pricePerMonth": 600}` :
-      `{"pricePerNight": 80, "pricePerMonth": 600}`;
+      rentalType === "SHORT_TERM"
+        ? `{"pricePerNight": 80}`
+        : rentalType === "LONG_TERM"
+          ? `{"pricePerMonth": 600}`
+          : `{"pricePerNight": 80, "pricePerMonth": 600}`;
 
-    // ============================================
     // 7. APPEL IA GROQ
-    // ============================================
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.GROQ_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
-        temperature: 0.3,
-        max_tokens: 150,
-        messages: [
-          {
-            role: "system",
-            content: `Tu es un expert immobilier en Tunisie. Tu analyses les caractéristiques d'un bien et le marché local pour estimer un prix réaliste. Tu réponds UNIQUEMENT en JSON valide sans aucun texte autour.
+    const response = await fetch(
+      "https://api.groq.com/openai/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          temperature: 0.3,
+          max_tokens: 150,
+          messages: [
+            {
+              role: "system",
+              content: `Tu es un expert immobilier en Tunisie. Tu analyses les caractéristiques d'un bien et le marché local pour estimer un prix réaliste. Tu réponds UNIQUEMENT en JSON valide sans aucun texte autour.
 
 FOURCHETTES DE PRIX TUNISIE:
 
@@ -189,10 +202,10 @@ AJUSTEMENTS IMPORTANTS:
 - Studio: -20% vs appartement
 - Chaque chambre supplémentaire: +8%
 - Chaque 30m² supplémentaire: +5%`,
-          },
-          {
-            role: "user",
-            content: `Analyse ce bien immobilier tunisien et donne une estimation de prix réaliste.
+            },
+            {
+              role: "user",
+              content: `Analyse ce bien immobilier tunisien et donne une estimation de prix réaliste.
 
 BIEN:
 - Gouvernorat: ${governorate}
@@ -219,10 +232,11 @@ CONTEXTE SUPPLÉMENTAIRE:
 
 Réponds UNIQUEMENT avec ce JSON:
 ${jsonFormat}`,
-          },
-        ],
-      }),
-    });
+            },
+          ],
+        }),
+      },
+    );
 
     const data = await response.json();
     console.log("Réponse Groq:", JSON.stringify(data));
@@ -242,31 +256,34 @@ ${jsonFormat}`,
     let pricePerNight = parsed.pricePerNight ?? null;
     let pricePerMonth = parsed.pricePerMonth ?? null;
 
-    // ============================================
     // 8. APPLICATION DES MULTIPLICATEURS
-    // ============================================
-    let finalMultiplier = seasonMultiplier * trustMultiplier * popularityMultiplier;
-    
+    let finalMultiplier =
+      seasonMultiplier * trustMultiplier * popularityMultiplier;
+
     // Si un historique existe, lisser le prix (pondération 70% IA, 30% historique)
     if (historicalAveragePrice && pricePerNight) {
-      pricePerNight = (pricePerNight * 0.7) + (historicalAveragePrice * 0.3);
+      pricePerNight = pricePerNight * 0.7 + historicalAveragePrice * 0.3;
       if (pricePerMonth) {
-        pricePerMonth = (pricePerMonth * 0.7) + (historicalAveragePrice * 30 * 0.3);
+        pricePerMonth = pricePerMonth * 0.7 + historicalAveragePrice * 30 * 0.3;
       }
     }
-    
+
     // Appliquer le multiplicateur final
     if (pricePerNight) pricePerNight = pricePerNight * finalMultiplier;
     if (pricePerMonth) pricePerMonth = pricePerMonth * finalMultiplier;
 
-    // ============================================
     // 9. VALIDATION ET ARRONDI
-    // ============================================
     if (pricePerNight) {
-      pricePerNight = Math.min(500, Math.max(40, Math.round(pricePerNight / 5) * 5));
+      pricePerNight = Math.min(
+        500,
+        Math.max(40, Math.round(pricePerNight / 5) * 5),
+      );
     }
     if (pricePerMonth) {
-      pricePerMonth = Math.min(2000, Math.max(200, Math.round(pricePerMonth / 50) * 50));
+      pricePerMonth = Math.min(
+        2000,
+        Math.max(200, Math.round(pricePerMonth / 50) * 50),
+      );
     }
 
     return NextResponse.json({
@@ -274,22 +291,20 @@ ${jsonFormat}`,
       pricePerNight,
       pricePerMonth,
       currency: "TND",
-      // NOUVEAU : métriques pour debugging
       meta: {
         seasonMultiplier,
         trustMultiplier,
         popularityMultiplier,
         finalMultiplier,
         historicalPriceUsed: !!historicalAveragePrice,
-        similarListingsCount: similarListings.length
-      }
+        similarListingsCount: similarListings.length,
+      },
     });
-
   } catch (error) {
     console.error("Erreur IA:", error);
     return NextResponse.json(
       { success: false, error: "Erreur lors du calcul IA" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

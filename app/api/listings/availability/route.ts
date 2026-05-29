@@ -7,7 +7,7 @@ import { withAuth } from "@/lib/api/withAuth";
 // GET - Public (pas de withAuth)
 export async function GET(request: NextRequest) {
   try {
-    console.log("🔵 [GET /api/listings/availability] Début de la requête");
+    console.log(" [GET /api/listings/availability] Début de la requête");
 
     const { searchParams } = new URL(request.url);
     const listingId = searchParams.get("listingId");
@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
     );
 
     console.log(
-      `📊 Paramètres: listingId=${listingId}, year=${year}, month=${month}`,
+      ` Paramètres: listingId=${listingId}, year=${year}, month=${month}`,
     );
 
     if (!listingId) {
-      console.log("❌ Aucun listingId fourni");
+      console.log(" Aucun listingId fourni");
       return NextResponse.json({ error: "listingId requis" }, { status: 400 });
     }
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     endDate.setHours(23, 59, 59, 999);
 
     console.log(
-      `📅 Période: ${startDate.toISOString()} -> ${endDate.toISOString()}`,
+      ` Période: ${startDate.toISOString()} -> ${endDate.toISOString()}`,
     );
 
     const [blockedDates, bookings, pricingRules, pendingBookings] =
@@ -84,10 +84,9 @@ export async function GET(request: NextRequest) {
           },
         }),
       ]);
-    // ✅ AJOUTE CETTE PARTIE APRÈS avoir récupéré blockedDates, bookings, pricingRules, pendingBookings
-    // (vers ligne 70-80)
+   
 
-    // 🔥 RÉCUPÉRATION DU MODE VACANCES
+    //  RÉCUPÉRATION DU MODE VACANCES
     const listingInfo = await prisma.listing.findUnique({
       where: { id: listingId },
       select: {
@@ -98,7 +97,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // 🔥 GÉNÉRATION DES DATES BLOQUÉES PAR MODE VACANCES
+    //  GÉNÉRATION DES DATES BLOQUÉES PAR MODE VACANCES
     let vacationBlockedDates: {
       startDate: Date;
       endDate: Date;
@@ -123,14 +122,14 @@ export async function GET(request: NextRequest) {
         vacationBlockedDates.push({
           startDate: new Date(d),
           endDate: new Date(d),
-          reason: "🏖️ Propriétaire en vacances",
+          reason: " Propriétaire en vacances",
         });
       }
       console.log(
-        `🏖️ Mode vacances actif: ${vacationBlockedDates.length} dates bloquées`,
+        ` Mode vacances actif: ${vacationBlockedDates.length} dates bloquées`,
       );
     }
-    // ✅ FILTRER : Exclure les pendingBookings qui ont déjà un booking CONFIRMÉ
+    //  FILTRER : Exclure les pendingBookings qui ont déjà un booking CONFIRMÉ
     const pendingBlockedDatesArray = pendingBookings
       .filter((pb) => {
         // Vérifier si un booking confirmé existe pour cette offre
@@ -139,10 +138,10 @@ export async function GET(request: NextRequest) {
         );
         if (hasConfirmedBooking) {
           console.log(
-            `🟠 Pending booking ${pb.id} ignoré (booking confirmé existe déjà)`,
+            ` Pending booking ${pb.id} ignoré (booking confirmé existe déjà)`,
           );
         }
-        return !hasConfirmedBooking; // Ne garder que les pending SANS booking confirmé
+        return !hasConfirmedBooking; 
       })
       .flatMap((pb) => {
         const dates = pb.dates as string[];
@@ -151,14 +150,14 @@ export async function GET(request: NextRequest) {
           listingId: pb.listingId,
           startDate: new Date(dateStr),
           endDate: new Date(dateStr),
-          reason: `⏳ En attente de paiement - Expire ${new Date(pb.expiresAt).toLocaleString()}`,
+          reason: ` En attente de paiement - Expire ${new Date(pb.expiresAt).toLocaleString()}`,
           isRecurring: false,
           blockedById: "",
           createdAt: new Date(),
         }));
       });
 
-    // ✅ Convertir les bookings CONFIRMÉS en dates bloquées (seront en ROUGE)
+    //  Convertir les bookings CONFIRMÉS en dates bloquées (seront en ROUGE)
     const confirmedBlockedDates = bookings.flatMap((booking) => {
       if (booking.status !== "CONFIRMED") return [];
 
@@ -180,10 +179,9 @@ export async function GET(request: NextRequest) {
       return dates;
     });
 
-    // ✅ Fusionner les dates ROUGES (blocages manuels + réservations confirmées)
-// ✅ Fusionner les dates ROUGES (blocages manuels + réservations confirmées + mode vacances)
+//  Fusionner les dates ROUGES (blocages manuels + réservations confirmées + mode vacances)
 const redBlockedDates = [...blockedDates, ...confirmedBlockedDates, ...vacationBlockedDates];
-    console.log(`📊 Résultats:`);
+    console.log(` Résultats:`);
     console.log(`   - blockedDates (manuels): ${blockedDates.length}`);
     console.log(
       `   - confirmedBlockedDates (payés): ${confirmedBlockedDates.length}`,
@@ -195,7 +193,7 @@ const redBlockedDates = [...blockedDates, ...confirmedBlockedDates, ...vacationB
     console.log(`   - total ORANGES: ${pendingBlockedDatesArray.length}`);
 
     if (redBlockedDates.length > 0) {
-      console.log("🔴 Dates ROUGES (indisponibles):");
+      console.log(" Dates ROUGES (indisponibles):");
       redBlockedDates.forEach((bd, i) => {
         console.log(
           `   ${i + 1}. startDate=${bd.startDate}, endDate=${bd.endDate}, reason=${bd.reason}`,
@@ -204,7 +202,7 @@ const redBlockedDates = [...blockedDates, ...confirmedBlockedDates, ...vacationB
     }
 
     if (pendingBlockedDatesArray.length > 0) {
-      console.log("🟠 Dates ORANGES (en attente de paiement):");
+      console.log(" Dates ORANGES (en attente de paiement):");
       pendingBlockedDatesArray.forEach((pb, i) => {
         console.log(
           `   ${i + 1}. startDate=${pb.startDate}, endDate=${pb.endDate}, reason=${pb.reason}`,
@@ -219,10 +217,10 @@ const redBlockedDates = [...blockedDates, ...confirmedBlockedDates, ...vacationB
       pricingRules,
     };
 
-    console.log("✅ Réponse envoyée avec succès");
+    console.log(" Réponse envoyée avec succès");
     return NextResponse.json(response);
   } catch (error) {
-    console.error("❌ [GET /api/listings/availability] Erreur:", error);
+    console.error(" [GET /api/listings/availability] Erreur:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
@@ -230,20 +228,20 @@ const redBlockedDates = [...blockedDates, ...confirmedBlockedDates, ...vacationB
 // POST - Modifications (réservé aux propriétaires)
 export const POST = withAuth(
   async (request: NextRequest) => {
-    console.log("🔵 [POST /api/listings/availability] Début de la requête");
+    console.log(" [POST /api/listings/availability] Début de la requête");
 
     const user = (request as any).user;
-    console.log(`👤 Utilisateur: ${user.id}, role: ${user.role}`);
+    console.log(` Utilisateur: ${user.id}, role: ${user.role}`);
 
     const body = await request.json();
-    console.log("📦 Body reçu:", JSON.stringify(body, null, 2));
+    console.log(" Body reçu:", JSON.stringify(body, null, 2));
 
     const { listingId, action, dates, reason, customPrice, minStay } = body;
 
-    console.log(`📊 Action: ${action}, listingId: ${listingId}`);
-    console.log(`📅 Dates: ${dates?.join(", ")}`);
-    if (reason) console.log(`💬 Raison: ${reason}`);
-    if (customPrice) console.log(`💰 Prix spécial: ${customPrice}`);
+    console.log(` Action: ${action}, listingId: ${listingId}`);
+    console.log(` Dates: ${dates?.join(", ")}`);
+    if (reason) console.log(` Raison: ${reason}`);
+    if (customPrice) console.log(` Prix spécial: ${customPrice}`);
 
     const listing = await prisma.listing.findFirst({
       where: { id: listingId, ownerId: user.id },
@@ -251,7 +249,7 @@ export const POST = withAuth(
 
     if (!listing) {
       console.log(
-        `❌ Annonce non trouvée ou non autorisée: listingId=${listingId}, ownerId=${user.id}`,
+        ` Annonce non trouvée ou non autorisée: listingId=${listingId}, ownerId=${user.id}`,
       );
       return NextResponse.json(
         { error: "Annonce non trouvée ou non autorisée" },
@@ -259,10 +257,10 @@ export const POST = withAuth(
       );
     }
 
-    console.log(`✅ Annonce trouvée: ${listing.title} (${listing.id})`);
+    console.log(` Annonce trouvée: ${listing.title} (${listing.id})`);
 
     if (action === "block") {
-      console.log(`🔒 Blocage de ${dates.length} date(s)`);
+      console.log(` Blocage de ${dates.length} date(s)`);
       let blockedCount = 0;
 
       for (const dateStr of dates) {
@@ -277,13 +275,13 @@ export const POST = withAuth(
         });
 
         if (existing) {
-          console.log(`   ⚠️ Date déjà bloquée, mise à jour de la raison`);
+          console.log(`    Date déjà bloquée, mise à jour de la raison`);
           await prisma.blockedDate.update({
             where: { id: existing.id },
             data: { reason: reason || existing.reason },
           });
         } else {
-          console.log(`   ✅ Création d'un nouveau blocage`);
+          console.log(`    Création d'un nouveau blocage`);
           await prisma.blockedDate.create({
             data: {
               listingId,
@@ -297,7 +295,7 @@ export const POST = withAuth(
         }
       }
 
-      console.log(`✅ ${blockedCount} nouvelles dates bloquées`);
+      console.log(` ${blockedCount} nouvelles dates bloquées`);
       return NextResponse.json({
         success: true,
         message: `${dates.length} date(s) bloquée(s)`,
@@ -306,7 +304,7 @@ export const POST = withAuth(
     }
 
     if (action === "unblock") {
-      console.log(`🔓 Déblocage de ${dates.length} date(s)`);
+      console.log(` Déblocage de ${dates.length} date(s)`);
       let unblockedCount = 0;
 
       for (const dateStr of dates) {
@@ -320,13 +318,13 @@ export const POST = withAuth(
 
         if (result.count > 0) {
           unblockedCount++;
-          console.log(`   ✅ Blocage supprimé`);
+          console.log(`    Blocage supprimé`);
         } else {
-          console.log(`   ⚠️ Aucun blocage trouvé pour cette date`);
+          console.log(`    Aucun blocage trouvé pour cette date`);
         }
       }
 
-      console.log(`✅ ${unblockedCount} dates débloquées`);
+      console.log(` ${unblockedCount} dates débloquées`);
       return NextResponse.json({
         success: true,
         message: `${dates.length} date(s) débloquée(s)`,
@@ -337,11 +335,11 @@ export const POST = withAuth(
     if (action === "setPrice") {
       const price = parseFloat(customPrice);
       console.log(
-        `💰 Application d'un prix spécial: ${price} TND pour ${dates.length} date(s)`,
+        ` Application d'un prix spécial: ${price} TND pour ${dates.length} date(s)`,
       );
 
       if (isNaN(price) || price <= 0) {
-        console.log(`❌ Prix invalide: ${customPrice}`);
+        console.log(` Prix invalide: ${customPrice}`);
         return NextResponse.json({ error: "Prix invalide" }, { status: 400 });
       }
 
@@ -357,13 +355,13 @@ export const POST = withAuth(
         });
 
         if (existing) {
-          console.log(`   ⚠️ Règle existante, mise à jour du prix`);
+          console.log(`    Règle existante, mise à jour du prix`);
           await prisma.pricingRule.update({
             where: { id: existing.id },
             data: { fixedPrice: price, isActive: true },
           });
         } else {
-          console.log(`   ✅ Création d'une nouvelle règle de prix`);
+          console.log(`    Création d'une nouvelle règle de prix`);
           await prisma.pricingRule.create({
             data: {
               listingId,
@@ -379,7 +377,7 @@ export const POST = withAuth(
         }
       }
 
-      console.log(`✅ ${priceCount} nouvelles règles de prix créées`);
+      console.log(` ${priceCount} nouvelles règles de prix créées`);
       return NextResponse.json({
         success: true,
         message: `Prix appliqué à ${dates.length} date(s)`,
@@ -387,7 +385,44 @@ export const POST = withAuth(
       });
     }
 
-    console.log(`❌ Action non reconnue: ${action}`);
+    
+if (action === "unsetPrice") {
+  console.log(` Suppression du prix spécial pour ${dates.length} date(s)`);
+  
+  let removedCount = 0;
+
+  for (const dateStr of dates) {
+    const date = new Date(dateStr);
+    date.setHours(0, 0, 0, 0);
+    console.log(`   Suppression du prix pour: ${dateStr}`);
+
+    // Supprimer les pricing rules pour ces dates
+    const result = await prisma.pricingRule.deleteMany({
+      where: {
+        listingId,
+        startDate: date,
+        endDate: date,
+        fixedPrice: { not: null },
+      },
+    });
+
+    if (result.count > 0) {
+      removedCount++;
+      console.log(`    Prix spécial supprimé`);
+    } else {
+      console.log(`    Aucun prix spécial trouvé pour cette date`);
+    }
+  }
+
+  console.log(` ${removedCount} dates avec prix spécial supprimé`);
+  return NextResponse.json({
+    success: true,
+    message: `${dates.length} date(s) avec prix spécial supprimé(s)`,
+    removedCount,
+  });
+}
+
+    console.log(` Action non reconnue: ${action}`);
     return NextResponse.json({ error: "Action non reconnue" }, { status: 400 });
   },
   { requiredRole: "OWNER" },

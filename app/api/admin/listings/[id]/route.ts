@@ -80,10 +80,10 @@ export async function GET(
       );
     }
 
-    // 🔥 CORRECTION: Vérifier correctement s'il y a une révision en attente
+    //  Vérifier correctement s'il y a une révision en attente
     const hasPendingRevision = listing.hasPendingRevision === true;
 
-    // 🔥 CORRECTION: Récupérer les changements proposés depuis le champ pendingRevision
+    //  Récupérer les changements proposés depuis le champ pendingRevision
     let previousVersionData = null;
     if (hasPendingRevision && listing.pendingRevision) {
       try {
@@ -293,8 +293,7 @@ export async function GET(
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
-// app/api/admin/listings/[id]/route.ts
-// Ajoute cette méthode PATCH après le GET
+
 
 export async function PATCH(
   request: NextRequest,
@@ -337,7 +336,7 @@ export async function PATCH(
 
     let updatedListing;
 
-    // 🔥 CAS 1: Changement de statut
+    //  CAS 1: Changement de statut
     if (status) {
       updatedListing = await prisma.listing.update({
         where: { id },
@@ -355,9 +354,9 @@ export async function PATCH(
         },
       });
 
-      console.log(`👑 ADMIN - Statut changé vers ${status}`);
+      console.log(` ADMIN - Statut changé vers ${status}`);
     }
-    // 🔥 CAS 2: Rejet avec motif
+    //  CAS 2: Rejet avec motif
     else if (action === "reject") {
       updatedListing = await prisma.listing.update({
         where: { id },
@@ -369,9 +368,9 @@ export async function PATCH(
         },
       });
 
-      console.log(`👑 ADMIN - Annonce rejetée: ${rejectionReason}`);
+      console.log(` ADMIN - Annonce rejetée: ${rejectionReason}`);
     }
-    // 🔥 CAS 3: Approbation
+    //  CAS 3: Approbation
     else if (action === "approve") {
       updatedListing = await prisma.listing.update({
         where: { id },
@@ -386,9 +385,9 @@ export async function PATCH(
         },
       });
 
-      console.log(`👑 ADMIN - Annonce approuvée`);
+      console.log(` ADMIN - Annonce approuvée`);
     }
-    // 🔥 CAS 4: Modification directe des champs
+    //  CAS 4: Modification directe des champs
     else if (Object.keys(updateData).length > 0) {
       // Champs autorisés pour l'admin
       const allowedFields = [
@@ -436,10 +435,10 @@ export async function PATCH(
       });
 
       console.log(
-        `👑 ADMIN - Champs modifiés: ${Object.keys(filteredData).join(", ")}`,
+        ` ADMIN - Champs modifiés: ${Object.keys(filteredData).join(", ")}`,
       );
     }
-    // 🔥 CAS 5: Forcer l'annulation d'une révision en attente
+    //  CAS 5: Forcer l'annulation d'une révision en attente
     else if (action === "clearRevision") {
       updatedListing = await prisma.listing.update({
         where: { id },
@@ -449,7 +448,7 @@ export async function PATCH(
         },
       });
 
-      console.log(`👑 ADMIN - Révision annulée`);
+      console.log(` ADMIN - Révision annulée`);
     } else {
       return NextResponse.json(
         { error: "Aucune action ou modification fournie" },

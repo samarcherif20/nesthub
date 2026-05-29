@@ -154,7 +154,7 @@ export async function PUT(req: NextRequest) {
     }
 
     const body: UpdateProfileBody = await req.json();
-    console.log("📥 [API] Données reçues:", JSON.stringify(body, null, 2));
+    console.log(" [API] Données reçues:", JSON.stringify(body, null, 2));
 
     const {
       firstName,
@@ -186,7 +186,7 @@ export async function PUT(req: NextRequest) {
       }
     }
 
-    console.log("📦 [API] Availability à sauvegarder:", availability);
+    console.log(" [API] Availability à sauvegarder:", availability);
 
     const updatedUser = await prisma.user.update({
       where: { clerkId },
@@ -203,8 +203,8 @@ export async function PUT(req: NextRequest) {
       },
     });
 
-    console.log("✅ [API] Utilisateur mis à jour:", updatedUser.id);
-    console.log("📦 [API] Availability sauvegardée:", updatedUser.availability);
+    console.log(" [API] Utilisateur mis à jour:", updatedUser.id);
+    console.log(" [API] Availability sauvegardée:", updatedUser.availability);
 
     return NextResponse.json({
       success: true,
@@ -222,7 +222,7 @@ export async function PUT(req: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("❌ [API] Erreur sauvegarde:", error);
+    console.error(" [API] Erreur sauvegarde:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

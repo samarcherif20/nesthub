@@ -41,10 +41,10 @@ export function useChatSocket() {
       console.log("🔌 Socket connected:", socketInstance.id);
       setIsConnected(true);
 
-      // 🔥 RECONNEXION : Rejoindre automatiquement la conversation précédente
+      //  RECONNEXION : Rejoindre automatiquement la conversation précédente
       if (currentConvRef.current) {
         console.log(
-          `🔄 Reconnexion - Rejoin conversation: ${currentConvRef.current}`,
+          ` Reconnexion - Rejoin conversation: ${currentConvRef.current}`,
         );
         socketInstance.emit("join-conversation", currentConvRef.current);
       }
@@ -60,7 +60,7 @@ export function useChatSocket() {
     });
 
     socketInstance.on("new-message", (message: Message) => {
-      console.log("📩 New message received via socket:", message);
+      console.log(" New message received via socket:", message);
       setMessages((prev) => {
         if (prev.some((m) => m.id === message.id)) return prev;
         return [...prev, message];
@@ -68,7 +68,7 @@ export function useChatSocket() {
     });
 
     socketInstance.on("message-blocked", (data) => {
-      console.log("🛡️ Message blocked:", data);
+      console.log(" Message blocked:", data);
     });
 
     socketInstance.on("user-typing", ({ userId, name }) => {
@@ -110,7 +110,7 @@ export function useChatSocket() {
     if (socketRef.current && conversationId !== currentConvRef.current) {
       currentConvRef.current = conversationId;
       socketRef.current.emit("join-conversation", conversationId);
-      console.log(`📌 Joined conversation: ${conversationId}`);
+      console.log(` Joined conversation: ${conversationId}`);
     }
   }, []);
 
@@ -118,7 +118,7 @@ export function useChatSocket() {
     (conversationId: string, content: string, receiverId?: string) => {
       if (socketRef.current && content.trim()) {
         console.log(
-          `📤 Sending message via socket to ${conversationId}: ${content}`,
+          ` Sending message via socket to ${conversationId}: ${content}`,
         );
         socketRef.current.emit("send-message", {
           conversationId,

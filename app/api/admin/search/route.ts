@@ -5,26 +5,26 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(req: NextRequest) {
   try {
-    // ✅ Utiliser getAuth(req) comme dans l'API invitations
+    //  Utiliser getAuth(req) comme dans l'API invitations
     const { userId } = getAuth(req);
     
     if (!userId) {
-      console.log("❌ [API SEARCH] Non authentifié");
+      console.log(" [API SEARCH] Non authentifié");
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // ✅ Vérifier le rôle dans la base de données
+    //  Vérifier le rôle dans la base de données
     const admin = await prisma.user.findUnique({
       where: { clerkId: userId },
       select: { role: true, id: true, email: true, firstName: true, lastName: true }
     });
     
     if (!admin || admin.role !== "ADMIN") {
-      console.log("❌ [API SEARCH] Accès refusé - rôle:", admin?.role);
+      console.log(" [API SEARCH] Accès refusé - rôle:", admin?.role);
       return NextResponse.json({ error: "Accès réservé aux administrateurs" }, { status: 403 });
     }
 
-    console.log("✅ [API SEARCH] Accès autorisé pour admin:", admin.email);
+    console.log(" [API SEARCH] Accès autorisé pour admin:", admin.email);
 
     const searchParams = req.nextUrl.searchParams;
     const query = searchParams.get("q") || "";
@@ -33,9 +33,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json([]);
     }
 
-    console.log(`🔍 [API SEARCH] Recherche pour: "${query}"`);
+    console.log(` [API SEARCH] Recherche pour: "${query}"`);
 
-    // ✅ Recherche dans TOUTES les tables
+    //  Recherche dans TOUTES les tables
     const [users, listings, bookings, payments, verificationRequests, disputes, userReports] = await Promise.all([
       // 1. UTILISATEURS
       prisma.user.findMany({
@@ -231,7 +231,7 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    // ✅ Formater les résultats avec les bons liens
+    //  Formater les résultats avec les bons liens
     const results = [
       // 1. Utilisateurs
       ...users.map((user) => ({
@@ -376,11 +376,11 @@ export async function GET(req: NextRequest) {
       })),
     ];
 
-    console.log(`✅ [API SEARCH] ${results.length} résultats trouvés`);
+    console.log(` [API SEARCH] ${results.length} résultats trouvés`);
     return NextResponse.json(results);
     
   } catch (error) {
-    console.error("❌ [API SEARCH] Error:", error);
+    console.error(" [API SEARCH] Error:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },
       { status: 500 },

@@ -62,7 +62,6 @@ export async function POST(request: NextRequest) {
     }
 
     const formData = await request.formData();
-    // ✅ CORRECTION: Le frontend envoie "file", pas "photos"
     const file = formData.get("file") as File;
 
     if (!file) {
@@ -100,21 +99,20 @@ export async function POST(request: NextRequest) {
       .jpeg({ quality: 60 })
       .toBuffer();
 
-    // app/api/listings/upload-temp-photo/route.ts - CORRECTION
     const [mainBlob, thumbBlob] = await Promise.all([
       put(`${fileName}.${fileExt}`, optimizedBuffer, {
-        access: "private", // ← Change "public" en "private"
+        access: "private",
         contentType: fileExt === "png" ? "image/png" : "image/jpeg",
         addRandomSuffix: true,
       }),
       put(`${fileName}-thumb.${fileExt}`, thumbnailBuffer, {
-        access: "private", // ← Change "public" en "private"
+        access: "private",
         contentType: fileExt === "png" ? "image/png" : "image/jpeg",
         addRandomSuffix: true,
       }),
     ]);
 
-    console.log("✅ Photo uploadée avec succès:", mainBlob.url);
+    console.log(" Photo uploadée avec succès:", mainBlob.url);
 
     return NextResponse.json({
       success: true,

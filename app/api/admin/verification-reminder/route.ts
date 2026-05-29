@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     const notifications = admins.map((admin) => ({
       userId: admin.id,
       type: "SYSTEM_ALERT",
-      title: "🔔 Rappel de vérification d'identité",
+      title: " Rappel de vérification d'identité",
       content: `L'utilisateur ${user.firstName} ${user.lastName} (${user.email}) demande une vérification de son identité. ${message ? `Message: ${message}` : ""}`,
       channels: [NotificationChannel.IN_APP, NotificationChannel.EMAIL],
       data: {
@@ -116,7 +116,7 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log(`🔔 RAPPEL ADMIN: ${notifications.length} notification(s) envoyée(s) pour l'utilisateur ${user.email}`);
+    console.log(` RAPPEL ADMIN: ${notifications.length} notification(s) envoyée(s) pour l'utilisateur ${user.email}`);
 
     return NextResponse.json({
       success: true,

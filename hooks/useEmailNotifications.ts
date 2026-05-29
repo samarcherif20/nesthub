@@ -22,7 +22,7 @@ export function useEmailNotification() {
         throw new Error('Token non disponible');
       }
 
-      console.log('📧 Envoi notification:', data);
+      console.log(' Envoi notification:', data);
 
       const response = await fetch('/api/admin/notifications/send', {
         method: 'POST',
@@ -39,11 +39,11 @@ export function useEmailNotification() {
         throw new Error(responseData.error || 'Erreur envoi notification');
       }
 
-      console.log('✅ Notification envoyée:', responseData);
+      console.log(' Notification envoyée:', responseData);
       return responseData;
 
     } catch (error) {
-      console.error('❌ Erreur envoi notification:', error);
+      console.error(' Erreur envoi notification:', error);
       throw error;
     }
   }, [getToken]);

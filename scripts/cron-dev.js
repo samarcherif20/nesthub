@@ -9,42 +9,42 @@ const SECRET_KEY = process.env.CRON_SECRET || "ton_secret_local_123";
 
 const JOBS = [
   {
-    name: "🔄 Réactivation des utilisateurs",
+    name: " Réactivation des utilisateurs",
     path: "/api/cron/reactivate-users",
     method: "POST",
     schedule: "0 */6 * * *",
     description: "Toutes les 6 heures",
   },
   {
-    name: "⏰ Expiration des demandes d'information",
+    name: " Expiration des demandes d'information",
     path: "/api/cron/expire-info-requests",
     method: "POST",
     schedule: "0 * * * *",
     description: "Toutes les heures",
   },
   {
-    name: "💸 Expiration des offres",
+    name: " Expiration des offres",
     path: "/api/cron/expire-offers",
     method: "POST",
     schedule: "0 * * * *",
     description: "Toutes les heures",
   },
   {
-    name: "🔓 Libération des réservations expirées",
+    name: " Libération des réservations expirées",
     path: "/api/cron/release-expired-bookings",
     method: "POST",
     schedule: "0 * * * *",
     description: "Toutes les heures",
   },
   {
-    name: "✅ Vérification des séjours terminés",
+    name: " Vérification des séjours terminés",
     path: "/api/cron/check-completed-bookings",
     method: "GET", // ← GET car l'API supporte les deux
     schedule: "0 10 * * *",
     description: "Tous les jours à 10h",
   },
   {
-    name: "🧪 TEST - Tous les jobs",
+    name: " TEST - Tous les jobs",
     path: "/api/cron/test-all",
     method: "GET",
     schedule: "*/5 * * * *",
@@ -55,8 +55,8 @@ const JOBS = [
 // Fonction pour exécuter un job
 function runJob(name, path, method) {
   return new Promise((resolve, reject) => {
-    console.log(`\n🚀 [${new Date().toLocaleString()}] Exécution: ${name}`);
-    console.log(`📡 Appel de: ${API_BASE}${path} (${method})`);
+    console.log(`\n [${new Date().toLocaleString()}] Exécution: ${name}`);
+    console.log(` Appel de: ${API_BASE}${path} (${method})`);
 
     const options = {
       hostname: "localhost",
@@ -75,30 +75,30 @@ function runJob(name, path, method) {
       res.on("data", (chunk) => (data += chunk));
       res.on("end", () => {
         if (res.statusCode === 200) {
-          console.log(`✅ ${name} - SUCCÈS (${res.statusCode})`);
+          console.log(` ${name} - SUCCÈS (${res.statusCode})`);
           try {
             const response = JSON.parse(data);
-            console.log(`📦 Réponse:`, response);
+            console.log(` Réponse:`, response);
           } catch (e) {
-            console.log(`📦 Réponse: ${data}`);
+            console.log(` Réponse: ${data}`);
           }
           resolve();
         } else {
-          console.log(`❌ ${name} - ERREUR (${res.statusCode})`);
-          console.log(`📦 Réponse: ${data}`);
+          console.log(` ${name} - ERREUR (${res.statusCode})`);
+          console.log(` Réponse: ${data}`);
           reject(new Error(`HTTP ${res.statusCode}`));
         }
       });
     });
 
     req.on("error", (err) => {
-      console.log(`❌ ${name} - ÉCHEC: ${err.message}`);
+      console.log(` ${name} - ÉCHEC: ${err.message}`);
       reject(err);
     });
 
     req.on("timeout", () => {
       req.destroy();
-      console.log(`❌ ${name} - TIMEOUT (30s)`);
+      console.log(` ${name} - TIMEOUT (30s)`);
       reject(new Error("Timeout"));
     });
 
@@ -109,7 +109,7 @@ function runJob(name, path, method) {
 // Fonction pour exécuter tous les jobs immédiatement
 async function runAllJobs() {
   console.log("\n" + "=".repeat(60));
-  console.log("🚀 EXÉCUTION MANUELLE DE TOUS LES JOBS");
+  console.log(" EXÉCUTION MANUELLE DE TOUS LES JOBS");
   console.log("=".repeat(60));
 
   for (const job of JOBS) {
@@ -118,7 +118,7 @@ async function runAllJobs() {
   }
 
   console.log("\n" + "=".repeat(60));
-  console.log("✅ TOUS LES JOBS EXÉCUTÉS");
+  console.log(" TOUS LES JOBS EXÉCUTÉS");
   console.log("=".repeat(60));
   process.exit(0);
 }
@@ -126,13 +126,13 @@ async function runAllJobs() {
 // Fonction pour exécuter un job spécifique
 async function runSpecificJob(jobName) {
   const job = JOBS.find(
-    (j) => j.name.includes(jobName) || j.path.includes(jobName)
+    (j) => j.name.includes(jobName) || j.path.includes(jobName),
   );
   if (job) {
     await runJob(job.name, job.path, job.method);
   } else {
-    console.log(`❌ Job non trouvé: ${jobName}`);
-    console.log(`📋 Jobs disponibles:`);
+    console.log(` Job non trouvé: ${jobName}`);
+    console.log(` Jobs disponibles:`);
     JOBS.forEach((j) => console.log(`   - ${j.name}`));
   }
   process.exit(0);
@@ -141,25 +141,25 @@ async function runSpecificJob(jobName) {
 // Démarrer les cron jobs
 function startCronJobs() {
   console.log("\n" + "=".repeat(60));
-  console.log("⏰ DÉMARRAGE DES CRON JOBS");
+  console.log(" DÉMARRAGE DES CRON JOBS");
   console.log("=".repeat(60));
-  console.log(`🔑 Clé secrète utilisée: ${SECRET_KEY.substring(0, 10)}...\n`);
+  console.log(` Clé secrète utilisée: ${SECRET_KEY.substring(0, 10)}...\n`);
 
   JOBS.forEach((job) => {
     if (cron.validate(job.schedule)) {
       cron.schedule(job.schedule, () => {
         runJob(job.name, job.path, job.method);
       });
-      console.log(`✅ Planifié: ${job.name}`);
-      console.log(`   ⏰ ${job.description} (${job.schedule}) - ${job.method}`);
+      console.log(` Planifié: ${job.name}`);
+      console.log(`    ${job.description} (${job.schedule}) - ${job.method}`);
     } else {
-      console.log(`❌ Expression invalide: ${job.name} - ${job.schedule}`);
+      console.log(` Expression invalide: ${job.name} - ${job.schedule}`);
     }
   });
 
   console.log("\n" + "=".repeat(60));
-  console.log("✅ CRON JOBS EN COURS D'EXÉCUTION");
-  console.log("📝 Appuyez sur Ctrl+C pour arrêter");
+  console.log(" CRON JOBS EN COURS D'EXÉCUTION");
+  console.log(" Appuyez sur Ctrl+C pour arrêter");
   console.log("=".repeat(60) + "\n");
 }
 
@@ -173,14 +173,14 @@ if (args.includes("--run-all")) {
   if (jobName) {
     runSpecificJob(jobName);
   } else {
-    console.log('❌ Usage: node scripts/cron-dev.js --run "nom_du_job"');
+    console.log(' Usage: node scripts/cron-dev.js --run "nom_du_job"');
     process.exit(1);
   }
 } else {
   startCronJobs();
   process.stdin.resume();
   process.on("SIGINT", () => {
-    console.log("\n\n🛑 Arrêt des cron jobs...");
+    console.log("\n\n Arrêt des cron jobs...");
     process.exit();
   });
 }

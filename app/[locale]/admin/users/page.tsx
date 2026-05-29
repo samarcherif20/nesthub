@@ -183,7 +183,7 @@ export default function AdminUsersPage() {
     handleExport,
     selectedUserForHistory,
     hasAdvancedSearch,
-  } = useAdminUsers(sortBy);;
+  } = useAdminUsers(sortBy);
 
   // Convert error/success to toast
   useEffect(() => {
@@ -210,14 +210,14 @@ export default function AdminUsersPage() {
   };
 
   const closeMenu = () => setMenuPosition({ top: 0, left: 0, userId: null });
-  
+
   const handleSort = (field: string) => {
     setSortBy((prev) => ({
       field,
       order: prev.field === field && prev.order === "desc" ? "asc" : "desc",
     }));
   };
-  
+
   // Fonction pour obtenir les initiales de l'utilisateur
   const getUserInitials = (user: any) => {
     const first = user.firstName?.charAt(0) || "";
@@ -556,7 +556,7 @@ export default function AdminUsersPage() {
                       className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
                     />
                   </th>
-                  
+
                   {/* Colonne UTILISATEUR */}
                   <th
                     onClick={() => handleSort("firstName")}
@@ -577,7 +577,7 @@ export default function AdminUsersPage() {
                       )}
                     </div>
                   </th>
-                  
+
                   <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
                     {t("table.headers.contact")}
                   </th>
@@ -590,7 +590,7 @@ export default function AdminUsersPage() {
                   <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
                     {t("table.headers.verification")}
                   </th>
-                  
+
                   {/* Colonne FIABILITÉ */}
                   <th
                     onClick={() => handleSort("reliabilityScore")}
@@ -611,7 +611,7 @@ export default function AdminUsersPage() {
                       )}
                     </div>
                   </th>
-                  
+
                   {/* Colonne FRAUDE */}
                   <th
                     onClick={() => handleSort("fraudScore")}
@@ -632,7 +632,7 @@ export default function AdminUsersPage() {
                       )}
                     </div>
                   </th>
-                  
+
                   {/* Colonne INSCRIPTION */}
                   <th
                     onClick={() => handleSort("createdAt")}
@@ -653,7 +653,7 @@ export default function AdminUsersPage() {
                       )}
                     </div>
                   </th>
-                  
+
                   <th className="px-4 py-3 text-left text-[10px] font-bold text-indigo-400 dark:text-indigo-500 uppercase tracking-wider">
                     {t("table.headers.actions")}
                   </th>

@@ -25,9 +25,7 @@ export async function GET(req: NextRequest) {
     const search       = searchParams.get("search") || "";
     const skip         = (page - 1) * limit;
 
-    // ── build the where clause ──────────────────────────────────────────
-    // History page only shows already-processed requests (not PENDING).
-    // When a specific filter is chosen we narrow further.
+    
     const statusWhere =
       statusFilter === "VALIDATED" ? { status: "VALIDATED" }
       : statusFilter === "REJECTED" ? { status: "REJECTED" }

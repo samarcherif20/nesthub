@@ -40,21 +40,21 @@ export async function POST(req: NextRequest) {
     };
 
     const message =
-      `🔓 **INFORMATIONS DÉCRYPTÉES** 🔓\n\n` +
-      `✅ **Paiement confirmé** pour le séjour du ${formatDate(revealedInfo.checkIn)} au ${formatDate(revealedInfo.checkOut)}\n\n` +
-      `**📍 Informations d'accès débloquées :**\n` +
+      ` **INFORMATIONS DÉCRYPTÉES** \n\n` +
+      ` **Paiement confirmé** pour le séjour du ${formatDate(revealedInfo.checkIn)} au ${formatDate(revealedInfo.checkOut)}\n\n` +
+      `** Informations d'accès débloquées :**\n` +
       `${revealedInfo.exactAddress ? `• Adresse exacte : ${revealedInfo.exactAddress}\n` : ""}` +
       `${revealedInfo.accessCode ? `• Code d'accès : ${revealedInfo.accessCode}\n` : ""}` +
       `${revealedInfo.checkinInstructions ? `• Instructions d'arrivée : ${revealedInfo.checkinInstructions}\n` : ""}` +
       `${revealedInfo.ownerPhone ? `• Contact de l'hôte : ${revealedInfo.ownerPhone}\n` : ""}\n\n` +
-      `**👤 Détails des voyageurs :**\n` +
+      `** Détails des voyageurs :**\n` +
       `• ${tenant?.firstName} ${tenant?.lastName}\n` +
       `${tenant?.phone ? `• Téléphone : ${tenant.phone}\n` : ""}` +
       `${tenant?.email ? `• Email : ${tenant.email}\n` : ""}\n\n` +
-      `**🏠 Informations sur le logement :**\n` +
+      `** Informations sur le logement :**\n` +
       `• ${revealedInfo.listingTitle}\n` +
       `${revealedInfo.listingLocation ? `• ${revealedInfo.listingLocation}\n` : ""}\n\n` +
-      `**💰 Récapitulatif financier :**\n` +
+      `** Récapitulatif financier :**\n` +
       `• ${revealedInfo.nights} nuit(s) × ${revealedInfo.pricePerNight} TND = ${(revealedInfo.pricePerNight * revealedInfo.nights).toLocaleString("fr-FR")} TND\n` +
       `${revealedInfo.cleaningFee > 0 ? `• Frais de ménage : ${revealedInfo.cleaningFee.toLocaleString("fr-FR")} TND\n` : ""}` +
       `${revealedInfo.serviceFee > 0 ? `• Frais de service : ${revealedInfo.serviceFee.toLocaleString("fr-FR")} TND\n` : ""}` +
@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, message: systemMessage });
   } catch (error) {
-    console.error("❌ Erreur envoi notification:", error);
+    console.error(" Erreur envoi notification:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

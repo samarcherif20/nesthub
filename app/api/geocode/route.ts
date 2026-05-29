@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log("🔍 [GEOCODE] Recherche pour:", address);
+    console.log(" [GEOCODE] Recherche pour:", address);
 
     // Utiliser Nominatim (OpenStreetMap) avec un User-Agent
     const response = await fetch(
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     );
 
     if (!response.ok) {
-      console.error("❌ [GEOCODE] Erreur HTTP:", response.status);
+      console.error(" [GEOCODE] Erreur HTTP:", response.status);
       return NextResponse.json(
         { error: "Erreur lors du géocodage" },
         { status: response.status }
@@ -59,7 +59,7 @@ export async function GET(request: NextRequest) {
       count: results.length,
     });
   } catch (error) {
-    console.error("❌ [GEOCODE] Erreur:", error);
+    console.error(" [GEOCODE] Erreur:", error);
     return NextResponse.json(
       { error: "Erreur serveur" },
       { status: 500 }

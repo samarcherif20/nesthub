@@ -23,6 +23,54 @@ export async function GET(req: NextRequest) {
         { status: 404 },
       );
     }
+    // AJOUTE CES LIGNES APRÈS `const user = await prisma.user.findUnique(...)`
+
+    const searchParams = req.nextUrl.searchParams;
+    const specificUserId = searchParams.get("userId");
+    const specificListingId = searchParams.get("listingId");
+
+    // 🔥 SI on demande une conversation spécifique (bouton message)
+    if (specificUserId && specificListingId) {
+      // Vérifier que le listing existe
+      const listing = await prisma.listing.findUnique({
+        where: { id: specificListingId },
+        select: { ownerId: true },
+      });
+
+      if (!listing) {
+        return NextResponse.json(
+          { error: "Annonce non trouvée" },
+          { status: 404 },
+        );
+      }
+
+      const ownerId = listing.ownerId;
+      const tenantId = specificUserId;
+
+      // Chercher une conversation existante
+      let conversation = await prisma.conversation.findFirst({
+        where: {
+          listingId: specificListingId,
+          ownerId: ownerId,
+          tenantId: tenantId,
+        },
+      });
+
+      // Si elle n'existe pas, la créer
+      if (!conversation) {
+        conversation = await prisma.conversation.create({
+          data: {
+            listingId: specificListingId,
+            ownerId: ownerId,
+            tenantId: tenantId,
+            status: "OPEN",
+            lastMessageAt: new Date(),
+          },
+        });
+      }
+
+      return NextResponse.json({ conversationId: conversation.id });
+    }
 
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -82,7 +130,7 @@ export async function GET(req: NextRequest) {
       orderBy: { updatedAt: "desc" },
     });
 
-    // ✅ Récupérer les offres pour chaque conversation séparément
+    //  Récupérer les offres pour chaque conversation séparément
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conv) => {
         const unreadCount = await prisma.message.count({
@@ -96,7 +144,7 @@ export async function GET(req: NextRequest) {
         const otherUser = conv.ownerId === user.id ? conv.tenant : conv.owner;
         const lastMessage = conv.messages[0];
 
-        // ✅ Récupérer l'offre en attente pour cette conversation (via infoRequest)
+        //  Récupérer l'offre en attente pour cette conversation (via infoRequest)
         let activeOffer = null;
         if (conv.infoRequestId) {
           const offer = await prisma.offer.findFirst({
@@ -148,7 +196,7 @@ export async function GET(req: NextRequest) {
                 expiresAt: conv.infoRequest.expiresAt?.toISOString(),
               }
             : null,
-          // ✅ AJOUT : Inclure l'offre dans la réponse
+          //  AJOUT : Inclure l'offre dans la réponse
           offer: activeOffer
             ? {
                 id: activeOffer.id,

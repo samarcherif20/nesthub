@@ -29,11 +29,11 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log(`✅ ClerkId updated: ${oldClerkId} → ${newClerkId}`);
+    console.log(` ClerkId updated: ${oldClerkId} → ${newClerkId}`);
     return NextResponse.json({ success: true, user: updated });
 
   } catch (error: any) {
-    console.error("❌ Error updating clerkId:", error);
+    console.error(" Error updating clerkId:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

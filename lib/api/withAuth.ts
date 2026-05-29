@@ -48,11 +48,11 @@ export function withAuth(handler: Handler, options: AuthOptions = {}) {
       if (options.requireListingAccess) {
         let listingId: string | null = null;
 
-        // ✅ CORRIGÉ - Récupérer l'id de manière asynchrone
+        //  Récupérer l'id de manière asynchrone
         if (options.getListingId) {
           listingId = options.getListingId(req, context);
         } else if (context.params) {
-          // ✅ context.params est une Promise, il faut l'attendre
+          // context.params est une Promise, il faut l'attendre
           const params = await context.params;
           listingId = params?.id || null;
         }

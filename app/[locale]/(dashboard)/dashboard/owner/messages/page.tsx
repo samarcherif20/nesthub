@@ -3,8 +3,10 @@
 
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/nextjs";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { ChatBox } from "@/components/ui/chat/ChatBox";
-import { motion } from "framer-motion";
 import {
   MessageSquare,
   ArrowLeft,
@@ -18,7 +20,6 @@ import {
   User,
   Tag,
   Wallet,
-  Activity,
   Clock,
   AlertCircle,
   Timer,
@@ -28,11 +29,346 @@ import {
   Shield,
   TrendingUp,
   HelpCircle,
+  UsersRound,
 } from "lucide-react";
 import { TbHomePlus, TbMessageOff } from "react-icons/tb";
-import Link from "next/link";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { CheckCircle as CheckCircleIcon, AlertCircle as AlertCircleIcon, X } from "lucide-react";
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const pipAvatar = (url: string) =>
+  `/api/users/avatar?url=${encodeURIComponent(url)}`;
+const pipListingImage = (url: string) =>
+  `/api/listings/image?url=${encodeURIComponent(url)}`;
+
+// ─── Avatar Component ─────────────────────────────────────────────────────────
+function Avatar({
+  src,
+  name,
+  size = 40,
+}: {
+  src?: string;
+  name: string;
+  size?: number;
+}) {
+  const [err, setErr] = useState(false);
+  const url = src ? pipAvatar(src) : null;
+  const safeName = name || "?";
+
+  return (
+    <div
+      className="relative flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center font-bold text-white"
+      style={{
+        width: size,
+        height: size,
+        background:
+          !url || err
+            ? "linear-gradient(135deg, #0ea5e9, #6366f1, #a855f7)"
+            : "#e2e8f0",
+        fontSize: size * 0.36,
+      }}
+    >
+      {url && !err ? (
+        <img
+          src={url}
+          alt={safeName}
+          className="w-full h-full object-cover"
+          onError={() => setErr(true)}
+        />
+      ) : (
+        safeName.charAt(0).toUpperCase()
+      )}
+    </div>
+  );
+}
+
+// ─── Group Avatar Component ───────────────────────────────────────────────────
+function GroupAvatar({ participants }: { participants?: { id: string; username: string; image?: string }[] }) {
+  const visibleParticipants = participants?.slice(0, 3) || [];
+  const remainingCount = (participants?.length || 0) - 3;
+
+  return (
+    <div className="relative flex-shrink-0">
+      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-md">
+        <UsersRound className="w-5 h-5 text-white" />
+      </div>
+      {visibleParticipants.length > 0 && (
+        <div className="absolute -bottom-1 -right-1 flex">
+          {visibleParticipants.map((p, idx) => (
+            <div
+              key={p.id}
+              className="w-4 h-4 rounded-full bg-white dark:bg-slate-900 border border-white dark:border-slate-900 overflow-hidden"
+              style={{ marginLeft: idx > 0 ? "-4px" : "0" }}
+            >
+              {p.image ? (
+                <img
+                  src={pipAvatar(p.image)}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-sky-500 to-purple-600 flex items-center justify-center text-[8px] font-bold text-white">
+                  {p.username?.charAt(0).toUpperCase() || "?"}
+                </div>
+              )}
+            </div>
+          ))}
+          {remainingCount > 0 && (
+            <div className="w-4 h-4 rounded-full bg-slate-300 dark:bg-slate-600 text-[8px] font-bold text-white flex items-center justify-center border border-white dark:border-slate-900">
+              +{remainingCount}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Toast Component ─────────────────────────────────────────────────────────
+function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error" | "info";
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3500);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const styles = {
+    success: "bg-green-500",
+    error: "bg-red-500",
+    info: "bg-blue-500",
+  };
+
+  return (
+    <div className="fixed top-24 right-8 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+      <div
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${styles[type]} text-white`}
+      >
+        {type === "success" ? (
+          <CheckCircleIcon className="w-5 h-5" />
+        ) : type === "error" ? (
+          <AlertCircleIcon className="w-5 h-5" />
+        ) : (
+          <Info className="w-5 h-5" />
+        )}
+        <span className="text-sm font-medium">{message}</span>
+        <button onClick={onClose} className="ml-2 hover:opacity-70">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Empty Messages State ─────────────────────────────────────────────────────
+function EmptyMessagesState({ t, locale }: { t: any; locale: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center max-w-md mx-auto">
+      <div className="relative mb-6">
+        <div className="absolute inset-0 bg-gradient-to-r from-sky-500/20 to-purple-500/20 rounded-full blur-2xl animate-pulse" />
+        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center shadow-lg">
+          <TbMessageOff size={48} className="text-sky-500 dark:text-sky-400" />
+        </div>
+      </div>
+      <h3 className="text-2xl font-headline font-bold bg-gradient-to-r from-sky-600 to-purple-600 dark:from-sky-400 dark:to-purple-400 bg-clip-text text-transparent mb-3">
+        {t("empty.title")}
+      </h3>
+      <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 leading-relaxed">
+        {t("empty.description")}
+      </p>
+      <Link
+        href={`/${locale}/dashboard/owner/listings`}
+        className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
+      >
+        <TbHomePlus size={18} className="group-hover:rotate-12 transition-transform duration-300" />
+        {t("empty.button")}
+        <TrendingUp size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+      </Link>
+      <Link
+        href={`/${locale}/help`}
+        className="mt-6 text-xs text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors flex items-center gap-1"
+      >
+        <HelpCircle size={12} />
+        {t("empty.helpLink")}
+      </Link>
+    </div>
+  );
+}
+
+// ─── Conversation List Component (avec groupes) ──────────────────────────────
+function ConversationList({
+  conversations,
+  groups,
+  onSelect,
+  selectedId,
+  t,
+}: {
+  conversations: Conversation[];
+  groups: GroupConversation[];
+  onSelect: (conv: Conversation | GroupConversation, isGroup: boolean) => void;
+  selectedId?: string;
+  t: any;
+}) {
+  return (
+    <div className="h-full bg-white dark:bg-slate-900">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+          {t("title")}
+        </h2>
+        <p className="text-xs text-slate-400 mt-0.5">
+          {conversations.length + groups.length} {t("conversations.count")}
+          {conversations.length + groups.length > 1 ? "s" : ""}
+        </p>
+      </div>
+      <div className="overflow-y-auto h-[calc(100%-73px)]">
+        {/* Section Groupes */}
+        {groups.length > 0 && (
+          <>
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                {t("conversations.groups")}
+              </p>
+            </div>
+            {groups.map((group) => (
+              <button
+                key={`group_${group.id}`}
+                onClick={() => onSelect(group, true)}
+                className={`w-full p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 ${
+                  selectedId === `group_${group.id}`
+                    ? "bg-purple-50 dark:bg-purple-900/20 border-l-4 border-l-purple-500"
+                    : ""
+                }`}
+              >
+                <div className="flex gap-3">
+                  <GroupAvatar participants={group.participants} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <p className="font-medium text-slate-900 dark:text-white truncate flex items-center gap-1.5">
+                        <UsersRound className="w-3.5 h-3.5 text-purple-500" />
+                        {group.name || t("conversations.disputeGroup")}
+                      </p>
+                      {group.unreadCount > 0 && (
+                        <span className="min-w-[20px] h-5 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center px-1.5">
+                          {group.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-500 truncate">
+                      {group.listing?.title || t("conversations.unknownListing")}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-purple-500 bg-purple-50 dark:bg-purple-900/30 px-1.5 py-0.5 rounded-full">
+                        {t("conversations.dispute")}
+                      </span>
+                      {group.lastMessage && (
+                        <p className="text-xs text-slate-400 truncate flex-1">
+                          {group.lastMessage}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </>
+        )}
+
+        {/* Section Conversations normales */}
+        {conversations.length > 0 && (
+          <>
+            {groups.length > 0 && (
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {t("conversations.messages")}
+                </p>
+              </div>
+            )}
+            {conversations.map((conv) => (
+              <button
+                key={conv.id}
+                onClick={() => onSelect(conv, false)}
+                className={`w-full p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 ${
+                  selectedId === conv.id
+                    ? "bg-sky-50 dark:bg-sky-900/20 border-l-4 border-l-sky-500"
+                    : ""
+                }`}
+              >
+                <div className="flex gap-3">
+                  <Avatar src={conv.otherUser.image} name={conv.otherUser.username} size={48} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start">
+                      <p className="font-medium text-slate-900 dark:text-white truncate">
+                        {conv.otherUser.username}
+                      </p>
+                      {conv.unreadCount > 0 && (
+                        <span className="min-w-[20px] h-5 rounded-full bg-sky-500 text-white text-[10px] font-bold flex items-center justify-center px-1.5">
+                          {conv.unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-500 truncate">{conv.listing.title}</p>
+                    {conv.offer && conv.offer.status === "PENDING" && (
+                      <p className="text-[10px] text-amber-500 font-medium mt-0.5 flex items-center gap-1">
+                        <Clock className="w-2.5 h-2.5" /> {t("offer.pending")}
+                      </p>
+                    )}
+                    {conv.lastMessage && (
+                      <p className="text-xs text-slate-400 truncate mt-1">{conv.lastMessage}</p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </>
+        )}
+
+        {conversations.length === 0 && groups.length === 0 && (
+          <div className="p-8 text-center text-slate-400">
+            {t("conversations.empty")}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Listing Image Component ─────────────────────────────────────────────────
+function ListingImage({
+  listing,
+  className = "",
+}: {
+  listing: { title: string; image?: string };
+  className?: string;
+}) {
+  const [err, setErr] = useState(false);
+  const imageUrl = listing.image ? pipListingImage(listing.image) : null;
+  return (
+    <div
+      className={`relative overflow-hidden bg-slate-100 dark:bg-slate-800 ${className}`}
+    >
+      {imageUrl && !err ? (
+        <img
+          src={imageUrl}
+          alt={listing.title}
+          className="w-full h-full object-cover"
+          onError={() => setErr(true)}
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center">
+          <Home className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Interfaces ──────────────────────────────────────────────────────────────
 interface Conversation {
   id: string;
   listing: {
@@ -47,7 +383,7 @@ interface Conversation {
   };
   otherUser: {
     id: string;
-    username: string;  // ✅ CHANGÉ : name → username
+    username: string;
     image?: string;
   };
   infoRequest?: {
@@ -67,164 +403,55 @@ interface Conversation {
   unreadCount: number;
 }
 
-const pipAvatar = (url: string) => `/api/users/avatar?url=${encodeURIComponent(url)}`;
-const pipListingImage = (url: string) => `/api/listings/image?url=${encodeURIComponent(url)}`;
-
-function Avatar({ src, name, size = 40 }: { src?: string; name: string; size?: number }) {
-  const [err, setErr] = useState(false);
-  const url = src ? pipAvatar(src) : null;
-  const safeName = name || "?";
-  
-  return (
-    <div
-      className="relative flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center font-bold text-white"
-      style={{
-        width: size,
-        height: size,
-        background: !url || err ? "linear-gradient(135deg, #0ea5e9, #6366f1, #a855f7)" : "#e2e8f0",
-        fontSize: size * 0.36,
-      }}
-    >
-      {url && !err ? (
-        <img src={url} alt={safeName} className="w-full h-full object-cover" onError={() => setErr(true)} />
-      ) : (
-        safeName.charAt(0).toUpperCase()
-      )}
-    </div>
-  );
-}
-
-function getListingImage(listing: Conversation["listing"]): string {
-  if (listing.image && listing.image.trim() !== "") {
-    return pipListingImage(listing.image);
-  }
-  return "/images/placeholder-listing.jpg";
-}
-
-function ListingImage({ listing, className = "" }: { listing: Conversation["listing"]; className?: string }) {
-  const [err, setErr] = useState(false);
-  const imageUrl = getListingImage(listing);
-  return (
-    <div className={`relative overflow-hidden bg-slate-100 dark:bg-slate-800 ${className}`}>
-      {!err ? (
-        <img src={imageUrl} alt={listing.title} className="w-full h-full object-cover" onError={() => setErr(true)} />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center">
-          <Home className="w-8 h-8 text-slate-300 dark:text-slate-600" />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function EmptyMessagesState() {
-  const locale = "fr";
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-center max-w-md mx-auto">
-      <div className="relative mb-6">
-        <div className="absolute inset-0 bg-gradient-to-r from-sky-500/20 to-purple-500/20 rounded-full blur-2xl animate-pulse" />
-        <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center shadow-lg">
-          <TbMessageOff size={48} className="text-sky-500 dark:text-sky-400" />
-        </div>
-      </div>
-      <h3 className="text-2xl font-headline font-bold bg-gradient-to-r from-sky-600 to-purple-600 dark:from-sky-400 dark:to-purple-400 bg-clip-text text-transparent mb-3">
-        Aucune conversation
-      </h3>
-      <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 leading-relaxed">
-        Les messages des voyageurs apparaîtront ici dès qu'ils vous contacteront.
-      </p>
-      <Link
-        href={`/${locale}/dashboard/owner/listings`}
-        className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
-      >
-        <TbHomePlus size={18} className="group-hover:rotate-12 transition-transform duration-300" />
-        Voir mes annonces
-        <TrendingUp size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
-      </Link>
-      <Link
-        href={`/${locale}/help`}
-        className="mt-6 text-xs text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors flex items-center gap-1"
-      >
-        <HelpCircle size={12} />
-        Comment gérer mes messages ?
-      </Link>
-    </div>
-  );
-}
-
-function Toast({ message, type, onClose }: { message: string; type: "success" | "error" | "info"; onClose: () => void }) {
-  useEffect(() => {
-    const timer = setTimeout(onClose, 3000);
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  const styles = { success: "bg-emerald-500", error: "bg-red-500", info: "bg-blue-500" };
-  return (
-    <div className={`fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl text-white text-sm font-medium shadow-lg animate-in slide-in-from-bottom-2 ${styles[type]}`}>
-      {message}
-    </div>
-  );
-}
-
-function ConversationList({
-  conversations,
-  onSelect,
-  selectedId,
-}: {
-  conversations: Conversation[];
-  onSelect: (conv: Conversation) => void;
-  selectedId?: string;
-}) {
-  return (
-    <div className="h-full bg-white dark:bg-slate-900">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
-        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Messages</h2>
-      </div>
-      <div className="overflow-y-auto h-[calc(100%-73px)]">
-        {conversations.map((conv) => (
-          <button
-            key={conv.id}
-            onClick={() => onSelect(conv)}
-            className="w-full p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800"
-          >
-            <div className="flex gap-3">
-              <Avatar src={conv.otherUser.image} name={conv.otherUser.username} size={48} />
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-start">
-                  <p className="font-medium text-slate-900 dark:text-white">{conv.otherUser.username}</p>
-                  {conv.unreadCount > 0 && (
-                    <span className="w-5 h-5 rounded-full bg-sky-500 text-white text-xs font-bold flex items-center justify-center">
-                      {conv.unreadCount}
-                    </span>
-                  )}
-                </div>
-                <p className="text-sm text-slate-500 truncate">{conv.listing.title}</p>
-                {conv.offer && conv.offer.status === "PENDING" && (
-                  <p className="text-[10px] text-amber-500 font-medium mt-0.5 flex items-center gap-1">
-                    <Clock className="w-2.5 h-2.5" /> Offre en attente
-                  </p>
-                )}
-                {conv.lastMessage && <p className="text-xs text-slate-400 truncate mt-1">{conv.lastMessage}</p>}
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
+interface GroupConversation {
+  id: string;
+  name: string;
+  listing?: {
+    id: string;
+    title: string;
+    image?: string;
+  };
+  participants: {
+    id: string;
+    username: string;
+    image?: string;
+    role?: string;
+  }[];
+  dispute?: {
+    id: string;
+    status: string;
+    type: string;
+  };
+  lastMessage?: string;
+  unreadCount: number;
+  status: string;
 }
 
 export default function OwnerMessagesPage() {
+  const params = useParams();
+  const router = useRouter();
   const { user } = useUser();
+  const t = useTranslations("MessagesPage");
+  const locale = params.locale as string || "fr";
+  const searchParams = useSearchParams();
+  const urlConversationId = searchParams.get("conversationId");
+
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [groups, setGroups] = useState<GroupConversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<GroupConversation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobileView, setIsMobileView] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info";
+  } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const showToast = (message: string, type: "success" | "error" | "info" = "info") => setToast({ message, type });
+  const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
+    setToast({ message, type });
+  };
 
   useEffect(() => {
     const checkMobile = () => setIsMobileView(window.innerWidth < 1024);
@@ -233,55 +460,104 @@ export default function OwnerMessagesPage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  useEffect(() => { loadConversations(); }, []);
+  useEffect(() => {
+    loadConversations();
+    loadGroups();
+  }, []);
+
+  // 🔥 Ouverture automatique depuis l'URL
+  useEffect(() => {
+    if (urlConversationId && !selectedConv && !selectedGroup) {
+      // Vérifier si c'est un groupe
+      if (urlConversationId.startsWith("group_")) {
+        const groupToOpen = groups.find((g) => `group_${g.id}` === urlConversationId);
+        if (groupToOpen) {
+          setSelectedGroup(groupToOpen);
+          if (isMobileView) setShowChat(true);
+        }
+      } else {
+        const conversationToOpen = conversations.find((c) => c.id === urlConversationId);
+        if (conversationToOpen) {
+          setSelectedConv(conversationToOpen);
+          if (isMobileView) setShowChat(true);
+        }
+      }
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+    }
+  }, [urlConversationId, conversations, groups, selectedConv, selectedGroup, isMobileView]);
 
   const loadConversations = async () => {
     try {
       const res = await fetch("/api/conversations");
       if (!res.ok) throw new Error();
       const data = await res.json();
-      // ✅ FILTRE : ne garde que les conversations valides
-      const validData = data.filter((c: Conversation) => c && c.otherUser && c.otherUser.id);
+      const validData = data.filter(
+        (c: Conversation) => c && c.otherUser && c.otherUser.id,
+      );
       setConversations(validData);
     } catch (error) {
       console.error("Error loading conversations:", error);
+    }
+  };
+
+  const loadGroups = async () => {
+    try {
+      const res = await fetch("/api/conversations/groups");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setGroups(data);
+    } catch (error) {
+      console.error("Error loading groups:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSelectConversation = (conv: Conversation) => {
-    setSelectedConv(conv);
+  const handleSelectConversation = (conv: Conversation, isGroup: boolean) => {
+    if (isGroup) {
+      setSelectedGroup(conv as unknown as GroupConversation);
+      setSelectedConv(null);
+    } else {
+      setSelectedConv(conv);
+      setSelectedGroup(null);
+    }
     if (isMobileView) setShowChat(true);
   };
 
   const handleBack = () => {
     setShowChat(false);
     setSelectedConv(null);
+    setSelectedGroup(null);
   };
 
   const handleAcceptOffer = async () => {
     if (!selectedConv?.offer?.id) {
-      showToast("Aucune offre trouvée", "error");
+      showToast(t("toast.noOffer"), "error");
       return;
     }
     if (selectedConv.offer.status !== "PENDING") {
-      showToast("Cette offre a déjà été traitée", "error");
+      showToast(t("toast.offerAlreadyProcessed"), "error");
       return;
     }
     setIsProcessing(true);
     try {
-      const res = await fetch(`/api/offers/${selectedConv.offer.id}/accept`, { method: "POST" });
+      const res = await fetch(`/api/offers/${selectedConv.offer.id}/accept`, {
+        method: "POST",
+      });
       const data = await res.json();
       if (res.ok) {
-        showToast("Offre acceptée avec succès ! La réservation est confirmée.", "success");
-        setSelectedConv({ ...selectedConv, offer: { ...selectedConv.offer, status: "ACCEPTED" } });
+        showToast(t("toast.offerAccepted"), "success");
+        setSelectedConv({
+          ...selectedConv,
+          offer: { ...selectedConv.offer, status: "ACCEPTED" },
+        });
         await loadConversations();
       } else {
-        showToast(data.error || "Erreur lors de l'acceptation", "error");
+        showToast(data.error || t("toast.acceptError"), "error");
       }
     } catch (error) {
-      showToast("Erreur de connexion", "error");
+      showToast(t("toast.connectionError"), "error");
     } finally {
       setIsProcessing(false);
     }
@@ -289,26 +565,31 @@ export default function OwnerMessagesPage() {
 
   const handleRejectOffer = async () => {
     if (!selectedConv?.offer?.id) {
-      showToast("Aucune offre trouvée", "error");
+      showToast(t("toast.noOffer"), "error");
       return;
     }
     if (selectedConv.offer.status !== "PENDING") {
-      showToast("Cette offre a déjà été traitée", "error");
+      showToast(t("toast.offerAlreadyProcessed"), "error");
       return;
     }
     setIsProcessing(true);
     try {
-      const res = await fetch(`/api/offers/${selectedConv.offer.id}/reject`, { method: "POST" });
+      const res = await fetch(`/api/offers/${selectedConv.offer.id}/reject`, {
+        method: "POST",
+      });
       const data = await res.json();
       if (res.ok) {
-        showToast("Offre refusée", "info");
-        setSelectedConv({ ...selectedConv, offer: { ...selectedConv.offer, status: "REJECTED" } });
+        showToast(t("toast.offerRejected"), "info");
+        setSelectedConv({
+          ...selectedConv,
+          offer: { ...selectedConv.offer, status: "REJECTED" },
+        });
         await loadConversations();
       } else {
-        showToast(data.error || "Erreur lors du refus", "error");
+        showToast(data.error || t("toast.rejectError"), "error");
       }
     } catch (error) {
-      showToast("Erreur de connexion", "error");
+      showToast(t("toast.connectionError"), "error");
     } finally {
       setIsProcessing(false);
     }
@@ -317,16 +598,15 @@ export default function OwnerMessagesPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-120px)]">
-        <LoadingSpinner variant="spinner" size="lg" color="primary" text="Chargement des messages..." speed="normal" />
+        <LoadingSpinner variant="spinner" size="lg" color="primary" text={t("loading")} speed="normal" />
       </div>
     );
   }
 
-  // ✅ EMPTY STATE : S'il n'y a AUCUNE conversation → afficher l'empty state centré
-  if (conversations.length === 0) {
+  if (conversations.length === 0 && groups.length === 0) {
     return (
       <div className="flex items-center justify-center h-[calc(100vh-120px)] bg-white dark:bg-slate-900/0 overflow-hidden">
-        <EmptyMessagesState />
+        <EmptyMessagesState t={t} locale={locale} />
       </div>
     );
   }
@@ -335,41 +615,66 @@ export default function OwnerMessagesPage() {
   if (isMobileView) {
     return (
       <div className="h-[calc(100vh-120px)] bg-white dark:bg-slate-900 rounded-xl overflow-hidden">
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-        {showChat && selectedConv ? (
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+        {showChat && (selectedConv || selectedGroup) ? (
           <>
             <div className="flex items-center gap-3 p-3 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
               <button onClick={handleBack} className="p-2 hover:bg-slate-100 rounded-lg">
                 <ArrowLeft className="w-5 h-5" />
               </button>
-              <Avatar src={selectedConv.otherUser.image} name={selectedConv.otherUser.username} size={32} />
-              <div>
-                <p className="font-medium">{selectedConv.otherUser.username}</p>
-                <p className="text-xs text-slate-500">{selectedConv.listing.title}</p>
-              </div>
+              {selectedConv ? (
+                <>
+                  <Avatar src={selectedConv.otherUser.image} name={selectedConv.otherUser.username} size={32} />
+                  <div>
+                    <p className="font-medium">{selectedConv.otherUser.username}</p>
+                    <p className="text-xs text-slate-500">{selectedConv.listing.title}</p>
+                  </div>
+                </>
+              ) : selectedGroup && (
+                <>
+                  <GroupAvatar participants={selectedGroup.participants} />
+                  <div>
+                    <p className="font-medium">{selectedGroup.name || t("conversations.disputeGroup")}</p>
+                    <p className="text-xs text-slate-500">{selectedGroup.listing?.title || t("conversations.unknownListing")}</p>
+                  </div>
+                </>
+              )}
             </div>
             <ChatBox
-              conversationId={selectedConv.id}
-              recipientId={selectedConv.otherUser.id}
-              recipientName={selectedConv.otherUser.username}
-              recipientImage={selectedConv.otherUser.image}
-              listingTitle={selectedConv.listing.title}
+              conversationId={selectedConv?.id || `group_${selectedGroup?.id}`}
+              recipientId={selectedConv?.otherUser.id || "group"}
+              recipientName={selectedConv?.otherUser.username || selectedGroup?.name || t("conversations.disputeGroup")}
+              recipientImage={selectedConv?.otherUser.image}
+              listingTitle={selectedConv?.listing.title || selectedGroup?.listing?.title || ""}
               listing={{
-                id: selectedConv.listing.id,
-                title: selectedConv.listing.title,
-                image: selectedConv.listing.image,
-                pricePerNight: selectedConv.listing.pricePerNight,
-                location: selectedConv.listing.location,
-                bedrooms: selectedConv.listing.bedrooms,
-                maxGuests: selectedConv.listing.maxGuests,
-                cleaningFee: selectedConv.listing.cleaningFee,
-                infoRequestId: selectedConv.infoRequest?.id,
+                id: selectedConv?.listing.id || selectedGroup?.listing?.id || "",
+                title: selectedConv?.listing.title || selectedGroup?.listing?.title || "",
+                image: selectedConv?.listing.image || selectedGroup?.listing?.image,
+                pricePerNight: selectedConv?.listing.pricePerNight,
+                location: selectedConv?.listing.location,
+                bedrooms: selectedConv?.listing.bedrooms,
+                maxGuests: selectedConv?.listing.maxGuests,
+                cleaningFee: selectedConv?.listing.cleaningFee,
+                infoRequestId: selectedConv?.infoRequest?.id,
               }}
               userRole="PROPERTY_OWNER"
+              isGroup={!!selectedGroup}
             />
           </>
         ) : (
-          <ConversationList conversations={conversations} onSelect={handleSelectConversation} selectedId={selectedConv?.id} />
+          <ConversationList
+            conversations={conversations}
+            groups={groups}
+            onSelect={handleSelectConversation}
+            selectedId={selectedConv?.id || (selectedGroup ? `group_${selectedGroup.id}` : undefined)}
+            t={t}
+          />
         )}
       </div>
     );
@@ -378,102 +683,84 @@ export default function OwnerMessagesPage() {
   // Vue desktop
   return (
     <div className="flex h-[calc(100vh-120px)] gap-0 bg-slate-50 dark:bg-slate-900 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       {/* Liste des conversations - 25% */}
       <div className="w-[25%] min-w-[260px] bg-white dark:bg-slate-900 flex flex-col border-r border-slate-200 dark:border-slate-700">
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">Messages</h2>
-          <p className="text-xs text-slate-400 mt-0.5">{conversations.length} conversation{conversations.length > 1 ? "s" : ""}</p>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {conversations.map((conv) => (
-            <button
-              key={conv.id}
-              onClick={() => handleSelectConversation(conv)}
-              className={`w-full p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 ${
-                selectedConv?.id === conv.id ? "bg-sky-50 dark:bg-sky-900/20 border-l-4 border-l-sky-500" : ""
-              }`}
-            >
-              <div className="flex gap-3">
-                <Avatar src={conv.otherUser.image} name={conv.otherUser.username} size={40} />
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-start">
-                    <p className="font-medium text-slate-900 dark:text-white text-sm truncate">{conv.otherUser.username}</p>
-                    {conv.unreadCount > 0 && (
-                      <span className="min-w-[20px] h-5 rounded-full bg-sky-500 text-white text-[10px] font-bold flex items-center justify-center px-1.5">
-                        {conv.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 truncate">{conv.listing.title}</p>
-                  {conv.offer && conv.offer.status === "PENDING" && (
-                    <p className="text-[10px] text-amber-500 font-medium mt-0.5 flex items-center gap-1">
-                      <Clock className="w-2.5 h-2.5" /> Offre en attente
-                    </p>
-                  )}
-                  {conv.lastMessage && <p className="text-[11px] text-slate-400 truncate mt-1">{conv.lastMessage}</p>}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
+        <ConversationList
+          conversations={conversations}
+          groups={groups}
+          onSelect={handleSelectConversation}
+          selectedId={selectedConv?.id || (selectedGroup ? `group_${selectedGroup.id}` : undefined)}
+          t={t}
+        />
       </div>
 
       {/* Zone de chat - 45% */}
       <div className="flex-1 min-w-0 bg-white dark:bg-slate-900 flex flex-col">
-        {selectedConv ? (
+        {(selectedConv || selectedGroup) ? (
           <ChatBox
-            conversationId={selectedConv.id}
-            recipientId={selectedConv.otherUser.id}
-            recipientName={selectedConv.otherUser.username}
-            recipientImage={selectedConv.otherUser.image}
-            listingTitle={selectedConv.listing.title}
+            conversationId={selectedConv?.id || `group_${selectedGroup?.id}`}
+            recipientId={selectedConv?.otherUser.id || "group"}
+            recipientName={selectedConv?.otherUser.username || selectedGroup?.name || t("conversations.disputeGroup")}
+            recipientImage={selectedConv?.otherUser.image}
+            listingTitle={selectedConv?.listing.title || selectedGroup?.listing?.title || ""}
             listing={{
-              id: selectedConv.listing.id,
-              title: selectedConv.listing.title,
-              image: selectedConv.listing.image,
-              pricePerNight: selectedConv.listing.pricePerNight,
-              location: selectedConv.listing.location,
-              bedrooms: selectedConv.listing.bedrooms,
-              maxGuests: selectedConv.listing.maxGuests,
-              cleaningFee: selectedConv.listing.cleaningFee,
-              infoRequestId: selectedConv.infoRequest?.id,
+              id: selectedConv?.listing.id || selectedGroup?.listing?.id || "",
+              title: selectedConv?.listing.title || selectedGroup?.listing?.title || "",
+              image: selectedConv?.listing.image || selectedGroup?.listing?.image,
+              pricePerNight: selectedConv?.listing.pricePerNight,
+              location: selectedConv?.listing.location,
+              bedrooms: selectedConv?.listing.bedrooms,
+              maxGuests: selectedConv?.listing.maxGuests,
+              cleaningFee: selectedConv?.listing.cleaningFee,
+              infoRequestId: selectedConv?.infoRequest?.id,
             }}
             userRole="PROPERTY_OWNER"
+            isGroup={!!selectedGroup}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-slate-400">
             <div className="text-center">
               <MessageSquare className="w-16 h-16 mx-auto mb-4 opacity-50" />
-              <p className="font-medium">Sélectionnez une conversation</p>
-              <p className="text-sm mt-1">pour commencer à discuter</p>
+              <p className="font-medium">{t("selectConversation")}</p>
+              <p className="text-sm mt-1">{t("selectConversationHint")}</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Panneau droit - Contexte de réservation - 30% */}
-      {selectedConv && (
+      {/* Panneau droit - Contexte - 30% - UNIQUEMENT pour conversations normales */}
+      {selectedConv && !selectedGroup && (
         <div className="w-[30%] min-w-[280px] bg-slate-50 dark:bg-slate-800/30 border-l border-slate-200 dark:border-slate-700 overflow-y-auto">
           <div className="p-5 space-y-6">
             {/* Propriété */}
             <div>
               <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-                <Home className="w-3 h-3" /> Propriété
+                <Home className="w-3 h-3" /> {t("sidebar.property")}
               </h4>
               <div className="rounded-xl overflow-hidden bg-white dark:bg-slate-900 shadow-sm border border-slate-100 dark:border-slate-700">
                 <div className="h-32 w-full relative">
                   <ListingImage listing={selectedConv.listing} className="w-full h-full" />
                   {selectedConv.listing.pricePerNight && (
                     <div className="absolute top-2 right-2 bg-white/90 dark:bg-slate-900/90 backdrop-blur px-2 py-1 rounded-lg text-[11px] font-bold text-sky-600 dark:text-sky-400 shadow-sm">
-                      {selectedConv.listing.pricePerNight} DT / Nuit
+                      {selectedConv.listing.pricePerNight} DT / {t("sidebar.night")}
                     </div>
                   )}
                 </div>
                 <div className="p-3">
-                  <h5 className="text-sm font-bold font-headline text-slate-900 dark:text-white">{selectedConv.listing.title}</h5>
-                  {selectedConv.listing.location && <p className="text-xs text-slate-500 mt-0.5">{selectedConv.listing.location}</p>}
+                  <h5 className="text-sm font-bold font-headline text-slate-900 dark:text-white">
+                    {selectedConv.listing.title}
+                  </h5>
+                  {selectedConv.listing.location && (
+                    <p className="text-xs text-slate-500 mt-0.5">{selectedConv.listing.location}</p>
+                  )}
                   {selectedConv.infoRequest && (
                     <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-500 font-medium">
                       <span className="flex items-center gap-1">
@@ -483,7 +770,7 @@ export default function OwnerMessagesPage() {
                       </span>
                       <span className="flex items-center gap-1">
                         <Users className="w-3 h-3" />
-                        {selectedConv.infoRequest.guests} pers.
+                        {selectedConv.infoRequest.guests} {t("sidebar.guests")}
                       </span>
                     </div>
                   )}
@@ -491,10 +778,10 @@ export default function OwnerMessagesPage() {
               </div>
             </div>
 
-            {/* Profil Locataire */}
+            {/* Profil */}
             <div>
               <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-                <User className="w-3 h-3" /> Profil Locataire
+                <User className="w-3 h-3" /> {t("sidebar.tenantProfile")}
               </h4>
               <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
                 <div className="flex items-center gap-3 mb-3">
@@ -503,12 +790,12 @@ export default function OwnerMessagesPage() {
                     <p className="font-medium text-slate-900 dark:text-white">{selectedConv.otherUser.username}</p>
                     <div className="flex items-center gap-1 mt-0.5">
                       <Verified className="w-3.5 h-3.5 text-sky-500" />
-                      <span className="text-[10px] text-slate-500">Vérifié</span>
+                      <span className="text-[10px] text-slate-500">{t("sidebar.verified")}</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Score de fiabilité</span>
+                  <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{t("sidebar.reliabilityScore")}</span>
                   <span className="text-sm font-bold text-sky-600 dark:text-sky-400">98/100</span>
                 </div>
                 <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden mt-2">
@@ -516,54 +803,57 @@ export default function OwnerMessagesPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-3 mt-3 pt-2">
                   <div className="text-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                    <p className="text-[10px] text-slate-400">Avis</p>
+                    <p className="text-[10px] text-slate-400">{t("sidebar.reviews")}</p>
                     <div className="flex items-center justify-center gap-0.5 mt-1">
                       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                       <span className="text-xs font-bold">4.9</span>
                     </div>
                   </div>
                   <div className="text-center p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
-                    <p className="text-[10px] text-slate-400">Séjours</p>
+                    <p className="text-[10px] text-slate-400">{t("sidebar.stays")}</p>
                     <p className="text-xs font-bold mt-1">12</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Offre de réservation */}
+            {/* Offre */}
             <div>
               <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-                <Tag className="w-3 h-3" /> Offre de réservation
+                <Tag className="w-3 h-3" /> {t("sidebar.bookingOffer")}
               </h4>
               <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
                 {selectedConv.offer ? (
                   <div className="flex flex-col space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                        <Wallet className="w-3 h-3" /> Montant total
+                        <Wallet className="w-3 h-3" /> {t("sidebar.totalAmount")}
                       </span>
                       <span className="text-lg font-bold text-sky-600 dark:text-sky-400">
                         {selectedConv.offer.totalPrice.toLocaleString("fr-FR")} TND
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Statut</span>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-400">{t("sidebar.status")}</span>
                       <span className={`text-xs font-semibold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                        selectedConv.offer.status === "PENDING" ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" :
-                        selectedConv.offer.status === "ACCEPTED" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" :
-                        selectedConv.offer.status === "REJECTED" ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" :
-                        "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                        selectedConv.offer.status === "PENDING"
+                          ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                          : selectedConv.offer.status === "ACCEPTED"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                            : selectedConv.offer.status === "REJECTED"
+                              ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-400"
                       }`}>
-                        {selectedConv.offer.status === "PENDING" && <><Clock className="w-3 h-3" /> En attente</>}
-                        {selectedConv.offer.status === "ACCEPTED" && <><CheckCircle className="w-3 h-3" /> Acceptée</>}
-                        {selectedConv.offer.status === "REJECTED" && <><XCircle className="w-3 h-3" /> Refusée</>}
-                        {selectedConv.offer.status === "EXPIRED" && <><AlertCircle className="w-3 h-3" /> Expirée</>}
+                        {selectedConv.offer.status === "PENDING" && <><Clock className="w-3 h-3" /> {t("sidebar.pending")}</>}
+                        {selectedConv.offer.status === "ACCEPTED" && <><CheckCircle className="w-3 h-3" /> {t("sidebar.accepted")}</>}
+                        {selectedConv.offer.status === "REJECTED" && <><XCircle className="w-3 h-3" /> {t("sidebar.rejected")}</>}
+                        {selectedConv.offer.status === "EXPIRED" && <><AlertCircle className="w-3 h-3" /> {t("sidebar.expired")}</>}
                       </span>
                     </div>
                     {selectedConv.offer.expiresAt && selectedConv.offer.status === "PENDING" && (
                       <div className="flex justify-between items-center pt-2 border-t border-slate-100 dark:border-slate-700">
                         <span className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                          <Timer className="w-3 h-3" /> Expiration
+                          <Timer className="w-3 h-3" /> {t("sidebar.expiration")}
                         </span>
                         <span className="text-xs text-slate-500">{new Date(selectedConv.offer.expiresAt).toLocaleDateString()}</span>
                       </div>
@@ -572,16 +862,16 @@ export default function OwnerMessagesPage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-4">
                     <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                    <p className="text-xs text-slate-400">Aucune offre en cours</p>
+                    <p className="text-xs text-slate-400">{t("sidebar.noOffer")}</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Actions rapides */}
+            {/* Actions */}
             <div className="space-y-2">
               <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-                <Zap className="w-3 h-3" /> Actions rapides
+                <Zap className="w-3 h-3" /> {t("sidebar.quickActions")}
               </h4>
               <button
                 onClick={handleAcceptOffer}
@@ -593,7 +883,7 @@ export default function OwnerMessagesPage() {
                 }`}
               >
                 {isProcessing ? <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                Accepter la demande
+                {t("actions.accept")}
               </button>
               <button
                 onClick={handleRejectOffer}
@@ -604,15 +894,16 @@ export default function OwnerMessagesPage() {
                     : "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed border-slate-300 dark:border-slate-600"
                 }`}
               >
-                <XCircle className="w-4 h-4" /> Refuser
+                <XCircle className="w-4 h-4" /> {t("actions.reject")}
               </button>
               {(!selectedConv?.offer || selectedConv.offer.status !== "PENDING") && (
                 <div className="flex items-center justify-center gap-1 mt-2 p-2 rounded-lg bg-slate-100 dark:bg-slate-800/50">
                   <Info className="w-3 h-3 text-slate-400" />
                   <p className="text-[10px] text-slate-400 text-center">
-                    {!selectedConv?.offer ? "Aucune offre en attente" :
-                     selectedConv.offer.status === "ACCEPTED" ? "Cette offre a déjà été acceptée" :
-                     selectedConv.offer.status === "REJECTED" ? "Cette offre a déjà été refusée" : "Cette offre a expirée"}
+                    {!selectedConv?.offer ? t("messages.noOffer") :
+                      selectedConv.offer.status === "ACCEPTED" ? t("messages.alreadyAccepted") :
+                      selectedConv.offer.status === "REJECTED" ? t("messages.alreadyRejected") :
+                      t("messages.expired")}
                   </p>
                 </div>
               )}
@@ -623,7 +914,7 @@ export default function OwnerMessagesPage() {
               <div className="flex items-center justify-center gap-1">
                 <Shield className="w-3 h-3 text-slate-400" />
                 <p className="text-[10px] text-slate-400 text-center leading-relaxed">
-                  En acceptant, vous pré-approuvez la réservation. Le locataire aura 24h pour finaliser le paiement.
+                  {t("sidebar.note")}
                 </p>
               </div>
             </div>

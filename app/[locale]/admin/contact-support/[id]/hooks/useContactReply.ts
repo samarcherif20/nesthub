@@ -66,7 +66,7 @@ export function useContactReply(contactId: string, locale: string) {
       return { success: false, error: t("toast.messageNotFound") };
     }
     
-    // ✅ VÉRIFIER SI DÉJÀ RÉPONDU
+    //  VÉRIFIER SI DÉJÀ RÉPONDU
     if (message.status === "REPLIED") {
       return { success: false, error: t("toast.alreadyReplied") };
     }
@@ -91,7 +91,7 @@ export function useContactReply(contactId: string, locale: string) {
       const data = await res.json();
 
       if (res.ok) {
-        // ✅ Mettre à jour le statut localement après envoi réussi
+        //  Mettre à jour le statut localement après envoi réussi
         setMessage(prev => prev ? { ...prev, status: "REPLIED", repliedAt: new Date().toISOString() } : prev);
         return { success: true, message: `${t("toast.replySent")} ${message.email}` };
       } else {
@@ -133,7 +133,7 @@ export function useContactReply(contactId: string, locale: string) {
     error,
     hasProfileImage,
     profileImageUrl,
-    isAlreadyReplied, // ✅ NOUVEAU
+    isAlreadyReplied, 
     // Actions
     setReplyText,
     setReplySubject,

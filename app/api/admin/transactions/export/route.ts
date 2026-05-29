@@ -167,7 +167,6 @@ async function generateCSV(transactions: any[]) {
   const csv = bom + csvRows.join("\n");
   const date = new Date().toISOString().split("T")[0];
 
-  // ✅ Nom de fichier SIMPLE - sans count et sans underscore en trop
   const filename = `transactions_${date}.csv`;
 
   return new NextResponse(csv, {
@@ -289,7 +288,6 @@ async function generatePDF(transactions: any[]) {
     const pdfBytes = await pdfDoc.save();
     const date = new Date().toISOString().split("T")[0];
 
-    // ✅ Nom de fichier PDF correct - comme dans listing export
     const filename = `transactions_${date}.pdf`;
 
     return new NextResponse(pdfBytes, {

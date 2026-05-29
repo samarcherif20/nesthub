@@ -7,17 +7,17 @@ export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
-    // ✅ Ajoute cette vérification d'auth
+    //  Ajoute cette vérification d'auth
     const authHeader = req.headers.get("authorization");
     const isValidAuth = authHeader === `Bearer ${process.env.CRON_SECRET}`;
     const isDev = process.env.NODE_ENV === "development";
 
     if (!isValidAuth && !isDev) {
-      console.error("❌ Cron: Authentification échouée");
+      console.error(" Cron: Authentification échouée");
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    console.log("🕐 Cron: Expiration des offres");
+    console.log(" Cron: Expiration des offres");
     const now = new Date();
 
     const expiredOffers = await prisma.offer.findMany({
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`📊 ${expiredOffers.length} offre(s) expirée(s)`);
+    console.log(` ${expiredOffers.length} offre(s) expirée(s)`);
 
     for (const offer of expiredOffers) {
       await prisma.offer.update({
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
             conversationId: conversation.id,
             senderId: offer.ownerId,
             receiverId: offer.tenantId,
-            content: `⏰ **Offre expirée**\n\nL'offre n'a pas été acceptée dans les 24h.\n\nVous pouvez faire une nouvelle demande si vous êtes toujours intéressé.`,
+            content: ` **Offre expirée**\n\nL'offre n'a pas été acceptée dans les 24h.\n\nVous pouvez faire une nouvelle demande si vous êtes toujours intéressé.`,
             isRead: false,
             isSystem: true,
           },

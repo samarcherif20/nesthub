@@ -8,7 +8,7 @@ export async function PATCH(
   { params }: { params: Promise<{ actionId: string }> }
 ) {
   try {
-    console.log('🚀 [UNDO] Début annulation action');
+    console.log(' [UNDO] Début annulation action');
     
     const auth = getAdminAuth(request);
     
@@ -20,7 +20,7 @@ export async function PATCH(
     }
 
     const { actionId } = await params;
-    console.log('📝 Action ID à annuler:', actionId);
+    console.log(' Action ID à annuler:', actionId);
 
     if (!actionId) {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function PATCH(
       );
     }
 
-    console.log('✅ Action trouvée:', {
+    console.log(' Action trouvée:', {
       id: userAction.id,
       type: userAction.actionType,
       userId: userAction.userId,
@@ -58,7 +58,7 @@ export async function PATCH(
           suspendedUntil: null
         }
       });
-      console.log('✅ Statut utilisateur restauré à:', userAction.previousStatus);
+      console.log(' Statut utilisateur restauré à:', userAction.previousStatus);
     }
 
     // Marquer l'action comme annulée (on peut ajouter un champ isUndone ou changer le type)
@@ -69,7 +69,7 @@ export async function PATCH(
       }
     });
 
-    console.log('✅ Action marquée comme annulée');
+    console.log(' Action marquée comme annulée');
 
     return NextResponse.json({ 
       success: true,
@@ -77,7 +77,7 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('❌ Error undoing action:', error);
+    console.error(' Error undoing action:', error);
     return NextResponse.json(
       { error: 'Erreur serveur: ' + error.message },
       { status: 500 }

@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-// ============================================
 // TYPES
-// ============================================
 
 interface ListingPerformance {
   id: string;
@@ -54,9 +52,7 @@ interface WeeklyDataPoint {
   revenue: number;
 }
 
-// ============================================
 // FONCTION UTILITAIRE
-// ============================================
 
 function getTimeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -71,9 +67,7 @@ function getTimeAgo(date: Date): string {
   return `il y a ${Math.floor(days / 30)} mois`;
 }
 
-// ============================================
 // API ROUTE
-// ============================================
 
 export async function GET(req: NextRequest) {
   try {
@@ -101,10 +95,8 @@ export async function GET(req: NextRequest) {
     const ownerId = user.id;
     const currentYear = new Date().getFullYear();
 
-    // ============================================
-    // RÉCUPÉRATION DES DONNÉES
-    // ============================================
-
+        // RÉCUPÉRATION DES DONNÉES
+    
     // Récupérer toutes les annonces du propriétaire
     const listings = await prisma.listing.findMany({
       where: { ownerId, status: { not: "ARCHIVED" } },
@@ -148,19 +140,15 @@ export async function GET(req: NextRequest) {
       (b) => b.status === "CONFIRMED",
     );
 
-    // ============================================
-    // CALCUL DES DATES POUR LES CROISSANCES
-    // ============================================
-
+        // CALCUL DES DATES POUR LES CROISSANCES
+    
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, 1);
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    // ============================================
-    // 1. REVENUS TOTAUX ET CROISSANCE (avec période)
-    // ============================================
-
+        // 1. REVENUS TOTAUX ET CROISSANCE (avec période)
+    
     const totalRevenue = periodBookings
       .filter((b) => b.status === "COMPLETED" || b.status === "CONFIRMED")
       .reduce((sum, b) => sum + b.totalWithFees, 0);
@@ -193,10 +181,8 @@ export async function GET(req: NextRequest) {
           100
         : 0;
 
-    // ============================================
-    // 2. TAUX D'OCCUPATION ET CROISSANCE
-    // ============================================
-
+        // 2. TAUX D'OCCUPATION ET CROISSANCE
+    
     const totalNightsBooked = periodBookings
       .filter((b) => b.status !== "CANCELLED")
       .reduce((sum, b) => sum + b.totalNights, 0);
@@ -236,10 +222,8 @@ export async function GET(req: NextRequest) {
         ? ((lastMonthNights - previousMonthNights) / previousMonthNights) * 100
         : 0;
 
-    // ============================================
-    // 3. RÉSERVATIONS ET CROISSANCE (avec période)
-    // ============================================
-
+        // 3. RÉSERVATIONS ET CROISSANCE (avec période)
+    
     const totalBookings = periodBookings.length;
 
     const lastMonthBookings = allBookings.filter((b) => {
@@ -259,10 +243,8 @@ export async function GET(req: NextRequest) {
           100
         : 0;
 
-    // ============================================
-    // 4. NOTE MOYENNE
-    // ============================================
-
+        // 4. NOTE MOYENNE
+    
     const allReviews = periodBookings
       .filter((b) => b.review)
       .map((b) => b.review);
@@ -272,10 +254,8 @@ export async function GET(req: NextRequest) {
           allReviews.length
         : 0;
 
-    // ============================================
-    // 5. PRIX MOYEN PAR NUIT ET CROISSANCE
-    // ============================================
-
+        // 5. PRIX MOYEN PAR NUIT ET CROISSANCE
+    
     const periodCompleted = periodBookings.filter(
       (b) => b.status === "COMPLETED",
     );
@@ -313,10 +293,8 @@ export async function GET(req: NextRequest) {
           100
         : 0;
 
-    // ============================================
-    // 6. REVENUS MENSUELS (12 derniers mois)
-    // ============================================
-
+        // 6. REVENUS MENSUELS (12 derniers mois)
+    
     const monthlyRevenue: number[] = [];
     const previousYearRevenue: number[] = [];
     const months = [
@@ -360,10 +338,8 @@ export async function GET(req: NextRequest) {
       previousYearRevenue.push(prevRevenue);
     }
 
-    // ============================================
-    // 7. TYPES DE VOYAGEURS (UNIQUEMENT 3 TYPES)
-    // ============================================
-
+        // 7. TYPES DE VOYAGEURS (UNIQUEMENT 3 TYPES)
+    
     let longStayCount = 0;
     let shortStayCount = 0;
     let standardStayCount = 0;
@@ -392,10 +368,8 @@ export async function GET(req: NextRequest) {
           : 0,
     };
 
-    // ============================================
-    // 8. PERFORMANCE PAR ANNONCE
-    // ============================================
-
+        // 8. PERFORMANCE PAR ANNONCE
+    
     const listingsPerformance = await Promise.all(
       listings.map(async (listing) => {
         const listingBookings = allBookings.filter(
@@ -460,10 +434,8 @@ export async function GET(req: NextRequest) {
       }),
     );
 
-    // ============================================
-    // 9. PAIEMENTS À VENIR
-    // ============================================
-
+        // 9. PAIEMENTS À VENIR
+    
     const upcomingPayments: UpcomingPayment[] = confirmedBookings
       .filter((b) => new Date(b.checkIn) > new Date())
       .slice(0, 5)
@@ -475,10 +447,8 @@ export async function GET(req: NextRequest) {
         status: "confirmed",
       }));
 
-    // ============================================
-    // 10. TÂCHES À FAIRE
-    // ============================================
-
+        // 10. TÂCHES À FAIRE
+    
     const todoTasks: TodoTask[] = [];
     for (const listing of listings) {
       const photoCount = await prisma.listingMedia.count({
@@ -511,10 +481,8 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // ============================================
-    // 11. ACTIVITÉ RÉCENTE
-    // ============================================
-
+        // 11. ACTIVITÉ RÉCENTE
+    
     const recentActivity: ActivityItem[] = [];
 
     allBookings.slice(0, 3).forEach((b) => {
@@ -552,10 +520,8 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    // ============================================
-    // 12. TOP VILLES
-    // ============================================
-
+        // 12. TOP VILLES
+    
     const cityStats = new Map<string, { revenue: number; bookings: number }>();
     for (const listing of listings) {
       const revenue = allBookings
@@ -591,10 +557,8 @@ export async function GET(req: NextRequest) {
       city.percentage =
         totalRevenueAll > 0 ? (city.revenue / totalRevenueAll) * 100 : 0;
     });
-    // ============================================
-    // 13. DONNÉES POUR GRAPHIQUES (14 derniers jours) - CORRIGÉ
-    // ============================================
-
+        // 13. DONNÉES POUR GRAPHIQUES (14 derniers jours) - CORRIGÉ
+    
     const last14Days: WeeklyDataPoint[] = [];
     const dayNames = ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"];
 
@@ -669,10 +633,8 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    // ============================================
-    // RÉPONSE FINALE
-    // ============================================
-
+        // RÉPONSE FINALE
+    
     return NextResponse.json({
       kpi: {
         totalRevenue,

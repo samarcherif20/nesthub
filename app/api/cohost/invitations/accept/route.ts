@@ -3,16 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { clerkClient } from "@clerk/nextjs/server";
 
-// ✅ AJOUT DE LA FONCTION GET
+//  AJOUT DE LA FONCTION GET
 export async function GET(req: NextRequest) {
-  console.log("📨 [GET] /api/cohost/invitations/accept - Début");
 
   try {
     const token = req.nextUrl.searchParams.get("token");
     const type = req.nextUrl.searchParams.get("type") || "admin";
     const normalizedType = (type || "").toLowerCase();
 
-    console.log("🔍 Paramètres GET:", {
+    console.log(" Paramètres GET:", {
       token: token?.slice(0, 8) + "...",
       type,
       normalizedType,
@@ -32,11 +31,11 @@ export async function GET(req: NextRequest) {
       });
 
       if (!invitation) {
-        console.log("❌ Invitation non trouvée");
+        console.log(" Invitation non trouvée");
         return NextResponse.json({ valid: false, reason: "not_found" });
       }
 
-      console.log("✅ Invitation trouvée:", {
+      console.log(" Invitation trouvée:", {
         id: invitation.id,
         email: invitation.inviteeEmail,
         status: invitation.status,
@@ -81,13 +80,13 @@ export async function GET(req: NextRequest) {
 
 // POST - Acceptation de l'invitation
 export async function POST(req: NextRequest) {
-  console.log("📨 [POST] /api/cohost/invitations/accept - Début");
+  console.log("[POST] /api/cohost/invitations/accept - Début");
 
   try {
     const body = await req.json();
     const { token, firstName, lastName, username, password, type } = body;
 
-    console.log("🔍 Paramètres POST:", {
+    console.log(" Paramètres POST:", {
       token: token?.slice(0, 8) + "...",
       firstName,
       lastName,
@@ -109,14 +108,14 @@ export async function POST(req: NextRequest) {
       });
 
       if (!invitation) {
-        console.log("❌ Invitation non trouvée");
+        console.log(" Invitation non trouvée");
         return NextResponse.json(
           { error: "Invitation invalide" },
           { status: 404 },
         );
       }
 
-      console.log("✅ Invitation trouvée:", {
+      console.log(" Invitation trouvée:", {
         id: invitation.id,
         email: invitation.inviteeEmail,
         status: invitation.status,
@@ -124,7 +123,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (invitation.status !== "PENDING") {
-        console.log("❌ Invitation déjà utilisée, status:", invitation.status);
+        console.log(" Invitation déjà utilisée, status:", invitation.status);
         return NextResponse.json(
           { error: "Cette invitation a déjà été utilisée" },
           { status: 409 },
@@ -132,7 +131,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (new Date() > invitation.expiresAt) {
-        console.log("❌ Invitation expirée, expiresAt:", invitation.expiresAt);
+        console.log(" Invitation expirée, expiresAt:", invitation.expiresAt);
         return NextResponse.json(
           { error: "Cette invitation a expiré" },
           { status: 410 },
@@ -153,10 +152,10 @@ export async function POST(req: NextRequest) {
         await clerk.users.updateUser(clerkUserId, {
           publicMetadata: { role: "PROPERTY_OWNER" },
         });
-        console.log("✅ Métadonnées Clerk mises à jour");
+        console.log(" Métadonnées Clerk mises à jour");
       } else {
         isNewUser = true;
-        console.log("🆕 Création nouvel utilisateur Clerk");
+        console.log(" Création nouvel utilisateur Clerk");
 
         if (!firstName || !lastName || !username || !password) {
           return NextResponse.json(
@@ -174,7 +173,7 @@ export async function POST(req: NextRequest) {
           publicMetadata: { role: "PROPERTY_OWNER" },
         });
         clerkUserId = newUser.id;
-        console.log("✅ Utilisateur Clerk créé:", clerkUserId);
+        console.log(" Utilisateur Clerk créé:", clerkUserId);
       }
 
       const dbUser = await prisma.user.upsert({
@@ -198,7 +197,7 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      console.log("✅ Utilisateur DB mis à jour:", dbUser.id);
+      console.log(" Utilisateur DB mis à jour:", dbUser.id);
 
       await prisma.teamMember.create({
         data: {
@@ -219,22 +218,22 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      console.log("✅ Membre d'équipe ajouté");
+      console.log(" Membre d'équipe ajouté");
 
       await prisma.coOwnerInvitation.update({
         where: { id: invitation.id },
         data: { status: "ACCEPTED", acceptedAt: new Date() },
       });
 
-      console.log("✅ Invitation marquée comme acceptée");
+      console.log(" Invitation marquée comme acceptée");
 
       // Créer un token de signature pour auto-connexion
       const signInToken = await clerk.signInTokens.createSignInToken({
         userId: clerkUserId,
-        expiresInSeconds: 60 * 5, // 5 minutes
+        expiresInSeconds: 60 * 5, 
       });
 
-      console.log("✅ Token d'auto-login créé:", signInToken.token);
+      console.log(" Token d'auto-login créé:", signInToken.token);
 
       // Retourner le token pour redirection
       return NextResponse.json({

@@ -52,9 +52,9 @@ export async function PATCH(
     let notificationTitle;
     let notificationContent;
 
-    // 🔥 DISTINCTION ENTRE NOUVELLE ANNONCE ET MODIFICATION
+    //  DISTINCTION ENTRE NOUVELLE ANNONCE ET MODIFICATION
     if (isRevision) {
-      // ========== CAS 1: MODIFICATION D'UNE ANNONCE EXISTANTE ==========
+      //  CAS 1: MODIFICATION D'UNE ANNONCE EXISTANTE 
       if (action === "approve") {
         // Appliquer les modifications
         const pendingData = listing.pendingRevision as any;
@@ -92,7 +92,7 @@ export async function PATCH(
         console.log(` [REVISION] Modification rejetée pour l'annonce ${id}`);
       }
     } else {
-      // ========== CAS 2: NOUVELLE ANNONCE ==========
+      //  CAS 2: NOUVELLE ANNONCE 
       if (action === "approve") {
         updatedListing = await prisma.listing.update({
           where: { id },

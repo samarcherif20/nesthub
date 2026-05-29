@@ -61,21 +61,21 @@ export const listingBaseSchema = z.object({
     .max(5, "Maximum 5 cuisines")
     .default(1),
 
-  // ✅ maxGuests: null = non défini par le propriétaire (optionnel)
+  //  maxGuests: null = non défini par le propriétaire (optionnel)
   maxGuests: z.number().min(0).max(30).nullable().optional(),
 
-  // ✅ surfaceArea: OBLIGATOIRE
+  //  surfaceArea: OBLIGATOIRE
   surfaceArea: z
     .number()
     .positive("La surface doit être positive")
     .min(1, "La surface est requise"),
 
-  // ✅ floorNumber: OBLIGATOIRE
+  //  floorNumber: OBLIGATOIRE
   floorNumber: z.number().min(0, "L'étage doit être 0 ou plus"),
 
   hasElevator: z.boolean().default(false),
 
-  // ✅ NOUVEAUX CHAMPS (optionnels)
+  //  NOUVEAUX CHAMPS (optionnels)
   hasBalcony: z.boolean().default(false),
   hasGarden: z.boolean().default(false),
   hasGarage: z.boolean().default(false),
@@ -122,7 +122,7 @@ export const listingBaseSchema = z.object({
   status: z.enum(["DRAFT", "ACTIVE"]).default("DRAFT"),
 });
 
-// ✅ Schéma pour la mise à jour (avec tous les nouveaux champs)
+//  Schéma pour la mise à jour (avec tous les nouveaux champs)
 export const updateListingSchema = z.object({
   title: z.string().min(3).max(100).optional(),
   description: z.string().max(2000).optional(),
@@ -144,7 +144,7 @@ export const updateListingSchema = z.object({
   floorNumber: z.number().min(0).optional(), // Optionnel en mise à jour
   hasElevator: z.boolean().optional(),
 
-  // ✅ NOUVEAUX CHAMPS
+  //  NOUVEAUX CHAMPS
   hasBalcony: z.boolean().optional(),
   hasGarden: z.boolean().optional(),
   hasGarage: z.boolean().optional(),

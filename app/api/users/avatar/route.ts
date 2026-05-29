@@ -13,10 +13,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "URL manquante" }, { status: 400 });
     }
 
-    // ✅ Vérifier si c'est une image uploadée depuis le mobile (inscription)
+    //  Vérifier si c'est une image uploadée depuis le mobile (inscription)
     const isMobileUpload = blobUrl.includes("mobile-uploads/");
 
-    // Pour les uploads mobiles, permettre l'accès sans authentification
     // Pour les avatars normaux, vérifier l'authentification Clerk
     if (!isMobileUpload) {
       const { userId: clerkId } = getAuth(req);
@@ -82,7 +81,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("📸 Upload avatar pour clerkId:", clerkId);
+    console.log(" Upload avatar pour clerkId:", clerkId);
 
     // Lire le buffer
     const fileBuf = await file.arrayBuffer().then((b) => Buffer.from(b));
@@ -95,7 +94,7 @@ export async function POST(req: NextRequest) {
       addRandomSuffix: true,
     });
 
-    console.log("✅ Upload avatar réussi:", blob.url);
+    console.log(" Upload avatar réussi:", blob.url);
 
     // Récupérer l'ancienne photo pour la supprimer plus tard
     const user = await prisma.user.findUnique({
@@ -119,9 +118,9 @@ export async function POST(req: NextRequest) {
         const oldUrl = new URL(user.profilePictureUrl);
         const oldPathname = oldUrl.pathname;
         await del(oldPathname);
-        console.log("🗑️ Ancienne avatar supprimée:", oldPathname);
+        console.log(" Ancienne avatar supprimée:", oldPathname);
       } catch (err) {
-        console.log("⚠️ Impossible de supprimer l'ancienne image:", err);
+        console.log(" Impossible de supprimer l'ancienne image:", err);
       }
     }
 

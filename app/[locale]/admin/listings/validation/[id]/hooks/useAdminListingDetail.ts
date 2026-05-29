@@ -42,6 +42,7 @@ export interface ListingDetail {
   hasPendingRevision?: boolean;
   pendingRevisionData?: {
     changes: Array<{ field: string; oldValue: any; newValue: any }>;
+    submittedAt?: Date;
   };
   equipment: Record<string, boolean>;
   services: Record<string, boolean>;
@@ -73,7 +74,7 @@ export interface ListingDetail {
   createdAt: Date;
   publishedAt: Date | null;
   rejectionReason: string | null;
-  
+
   ownerBio?: string | null;
   equipmentList?: Array<{ name: string; icon: string }>;
   houseRulesList?: string[];
@@ -84,7 +85,10 @@ export interface ToastState {
   type: "success" | "error" | "info";
 }
 
-export function useAdminListingDetail(listingId: string, locale: string = "fr") {
+export function useAdminListingDetail(
+  listingId: string,
+  locale: string = "fr",
+) {
   const { getToken } = useAuth();
   const router = useRouter();
   const t = useTranslations("AdminListingDetail");
@@ -98,45 +102,121 @@ export function useAdminListingDetail(listingId: string, locale: string = "fr") 
   const [lightboxImg, setLightboxImg] = useState<string | null>(null);
   const [showChanges, setShowChanges] = useState(false);
 
-  const showToast = (msg: string, type: "success" | "error" | "info" = "info") => {
+  const showToast = (
+    msg: string,
+    type: "success" | "error" | "info" = "info",
+  ) => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3500);
   };
 
   const getImageUrl = (url: string | null | undefined): string => {
     if (!url) return "";
-    if (url.includes("vercel-storage.com") || url.includes("googleusercontent.com"))
-      return `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
+    if (
+      url.includes("vercel-storage.com") ||
+      url.includes("googleusercontent.com")
+    ) {
+      return `/api/listings/image?url=${encodeURIComponent(url)}`;
+    }
     return url;
   };
 
-  const getEquipmentList = (equipment: Record<string, boolean>): Array<{ name: string; icon: string }> => {
+  // Prend en compte les équipements de la révision
+  const getEquipmentList = (
+    equipment: Record<string, boolean>,
+    pendingRevisionData?: {
+      changes: Array<{ field: string; oldValue: any; newValue: any }>;
+    },
+  ): Array<{ name: string; icon: string }> => {
     if (!equipment) return [];
-    
-    const keys = Object.entries(equipment)
+
+    // Récupérer les équipements actifs actuels
+    let activeEquipment = Object.entries(equipment)
       .filter(([, v]) => v === true)
       .map(([k]) => k);
 
-    return keys.map(key => ({
+    // Si des changements sont en attente, appliquer les modifications
+    if (pendingRevisionData?.changes) {
+      for (const change of pendingRevisionData.changes) {
+        if (change.field === "equipment") {
+          // Cas où tout l'objet equipment a été modifié
+          const newEquip = change.newValue || {};
+          activeEquipment = Object.entries(newEquip)
+            .filter(([, v]) => v === true)
+            .map(([k]) => k);
+        } else if (change.field.startsWith("equipment.")) {
+          const equipName = change.field.replace("equipment.", "");
+          const newValue = change.newValue;
+          if (newValue === true) {
+            if (!activeEquipment.includes(equipName))
+              activeEquipment.push(equipName);
+          } else {
+            activeEquipment = activeEquipment.filter((e) => e !== equipName);
+          }
+        }
+      }
+    }
+
+    return activeEquipment.map((key) => ({
       name: key,
       icon: key,
     }));
   };
 
-  const getHouseRulesList = (houseRules: Record<string, boolean>, customRules: string, listingData: any): string[] => {
-    const rules: string[] = [];
+  // Dans useAdminListingDetail.ts, dans getHouseRulesList
+  const getHouseRulesList = (
+    houseRules: Record<string, boolean>,
+    customRules: string,
+    listingData: any,
+    pendingRevisionData?: {
+      changes: Array<{ field: string; oldValue: any; newValue: any }>;
+    },
+  ): string[] => {
+    // Règles de base
+    let rules: string[] = [];
 
     if (houseRules?.noSmoking === true) rules.push("noSmoking");
     if (houseRules?.noPets === true) rules.push("noPets");
     if (houseRules?.noParties === true) rules.push("noParties");
     if (houseRules?.childrenAllowed === true) rules.push("childrenAllowed");
+    if (houseRules?.quietAfter22 === true) rules.push("quietAfter22"); // ✅ AJOUTE CETTE LIGNE
     if (listingData?.petsAllowed === true) rules.push("petsAllowed");
     if (listingData?.smokingAllowed === true) rules.push("smokingAllowed");
     if (customRules) rules.push(customRules);
 
+    // Appliquer les modifications de la révision
+    if (pendingRevisionData?.changes) {
+      for (const change of pendingRevisionData.changes) {
+        if (change.field === "houseRules") {
+          const newRules = change.newValue || {};
+          rules = [];
+          if (newRules.noSmoking === true) rules.push("noSmoking");
+          if (newRules.noPets === true) rules.push("noPets");
+          if (newRules.noParties === true) rules.push("noParties");
+          if (newRules.childrenAllowed === true) rules.push("childrenAllowed");
+          if (newRules.quietAfter22 === true) rules.push("quietAfter22"); // ✅ AJOUTE CETTE LIGNE
+        } else if (change.field === "petsAllowed") {
+          if (change.newValue === true && !rules.includes("petsAllowed"))
+            rules.push("petsAllowed");
+          else if (change.newValue !== true)
+            rules = rules.filter((r) => r !== "petsAllowed");
+        } else if (change.field === "smokingAllowed") {
+          if (change.newValue === true && !rules.includes("smokingAllowed"))
+            rules.push("smokingAllowed");
+          else if (change.newValue !== true)
+            rules = rules.filter((r) => r !== "smokingAllowed");
+        } else if (change.field.startsWith("houseRules.")) {
+          const ruleName = change.field.replace("houseRules.", "");
+          if (change.newValue === true && !rules.includes(ruleName))
+            rules.push(ruleName);
+          else if (change.newValue !== true)
+            rules = rules.filter((r) => r !== ruleName);
+        }
+      }
+    }
+
     return rules;
   };
-
   const fetchListing = useCallback(async () => {
     setLoading(true);
     try {
@@ -146,10 +226,19 @@ export function useAdminListingDetail(listingId: string, locale: string = "fr") 
       });
       if (!res.ok) throw new Error();
       const data = await res.json();
-      
-      const equipmentList = getEquipmentList(data.equipment || {});
-      const houseRulesList = getHouseRulesList(data.houseRules || {}, data.customRules || "", data);
-      
+
+      const pendingRevisionData = data.pendingRevisionData;
+      const equipmentList = getEquipmentList(
+        data.equipment || {},
+        pendingRevisionData,
+      );
+      const houseRulesList = getHouseRulesList(
+        data.houseRules || {},
+        data.customRules || "",
+        data,
+        pendingRevisionData,
+      );
+
       setListing({
         ...data,
         equipmentList,
@@ -164,7 +253,9 @@ export function useAdminListingDetail(listingId: string, locale: string = "fr") 
     }
   }, [getToken, listingId, t]);
 
-  const handleValidate = async (action: "approve" | "reject"): Promise<{ success: boolean; message: string }> => {
+  const handleValidate = async (
+    action: "approve" | "reject",
+  ): Promise<{ success: boolean; message: string }> => {
     if (action === "reject" && !rejectionReason) {
       return { success: false, message: t("rejectionRequired") };
     }
@@ -192,20 +283,19 @@ export function useAdminListingDetail(listingId: string, locale: string = "fr") 
 
       const isRev = listing?.hasPendingRevision;
       let successMessage = "";
-      
+
       if (isRev) {
-        successMessage = action === "approve" 
-          ? t("modificationApproved")
-          : t("modificationRejected");
+        successMessage =
+          action === "approve"
+            ? t("modificationApproved")
+            : t("modificationRejected");
       } else {
-        successMessage = action === "approve" 
-          ? t("listingApproved")
-          : t("listingRejected");
+        successMessage =
+          action === "approve" ? t("listingApproved") : t("listingRejected");
       }
 
       setActionLoading(false);
       return { success: true, message: successMessage };
-      
     } catch (error) {
       console.error("Error:", error);
       setActionLoading(false);
@@ -218,14 +308,26 @@ export function useAdminListingDetail(listingId: string, locale: string = "fr") 
   }, [fetchListing]);
 
   const isPending = listing?.status === "PENDING_REVIEW";
-  const isRevision = !!(listing?.hasPendingRevision && listing?.status === "ACTIVE");
+  const isRevision = !!(
+    listing?.hasPendingRevision && listing?.status === "ACTIVE"
+  );
   const needsValidation = isPending || isRevision;
-  const mainPhoto = listing?.photos?.find((p) => p.isMain) ?? listing?.photos?.[0];
-  const displayPhotos = [
-    mainPhoto,
-    ...(listing?.photos?.filter((p) => !p.isMain) ?? []).slice(0, 4),
-  ].filter(Boolean) as typeof listing.photos;
 
+  //  Photos pour l'affichage miniature (1 grande + 4 petites)
+  const mainPhoto =
+    listing?.photos?.find((p) => p.isMain) ?? listing?.photos?.[0];
+  const otherPhotos =
+    listing?.photos?.filter((p) => !p.isMain && p.url !== mainPhoto?.url) ?? [];
+  const displayPhotos = [mainPhoto, ...otherPhotos.slice(0, 4)].filter(
+    Boolean,
+  ) as typeof listing.photos;
+
+  //  TOUTES les photos pour la lightbox (sans limite)
+  const allPhotos = listing?.photos ?? [];
+
+  // Vérifier s'il y a des photos supplémentaires cachées
+  const hasMorePhotos = otherPhotos.length > 4;
+  const hiddenPhotosCount = otherPhotos.length - 4;
   const activeEquipment = listing?.equipmentList || [];
 
   const statusCfg = (() => {
@@ -269,6 +371,9 @@ export function useAdminListingDetail(listingId: string, locale: string = "fr") 
     isRevision,
     needsValidation,
     displayPhotos,
+    allPhotos,
+    hasMorePhotos,
+    hiddenPhotosCount,
     activeEquipment,
     statusCfg,
     setRejectionReason,

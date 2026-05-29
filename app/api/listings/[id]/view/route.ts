@@ -10,13 +10,6 @@ export async function POST(
     const { userId: clerkId } = getAuth(request);
     const { id } = await params;
     
-    console.log('===================');
-    console.log('📊 [VIEW API] Appel reçu!');
-    console.log(`📊 [VIEW API] Listing ID: ${id}`);
-    console.log(`📊 [VIEW API] Utilisateur: ${clerkId || 'non connecté'}`);
-    console.log(`📊 [VIEW API] URL complète: ${request.url}`);
-    console.log('===================');
-    
     if (!id) {
       return NextResponse.json({ error: 'ID manquant' }, { status: 400 });
     }
@@ -35,7 +28,7 @@ export async function POST(
         });
         
         if (listing) {
-          console.log(`🚫 [VIEW API] Vue NON comptée - propriétaire: ${listing.title}`);
+          console.log(` [VIEW API] Vue NON comptée - propriétaire: ${listing.title}`);
           return NextResponse.json({ 
             success: false, 
             message: 'Vue non comptée (propriétaire)',
@@ -52,9 +45,9 @@ export async function POST(
       select: { viewCount: true, title: true },
     });
     
-    console.log(`✅ [VIEW API] Vue COMPTÉE pour: ${updatedListing.title}`);
-    console.log(`📊 [VIEW API] Nouveau compteur: ${updatedListing.viewCount}`);
-    
+    console.log(` [VIEW API] Vue COMPTÉE pour: ${updatedListing.title}`);
+    console.log(` [VIEW API] Nouveau compteur: ${updatedListing.viewCount}`);
+  
     return NextResponse.json({ 
       success: true, 
       message: 'Vue comptée',

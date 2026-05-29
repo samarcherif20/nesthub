@@ -15,15 +15,15 @@ async function handleRequest(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
     const expected = `Bearer ${process.env.CRON_SECRET}`;
 
-    console.log("🔑 Auth header reçu:", authHeader);
-    console.log("🔐 Expected:", expected);
+    console.log(" Auth header reçu:", authHeader);
+    console.log(" Expected:", expected);
 
     if (authHeader !== expected) {
-      console.error("❌ Cron: Authentification échouée");
+      console.error(" Cron: Authentification échouée");
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    console.log("🕐 Cron: Vérification des séjours terminés");
+    console.log(" Cron: Vérification des séjours terminés");
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -40,7 +40,7 @@ async function handleRequest(req: NextRequest) {
     });
 
     console.log(
-      `📋 ${completedBookings.length} réservations terminées trouvées`,
+      ` ${completedBookings.length} réservations terminées trouvées`,
     );
 
     let processedCount = 0;
@@ -54,7 +54,7 @@ async function handleRequest(req: NextRequest) {
       });
 
       if (existingNotification) {
-        console.log(`⏭️ Notification déjà envoyée pour ${booking.reference}`);
+        console.log(` Notification déjà envoyée pour ${booking.reference}`);
         continue;
       }
 
@@ -79,7 +79,7 @@ async function handleRequest(req: NextRequest) {
       });
 
       processedCount++;
-      console.log(`✅ Notification envoyée pour ${booking.reference}`);
+      console.log(` Notification envoyée pour ${booking.reference}`);
     }
 
     return NextResponse.json({

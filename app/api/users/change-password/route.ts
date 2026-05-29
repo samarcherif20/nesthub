@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 
 export async function POST(req: NextRequest) {
   try {
-    console.log("🔵 Début changement mot de passe");
+    console.log(" Début changement mot de passe");
     
     const { userId } = await auth();
     if (!userId) {
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { currentPassword, newPassword } = await req.json();
-    console.log("🔵 userId:", userId);
+    console.log(" userId:", userId);
 
     if (!currentPassword || !newPassword) {
       return NextResponse.json(
@@ -29,10 +29,10 @@ export async function POST(req: NextRequest) {
     }
 
     const CLERK_API_KEY = process.env.CLERK_SECRET_KEY;
-    console.log("🔵 CLERK_API_KEY présent:", !!CLERK_API_KEY);
+    console.log(" CLERK_API_KEY présent:", !!CLERK_API_KEY);
 
     // 1. Récupérer l'utilisateur pour obtenir son email
-    console.log("🔵 Récupération de l'utilisateur...");
+    console.log(" Récupération de l'utilisateur...");
     const userResponse = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
       headers: {
         Authorization: `Bearer ${CLERK_API_KEY}`,
@@ -41,20 +41,20 @@ export async function POST(req: NextRequest) {
     });
 
     if (!userResponse.ok) {
-      console.log("🔴 Erreur récupération utilisateur:", userResponse.status);
+      console.log(" Erreur récupération utilisateur:", userResponse.status);
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
     const user = await userResponse.json();
     const email = user.email_addresses?.find((e: any) => e.id === user.primary_email_address_id)?.email_address;
-    console.log("🔵 Email trouvé:", email);
+    console.log(" Email trouvé:", email);
 
     if (!email) {
       return NextResponse.json({ error: "Aucun email trouvé" }, { status: 400 });
     }
 
     // 2. VÉRIFIER L'ANCIEN MOT DE PASSE via l'API sign_in_tokens de Clerk
-    console.log("🔵 Vérification de l'ancien mot de passe...");
+    console.log(" Vérification de l'ancien mot de passe...");
     
     const signInResponse = await fetch("https://api.clerk.com/v1/sign_in_tokens", {
       method: "POST",
@@ -63,26 +63,26 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${CLERK_API_KEY}`,
       },
       body: JSON.stringify({
-        user_id: userId,        // ✅ AJOUTER user_id
+        user_id: userId,       
         password: currentPassword,
       }),
     });
 
-    console.log("🔵 Status vérification:", signInResponse.status);
+    console.log(" Status vérification:", signInResponse.status);
 
     if (!signInResponse.ok) {
       const errorText = await signInResponse.text();
-      console.log("🔴 Réponse erreur:", errorText);
+      console.log(" Réponse erreur:", errorText);
       return NextResponse.json(
         { error: "Mot de passe actuel incorrect" },
         { status: 401 }
       );
     }
 
-    console.log("✅ Ancien mot de passe vérifié avec succès");
+    console.log(" Ancien mot de passe vérifié avec succès");
 
     // 3. Changer le mot de passe
-    console.log("🔵 Changement du mot de passe...");
+    console.log(" Changement du mot de passe...");
     const updateResponse = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
       method: "PATCH",
       headers: {
@@ -96,21 +96,21 @@ export async function POST(req: NextRequest) {
 
     if (!updateResponse.ok) {
       const error = await updateResponse.json();
-      console.error("🔴 Erreur changement:", error);
+      console.error(" Erreur changement:", error);
       return NextResponse.json(
         { error: "Erreur lors du changement de mot de passe" },
         { status: 500 }
       );
     }
 
-    console.log("✅ Mot de passe mis à jour avec succès");
+    console.log(" Mot de passe mis à jour avec succès");
 
     return NextResponse.json({
       success: true,
       message: "Mot de passe mis à jour avec succès",
     });
   } catch (error: any) {
-    console.error("🔴 Erreur:", error);
+    console.error(" Erreur:", error);
     return NextResponse.json(
       { error: error.message || "Une erreur est survenue" },
       { status: 500 }

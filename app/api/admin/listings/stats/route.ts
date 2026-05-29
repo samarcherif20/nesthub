@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // 🔥 Compter les annonces par statut (complet)
+    //  Compter les annonces par statut (complet)
     const [
       total,
       pending,
@@ -54,14 +54,14 @@ export async function GET(request: NextRequest) {
           hasPendingRevision: true,
         },
       }),
-      // ✅ Annonces validées (historique)
+      //  Annonces validées (historique)
       prisma.listing.count({
         where: {
           status: "ACTIVE",
           hasPendingRevision: false,
         },
       }),
-      // ✅ Annonces rejetées (historique)
+      //  Annonces rejetées (historique)
       prisma.listing.count({
         where: {
           status: "REJECTED",
@@ -115,8 +115,8 @@ export async function GET(request: NextRequest) {
       total,
       pending,
       revisions,
-      validated,    // ✅ Ajouté
-      rejected,     // ✅ Ajouté
+      validated,    
+      rejected,     
       processedToday,
       avgResponseTime,
     });

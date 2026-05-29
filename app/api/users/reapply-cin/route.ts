@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         type: "SYSTEM_ALERT",
-        title: "🔄 Nouvelle réapplication CIN",
+        title: " Nouvelle réapplication CIN",
         content: `L'utilisateur a soumis une nouvelle demande de vérification CIN après rejet.`,
         isRead: false,
       },

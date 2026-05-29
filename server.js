@@ -9,19 +9,16 @@ const next = require("next");
 const { Server } = require("socket.io");
 const { PrismaClient } = require("@prisma/client");
 
-// ✅ IMPORT DU MODULE DE MODÉRATION (remplace tout l'ancien code IA)
+//  IMPORT DU MODULE DE MODÉRATION (remplace tout l'ancien code IA)
 const { moderateMessage } = require("./lib/moderation");
 
-// ============================================
-// 🆕 AUGMENTER LA LIMITE DES UPLOADS
-// ============================================
+//  AUGMENTER LA LIMITE DES UPLOADS
 const express = require("express");
 const expressApp = express(); // ← Renommé pour éviter conflit
 
 expressApp.use(express.json({ limit: "50mb" }));
 expressApp.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// ============================================
 
 const prisma = new PrismaClient();
 const dev = process.env.NODE_ENV !== "production";
@@ -34,10 +31,10 @@ const userSockets = new Map();
 // Variable pour l'instance socket.io (sera exposée à l'API)
 let globalIo = null;
 
-// 🧠 Fonction pour détecter les messages vocaux (gardée)
+//  Fonction pour détecter les messages vocaux (gardée)
 function isVoiceMessage(content) {
   return (
-    content === "🎤 Message vocal" ||
+    content === " Message vocal" ||
     content === "[Message vocal]" ||
     content?.startsWith("🎤")
   );
@@ -49,8 +46,8 @@ function getIo() {
 }
 
 app.prepare().then(async () => {
-  console.log("⏳ Démarrage du serveur...");
-  console.log("🤖 Module de modération importé depuis lib/moderation.js");
+  console.log(" Démarrage du serveur...");
+  console.log(" Module de modération importé depuis lib/moderation.js");
 
   const httpServer = createServer((req, res) => {
     const parsedUrl = parse(req.url, true);
@@ -74,27 +71,27 @@ app.prepare().then(async () => {
   global.io = io; // Pour l'API
 
   io.on("connection", (socket) => {
-    console.log("✅ Client connecté:", socket.id);
+    console.log(" Client connecté:", socket.id);
 
     const userId = socket.handshake.auth.userId;
     let currentConversationId = null;
 
     if (userId) {
       userSockets.set(socket.id, { userId, conversationId: null });
-      console.log(`🔐 User ${userId} associé au socket ${socket.id}`);
+      console.log(` User ${userId} associé au socket ${socket.id}`);
     }
 
     // Rejoindre une conversation
     socket.on("join-conversation", (conversationId) => {
       if (!conversationId) {
-        console.error("❌ join-conversation: conversationId manquant");
+        console.error(" join-conversation: conversationId manquant");
         return;
       }
 
       if (currentConversationId) {
         const oldRoom = `conv:${currentConversationId}`;
         socket.leave(oldRoom);
-        console.log(`📤 Socket ${socket.id} a quitté ${oldRoom}`);
+        console.log(` Socket ${socket.id} a quitté ${oldRoom}`);
       }
 
       const roomName = `conv:${conversationId}`;
@@ -107,7 +104,7 @@ app.prepare().then(async () => {
         userSockets.set(socket.id, userData);
       }
 
-      console.log(`📌 Socket ${socket.id} a rejoint ${roomName}`);
+      console.log(` Socket ${socket.id} a rejoint ${roomName}`);
 
       socket.emit("joined-conversation", {
         conversationId,
@@ -118,10 +115,10 @@ app.prepare().then(async () => {
     // Envoyer un message
     socket.on("send-message", async (data) => {
       console.log("\n========== SOCKET: NOUVEAU MESSAGE ==========");
-      console.log(`📤 Message reçu: ${data.content}`);
-      console.log(`📨 Conversation: ${data.conversationId}`);
-      console.log(`📨 Sender: ${data.userId}`);
-      console.log(`📨 Type: ${data.type || "text"}`);
+      console.log(` Message reçu: ${data.content}`);
+      console.log(` Conversation: ${data.conversationId}`);
+      console.log(` Sender: ${data.userId}`);
+      console.log(` Type: ${data.type || "text"}`);
 
       let finalContent = data.content;
       let isBlocked = false;
@@ -130,13 +127,13 @@ app.prepare().then(async () => {
       const voiceMsg = isVoiceMessage(data.content) || data.type === "voice";
 
       if (voiceMsg) {
-        console.log("🎤 [VOICE] Message vocal - skip modération");
+        console.log(" [VOICE] Message vocal - skip modération");
       } else {
         try {
           // ==========================================
-          // 🧠 MODÉRATION AVEC LE MODULE EXTERNE
+          //  MODÉRATION AVEC LE MODULE EXTERNE
           // ==========================================
-          console.log("🤖 [MODERATION] Analyse du message...");
+          console.log(" [MODERATION] Analyse du message...");
 
           const result = await moderateMessage(data.content, data.userId);
 
@@ -150,22 +147,22 @@ app.prepare().then(async () => {
               confidence: result.confidence,
             });
             console.log(
-              `🛡️ [MODERATION] BLOQUÉ: ${result.reason} (${result.category})`,
+              ` [MODERATION] BLOQUÉ: ${result.reason} (${result.category})`,
             );
           } else {
             console.log(
-              `✅ [MODERATION] AUTORISÉ (confiance: ${result.confidence})`,
+              ` [MODERATION] AUTORISÉ (confiance: ${result.confidence})`,
             );
           }
         } catch (error) {
-          console.error("❌ Erreur modération:", error);
+          console.error(" Erreur modération:", error);
         }
       }
 
       const senderId = data.userId;
 
       if (!senderId || senderId === "unknown") {
-        console.error("❌ Impossible de sauvegarder: userId manquant");
+        console.error(" Impossible de sauvegarder: userId manquant");
         io.to(`conv:${data.conversationId}`).emit("new-message", {
           id: Date.now().toString(),
           content: finalContent,
@@ -189,7 +186,7 @@ app.prepare().then(async () => {
         });
 
         if (!conversation) {
-          console.error(`❌ Conversation ${data.conversationId} non trouvée`);
+          console.error(` Conversation ${data.conversationId} non trouvée`);
           return;
         }
 
@@ -216,7 +213,7 @@ app.prepare().then(async () => {
         }
 
         if (!sender) {
-          console.error(`❌ Utilisateur ${senderId} non trouvé en DB`);
+          console.error(` Utilisateur ${senderId} non trouvé en DB`);
           return;
         }
 
@@ -257,7 +254,7 @@ app.prepare().then(async () => {
           },
         });
 
-        console.log(`💾 Message sauvegardé en DB (ID: ${message.id})`);
+        console.log(` Message sauvegardé en DB (ID: ${message.id})`);
 
         const formattedMessage = {
           id: message.id,
@@ -278,10 +275,9 @@ app.prepare().then(async () => {
         console.log(`📡 Émission du message à la room: ${roomName}`);
         io.to(roomName).emit("new-message", formattedMessage);
       } catch (dbError) {
-        console.error("❌ Erreur sauvegarde DB:", dbError);
+        console.error(" Erreur sauvegarde DB:", dbError);
       }
 
-      console.log("===========================================\n");
     });
 
     socket.on("typing-start", (data) => {
@@ -296,10 +292,10 @@ app.prepare().then(async () => {
       const userData = userSockets.get(socket.id);
       if (userData) {
         console.log(
-          `❌ Client déconnecté: ${socket.id} (User: ${userData.userId})`,
+          ` Client déconnecté: ${socket.id} (User: ${userData.userId})`,
         );
       } else {
-        console.log(`❌ Client déconnecté: ${socket.id}`);
+        console.log(` Client déconnecté: ${socket.id}`);
       }
       userSockets.delete(socket.id);
     });
@@ -307,9 +303,9 @@ app.prepare().then(async () => {
 
   httpServer.listen(3000, hostname, (err) => {
     if (err) throw err;
-    console.log(`🚀 Serveur prêt sur http://${hostname}:3000`);
-    console.log("🔌 Socket.io actif sur /api/socket");
-    console.log("🤖 Modération IA active (GPT-4o-mini)");
+    console.log(` Serveur prêt sur http://${hostname}:3000`);
+    console.log(" Socket.io actif sur /api/socket");
+    console.log(" Modération IA active (GPT-4o-mini)");
   });
 });
 

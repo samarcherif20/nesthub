@@ -56,7 +56,7 @@ export async function GET(
 
     const overpassUrl = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
-    console.log("🔍 Requête Overpass:", overpassUrl);
+    console.log(" Requête Overpass:", overpassUrl);
 
     const response = await fetch(overpassUrl, {
       headers: {
@@ -162,7 +162,7 @@ export async function GET(
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 50);
 
-    console.log(`✅ ${sortedPOIs.length} POIs trouvés`);
+    console.log(` ${sortedPOIs.length} POIs trouvés`);
 
     return NextResponse.json({
       success: true,

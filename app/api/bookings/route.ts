@@ -45,7 +45,56 @@ export async function GET(req: NextRequest) {
 
     const skip = (page - 1) * pageSize;
 
-    const [bookings, totalCount] = await Promise.all([
+    // Calcul des dates pour les stats hebdomadaires
+    const startOfWeek = new Date();
+    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfNext30Days = new Date();
+    endOfNext30Days.setDate(endOfNext30Days.getDate() + 30);
+    endOfNext30Days.setHours(23, 59, 59, 999);
+
+    //  Récupérer les stats en parallèle (séparément)
+    const weeklyRequestsPromise = prisma.booking.count({
+      where: {
+        ...whereClause,
+        createdAt: { gte: startOfWeek },
+      },
+    });
+
+    const occupancySumPromise = prisma.booking.aggregate({
+      where: {
+        ...whereClause,
+        status: { in: ["CONFIRMED", "ACCEPTED"] },
+        checkIn: { gte: new Date() },
+        checkIn: { lte: endOfNext30Days },
+      },
+      _sum: { totalNights: true },
+    });
+
+    const weeklyRevenueSumPromise = prisma.booking.aggregate({
+      where: {
+        ...whereClause,
+        status: { in: ["CONFIRMED", "ACCEPTED"] },
+        createdAt: { gte: startOfWeek },
+      },
+      _sum: { totalPrice: true },
+    });
+
+    const statusCountsPromise = prisma.booking.groupBy({
+      by: ["status"],
+      where: whereClause,
+      _count: { status: true },
+    });
+
+    const [
+      bookings,
+      totalCount,
+      weeklyRequests,
+      occupancySum,
+      weeklyRevenueSum,
+      statusCounts,
+    ] = await Promise.all([
       prisma.booking.findMany({
         where: whereClause,
         include: {
@@ -66,7 +115,7 @@ export async function GET(req: NextRequest) {
           owner: {
             select: {
               id: true,
-              username: true, // On garde le username
+              username: true,
               firstName: true,
               lastName: true,
               profilePictureUrl: true,
@@ -79,7 +128,7 @@ export async function GET(req: NextRequest) {
           tenant: {
             select: {
               id: true,
-              username: true, // On garde le username
+              username: true,
               firstName: true,
               lastName: true,
               profilePictureUrl: true,
@@ -110,7 +159,35 @@ export async function GET(req: NextRequest) {
         take: pageSize,
       }),
       prisma.booking.count({ where: whereClause }),
+      weeklyRequestsPromise,
+      occupancySumPromise,
+      weeklyRevenueSumPromise,
+      statusCountsPromise,
     ]);
+
+    // Calcul du taux d'occupation (sur 30 jours = 30 nuits maximum)
+    const totalBookedNights = occupancySum._sum.totalNights || 0;
+    const occupancyRate = Math.min(
+      Math.round((totalBookedNights / 30) * 100),
+      100,
+    );
+
+    // Extraire les compteurs par statut
+    let pendingCount = 0;
+    let acceptedCount = 0;
+    let pastCount = 0;
+
+    for (const stat of statusCounts) {
+      if (stat.status === "PENDING") pendingCount = stat._count.status;
+      if (stat.status === "ACCEPTED" || stat.status === "CONFIRMED")
+        acceptedCount += stat._count.status;
+      if (
+        stat.status === "COMPLETED" ||
+        stat.status === "CANCELLED" ||
+        stat.status === "REJECTED"
+      )
+        pastCount += stat._count.status;
+    }
 
     const formattedBookings = bookings.map((booking) => {
       const isPaid =
@@ -143,8 +220,8 @@ export async function GET(req: NextRequest) {
         cancelledAt: booking.cancelledAt,
         tenant: {
           id: booking.tenant?.id,
-          username: booking.tenant?.username || null, // AJOUTÉ
-          name: booking.tenant?.username || "Locataire", // MODIFIÉ: utilise username
+          username: booking.tenant?.username || null,
+          name: booking.tenant?.username || "Locataire",
           firstName: booking.tenant?.firstName,
           lastName: booking.tenant?.lastName,
           image: booking.tenant?.profilePictureUrl || null,
@@ -153,8 +230,8 @@ export async function GET(req: NextRequest) {
         },
         owner: {
           id: booking.owner?.id,
-          username: booking.owner?.username || null, // AJOUTÉ
-          name: booking.owner?.username || "Hôte", // MODIFIÉ: utilise username
+          username: booking.owner?.username || null,
+          name: booking.owner?.username || "Hôte",
           firstName: booking.owner?.firstName,
           lastName: booking.owner?.lastName,
           image: booking.owner?.profilePictureUrl || null,
@@ -173,8 +250,9 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    console.log(`📊 ${formattedBookings.length} réservations chargées`);
+    console.log(` ${formattedBookings.length} réservations chargées`);
 
+    // Retourner les stats dans la réponse
     return NextResponse.json({
       bookings: formattedBookings,
       pagination: {
@@ -182,6 +260,14 @@ export async function GET(req: NextRequest) {
         pageSize,
         totalCount,
         totalPages: Math.ceil(totalCount / pageSize),
+      },
+      stats: {
+        pendingCount,
+        acceptedCount,
+        pastCount,
+        weeklyRequests,
+        occupancyRate,
+        weeklyRevenue: weeklyRevenueSum._sum.totalPrice || 0,
       },
     });
   } catch (error) {

@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
             listing: true,
           },
         },
-        stats: true, // Changé de userStats à stats
+        stats: true, 
       },
     });
 

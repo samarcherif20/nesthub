@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-// ✅ GET - Récupérer une demande de prolongation
+//  GET - Récupérer une demande de prolongation
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -26,7 +26,7 @@ export async function GET(
     }
 
     const { id } = await params;
-    console.log("🔵 API GET /extensions/[id] appelée avec ID:", id);
+    console.log(" API GET /extensions/[id] appelée avec ID:", id);
 
     const notification = await prisma.notification.findFirst({
       where: {
@@ -114,7 +114,7 @@ export async function GET(
   }
 }
 
-// ✅ PUT - Répondre à une demande de prolongation
+//  PUT - Répondre à une demande de prolongation
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -221,14 +221,14 @@ export async function PUT(
         data: {
           userId: data.tenantId,
           type: "EXTENSION_ACCEPTED",
-          title: "✅ Prolongation acceptée",
+          title: " Prolongation acceptée",
           content: `Votre demande de prolongation a été acceptée. Nouvelle date de départ: ${newCheckOut.toLocaleDateString("fr-FR")}`,
           data: { bookingId: data.bookingId },
         },
       });
 
       console.log(
-        `✅ Prolongation acceptée pour la réservation ${data.bookingId}`,
+        `Prolongation acceptée pour la réservation ${data.bookingId}`,
       );
       console.log(`   - Nouvelles dates bloquées: ${additionalDates.length}`);
 
@@ -264,14 +264,14 @@ export async function PUT(
         data: {
           userId: data.tenantId,
           type: "EXTENSION_REJECTED",
-          title: "❌ Prolongation refusée",
+          title: " Prolongation refusée",
           content: `Votre demande de prolongation a été refusée.${rejectionReason ? ` Motif: ${rejectionReason}` : ""}`,
           data: { bookingId: data.bookingId },
         },
       });
 
       console.log(
-        `❌ Prolongation refusée pour la réservation ${data.bookingId}`,
+        ` Prolongation refusée pour la réservation ${data.bookingId}`,
       );
 
       return NextResponse.json({ success: true });

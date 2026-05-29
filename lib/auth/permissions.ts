@@ -22,7 +22,7 @@ export async function getUserPermissions(
 
     if (!user) return null;
 
-    // ✅ CORRECTION: ADMIN doit avoir le rôle "ADMIN", pas "OWNER"
+    //  ADMIN doit avoir le rôle "ADMIN", pas "OWNER"
     if (user.role === "ADMIN") {
       return {
         userId: user.id,
@@ -124,7 +124,7 @@ export async function checkListingAccess(
       };
     }
 
-    // ✅ CORRECTION: ADMIN a toujours accès à tout
+    // ADMIN a toujours accès à tout
     if (permissions.role === "ADMIN") {
       return { allowed: true, userPermissions: permissions };
     }

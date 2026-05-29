@@ -29,6 +29,8 @@ export interface ListingValidation {
   smokingAllowed: boolean;
   status: string;
   hasPendingRevision: boolean;
+  pendingRevisionSubmittedAt?: Date | null; // ← AJOUTE
+
   rejectionReason?: string | null;
   validatedAt?: Date | null;
   rejectedAt?: Date | null;

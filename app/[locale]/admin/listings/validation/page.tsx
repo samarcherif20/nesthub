@@ -24,7 +24,7 @@ import {
   IoCalendarOutline,
 } from "react-icons/io5";
 import { formatDistanceToNow, format } from "date-fns";
-import { fr, enUS } from "date-fns/locale"; // ✅ Importer les deux
+import { fr, enUS } from "date-fns/locale"; 
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import Pagination from "@/components/ui/Pagination";
 import { useAdminListingsValidation } from "./hooks/useAdminListingsValidation";
@@ -600,24 +600,62 @@ export default function ListingsValidationPage() {
 
                           {/* Date */}
                           <td className="px-4 py-3.5 whitespace-nowrap">
-                            <p className="text-sm text-slate-900 dark:text-white">
-                              {format(
-                                new Date(listing.createdAt),
-                                "dd/MM/yyyy",
-                                {
-                                  locale: getDateLocale(),
-                                },
-                              )}
-                            </p>
-                            <p className="text-[10px] text-slate-400">
-                              {formatDistanceToNow(
-                                new Date(listing.createdAt),
-                                {
-                                  addSuffix: true,
-                                  locale: getDateLocale(),
-                                },
-                              )}
-                            </p>
+                            {activeTab === "revisions" &&
+                            listing.hasPendingRevision &&
+                            listing.pendingRevisionSubmittedAt ? (
+                              <>
+                                <p className="text-sm text-amber-600 dark:text-amber-400 font-semibold">
+                                  {format(
+                                    new Date(
+                                      listing.pendingRevisionSubmittedAt,
+                                    ),
+                                    "dd/MM/yyyy",
+                                    {
+                                      locale: getDateLocale(),
+                                    },
+                                  )}
+                                </p>
+                                <p className="text-[10px] text-amber-500/70">
+                                  {formatDistanceToNow(
+                                    new Date(
+                                      listing.pendingRevisionSubmittedAt,
+                                    ),
+                                    {
+                                      addSuffix: true,
+                                      locale: getDateLocale(),
+                                    },
+                                  )}
+                                </p>
+                                <p className="text-[9px] text-slate-400 mt-0.5">
+                                  Créée le{" "}
+                                  {format(
+                                    new Date(listing.createdAt),
+                                    "dd/MM/yyyy",
+                                  )}
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <p className="text-sm text-slate-900 dark:text-white">
+                                  {format(
+                                    new Date(listing.createdAt),
+                                    "dd/MM/yyyy",
+                                    {
+                                      locale: getDateLocale(),
+                                    },
+                                  )}
+                                </p>
+                                <p className="text-[10px] text-slate-400">
+                                  {formatDistanceToNow(
+                                    new Date(listing.createdAt),
+                                    {
+                                      addSuffix: true,
+                                      locale: getDateLocale(),
+                                    },
+                                  )}
+                                </p>
+                              </>
+                            )}
                           </td>
 
                           {/* Status */}

@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   try {
     const { userId } = getAuth(request);
     
-    console.log("🔐 [pending-old] userId from Clerk:", userId);
+    console.log(" [pending-old] userId from Clerk:", userId);
     
     if (!userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       select: { role: true }
     });
 
-    console.log("🔐 [pending-old] user role from DB:", user?.role);
+    console.log(" [pending-old] user role from DB:", user?.role);
 
     if (!user || user.role !== "ADMIN") {
       return NextResponse.json({ error: "Non autorisé - Admin seulement" }, { status: 403 });

@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { ListingType } from "@prisma/client"; // ✅ Importer depuis @prisma/client
+import { ListingType } from "@prisma/client"; 
 
 export async function GET() {
   try {
@@ -101,7 +101,7 @@ export async function PATCH(request: NextRequest) {
 
     const body = await request.json();
     
-    console.log("✅ Paramètres sauvegardés:", {
+    console.log(" Paramètres sauvegardés:", {
       commission: body.commission,
       searchSettings: body.searchSettings,
       moderationSettings: body.moderationSettings,

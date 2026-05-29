@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   const results: any = {};
   
   for (const cron of cronJobs) {
-    console.log(`🕐 Test de ${cron.name}...`);
+    console.log(` Test de ${cron.name}...`);
     
     try {
       const response = await fetch(`${baseUrl}${cron.path}`, {
@@ -35,9 +35,9 @@ export async function GET(req: NextRequest) {
         timestamp: new Date().toISOString(),
       };
       
-      console.log(`✅ ${cron.name}: ${response.status}`);
+      console.log(` ${cron.name}: ${response.status}`);
     } catch (error: any) {
-      console.log(`❌ ${cron.name}:`, error.message);
+      console.log(` ${cron.name}:`, error.message);
       results[cron.name] = {
         status: "error",
         error: error.message,

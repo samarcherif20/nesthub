@@ -628,6 +628,8 @@ model Listing {
   status             ListingStatus @default(DRAFT)
   hasPendingRevision Boolean       @default(false) // ← AJOUTER CETTE LIGNE
   pendingRevision    Json? // ← AJOUTE CETTE LIGNE
+  pendingRevisionSubmittedAt DateTime? // ← AJOUTE CETTE LIGNE
+
 
   // Localisation
   governorate  String
@@ -1091,17 +1093,34 @@ model Review {
   booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   reviewerId  String
   targetId    String
-  targetType  String
-  rating      Int
+  targetType  String    // "TENANT" ou "OWNER" ou "LISTING"
+  
+  // Note globale (moyenne)
+  rating      Int       // 1-5
+  
+  // Sous-notations pour l'avis sur locataire
+  cleanliness  Int?     // Propreté (1-5)
+  communication Int?    // Communication (1-5)
+  houseRules   Int?     // Respect du règlement (1-5)
+  recommend    Boolean? // Recommanderait ou non
+  
+  // Commentaire
   comment     String?   @db.Text
+  
+  // Réponse du propriétaire/locataire (optionnel)
   response    String?   @db.Text
   responseAt  DateTime?
+  
+  // Statut
   isPublished Boolean   @default(true)
   isFlagged   Boolean   @default(false)
   flagReason  String?
+  
+  // Timestamps
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  // Relations
   reviewer User @relation("ReviewsWritten", fields: [reviewerId], references: [id])
   target   User @relation("ReviewsReceived", fields: [targetId], references: [id])
 
@@ -1110,9 +1129,9 @@ model Review {
   @@index([targetId])
   @@index([targetType])
   @@index([rating])
+  @@index([createdAt])
   @@map("reviews")
 }
-
 model ListingReport {
   id          String    @id @default(cuid())
   listingId   String

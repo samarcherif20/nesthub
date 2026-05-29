@@ -59,7 +59,7 @@ export async function POST(
     let messageRecord = null;
 
     if (recipient === "BOTH") {
-      // ✅ RÉCUPÉRER OU CRÉER LA CONVERSATION DE GROUPE
+      //  RÉCUPÉRER OU CRÉER LA CONVERSATION DE GROUPE
       groupConversation = await prisma.groupConversation.findFirst({
         where: {
           disputeId: dispute.id,
@@ -115,7 +115,7 @@ export async function POST(
         });
       }
 
-      // ✅ CRÉER LE MESSAGE DANS LE GROUPE
+      //  CRÉER LE MESSAGE DANS LE GROUPE
       messageRecord = await prisma.groupConversationMessage.create({
         data: {
           groupId: groupConversation.id,
@@ -135,14 +135,14 @@ export async function POST(
         },
       });
 
-      // ✅ NOTIFICATIONS POUR LES DEUX PARTIES
+      //  NOTIFICATIONS POUR LES DEUX PARTIES
       for (const party of [plaintiff, defendant]) {
         if (party?.id) {
           await prisma.notification.create({
             data: {
               userId: party.id,
               type: "DISPUTE_MESSAGE",
-              title: "💬 Nouveau message dans le groupe",
+              title: " Nouveau message dans le groupe",
               content: `Un administrateur a répondu au litige concernant "${listing?.title}".`,
               channels: ["IN_APP", "EMAIL"],
               data: {
@@ -155,7 +155,7 @@ export async function POST(
         }
       }
     } else {
-      // ✅ Messages PRIVÉS (conversation 1-1 avec l'admin)
+      //  Messages PRIVÉS (conversation 1-1 avec l'admin)
       const targetUser =
         recipient === "OWNER"
           ? dispute.booking?.owner
@@ -222,7 +222,7 @@ export async function POST(
           data: {
             userId: targetUser.id,
             type: "DISPUTE_MESSAGE",
-            title: "💬 Message privé concernant votre litige",
+            title: " Message privé concernant votre litige",
             content: `Un administrateur vous a envoyé un message privé concernant "${listing?.title}".`,
             channels: ["IN_APP", "EMAIL"],
             data: {
@@ -235,7 +235,7 @@ export async function POST(
       }
     }
 
-    // ✅ CRÉER AUSSI LE MESSAGE DANS LE LITIGE (pour l'historique admin)
+    //  CRÉER AUSSI LE MESSAGE DANS LE LITIGE (pour l'historique admin)
     const disputeMessage = await prisma.disputeMessage.create({
       data: {
         disputeId: id,

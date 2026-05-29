@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const userId = formData.get("userId") as string;
-    const type = formData.get("type") as string; // "profile" | "cin_recto" | "cin_verso"
+    const type = formData.get("type") as string; 
 
     if (!file || !userId) {
       return NextResponse.json(
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       transformation,
     });
 
-    console.log(`✅ ${type} uploadée:`, uploadResponse.secure_url);
+    console.log(` ${type} uploadée:`, uploadResponse.secure_url);
 
     // Sauvegarder l'URL dans Prisma selon le type
     if (type === "profile") {
@@ -90,7 +90,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error("❌ Erreur upload photo:", error);
+    console.error(" Erreur upload photo:", error);
     return NextResponse.json(
       { error: error.message || "Erreur serveur" },
       { status: 500 }

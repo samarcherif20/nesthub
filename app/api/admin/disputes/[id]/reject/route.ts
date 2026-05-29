@@ -67,13 +67,13 @@ export async function POST(
       },
     });
 
-    // ✅ Notification pour le DEMANDEUR (celui qui a ouvert le litige)
+    //  Notification pour le DEMANDEUR (celui qui a ouvert le litige)
     if (plaintiff?.id) {
       await prisma.notification.create({
         data: {
           userId: plaintiff.id,
           type: "DISPUTE_REJECTED",
-          title: "❌ Votre litige a été rejeté",
+          title: " Votre litige a été rejeté",
           content: `Bonjour ${plaintiff.firstName}, le litige concernant "${dispute.booking?.listing?.title}" que vous avez ouvert a été rejeté par l'administrateur. Aucun remboursement ne sera effectué.`,
           channels: ["IN_APP", "EMAIL"],
           data: { disputeId: dispute.id },
@@ -81,13 +81,13 @@ export async function POST(
       });
     }
 
-    // ✅ Notification pour le DÉFENDEUR (celui contre qui le litige a été ouvert)
+    //  Notification pour le DÉFENDEUR (celui contre qui le litige a été ouvert)
     if (defendant?.id) {
       await prisma.notification.create({
         data: {
           userId: defendant.id,
           type: "DISPUTE_REJECTED",
-          title: "❌ Un litige vous concernant a été rejeté",
+          title: " Un litige vous concernant a été rejeté",
           content: `Bonjour ${defendant.firstName}, le litige concernant "${dispute.booking?.listing?.title}" a été rejeté par l'administrateur. Aucune action n'est requise de votre part.`,
           channels: ["IN_APP", "EMAIL"],
           data: { disputeId: dispute.id },

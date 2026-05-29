@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { onDisputeOpened } from "@/lib/risk-scoring"; // ← AJOUTER CETTE LIGNE
+import { onDisputeOpened } from "@/lib/risk-scoring";
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: otherUserId!,
         type: "DISPUTE_OPENED",
-        title: "⚠️ Nouveau litige ouvert",
+        title: " Nouveau litige ouvert",
         content: `Un litige a été ouvert concernant ${booking.listing.title}`,
         data: { disputeId: dispute.id }
       }
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
         data: {
           userId: admin.id,
           type: "DISPUTE_OPENED_ADMIN",
-          title: "🆕 Nouveau litige à traiter",
+          title: " Nouveau litige à traiter",
           content: `${isTenant ? "Locataire" : "Propriétaire"} a ouvert un litige`,
           data: { disputeId: dispute.id }
         }

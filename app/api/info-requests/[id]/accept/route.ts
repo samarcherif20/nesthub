@@ -102,7 +102,7 @@ export async function POST(
 
     if (!existingSystemMessage) {
       // Créer un message système dans le chat
-      const systemMessage = `💬 Le propriétaire a accepté votre demande. Vous pouvez maintenant discuter.`;
+      const systemMessage = ` Le propriétaire a accepté votre demande. Vous pouvez maintenant discuter.`;
 
       await prisma.message.create({
         data: {
@@ -121,7 +121,7 @@ export async function POST(
       data: {
         userId: infoRequest.tenantId,
         type: "INFO_REQUEST_ACCEPTED",
-        title: "✅ Demande acceptée !",
+        title: " Demande acceptée !",
         content: `Le propriétaire a accepté votre demande pour "${infoRequest.listing.title}". Vous pouvez maintenant discuter avec lui.`,
         data: {
           infoRequestId: infoRequest.id,

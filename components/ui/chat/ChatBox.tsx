@@ -40,6 +40,7 @@ import { useChatSocket } from "@/hooks/useChatSocket";
 import EmojiPicker from "emoji-picker-react";
 import LoadingSpinner from "../LoadingSpinner";
 import { useRealtimeChatBox } from "@/hooks/useRealtimeChatBox";
+import { UsersRound } from "lucide-react";
 
 // ─── pip helpers ────────────────────────────────────────────────────────────────
 const pipAvatar = (url: string) =>
@@ -97,7 +98,9 @@ interface ChatBoxProps {
   userRole?: "TENANT" | "PROPERTY_OWNER";
   offerId?: string;
   offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
-  isPaid?: boolean; // 👈 AJOUTÉ
+  isPaid?: boolean; 
+    isGroup?: boolean;  
+
 }
 
 // ─── Toast ─────────────────────────────────────────────────────────────────────
@@ -678,7 +681,9 @@ export function ChatBox({
   userRole = "TENANT",
   offerId,
   offerStatus,
-  isPaid = false, // 👈 AJOUTÉ avec valeur par défaut
+  isPaid = false,
+    isGroup = false, 
+
 }: ChatBoxProps) {
   const { user: clerkUser } = useUser();
   const isTenant = userRole === "TENANT";
@@ -777,38 +782,48 @@ export function ChatBox({
 
   const showPaymentBanner = offerStatus === "ACCEPTED" && !isPaid; // 👈 MODIFIÉ - ajout de !isPaid
 
-  const loadMessages = useCallback(async () => {
-    if (!conversationId) return;
-    try {
-      const res = await fetch(`/api/conversations/${conversationId}/messages`);
-      if (!res.ok) throw new Error(`${res.status}`);
-      const data = await res.json();
-      const loaded: Message[] = Array.isArray(data)
-        ? data
-        : (data.messages ?? []);
-      loaded.forEach((m) => processedIds.current.add(m.id));
-      setMessages(loaded);
-
-      const hasOffer = loaded.some(
-        (m) =>
-          m.content &&
-          (m.content.includes("offre de réservation") ||
-            m.content.includes("Offre de réservation")),
-      );
-      setOfferCreated(hasOffer);
-
-      if (listing && !hasOffer) {
-        setShowOfferCard(true);
-      } else {
-        setShowOfferCard(false);
-      }
-    } catch (e) {
-      console.error("Error loading messages:", e);
-      setMessages([]);
-    } finally {
-      setIsLoading(false);
+ const loadMessages = useCallback(async () => {
+  if (!conversationId) return;
+  try {
+    // 🔥 CORRECTION : Utiliser le bon endpoint selon isGroup
+    let endpoint;
+    if (isGroup) {
+      // Enlever le préfixe "group_" pour l'API
+      const cleanId = conversationId.replace("group_", "");
+      endpoint = `/api/conversations/groups/${cleanId}/messages`;
+    } else {
+      endpoint = `/api/conversations/${conversationId}/messages`;
     }
-  }, [conversationId, listing]);
+    
+    const res = await fetch(endpoint);
+    if (!res.ok) throw new Error(`${res.status}`);
+    const data = await res.json();
+    const loaded: Message[] = Array.isArray(data)
+      ? data
+      : (data.messages ?? []);
+    loaded.forEach((m) => processedIds.current.add(m.id));
+    setMessages(loaded);
+
+    const hasOffer = loaded.some(
+      (m) =>
+        m.content &&
+        (m.content.includes("offre de réservation") ||
+          m.content.includes("Offre de réservation")),
+    );
+    setOfferCreated(hasOffer);
+
+    if (listing && !hasOffer) {
+      setShowOfferCard(true);
+    } else {
+      setShowOfferCard(false);
+    }
+  } catch (e) {
+    console.error("Error loading messages:", e);
+    setMessages([]);
+  } finally {
+    setIsLoading(false);
+  }
+}, [conversationId, listing, isGroup]);
   useEffect(() => {
     if (!isLoading && messages.length > 0) {
       setTimeout(() => {
@@ -982,113 +997,143 @@ export function ChatBox({
     setContextMenu({ x: e.clientX, y: e.clientY, message });
   };
 
-  const handleSend = async () => {
-    if (!input.trim() || isSending || !isConnected) return;
+const handleSend = async () => {
+  if (!input.trim() || isSending || !isConnected) return;
 
-    // ✅ VÉRIFICATION DES DISPONIBILITÉS (seulement pour le locataire)
-    if (userRole === "TENANT") {
-      try {
-        const availabilityRes = await fetch(
-          `/api/users/${recipientId}/availability`,
-        );
-        if (availabilityRes.ok) {
-          const availabilityData = await availabilityRes.json();
+  // ✅ VÉRIFICATION DES DISPONIBILITÉS (seulement pour le locataire)
+  if (userRole === "TENANT" && !isGroup) {
+    try {
+      const availabilityRes = await fetch(
+        `/api/users/${recipientId}/availability`,
+      );
+      if (availabilityRes.ok) {
+        const availabilityData = await availabilityRes.json();
 
-          // Vérifier le mode vacances
-          if (availabilityData.vacationMode) {
-            showToastMsg(
-              availabilityData.vacationMessage ||
-                "Le propriétaire est actuellement en vacances.",
-              "error",
+        // Vérifier le mode vacances
+        if (availabilityData.vacationMode) {
+          showToastMsg(
+            availabilityData.vacationMessage ||
+              "Le propriétaire est actuellement en vacances.",
+            "error",
+          );
+          return;
+        }
+
+        const availability = availabilityData.availability || [];
+        if (availability.length > 0) {
+          const now = new Date();
+          const days = [
+            "dimanche",
+            "lundi",
+            "mardi",
+            "mercredi",
+            "jeudi",
+            "vendredi",
+            "samedi",
+          ];
+          const currentDay = days[now.getDay()];
+          const currentHour = now.getHours();
+          const currentMinute = now.getMinutes();
+
+          // Trouver le créneau du jour
+          const todaySlot = availability.find(
+            (slot: any) =>
+              slot.day.toLowerCase() === currentDay ||
+              (slot.day === "Lun - Ven" &&
+                now.getDay() >= 1 &&
+                now.getDay() <= 5),
+          );
+
+          let isAvailable = true;
+          let unavailableMessage = "";
+
+          if (!todaySlot || !todaySlot.enabled) {
+            isAvailable = false;
+            unavailableMessage =
+              "Le propriétaire n'est pas disponible aujourd'hui.";
+          } else if (todaySlot.hours === "Fermé") {
+            isAvailable = false;
+            unavailableMessage = "Le propriétaire est fermé aujourd'hui.";
+          } else if (todaySlot.hours !== "Sur rendez-vous") {
+            const hoursMatch = todaySlot.hours.match(
+              /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/,
             );
-            return;
-          }
+            if (hoursMatch) {
+              const startHour = parseInt(hoursMatch[1]);
+              const startMinute = parseInt(hoursMatch[2]);
+              const endHour = parseInt(hoursMatch[3]);
+              const endMinute = parseInt(hoursMatch[4]);
 
-          const availability = availabilityData.availability || [];
-          if (availability.length > 0) {
-            const now = new Date();
-            const days = [
-              "dimanche",
-              "lundi",
-              "mardi",
-              "mercredi",
-              "jeudi",
-              "vendredi",
-              "samedi",
-            ];
-            const currentDay = days[now.getDay()];
-            const currentHour = now.getHours();
-            const currentMinute = now.getMinutes();
+              const currentTotalMinutes = currentHour * 60 + currentMinute;
+              const startTotalMinutes = startHour * 60 + startMinute;
+              const endTotalMinutes = endHour * 60 + endMinute;
 
-            // Trouver le créneau du jour
-            const todaySlot = availability.find(
-              (slot: any) =>
-                slot.day.toLowerCase() === currentDay ||
-                (slot.day === "Lun - Ven" &&
-                  now.getDay() >= 1 &&
-                  now.getDay() <= 5),
-            );
-
-            let isAvailable = true;
-            let unavailableMessage = "";
-
-            if (!todaySlot || !todaySlot.enabled) {
-              isAvailable = false;
-              unavailableMessage =
-                "Le propriétaire n'est pas disponible aujourd'hui.";
-            } else if (todaySlot.hours === "Fermé") {
-              isAvailable = false;
-              unavailableMessage = "Le propriétaire est fermé aujourd'hui.";
-            } else if (todaySlot.hours !== "Sur rendez-vous") {
-              const hoursMatch = todaySlot.hours.match(
-                /(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/,
-              );
-              if (hoursMatch) {
-                const startHour = parseInt(hoursMatch[1]);
-                const startMinute = parseInt(hoursMatch[2]);
-                const endHour = parseInt(hoursMatch[3]);
-                const endMinute = parseInt(hoursMatch[4]);
-
-                const currentTotalMinutes = currentHour * 60 + currentMinute;
-                const startTotalMinutes = startHour * 60 + startMinute;
-                const endTotalMinutes = endHour * 60 + endMinute;
-
-                if (currentTotalMinutes < startTotalMinutes) {
-                  isAvailable = false;
-                  unavailableMessage = `Le propriétaire sera disponible à ${startHour.toString().padStart(2, "0")}:${startMinute.toString().padStart(2, "0")}.`;
-                } else if (currentTotalMinutes > endTotalMinutes) {
-                  isAvailable = false;
-                  unavailableMessage =
-                    "Le propriétaire n'est plus disponible aujourd'hui.";
-                }
+              if (currentTotalMinutes < startTotalMinutes) {
+                isAvailable = false;
+                unavailableMessage = `Le propriétaire sera disponible à ${startHour.toString().padStart(2, "0")}:${startMinute.toString().padStart(2, "0")}.`;
+              } else if (currentTotalMinutes > endTotalMinutes) {
+                isAvailable = false;
+                unavailableMessage =
+                  "Le propriétaire n'est plus disponible aujourd'hui.";
               }
             }
+          }
 
-            if (!isAvailable) {
-              showToastMsg(unavailableMessage, "error");
-              return;
-            }
+          if (!isAvailable) {
+            showToastMsg(unavailableMessage, "error");
+            return;
           }
         }
-      } catch (error) {
-        console.error("Erreur vérification disponibilité:", error);
-        // Fail-safe: on laisse passer le message
       }
+    } catch (error) {
+      console.error("Erreur vérification disponibilité:", error);
+      // Fail-safe: on laisse passer le message
     }
+  }
 
-    setIsSending(true);
-    let content = input.trim();
-    if (replyTo) content = `@${replyTo.senderName}: ${content}`;
-    setInput("");
-    if (inputRef.current) inputRef.current.style.height = "auto";
+  setIsSending(true);
+  let content = input.trim();
+  if (replyTo) content = `@${replyTo.senderName}: ${content}`;
+  setInput("");
+  if (inputRef.current) inputRef.current.style.height = "auto";
+
+  // 🔥 CORRECTION : Distinguer groupe et conversation normale
+  if (isGroup) {
+    // Pour les groupes : utiliser l'API REST
+    const cleanId = conversationId.replace("group_", "");
+    try {
+      const res = await fetch(`/api/conversations/groups/${cleanId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (res.ok) {
+        const newMessage = await res.json();
+        if (!processedIds.current.has(newMessage.id)) {
+          processedIds.current.add(newMessage.id);
+          setMessages(prev => [...prev, newMessage]);
+          setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        }
+      } else {
+        const error = await res.json();
+        showToastMsg(error.error || "Erreur lors de l'envoi", "error");
+      }
+    } catch (error) {
+      console.error("Error sending group message:", error);
+      showToastMsg("Erreur de connexion", "error");
+    }
+  } else {
+    // Pour les conversations normales : utiliser WebSocket
     sendSocketMessage(conversationId, content, recipientId);
-    setReplyTo(null);
-    setTimeout(
-      () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
-      80,
-    );
-    setIsSending(false);
-  };
+  }
+
+  setReplyTo(null);
+  setTimeout(
+    () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }),
+    80,
+  );
+  setIsSending(false);
+};
   const handleSendVoice = async (audioBlob: Blob, duration: number) => {
     setIsUploadingVoice(true);
     try {
@@ -1349,107 +1394,93 @@ export function ChatBox({
         />
       )}
 
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-        <Avatar
-          src={recipientImage}
-          name={recipientName}
-          size={38}
-          online={isConnected}
-        />
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-            {recipientName}
-          </p>
-          {/* Indicateur "en train d'écrire" */}
-          {isTyping && isConnected && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <div className="flex gap-0.5">
-                <span
-                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "0ms" }}
-                ></span>
-                <span
-                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "150ms" }}
-                ></span>
-                <span
-                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "300ms" }}
-                ></span>
-              </div>
-              <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
-                {recipientName} est en train d'écrire...
-              </span>
-            </div>
-          )}
+    {/* Header */}
+<div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+  {isGroup ? (
+    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+      <UsersRound className="w-5 h-5 text-white" />
+    </div>
+  ) : (
+    <Avatar src={recipientImage} name={recipientName} size={38} online={isConnected} />
+  )}
+  <div className="flex-1 min-w-0">
+    <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+      {isGroup ? (listingTitle || "Litige") : recipientName}
+    </p>
+    {isGroup && (
+      <p className="text-xs text-purple-500 dark:text-purple-400">Conversation de litige</p>
+    )}
+    {/* Indicateur "en train d'écrire" */}
+    {isTyping && isConnected && !isGroup && (
+      <div className="flex items-center gap-1 mt-0.5">
+        <div className="flex gap-0.5">
+          <span className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+          <span className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+          <span className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+        </div>
+        <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
+          {recipientName} est en train d'écrire...
+        </span>
+      </div>
+    )}
 
-          {/* Statut de connexion */}
-          {!isTyping && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-slate-400"}`}
-              ></span>
-              <span className="text-[10px] ${isConnected ? 'text-green-600 dark:text-green-400' : 'text-slate-400'}">
-                {isConnected ? "En ligne" : "Hors ligne"}
-              </span>
-            </div>
-          )}
-          {listingTitle && (
-            <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
-              {listingTitle}
-            </p>
-          )}
-        </div>
-        <div className="flex items-center gap-1 shrink-0">
-          <div className="relative" ref={moreRef}>
+    {/* Statut de connexion */}
+    {!isTyping && !isGroup && (
+      <div className="flex items-center gap-1 mt-0.5">
+        <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-slate-400"}`}></span>
+        <span className="text-[10px] text-slate-400">
+          {isConnected ? "En ligne" : "Hors ligne"}
+        </span>
+      </div>
+    )}
+    {listingTitle && !isGroup && (
+      <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+        {listingTitle}
+      </p>
+    )}
+  </div>
+  {/* Menu plus - uniquement pour conversations normales */}
+  {!isGroup && (
+    <div className="flex items-center gap-1 shrink-0">
+      <div className="relative" ref={moreRef}>
+        <button
+          onClick={() => !isAdminLocked && setShowMoreMenu((p) => !p)}
+          disabled={isAdminLocked}
+          className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isAdminLocked ? "text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+        >
+          <IoEllipsisVerticalOutline className="text-lg" />
+        </button>
+        {showMoreMenu && (
+          <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-xl z-30 overflow-hidden">
             <button
-              onClick={() => !isAdminLocked && setShowMoreMenu((p) => !p)}
-              disabled={isAdminLocked}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isAdminLocked ? "text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+              onClick={handleReportConversation}
+              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700"
             >
-              <IoEllipsisVerticalOutline className="text-lg" />
+              <IoFlagOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
+              <span className="text-slate-700 dark:text-slate-300">Signaler la conversation</span>
             </button>
-            {showMoreMenu && (
-              <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-xl z-30 overflow-hidden">
-                <button
-                  onClick={handleReportConversation}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700"
-                >
-                  <IoFlagOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
-                  <span className="text-slate-700 dark:text-slate-300">
-                    Signaler la conversation
-                  </span>
-                </button>
-                <button
-                  onClick={handleOpenBlockSheet}
-                  disabled={isUserBlocked || blockCooldown}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700 disabled:opacity-50"
-                >
-                  <IoBanOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
-                  <span className="text-slate-700 dark:text-slate-300">
-                    {isUserBlocked
-                      ? "Utilisateur bloqué"
-                      : blockCooldown
-                        ? `Bloqué (reste ${cooldownRemaining}h)`
-                        : "Bloquer cet utilisateur"}
-                  </span>
-                </button>
-              </div>
-            )}
+            <button
+              onClick={handleOpenBlockSheet}
+              disabled={isUserBlocked || blockCooldown}
+              className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700 disabled:opacity-50"
+            >
+              <IoBanOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
+              <span className="text-slate-700 dark:text-slate-300">
+                {isUserBlocked ? "Utilisateur bloqué" : blockCooldown ? `Bloqué (reste ${cooldownRemaining}h)` : "Bloquer cet utilisateur"}
+              </span>
+            </button>
           </div>
-        </div>
-        {!isConnected && (
-          <span className="text-[10px] text-amber-500 font-medium">
-            Reconnexion…
-          </span>
-        )}
-        {isAdminLocked && (
-          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full ml-2">
-            Verrouillé
-          </span>
         )}
       </div>
+    </div>
+  )}
+  {!isConnected && !isGroup && (
+    <span className="text-[10px] text-amber-500 font-medium">Reconnexion…</span>
+  )}
+  {isAdminLocked && (
+    <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full ml-2">Verrouillé</span>
+  )}
+</div>
       {/* Safety Banner - Style Atlas Algorithm avec dégradé */}
       {isAdminLocked && (
         <div className="sticky top-0 z-40 px-4 pt-2 animate-in fade-in slide-in-from-top-2 duration-500">
@@ -1796,7 +1827,7 @@ export function ChatBox({
             })}
 
             {/* Afficher la carte d'offre */}
-            {isTenant && listing && showOfferCard && !offerCreated && (
+{!isGroup && isTenant && listing && showOfferCard && !offerCreated && (
               <OfferCard
                 listing={listing}
                 checkIn={checkInDate}

@@ -15,9 +15,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
-    // ============================================
     // 1. REVENUS MENSUELS
-    // ============================================
     const currentMonth = new Date();
     currentMonth.setDate(1);
     currentMonth.setHours(0, 0, 0, 0);
@@ -42,9 +40,7 @@ export async function GET(request: NextRequest) {
         ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100
         : 12.4;
 
-    // ============================================
     // 2. CROISSANCE UTILISATEURS
-    // ============================================
     const currentMonthUsers = await prisma.user.count({
       where: { createdAt: { gte: currentMonth } },
     });
@@ -60,9 +56,7 @@ export async function GET(request: NextRequest) {
 
     const totalUsers = await prisma.user.count();
 
-    // ============================================
     // 3. TAUX D'OCCUPATION
-    // ============================================
     const totalListings = await prisma.listing.count({
       where: { status: "ACTIVE" },
     });
@@ -81,9 +75,7 @@ export async function GET(request: NextRequest) {
     const occupancyRate =
       totalListings > 0 ? (activeBookings / (totalListings * 30)) * 100 : 78.5;
 
-    // ============================================
     // 4. LITIGES ACTIFS
-    // ============================================
     const activeDisputes = await prisma.dispute.count({
       where: { status: { in: ["OPEN", "IN_REVIEW"] } },
     });
@@ -92,9 +84,7 @@ export async function GET(request: NextRequest) {
       where: { status: { in: ["OPEN", "IN_REVIEW"] }, priority: "HIGH" },
     });
 
-    // ============================================
     // 5. ANALYSE FINANCIÈRE (6 derniers mois)
-    // ============================================
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
     sixMonthsAgo.setDate(1);
@@ -126,9 +116,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ============================================
     // 6. PARTS DE MARCHÉ PAR TYPE
-    // ============================================
     const listingsByType = await prisma.listing.groupBy({
       by: ["type"],
       _count: true,
@@ -150,9 +138,7 @@ export async function GET(request: NextRequest) {
       else other += percentage;
     }
 
-    // ============================================
     // 7. TENDANCES RÉSERVATIONS (12 mois)
-    // ============================================
     const twelveMonthsAgo = new Date();
     twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
     twelveMonthsAgo.setDate(1);
@@ -185,9 +171,7 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // ============================================
     // 8. DÉMOGRAPHIE LOCATAIRES
-    // ============================================
     const tenants = await prisma.user.findMany({
       where: { role: "TENANT" },
       select: { profession: true },
@@ -216,9 +200,7 @@ export async function GET(request: NextRequest) {
       families: Math.round((families / totalTenants) * 100),
     };
 
-    // ============================================
     // 9. RÉPARTITION PAR GOUVERNORAT (CORRIGÉ)
-    // ============================================
     const listingsByGovernorateRaw = await prisma.listing.groupBy({
       by: ["governorate"],
       _count: true,
@@ -234,9 +216,7 @@ export async function GET(request: NextRequest) {
         percentage: Math.round((g._count / totalActiveListings) * 100),
       }));
 
-    // ============================================
     // 10. TOP HÔTES PERFORMANTS
-    // ============================================
     const topHostsData = await prisma.user.findMany({
       where: { role: "PROPERTY_OWNER" },
       include: {
@@ -270,16 +250,12 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.conversion - a.conversion)
       .slice(0, 3);
 
-    // ============================================
     // 11. VÉRIFICATIONS EN ATTENTE
-    // ============================================
     const pendingVerifications = await prisma.verificationRequest.count({
       where: { status: "PENDING" },
     });
 
-    // ============================================
     // RÉPONSE FINALE
-    // ============================================
     return NextResponse.json({
       revenue: {
         monthly: Math.round(monthlyRevenue),

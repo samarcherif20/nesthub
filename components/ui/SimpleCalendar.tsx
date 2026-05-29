@@ -1,18 +1,13 @@
-// components/ui/SimpleCalendar.tsx - VERSION CORRIGÉE
+// components/ui/SimpleCalendar.tsx - VERSION COMPLÈTE CORRIGÉE
 "use client";
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import {
-  FR_DAYS_SHORT,
-  FR_MONTHS,
-  isSameDay,
-} from "../../app/[locale]/(dashboard)/dashboard/owner/calendar/hooks/useCalendar";
+import { isSameDay } from "@/app/[locale]/(dashboard)/dashboard/owner/calendar/hooks/useCalendar";
 import {
   ChevronLeft,
   ChevronRight,
   Clock,
-  LockOpen,
   MousePointerClick,
 } from "lucide-react";
 import {
@@ -86,7 +81,6 @@ const CSS = `
 .sc-day.other{ opacity:.3; background:var(--c-other); cursor:default; }
 .sc-day.past{ cursor:default; background:var(--c-past-bg); }
 .sc-day.today .sc-num{ background:#6366f1; color:#fff!important; border-radius:50%; width:24px;height:24px; display:inline-flex;align-items:center;justify-content:center; }
-/* SELECTED — colored indigo tint + outline */
 .sc-day.sel{ background:var(--c-sel)!important; outline:2px solid var(--c-sel-border); outline-offset:-2px; }
 .sc-day.sel:not(.today) .sc-num{ background:rgba(99,102,241,.18); color:#6366f1!important; border-radius:50%; width:24px;height:24px; display:inline-flex;align-items:center;justify-content:center; font-weight:900; }
 .sc-day.booked-day{ background:var(--c-booked-bg); }
@@ -97,7 +91,7 @@ const CSS = `
 .sc-day.other .sc-num{ color:var(--c-other-num); }
 .sc-events{ display:flex; flex-direction:column; gap:2px; margin-top:3px; }
 /* Tooltip styles */
-.sc-pill{ position:relative; border-radius:4px; padding:2px 5px; font-size:9px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; transition:opacity .12s; display:flex;align-items:center;gap:3px; max-width:100%; }
+.sc-pill{ position:relative; border-radius:4px; padding:2px 5px; font-size:9px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:default; display:flex;align-items:center;gap:3px; max-width:100%; }
 .sc-pill span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .sc-pill:hover::after{ 
   content:attr(data-tooltip); 
@@ -144,7 +138,6 @@ const CSS = `
 .sc-week-hday{ font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--c-head-txt); }
 .sc-week-hnum{ font-size:16px; font-weight:800; color:var(--c-day-num); width:30px;height:30px; display:flex;align-items:center;justify-content:center; border-radius:50%; margin:2px auto 0; transition:all .15s; }
 .sc-week-hnum.today{ background:#6366f1; color:#fff!important; }
-/* SELECTED week header */
 .sc-week-hnum.sel-day{ background:rgba(99,102,241,.15); color:#6366f1!important; outline:2px solid #6366f1; outline-offset:1px; }
 .sc-hour-row{ display:grid; grid-template-columns:52px repeat(7,1fr); border-bottom:1px solid var(--c-border); min-height:44px; transition:background .1s; }
 .sc-hour-row:hover{ background:var(--c-hover); }
@@ -155,14 +148,12 @@ const CSS = `
 .sc-hour-cell.blocked-bg{ background:var(--c-blocked-bg); }
 .sc-hour-cell.booked-bg{ background:var(--c-booked-bg); }
 .sc-hour-cell.price-bg{ background:var(--c-price-bg); }
-/* SELECTED column tint */
 .sc-hour-cell.sel-col{ background:var(--c-sel)!important; }
 .sc-hour-btn{ width:100%;height:100%;min-height:40px; display:flex;flex-direction:column;align-items:center;justify-content:center; gap:2px; border:none;background:transparent;cursor:pointer; border-radius:6px; transition:background .1s; }
 .sc-hour-btn:hover:not(:disabled){ background:rgba(99,102,241,.07); }
 .sc-hour-btn:disabled{ cursor:default; }
 .sc-hour-pill{ display:flex;align-items:center;gap:3px; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; }
 .sc-hour-pill[title]:hover::after{ content:attr(title); position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:8px; padding:8px 12px; background:#1e293b; color:#fff; font-size:11px; white-space:normal; max-width:280px; word-break:break-word; border-radius:8px; z-index:9999; pointer-events:none; }
-/* now */
 .sc-now-line{ position:absolute;left:0;right:0;height:2px;background:#ef4444;z-index:4;pointer-events:none; }
 .sc-now-dot{ position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:#ef4444; }
 /* list */
@@ -170,9 +161,8 @@ const CSS = `
 .sc-list-dh td{ background:var(--c-head-bg); padding:7px 14px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.07em; color:var(--c-head-txt); border-top:1px solid var(--c-border); }
 .sc-list-row td{ padding:9px 14px; border-top:1px solid var(--c-border); color:var(--c-day-num); vertical-align:middle; transition:background .1s; }
 .sc-list-row:hover td{ background:var(--c-hover); }
-/* SELECTED list row */
 .sc-list-row.sel-row td{ background:var(--c-sel)!important; }
-.sc-status-pill{ display:inline-flex;align-items:center;gap:5px; padding:3px 9px; border-radius:99px; font-size:10px; font-weight:700; }
+.sc-status-pill{ display:inline-flex;align-items:center;gap:5px; padding:3px 9px; border-radius:99px; font-size:10px; font-weight:700; cursor:default; }
 .sc-status-pill[title]:hover::after{ content:attr(title); position:absolute; bottom:100%; left:50%; transform:translateX(-50%); margin-bottom:8px; padding:8px 12px; background:#1e293b; color:#fff; font-size:11px; white-space:normal; max-width:280px; word-break:break-word; border-radius:8px; z-index:9999; pointer-events:none; white-space:pre-wrap; }
 .sc-list-empty{ text-align:center; padding:40px; color:var(--c-head-txt); font-size:12px; }
 `;
@@ -197,6 +187,37 @@ const COLORS = {
       d ? "rgba(245,158,11,.20)" : "rgba(245,158,11,.12)",
   },
 };
+
+function getDaysShort(locale: string): string[] {
+  const days = [
+    "lundi",
+    "mardi",
+    "mercredi",
+    "jeudi",
+    "vendredi",
+    "samedi",
+    "dimanche",
+  ];
+  return days.map((day) => day.charAt(0).toUpperCase() + day.slice(1));
+}
+
+function getMonths(locale: string): string[] {
+  const months = [
+    "janvier",
+    "février",
+    "mars",
+    "avril",
+    "mai",
+    "juin",
+    "juillet",
+    "août",
+    "septembre",
+    "octobre",
+    "novembre",
+    "décembre",
+  ];
+  return months.map((month) => month.charAt(0).toUpperCase() + month.slice(1));
+}
 
 const getEventInfo = (day: any, dark: boolean, t: any) => {
   if (day.isBooked) {
@@ -231,12 +252,11 @@ const getEventInfo = (day: any, dark: boolean, t: any) => {
       bg: COLORS.price.bg(dark),
       text: COLORS.price.text(dark),
       label: `${day.customPrice} TND`,
-      fullLabel: `💰 Prix spécial: ${day.customPrice} TND par nuit`,
+      fullLabel: ` ${t("tooltip.specialPrice")}: ${day.customPrice} TND ${t("common.perNight")}`,
     };
   return null;
 };
 
-// ── component ─────────────────────────────────────────────────────────────────
 export function SimpleCalendar({
   days,
   currentDate,
@@ -245,6 +265,7 @@ export function SimpleCalendar({
   selectedDates,
   onDateMouseEnter,
   isDark = false,
+  locale = "fr",
 }: {
   days: any[];
   currentDate: Date;
@@ -253,9 +274,13 @@ export function SimpleCalendar({
   selectedDates: Date[];
   onDateMouseEnter?: (day: any) => void;
   isDark?: boolean;
+  locale?: string;
 }) {
   const t = useTranslations("Calendar");
   const [view, setView] = React.useState<"month" | "week" | "list">("month");
+
+  const daysShort = React.useMemo(() => getDaysShort(locale), [locale]);
+  const months = React.useMemo(() => getMonths(locale), [locale]);
 
   const today = React.useMemo(() => {
     const d = new Date();
@@ -306,17 +331,17 @@ export function SimpleCalendar({
     if (view === "week") {
       const end = weekDates[6];
       const fmt = (d: Date) =>
-        d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
+        d.toLocaleDateString(locale, { day: "2-digit", month: "short" });
       return `${fmt(weekDates[0])} – ${fmt(end)} ${end.getFullYear()}`;
     }
-    return `${FR_MONTHS[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
-  }, [view, currentDate, weekDates]);
+    return `${months[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+  }, [view, currentDate, weekDates, months, locale]);
 
-  // ── MONTH ───────────────────────────────────────────────────────────────────
+  // ── MONTH VIEW ──────────────────────────────────────────────────────────────
   const renderMonth = () => (
     <div className="sc-grid-wrap">
       <div className="sc-col-headers">
-        {FR_DAYS_SHORT.map((d) => (
+        {daysShort.map((d) => (
           <div key={d} className="sc-col-hdr">
             {d}
           </div>
@@ -344,15 +369,19 @@ export function SimpleCalendar({
             <div
               key={i}
               className={cls}
-              onClick={() =>
-                !day.isPast && day.isCurrentMonth && onDateClick(day)
-              }
+              onClick={() => {
+                if (!day.isCurrentMonth || day.isPast) return;
+                onDateClick(day);
+              }}
               onMouseEnter={() => onDateMouseEnter?.(day)}
             >
               <span className="sc-num">{day.date.getDate()}</span>
               <div className="sc-events">
                 {isSd && !ev && (
-                  <div className="sc-pill sel-pill">
+                  <div
+                    className="sc-pill sel-pill"
+                    data-tooltip={t("tooltip.selectedDate")}
+                  >
                     <RiCheckboxCircleLine
                       style={{ width: 9, height: 9, flexShrink: 0 }}
                     />
@@ -380,15 +409,7 @@ export function SimpleCalendar({
                         style={{ width: 9, height: 9, flexShrink: 0 }}
                       />
                     )}
-                    <span
-                      style={{
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {ev.label}
-                    </span>
+                    <span>{ev.label}</span>
                   </div>
                 )}
               </div>
@@ -399,7 +420,7 @@ export function SimpleCalendar({
     </div>
   );
 
-  // ── WEEK ────────────────────────────────────────────────────────────────────
+  // ── WEEK VIEW ───────────────────────────────────────────────────────────────
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const nowHour = new Date().getHours();
   const nowMin = new Date().getMinutes();
@@ -423,7 +444,7 @@ export function SimpleCalendar({
             const isSd = isSel(wd);
             return (
               <div key={i} className="sc-week-hcell">
-                <div className="sc-week-hday">{FR_DAYS_SHORT[i]}</div>
+                <div className="sc-week-hday">{daysShort[i]}</div>
                 <div
                   className={`sc-week-hnum${isTd ? " today" : ""}${isSd && !isTd ? " sel-day" : ""}`}
                 >
@@ -461,13 +482,12 @@ export function SimpleCalendar({
                     .filter(Boolean)
                     .join(" ");
 
-                  // Récupérer le texte complet pour le tooltip
                   const tooltipText = isBkd
                     ? day?.bookingGuest
                     : isBlk
                       ? day?.blockedReason
                       : isPrc
-                        ? `Prix spécial: ${day?.customPrice} TND`
+                        ? `💰 ${t("tooltip.specialPrice")}: ${day?.customPrice} TND`
                         : "";
 
                   return (
@@ -542,6 +562,7 @@ export function SimpleCalendar({
                               background: "rgba(99,102,241,.18)",
                               color: "#6366f1",
                             }}
+                            title={t("tooltip.selectedDate")}
                           >
                             <RiCheckboxCircleLine
                               style={{ width: 9, height: 9 }}
@@ -561,14 +582,14 @@ export function SimpleCalendar({
     </div>
   );
 
-  // ── LIST ────────────────────────────────────────────────────────────────────
+  // ── LIST VIEW ───────────────────────────────────────────────────────────────
   const renderList = () => {
     const evDays = days
       .filter((d) => d.isCurrentMonth)
       .sort((a, b) => a.date.getTime() - b.date.getTime());
     const groups: { label: string; items: any[] }[] = [];
     evDays.forEach((d) => {
-      const label = d.date.toLocaleDateString("fr-FR", {
+      const label = d.date.toLocaleDateString(locale, {
         weekday: "long",
         day: "2-digit",
         month: "long",
@@ -610,14 +631,14 @@ export function SimpleCalendar({
                     : day.isBlocked
                       ? day.blockedReason
                       : day.customPrice
-                        ? `Prix spécial: ${day.customPrice} TND`
+                        ? `💰 ${t("tooltip.specialPrice")}: ${day.customPrice} TND`
                         : "";
                   return (
                     <tr
                       key={i}
                       className={`sc-list-row${sel ? " sel-row" : ""}`}
                       style={{ cursor: "pointer" }}
-                      onClick={() => !day.isPast && onDateClick(day)}
+                      onClick={() => onDateClick(day)}
                     >
                       <td style={{ width: 24, paddingRight: 0 }}>
                         {(ev || sel) && (
@@ -771,29 +792,6 @@ export function SimpleCalendar({
                             {sel ? t("deselect") : t("select")}
                           </button>
                         )}
-                        {day.isBlocked && !day.isPast && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDateClick(day);
-                            }}
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 700,
-                              padding: "3px 9px",
-                              borderRadius: 6,
-                              border: "none",
-                              cursor: "pointer",
-                              background: "rgba(239,68,68,.10)",
-                              color: "#ef4444",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              gap: 4,
-                            }}
-                          >
-                            <LockOpen size={10} /> {t("unblock")}
-                          </button>
-                        )}
                       </td>
                     </tr>
                   );
@@ -815,7 +813,6 @@ export function SimpleCalendar({
   return (
     <div className={`sc${isDark ? " dark" : ""}`}>
       <style>{CSS}</style>
-
       <div className="sc-toolbar">
         <div className="sc-nav">
           <button className="sc-ico-btn" onClick={handlePrev}>
@@ -841,26 +838,22 @@ export function SimpleCalendar({
           ))}
         </div>
       </div>
-
       <div className="sc-legend">
         <div className="sc-leg-item">
           <span className="sc-leg-dot booked" />
-          <RiCalendarCheckLine style={{ width: 10, height: 10 }} />{" "}
           {t("legendBooked")}
         </div>
         <div className="sc-leg-item">
           <span className="sc-leg-dot blocked" />
-          <RiLockLine style={{ width: 10, height: 10 }} /> {t("legendBlocked")}
+          {t("legendBlocked")}
         </div>
         <div className="sc-leg-item">
           <span className="sc-leg-dot price" />
-          <RiMoneyDollarCircleLine style={{ width: 10, height: 10 }} />{" "}
           {t("legendSpecialPrice")}
         </div>
         {selectedDates.length > 0 ? (
           <div className="sc-leg-item sel-item">
             <span className="sc-leg-dot sel" />
-            <RiCheckboxCircleLine style={{ width: 10, height: 10 }} />
             {t("legendSelectedCount", { count: selectedDates.length })}
           </div>
         ) : (
@@ -869,7 +862,6 @@ export function SimpleCalendar({
           </div>
         )}
       </div>
-
       {view === "month" && renderMonth()}
       {view === "week" && renderWeek()}
       {view === "list" && renderList()}

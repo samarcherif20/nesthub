@@ -10,10 +10,10 @@ export async function POST(
     const { userId: clerkId } = getAuth(request);
     const { id } = await params;
 
-    console.log(`📝 [RESUBMIT] Début - listingId: ${id}, userId: ${clerkId}`);
+    console.log(` [RESUBMIT] Début - listingId: ${id}, userId: ${clerkId}`);
 
     if (!clerkId) {
-      console.log("❌ [RESUBMIT] Non authentifié");
+      console.log(" [RESUBMIT] Non authentifié");
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
@@ -23,7 +23,7 @@ export async function POST(
     });
 
     if (!user) {
-      console.log("❌ [RESUBMIT] Utilisateur non trouvé");
+      console.log(" [RESUBMIT] Utilisateur non trouvé");
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
@@ -32,18 +32,18 @@ export async function POST(
     });
 
     if (!listing) {
-      console.log(`❌ [RESUBMIT] Annonce non trouvée - id: ${id}`);
+      console.log(` [RESUBMIT] Annonce non trouvée - id: ${id}`);
       return NextResponse.json({ error: "Annonce non trouvée" }, { status: 404 });
     }
 
-    console.log(`✅ [RESUBMIT] Annonce trouvée: ${listing.title}, statut actuel: ${listing.status}`);
+    console.log(` [RESUBMIT] Annonce trouvée: ${listing.title}, statut actuel: ${listing.status}`);
 
-    // 🔥 METTRE À JOUR : status + hasPendingRevision = true
+    //  METTRE À JOUR : status + hasPendingRevision = true
     const updatedListing = await prisma.listing.update({
       where: { id },
       data: {
         status: "PENDING_REVIEW",
-        hasPendingRevision: true,  // ← AJOUT CRUCIAL
+        hasPendingRevision: true,  
         rejectionReason: null,
         rejectionDetails: null,
         rejectedAt: null,
@@ -51,7 +51,7 @@ export async function POST(
       },
     });
 
-    console.log(`✅ [RESUBMIT] Statut mis à jour: ${updatedListing.status}, hasPendingRevision: ${updatedListing.hasPendingRevision}`);
+    console.log(` [RESUBMIT] Statut mis à jour: ${updatedListing.status}, hasPendingRevision: ${updatedListing.hasPendingRevision}`);
 
     // Notifier les admins
     const admins = await prisma.user.findMany({
@@ -59,7 +59,7 @@ export async function POST(
       select: { id: true },
     });
 
-    console.log(`📢 [RESUBMIT] Envoi de notification à ${admins.length} admin(s)`);
+    console.log(` [RESUBMIT] Envoi de notification à ${admins.length} admin(s)`);
 
     if (admins.length > 0) {
       await prisma.notification.createMany({
@@ -76,7 +76,7 @@ export async function POST(
           },
         })),
       });
-      console.log(`✅ [RESUBMIT] Notifications envoyées`);
+      console.log(` [RESUBMIT] Notifications envoyées`);
     }
 
     return NextResponse.json(updatedListing);

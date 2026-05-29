@@ -112,9 +112,26 @@ function mergeWithPendingRevision(original: any, pending: any): any {
     }
   }
 
-  if (pending.photos && pending.photos.length > 0) {
-    console.log(`Fusion des photos: ${pending.photos.length} photos`);
-    merged.photos = pending.photos;
+  // ✅ CORRECTION : Gérer tous les cas de photos (ajout, suppression, modification)
+  // Si pending.photos existe (même un tableau vide), on remplace complètement les photos
+  if (pending.photos !== undefined) {
+    console.log(`Fusion des photos: pending.photos = ${JSON.stringify(pending.photos)}`);
+    if (Array.isArray(pending.photos)) {
+      // Nettoyer les photos pour enlever les champs temporaires
+      const cleanPhotos = pending.photos.map((photo: any) => ({
+        id: photo.id,
+        url: photo.url,
+        thumbnailUrl: photo.thumbnailUrl,
+        isMain: photo.isMain,
+        position: photo.position,
+      }));
+      merged.photos = cleanPhotos;
+      console.log(`Photos remplacées par ${cleanPhotos.length} photo(s) de la révision`);
+    } else {
+      console.log(`pending.photos n'est pas un tableau:`, pending.photos);
+    }
+  } else {
+    console.log(`Aucune modification de photos dans la révision`);
   }
 
   console.log(
@@ -122,7 +139,6 @@ function mergeWithPendingRevision(original: any, pending: any): any {
   );
   return merged;
 }
-
 async function sendNotificationToOwner(
   ownerId: string,
   title: string,
@@ -170,7 +186,111 @@ async function sendNotificationToOwner(
     console.error("Erreur lors de l'envoi de la notification:", error);
   }
 }
+function calculateChanges(
+  original: any,
+  pending: any,
+): Array<{ field: string; oldValue: any; newValue: any }> {
+  if (!pending) return [];
 
+  const changes: Array<{ field: string; oldValue: any; newValue: any }> = [];
+
+  // Champs à comparer
+  const fieldsToCompare = [
+    "title",
+    "description",
+    "type",
+    "governorate",
+    "delegation",
+    "street",
+    "rooms",
+    "bathrooms",
+    "numberOfKitchens",
+    "maxGuests",
+    "surfaceArea",
+    "floorNumber",
+    "hasElevator",
+    "hasBalcony",
+    "hasGarden",
+    "hasGarage",
+    "isFurnished",
+    "petsAllowed",
+    "smokingAllowed",
+    "rentalType",
+    "pricePerNight",
+    "pricePerMonth",
+    "securityDeposit",
+    "cleaningFee",
+  ];
+
+  for (const field of fieldsToCompare) {
+    const oldVal = original[field];
+    const newVal = pending[field];
+
+    if (
+      newVal !== undefined &&
+      JSON.stringify(oldVal) !== JSON.stringify(newVal)
+    ) {
+      changes.push({
+        field,
+        oldValue: oldVal ?? null,
+        newValue: newVal ?? null,
+      });
+    }
+  }
+
+  //  AJOUTER LA COMPARAISON DES PHOTOS
+  if (pending.photos && Array.isArray(pending.photos)) {
+    const oldPhotos = original.photos || [];
+    const newPhotos = pending.photos || [];
+
+    if (oldPhotos.length !== newPhotos.length) {
+      changes.push({
+        field: "photos",
+        oldValue: `${oldPhotos.length} photo(s)`,
+        newValue: `${newPhotos.length} photo(s)`,
+      });
+    } else {
+      // Vérifier si les URLs ont changé
+      const oldUrls = oldPhotos
+        .map((p: any) => p.url)
+        .sort()
+        .join(",");
+      const newUrls = newPhotos
+        .map((p: any) => p.url)
+        .sort()
+        .join(",");
+      if (oldUrls !== newUrls) {
+        changes.push({
+          field: "photos",
+          oldValue: `${oldPhotos.length} photo(s)`,
+          newValue: `${newPhotos.length} photo(s) (modifiées)`,
+        });
+      }
+    }
+  }
+
+  // Comparaison spéciale pour les équipements
+  if (pending.equipment) {
+    const oldEquip = original.equipment || {};
+    const newEquip = pending.equipment;
+    const allKeys = new Set([
+      ...Object.keys(oldEquip),
+      ...Object.keys(newEquip),
+    ]);
+
+    for (const key of allKeys) {
+      if (oldEquip[key] !== newEquip[key]) {
+        changes.push({
+          field: `equipment.${key}`,
+          oldValue: oldEquip[key] ? " Oui" : " Non",
+          newValue: newEquip[key] ? " Oui" : " Non",
+        });
+      }
+    }
+  }
+
+  return changes;
+}
 // GET - Recupere TOUTES les donnees d'une annonce (avec fusion des revisions en attente)
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
@@ -290,6 +410,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     console.log(`   - Nombre de reviews: ${reviewsList.length}`);
 
     let displayData = { ...listing };
+    let pendingRevisionData = null;
 
     if (listing.hasPendingRevision && listing.pendingRevision) {
       console.log(
@@ -298,6 +419,16 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const pendingData = listing.pendingRevision;
       displayData = mergeWithPendingRevision(displayData, pendingData);
       console.log(`Donnees fusionnees - nouveau titre: ${displayData.title}`);
+      if (listing.hasPendingRevision && listing.pendingRevision) {
+        const changes = calculateChanges(listing, listing.pendingRevision);
+        pendingRevisionData = {
+          changes,
+          submittedAt: new Date(),
+        };
+        console.log(
+          ` Calcul des changements: ${changes.length} champ(s) modifié(s)`,
+        );
+      }
     } else {
       console.log(`Aucune revision en attente pour cette annonce`);
     }
@@ -378,7 +509,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
               firstName: true,
               lastName: true,
               username: true,
-              email: true, // ✅ AJOUTER email pour fallback
+              email: true,
 
               profilePictureUrl: true,
             },
@@ -400,7 +531,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
               firstName: true,
               lastName: true,
               username: true,
-              email: true, // ✅ AJOUTER email pour fallback
+              email: true,
 
               profilePictureUrl: true,
             },
@@ -456,6 +587,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       id: displayData.id,
       title: displayData.title,
       description: displayData.description,
+
       slug: displayData.slug,
       type: displayData.type,
       status: displayData.status,
@@ -464,6 +596,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       rejectedAt: displayData.rejectedAt,
       rejectedBy: displayData.rejectedBy,
       hasPendingRevision: listing.hasPendingRevision || false,
+      pendingRevisionSubmittedAt: listing.pendingRevisionSubmittedAt, // ← AJOUTE
+
+      pendingRevisionData,
+
       governorate: displayData.governorate,
       delegation: displayData.delegation,
       street: displayData.street,
@@ -510,7 +646,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       archivedAt: displayData.archivedAt,
       totalBookings: bookingCount,
       totalRevenue: totalRevenue,
-      realOccupancyRate: realOccupancyRate, 
+      realOccupancyRate: realOccupancyRate,
 
       owner: displayData.owner,
       blockedDates: blockedDates,
@@ -740,6 +876,7 @@ export const PATCH = withAuth(
       "weekendPriceMultiplier",
       "extraFees",
       "seasonalRules",
+      "photos",
     ];
 
     const filterAllowedFields = (fields: any) => {
@@ -802,34 +939,88 @@ export const PATCH = withAuth(
 
       console.log(`Statut change par ADMIN: ${oldStatus} -> ${newStatus}`);
     }
-    // CAS 2: Mise a jour d'une annonce ACTIVE → CREER UNE REVISION
-    else if (
-      existingListing.status === "ACTIVE" &&
-      Object.keys(updateFields).length > 0
-    ) {
-      console.log(`CAS 2: Annonce ACTIVE - Creation d'une revision`);
+   // CAS 2: Mise a jour d'une annonce ACTIVE → CREER UNE REVISION
+else if (
+  existingListing.status === "ACTIVE" &&
+  Object.keys(updateFields).length > 0
+) {
+  console.log(`CAS 2: Annonce ACTIVE - Creation d'une revision`);
 
-      const revisionData = filterAllowedFields(updateFields);
-      console.log(`Champs pour revision:`, Object.keys(revisionData));
+  // ✅ Inclure les photos dans la révision (même si tableau vide)
+  let revisionData = filterAllowedFields(updateFields);
+  
+  // Si des photos sont envoyées (même tableau vide), les inclure
+  if (updateFields.photos !== undefined && Array.isArray(updateFields.photos)) {
+    // Nettoyer les photos pour la révision
+    const cleanPhotos = updateFields.photos.map((photo: any) => ({
+      id: photo.id,
+      url: photo.url,
+      thumbnailUrl: photo.thumbnailUrl,
+      isMain: photo.isMain,
+      position: photo.position,
+    }));
+    revisionData.photos = cleanPhotos;
+    console.log(`📸 ${cleanPhotos.length} photos incluses dans la révision`);
+  }
+  
+  console.log(`Champs pour revision:`, Object.keys(revisionData));
 
-      if (Object.keys(revisionData).length === 0) {
-        console.log(`Aucun champ valide a reviser`);
-        return NextResponse.json(
-          { error: "Aucun champ valide a modifier" },
-          { status: 400 },
+  if (Object.keys(revisionData).length === 0) {
+    console.log(`Aucun champ valide a reviser`);
+    return NextResponse.json(
+      { error: "Aucun champ valide a modifier" },
+      { status: 400 },
+    );
+  }
+
+  result = await prisma.listing.update({
+    where: { id },
+    data: {
+      pendingRevision: revisionData,
+      hasPendingRevision: true,
+      pendingRevisionSubmittedAt: new Date(),
+      updatedAt: new Date(),
+    },
+  });
+
+  console.log(`Revision creee - hasPendingRevision: true`);
+
+      try {
+        // Récupérer tous les admins
+        const admins = await prisma.user.findMany({
+          where: { role: "ADMIN" },
+          select: { id: true, email: true, firstName: true, lastName: true },
+        });
+
+        console.log(`[NOTIFICATION] Envoi à ${admins.length} admin(s)`);
+
+        for (const admin of admins) {
+          await prisma.notification.create({
+            data: {
+              userId: admin.id,
+              type: "LISTING_PENDING_REVIEW",
+              title: " Nouvelle modification en attente",
+              content: `L'annonce "${existingListing.title}" a été modifiée par ${user.firstName || user.email || "le propriétaire"} et attend votre validation.`,
+              channels: ["IN_APP"],
+              data: {
+                listingId: id,
+                listingTitle: existingListing.title,
+                ownerId: existingListing.ownerId,
+                actionBy: user.id,
+                actionAt: new Date().toISOString(),
+                fieldsChanged: Object.keys(revisionData),
+              },
+            },
+          });
+        }
+
+        console.log(` Notifications envoyées aux admins`);
+      } catch (notifError) {
+        console.error(
+          "Erreur lors de l'envoi des notifications aux admins:",
+          notifError,
         );
       }
-
-      result = await prisma.listing.update({
-        where: { id },
-        data: {
-          pendingRevision: revisionData,
-          hasPendingRevision: true,
-          updatedAt: new Date(),
-        },
-      });
-
-      console.log(`Revision creee - hasPendingRevision: true`);
     }
     // CAS 3: Mise a jour d'une annonce non-ACTIVE → modification directe
     else if (Object.keys(updateFields).length > 0) {

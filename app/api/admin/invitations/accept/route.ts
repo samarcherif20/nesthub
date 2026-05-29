@@ -5,11 +5,11 @@ import { AccountStatus } from "@prisma/client";
 
 // GET - Vérifier l'invitation
 export async function GET(req: NextRequest) {
-  console.log("📨 GET request received to /api/admin/invitations/accept");
+  console.log(" GET request received to /api/admin/invitations/accept");
 
   try {
     const token = req.nextUrl.searchParams.get("token");
-    console.log("🔍 GET request with token:", token);
+    console.log(" GET request with token:", token);
 
     if (!token) {
       return NextResponse.json({
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!invitation) {
-      console.log("❌ Invitation not found for token:", token);
+      console.log(" Invitation not found for token:", token);
       return NextResponse.json({
         valid: false,
         reason: "not_found",
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (invitation.acceptedAt) {
-      console.log("❌ Invitation already used:", invitation.acceptedAt);
+      console.log(" Invitation already used:", invitation.acceptedAt);
       return NextResponse.json({
         valid: false,
         reason: "already_used",
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (new Date() > invitation.expiresAt) {
-      console.log("❌ Invitation expired:", invitation.expiresAt);
+      console.log(" Invitation expired:", invitation.expiresAt);
       return NextResponse.json({
         valid: false,
         reason: "expired",
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       select: { firstName: true, lastName: true, email: true },
     });
 
-    console.log("✅ GET request successful for email:", invitation.email);
+    console.log(" GET request successful for email:", invitation.email);
 
     return NextResponse.json({
       valid: true,
@@ -83,7 +83,7 @@ export async function GET(req: NextRequest) {
 
 // POST - Accepter l'invitation
 export async function POST(req: NextRequest) {
-  console.log("📨 POST request received to /api/admin/invitations/accept");
+  console.log(" POST request received to /api/admin/invitations/accept");
 
   try {
     const body = await req.json();
@@ -95,11 +95,11 @@ export async function POST(req: NextRequest) {
     const { token, firstName, lastName, username, password } = body;
 
     if (!token) {
-      console.log("❌ No token provided");
+      console.log(" No token provided");
       return NextResponse.json({ error: "Token manquant" }, { status: 400 });
     }
 
-    console.log("🔍 Looking up invitation with token:", token);
+    console.log(" Looking up invitation with token:", token);
 
     // Vérifier le token
     const invitation = await prisma.adminInvitation.findUnique({
@@ -107,20 +107,20 @@ export async function POST(req: NextRequest) {
     });
 
     if (!invitation) {
-      console.log("❌ Invitation not found for token:", token);
+      console.log(" Invitation not found for token:", token);
       return NextResponse.json(
         { error: "Invitation invalide ou introuvable" },
         { status: 404 },
       );
     }
 
-    console.log("✅ Invitation found:", {
+    console.log(" Invitation found:", {
       id: invitation.id,
       email: invitation.email,
     });
 
     if (invitation.acceptedAt) {
-      console.log("❌ Invitation already used:", invitation.acceptedAt);
+      console.log(" Invitation already used:", invitation.acceptedAt);
       return NextResponse.json(
         { error: "Cette invitation a déjà été utilisée" },
         { status: 409 },
@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (new Date() > invitation.expiresAt) {
-      console.log("❌ Invitation expired:", invitation.expiresAt);
+      console.log(" Invitation expired:", invitation.expiresAt);
       return NextResponse.json(
         { error: "Cette invitation a expiré" },
         { status: 410 },
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
     }
 
     const clerk = await clerkClient();
-    console.log("✅ Clerk client initialized");
+    console.log(" Clerk client initialized");
 
     // Vérifier si l'utilisateur existe déjà dans Clerk
     let existingClerkUsers;
@@ -144,9 +144,9 @@ export async function POST(req: NextRequest) {
       existingClerkUsers = await clerk.users.getUserList({
         emailAddress: [invitation.email],
       });
-      console.log("📊 Clerk users found:", existingClerkUsers.data.length);
+      console.log(" Clerk users found:", existingClerkUsers.data.length);
     } catch (clerkError) {
-      console.error("❌ Error fetching users from Clerk:", clerkError);
+      console.error(" Error fetching users from Clerk:", clerkError);
       return NextResponse.json(
         {
           error: "Erreur de communication avec le service d'authentification",
@@ -156,7 +156,7 @@ export async function POST(req: NextRequest) {
     }
 
     const isExistingAccount = existingClerkUsers.data.length > 0;
-    console.log("👤 Existing account in Clerk:", isExistingAccount);
+    console.log(" Existing account in Clerk:", isExistingAccount);
 
     let clerkUserId: string;
     let isNewUser = false;
@@ -164,16 +164,16 @@ export async function POST(req: NextRequest) {
     if (isExistingAccount) {
       // CAS COMPTE EXISTANT
       clerkUserId = existingClerkUsers.data[0].id;
-      console.log("👤 Updating existing user:", clerkUserId);
+      console.log(" Updating existing user:", clerkUserId);
 
       try {
         // Mettre à jour les métadonnées
         await clerk.users.updateUser(clerkUserId, {
           publicMetadata: { role: "ADMIN" },
         });
-        console.log("✅ Clerk user metadata updated");
+        console.log(" Clerk user metadata updated");
       } catch (clerkError) {
-        console.error("❌ Error updating Clerk user:", clerkError);
+        console.error(" Error updating Clerk user:", clerkError);
         return NextResponse.json(
           {
             error: "Erreur lors de la mise à jour du compte",
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (existingDbUser) {
-        console.log("💾 Updating existing DB user");
+        console.log(" Updating existing DB user");
         await prisma.user.update({
           where: { email: invitation.email },
           data: {
@@ -199,7 +199,7 @@ export async function POST(req: NextRequest) {
           },
         });
       } else {
-        console.log("💾 Creating new DB user from Clerk data");
+        console.log(" Creating new DB user from Clerk data");
         const clerkUser = existingClerkUsers.data[0];
         await prisma.user.create({
           data: {
@@ -219,10 +219,10 @@ export async function POST(req: NextRequest) {
     } else {
       // CAS NOUVEAU COMPTE
       isNewUser = true;
-      console.log("👤 Creating new user in Clerk");
+      console.log(" Creating new user in Clerk");
 
       if (!firstName || !lastName || !username || !password) {
-        console.log("❌ Missing required fields");
+        console.log(" Missing required fields");
         return NextResponse.json(
           {
             error: "Prénom, nom, nom d'utilisateur et mot de passe requis",
@@ -232,7 +232,7 @@ export async function POST(req: NextRequest) {
       }
 
       if (password.length < 8) {
-        console.log("❌ Password too short");
+        console.log(" Password too short");
         return NextResponse.json(
           {
             error: "Le mot de passe doit faire au moins 8 caractères",
@@ -247,7 +247,7 @@ export async function POST(req: NextRequest) {
       const hasNumbers = /\d/.test(password);
 
       if (!hasUpperCase || !hasLowerCase || !hasNumbers) {
-        console.log("❌ Password does not meet Clerk requirements");
+        console.log(" Password does not meet Clerk requirements");
         return NextResponse.json(
           {
             error:
@@ -259,7 +259,7 @@ export async function POST(req: NextRequest) {
 
       // Vérifier le format du username
       if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-        console.log("❌ Invalid username format");
+        console.log(" Invalid username format");
         return NextResponse.json(
           {
             error:
@@ -272,7 +272,7 @@ export async function POST(req: NextRequest) {
       try {
         // Créer l'utilisateur dans Clerk
         console.log(
-          "📤 Sending request to Clerk to create user with username...",
+          " Sending request to Clerk to create user with username...",
         );
 
         const clerkUser = await clerk.users.createUser({
@@ -285,7 +285,7 @@ export async function POST(req: NextRequest) {
         });
 
         clerkUserId = clerkUser.id;
-        console.log("✅ Clerk user created successfully:", clerkUserId);
+        console.log(" Clerk user created successfully:", clerkUserId);
 
         // Créer l'utilisateur dans la DB
         await prisma.user.create({
@@ -303,15 +303,15 @@ export async function POST(req: NextRequest) {
           },
         });
         console.log(
-          "💾 DB user created successfully with automatic verification",
+          " DB user created successfully with automatic verification",
         );
       } catch (clerkError: any) {
-        console.error("❌ Erreur création Clerk:", clerkError);
+        console.error(" Erreur création Clerk:", clerkError);
 
         // Gestion détaillée des erreurs Clerk
         if (clerkError.errors && clerkError.errors.length > 0) {
           for (const err of clerkError.errors) {
-            console.error(`❌ Clerk error: ${err.code} - ${err.message}`);
+            console.error(` Clerk error: ${err.code} - ${err.message}`);
 
             if (
               err.code === "form_identifier_exists" &&
@@ -373,15 +373,15 @@ export async function POST(req: NextRequest) {
       where: { id: invitation.id },
       data: { acceptedAt: new Date() },
     });
-    console.log("✅ Invitation marked as accepted");
+    console.log(" Invitation marked as accepted");
 
-    // ✅ CRÉER LE TOKEN D'AUTO-LOGIN COMME POUR CO-HOST
+    //  CRÉER LE TOKEN D'AUTO-LOGIN COMME POUR CO-HOST
     const signInToken = await clerk.signInTokens.createSignInToken({
       userId: clerkUserId,
-      expiresInSeconds: 60 * 5, // 5 minutes
+      expiresInSeconds: 60 * 5, 
     });
 
-    console.log("✅ Token d'auto-login créé:", signInToken.token);
+    console.log(" Token d'auto-login créé:", signInToken.token);
 
     // Retourner la réponse avec le token
     return NextResponse.json({

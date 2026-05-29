@@ -32,7 +32,6 @@ export async function GET() {
         vacationMessage: true,
         vacationStartDate: true,
         vacationEndDate: true,
-        // ✅ Ne pas inclure stats ici car les champs n'existent pas
       },
     });
 

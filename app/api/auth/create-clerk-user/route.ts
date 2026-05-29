@@ -5,8 +5,8 @@ export async function POST(req: Request) {
   try {
     const { email, username, password, firstName, lastName, phoneNumber } = await req.json();
     
-    console.log("🔧 Creating Clerk user via API for:", email);
-    console.log("📦 Data received:", { email, username, firstName, lastName, phoneNumber });
+    console.log(" Creating Clerk user via API for:", email);
+    console.log(" Data received:", { email, username, firstName, lastName, phoneNumber });
     
     // Validate required fields
     if (!email || !username || !password) {
@@ -29,7 +29,7 @@ export async function POST(req: Request) {
       phoneNumber: phoneNumber ? [phoneNumber] : undefined,
     });
     
-    console.log("✅ Clerk user created:", user.id);
+    console.log(" Clerk user created:", user.id);
     
     return NextResponse.json({ 
       success: true, 
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     });
     
   } catch (error: any) {
-    console.error("❌ Error creating Clerk user:", error);
+    console.error(" Error creating Clerk user:", error);
     
     // Handle specific Clerk errors
     if (error.errors) {

@@ -90,9 +90,9 @@ export async function POST(
           },
         });
 
-        console.log(`✅ Refund Stripe créé: ${stripeRefund.id}`);
+        console.log(` Refund Stripe créé: ${stripeRefund.id}`);
       } catch (stripeError) {
-        console.error("❌ Erreur Stripe:", stripeError);
+        console.error(" Erreur Stripe:", stripeError);
         return NextResponse.json(
           { error: "Erreur lors du remboursement Stripe" },
           { status: 500 },
@@ -196,7 +196,7 @@ export async function POST(
       },
     });
   } catch (error) {
-    console.error("❌ Refund error:", error);
+    console.error(" Refund error:", error);
     return NextResponse.json(
       { error: "Erreur lors du remboursement" },
       { status: 500 },

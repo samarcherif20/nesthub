@@ -5,17 +5,17 @@ const { updateListingTrustScore } = require('../lib/risk-scoring/ai-listing-scor
 const prisma = new PrismaClient();
 
 async function updateAllUserScores() {
-  console.log('👥 Mise à jour scores utilisateurs...');
+  console.log(' Mise à jour scores utilisateurs...');
   
   const users = await prisma.user.findMany({
     where: { 
       status: { in: ['ACTIVE', 'PENDING_VALIDATION'] }
     },
     select: { id: true, email: true },
-    take: 20 // Limite pour éviter timeout
+    take: 20 
   });
   
-  console.log(`📊 ${users.length} utilisateurs trouvés`);
+  console.log(` ${users.length} utilisateurs trouvés`);
   
   for (let i = 0; i < users.length; i++) {
     const user = users[i];
@@ -26,13 +26,13 @@ async function updateAllUserScores() {
       // Pause de 2s entre chaque appel pour éviter rate limit
       await new Promise(r => setTimeout(r, 2000));
     } catch (error) {
-      console.error(`❌ Erreur ${user.email}:`, error.message);
+      console.error(` Erreur ${user.email}:`, error.message);
     }
   }
 }
 
 async function updateAllListingScores() {
-  console.log('\n🏠 Mise à jour scores annonces...');
+  console.log('\n Mise à jour scores annonces...');
   
   const listings = await prisma.listing.findMany({
     where: { 
@@ -42,7 +42,7 @@ async function updateAllListingScores() {
     take: 20
   });
   
-  console.log(`📊 ${listings.length} annonces trouvées`);
+  console.log(` ${listings.length} annonces trouvées`);
   
   for (let i = 0; i < listings.length; i++) {
     const listing = listings[i];
@@ -52,13 +52,13 @@ async function updateAllListingScores() {
       await updateListingTrustScore(listing.id);
       await new Promise(r => setTimeout(r, 2000));
     } catch (error) {
-      console.error(`❌ Erreur ${listing.title}:`, error.message);
+      console.error(` Erreur ${listing.title}:`, error.message);
     }
   }
 }
 
 async function updateTopPriorityScores() {
-  console.log('🎯 Mise à jour priorité haute...');
+  console.log(' Mise à jour priorité haute...');
   
   // Utilisateurs avec des réservations récentes
   const activeUsers = await prisma.user.findMany({
@@ -86,7 +86,7 @@ async function updateTopPriorityScores() {
     take: 10
   });
   
-  console.log(`🔥 ${activeUsers.length} utilisateurs actifs + ${activeListings.length} annonces actives`);
+  console.log(` ${activeUsers.length} utilisateurs actifs + ${activeListings.length} annonces actives`);
   
   for (const user of activeUsers) {
     await updateUserRiskScore(user.id);
@@ -100,7 +100,7 @@ async function updateTopPriorityScores() {
 }
 
 async function main() {
-  console.log('🚀 Script de mise à jour des scores IA\n');
+  console.log(' Script de mise à jour des scores IA\n');
   
   const args = process.argv.slice(2);
   
@@ -116,7 +116,7 @@ async function main() {
     await updateAllListingScores();
   }
   
-  console.log('\n✅ Mise à jour terminée');
+  console.log('\n Mise à jour terminée');
 }
 
 main()

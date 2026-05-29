@@ -5,32 +5,32 @@ import { getAdminAuth, isAuthError } from '@/lib/auth-admin';
 import { emailService } from '@/lib/services/email.service';
 
 export async function POST(request: NextRequest) {
-  console.log('🚀 [API] POST /api/admin/notifications/send - Début');
+  console.log(' [API] POST /api/admin/notifications/send - Début');
   
   try {
     // Log complet de la requête
-    console.log('📨 Headers:', Object.fromEntries(request.headers));
+    console.log(' Headers:', Object.fromEntries(request.headers));
     
     // Vérification admin
-    console.log('🔐 Vérification admin...');
+    console.log(' Vérification admin...');
     const auth = getAdminAuth(request);
     if (isAuthError(auth)) {
-      console.log('❌ Auth error:', auth);
+      console.log(' Auth error:', auth);
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
-    console.log('✅ Admin vérifié:', auth.userId);
+    console.log(' Admin vérifié:', auth.userId);
 
     // Récupération des données
     const body = await request.json();
-    console.log('📦 Body reçu:', JSON.stringify(body, null, 2));
+    console.log(' Body reçu:', JSON.stringify(body, null, 2));
 
     const { userId, actionType, motif, reason, duration, level } = body;
 
-    console.log('📨 Requête notification:', { userId, actionType, motif, duration, level });
+    console.log(' Requête notification:', { userId, actionType, motif, duration, level });
 
     // Validation
     if (!userId || !actionType) {
-      console.log('❌ Paramètres manquants');
+      console.log(' Paramètres manquants');
       return NextResponse.json(
         { error: 'Paramètres manquants' },
         { status: 400 }
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Récupérer l'utilisateur
-    console.log('👤 Recherche utilisateur:', userId);
+    console.log(' Recherche utilisateur:', userId);
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -50,14 +50,14 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      console.log('❌ Utilisateur non trouvé:', userId);
+      console.log(' Utilisateur non trouvé:', userId);
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },
         { status: 404 }
       );
     }
 
-    console.log('✅ Utilisateur trouvé:', { 
+    console.log(' Utilisateur trouvé:', { 
       id: user.id, 
       email: user.email,
       name: `${user.firstName} ${user.lastName}`
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     // Validation de l'email
     if (!user.email || !user.email.includes('@')) {
-      console.error('❌ Email invalide:', user.email);
+      console.error(' Email invalide:', user.email);
       return NextResponse.json(
         { error: 'Email utilisateur invalide' },
         { status: 400 }
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Envoyer l'email avec Brevo
-    console.log('📧 Tentative envoi email via Brevo...');
+    console.log(' Tentative envoi email via Brevo...');
     try {
       await emailService.sendModerationNotification({
         userEmail: user.email,
@@ -85,14 +85,14 @@ export async function POST(request: NextRequest) {
         level,
         suspendedUntil: duration ? new Date(Date.now() + duration * 24 * 60 * 60 * 1000) : undefined,
       });
-      console.log('✅ Email envoyé avec succès');
+      console.log(' Email envoyé avec succès');
     } catch (emailError) {
-      console.error('❌ Erreur email mais on continue:', emailError);
+      console.error(' Erreur email mais on continue:', emailError);
       // On continue pour ne pas bloquer l'action admin
     }
 
     // Logger l'envoi dans la base
-    console.log('📝 Création log email...');
+    console.log(' Création log email...');
     await prisma.emailLog.create({
       data: {
         userId,
@@ -103,9 +103,9 @@ export async function POST(request: NextRequest) {
         level: level || null,
         status: 'SENT', // On considère que c'est envoyé même si email échoue
       }
-    }).catch(e => console.error('❌ Erreur logging:', e));
+    }).catch(e => console.error(' Erreur logging:', e));
 
-    console.log('✅ Notification enregistrée dans les logs');
+    console.log(' Notification enregistrée dans les logs');
 
     return NextResponse.json({ 
       success: true,
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Erreur détaillée:', {
+    console.error(' Erreur détaillée:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : 'No stack',
@@ -137,10 +137,10 @@ export async function POST(request: NextRequest) {
             status: 'FAILED',
             error: error instanceof Error ? error.message : 'Erreur inconnue',
           }
-        }).catch(e => console.error('❌ Erreur logging:', e));
+        }).catch(e => console.error(' Erreur logging:', e));
       }
     } catch (logError) {
-      console.error('❌ Erreur lors du logging:', logError);
+      console.error(' Erreur lors du logging:', logError);
     }
 
     return NextResponse.json(

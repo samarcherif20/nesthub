@@ -39,7 +39,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, user: updatedUser });
   } catch (error: any) {
-    console.error("❌ Erreur update user:", error);
+    console.error(" Erreur update user:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

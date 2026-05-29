@@ -190,7 +190,7 @@ export async function POST(
       });
     }
 
-    // ✅ 5. Notification au locataire
+    // 5. Notification au locataire
     await prisma.notification.create({
       data: {
         userId: offer.tenantId,

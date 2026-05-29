@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log("📦 Données reçues:", body);
+    console.log(" Données reçues:", body);
 
     const {
       userId,
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     // Convertir le rôle string en enum Prisma
     const userRole = role === "landlord" ? "PROPERTY_OWNER" : "TENANT";
 
-    console.log("📝 Tentative de création avec:", {
+    console.log(" Tentative de création avec:", {
       clerkId: userId,
       email,
       username,
@@ -66,11 +66,9 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log("✅ Utilisateur créé:", user);
+    console.log(" Utilisateur créé:", user);
 
-    // ============================================
-    // 🆕 AJOUTER ICI LA CRÉATION DE UserStats
-    // ============================================
+    //  AJOUTER ICI LA CRÉATION DE UserStats
     try {
       await prisma.userStats.create({
         data: {
@@ -82,22 +80,21 @@ export async function POST(req: Request) {
           lastScoredAt: null,
         },
       });
-      console.log("✅ UserStats créées pour l'utilisateur:", user.id);
+      console.log(" UserStats créées pour l'utilisateur:", user.id);
     } catch (statsError) {
       console.error(
-        "⚠️ Erreur création UserStats (non bloquante):",
+        " Erreur création UserStats (non bloquante):",
         statsError,
       );
-      // On continue même si UserStats échoue (l'utilisateur est déjà créé)
     }
 
     return NextResponse.json({ success: true, user });
   } catch (error: any) {
-    console.error("❌ ERREUR COMPLÈTE:", error);
+    console.error(" ERREUR COMPLÈTE:", error);
     if (error.code) {
-      console.error("📌 Code erreur Prisma:", error.code);
-      console.error("📌 Message:", error.message);
-      console.error("📌 Meta:", error.meta);
+      console.error(" Code erreur Prisma:", error.code);
+      console.error(" Message:", error.message);
+      console.error(" Meta:", error.meta);
     }
 
     return NextResponse.json(

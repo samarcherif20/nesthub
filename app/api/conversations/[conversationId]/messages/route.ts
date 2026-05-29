@@ -124,7 +124,7 @@ export async function POST(
     }
 
     const { conversationId } = await params;
-const { content, isSystem } = await req.json();
+    const { content, isSystem } = await req.json();
     if (!content || !content.trim()) {
       return NextResponse.json(
         { error: "Le message ne peut pas être vide" },
@@ -156,25 +156,21 @@ const { content, isSystem } = await req.json();
       },
     });
 
-       if (!conversation) {
+    if (!conversation) {
       return NextResponse.json(
         { error: "Conversation non trouvée" },
         { status: 404 },
       );
     }
-// ✅ AJOUTE ICI LA VÉRIFICATION DES DISPONIBILITÉS
-    // ============================================
     // VÉRIFICATION DES DISPONIBILITÉS DU PROPRIÉTAIRE
-    // ============================================
     // Ne vérifier QUE si l'expéditeur est le LOCATAIRE
     // ET que le message n'est PAS un message système
     if (!isSystem && conversation.tenantId === user.id) {
       try {
-        // Importer la fonction au début du fichier
-        // import { checkOwnerAvailability } from "@/lib/availability";
-        
-        const availabilityCheck = await checkOwnerAvailability(conversation.ownerId);
-        
+        const availabilityCheck = await checkOwnerAvailability(
+          conversation.ownerId,
+        );
+
         if (!availabilityCheck.isAvailable) {
           return NextResponse.json(
             {
@@ -182,23 +178,24 @@ const { content, isSystem } = await req.json();
               nextAvailableTime: availabilityCheck.nextAvailableTime,
               currentHours: availabilityCheck.currentHours,
               canSend: false,
-              code: "OWNER_UNAVAILABLE"
+              code: "OWNER_UNAVAILABLE",
             },
-            { status: 403 }
+            { status: 403 },
           );
         }
       } catch (availabilityError) {
-        console.error("❌ Erreur vérification disponibilité:", availabilityError);
+        console.error(" Erreur vérification disponibilité:", availabilityError);
         // En cas d'erreur, on laisse passer le message (fail-safe)
       }
     }
 
-    // 🔥 ============================================
-    // 🔥 SI C'EST UN MESSAGE SYSTÈME - PAS DE VÉRIFICATIONS
-    // 🔥 ============================================
+    //  SI C'EST UN MESSAGE SYSTÈME - PAS DE VÉRIFICATIONS
     if (isSystem === true) {
-      const receiverId = conversation.ownerId === user.id ? conversation.tenantId : conversation.ownerId;
-      
+      const receiverId =
+        conversation.ownerId === user.id
+          ? conversation.tenantId
+          : conversation.ownerId;
+
       const systemMessage = await prisma.message.create({
         data: {
           conversationId,
@@ -245,13 +242,7 @@ const { content, isSystem } = await req.json();
       });
     }
 
-    // 🔥 ============================================
-    // 🔥 VÉRIFICATIONS NORMALES POUR LES MESSAGES UTILISATEUR
-    // 🔥 ============================================
-
-    // 🔥 ============================================
-    // 🔥 VÉRIFICATION CRUCIALE : STATUT DE LA CONVERSATION
-    // 🔥 ============================================
+    // VÉRIFICATIONS NORMALES POUR LES MESSAGES UTILISATEUR
 
     // 1. Vérifier si la conversation est bloquée par un modérateur
     if (conversation.isBlocked) {
@@ -331,9 +322,7 @@ const { content, isSystem } = await req.json();
 
     // Variable pour savoir si le message sera délivré
     const willBeDelivered = !receiverBlockedSender;
-    // ============================================
     // FIN DES VÉRIFICATIONS - CONTINUER L'ENVOI
-    // ============================================
 
     const receiverId =
       conversation.ownerId === user.id
@@ -352,11 +341,11 @@ const { content, isSystem } = await req.json();
         blockedReason = moderation.reason;
         finalContent = `[Message bloqué - ${moderation.reason}]`;
 
-        // ✅ DÉCLENCHER LE RECALCUL DU SCORE
+        //  DÉCLENCHER LE RECALCUL DU SCORE
         await onMessageBlocked(user.id);
       }
     } catch (error) {
-      console.error("❌ Erreur modération:", error);
+      console.error(" Erreur modération:", error);
     }
 
     const message = await prisma.message.create({
@@ -425,7 +414,7 @@ const { content, isSystem } = await req.json();
       isRead: message.isRead,
       isSystem: false,
       type: "text",
-      willBeDelivered: willBeDelivered, // ← AJOUTE CETTE LIGNE
+      willBeDelivered: willBeDelivered, 
     });
   } catch (error) {
     console.error("[POST /api/conversations/messages] Erreur:", error);
@@ -484,12 +473,10 @@ export async function DELETE(
         ? conversation.tenantId
         : conversation.ownerId;
 
-    // ============================================
     // CAS 1: SUPPRIMER TOUS LES MESSAGES DE LA CONVERSATION
-    // ============================================
     if (deleteAll) {
       console.log(
-        `🗑️ Suppression de tous les messages de la conversation ${conversationId}`,
+        ` Suppression de tous les messages de la conversation ${conversationId}`,
       );
 
       // 1. Récupérer tous les messages vocaux pour supprimer les blobs
@@ -509,9 +496,9 @@ export async function DELETE(
             const url = new URL(msg.voiceUrl);
             const pathname = url.pathname;
             await del(pathname);
-            console.log("🗑️ Audio supprimé:", pathname);
+            console.log(" Audio supprimé:", pathname);
           } catch (err) {
-            console.log("⚠️ Impossible de supprimer l'audio:", err);
+            console.log(" Impossible de supprimer l'audio:", err);
           }
         }
       }
@@ -521,7 +508,7 @@ export async function DELETE(
         where: { conversationId },
       });
 
-      console.log(`✅ ${deleted.count} messages supprimés de la DB`);
+      console.log(` ${deleted.count} messages supprimés de la DB`);
 
       // 4. Ajouter un message système indiquant l'effacement
       const systemMessage = await prisma.message.create({
@@ -529,7 +516,7 @@ export async function DELETE(
           conversationId,
           senderId: user.id,
           receiverId,
-          content: "🗑️ L'historique des messages a été effacé",
+          content: " L'historique des messages a été effacé",
           isSystem: true,
           isBlocked: false,
         },
@@ -539,7 +526,7 @@ export async function DELETE(
       await prisma.conversation.update({
         where: { id: conversationId },
         data: {
-          lastMessage: "🗑️ L'historique des messages a été effacé",
+          lastMessage: " L'historique des messages a été effacé",
           lastMessageAt: new Date(),
         },
       });
@@ -552,9 +539,7 @@ export async function DELETE(
       });
     }
 
-    // ============================================
     // CAS 2: SUPPRIMER UN SEUL MESSAGE SPÉCIFIQUE
-    // ============================================
     if (!messageId) {
       return NextResponse.json(
         { error: "Paramètre requis: messageId ou deleteAll=true" },
@@ -563,7 +548,7 @@ export async function DELETE(
     }
 
     console.log(
-      `🗑️ Suppression du message ${messageId} dans la conversation ${conversationId}`,
+      ` Suppression du message ${messageId} dans la conversation ${conversationId}`,
     );
 
     // Vérifier que le message existe et appartient à l'utilisateur
@@ -591,9 +576,9 @@ export async function DELETE(
         const url = new URL(message.voiceUrl);
         const pathname = url.pathname;
         await del(pathname);
-        console.log("🗑️ Audio supprimé:", pathname);
+        console.log(" Audio supprimé:", pathname);
       } catch (err) {
-        console.log("⚠️ Impossible de supprimer l'audio:", err);
+        console.log(" Impossible de supprimer l'audio:", err);
       }
     }
 
@@ -602,7 +587,7 @@ export async function DELETE(
       where: { id: messageId },
     });
 
-    console.log(`✅ Message ${messageId} supprimé`);
+    console.log(` Message ${messageId} supprimé`);
 
     // Récupérer le dernier message pour mettre à jour la conversation
     const lastMessage = await prisma.message.findFirst({

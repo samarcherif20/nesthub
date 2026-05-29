@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
     const maxPriceAll = Math.max(maxNight, maxMonth);
 
     console.log(
-      `📊 ${listings.length} annonces trouvées pour l'utilisateur ${user.id}`,
+      ` ${listings.length} annonces trouvées pour l'utilisateur ${user.id}`,
     );
 
     return NextResponse.json({

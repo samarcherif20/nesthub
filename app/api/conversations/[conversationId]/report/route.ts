@@ -13,7 +13,7 @@ export async function POST(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // ✅ ATTENDRE params avec await
+    //  ATTENDRE params avec await
     const { conversationId } = await params;
     const { reason } = await req.json();
 
@@ -70,7 +70,7 @@ export async function POST(
         senderId: user.id,
         receiverId: reportedUserId,
         content:
-          "⚠️ Cette conversation a été signalée à l'équipe de modération",
+          " Cette conversation a été signalée à l'équipe de modération",
         isSystem: true,
         isBlocked: false,
       },

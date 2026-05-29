@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    // ✅ AJOUTE : Vérifier les conflits AVANT de mettre à jour
+    //  AJOUTE : Vérifier les conflits AVANT de mettre à jour
     if (enabled && startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // ✅ Si pas de conflit, on met à jour
+    //  Si pas de conflit, on met à jour
     const user = await prisma.user.update({
       where: { clerkId },
       data: {

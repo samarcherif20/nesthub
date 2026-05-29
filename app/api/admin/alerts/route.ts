@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
       alerts.push({
         id: `dispute-${dispute.id}`,
         type: "DISPUTE",
-        title: "⚖️ Litige en cours",
+        title: " Litige en cours",
         description: `Litige "${dispute.type}" pour "${
           dispute.booking?.listing?.title || "une propriété"
         }"`,
@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
       alerts.push({
         id: `validation-pending-${listing.id}`,
         type: "VALIDATION",
-        title: "✅ Nouvelle propriété à valider",
+        title: " Nouvelle propriété à valider",
         description: `"${listing.title}" par ${ownerName}`,
         priority: "HIGH",
         createdAt: listing.createdAt.toISOString(),
@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
       alerts.push({
         id: `suspended-${listing.id}`,
         type: "DISPUTE",
-        title: "⚠️ Propriété suspendue",
+        title: " Propriété suspendue",
         description: `"${listing.title}" a été suspendue suite à un signalement`,
         priority: "HIGH",
         createdAt: listing.updatedAt.toISOString(),
@@ -161,7 +161,7 @@ export async function GET(request: NextRequest) {
       alerts.push({
         id: `modification-${modif.id}`,
         type: "MODIFICATION",
-        title: "📝 Propriété modifiée",
+        title: " Propriété modifiée",
         description: `"${modif.listing.title}" a été ${actionLabel} par ${modifierName}`,
         priority: "LOW",
         createdAt: modif.createdAt.toISOString(),
@@ -215,7 +215,7 @@ export async function GET(request: NextRequest) {
         alerts.push({
           id: `validated-${validation.id}`,
           type: "VALIDATION",
-          title: "✅ Propriété validée",
+          title: " Propriété validée",
           description: `"${validation.listing.title}" a été validée par ${validatorName}`,
           priority: "LOW",
           createdAt: validation.createdAt.toISOString(),
@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
       alerts.push({
         id: `report-${report.id}`,
         type: "DISPUTE",
-        title: "🚨 Signalement de propriété",
+        title: " Signalement de propriété",
         description: `"${report.listing?.title}" a été signalé pour "${report.reason}"`,
         priority: "HIGH",
         createdAt: report.createdAt.toISOString(),
@@ -281,7 +281,7 @@ export async function GET(request: NextRequest) {
       },
     };
 
-    console.log(`📊 Alertes chargées: ${alerts.length}`, stats);
+    console.log(` Alertes chargées: ${alerts.length}`, stats);
 
     return NextResponse.json({
       success: true,

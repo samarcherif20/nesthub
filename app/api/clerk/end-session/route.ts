@@ -5,7 +5,7 @@ export async function POST(req: Request) {
   try {
     const { sessionId } = await req.json();
 
-    console.log("🔍 Tentative d'annulation de la session:", sessionId);
+    console.log(" Tentative d'annulation de la session:", sessionId);
 
     if (!sessionId) {
       return NextResponse.json(
@@ -16,7 +16,7 @@ export async function POST(req: Request) {
 
     // Vérifier que la clé API existe
     if (!process.env.CLERK_SECRET_KEY) {
-      console.error("❌ CLERK_SECRET_KEY manquante");
+      console.error(" CLERK_SECRET_KEY manquante");
       return NextResponse.json(
         { error: "Configuration error" },
         { status: 500 },
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("❌ Erreur API Clerk:", {
+      console.error(" Erreur API Clerk:", {
         status: response.status,
         statusText: response.statusText,
         body: errorText,
@@ -48,10 +48,10 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("✅ Session annulée avec succès:", sessionId);
+    console.log(" Session annulée avec succès:", sessionId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ Erreur:", error);
+    console.error(" Erreur:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

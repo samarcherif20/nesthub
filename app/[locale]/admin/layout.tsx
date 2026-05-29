@@ -1,7 +1,8 @@
 // app/[locale]/admin/layout.tsx
 "use client";
 
-import { useRouter, usePathname, useParams } from "next/navigation";import { useEffect, useState } from "react";
+import { useRouter, usePathname, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import * as React from "react";
@@ -92,9 +93,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
- const params = useParams();
-const locale = (params?.locale as string) || "fr";
-const pathname = usePathname();
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
+  const pathname = usePathname();
   const tLayout = useTranslations("admin");
 
   const { user, isLoaded, isSignedIn } = useUser();
@@ -245,90 +246,90 @@ const pathname = usePathname();
     router.push(`/${locale}/login`);
   };
 
- const navItems = [
-  {
-    name: tLayout("dashboard"),
-    href: `/${locale}/admin/dashboard`,
-    icon: <LuLayoutDashboard size={18} />,
-  },
-  {
-    name: tLayout("users"),
-    href: `/${locale}/admin/users`,
-    icon: <MdOutlinePeopleAlt size={18} />,
-  },
-  {
-    name: tLayout("invitations"),
-    href: `/${locale}/admin/invitation`,
-    icon: <TiUserAddOutline size={18} />,
-    count: counters.pendingInvitations,
-    countColor: "bg-amber-500",
-  },
-  {
-    name: tLayout("bookings"),
-    href: `/${locale}/admin/booking`,
-    icon: <MdOutlineHolidayVillage  size={18} />,
-    count: counters.pendingBookings,
-    countColor: "bg-amber-500",
-  },
-  {
-    name: tLayout("properties"),
-    href: `/${locale}/admin/properties`,
-    icon: <MdOutlineMapsHomeWork size={18} />,
-    hasSubMenu: true,
-    count: counters.pendingListings,
-    countColor: "bg-amber-500",
-    subItems: [
-      {
-        name: tLayout("allProperties"),
-        href: `/${locale}/admin/properties`,
-        icon: <MdOutlineMapsHomeWork size={14} />,
-      },
-      {
-        name: tLayout("pendingValidations"),
-        href: `/${locale}/admin/listings/validation`,
-        icon: <MdOutlinePendingActions size={14} />,
-        count: counters.pendingListings,
-        countColor: "bg-amber-500",
-      },
-    ],
-  },
-  {
-    name: tLayout("transactions"),
-    href: `/${locale}/admin/transactions`,
-    icon: <GrMoney size={18} />,
-  },
-  {
-    name: tLayout("verifications"),
-    href: `/${locale}/admin/verifications`,
-    icon: <MdOutlineVerified size={18} />,
-    count: counters.pendingVerifications,
-    countColor: "bg-primary",
-  },
-  {
-    name: tLayout("moderation"),
-    href: `/${locale}/admin/moderation`,
-    icon: <TbMessageUser size={18} />,
-    count: counters.pendingReports,
-    countColor: "bg-red-500",
-  },
-  {
-    name: tLayout("disputes"),
-    href: `/${locale}/admin/disputes`,
-    icon: <PiGavelBold size={18} />,
-    count: counters.activeDisputes,
-    countColor: "bg-amber-500",
-  },
-  {
-    name: tLayout("contact"),
-    href: `/${locale}/admin/contact-support`,
-    icon: <MdSupportAgent size={18} />,
-  },
-  {
-    name: tLayout("staticPages"),
-    href: `/${locale}/admin/static-page`,
-    icon: <PiFilesDuotone size={18} />,
-  },
-];
+  const navItems = [
+    {
+      name: tLayout("dashboard"),
+      href: `/${locale}/admin/dashboard`,
+      icon: <LuLayoutDashboard size={18} />,
+    },
+    {
+      name: tLayout("users"),
+      href: `/${locale}/admin/users`,
+      icon: <MdOutlinePeopleAlt size={18} />,
+    },
+    {
+      name: tLayout("invitations"),
+      href: `/${locale}/admin/invitation`,
+      icon: <TiUserAddOutline size={18} />,
+      count: counters.pendingInvitations,
+      countColor: "bg-amber-500",
+    },
+    {
+      name: tLayout("bookings"),
+      href: `/${locale}/admin/booking`,
+      icon: <MdOutlineHolidayVillage size={18} />,
+      count: counters.pendingBookings,
+      countColor: "bg-amber-500",
+    },
+    {
+      name: tLayout("properties"),
+      href: `/${locale}/admin/properties`,
+      icon: <MdOutlineMapsHomeWork size={18} />,
+      hasSubMenu: true,
+      count: counters.pendingListings,
+      countColor: "bg-amber-500",
+      subItems: [
+        {
+          name: tLayout("allProperties"),
+          href: `/${locale}/admin/properties`,
+          icon: <MdOutlineMapsHomeWork size={14} />,
+        },
+        {
+          name: tLayout("pendingValidations"),
+          href: `/${locale}/admin/listings/validation`,
+          icon: <MdOutlinePendingActions size={14} />,
+          count: counters.pendingListings,
+          countColor: "bg-amber-500",
+        },
+      ],
+    },
+    {
+      name: tLayout("transactions"),
+      href: `/${locale}/admin/transactions`,
+      icon: <GrMoney size={18} />,
+    },
+    {
+      name: tLayout("verifications"),
+      href: `/${locale}/admin/verifications`,
+      icon: <MdOutlineVerified size={18} />,
+      count: counters.pendingVerifications,
+      countColor: "bg-primary",
+    },
+    {
+      name: tLayout("moderation"),
+      href: `/${locale}/admin/moderation`,
+      icon: <TbMessageUser size={18} />,
+      count: counters.pendingReports,
+      countColor: "bg-red-500",
+    },
+    {
+      name: tLayout("disputes"),
+      href: `/${locale}/admin/disputes`,
+      icon: <PiGavelBold size={18} />,
+      count: counters.activeDisputes,
+      countColor: "bg-amber-500",
+    },
+    {
+      name: tLayout("contact"),
+      href: `/${locale}/admin/contact-support`,
+      icon: <MdSupportAgent size={18} />,
+    },
+    {
+      name: tLayout("staticPages"),
+      href: `/${locale}/admin/static-page`,
+      icon: <PiFilesDuotone size={18} />,
+    },
+  ];
 
   const mainNavItems = navItems.slice(0, -2);
   const settingsNavItems = navItems.slice(-2);
@@ -617,90 +618,112 @@ const pathname = usePathname();
                 />
               </div>
 
-
-{searchQuery.length >= 2 && (
-  <div className="absolute right-0 mt-2 w-[450px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
-    <div className="px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-slate-200 dark:border-slate-800">
-      <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
-       {isSearching
-  ? tLayout("searching")
-  : tLayout("resultsCount", { count: searchResults.length })}
-      </p>
-    </div>
-    <div className="max-h-[400px] overflow-y-auto">
-      {isSearching ? (
-        <div className="p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent mx-auto"></div>
-        </div>
-      ) : searchResults.length > 0 ? (
-        searchResults.map((result, index) => (
-          <Link
-            key={index}
-            href={`/${locale}${result.href}`}
-            onClick={() => {
-              // Fermer la recherche
-              setSearchQuery("");
-              setSearchResults([]);
-            }}
-            className="block px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer border-b last:border-b-0 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                  result.type === "user"
-                    ? "bg-indigo-100 text-indigo-700"
-                    : result.type === "property"
-                      ? "bg-emerald-100 text-emerald-600"
-                      : result.type === "booking"
-                        ? "bg-blue-100 text-blue-600"
-                        : result.type === "transaction"
-                          ? "bg-amber-100 text-amber-600"
-                          : result.type === "verification"
-                            ? "bg-purple-100 text-purple-600"
-                            : result.type === "dispute"
-                              ? "bg-red-100 text-red-600"
-                              : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {result.type === "user" && <MdOutlinePeopleAlt size={16} />}
-                {result.type === "property" && <MdOutlineMapsHomeWork size={16} />}
-                {result.type === "booking" && <PiGavel size={16} />}
-                {result.type === "transaction" && <GrMoney size={16} />}
-                {result.type === "verification" && <MdOutlineVerified size={16} />}
-                {result.type === "dispute" && <PiGavelBold size={16} />}
-                {result.type === "report" && <TbMessageUser size={16} />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                  {result.name}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {result.type === "user" && (result.email || result.username)}
-                  {result.type === "property" && result.location}
-                  {result.type === "booking" && `${result.tenant} - ${result.amount}`}
-                  {result.type === "transaction" && `${result.amount} - ${result.status}`}
-                  {result.type === "verification" && result.user}
-                  {result.type === "dispute" && result.bookingRef}
-{result.type === "report" && `${tLayout("reportedBy")} ${result.reporter}`}                </p>
-              </div>
-              {result.badgeColor && (
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${result.badgeColor}`}
-                >
-                  {result.badgeText || result.status || result.type}
-                </span>
+              {searchQuery.length >= 2 && (
+                <div className="absolute right-0 mt-2 w-[450px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
+                  <div className="px-4 py-3 bg-indigo-50 dark:bg-indigo-900/20 border-b border-slate-200 dark:border-slate-800">
+                    <p className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+                      {isSearching
+                        ? tLayout("searching")
+                        : tLayout("resultsCount", {
+                            count: searchResults.length,
+                          })}
+                    </p>
+                  </div>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {isSearching ? (
+                      <div className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent mx-auto"></div>
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map((result, index) => (
+                        <Link
+                          key={index}
+                          href={`/${locale}${result.href}`}
+                          onClick={() => {
+                            // Fermer la recherche
+                            setSearchQuery("");
+                            setSearchResults([]);
+                          }}
+                          className="block px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer border-b last:border-b-0 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                result.type === "user"
+                                  ? "bg-indigo-100 text-indigo-700"
+                                  : result.type === "property"
+                                    ? "bg-emerald-100 text-emerald-600"
+                                    : result.type === "booking"
+                                      ? "bg-blue-100 text-blue-600"
+                                      : result.type === "transaction"
+                                        ? "bg-amber-100 text-amber-600"
+                                        : result.type === "verification"
+                                          ? "bg-purple-100 text-purple-600"
+                                          : result.type === "dispute"
+                                            ? "bg-red-100 text-red-600"
+                                            : "bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {result.type === "user" && (
+                                <MdOutlinePeopleAlt size={16} />
+                              )}
+                              {result.type === "property" && (
+                                <MdOutlineMapsHomeWork size={16} />
+                              )}
+                              {result.type === "booking" && (
+                                <PiGavel size={16} />
+                              )}
+                              {result.type === "transaction" && (
+                                <GrMoney size={16} />
+                              )}
+                              {result.type === "verification" && (
+                                <MdOutlineVerified size={16} />
+                              )}
+                              {result.type === "dispute" && (
+                                <PiGavelBold size={16} />
+                              )}
+                              {result.type === "report" && (
+                                <TbMessageUser size={16} />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                                {result.name}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                {result.type === "user" &&
+                                  (result.email || result.username)}
+                                {result.type === "property" && result.location}
+                                {result.type === "booking" &&
+                                  `${result.tenant} - ${result.amount}`}
+                                {result.type === "transaction" &&
+                                  `${result.amount} - ${result.status}`}
+                                {result.type === "verification" && result.user}
+                                {result.type === "dispute" && result.bookingRef}
+                                {result.type === "report" &&
+                                  `${tLayout("reportedBy")} ${result.reporter}`}{" "}
+                              </p>
+                            </div>
+                            {result.badgeColor && (
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${result.badgeColor}`}
+                              >
+                                {result.badgeText ||
+                                  result.status ||
+                                  result.type}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                        {tLayout("noResults")}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
-            </div>
-          </Link>
-        ))
-      ) : (
-        <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-          {tLayout("noResults")}
-        </div>
-      )}
-    </div>
-  </div>
-)}
             </div>
 
             <button
@@ -750,8 +773,8 @@ const pathname = usePathname();
                     {user?.firstName} {user?.lastName}
                   </p>
                   <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
-  {tLayout("adminRole")}
-</p>
+                    {tLayout("adminRole")}
+                  </p>
                 </div>
                 <FaChevronDown
                   className={`hidden sm:block text-slate-400 text-xs transition-transform ${isProfileDropdownOpen ? "rotate-180" : ""}`}
@@ -795,9 +818,9 @@ const pathname = usePathname();
                           {user?.firstName} {user?.lastName}
                         </p>
                         <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
-  {tLayout("adminBadge")}
-</span>
+                          <span className="text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-2 py-0.5 rounded-full font-medium">
+                            {tLayout("adminBadge")}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -838,7 +861,6 @@ const pathname = usePathname();
                       <GoShieldLock size={16} />{" "}
                       <span>{tLayout("security")}</span>
                     </Link>
-                    
                   </div>
                   <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
                     <button
@@ -887,81 +909,93 @@ const pathname = usePathname();
               {tLayout("cancel")}
             </button>
           </div>
-  {searchQuery.length >= 2 && (
-  <div className="mt-2 max-h-[calc(100vh-120px)] overflow-y-auto">
-    {isSearching ? (
-      <div className="p-8 text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent mx-auto"></div>
-      </div>
-    ) : searchResults.length > 0 ? (
-      searchResults.map((result, index) => (
-        <Link
-          key={index}
-          href={`/${locale}${result.href}`}
-          onClick={() => {
-            setIsMobileSearchOpen(false);
-            setSearchQuery("");
-            setSearchResults([]);
-          }}
-          className="block p-4 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer border-b border-slate-200 dark:border-slate-800 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                result.type === "user"
-                  ? "bg-indigo-100 text-indigo-700"
-                  : result.type === "property"
-                    ? "bg-emerald-100 text-emerald-600"
-                    : result.type === "booking"
-                      ? "bg-blue-100 text-blue-600"
-                      : result.type === "transaction"
-                        ? "bg-amber-100 text-amber-600"
-                        : result.type === "verification"
-                          ? "bg-purple-100 text-purple-600"
-                          : result.type === "dispute"
-                            ? "bg-red-100 text-red-600"
-                            : "bg-gray-100 text-gray-600"
-              }`}
-            >
-              {result.type === "user" && <MdOutlinePeopleAlt size={20} />}
-              {result.type === "property" && <MdOutlineMapsHomeWork size={20} />}
-              {result.type === "booking" && <PiGavel size={20} />}
-              {result.type === "transaction" && <GrMoney size={20} />}
-              {result.type === "verification" && <MdOutlineVerified size={20} />}
-              {result.type === "dispute" && <PiGavelBold size={20} />}
-              {result.type === "report" && <TbMessageUser size={20} />}
+          {searchQuery.length >= 2 && (
+            <div className="mt-2 max-h-[calc(100vh-120px)] overflow-y-auto">
+              {isSearching ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-indigo-500 border-t-transparent mx-auto"></div>
+                </div>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((result, index) => (
+                  <Link
+                    key={index}
+                    href={`/${locale}${result.href}`}
+                    onClick={() => {
+                      setIsMobileSearchOpen(false);
+                      setSearchQuery("");
+                      setSearchResults([]);
+                    }}
+                    className="block p-4 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 cursor-pointer border-b border-slate-200 dark:border-slate-800 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          result.type === "user"
+                            ? "bg-indigo-100 text-indigo-700"
+                            : result.type === "property"
+                              ? "bg-emerald-100 text-emerald-600"
+                              : result.type === "booking"
+                                ? "bg-blue-100 text-blue-600"
+                                : result.type === "transaction"
+                                  ? "bg-amber-100 text-amber-600"
+                                  : result.type === "verification"
+                                    ? "bg-purple-100 text-purple-600"
+                                    : result.type === "dispute"
+                                      ? "bg-red-100 text-red-600"
+                                      : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {result.type === "user" && (
+                          <MdOutlinePeopleAlt size={20} />
+                        )}
+                        {result.type === "property" && (
+                          <MdOutlineMapsHomeWork size={20} />
+                        )}
+                        {result.type === "booking" && <PiGavel size={20} />}
+                        {result.type === "transaction" && <GrMoney size={20} />}
+                        {result.type === "verification" && (
+                          <MdOutlineVerified size={20} />
+                        )}
+                        {result.type === "dispute" && <PiGavelBold size={20} />}
+                        {result.type === "report" && (
+                          <TbMessageUser size={20} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-medium text-slate-900 dark:text-white truncate">
+                          {result.name}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                          {result.type === "user" &&
+                            (result.email || result.username)}
+                          {result.type === "property" && result.location}
+                          {result.type === "booking" &&
+                            `${result.tenant} - ${result.amount}`}
+                          {result.type === "transaction" &&
+                            `${result.amount} - ${result.status}`}
+                          {result.type === "verification" && result.user}
+                          {result.type === "dispute" && result.bookingRef}
+                          {result.type === "report" &&
+                            `Signalé par: ${result.reporter}`}
+                        </p>
+                      </div>
+                      {result.badgeColor && (
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${result.badgeColor}`}
+                        >
+                          {result.badgeText || result.status || result.type}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="p-8 text-center text-slate-500">
+                  {tLayout("noResults")}
+                </div>
+              )}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-base font-medium text-slate-900 dark:text-white truncate">
-                {result.name}
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                {result.type === "user" && (result.email || result.username)}
-                {result.type === "property" && result.location}
-                {result.type === "booking" && `${result.tenant} - ${result.amount}`}
-                {result.type === "transaction" && `${result.amount} - ${result.status}`}
-                {result.type === "verification" && result.user}
-                {result.type === "dispute" && result.bookingRef}
-                {result.type === "report" && `Signalé par: ${result.reporter}`}
-              </p>
-            </div>
-            {result.badgeColor && (
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full ${result.badgeColor}`}
-              >
-                {result.badgeText || result.status || result.type}
-              </span>
-            )}
-          </div>
-        </Link>
-      ))
-    ) : (
-      <div className="p-8 text-center text-slate-500">
-        {tLayout("noResults")}
-      </div>
-    )}
-  </div>
-)}
+          )}
         </div>
       )}
 

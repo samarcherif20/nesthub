@@ -216,8 +216,8 @@ export function useAdminTransactions(locale: string = "fr") {
 
   // Ouvrir la modale de remboursement
   const openRefundModal = (transaction: Transaction) => {
-     console.log("💰 Transaction:", transaction); // ✅ AJOUTE CE LOG
-  console.log("💰 Montant original:", transaction.amount); // ✅ AJOUTE CE LOG
+     console.log(" Transaction:", transaction); 
+  console.log(" Montant original:", transaction.amount);
     setRefundModal({
       isOpen: true,
       transaction,

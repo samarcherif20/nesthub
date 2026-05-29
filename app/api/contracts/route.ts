@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 import { generateContractPDF } from "@/lib/pdf-generator";
 
-// ✅ FONCTION POUR NETTOYER LES NOMS
+//  FONCTION POUR NETTOYER LES NOMS
 function cleanName(name: string | null | undefined): string {
   if (!name) return "";
   // Garder uniquement les lettres (y compris accentuées) et les espaces
@@ -13,7 +13,7 @@ function cleanName(name: string | null | undefined): string {
   return cleaned;
 }
 
-// ✅ FONCTION POUR EXTRAIRE LE PRÉNOM ET NOM DEPUIS PLUSIEURS SOURCES
+//  FONCTION POUR EXTRAIRE LE PRÉNOM ET NOM DEPUIS PLUSIEURS SOURCES
 function extractUserIdentity(user: any) {
   // Essayer plusieurs sources possibles
   let firstName = "";
@@ -84,14 +84,14 @@ function extractUserIdentity(user: any) {
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
-    console.log("🔐 POST /api/contracts - userId:", userId);
+    console.log(" POST /api/contracts - userId:", userId);
     
     if (!userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
     const body = await req.json();
-    console.log("📦 Body reçu:", body);
+    console.log(" Body reçu:", body);
     
     const { offerId, bookingId } = body;
 
@@ -138,16 +138,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
-    // ✅ EXTRAIRE LES IDENTITÉS CORRECTEMENT
+    //  EXTRAIRE LES IDENTITÉS CORRECTEMENT
     const tenantIdentity = extractUserIdentity(booking.tenant);
     const ownerIdentity = extractUserIdentity(booking.owner);
 
-    console.log("📋 Tenant identity extraite:", {
+    console.log(" Tenant identity extraite:", {
       firstName: tenantIdentity.firstName,
       lastName: tenantIdentity.lastName,
       cinNumber: tenantIdentity.cinNumber,
     });
-    console.log("📋 Owner identity extraite:", {
+    console.log(" Owner identity extraite:", {
       firstName: ownerIdentity.firstName,
       lastName: ownerIdentity.lastName,
       cinNumber: ownerIdentity.cinNumber,
@@ -157,7 +157,7 @@ export async function POST(req: NextRequest) {
     const totalNights = booking.totalNights || 
       Math.ceil((new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / (1000 * 60 * 60 * 24));
 
-    // ✅ PRÉPARER LES DONNÉES POUR LE PDF
+    //  PRÉPARER LES DONNÉES POUR LE PDF
     const contractData = {
       reference: `CTR-${Date.now().toString(36)}`,
       bookingId: booking.id,
@@ -194,10 +194,10 @@ export async function POST(req: NextRequest) {
       createdAt: new Date(),
     };
 
-    // ✅ GÉNÉRER LE PDF EN BASE64
+    //  GÉNÉRER LE PDF EN BASE64
     const pdfBase64 = await generateContractPDF(contractData);
     
-    // ✅ VÉRIFIER SI LE CONTRAT EXISTE DÉJÀ
+    //  VÉRIFIER SI LE CONTRAT EXISTE DÉJÀ
     const existingContract = await prisma.contract.findUnique({
       where: { bookingId: booking.id },
     });
@@ -213,7 +213,7 @@ export async function POST(req: NextRequest) {
           updatedAt: new Date(),
         },
       });
-      console.log("✅ Contrat mis à jour");
+      console.log(" Contrat mis à jour");
     } else {
       contract = await prisma.contract.create({
         data: {
@@ -225,12 +225,12 @@ export async function POST(req: NextRequest) {
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
       });
-      console.log("✅ Nouveau contrat créé");
+      console.log(" Nouveau contrat créé");
     }
 
     return NextResponse.json({ success: true, contract });
   } catch (error) {
-    console.error("❌ Erreur POST:", error);
+    console.error(" Erreur POST:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
@@ -270,7 +270,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({ contract });
   } catch (error) {
-    console.error("❌ Erreur GET:", error);
+    console.error(" Erreur GET:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

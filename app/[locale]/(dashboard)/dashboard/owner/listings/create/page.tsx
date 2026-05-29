@@ -369,9 +369,7 @@ export default function CreateListingPage({
   >(null);
   const t = useTranslations("CreateListing");
 
-  // ============================================
   // TOUS LES useState
-  // ============================================
   const [step, setStep] = useState(1);
   const [form, setForm] = useState<ListingFormData>(initial);
   const [saving, setSaving] = useState(false);
@@ -388,9 +386,7 @@ export default function CreateListingPage({
   const [uploadedCount, setUploadedCount] = useState(0);
   const [isPageLoading, setIsPageLoading] = useState(true);
 
-  // ============================================
   // TOUS LES useEffect (AVANT le return)
-  // ============================================
   useEffect(() => {
     const timer = setTimeout(() => setIsPageLoading(false), 500);
     return () => clearTimeout(timer);
@@ -451,9 +447,7 @@ export default function CreateListingPage({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasUnsavedChanges, t]);
 
-  // ============================================
   // STEPS
-  // ============================================
   const STEPS = [
     {
       id: 1,
@@ -473,9 +467,7 @@ export default function CreateListingPage({
     { id: 6, key: "preview", icon: Eye, title: t("steps.preview") },
   ];
 
-  // ============================================
   // TOUS LES useCallback et useMemo
-  // ============================================
   const upd = useCallback(
     (u: Partial<ListingFormData>) => setForm((p) => ({ ...p, ...u })),
     [],
@@ -967,9 +959,6 @@ export default function CreateListingPage({
     dryer: Fan,
   };
 
-  // ============================================
-  // RETURN CONDITIONNEL (APRÈS TOUS LES HOOKS)
-  // ============================================
   if (isPageLoading) {
     return (
       <div className="h-full flex items-center justify-center">
@@ -981,9 +970,7 @@ export default function CreateListingPage({
     );
   }
 
-  // ============================================
   // RENDER PRINCIPAL
-  // ============================================
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}

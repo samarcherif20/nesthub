@@ -1,6 +1,8 @@
-// hooks/useEditListing.ts
+"use client";
+
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 interface Listing {
   id: string;
@@ -35,6 +37,7 @@ interface Listing {
     thumbnailUrl: string;
     isMain: boolean;
     position: number;
+    file?: File;
   }>;
   rentalType: string;
   pricePerNight: number | null;
@@ -51,7 +54,43 @@ interface Listing {
   rejectedBy?: string;
 }
 
-// 🔥 Fonction pour convertir null en undefined (supprime les champs null)
+// Fonction pour uploader une seule photo
+const uploadSinglePhoto = async (
+  file: File,
+): Promise<{ url: string; thumbnailUrl: string }> => {
+  const formData = new FormData();
+  formData.append("file", file);
+  const uploadRes = await fetch("/api/listings/upload-temp-photo", {
+    method: "POST",
+    body: formData,
+  });
+  if (!uploadRes.ok) {
+    const error = await uploadRes.json();
+    throw new Error(error.error || "Upload failed");
+  }
+  const data = await uploadRes.json();
+  return { url: data.url, thumbnailUrl: data.thumbnailUrl || data.url };
+};
+
+// Fonction pour uploader toutes les nouvelles photos
+const uploadNewPhotos = async (photos: any[]): Promise<any[]> => {
+  const result = [];
+  for (const photo of photos) {
+    if (photo.file) {
+      const { url, thumbnailUrl } = await uploadSinglePhoto(photo.file);
+      result.push({
+        ...photo,
+        url,
+        thumbnailUrl,
+        file: undefined,
+      });
+    } else {
+      result.push(photo);
+    }
+  }
+  return result;
+};
+
 const removeNullFields = (obj: any): any => {
   const result: any = {};
   for (const [key, value] of Object.entries(obj)) {
@@ -66,24 +105,29 @@ const removeNullFields = (obj: any): any => {
   return result;
 };
 
-export function useEditListing(id: string, locale: string) {
+export function useEditListing(
+  id: string,
+  locale: string,
+  setToast?: (
+    toast: { type: "success" | "error"; message: string } | null,
+  ) => void,
+) {
   const router = useRouter();
+  const t = useTranslations("EditListing");
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
-  const [alert, setAlert] = useState<{
-    type: "success" | "error" | "warning" | "info";
-    message: string;
-  } | null>(null);
 
-  const showAlert = useCallback(
-    (type: "success" | "error" | "warning" | "info", message: string) => {
-      setAlert({ type, message });
-      setTimeout(() => setAlert(null), 5000);
+  const showToast = useCallback(
+    (type: "success" | "error", message: string) => {
+      if (setToast) {
+        setToast({ type, message });
+        setTimeout(() => setToast(null), 3000);
+      }
     },
-    [],
+    [setToast],
   );
 
   const fetchListing = useCallback(async () => {
@@ -92,17 +136,22 @@ export function useEditListing(id: string, locale: string) {
       const res = await fetch(`/api/listings/${id}`);
       if (res.ok) {
         const data = await res.json();
-        setListing(data);
+        const cleanPhotos =
+          data.photos?.map((p: any) => ({
+            ...p,
+            file: undefined,
+          })) || [];
+        setListing({ ...data, photos: cleanPhotos });
       } else {
-        showAlert("error", "Annonce non trouvée");
+        showToast("error", t("toast.listingNotFound"));
         router.push(`/${locale}/dashboard/owner/listings`);
       }
     } catch {
-      showAlert("error", "Erreur de chargement");
+      showToast("error", t("toast.loadingError"));
     } finally {
       setLoading(false);
     }
-  }, [id, locale, router, showAlert]);
+  }, [id, locale, router, showToast, t]);
 
   useEffect(() => {
     fetchListing();
@@ -115,7 +164,6 @@ export function useEditListing(id: string, locale: string) {
     [listing],
   );
 
-  // 🔥 FONCTION SAVE CORRIGÉE
   const save = useCallback(
     async (
       extraData?: Partial<Listing>,
@@ -124,8 +172,27 @@ export function useEditListing(id: string, locale: string) {
       if (!listing) return;
       setSaving(true);
       try {
-        const dataToSend = { ...listing, ...extraData };
+        let finalPhotos = listing.photos;
+        const hasNewFiles = listing.photos.some((p) => p.file);
+        if (hasNewFiles) {
+          setUploadingPhotos(true);
+          finalPhotos = await uploadNewPhotos(listing.photos);
+          setUploadingPhotos(false);
+        }
+
+        const dataToSend = { ...listing, ...extraData, photos: finalPhotos };
         delete dataToSend.status;
+
+        if (dataToSend.photos) {
+          dataToSend.photos = dataToSend.photos.map((photo: any) => ({
+            id: photo.id,
+            url: photo.url,
+            thumbnailUrl: photo.thumbnailUrl,
+            isMain: photo.isMain,
+            position: photo.position,
+          }));
+        }
+
         const cleanData = removeNullFields(dataToSend);
 
         const res = await fetch(`/api/listings/${id}`, {
@@ -136,88 +203,90 @@ export function useEditListing(id: string, locale: string) {
 
         if (res.ok) {
           const data = await res.json();
-          setListing(data);
+          const cleanDataPhotos =
+            data.photos?.map((p: any) => ({
+              ...p,
+              file: undefined,
+            })) || [];
+          setListing({ ...data, photos: cleanDataPhotos });
           setLastSaved(new Date());
 
           if (listing.status === "ACTIVE") {
-            showAlert(
-              "success",
-              "Modifications envoyées pour validation. L'annonce reste visible en attendant l'approbation de l'admin.",
-            );
+            showToast("success", t("toast.changesPendingValidation"));
           } else {
-            showAlert("success", "Modifications enregistrées avec succès");
+            showToast("success", t("toast.changesSaved"));
           }
 
           if (redirectAfterSave) {
-            router.push(`/${locale}/dashboard/owner/listings`);
+            setTimeout(() => {
+              router.push(`/${locale}/dashboard/owner/listings`);
+            }, 2000);
           }
+          return true;
         } else {
           const error = await res.json();
-          showAlert("error", error.error || "Erreur lors de l'enregistrement");
+          showToast("error", error.error || t("toast.saveError"));
+          return false;
         }
-      } catch {
-        showAlert("error", "Erreur de connexion");
+      } catch (error) {
+        console.error("Save error:", error);
+        showToast("error", t("toast.connectionError"));
+        return false;
       } finally {
         setSaving(false);
       }
     },
-    [listing, id, showAlert, locale, router],
+    [listing, id, showToast, locale, router, t],
   );
 
   const handleFileChange = useCallback(
-    async (files: FileList | null) => {
+    (files: FileList | null) => {
       if (!files || !listing) return;
-      setUploadingPhotos(true);
-      try {
-        const uploaded = [];
-        const currentPhotos = listing.photos || [];
-        for (const file of Array.from(files).slice(
-          0,
-          20 - currentPhotos.length,
-        )) {
-          const fd = new FormData();
-          fd.append("photos", file);
-          const res = await fetch("/api/listings/upload-temp-photo", {
-            method: "POST",
-            body: fd,
-          });
-          if (res.ok) {
-            const data = await res.json();
-            uploaded.push({
-              id: data.id ?? crypto.randomUUID(),
-              url: data.url,
-              thumbnailUrl: data.thumbnailUrl ?? data.url,
-              isMain: currentPhotos.length === 0 && uploaded.length === 0,
-              position: currentPhotos.length + uploaded.length,
-            });
-          }
-        }
-        if (uploaded.length > 0) {
-          const updatedPhotos = [...currentPhotos, ...uploaded];
-          setListing({ ...listing, photos: updatedPhotos });
-          showAlert("success", `${uploaded.length} photo(s) ajoutée(s)`);
-        }
-      } catch {
-        showAlert("error", "Erreur lors de l'upload des photos");
-      } finally {
-        setUploadingPhotos(false);
+
+      const currentPhotos = listing.photos || [];
+      const remainingSlots = 20 - currentPhotos.length;
+      if (remainingSlots <= 0) {
+        showToast("error", t("photos.maxReached"));
+        return;
       }
+
+      const newFiles = Array.from(files).slice(0, remainingSlots);
+
+      const newPhotos = newFiles.map((file, index) => ({
+        id: crypto.randomUUID(),
+        url: URL.createObjectURL(file),
+        thumbnailUrl: URL.createObjectURL(file),
+        isMain: currentPhotos.length === 0 && index === 0,
+        position: currentPhotos.length + index,
+        file: file,
+      }));
+
+      setListing({ ...listing, photos: [...currentPhotos, ...newPhotos] });
+      showToast("success", t("photos.added", { count: newFiles.length }));
     },
-    [listing, showAlert],
+    [listing, showToast, t],
   );
 
   const removePhoto = useCallback(
     (photoId: string) => {
       if (!listing) return;
       const currentPhotos = listing.photos || [];
+      const photoToRemove = currentPhotos.find((p) => p.id === photoId);
+      if (photoToRemove?.url?.startsWith("blob:")) {
+        URL.revokeObjectURL(photoToRemove.url);
+      }
+      if (photoToRemove?.thumbnailUrl?.startsWith("blob:")) {
+        URL.revokeObjectURL(photoToRemove.thumbnailUrl);
+      }
+
       const filtered = currentPhotos.filter((p) => p.id !== photoId);
       if (filtered.length > 0 && !filtered.some((p) => p.isMain)) {
         filtered[0].isMain = true;
       }
       setListing({ ...listing, photos: filtered });
-      showAlert("success", "Photo supprimée");
+      showToast("success", t("photos.removed"));
     },
-    [listing, showAlert],
+    [listing, showToast, t],
   );
 
   const setMainPhoto = useCallback(
@@ -228,18 +297,25 @@ export function useEditListing(id: string, locale: string) {
         ...listing,
         photos: currentPhotos.map((p) => ({ ...p, isMain: p.id === photoId })),
       });
-      showAlert("success", "Photo principale mise à jour");
+      showToast("success", t("photos.mainUpdated"));
     },
-    [listing, showAlert],
+    [listing, showToast, t],
   );
 
-  // ✅ FONCTION SAVEANDRESUBMIT CORRIGÉE
   const saveAndResubmit = useCallback(async () => {
     if (!listing) return;
 
     setSaving(true);
     try {
-      const cleanData = removeNullFields(listing);
+      let finalPhotos = listing.photos;
+      const hasNewFiles = listing.photos.some((p) => p.file);
+      if (hasNewFiles) {
+        setUploadingPhotos(true);
+        finalPhotos = await uploadNewPhotos(listing.photos);
+        setUploadingPhotos(false);
+      }
+
+      const cleanData = removeNullFields({ ...listing, photos: finalPhotos });
       delete cleanData.status;
 
       const saveRes = await fetch(`/api/listings/${id}`, {
@@ -250,7 +326,7 @@ export function useEditListing(id: string, locale: string) {
 
       if (!saveRes.ok) {
         const error = await saveRes.json();
-        throw new Error(error.error || "Erreur lors de la sauvegarde");
+        throw new Error(error.error || t("toast.saveError"));
       }
 
       const resubmitRes = await fetch(`/api/listings/${id}/resubmit`, {
@@ -259,24 +335,24 @@ export function useEditListing(id: string, locale: string) {
       });
 
       if (resubmitRes.ok) {
-        showAlert(
-          "success",
-          "✅ Modifications sauvegardées et soumises pour validation",
-        );
-        router.push(`/${locale}/dashboard/owner/listings`);
+        showToast("success", t("toast.resubmitted"));
+
+        setTimeout(() => {
+          router.push(`/${locale}/dashboard/owner/listings`);
+        }, 2000);
       } else {
         const error = await resubmitRes.json();
-        showAlert("error", error.error || "Erreur lors de la soumission");
+        showToast("error", error.error || t("toast.submissionError"));
       }
     } catch (error: any) {
       console.error(error);
-      showAlert("error", error.message || "Erreur lors de l'opération");
+      showToast("error", error.message || t("toast.operationError"));
     } finally {
       setSaving(false);
+      setUploadingPhotos(false);
     }
-  }, [listing, id, showAlert, locale, router]);
+  }, [listing, id, showToast, locale, router, t]);
 
-  // 🔥 QUALITY SCORE CORRIGÉ - Protection contre photos undefined
   const qualityScore = listing
     ? Math.min(
         85 +
@@ -293,8 +369,6 @@ export function useEditListing(id: string, locale: string) {
     lastSaved,
     uploadingPhotos,
     qualityScore,
-    alert,
-    setAlert,
     setField,
     save,
     handleFileChange,

@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {};
 
-    // 🔥 FILTRE PAR DATE AJOUTÉ 🔥
+    //  FILTRE PAR DATE AJOUTÉ 
     if (dateRange && dateRange !== "all") {
       const now = new Date();
       let startDate: Date;
@@ -69,7 +69,7 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // 🔥 RECHERCHE AMÉLIORÉE 🔥
+    // 🔥RECHERCHE AMÉLIORÉE 
     if (search) {
       where.OR = [
         // Recherche dans le titre de l'annonce
@@ -283,13 +283,13 @@ export async function PATCH(request: NextRequest) {
       include: { owner: true, tenant: true, listing: true },
     });
 
-    // 🔥 MESSAGE SYSTÈME DANS LA CONVERSATION 🔥
+    //  MESSAGE SYSTÈME DANS LA CONVERSATION 
     const actionMessages: Record<string, string> = {
-      FLAG: "⚠️ Cette conversation a été signalée par un modérateur.",
+      FLAG: " Cette conversation a été signalée par un modérateur.",
       UNFLAG:
-        "✅ Le signalement de cette conversation a été levé par un modérateur.",
-      CLOSE: "🔒 Cette conversation a été fermée par un modérateur.",
-      REOPEN: "🔓 Cette conversation a été réouverte par un modérateur.",
+        " Le signalement de cette conversation a été levé par un modérateur.",
+      CLOSE: " Cette conversation a été fermée par un modérateur.",
+      REOPEN: " Cette conversation a été réouverte par un modérateur.",
     };
 
     if (actionMessages[action]) {
@@ -311,14 +311,14 @@ export async function PATCH(request: NextRequest) {
           conversationId,
           senderId: user.id,
           receiverId: conversation.ownerId,
-          content: `⚠️ Raison: ${reason}`,
+          content: ` Raison: ${reason}`,
           isSystem: true,
           type: "text",
         },
       });
     }
 
-    // 🔥 NOTIFICATIONS IN-APP POUR LES DEUX UTILISATEURS 🔥
+    //  NOTIFICATIONS IN-APP POUR LES DEUX UTILISATEURS 
     const notificationTitles: Record<string, string> = {
       FLAG: "Conversation signalée",
       UNFLAG: "Signalement levé",

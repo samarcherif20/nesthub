@@ -317,7 +317,7 @@ export function useAdminProperties(locale: string = "fr") {
       return { success: false, message: "ID de propriété invalide" };
     }
 
-    console.log(`🔧 Action: ${type} sur l'ID: ${id}`);
+    console.log(` Action: ${type} sur l'ID: ${id}`);
 
     if (type === "valider" || type === "rejeter") {
       window.open(`/${locale}/admin/listings/validation/${id}`, "_blank");

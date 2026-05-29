@@ -12,7 +12,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // ✅ Extraire conversationId (pas id)
+    //  Extraire conversationId 
     const { conversationId } = await params;
 
     if (!conversationId) {

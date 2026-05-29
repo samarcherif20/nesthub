@@ -24,13 +24,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log("🎤 Upload message vocal pour conversation:", conversationId);
-    console.log("📊 Durée reçue brute:", duration);
+    console.log(" Upload message vocal pour conversation:", conversationId);
+    console.log(" Durée reçue brute:", duration);
 
     const audioBuf = await audio.arrayBuffer().then((b) => Buffer.from(b));
     const ts = Date.now();
 
-    // ✅ GARDER access: "private"
+    //  GARDER access: "private"
     const blob = await put(
       `voice/${conversationId}/${ts}-${audio.name}`,
       audioBuf,
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
       },
     );
 
-    console.log("✅ Upload vocal réussi:", blob.url);
+    console.log(" Upload vocal réussi:", blob.url);
 
     const sender = await prisma.user.findUnique({
       where: { clerkId },
@@ -78,14 +78,14 @@ export async function POST(req: NextRequest) {
         : conversation.ownerId;
 
     const durationInt = parseInt(duration, 10) || 0;
-    console.log("📊 Durée sauvegardée:", durationInt);
+    console.log(" Durée sauvegardée:", durationInt);
 
     const message = await prisma.message.create({
       data: {
         conversationId,
         senderId: sender.id,
         receiverId: finalReceiverId,
-        content: "🎤 Message vocal",
+        content: " Message vocal",
         type: "voice",
         voiceUrl: blob.url,
         duration: durationInt,
@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`✅ Message vocal créé: ${message.id}`);
+    console.log(` Message vocal créé: ${message.id}`);
 
     const formattedMessage = {
       id: message.id,
@@ -164,13 +164,13 @@ export async function POST(req: NextRequest) {
     const buffer = await response.arrayBuffer();
     console.log("🎵 Audio récupéré, taille:", buffer.byteLength, "bytes");
 
-    // ✅ Détecter le type MIME réel
+    //  Détecter le type MIME réel
     const contentType = response.headers.get("content-type") || "audio/ogg";
-    console.log("🎵 Content-Type original:", contentType);
+    console.log(" Content-Type original:", contentType);
 
     return new NextResponse(buffer, {
       headers: {
-        "Content-Type": "audio/ogg",  // ✅ Plus compatible
+        "Content-Type": "audio/ogg",  
         "Content-Length": buffer.byteLength.toString(),
         "Cache-Control": "public, max-age=3600",
         "Accept-Ranges": "bytes",

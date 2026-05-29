@@ -28,8 +28,21 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get("type") || "all";
     const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
+    //  ORDRE SELON LE TYPE D'ONGLET
+    let orderBy: any;
 
-    // 🔥 LOGIQUE DE FILTRAGE SELON LE TYPE (CORRIGÉE)
+    if (type === "history") {
+      orderBy = { updatedAt: "desc" };
+    } else if (type === "revisions") {
+      orderBy = { pendingRevisionSubmittedAt: "desc" };
+    } else if (type === "pending") {
+      orderBy = { createdAt: "desc" };
+    } else if (type === "all") {
+      orderBy = { pendingRevisionSubmittedAt: "desc" };
+    } else {
+      orderBy = { createdAt: "desc" };
+    }
+    //  LOGIQUE DE FILTRAGE SELON LE TYPE
     let where: any = {};
 
     if (type === "pending") {
@@ -64,7 +77,7 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // 🔥 RECHERCHE (CORRIGÉE)
+    //  RECHERCHE (CORRIGÉE)
     if (search && search.trim() !== "") {
       const searchCondition = {
         OR: [
@@ -118,8 +131,8 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-        orderBy:
-          type === "history" ? { updatedAt: "desc" } : { createdAt: "desc" },
+        orderBy,
+
         skip,
         take: limit,
       }),
@@ -177,6 +190,8 @@ export async function GET(request: NextRequest) {
       bookingCount: listing.bookingCount,
       totalRevenue: 0,
       hasPendingRevision: listing.hasPendingRevision || false,
+      pendingRevisionSubmittedAt: listing.pendingRevisionSubmittedAt,
+
       pendingRevision: listing.pendingRevision,
       rejectionReason: listing.rejectionReason,
       rejectionDetails: listing.rejectionDetails,
@@ -208,7 +223,8 @@ export async function GET(request: NextRequest) {
 
     const stats = {
       total: await prisma.listing.count(),
-      pending: statusCounts.find((s) => s.status === "PENDING_REVIEW")?._count || 0,
+      pending:
+        statusCounts.find((s) => s.status === "PENDING_REVIEW")?._count || 0,
       revisions: await prisma.listing.count({
         where: { hasPendingRevision: true },
       }),

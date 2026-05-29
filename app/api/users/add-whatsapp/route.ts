@@ -16,7 +16,7 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// ✅ EXPORT the store so it can be used in verify-whatsapp
+//  EXPORT the store so it can be used in verify-whatsapp
 export { otpStore };
 
 export async function POST(req: Request) {
@@ -46,10 +46,10 @@ export async function POST(req: Request) {
     // Stocker en mémoire (clé = userId)
     otpStore.set(userId, { code: otpCode, phone: phoneNumber, expiresAt });
 
-    console.log("💾 OTP stocké en mémoire pour:", userId);
-    console.log("📦 OTP store size:", otpStore.size);
-    console.log("🔑 OTP code:", otpCode);
-    console.log("⏰ Expires at:", expiresAt);
+    console.log(" OTP stocké en mémoire pour:", userId);
+    console.log(" OTP store size:", otpStore.size);
+    console.log(" OTP code:", otpCode);
+    console.log(" Expires at:", expiresAt);
 
     // Envoyer via WhatsApp
     try {
@@ -58,11 +58,11 @@ export async function POST(req: Request) {
         to: `whatsapp:${phoneNumber}`,
         body: ` *NESTHUB* - Your verification code : *${otpCode}*\n\n This code expires in 10 minutes.\n\n if you didn't ask for this code, just ignore this message.`,
       });
-      console.log("✅ Message WhatsApp envoyé à:", phoneNumber);
+      console.log(" Message WhatsApp envoyé à:", phoneNumber);
     } catch (twilioError) {
-      console.error("❌ Erreur Twilio:", twilioError);
+      console.error(" Erreur Twilio:", twilioError);
       // For development, still return success
-      console.log(`💡 Code de test (Twilio failed): ${otpCode}`);
+      console.log(` Code de test (Twilio failed): ${otpCode}`);
     }
 
     return NextResponse.json({
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       testCode: process.env.NODE_ENV === "development" ? otpCode : undefined,
     });
   } catch (error: any) {
-    console.error("❌ Erreur add-whatsapp:", error);
+    console.error(" Erreur add-whatsapp:", error);
     return NextResponse.json(
       { error: error.message || "Erreur serveur" },
       { status: 500 },

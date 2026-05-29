@@ -55,7 +55,7 @@ function filterValidPhotos(photos: any[]): any[] {
   );
 }
 
-// 🔥 FONCTION POUR ENVOYER UNE NOTIFICATION AU PROPRIÉTAIRE
+//  FONCTION POUR ENVOYER UNE NOTIFICATION AU PROPRIÉTAIRE
 async function sendNotificationToOwner(
   ownerId: string,
   title: string,
@@ -71,7 +71,7 @@ async function sendNotificationToOwner(
     });
 
     if (!owner) {
-      console.log(`❌ Propriétaire non trouvé: ${ownerId}`);
+      console.log(` Propriétaire non trouvé: ${ownerId}`);
       return;
     }
 
@@ -92,14 +92,14 @@ async function sendNotificationToOwner(
     });
 
     console.log(
-      `📧 [NOTIFICATION] Envoyée au propriétaire ${owner.email || ownerId}:`,
+      ` [NOTIFICATION] Envoyée au propriétaire ${owner.email || ownerId}:`,
     );
     console.log(`   - Titre: ${title}`);
     console.log(`   - Type: ${type}`);
 
     return notification;
   } catch (error) {
-    console.error("❌ Erreur lors de l'envoi de la notification:", error);
+    console.error(" Erreur lors de l'envoi de la notification:", error);
   }
 }
 
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
     const guests = searchParams.get("guests")
       ? parseInt(searchParams.get("guests")!)
       : undefined;
-    // 🔥 VÉRIFIER SI L'UTILISATEUR EST ADMIN
+    //  VÉRIFIER SI L'UTILISATEUR EST ADMIN
     let isAdmin = false;
     let userDb = null;
 
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(
-      `🔐 [API] User: ${clerkId || "visitor"}, isAdmin: ${isAdmin}, role: ${userDb?.role}`,
+      ` [API] User: ${clerkId || "visitor"}, isAdmin: ${isAdmin}, role: ${userDb?.role}`,
     );
 
     let where: any = {};
@@ -176,14 +176,14 @@ export async function GET(request: NextRequest) {
         where.status = status;
       }
     } else {
-      // 🔥 MODE PUBLIC - ADMIN voit TOUT, les autres voient seulement ACTIVE
+      //  MODE PUBLIC - ADMIN voit TOUT, les autres voient seulement ACTIVE
       if (isAdmin) {
         // ADMIN : Ne pas filtrer par statut, voir TOUTES les annonces
-        console.log("👑 ADMIN - Accès à toutes les annonces (tous statuts)");
+        console.log(" ADMIN - Accès à toutes les annonces (tous statuts)");
         // Ne pas ajouter where.status
       } else {
         // Non-admin : seulement les annonces ACTIVE
-        console.log("👤 VISITEUR - Accès uniquement aux annonces ACTIVE");
+        console.log(" VISITEUR - Accès uniquement aux annonces ACTIVE");
         where.status = "ACTIVE";
       }
     }
@@ -213,12 +213,12 @@ export async function GET(request: NextRequest) {
     if (minRooms) {
       where.rooms = { gte: minRooms };
     }
-    // 🔥 FILTRE VOYAGEURS
+    //  FILTRE VOYAGEURS
     if (guests && guests > 0) {
       where.maxGuests = { gte: guests };
     }
 
-    // 🔥 FILTRE DISPONIBILITÉ (DATES)
+    //  FILTRE DISPONIBILITÉ (DATES)
     if (checkIn && checkOut) {
       const checkInDate = new Date(checkIn);
       const checkOutDate = new Date(checkOut);
@@ -307,8 +307,8 @@ export async function GET(request: NextRequest) {
       prisma.listing.count({ where }),
     ]);
 
-    console.log(`📊 [API] Total annonces trouvées: ${totalCount}`);
-    console.log(`📊 Statuts trouvés:`, [
+    console.log(` [API] Total annonces trouvées: ${totalCount}`);
+    console.log(` Statuts trouvés:`, [
       ...new Set(listings.map((l) => l.status)),
     ]);
 
@@ -347,7 +347,7 @@ export async function GET(request: NextRequest) {
 // POST - Créer une annonce
 export async function POST(request: NextRequest) {
   try {
-    console.log("🔵 POST /api/listings - Début");
+    console.log(" POST /api/listings - Début");
 
     const { userId: clerkId } = getAuth(request);
     if (!clerkId) {
@@ -617,7 +617,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 🔥 RÉCUPÉRER L'ADMIN
+    //  RÉCUPÉRER L'ADMIN
     const adminUser = await prisma.user.findUnique({
       where: { clerkId },
       select: { id: true, role: true, firstName: true, lastName: true },
@@ -656,13 +656,13 @@ export async function PATCH(request: NextRequest) {
     let notificationContent = "";
     let notificationType = "";
 
-    // 🔥 CAS 1: Changement de statut par ADMIN
+    //  CAS 1: Changement de statut par ADMIN
     if (status !== undefined && isAdmin) {
       const oldStatus = existingListing.status;
       const newStatus = status;
 
       console.log(
-        `📝 [PATCH] ADMIN change le statut: ${oldStatus} -> ${newStatus}`,
+        ` [PATCH] ADMIN change le statut: ${oldStatus} -> ${newStatus}`,
       );
 
       updateData.status = status;
@@ -678,35 +678,35 @@ export async function PATCH(request: NextRequest) {
         },
       });
 
-      // 🔥 DÉTERMINER LA NOTIFICATION
+      //  DÉTERMINER LA NOTIFICATION
       if (oldStatus === "PENDING_REVIEW" && newStatus === "ACTIVE") {
-        notificationTitle = "✅ Annonce validée";
+        notificationTitle = "Annonce validée";
         notificationContent = `Votre annonce "${existingListing.title}" a été validée par l'administrateur et est maintenant en ligne.`;
         notificationType = "LISTING_ACTIVATED";
         notificationSent = true;
       } else if (oldStatus === "PENDING_REVIEW" && newStatus === "REJECTED") {
-        notificationTitle = "❌ Annonce rejetée";
+        notificationTitle = " Annonce rejetée";
         notificationContent = `Votre annonce "${existingListing.title}" a été rejetée par l'administrateur. Veuillez la modifier et la soumettre à nouveau.`;
         notificationType = "LISTING_REJECTED";
         notificationSent = true;
       } else if (newStatus === "ACTIVE" && oldStatus !== "ACTIVE") {
-        notificationTitle = "✅ Annonce activée";
+        notificationTitle = " Annonce activée";
         notificationContent = `Votre annonce "${existingListing.title}" a été activée par l'administrateur.`;
         notificationType = "LISTING_ACTIVATED";
         notificationSent = true;
       } else if (newStatus === "INACTIVE") {
-        notificationTitle = "⛔ Annonce désactivée";
+        notificationTitle = " Annonce désactivée";
         notificationContent = `Votre annonce "${existingListing.title}" a été désactivée par l'administrateur.`;
         notificationType = "LISTING_SUSPENDED";
         notificationSent = true;
       } else if (newStatus === "ARCHIVED") {
-        notificationTitle = "📦 Annonce archivée";
+        notificationTitle = " Annonce archivée";
         notificationContent = `Votre annonce "${existingListing.title}" a été archivée par l'administrateur.`;
         notificationType = "SYSTEM_ALERT";
         notificationSent = true;
       }
 
-      console.log(`✅ Statut changé par ADMIN: ${oldStatus} -> ${newStatus}`);
+      console.log(` Statut changé par ADMIN: ${oldStatus} -> ${newStatus}`);
     }
     // CAS 2: Changement de statut par non-admin (refusé)
     else if (status !== undefined && !isAdmin) {
@@ -749,7 +749,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    // 🔥 ENVOYER LA NOTIFICATION AU PROPRIÉTAIRE SI NÉCESSAIRE
+    //  ENVOYER LA NOTIFICATION AU PROPRIÉTAIRE SI NÉCESSAIRE
     if (notificationSent && existingListing.ownerId) {
       await sendNotificationToOwner(
         existingListing.ownerId,
@@ -814,11 +814,11 @@ export async function DELETE(request: NextRequest) {
         data: { status: "ARCHIVED", archivedAt: new Date() },
       });
 
-      // 🔥 NOTIFIER LE PROPRIÉTAIRE QUE SON ANNONCE EST ARCHIVÉE
+      //  NOTIFIER LE PROPRIÉTAIRE QUE SON ANNONCE EST ARCHIVÉE
       if (listing.ownerId) {
         await sendNotificationToOwner(
           listing.ownerId,
-          "📦 Annonce archivée",
+          " Annonce archivée",
           `Votre annonce "${listing.title}" a été archivée par l'administrateur.`,
           "SYSTEM_ALERT",
           id,

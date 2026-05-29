@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-// ✅ Fonction pour générer une référence unique
+//  Fonction pour générer une référence unique
 function generateReference(): string {
   const prefix = "INF";
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -10,7 +10,7 @@ function generateReference(): string {
   return `${prefix}-${timestamp}-${random}`;
 }
 
-// ✅ Méthode POST pour créer une demande d'information
+//  Méthode POST pour créer une demande d'information
 export async function POST(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ✅ Méthode GET pour récupérer les demandes d'information
+//  Méthode GET pour récupérer les demandes d'information
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -225,7 +225,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ✅ Méthode PUT pour mettre à jour une demande (accepter/refuser)
+//  Méthode PUT pour mettre à jour une demande (accepter/refuser)
 export async function PUT(request: NextRequest) {
   try {
     const { userId } = await auth();

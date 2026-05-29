@@ -2112,6 +2112,15 @@
   },
 
   "OwnerListingDetail": {
+    "features": {
+      "balcony": "Balcon",
+      "garden": "Jardin",
+      "garage": "Garage/Parking",
+      "furnished": "Meublé",
+      "petsAllowed": "Animaux acceptés",
+      "smokingAllowed": "Fumeurs acceptés"
+    },
+
     "toast": {
       "networkError": "Erreur de connexion",
       "listingDeleted": "Annonce supprimée avec succès",
@@ -2132,6 +2141,7 @@
       "hideButton": "Masquer",
       "publishButton": "Publier"
     },
+
     "houseRules": {
       "noParties": "Pas de fêtes ou d'événements",
       "noSmoking": "Logement non-fumeur",
@@ -2183,7 +2193,8 @@
       "active": "Publiée",
       "inactive": "Masquée",
       "draft": "Brouillon",
-      "pending_review":"en atente de validation"
+      "pending_review": "en atente de validation",
+      "archived": "Archivée - Restaurez pour réactiver"
     },
     "bookingStatus": {
       "pending": "En attente",
@@ -2219,7 +2230,10 @@
       "ownerDefault": "Propriétaire",
       "mainOwner": "Propriétaire principal",
       "team": "Équipe de gestion",
-      "teamDescription": "Personnes ayant accès à la gestion de cette annonce."
+      "teamDescription": "Personnes ayant accès à la gestion de cette annonce.",
+      "houseRules": "Règlement intérieur",
+      "noAmenities": "Aucun équipement ajouté pour le moment",
+      "host": "hôte"
     },
     "actions": {
       "viewPublic": "Voir l'annonce publique",
@@ -2231,12 +2245,18 @@
       "invite": "Inviter",
       "hide": "Masquer l'annonce",
       "publish": "Publier l'annonce",
-      "delete": "Supprimer"
+      "delete": "Supprimer",
+      "viewAllBookings": "Voir toutes les réservations",
+      "viewCalendar": "Voir le calendrier",
+      "addPhotos": "Ajouter des photos",
+      "addAmenities": "Ajouter des équipements"
     },
     "specs": {
       "rooms": "chambres",
       "bathrooms": "sdb",
-      "guests": "voyageurs"
+      "guests": "voyageurs",
+      "notSpecified": "Non spécifié",
+      "kitchens": "cuisine(s)"
     },
     "breadcrumb": {
       "listings": "Mes Annonces"
@@ -2266,13 +2286,16 @@
       "days": "L,M,M,J,V,S,D"
     }
   },
+
   "ListingHistory": {
     "user": {
-      "default": "Utilisateur"
+      "default": "Utilisateur",
+      "admin": "Administrateur"
     },
     "actions": {
       "export": "Exporter (PDF)",
-      "exporting": "Export en cours..."
+      "exporting": "Export en cours...",
+      "exportSuccess": "Export réussi !"
     },
     "fieldLabels": {
       "pricePerNight": "Modification du prix par nuit",
@@ -2282,7 +2305,8 @@
       "equipment": "Modification des équipements",
       "description": "Modification de la description",
       "title": "Modification du titre",
-      "general": "Modification générale"
+      "general": "Modification générale",
+      "pendingRevision": "Modification en attente de validation"
     },
     "photo": {
       "old": "Ancienne photo",
@@ -2307,11 +2331,13 @@
       "smartlock": "Serrure connectée",
       "speaker": "Enceinte",
       "workplace": "Espace travail",
-      "elevator": "Ascenseur"
+      "elevator": "Ascenseur",
+      "none": "Aucun équipement"
     },
     "errors": {
       "exportFailed": "Erreur lors de l'export. Veuillez réessayer.",
-      "loadFailed": "Impossible de charger l'historique"
+      "loadFailed": "Impossible de charger l'historique",
+      "networkError": "Erreur de connexion"
     },
     "notFound": {
       "title": "Annonce non trouvée",
@@ -2330,7 +2356,7 @@
       "history": "HISTORIQUE"
     },
     "filters": {
-      "": "Tous",
+      "": "Toutes",
       "period": "Période",
       "type": "Types de modifications",
       "30derniersjours": "30 derniers jours",
@@ -2342,6 +2368,7 @@
       "status_change": "Statut",
       "photo_update": "Photos",
       "update": "Général",
+      "pending_revision": "En attente",
       "7days": "7 derniers jours",
       "90days": "90 derniers jours",
       "alldates": "Toutes les dates"
@@ -2351,7 +2378,11 @@
       "newValue": "Nouvelle valeur",
       "deleted": "SUPPRIMÉE",
       "new": "NOUVELLE",
-      "unchanged": "Inchangé"
+      "unchanged": "Inchangé",
+      "pendingRevisionMessage": "Cette modification a été soumise et est en attente de validation par l'administration.",
+      "statusChange": "Changement de statut",
+      "priceChange": "Changement de prix",
+      "equipmentChange": "Modification des équipements"
     },
     "fields": {
       "pricePerNight": "Tarif par nuit",
@@ -2365,15 +2396,18 @@
     "actionTypes": {
       "PRICE_UPDATE": "Prix",
       "STATUS_CHANGE": "Statut",
+      "STATUS_CHANGE_BY_ADMIN": "Changement de statut (Admin)",
       "PHOTO_UPDATE": "Photos",
       "EQUIPMENT_UPDATE": "Équipements",
       "UPDATE": "Modification",
-      "CREATE": "Création"
+      "CREATE": "Création",
+      "PENDING_REVISION": "En attente de validation"
     },
     "roles": {
       "owner": "Propriétaire",
       "coOwner": "Co-propriétaire",
-      "admin": "Administrateur"
+      "admin": "Administrateur",
+      "system": "Système"
     },
     "emptyState": {
       "title": "Aucune modification",
@@ -2383,10 +2417,40 @@
       "active": "Publiée",
       "inactive": "Masquée",
       "draft": "Brouillon",
-      "archived": "Archivée"
+      "archived": "Archivée",
+      "rejected": "Rejetée",
+      "pending_review": "En attente de validation",
+      "pendingReview": "En attente de validation",
+      "pendingValidation": "En attente de validation"
+    },
+    "currency": {
+      "tnd": "TND"
+    },
+    "boolean": {
+      "yes": "Oui",
+      "no": "Non"
+    },
+    "rentalTypes": {
+      "shortTerm": "Court terme",
+      "longTerm": "Long terme",
+      "both": "Les deux"
+    },
+    "periods": {
+      "last30Days": "30 derniers jours",
+      "quarter": "Trimestre",
+      "year": "Année",
+      "all": "Tout"
+    },
+    "actionTypesLabels": {
+      "priceUpdate": " Prix",
+      "statusChange": " Statut",
+      "photoUpdate": " Photos",
+      "equipmentUpdate": " Équipements",
+      "update": " Modification",
+      "create": " Création",
+      "pendingRevision": " En attente"
     }
   },
-
   "OwnerListings": {
     "currency": {
       "tnd": "TND"
@@ -2606,6 +2670,38 @@
     }
   },
   "EditListing": {
+    "placeholders": {
+      "surfaceExample": "Ex: 120",
+      "floorExample": "Ex: 3"
+    },
+    "floor": {
+      "ground": "RDC",
+      "floorSuffix": "ème"
+    },
+    "currency": {
+      "perNight": "TND/nuit",
+      "perMonth": "TND/mois",
+      "tnd": "TND"
+    },
+    "rejection": {
+      "title": "Annonce rejetée par l'administration",
+      "reason": "Motif :",
+      "rejectedOn": "Rejeté le",
+      "recently": "récemment",
+      "saveAndResubmit": "Sauvegarder & Resoumettre"
+    },
+    "toast": {
+      "listingNotFound": "Listing not found",
+      "loadingError": "Error loading listing",
+      "changesPendingValidation": "Changes sent for validation. The listing remains visible while waiting for admin approval.",
+      "changesSaved": "Changes saved successfully",
+      "saveError": "Error saving changes",
+      "connectionError": "Connection error",
+      "resubmitted": "Changes saved and submitted for validation",
+      "submissionError": "Error during submission",
+      "operationError": "Operation error"
+    },
+
     "loading": "Chargement de votre annonce...",
     "notFound": "Annonce introuvable",
     "confirmLeave": "Vous avez des modifications non sauvegardées. Êtes-vous certain de vouloir quitter cette page ?",
@@ -2633,7 +2729,9 @@
       "details": "Informations",
       "photos": "Photos",
       "pricing": "Tarification",
-      "publish": "Publication"
+      "publish": "Publication",
+      "applyPrice": "Appliquer ce prix",
+      "apply": "Appliquer"
     },
 
     "sectionHints": {
@@ -2680,7 +2778,16 @@
       "configuration": "Configuration",
       "configurationHint": "Type et capacité d'accueil",
       "equipment": "Équipements",
-      "equipmentHint": "Sélectionnez les équipements disponibles"
+      "equipmentHint": "Sélectionnez les équipements disponibles",
+      "balcony": "Balcon",
+      "garden": "Jardin",
+      "garage": "Garage",
+      "elevator": "Ascenseur",
+      "furnished": "Meublé",
+      "rooms": "Chambres",
+      "bathrooms": "Salles de bain",
+      "kitchens": "Cuisines",
+      "rules": "Règles"
     },
 
     "fields": {
@@ -2690,7 +2797,9 @@
       "bathrooms": "Sdb",
       "surface": "Surface m²",
       "elevator": "Ascenseur",
-      "guests": "voyageurs"
+      "guests": "voyageurs",
+      "surfaceArea": "Surface totale",
+      "floorNumber": "Numéro d'étage"
     },
 
     "propertyTypes": {
@@ -2736,7 +2845,11 @@
       "minWarning": "Minimum 5 photos recommandées — il en manque {count}",
       "main": "Main",
       "add": "Ajouter",
-      "photos": "photos"
+      "photos": "photos",
+      "maxReached": "Maximum 20 photos",
+      "added": "{count} photo(s) added",
+      "removed": "Photo removed",
+      "mainUpdated": "Main photo updated"
     },
 
     "rentalTypes": {
@@ -2744,14 +2857,27 @@
       "longTerm": "Long terme",
       "both": "Les deux"
     },
-
+    "geocoding": {
+      "missingAddress": "Veuillez d'abord remplir l'adresse complète",
+      "positionFound": "Position trouvée sur la carte",
+      "addressNotFound": "Adresse non trouvée"
+    },
+    "ai": {
+      "recommendation": "Prix recommandé : {night} TND/nuit, {month} TND/mois",
+      "calculating": "Calcul en cours...",
+      "estimate": "Estimer",
+      "recommendationBadge": "IA RECOMMANDATION"
+    },
     "pricing": {
       "perNight": "Prix par nuit",
       "perMonth": "Prix par mois",
       "deposit": "Caution",
       "depositDesc": "Remboursable",
       "cleaningFee": "Frais ménage",
-      "cleaningFeeDesc": "Une seule fois"
+      "cleaningFeeDesc": "Une seule fois",
+      "yourPricePerNight": "Votre prix par nuit (TND)",
+      "yourPricePerMonth": "Votre prix par mois (TND)",
+      "apply": "Appliquer ce prix"
     },
 
     "units": {
@@ -2812,9 +2938,18 @@
       "mainPhotoRequired": "Veuillez définir une photo principale",
       "pricePerNightRequired": "Le prix par nuit est requis",
       "pricePerMonthRequired": "Le prix par mois est requis"
+    },
+    "rules": {
+      "petsAllowed": "Animaux autorisés",
+      "smokingAllowed": "Fumeurs autorisés",
+      "quietAfter22": "Soirées calme après 22h",
+      "noParties": "Pas de soirées/fêtes"
     }
   },
   "OwnerCalendar": {
+    "currency": {
+      "tnd": "TND"
+    },
     "emptyState": {
       "title": "Créez votre première annonce",
       "description": "Commencez par ajouter un bien immobilier pour commencer à gérer votre calendrier de disponibilités.",
@@ -2832,12 +2967,7 @@
       "selectProperty": "Sélectionnez une propriété",
       "noProperties": "Aucune propriété"
     },
-    "common": {
-      "guest": "Voyageur",
-      "dates": "date(s)",
-      "nights": "nuit(s)",
-      "night": "nuit"
-    },
+
     "sidebar": {
       "myProperties": "Mes Propriétés",
       "upcomingBookings": "Prochaines réservations",
@@ -2848,7 +2978,8 @@
       "upgrade": "Upgrade",
       "confirm": "Confirmer",
       "apply": "Appliquer",
-      "selectedDates": "date(s) sélectionnée(s)"
+      "selectedDates": "date(s) sélectionnée(s)",
+      "confirmRemove": "Confirmer la suppression"
     },
 
     "legend": {
@@ -2863,7 +2994,9 @@
       "specialPrice": "Prix spécial",
       "reasonOptional": "Raison (optionnel)",
       "selectDates": "Sélectionnez des dates",
-      "pricePlaceholder": "Prix"
+      "removePrice": "Supprimer le prix spécial",
+      "removePriceConfirm": "Voulez-vous vraiment supprimer le prix spécial pour {count} date(s) ?",
+      "pricePlaceholder": "Montant en TND"
     },
     "selection": {
       "title": "Sélection"
@@ -2875,11 +3008,18 @@
       "bookedNights": "Nuits rés.",
       "blockedDays": "Jours bloq."
     },
-    "aiTip": {
-      "title": "Conseil IA",
-      "lowOccupancy": "Taux d'occupation à {occupancy}%. Pensez aux promotions.",
-      "goodActivity": "Bonne activité. Optimisez vos tarifs weekend.",
-      "excellent": "Excellent ! Votre calendrier est bien rempli."
+    "common": {
+      "owner": "Propriétaire",
+      "guest": "Invité",
+      "dates": "date(s)",
+      "night": "nuit",
+      "nights": "nuit(s)"
+    },
+    "expertTip": {
+      "title": "Conseil d'expert",
+      "lowOccupancy": " Taux d'occupation à {occupancy}%. Nous vous recommandons d'activer des promotions ou d'ajuster vos tarifs à la baisse pour augmenter vos réservations.",
+      "goodActivity": " Bonne activité ! Pour optimiser vos revenus, augmentez légèrement vos tarifs le week-end ou proposez des offres spéciales.",
+      "excellent": " Excellent ! Votre calendrier est bien rempli. Maintenez cette dynamique et surveillez les tendances saisonnières."
     },
     "alerts": {
       "dateBlocked": "Date bloquée",
@@ -2896,11 +3036,24 @@
       "cannotUnblockDates": "Impossible de débloquer les dates.",
       "cannotApplyPrices": "Impossible d'appliquer les prix.",
       "dataRefreshed": "Données actualisées avec succès",
-      "refreshFailed": "Erreur lors de l'actualisation des données"
+      "refreshFailed": "Erreur lors de l'actualisation des données",
+      "priceRemoved": "Prix spécial supprimé pour {count} date(s)"
     }
   },
 
   "Calendar": {
+    "tooltip": {
+      "clickToUnblock": "Cliquer pour débloquer cette date",
+      "clickToRemovePrice": "Cliquer pour supprimer le prix spécial",
+      "specialPrice": "Prix spécial",
+      "selectedDate": "Date sélectionnée",
+      "bookingInfo": "Réservation existante - Non modifiable"
+    },
+    "removePrice": "Supprimer le prix",
+    "common": {
+      "perNight": "par nuit"
+    },
+    "selected": "sélectionnée",
     "booking": "Réservation",
     "blocked": "Bloqué",
     "specialPrice": "Prix spécial",
@@ -3401,27 +3554,69 @@
 
   "MessagesPage": {
     "loading": "Chargement des messages...",
-    "title": "Conversations",
-    "conversations": "Conversations",
-    "searchPlaceholder": "Rechercher une discussion...",
-    "noConversations": "Aucune conversation",
-    "noConversationsHint": "Vos messages apparaîtront ici",
-    "noResults": "Aucun résultat",
-    "noResultsHint": "Aucune conversation ne correspond à votre recherche",
+    "title": "Messages",
     "selectConversation": "Sélectionnez une conversation",
     "selectConversationHint": "pour commencer à discuter",
-    "filters": {
-      "all": "Toutes",
-      "unread": "Non lus",
-      "read": "Lus"
+    "conversations": {
+      "title": "Conversations",
+      "count": "conversation",
+      "groups": "GROUPES DE LITIGE",
+      "messages": "MESSAGES PRIVÉS",
+      "empty": "Aucune conversation",
+      "disputeGroup": "Litige en cours",
+      "dispute": "Litige",
+      "unknownListing": "Propriété inconnue"
     },
     "offer": {
-      "pending": "Offre en attente",
-      "accepted": "Offre acceptée",
-      "rejected": "Offre refusée"
+      "pending": "Offre en attente"
+    },
+    "actions": {
+      "accept": "Accepter la demande",
+      "reject": "Refuser"
+    },
+    "sidebar": {
+      "property": "Propriété",
+      "night": "nuit",
+      "guests": "pers.",
+      "tenantProfile": "Profil Locataire",
+      "verified": "Vérifié",
+      "reliabilityScore": "Score de fiabilité",
+      "reviews": "Avis",
+      "stays": "Séjours",
+      "bookingOffer": "Offre de réservation",
+      "totalAmount": "Montant total",
+      "status": "Statut",
+      "pending": "En attente",
+      "accepted": "Acceptée",
+      "rejected": "Refusée",
+      "expired": "Expirée",
+      "expiration": "Expiration",
+      "noOffer": "Aucune offre en cours",
+      "quickActions": "Actions rapides",
+      "note": "En acceptant, vous pré-approuvez la réservation. Le locataire aura 24h pour finaliser le paiement."
+    },
+    "messages": {
+      "noOffer": "Aucune offre en attente",
+      "alreadyAccepted": "Cette offre a déjà été acceptée",
+      "alreadyRejected": "Cette offre a déjà été refusée",
+      "expired": "Cette offre a expirée"
+    },
+    "toast": {
+      "noOffer": "Aucune offre trouvée",
+      "offerAlreadyProcessed": "Cette offre a déjà été traitée",
+      "offerAccepted": "Offre acceptée avec succès ! La réservation est confirmée.",
+      "offerRejected": "Offre refusée",
+      "acceptError": "Erreur lors de l'acceptation",
+      "rejectError": "Erreur lors du refus",
+      "connectionError": "Erreur de connexion"
+    },
+    "empty": {
+      "title": "Aucune conversation",
+      "description": "Les messages des voyageurs apparaîtront ici dès qu'ils vous contacteront.",
+      "button": "Voir mes annonces",
+      "helpLink": "Comment gérer mes messages ?"
     }
   },
-
   "ListingPage": {
     "loading": "Chargement de l'annonce...",
     "notFound": "Annonce introuvable",
@@ -5062,6 +5257,28 @@
   },
 
   "AdminListingDetail": {
+    "owner": {
+      "phone": "Téléphone",
+      "email": "Email",
+      "bio": "Bio du propriétaire"
+    },
+    "common": {
+      "modified": "Modifié",
+      "removed": "Retiré",
+      "oldValue": "Ancien"
+    },
+    "description": {
+      "current": "Description actuelle",
+      "old": "Ancienne description"
+    },
+    "location": {
+      "governorate": "Gouvernorat",
+      "delegation": "Délégation",
+      "street": "Rue",
+      "coordinatesChanged": "Coordonnées GPS modifiées",
+      "coordinates": "Coordonnées GPS"
+    },
+
     "rentalTypeLabel": "Type de location",
     "rentalType": {
       "SHORT_TERM": "Location courte durée",
@@ -5069,6 +5286,9 @@
       "BOTH": "Mixte (court et long terme)"
     },
     "equipment": {
+      "label": "Équipement",
+      "added": "Nouvel équipement",
+      "removed": "Équipement retiré",
       "wifi": "Wi-Fi haut débit",
       "pool": "Piscine",
       "ac": "Climatisation réversible",
@@ -5100,12 +5320,16 @@
       "workspace": "Espace bureau"
     },
     "rules": {
-      "noSmoking": "Interdiction de fumer dans tout le logement",
-      "noPets": "Animaux domestiques non autorisés",
-      "noParties": "Fêtes et événements interdits",
-      "childrenAllowed": "Enfants bienvenus",
-      "petsAllowed": "Animaux acceptés sur demande",
-      "smokingAllowed": "Fumeurs acceptés (extérieur uniquement)"
+      "label": "Règle",
+      "added": "Nouvelle règle",
+      "removed": "Règle retirée",
+      "noSmoking": "Interdiction de fumer",
+      "noPets": "Interdiction des animaux",
+      "noParties": "Pas de soirées/fêtes",
+      "childrenAllowed": "Enfants acceptés",
+      "petsAllowed": "Animaux acceptés",
+      "smokingAllowed": "Fumeurs acceptés",
+      "quietAfter22": "Soirées calme après 22h"
     },
     "propertyType": {
       "APARTMENT": "Appartement de standing",
@@ -5525,5 +5749,147 @@
     "footer": "Tableau de bord propriétaire",
     "marketAvg": "Moyenne du marché",
     "performance": "Performance"
+  },
+  "OwnerReservations": {
+    "page": {
+      "title": "Gestion des Réservations",
+      "description": "Suivez et gérez les demandes de séjour pour vos propriétés"
+    },
+    "tabs": {
+      "pending": "En attente",
+      "confirmed": "Confirmées",
+      "past": "Passées"
+    },
+    "status": {
+      "pending": "En attente",
+      "accepted": "Acceptée",
+      "confirmed": "Confirmée",
+      "rejected": "Refusée",
+      "cancelled": "Annulée",
+      "completed": "Terminée"
+    },
+    "actions": {
+      "accept": "Accepter",
+      "reject": "Refuser",
+      "viewListing": "Voir l'annonce",
+      "message": "Message",
+      "cancel": "Annuler",
+      "review": "Donner un avis",
+      "reviewGiven": "Avis donné"
+    },
+    "stats": {
+      "pending": "En attente",
+      "weeklyRequests": "Cette semaine",
+      "occupancy": "Occupation",
+      "revenue": "Revenus"
+    },
+    "sidebar": {
+      "quickActions": "Actions rapides",
+      "analytics": "Analytics",
+      "revenue": "Revenus & stats",
+      "messages": "Messages",
+      "conversations": "Conversations",
+      "listings": "Mes biens",
+      "manage": "Gérer",
+      "tips": "Conseils",
+      "addListing": "Ajouter un bien",
+      "addListingDesc": "Développez votre patrimoine",
+      "start": "Commencer"
+    },
+    "tips": {
+      "fastResponse": "Répondre en moins de 2h augmente vos réservations de 30%.",
+      "updatePhotos": "Mettez à jour vos photos pour la saison."
+    },
+    "toast": {
+      "acceptSuccess": "Demande acceptée !",
+      "acceptError": "Erreur lors de l'acceptation",
+      "rejectSuccess": "Demande refusée",
+      "rejectError": "Erreur lors du refus",
+      "networkError": "Erreur de connexion",
+      "reviewSuccess": " Avis publié avec succès ! Le locataire recevra une notification.",
+      "reviewError": "Erreur lors de la publication de l'avis"
+    },
+    "rejectReason": {
+      "default": "Dates non disponibles"
+    },
+    "currency": {
+      "tnd": "TND"
+    },
+    "emptyState": {
+      "title": "Aucune réservation pour le moment",
+      "description": "Les demandes de réservation apparaîtront ici dès que des voyageurs s'intéresseront à vos biens.",
+      "button": "Voir mes annonces",
+      "helpLink": "Comment gérer mes réservations ?"
+    },
+    "night": "nuit",
+    "nights": "nuits",
+    "guests": "voyageurs"
+  },
+
+  "Reviews": {
+    "title": "Évaluer le locataire",
+    "criteria": {
+      "cleanliness": "Propreté",
+      "communication": "Communication",
+      "houseRules": "Respect du règlement"
+    },
+    "comment": "Commentaire",
+    "commentPlaceholder": "Partagez votre expérience avec ce locataire...",
+    "recommend": "Recommanderiez-vous ce locataire ?",
+    "publish": "Publier l'avis",
+    "publishing": "Publication...",
+    "cancel": "Annuler",
+    "errors": {
+      "ratingRequired": "Veuillez noter tous les critères",
+      "submitError": "Erreur lors de la publication"
+    }
+  },
+  "OwnerCancelBooking": {
+    "breadcrumb": {
+      "reservations": "Réservations",
+      "cancellation": "Annulation"
+    },
+    "title": "Annuler une réservation",
+    "badge": "Annulation",
+    "notFound": "Réservation non trouvée",
+    "backToReservations": "Retour aux réservations",
+    "confirmError": "Veuillez saisir \"ANNULER\" pour confirmer",
+    "success": "Réservation annulée avec succès",
+    "error": "Erreur lors de l'annulation",
+    "networkError": "Erreur de connexion",
+    "important": {
+      "title": "Avis important",
+      "hostImpact": "Votre statut d'hôte peut être affecté par cette annulation.",
+      "calendarUnblock": "Le calendrier sera automatiquement débloqué pour ces dates.",
+      "fullRefund": "Le locataire sera remboursé intégralement."
+    },
+    "form": {
+      "reason": "Raison de l'annulation",
+      "selectReason": "Sélectionnez une raison",
+      "message": "Message pour le locataire",
+      "messagePlaceholder": "Expliquez brièvement la situation au locataire...",
+      "confirmation": "Confirmation finale",
+      "confirmText": "Veuillez saisir"
+    },
+    "reasons": {
+      "maintenance": "Maintenance d'urgence requise",
+      "doubleBooking": "Double réservation accidentelle",
+      "damage": "Dommages importants à la propriété",
+      "sold": "Vente de la propriété",
+      "other": "Autre motif impérieux"
+    },
+    "details": {
+      "checkIn": "Arrivée",
+      "checkOut": "Départ",
+      "tenant": "Locataire",
+      "totalPrice": "Prix Total",
+      "refund": "Remboursement",
+      "refundInfo": "En annulant, vous remboursez intégralement le locataire."
+    },
+    "buttons": {
+      "confirm": "Confirmer l'annulation",
+      "cancelling": "Annulation en cours...",
+      "back": "Retour"
+    }
   }
 }

@@ -53,16 +53,16 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // ✅ Conversion TND → EUR
+    // Conversion TND → EUR
     const amountTND = offer.totalPrice;
     const rate = await getCurrentExchangeRate();
     const amountInCents = await tndToStripeAmount(amountTND);
     const amountEUR = amountInCents / 100;
 
     console.log(
-      `💰 ${amountTND} TND → ${amountEUR.toFixed(2)} EUR (taux: ${rate.toFixed(4)})`,
+      ` ${amountTND} TND → ${amountEUR.toFixed(2)} EUR (taux: ${rate.toFixed(4)})`,
     );
-    console.log(`💰 Montant Stripe: ${amountInCents} centimes`);
+    console.log(` Montant Stripe: ${amountInCents} centimes`);
 
     // Créer le PaymentIntent en EUR
     const paymentIntent = await stripe.paymentIntents.create({

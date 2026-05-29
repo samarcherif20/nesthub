@@ -1,38 +1,49 @@
 // lib/services/poi.service.ts
 import { IconType } from "react-icons";
-import { 
-  FaUmbrellaBeach, 
-  FaStore, 
-  FaPills, 
-  FaGasPump, 
-  FaTrain, 
-  FaBus, 
-  FaParking, 
-  FaTree, 
-  FaUtensils, 
-  FaCoffee, 
-  FaDumbbell, 
-  FaSwimmer, 
-  FaHospital, 
-  FaSchool, 
-  FaUniversity, 
-  FaShieldAlt, 
-  FaMosque, 
-  FaChurch, 
-  FaFilm, 
-  FaLandmark, 
+import {
+  FaUmbrellaBeach,
+  FaStore,
+  FaPills,
+  FaGasPump,
+  FaTrain,
+  FaBus,
+  FaParking,
+  FaTree,
+  FaUtensils,
+  FaCoffee,
+  FaDumbbell,
+  FaSwimmer,
+  FaHospital,
+  FaSchool,
+  FaUniversity,
+  FaShieldAlt,
+  FaMosque,
+  FaChurch,
+  FaFilm,
+  FaLandmark,
   FaMoneyBillWave,
   FaCar,
-  FaTaxi
+  FaTaxi,
 } from "react-icons/fa";
-import { MdLocalGroceryStore, MdLocalPharmacy, MdLocalHospital, MdFastfood } from "react-icons/md";
+import {
+  MdLocalGroceryStore,
+  MdLocalPharmacy,
+  MdLocalHospital,
+  MdFastfood,
+} from "react-icons/md";
 import { GiGymBag } from "react-icons/gi";
 import { PiFilmReelFill } from "react-icons/pi";
 
-// ✅ Configuration des POIs - utilisation de IconType
+//  Configuration des POIs - utilisation de IconType
 export const POI_CATEGORIES: Record<
   string,
-  { icon: IconType; color: string; label: string; searchTerms: string[]; maxDistance: number }
+  {
+    icon: IconType;
+    color: string;
+    label: string;
+    searchTerms: string[];
+    maxDistance: number;
+  }
 > = {
   beach: {
     icon: FaUmbrellaBeach,
@@ -197,7 +208,7 @@ export interface POIItem {
   lon: number;
   name: string;
   category: string;
-  icon: IconType;  // ✅ Type correct pour react-icons
+  icon: IconType;
   color: string;
   distance: number;
 }
@@ -208,9 +219,8 @@ export async function fetchNearbyPOIs(
   lng: number,
   maxDistanceKm: number = 3,
 ): Promise<POIItem[]> {
-  
   const radiusMeters = maxDistanceKm * 1000;
-  
+
   const overpassQuery = `
     [out:json];
     (
@@ -248,7 +258,7 @@ export async function fetchNearbyPOIs(
     for (const element of data.elements) {
       let category = "supermarket";
       const tags = element.tags || {};
-      
+
       if (tags.natural === "beach") category = "beach";
       else if (tags.leisure === "park") category = "park";
       else if (tags.shop === "supermarket") category = "supermarket";
@@ -267,8 +277,7 @@ export async function fetchNearbyPOIs(
       else if (tags.amenity === "place_of_worship") {
         if (tags.religion === "muslim") category = "mosque";
         else category = "church";
-      }
-      else continue;
+      } else continue;
 
       const config = POI_CATEGORIES[category];
       if (!config) continue;
@@ -280,7 +289,7 @@ export async function fetchNearbyPOIs(
       seen.add(key);
 
       const distance = calculateDistance(lat, lng, element.lat, element.lon);
-      
+
       if (distance > config.maxDistance) continue;
 
       pois.push({
@@ -296,7 +305,6 @@ export async function fetchNearbyPOIs(
     }
 
     return pois.sort((a, b) => a.distance - b.distance).slice(0, 30);
-    
   } catch (error) {
     console.error("Erreur lors de la recherche des POIs:", error);
     return [];

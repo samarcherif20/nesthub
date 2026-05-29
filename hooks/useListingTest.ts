@@ -104,13 +104,13 @@ export function useListingTest(id: string) {
   const fetchAvailability = useCallback(async () => {
     if (!id) return;
 
-    console.log("🔵 fetchAvailability: Début pour listing", id);
+    console.log(" fetchAvailability: Début pour listing", id);
 
     try {
       const now = new Date();
       const allBlockedDates: any[] = [];
       const allPricingRules: any[] = [];
-      const allPendingDates: string[] = []; // ← tableau de strings
+      const allPendingDates: string[] = [];
 
       for (let i = 0; i < 12; i++) {
         const date = new Date(now);
@@ -127,7 +127,7 @@ export function useListingTest(id: string) {
           allBlockedDates.push(...(data.blockedDates || []));
           allPricingRules.push(...(data.pricingRules || []));
 
-          // ✅ CONVERSION CORRECTE : transformer les objets en strings
+          //  CONVERSION CORRECTE : transformer les objets en strings
           const pendingData = data.pendingBlockedDates || [];
           for (const item of pendingData) {
             if (item.startDate) {
@@ -146,18 +146,18 @@ export function useListingTest(id: string) {
       const uniquePendingDates = [...new Set(allPendingDates)];
 
       console.log(
-        `📊 fetchAvailability: ${allBlockedDates.length} dates ROUGES, ${uniquePendingDates.length} dates ORANGES`,
+        ` fetchAvailability: ${allBlockedDates.length} dates ROUGES, ${uniquePendingDates.length} dates ORANGES`,
       );
-      console.log("🟠 Dates ORANGES:", uniquePendingDates);
+      console.log(" Dates ORANGES:", uniquePendingDates);
 
       setBlockedDates(allBlockedDates);
-      setPendingDates(uniquePendingDates); // ← maintenant ce sont des strings !
+      setPendingDates(uniquePendingDates);
       setPricingRules(allPricingRules);
     } catch (error) {
-      console.error("❌ Erreur fetchAvailability:", error);
+      console.error(" Erreur fetchAvailability:", error);
     }
   }, [id]);
-  // ✅ CORRECTION: Vérifier si une date est bloquée (utilise les données de l'API)
+  //  CORRECTION: Vérifier si une date est bloquée (utilise les données de l'API)
   const isDateBlocked = useCallback(
     (date: string) => {
       if (!listing) return true;
@@ -172,25 +172,25 @@ export function useListingTest(id: string) {
       });
 
       if (isBlockedByAPI) {
-        console.log(`📅 ${date} est bloqué par l'API`);
+        console.log(` ${date} est bloqué par l'API`);
         return true;
       }
 
       // Vérifier dans pendingDates
       if (pendingDates.includes(date)) {
-        console.log(`📅 ${date} est en attente`);
+        console.log(` ${date} est en attente`);
         return true;
       }
 
       // Vérifier dans listing.blockedDates
       if (listing.blockedDates?.includes(date)) {
-        console.log(`📅 ${date} est bloqué par listing.blockedDates`);
+        console.log(` ${date} est bloqué par listing.blockedDates`);
         return true;
       }
 
       // Vérifier dans listing.availability
       if (listing.availability && listing.availability[date] === false) {
-        console.log(`📅 ${date} est bloqué par availability`);
+        console.log(` ${date} est bloqué par availability`);
         return true;
       }
 
@@ -199,7 +199,7 @@ export function useListingTest(id: string) {
     [listing, blockedDates, pendingDates],
   );
 
-  // ✅ Vérifier si une plage complète est disponible
+  //  Vérifier si une plage complète est disponible
   const isDateRangeAvailable = useCallback(
     (startDate: string, endDate: string) => {
       if (!startDate || !endDate) return false;
@@ -214,18 +214,18 @@ export function useListingTest(id: string) {
       }
 
       console.log(
-        `🔍 Vérification plage: ${startDate} → ${endDate} (${dates.length} nuits)`,
+        ` Vérification plage: ${startDate} → ${endDate} (${dates.length} nuits)`,
       );
 
       // Vérifier chaque date
       for (const date of dates) {
         if (isDateBlocked(date)) {
-          console.log(`❌ Plage non disponible: ${date} est bloqué`);
+          console.log(` Plage non disponible: ${date} est bloqué`);
           return false;
         }
       }
 
-      console.log(`✅ Plage disponible: ${startDate} → ${endDate}`);
+      console.log(` Plage disponible: ${startDate} → ${endDate}`);
       return true;
     },
     [isDateBlocked],
@@ -239,15 +239,15 @@ export function useListingTest(id: string) {
       try {
         const res = await fetch(`/api/listings/${id}`);
         const data = await res.json();
- console.log("🔍 DATA BRUTE DE L'API:", {
-        hasElevator: data.hasElevator,
-        hasBalcony: data.hasBalcony,
-        hasGarden: data.hasGarden,
-        hasGarage: data.hasGarage,
-        isFurnished: data.isFurnished,
-        // Affiche aussi tout l'équipement pour voir
-        equipment: data.equipment,
-      });
+        console.log(" DATA BRUTE DE L'API:", {
+          hasElevator: data.hasElevator,
+          hasBalcony: data.hasBalcony,
+          hasGarden: data.hasGarden,
+          hasGarage: data.hasGarage,
+          isFurnished: data.isFurnished,
+          // Affiche aussi tout l'équipement pour voir
+          equipment: data.equipment,
+        });
         const images = data.photos?.map((p: any) => p.url) ?? data.images ?? [];
         const amenities = extractAmenities(data.equipment ?? {});
         const houseRules = parseHouseRules(data.houseRules, data);
@@ -345,13 +345,13 @@ export function useListingTest(id: string) {
             value: 4.5,
           },
         };
-console.log("📦 transformedListing après création:", {
-  hasElevator: transformedListing.hasElevator,
-  hasBalcony: transformedListing.hasBalcony,
-  hasGarden: transformedListing.hasGarden,
-  hasGarage: transformedListing.hasGarage,
-  isFurnished: transformedListing.isFurnished,
-});
+        console.log(" transformedListing après création:", {
+          hasElevator: transformedListing.hasElevator,
+          hasBalcony: transformedListing.hasBalcony,
+          hasGarden: transformedListing.hasGarden,
+          hasGarage: transformedListing.hasGarage,
+          isFurnished: transformedListing.isFurnished,
+        });
         setListing(transformedListing);
       } catch (error) {
         console.error("Error fetching listing:", error);
@@ -370,16 +370,16 @@ console.log("📦 transformedListing après création:", {
     }
   }, [id, fetchAvailability]);
 
-  // ✅ Log quand checkIn/checkOut changent
+  //  Log quand checkIn/checkOut changent
   useEffect(() => {
     if (checkIn && checkOut) {
       const available = isDateRangeAvailable(checkIn, checkOut);
       console.log(
-        `📅 Dates sélectionnées: ${checkIn} → ${checkOut}, Disponible: ${available}`,
+        ` Dates sélectionnées: ${checkIn} → ${checkOut}, Disponible: ${available}`,
       );
     } else if (checkIn) {
       console.log(
-        `📅 Check-in sélectionné: ${checkIn}, Bloqué: ${isDateBlocked(checkIn)}`,
+        ` Check-in sélectionné: ${checkIn}, Bloqué: ${isDateBlocked(checkIn)}`,
       );
     }
   }, [checkIn, checkOut, isDateRangeAvailable, isDateBlocked]);

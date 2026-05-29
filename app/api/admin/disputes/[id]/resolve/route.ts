@@ -42,7 +42,7 @@ export async function POST(
     const plaintiff = isReporterOwner ? dispute.booking?.owner : dispute.booking?.tenant;
     const defendant = isReporterOwner ? dispute.booking?.tenant : dispute.booking?.owner;
 
-    // ✅ Mise à jour SANS argent
+    //  Mise à jour SANS argent
     const updatedDispute = await prisma.dispute.update({
       where: { id },
       data: {
@@ -59,7 +59,7 @@ export async function POST(
         data: {
           userId: plaintiff.id,
           type: "DISPUTE_RESOLVED",
-          title: "✅ Votre litige a été résolu",
+          title: " Votre litige a été résolu",
           content: `Bonjour ${plaintiff.firstName}, le litige que vous avez ouvert concernant "${dispute.booking?.listing?.title}" a été résolu par l'administrateur.`,
           channels: ["IN_APP", "EMAIL"],
           data: { disputeId: dispute.id },
@@ -73,7 +73,7 @@ export async function POST(
         data: {
           userId: defendant.id,
           type: "DISPUTE_RESOLVED",
-          title: "✅ Un litige vous concernant a été résolu",
+          title: " Un litige vous concernant a été résolu",
           content: `Bonjour ${defendant.firstName}, le litige concernant "${dispute.booking?.listing?.title}" a été résolu par l'administrateur.`,
           channels: ["IN_APP", "EMAIL"],
           data: { disputeId: dispute.id },

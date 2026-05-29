@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 🔔 Notifier l'utilisateur
+    //  Notifier l'utilisateur
     await prisma.notification.create({
       data: {
         userId: user.id,
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // 🔔 Notifier TOUS les admins
+    //  Notifier TOUS les admins
     const admins = await prisma.user.findMany({
       where: { role: "ADMIN" },
       select: { id: true },
@@ -85,14 +85,14 @@ export async function POST(request: NextRequest) {
         data: admins.map((admin) => ({
           userId: admin.id,
           type: "SYSTEM_ALERT",
-          title: "🆕 Nouvelle demande de vérification",
+          title: " Nouvelle demande de vérification",
           content: `${user.firstName || ""} ${user.lastName || ""} (${user.email}) a soumis une nouvelle demande de vérification d'identité.`,
           isRead: false,
           createdAt: new Date(),
         })),
       });
 
-      console.log(`✅ ${admins.length} notifications envoyées aux admins`);
+      console.log(` ${admins.length} notifications envoyées aux admins`);
     }
 
     return NextResponse.json({
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("❌ Erreur création verification request:", error);
+    console.error(" Erreur création verification request:", error);
     return NextResponse.json(
       { error: "Erreur serveur lors de la création de la demande" },
       { status: 500 },
@@ -151,7 +151,7 @@ export async function GET(request: NextRequest) {
       verificationRequest,
     });
   } catch (error) {
-    console.error("❌ Erreur récupération statut:", error);
+    console.error(" Erreur récupération statut:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

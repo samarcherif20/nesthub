@@ -7,7 +7,7 @@ export async function GET() {
     const cookieStore = await cookies();
     const redirectUrl = cookieStore.get('redirectAfterLogin')?.value;
     
-    console.log("🍪 Cookie redirectAfterLogin lu dans API:", redirectUrl);
+    console.log(" Cookie redirectAfterLogin lu dans API:", redirectUrl);
     
     return NextResponse.json({ url: redirectUrl || null });
   } catch (error) {

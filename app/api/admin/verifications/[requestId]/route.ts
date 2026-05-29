@@ -22,9 +22,7 @@ interface CinExtractedData {
   [key: string]: unknown;
 }
 
-// ============================================
 // GET - Détail d'une demande
-// ============================================
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { userId } = getAuth(request);
@@ -61,7 +59,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             createdAt: true,
             role: true,
             isIdentityVerified: true,
-            cinData: true, // ✅ AJOUTÉ - données arabes du CIN
+            cinData: true, 
             stats: true,
           },
         },
@@ -86,7 +84,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // ✅ Transformer la réponse pour inclure cinData au niveau supérieur
+    //  Transformer la réponse pour inclure cinData au niveau supérieur
     const response = {
       ...verificationRequest,
       cinData: verificationRequest.user?.cinData,
@@ -94,7 +92,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         verificationRequest.status === "REAPPLIED"
           ? {
               motif: verificationRequest.rejectionMotif,
-              date: verificationRequest.processedAt, // Use processedAt instead of rejectedAt
+              date: verificationRequest.processedAt, 
             }
           : null,
     };
@@ -106,9 +104,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   }
 }
 
-// ============================================
 // PATCH - Traiter une demande
-// ============================================
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   try {
     const { userId } = getAuth(request);
@@ -168,10 +164,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       adminComment,
     };
 
-    // ============================================
-    // VALIDATION
-    // ============================================
-    if (action === "VALIDATE") {
+        // VALIDATION
+        if (action === "VALIDATE") {
       newStatus = "VALIDATED";
       updateData = {
         ...updateData,
@@ -235,19 +229,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           },
         }),
 
-        // 🔔 NOTIFICATION - VALIDATION
+        //  NOTIFICATION - VALIDATION
         prisma.notification.create({
           data: {
             userId: verificationRequest.userId,
             type: "SYSTEM_ALERT",
-            title: "✅ Vérification d'identité approuvée",
+            title: " Vérification d'identité approuvée",
             content:
               "Félicitations ! Votre identité a été vérifiée avec succès. Votre compte est maintenant actif.",
             isRead: false,
           },
         }),
       ]);
-      // ✅ AJOUTER ICI - APRÈS LA TRANSACTION, AVANT LE RETURN
       await onUserVerified(verificationRequest.userId);
       return NextResponse.json({
         success: true,
@@ -255,10 +248,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       });
     }
 
-    // ============================================
-    // REJET
-    // ============================================
-    if (action === "REJECT") {
+        // REJET
+        if (action === "REJECT") {
       if (!rejectionMotif) {
         return NextResponse.json(
           { error: "Le motif de rejet est obligatoire" },
@@ -316,12 +307,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
           },
         }),
 
-        // 🔔 NOTIFICATION - REJET
+        //  NOTIFICATION - REJET
         prisma.notification.create({
           data: {
             userId: verificationRequest.userId,
             type: "SYSTEM_ALERT",
-            title: "❌ Vérification d'identité refusée",
+            title: " Vérification d'identité refusée",
             content: `Votre demande de vérification a été refusée. Raison: ${rejectionMotif}. Veuillez soumettre à nouveau des documents valides.`,
             isRead: false,
           },

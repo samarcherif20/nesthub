@@ -2,10 +2,10 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { RxCalendar } from "react-icons/rx";
 
 import {
@@ -27,13 +27,13 @@ import {
   TrendingUp,
   HelpCircle,
   Plus,
+  CheckCircle,
+  AlertCircle,
+  Trash2,
 } from "lucide-react";
-import { useCalendar } from "./hooks/useCalendar";
+import { useCalendar, isSameDay } from "./hooks/useCalendar";
 import { SimpleCalendar } from "@/components/ui/SimpleCalendar";
-import Alert from "@/components/ui/Alert";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-
-type AlertType = "success" | "error" | "info" | "warning";
 
 const TYPE_ICONS: Record<string, React.ElementType> = {
   APARTMENT: Building2,
@@ -75,14 +75,21 @@ function ListingCard({
   listing,
   selected,
   onClick,
+  t,
 }: {
   listing: any;
   selected: boolean;
   onClick: () => void;
+  t: any;
 }) {
   const photo =
     listing.photos?.find((p: any) => p.isMain) ?? listing.photos?.[0];
   const Icon = TYPE_ICONS[listing.type] ?? Home;
+
+  // 🔥 Utiliser username uniquement
+  const displayName =
+    listing.username || listing.owner?.username || t("common.owner");
+
   return (
     <button
       onClick={onClick}
@@ -114,14 +121,13 @@ function ListingCard({
           {listing.title}
         </p>
         <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-          {listing.governorate}
+          {displayName}
         </p>
       </div>
     </button>
   );
 }
 
-// COMPOSANT EMPTY STATE - STYLE LISTINGS (sans motion)
 function EmptyCalendarState({ t, locale }: { t: any; locale: string }) {
   return (
     <div className="flex flex-col items-center justify-center text-center max-w-md mx-auto">
@@ -141,9 +147,15 @@ function EmptyCalendarState({ t, locale }: { t: any; locale: string }) {
         href={`/${locale}/dashboard/owner/listings/create`}
         className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-sky-500/25 hover:shadow-xl hover:shadow-sky-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
       >
-        <Plus size={18} className="group-hover:rotate-12 transition-transform duration-300" />
+        <Plus
+          size={18}
+          className="group-hover:rotate-12 transition-transform duration-300"
+        />
         {t("emptyState.button")}
-        <TrendingUp size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
+        <TrendingUp
+          size={16}
+          className="group-hover:translate-x-1 transition-transform duration-300"
+        />
       </Link>
       <Link
         href={`/${locale}/help`}
@@ -156,7 +168,12 @@ function EmptyCalendarState({ t, locale }: { t: any; locale: string }) {
   );
 }
 
-export default function OwnerCalendarPage() {
+export default function OwnerCalendarPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = React.use(params);
   const t = useTranslations("OwnerCalendar");
   const { resolvedTheme } = useTheme();
   const [isDark, setIsDark] = React.useState(false);
@@ -167,11 +184,13 @@ export default function OwnerCalendarPage() {
   const [blockReason, setBlockReason] = React.useState("");
   const [customPrice, setCustomPrice] = React.useState("");
   const [actionLoading, setActionLoading] = React.useState(false);
-  const [alert, setAlert] = React.useState<{
-    type: "success" | "error" | "info" | "warning";
+  const [toast, setToast] = React.useState<{
+    type: "success" | "error";
     message: string;
   } | null>(null);
   const [isRefreshing, setIsRefreshing] = React.useState(false);
+  const [selectedDatesHavePrice, setSelectedDatesHavePrice] =
+    React.useState(false);
 
   const {
     listings,
@@ -195,9 +214,22 @@ export default function OwnerCalendarPage() {
     unblockDates,
     setPriceForDates,
     fetchAvailability,
-  } = useCalendar();
+  } = useCalendar(t);
 
-  const locale = "fr";
+  React.useEffect(() => {
+    if (!selectedDates.length || !days.length) {
+      setSelectedDatesHavePrice(false);
+      return;
+    }
+
+    // Vérifier si TOUTES les dates sélectionnées ont un prix spécial
+    const allHavePrice = selectedDates.every((selectedDate) => {
+      const day = days.find((d) => isSameDay(d.date, selectedDate));
+      return day?.customPrice && day.customPrice > 0;
+    });
+
+    setSelectedDatesHavePrice(allHavePrice);
+  }, [selectedDates, days]);
 
   React.useEffect(() => {
     setMounted(true);
@@ -208,21 +240,18 @@ export default function OwnerCalendarPage() {
     setSelectedDates(selectedDays);
   }, [selectedDays]);
 
-  const showAlert = (
-    type: "success" | "error" | "info" | "warning",
-    message: string,
-  ) => {
-    setAlert({ type, message });
-    setTimeout(() => setAlert(null), 5000);
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
   };
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
       await fetchAvailability();
-      showAlert("success", t("alerts.dataRefreshed"));
+      showToast("success", t("alerts.dataRefreshed"));
     } catch (error) {
-      showAlert("error", t("alerts.refreshFailed"));
+      showToast("error", t("alerts.refreshFailed"));
     } finally {
       setIsRefreshing(false);
     }
@@ -241,13 +270,13 @@ export default function OwnerCalendarPage() {
     setActionLoading(true);
     try {
       await blockDates(blockReason, selectedDates);
-      showAlert(
+      showToast(
         "success",
         t("alerts.datesBlocked", { count: selectedDates.length }),
       );
       clearSelectionHandler();
     } catch {
-      showAlert("error", t("alerts.cannotBlockDates"));
+      showToast("error", t("alerts.cannotBlockDates"));
     } finally {
       setActionLoading(false);
     }
@@ -258,13 +287,13 @@ export default function OwnerCalendarPage() {
     setActionLoading(true);
     try {
       await unblockDates(selectedDates);
-      showAlert(
+      showToast(
         "success",
         t("alerts.datesUnblocked", { count: selectedDates.length }),
       );
       clearSelectionHandler();
     } catch {
-      showAlert("error", t("alerts.cannotUnblockDates"));
+      showToast("error", t("alerts.cannotUnblockDates"));
     } finally {
       setActionLoading(false);
     }
@@ -275,7 +304,7 @@ export default function OwnerCalendarPage() {
     setActionLoading(true);
     try {
       await setPriceForDates(parseFloat(customPrice), selectedDates);
-      showAlert(
+      showToast(
         "success",
         t("alerts.priceApplied", {
           price: customPrice,
@@ -284,7 +313,7 @@ export default function OwnerCalendarPage() {
       );
       clearSelectionHandler();
     } catch {
-      showAlert("error", t("alerts.cannotApplyPrices"));
+      showToast("error", t("alerts.cannotApplyPrices"));
     } finally {
       setActionLoading(false);
     }
@@ -293,7 +322,7 @@ export default function OwnerCalendarPage() {
   const formatDateRange = () => {
     if (selectedDates.length === 0) return "";
     if (selectedDates.length === 1) {
-      return selectedDates[0].toLocaleDateString("fr-FR", {
+      return selectedDates[0].toLocaleDateString(locale, {
         weekday: "long",
         day: "numeric",
         month: "long",
@@ -301,7 +330,7 @@ export default function OwnerCalendarPage() {
     }
     const first = selectedDates[0];
     const last = selectedDates[selectedDates.length - 1];
-    return `${first.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })} → ${last.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}`;
+    return `${first.toLocaleDateString(locale, { day: "2-digit", month: "short" })} → ${last.toLocaleDateString(locale, { day: "2-digit", month: "short" })}`;
   };
 
   const upcomingBookings = React.useMemo(
@@ -325,19 +354,33 @@ export default function OwnerCalendarPage() {
 
   return (
     <div className="flex-1 flex h-full overflow-hidden">
-      {/* Alert */}
-      {alert && (
-        <div className="fixed top-20 right-6 z-[999] w-full max-w-sm animate-in slide-in-from-top-2 fade-in duration-300">
-          <Alert
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-            autoClose={5000}
-          />
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* LEFT SIDEBAR - TOUJOURS VISIBLE */}
+      {/* LEFT SIDEBAR */}
       <aside className="w-64 shrink-0 flex flex-col bg-white dark:bg-slate-900/0 border-r border-slate-200 dark:border-slate-800 h-full overflow-y-auto">
         <div className="px-4 pt-5 pb-3">
           <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 px-1 mb-3">
@@ -353,6 +396,7 @@ export default function OwnerCalendarPage() {
                   setSelectedListing(l);
                   clearSelectionHandler();
                 }}
+                t={t}
               />
             ))}
           </div>
@@ -377,10 +421,12 @@ export default function OwnerCalendarPage() {
                     />
                     <div className="min-w-0">
                       <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
-                        {b.guestName || t("common.guest")}
+                        {b.guestUsername ||
+                          b.tenant?.username ||
+                          t("common.guest")}
                       </p>
                       <p className="text-[10px] text-slate-400">
-                        {new Date(b.checkIn).toLocaleDateString("fr-FR", {
+                        {new Date(b.checkIn).toLocaleDateString(locale, {
                           day: "2-digit",
                           month: "short",
                         })}
@@ -432,80 +478,88 @@ export default function OwnerCalendarPage() {
           </div>
         </div>
 
-       {/* CONTENU PRINCIPAL - EMPTY STATE OU CALENDRIER */}
-<div className="flex-1 overflow-auto p-5">
-  {listings.length === 0 ? (
-    <div className="h-full flex items-center justify-center">
-      <EmptyCalendarState t={t} locale={locale} />
-    </div>
-  ) : !selectedListing ? (
-    <div className="h-full flex items-center justify-center">
-      <div className="text-center max-w-md mx-auto">
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, type: "spring", stiffness: 300 }}
-          className="relative mb-6"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full blur-2xl animate-pulse" />
-          <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 flex items-center justify-center shadow-lg">
-            <CalendarDays size={48} className="text-amber-500 dark:text-amber-400" />
-          </div>
-        </motion.div>
-
-        <motion.h3
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="text-2xl font-headline font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent mb-3"
-        >
-          {t("noProperty.title")}
-        </motion.h3>
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 leading-relaxed"
-        >
-          {t("noProperty.description")}
-        </motion.p>
-
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <button
-            onClick={() => {
-              const firstListing = listings[0];
-              if (firstListing) setSelectedListing(firstListing);
-            }}
-            className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
-          >
-            <Home size={18} className="group-hover:rotate-12 transition-transform duration-300" />
-            {t("noProperty.button")}
-            <TrendingUp size={16} className="group-hover:translate-x-1 transition-transform duration-300" />
-          </button>
-        </motion.div>
+        {/* CONTENU PRINCIPAL */}
+        <div className="flex-1 overflow-auto p-5">
+          {listings.length === 0 ? (
+            <div className="h-full flex items-center justify-center">
+              <EmptyCalendarState t={t} locale={locale} />
+            </div>
+          ) : !selectedListing ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center max-w-md mx-auto">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ duration: 0.5, type: "spring", stiffness: 300 }}
+                  className="relative mb-6"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-full blur-2xl animate-pulse" />
+                  <div className="relative w-24 h-24 rounded-full bg-gradient-to-br from-amber-100 to-orange-100 dark:from-amber-950/50 dark:to-orange-950/50 flex items-center justify-center shadow-lg">
+                    <CalendarDays
+                      size={48}
+                      className="text-amber-500 dark:text-amber-400"
+                    />
+                  </div>
+                </motion.div>
+                <motion.h3
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-2xl font-headline font-bold bg-gradient-to-r from-amber-600 to-orange-600 dark:from-amber-400 dark:to-orange-400 bg-clip-text text-transparent mb-3"
+                >
+                  {t("noProperty.title")}
+                </motion.h3>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="text-slate-500 dark:text-slate-400 max-w-sm mb-8 leading-relaxed"
+                >
+                  {t("noProperty.description")}
+                </motion.p>
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <button
+                    onClick={() => {
+                      const firstListing = listings[0];
+                      if (firstListing) setSelectedListing(firstListing);
+                    }}
+                    className="group relative inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white rounded-xl font-semibold text-sm shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 transition-all duration-300 hover:scale-105 active:scale-95"
+                  >
+                    <Home
+                      size={18}
+                      className="group-hover:rotate-12 transition-transform duration-300"
+                    />
+                    {t("noProperty.button")}
+                    <TrendingUp
+                      size={16}
+                      className="group-hover:translate-x-1 transition-transform duration-300"
+                    />
+                  </button>
+                </motion.div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md p-4">
+              <SimpleCalendar
+                days={days}
+                currentDate={currentDate}
+                onDateChange={setCurrentDate}
+                onDateClick={handleDayClick}
+                selectedDates={selectedDates}
+                onDateMouseEnter={handleDayMouseEnter}
+                isDark={isDark}
+                locale={locale}
+              />
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  ) : (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md p-4">
-      <SimpleCalendar
-        days={days}
-        currentDate={currentDate}
-        onDateChange={setCurrentDate}
-        onDateClick={handleDayClick}
-        onDateMouseEnter={handleDayMouseEnter}
-        selectedDates={selectedDates}
-        isDark={isDark}
-      />
-    </div>
-  )}
-</div>
-</div>
-      {/* RIGHT SIDEBAR - Actions groupées (désactivées si pas de sélection) */}
+
+      {/* RIGHT SIDEBAR - Actions */}
       <aside className="w-80 shrink-0 flex flex-col bg-white dark:bg-slate-900/0 border-l border-slate-200 dark:border-slate-800 h-full overflow-y-auto">
         <div className="p-5 space-y-5">
           <div>
@@ -558,7 +612,7 @@ export default function OwnerCalendarPage() {
                       <Loader2 size={14} className="animate-spin" />
                     ) : (
                       <Lock size={14} />
-                    )}{" "}
+                    )}
                     {t("actions.confirm")}
                   </button>
                 </div>
@@ -596,7 +650,9 @@ export default function OwnerCalendarPage() {
                   <DollarSign size={16} />
                   <div className="text-left">
                     <p className="text-sm font-bold">
-                      {t("bulkActions.specialPrice")}
+                      {selectedDatesHavePrice
+                        ? t("bulkActions.removePrice")
+                        : t("bulkActions.specialPrice")}
                     </p>
                     <p className="text-[10px] opacity-70">
                       {selectedDates.length
@@ -613,30 +669,72 @@ export default function OwnerCalendarPage() {
 
               {showPricePanel && selectedDates.length > 0 && (
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-200 dark:border-amber-800 space-y-2.5">
-                  <div className="relative">
-                    <input
-                      type="number"
-                      value={customPrice}
-                      onChange={(e) => setCustomPrice(e.target.value)}
-                      placeholder={t("bulkActions.pricePlaceholder")}
-                      className="w-full px-3 py-2 text-lg font-bold bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-800 rounded-lg"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-                      TND/{t("common.night")}
-                    </span>
-                  </div>
-                  <button
-                    onClick={doSetPrice}
-                    disabled={actionLoading || !customPrice}
-                    className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
-                  >
-                    {actionLoading ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <Check size={14} />
-                    )}{" "}
-                    {t("actions.apply")}
-                  </button>
+                  {selectedDatesHavePrice ? (
+                    // Mode suppression
+                    <>
+                      <p className="text-xs text-amber-700 dark:text-amber-400 text-center">
+                        {t("bulkActions.removePriceConfirm", {
+                          count: selectedDates.length,
+                        })}
+                      </p>
+                      <button
+                        onClick={async () => {
+                          setActionLoading(true);
+                          try {
+                            await setPriceForDates(0, selectedDates);
+                            showToast(
+                              "success",
+                              t("alerts.priceRemoved", {
+                                count: selectedDates.length,
+                              }),
+                            );
+                            clearSelectionHandler();
+                          } catch {
+                            showToast("error", t("alerts.cannotApplyPrices"));
+                          } finally {
+                            setActionLoading(false);
+                          }
+                        }}
+                        disabled={actionLoading}
+                        className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
+                      >
+                        {actionLoading ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Trash2 size={14} />
+                        )}
+                        {t("actions.confirmRemove")}
+                      </button>
+                    </>
+                  ) : (
+                    // Mode ajout
+                    <>
+                      <div className="relative">
+                        <input
+                          type="number"
+                          value={customPrice}
+                          onChange={(e) => setCustomPrice(e.target.value)}
+                          placeholder={t("bulkActions.pricePlaceholder")}
+                          className="w-full px-3 py-2 text-lg font-bold bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-800 rounded-lg"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+                          {t("currency.tnd")}/{t("common.night")}
+                        </span>
+                      </div>
+                      <button
+                        onClick={doSetPrice}
+                        disabled={actionLoading || !customPrice}
+                        className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2"
+                      >
+                        {actionLoading ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Check size={14} />
+                        )}
+                        {t("actions.apply")}
+                      </button>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -672,7 +770,9 @@ export default function OwnerCalendarPage() {
                   {t("stats.revenue")}
                 </p>
                 <p className="text-xl font-black text-purple-700">
-                  {revenue > 0 ? `${Math.round(revenue / 1000)}k TND` : "—"}
+                  {revenue > 0
+                    ? `${Math.round(revenue / 1000)}k ${t("currency.tnd")}`
+                    : "—"}
                 </p>
               </div>
               <div className="bg-emerald-50 dark:bg-emerald-950/30 p-3 rounded-xl border border-emerald-100 dark:border-emerald-800">
@@ -694,21 +794,20 @@ export default function OwnerCalendarPage() {
             </div>
           </div>
 
-          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-sky-200 dark:border-sky-800 mt-55">
+          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-sky-200 dark:border-sky-800">
             <h4 className="text-sm font-bold text-slate-800 dark:text-white mb-2 flex items-center gap-2">
               <Sparkles size={14} className="text-sky-500" />
-              {t("aiTip.title")}
+              {t("expertTip.title")}
             </h4>
             <p className="text-xs text-slate-500 leading-relaxed">
               {occupancy < 40
-                ? t("aiTip.lowOccupancy", { occupancy })
+                ? t("expertTip.lowOccupancy", { occupancy })
                 : occupancy < 70
-                  ? t("aiTip.goodActivity")
-                  : t("aiTip.excellent")}
+                  ? t("expertTip.goodActivity")
+                  : t("expertTip.excellent")}
             </p>
           </div>
         </div>
-        
       </aside>
     </div>
   );

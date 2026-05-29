@@ -81,7 +81,7 @@ export function useVerificationsHistory({
 
       const data = await res.json();
 
-      // ✅ PAS BESOIN DE TRANSFORMATION - L'API retourne déjà validatedBy correctement
+      //  PAS BESOIN DE TRANSFORMATION - L'API retourne déjà validatedBy correctement
       // validatedBy est inclus dans la réponse de l'API via le include dans Prisma
       setRequests(data.requests ?? []);
       setTotalPages(data.pagination?.totalPages ?? 1);

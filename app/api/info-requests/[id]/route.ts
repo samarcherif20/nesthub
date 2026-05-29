@@ -38,7 +38,7 @@ export async function PATCH(
         conversation: {
           select: { id: true }
         },
-        offer: true,  // ← AJOUTER L'OFFRE
+        offer: true,  
       },
     });
 
@@ -54,7 +54,7 @@ export async function PATCH(
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
     }
 
-    // ✅ NOUVELLE CONDITION: Vérifier si une réservation existe déjà
+    //  NOUVELLE CONDITION: Vérifier si une réservation existe déjà
     let existingBooking = null;
     if (infoRequest.offerId) {
       existingBooking = await prisma.booking.findFirst({
@@ -65,7 +65,7 @@ export async function PATCH(
       });
     }
 
-    // ✅ Si une réservation existe, on ne peut plus modifier
+    //  Si une réservation existe, on ne peut plus modifier
     if (existingBooking) {
       return NextResponse.json(
         { error: "Une réservation a déjà été effectuée, les dates ne peuvent plus être modifiées" },
@@ -73,7 +73,7 @@ export async function PATCH(
       );
     }
 
-    // ✅ Sinon, on autorise la modification (même si l'offre est acceptée)
+    //  Sinon, on autorise la modification (même si l'offre est acceptée)
     // Seules les demandes rejetées ou expirées ne peuvent pas être modifiées
     if (infoRequest.status === "REJECTED" || infoRequest.status === "EXPIRED") {
       return NextResponse.json(

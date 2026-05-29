@@ -4,10 +4,10 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ clerkId: string }> }, // ← ICI : params est une Promise
+  { params }: { params: Promise<{ clerkId: string }> }, 
 ) {
   try {
-    // ✅ Il faut attendre params
+    //  Il faut attendre params
     const { clerkId } = await params;
 
     console.log("🔍 API DB - Recherche pour clerkId:", clerkId);
@@ -40,14 +40,14 @@ export async function GET(
     });
 
     if (!user) {
-      console.log("❌ Utilisateur non trouvé pour clerkId:", clerkId);
+      console.log(" Utilisateur non trouvé pour clerkId:", clerkId);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    console.log("✅ Utilisateur trouvé:", user);
+    console.log("Utilisateur trouvé:", user);
     return NextResponse.json(user);
   } catch (error) {
-    console.error("❌ Erreur API DB:", error);
+    console.error(" Erreur API DB:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

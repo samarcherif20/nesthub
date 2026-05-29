@@ -7,17 +7,17 @@ export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
-    // ✅ Ajoute cette vérification d'auth
+    //  Ajoute cette vérification d'auth
     const authHeader = req.headers.get("authorization");
     const isValidAuth = authHeader === `Bearer ${process.env.CRON_SECRET}`;
     const isDev = process.env.NODE_ENV === "development";
 
     if (!isValidAuth && !isDev) {
-      console.error("❌ Cron: Authentification échouée");
+      console.error(" Cron: Authentification échouée");
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    console.log("🕐 Cron: Expiration des demandes d'information");
+    console.log(" Cron: Expiration des demandes d'information");
 
     const expiredRequests = await prisma.infoRequest.findMany({
       where: {
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`📊 ${expiredRequests.length} demande(s) expirée(s)`);
+    console.log(` ${expiredRequests.length} demande(s) expirée(s)`);
 
     for (const request of expiredRequests) {
       await prisma.infoRequest.update({

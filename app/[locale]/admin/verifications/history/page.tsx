@@ -105,7 +105,7 @@ export default function VerificationsHistoryPage() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  // ✅ APPEL SANS search - comme avant
+  //  APPEL SANS search - comme avant
   const {
     requests,
     loading,
@@ -131,12 +131,13 @@ export default function VerificationsHistoryPage() {
     }
   }, [error, setError]);
 
-  // ✅ FILTRAGE LOCAL (recherche)
+  //  FILTRAGE LOCAL (recherche)
   const filteredRequests = useMemo(() => {
     if (!localSearch.trim()) return requests;
     const searchLower = localSearch.toLowerCase();
     return requests.filter((req) => {
-      const fullName = `${req.user.firstName} ${req.user.lastName}`.toLowerCase();
+      const fullName =
+        `${req.user.firstName} ${req.user.lastName}`.toLowerCase();
       const email = req.user.email?.toLowerCase() || "";
       return fullName.includes(searchLower) || email.includes(searchLower);
     });

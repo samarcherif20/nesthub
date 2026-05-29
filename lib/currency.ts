@@ -35,21 +35,21 @@ export async function getCurrentExchangeRate(): Promise<number> {
     if (data.result === "success" && data.rates?.EUR) {
       const rate = data.rates.EUR;
       cachedRate = { rate, timestamp: Date.now() };
-      console.log(`✅ Taux de change: 1 TND = ${rate.toFixed(4)} EUR`);
+      console.log(` Taux de change: 1 TND = ${rate.toFixed(4)} EUR`);
       return rate;
     } else {
       throw new Error("Invalid API response");
     }
   } catch (error) {
-    console.warn("⚠️ Taux par défaut (1 TND = 0.303 EUR)");
-    return 0.303; // Taux par défaut (1 TND ≈ 0.303 EUR)
+    console.warn(" Taux par défaut (1 TND = 0.303 EUR)");
+    return 0.303; 
   }
 }
 
-// ✅ CORRECTION : Convertir TND → EUR (multiplication)
+//  CORRECTION : Convertir TND → EUR (multiplication)
 export async function tndToStripeAmount(amountTND: number): Promise<number> {
   const rate = await getCurrentExchangeRate();
-  const amountEUR = amountTND * rate; // ✅ Multiplier, pas diviser !
+  const amountEUR = amountTND * rate; //  Multiplier, pas diviser !
   return Math.round(amountEUR * CURRENCY_CONFIG.payment.multiplier);
 }
 
@@ -57,7 +57,7 @@ export async function tndToStripeAmount(amountTND: number): Promise<number> {
 export async function stripeToTndAmount(amountStripe: number): Promise<number> {
   const rate = await getCurrentExchangeRate();
   const amountEUR = amountStripe / CURRENCY_CONFIG.payment.multiplier;
-  return Math.round((amountEUR / rate) * 1000) / 1000; // ✅ Diviser par rate
+  return Math.round((amountEUR / rate) * 1000) / 1000; //  Diviser par rate
 }
 
 export function formatTND(amount: number): string {

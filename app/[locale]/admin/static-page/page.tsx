@@ -149,7 +149,6 @@ export default function AdminContentPage() {
   
   const PREVIEW = 4;
 
-  // ✅ Helper pour locale date-fns
   const getDateLocale = () => (locale === "fr" ? fr : enUS);
 
   const showToastMessage = (type: "success" | "error", message: string) => {
@@ -331,7 +330,7 @@ const handleRestoreVersion = async (version: Version) => {
   // ─── Render ──────────────────────────────────────────────────
   return (
     <>
-      {/* ✅ Toast Notification */}
+      {/*  Toast Notification */}
       {toast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
           <div

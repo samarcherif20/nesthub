@@ -7,7 +7,7 @@ import {
   UpdateListingInput,
 } from "@/lib/validations/listing";
 
-// ✅ FONCTION POUR FORMATER LES VALEURS EN TEXTE LISIBLE POUR L'HISTORIQUE
+//  FONCTION POUR FORMATER LES VALEURS EN TEXTE LISIBLE POUR L'HISTORIQUE
 function formatValueForHistory(value: any, fieldName: string): string {
   if (value === null || value === undefined) return "";
   
@@ -297,7 +297,7 @@ export class ListingService {
 
     const changes: any[] = [];
 
-    // ✅ FONCTION addChange AVEC FORMATAGE POUR L'HISTORIQUE
+    //  FONCTION addChange AVEC FORMATAGE POUR L'HISTORIQUE
     const addChange = (fieldName: string, oldValue: any, newValue: any) => {
       if (
         newValue !== undefined &&
@@ -407,7 +407,7 @@ export class ListingService {
       });
     }
 
-    // ✅ Enregistrer les changements dans l'historique (avec valeurs formatées en texte)
+    //  Enregistrer les changements dans l'historique (avec valeurs formatées en texte)
     for (const change of changes) {
       let actionType = "UPDATE";
       if (change.fieldName === "status") actionType = "STATUS_CHANGE";
@@ -421,8 +421,8 @@ export class ListingService {
           listingId: id,
           actionType,
           fieldName: change.fieldName,
-          oldValue: change.oldValue,  // ✅ Déjà formaté en texte lisible
-          newValue: change.newValue,  // ✅ Déjà formaté en texte lisible
+          oldValue: change.oldValue,  
+          newValue: change.newValue,  
           changedBy: ownerId,
         },
       });

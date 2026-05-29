@@ -99,8 +99,8 @@ interface BlockedDate {
 export function useListingDetail(
   id: string,
   locale: string,
-  setError?: (error: string) => void,
-  t?: (key: string, params?: any) => string,
+  setError: (error: string) => void,
+  t: (key: string, params?: any) => string
 ) {
   const router = useRouter();
 
@@ -220,15 +220,15 @@ export function useListingDetail(
         });
         if (res.ok) {
           await fetchAvailability(currentMonth.getFullYear(), currentMonth.getMonth());
-          toast.success(t ? t("toast.availabilityUpdated") : "Disponibilité mise à jour");
+          toast.success(t("toast.availabilityUpdated"));
           return true;
         } else {
-          toast.error(t ? t("toast.availabilityUpdateFailed") : "Erreur lors de la mise à jour");
+          toast.error(t("toast.availabilityUpdateFailed"));
           return false;
         }
       } catch (error) {
         console.error("Error updating availability:", error);
-        toast.error(t ? t("toast.networkError") : "Erreur de connexion");
+        toast.error(t("toast.networkError"));
         return false;
       } finally {
         setUpdatingAvailability(false);
@@ -270,11 +270,11 @@ export function useListingDetail(
           setBookings(data.pastBookings);
         }
       } else if (setError) {
-        setError(t ? t("errors.loadFailed") : "Erreur lors du chargement de l'annonce");
+        setError(t("errors.loadFailed"));
       }
     } catch (error) {
       console.error("Error fetching listing:", error);
-      if (setError) setError(t ? t("toast.networkError") : "Erreur de connexion");
+      if (setError) setError(t("toast.networkError"));
     } finally {
       setLoading(false);
     }
@@ -300,44 +300,43 @@ export function useListingDetail(
       const res = await fetch(`/api/listings/${id}`, { method: "DELETE" });
       if (res.ok) {
         setShowDeleteModal(false);
-        toast.success(t ? t("toast.listingDeleted") : "Annonce supprimée avec succès");
+        toast.success(t("toast.listingDeleted"));
         setTimeout(() => {
           router.push(`/${locale}/dashboard/owner/listings`);
         }, 300);
       } else {
-        toast.error(t ? t("toast.deleteFailed") : "Erreur lors de la suppression");
+        toast.error(t("toast.deleteFailed"));
         setIsDeleting(false);
       }
     } catch (error) {
       console.error("Error deleting listing:", error);
-      toast.error(t ? t("toast.networkError") : "Erreur de connexion");
+      toast.error(t("toast.networkError"));
       setIsDeleting(false);
     }
   }, [id, router, locale, t]);
 
-const handleToggleStatus = useCallback(async () => {
-  if (!listing) return;
-  const newStatus = listing.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
-  try {
-    const res = await fetch(`/api/listings/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "TOGGLE_STATUS",
-        status: newStatus,
-      }),
-    });
-    if (res.ok) {
-      setListing({ ...listing, status: newStatus });
-      // ✅ SUPPRIME LE TOAST ICI (il est déjà dans la page)
-      return true;
+  const handleToggleStatus = useCallback(async () => {
+    if (!listing) return;
+    const newStatus = listing.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    try {
+      const res = await fetch(`/api/listings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "TOGGLE_STATUS",
+          status: newStatus,
+        }),
+      });
+      if (res.ok) {
+        setListing({ ...listing, status: newStatus });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error toggling status:", error);
+      return false;
     }
-    return false;
-  } catch (error) {
-    console.error("Error toggling status:", error);
-    return false;
-  }
-}, [id, listing]);
+  }, [id, listing]);
 
   const nextPhoto = useCallback(() => {
     if (!listing) return;
@@ -405,16 +404,18 @@ const handleToggleStatus = useCallback(async () => {
   const getHouseRulesList = useCallback(() => {
     if (!listing?.houseRules) return [];
     const rulesList: string[] = [];
-    if (listing.houseRules.noParties) rulesList.push(t ? t("houseRules.noParties") : "Pas de fêtes ou d'événements");
-    if (listing.houseRules.noSmoking) rulesList.push(t ? t("houseRules.noSmoking") : "Logement non-fumeur");
-    if (listing.houseRules.noPets) rulesList.push(t ? t("houseRules.noPets") : "Animaux non acceptés");
-    if (listing.houseRules.quietAfter22) rulesList.push(t ? t("houseRules.quietAfter22") : "Silence après 22h");
-    if (listing.houseRules.checkInAfter) rulesList.push(`${t ? t("houseRules.checkInAfter") : "Arrivée à partir de"} ${listing.houseRules.checkInAfter}`);
-    if (listing.houseRules.checkOutBefore) rulesList.push(`${t ? t("houseRules.checkOutBefore") : "Départ avant"} ${listing.houseRules.checkOutBefore}`);
+    if (listing.houseRules.noParties) rulesList.push(t("houseRules.noParties"));
+    if (listing.houseRules.noSmoking) rulesList.push(t("houseRules.noSmoking"));
+    if (listing.houseRules.noPets) rulesList.push(t("houseRules.noPets"));
+    if (listing.houseRules.quietAfter22) rulesList.push(t("houseRules.quietAfter22"));
+    if (listing.houseRules.checkInAfter) 
+      rulesList.push(`${t("houseRules.checkInAfter")} ${listing.houseRules.checkInAfter}`);
+    if (listing.houseRules.checkOutBefore) 
+      rulesList.push(`${t("houseRules.checkOutBefore")} ${listing.houseRules.checkOutBefore}`);
     if (listing.customRules) rulesList.push(listing.customRules);
     if (rulesList.length === 0) {
-      rulesList.push(t ? t("houseRules.defaultCheckIn") : "Arrivée à partir de 15h00");
-      rulesList.push(t ? t("houseRules.defaultCheckOut") : "Départ avant 11h00");
+      rulesList.push(t("houseRules.defaultCheckIn"));
+      rulesList.push(t("houseRules.defaultCheckOut"));
     }
     return rulesList;
   }, [listing, t]);
@@ -466,7 +467,6 @@ const handleToggleStatus = useCallback(async () => {
     remainingPhotosCount,
     getCalendarDays,
     getHouseRulesList,
-    setListing, // ✅ AJOUTER CETTE LIGNE
-
+    setListing, 
   };
 }

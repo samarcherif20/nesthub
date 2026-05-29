@@ -34,13 +34,13 @@ export async function GET(req: NextRequest) {
         skip,
         take: limit,
         include: {
-          user: {  // ✅ AJOUTER CETTE SECTION - inclure les infos utilisateur
+          user: {
             select: {
               id: true,
               firstName: true,
               lastName: true,
               email: true,
-              profilePictureUrl: true, // ← IMAGE DE PROFIL
+              profilePictureUrl: true,
             },
           },
         },
@@ -48,14 +48,14 @@ export async function GET(req: NextRequest) {
       prisma.contactMessage.count({ where }),
     ]);
 
-    // ✅ Formater les messages avec les infos utilisateur
+    //  Formater les messages avec les infos utilisateur
     const formattedMessages = messages.map((msg) => ({
       id: msg.id,
       fullName: msg.fullName,
       email: msg.email,
       phone: msg.phone,
       userId: msg.userId,
-      userProfilePictureUrl: msg.user?.profilePictureUrl || null, // ← CLÉ POUR L'IMAGE
+      userProfilePictureUrl: msg.user?.profilePictureUrl || null,
       userFirstName: msg.user?.firstName || null,
       userLastName: msg.user?.lastName || null,
       message: msg.message,
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json({
-      messages: formattedMessages, // ← UTILISER LES MESSAGES FORMATÉS
+      messages: formattedMessages,
       pagination: {
         page,
         limit,
@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
     console.error("Erreur:", error);
     return NextResponse.json(
       { error: "Erreur lors de la récupération" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

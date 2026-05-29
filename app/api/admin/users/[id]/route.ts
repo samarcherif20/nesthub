@@ -10,7 +10,7 @@ export async function GET(
   try {
     const { id } = await params;
 
-    console.log(`🔍 [Admin API] Recherche de l'utilisateur: ${id}`);
+    console.log(` [Admin API] Recherche de l'utilisateur: ${id}`);
 
     // Récupérer l'utilisateur avec TOUTES les relations
     const user = await prisma.user.findUnique({
@@ -158,7 +158,7 @@ export async function GET(
       );
     }
 
-    // ✅ CORRECTION: Récupérer les URLs depuis les bonnes sources
+    // Récupérer les URLs depuis les bonnes sources
     const latestVerification = user.verificationRequests?.[0];
     const extractedFromVerif = (latestVerification?.extractedData as any) || {};
     const userCinData = (user.cinData as any) || {};
@@ -170,11 +170,11 @@ export async function GET(
     };
 
     console.log(
-      "🔍🔍🔍 [API LOG 1] cinData APRÈS FUSION:",
+      " [API LOG 1] cinData APRÈS FUSION:",
       JSON.stringify(cinData, null, 2),
     );
 
-    // ✅ PRIORITÉ: Utiliser rectoUrl/versoUrl de cinData d'abord
+    // PRIORITÉ: Utiliser rectoUrl/versoUrl de cinData d'abord
     const rectoUrl =
       cinData?.rectoUrl ||
       cinData?.frontImageUrl ||
@@ -191,12 +191,12 @@ export async function GET(
     const documentType =
       cinData?.documentType || (passportUrl ? "PASSPORT" : "CIN");
 
-    console.log("🔍🔍🔍 [API LOG 2] rectoUrl:", rectoUrl);
-    console.log("🔍🔍🔍 [API LOG 2] versoUrl:", versoUrl);
-    console.log("🔍🔍🔍 [API LOG 2] passportUrl:", passportUrl);
-    console.log("🔍🔍🔍 [API LOG 2] documentType:", documentType);
+    console.log(" [API LOG 2] rectoUrl:", rectoUrl);
+    console.log(" [API LOG 2] versoUrl:", versoUrl);
+    console.log(" [API LOG 2] passportUrl:", passportUrl);
+    console.log(" [API LOG 2] documentType:", documentType);
 
-    // ✅ Pour l'image à afficher
+    //  Pour l'image à afficher
     const displayImageUrl =
       documentType === "PASSPORT" ? passportUrl : rectoUrl;
 
@@ -352,7 +352,6 @@ export async function GET(
         documentType: documentType,
         passportNumber: cinData?.passportNumber,
         country: cinData?.country,
-        // ✅ CORRECTION: Exposer les URLs correctes
         rectoUrl: rectoUrl,
         versoUrl: versoUrl,
         frontImageUrl: rectoUrl,
@@ -378,7 +377,7 @@ export async function GET(
     };
 
     console.log(
-      "🔍🔍🔍 [API LOG 3] response.cinData envoyé:",
+      " [API LOG 3] response.cinData envoyé:",
       JSON.stringify(response.cinData, null, 2),
     );
 

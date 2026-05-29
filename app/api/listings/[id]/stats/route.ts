@@ -60,6 +60,5 @@ export const GET = withAuth(
   {
     requireListingAccess: true,
     requiredPermission: "viewRevenue",
-    // ✅ getListingId supprimé
   },
 );

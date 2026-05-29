@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
-    // ✅ 1. Récupérer les annonces où l'utilisateur est propriétaire
+    //  1. Récupérer les annonces où l'utilisateur est propriétaire
     const ownedListings = await prisma.listing.findMany({
       where: { ownerId: user.id, isArchived: false },
       select: {
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // ✅ 2. Récupérer les annonces où l'utilisateur est co-hôte
+    //  2. Récupérer les annonces où l'utilisateur est co-hôte
     const teamMemberships = await prisma.teamMember.findMany({
       where: { userId: user.id, isActive: true },
       include: {
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    // ✅ 3. Combiner les deux
+    //  3. Combiner les deux
     const ownedListingsWithRole = ownedListings.map(listing => ({
       ...listing,
       role: "OWNER",
@@ -71,13 +71,13 @@ export async function GET(request: NextRequest) {
 
     const allListings = [...ownedListingsWithRole, ...cohostListingsWithRole];
 
-    // ✅ 4. Déterminer le rôle principal de l'utilisateur
+    //  4. Déterminer le rôle principal de l'utilisateur
     const isOwner = user.role === "PROPERTY_OWNER" || user.role === "BOTH" || user.role === "ADMIN";
     const isCohost = teamMemberships.length > 0;
 
     let primaryRole = "UNKNOWN";
     if (isOwner && isCohost) {
-      primaryRole = "BOTH";  // L'utilisateur est à la fois propriétaire ET co-hôte
+      primaryRole = "BOTH"; 
     } else if (isOwner) {
       primaryRole = "OWNER";
     } else if (isCohost) {

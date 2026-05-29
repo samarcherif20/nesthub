@@ -33,9 +33,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // ============================================
-  // 🆕 AJOUTE CETTE PARTIE POUR LES UPLOADS (>10MB)
-  // ============================================
+  //  AJOUTE CETTE PARTIE POUR LES UPLOADS (>10MB)
   experimental: {
     proxyClientMaxBodySize: "50mb",
   },

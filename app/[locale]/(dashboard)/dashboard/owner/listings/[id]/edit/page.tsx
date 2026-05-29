@@ -8,9 +8,10 @@ import { useTranslations } from "next-intl";
 import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
 import { Toggle } from "@/components/ui/Toggle";
 import { useEditListing } from "./hooks/useEditListing";
-import Alert from "@/components/ui/Alert";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { usePriceRecommendation } from "@/hooks/usePriceRecommendation";
+import { Check, X } from "lucide-react"; // Ajoute X si pas présent
 import {
   Home,
   Building2,
@@ -52,13 +53,6 @@ import {
   Star,
   AlertCircle,
   EyeOff,
-  Coffee,
-  Smartphone,
-  Lock,
-  Music,
-  BookOpen,
-  TrendingUp,
-  Zap,
   Award,
 } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -133,13 +127,8 @@ const equipmentList = [
   { id: "gym", label: "Salle sport", icon: Dumbbell },
   { id: "washer", label: "Lave-linge", icon: WashingMachine },
   { id: "tv", label: "Télévision", icon: Tv },
-  { id: "balcony", label: "Balcon", icon: Trees },
   { id: "dishwasher", label: "Lave-vaisselle", icon: Utensils },
   { id: "dryer", label: "Sèche-linge", icon: Fan },
-  { id: "coffee", label: "Cafetière", icon: Coffee },
-  { id: "smartlock", label: "Serrure connectée", icon: Smartphone },
-  { id: "speaker", label: "Enceinte", icon: Music },
-  { id: "workplace", label: "Espace travail", icon: BookOpen },
 ];
 
 const SECTIONS = [
@@ -249,27 +238,33 @@ export default function EditListingPage({
   const [active, setActive] = useState("details");
   const [hasChanges, setHasChanges] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
+  // Ajoute après les autres useState
+  const { getRecommendation, loading: aiLoading } = usePriceRecommendation();
+  const [recommendedPrice, setRecommendedPrice] = useState<number | null>(null);
+  const [recommendedPriceMonth, setRecommendedPriceMonth] = useState<
+    number | null
+  >(null);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [toast, setToast] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
   const {
     listing,
     loading,
     saving,
     lastSaved,
     uploadingPhotos,
-    alert,
-    setAlert,
     setField,
     save,
     handleFileChange,
     removePhoto,
     setMainPhoto,
     saveAndResubmit,
-  } = useEditListing(id, locale);
-
-  // 🔥 COMPLETION SCORE CORRIGÉ
+  } = useEditListing(id, locale, setToast);
   const completionScore = useMemo(() => {
     if (!listing) return 0;
-    const photosLength = listing.photos?.length ?? 0;
+    const photosLength = listing?.photos?.length ?? 0; // ← ajoute ? optional
     return calculateCompletionScore(listing, photosLength);
   }, [listing]);
 
@@ -301,7 +296,75 @@ export default function EditListingPage({
       setTimeout(() => setSuccessMessage(null), 3000);
     }
   };
+  const handleAIPriceRecommendation = async () => {
+    if (!listing) return;
+    const result = await getRecommendation({
+      governorate: listing.governorate,
+      type: listing.type,
+      rooms: listing.rooms,
+      bathrooms: listing.bathrooms,
+      surfaceArea: listing.surfaceArea,
+      equipment: listing.equipment,
+      hasBalcony: listing.hasBalcony,
+      hasGarden: listing.hasGarden,
+      hasGarage: listing.hasGarage,
+      hasElevator: listing.hasElevator,
+      isFurnished: listing.isFurnished,
+      rentalType: listing.rentalType,
+    });
+    if (result) {
+      setRecommendedPrice(result.pricePerNight);
+      setRecommendedPriceMonth(result.pricePerMonth);
+      setToast({
+        type: "success",
+        message: t("ai.recommendation", {
+          night: result.pricePerNight,
+          month: result.pricePerMonth,
+        }),
+      });
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
 
+  const geocodeAddress = async (address: string) => {
+    try {
+      const response = await fetch(
+        `/api/geocode?address=${encodeURIComponent(address)}`,
+      );
+      if (!response.ok) return null;
+      const data = await response.json();
+      return data.results?.[0]
+        ? { lat: data.results[0].lat, lng: data.results[0].lon }
+        : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Dans handleGeocodeOnEnter, remplace les textes durs :
+  const handleGeocodeOnEnter = async () => {
+    if (!listing?.governorate || !listing?.delegation || !listing?.street) {
+      setToast({
+        type: "error",
+        message: t("geocoding.missingAddress"),
+      });
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+    setIsGeocoding(true);
+    const fullAddress = `${listing.street}, ${listing.delegation}, ${listing.governorate}, Tunisie`;
+    const coords = await geocodeAddress(fullAddress);
+    if (coords) {
+      setField("latitude", coords.lat);
+      setField("longitude", coords.lng);
+      setToast({ type: "success", message: t("geocoding.positionFound") });
+      setTimeout(() => setToast(null), 3000);
+    } else {
+      setToast({ type: "error", message: t("geocoding.addressNotFound") });
+      setTimeout(() => setToast(null), 3000);
+    }
+    setIsGeocoding(false);
+  };
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center bg-white dark:bg-slate-950">
@@ -338,25 +401,18 @@ export default function EditListingPage({
 
   return (
     <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-950">
-      {/* Alert en haut à droite */}
-      {(alert || successMessage) && (
-        <div className="fixed top-20 right-6 z-50 max-w-md">
-          {alert && (
-            <Alert
-              type={alert.type}
-              message={alert.message}
-              onClose={() => setAlert(null)}
-              autoClose={5000}
-            />
-          )}
-          {successMessage && (
-            <Alert
-              type="success"
-              message={successMessage}
-              onClose={() => setSuccessMessage(null)}
-              autoClose={3000}
-            />
-          )}
+      {successMessage && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg bg-green-500 text-white">
+            <CheckCircle className="w-5 h-5" />
+            <span className="text-sm font-medium">{successMessage}</span>
+            <button
+              onClick={() => setSuccessMessage(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -384,60 +440,62 @@ export default function EditListingPage({
                 {t("page.subtitle")}
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <div
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
-                  listing.status === "ACTIVE"
-                    ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-                    : listing.status === "DRAFT"
-                      ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700"
-                      : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                }`}
-              >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
+            {listing && (
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border ${
                     listing.status === "ACTIVE"
-                      ? "bg-emerald-500 animate-pulse"
+                      ? "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
                       : listing.status === "DRAFT"
-                        ? "bg-slate-400"
-                        : "bg-amber-500"
+                        ? "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700"
+                        : "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-800"
                   }`}
-                />
-                {listing.status === "ACTIVE"
-                  ? t("status.active")
-                  : listing.status === "DRAFT"
-                    ? t("status.draft")
-                    : t("status.inactive")}
-              </div>
-              {lastSaved && (
-                <span className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">
-                  {t("autoSave.saved")}{" "}
-                  {lastSaved.toLocaleTimeString("fr-FR", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-              )}
-              <Tooltip text={t("tooltips.save")}>
-                <button
-                  onClick={() => handleSave(undefined, true)}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md disabled:opacity-50"
                 >
-                  {saving ? (
-                    <Loader2 size={14} className="animate-spin" />
-                  ) : (
-                    <Save size={14} />
-                  )}
-                  {t("actions.save")}
-                </button>
-              </Tooltip>
-            </div>
+                  <span
+                    className={`w-1.5 h-1.5 rounded-full ${
+                      listing.status === "ACTIVE"
+                        ? "bg-emerald-500 animate-pulse"
+                        : listing.status === "DRAFT"
+                          ? "bg-slate-400"
+                          : "bg-amber-500"
+                    }`}
+                  />
+                  {listing.status === "ACTIVE"
+                    ? t("status.active")
+                    : listing.status === "DRAFT"
+                      ? t("status.draft")
+                      : t("status.inactive")}
+                </div>
+                {lastSaved && (
+                  <span className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block">
+                    {t("autoSave.saved")}{" "}
+                    {lastSaved.toLocaleTimeString("fr-FR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                )}
+                <Tooltip text={t("tooltips.save")}>
+                  <button
+                    onClick={() => handleSave(undefined, true)}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white rounded-lg text-sm font-semibold transition-all shadow-md disabled:opacity-50"
+                  >
+                    {saving ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Save size={14} />
+                    )}
+                    {t("actions.save")}
+                  </button>
+                </Tooltip>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* ⚠️ Bandeau d'alerte - Annonce rejetée */}
+      {/* Bandeau d'alerte - Annonce rejetée */}
       {listing.status === "REJECTED" && listing.rejectionReason && (
         <div className="fixed top-20 right-6 z-50 w-[90%] max-w-md animate-in slide-in-from-top-2 fade-in duration-300">
           <div className="bg-red-50 dark:bg-red-950/30 border-l-4 border-red-500 rounded-xl shadow-lg overflow-hidden">
@@ -447,10 +505,10 @@ export default function EditListingPage({
               </div>
               <div className="flex-1">
                 <h3 className="text-sm font-bold text-red-800 dark:text-red-300">
-                  Annonce rejetée par l'administration
+                  {t("rejection.title")}{" "}
                 </h3>
                 <p className="text-xs text-red-700 dark:text-red-300/80 mt-1 leading-relaxed">
-                  <span className="font-semibold">Motif :</span>{" "}
+                  <span className="font-semibold">{t("rejection.reason")}</span>{" "}
                   {listing.rejectionReason}
                   {listing.rejectionDetails && (
                     <span className="block mt-1 text-red-600/80 dark:text-red-400/80">
@@ -460,14 +518,14 @@ export default function EditListingPage({
                 </p>
                 <p className="text-[10px] text-red-500/70 dark:text-red-400/70 mt-2 flex items-center gap-1">
                   <Calendar size={10} />
-                  Rejeté le{" "}
+                  {t("rejection.rejectedOn")}{" "}
                   {listing.rejectedAt
                     ? format(
                         new Date(listing.rejectedAt),
                         "dd MMM yyyy à HH:mm",
                         { locale: fr },
                       )
-                    : "récemment"}
+                    : t("rejection.recently")}
                 </p>
               </div>
               <button
@@ -480,7 +538,7 @@ export default function EditListingPage({
                 ) : (
                   <Rocket size={12} />
                 )}
-                Sauvegarder & Resoumettre
+                {t("rejection.saveAndResubmit")}{" "}
               </button>
             </div>
           </div>
@@ -661,7 +719,7 @@ export default function EditListingPage({
 
                       <div className="border-t border-slate-100 dark:border-slate-700"></div>
 
-                      {/* Type & Capacité */}
+                      {/* Type & Capacité - AVEC STEPPERS et TOGGLES */}
                       <div className="grid grid-cols-12 gap-6">
                         <div className="col-span-12 lg:col-span-3">
                           <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
@@ -706,53 +764,182 @@ export default function EditListingPage({
                               </span>
                             </div>
                           </div>
+
+                          {/* STEPPERS */}
                           <div className="grid grid-cols-3 gap-3">
-                            <Tooltip text={t("tooltips.rooms")}>
-                              <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                <Bed
-                                  size={16}
-                                  className="text-slate-400 dark:text-slate-500"
-                                />
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={listing.rooms}
-                                  onChange={(e) =>
+                            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Bed size={14} className="text-indigo-500" />
+                                <span className="text-xs font-medium">
+                                  {t("details.rooms")}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() =>
                                     setField(
                                       "rooms",
-                                      parseInt(e.target.value) || 1,
+                                      Math.max(1, listing.rooms - 1),
                                     )
                                   }
-                                  className="w-full bg-transparent focus:outline-none"
-                                />
+                                  className="w-6 h-6 rounded bg-white dark:bg-slate-800 flex items-center justify-center"
+                                >
+                                  -
+                                </button>
+                                <span className="w-8 text-center font-bold">
+                                  {listing.rooms}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    setField("rooms", listing.rooms + 1)
+                                  }
+                                  className="w-6 h-6 rounded bg-white dark:bg-slate-800 flex items-center justify-center"
+                                >
+                                  +
+                                </button>
                               </div>
-                            </Tooltip>
-                            <Tooltip text={t("tooltips.bathrooms")}>
-                              <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                <Bath
-                                  size={16}
-                                  className="text-slate-400 dark:text-slate-500"
-                                />
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={listing.bathrooms}
-                                  onChange={(e) =>
+                            </div>
+                            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Bath size={14} className="text-indigo-500" />
+                                <span className="text-xs font-medium">
+                                  {t("details.bathrooms")}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() =>
                                     setField(
                                       "bathrooms",
-                                      parseInt(e.target.value) || 1,
+                                      Math.max(1, listing.bathrooms - 1),
                                     )
                                   }
-                                  className="w-full bg-transparent focus:outline-none"
-                                />
+                                  className="w-6 h-6 rounded bg-white dark:bg-slate-800 flex items-center justify-center"
+                                >
+                                  -
+                                </button>
+                                <span className="w-8 text-center font-bold">
+                                  {listing.bathrooms}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    setField("bathrooms", listing.bathrooms + 1)
+                                  }
+                                  className="w-6 h-6 rounded bg-white dark:bg-slate-800 flex items-center justify-center"
+                                >
+                                  +
+                                </button>
                               </div>
-                            </Tooltip>
-                            <Tooltip text={t("tooltips.surface")}>
-                              <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
-                                <Ruler
-                                  size={16}
-                                  className="text-slate-400 dark:text-slate-500"
+                            </div>
+                            <div className="flex items-center justify-between px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <Utensils
+                                  size={14}
+                                  className="text-indigo-500"
                                 />
+                                <span className="text-xs font-medium">
+                                  {t("details.kitchens")}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() =>
+                                    setField(
+                                      "numberOfKitchens",
+                                      Math.max(
+                                        1,
+                                        (listing.numberOfKitchens || 1) - 1,
+                                      ),
+                                    )
+                                  }
+                                  className="w-6 h-6 rounded bg-white dark:bg-slate-800 flex items-center justify-center"
+                                >
+                                  -
+                                </button>
+                                <span className="w-8 text-center font-bold">
+                                  {listing.numberOfKitchens || 1}
+                                </span>
+                                <button
+                                  onClick={() =>
+                                    setField(
+                                      "numberOfKitchens",
+                                      (listing.numberOfKitchens || 1) + 1,
+                                    )
+                                  }
+                                  className="w-6 h-6 rounded bg-white dark:bg-slate-800 flex items-center justify-center"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* TOGGLES pour balcon/jardin/garage/meublé */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">
+                                  {t("details.balcony")}
+                                </span>
+                              </div>
+                              <Toggle
+                                checked={listing.hasBalcony}
+                                onChange={(v) => setField("hasBalcony", v)}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">
+                                  {t("details.garden")}
+                                </span>
+                              </div>
+                              <Toggle
+                                checked={listing.hasGarden}
+                                onChange={(v) => setField("hasGarden", v)}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">
+                                  {t("details.garage")}
+                                </span>
+                              </div>
+                              <Toggle
+                                checked={listing.hasGarage}
+                                onChange={(v) => setField("hasGarage", v)}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">
+                                  {t("details.elevator")}
+                                </span>
+                              </div>
+                              <Toggle
+                                checked={listing.hasElevator}
+                                onChange={(v) => setField("hasElevator", v)}
+                              />
+                            </div>
+                            <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm">
+                                  {t("details.furnished")}
+                                </span>
+                              </div>
+                              <Toggle
+                                checked={listing.isFurnished}
+                                onChange={(v) => setField("isFurnished", v)}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Surface et étage avec labels */}
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                                {t("fields.surfaceArea")}
+                              </label>
+                              <div className="relative">
                                 <input
                                   type="number"
                                   value={listing.surfaceArea || ""}
@@ -764,29 +951,107 @@ export default function EditListingPage({
                                         : null,
                                     )
                                   }
-                                  className="w-full bg-transparent focus:outline-none"
+                                  placeholder={t("placeholders.surfaceExample")}
+                                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
                                 />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">
+                                  m²
+                                </span>
                               </div>
-                            </Tooltip>
-                          </div>
-                          <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <ArrowUp
-                                size={16}
-                                className="text-slate-400 dark:text-slate-500"
-                              />
-                              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                                {t("fields.elevator")}
-                              </span>
                             </div>
-                            <Toggle
-                              checked={listing.hasElevator}
-                              onChange={(v) => setField("hasElevator", v)}
-                            />
+
+                            <div>
+                              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+                                {t("fields.floorNumber")}
+                              </label>
+                              <div className="relative">
+                                <input
+                                  type="number"
+                                  value={listing.floorNumber ?? ""}
+                                  onChange={(e) =>
+                                    setField(
+                                      "floorNumber",
+                                      e.target.value
+                                        ? parseInt(e.target.value)
+                                        : null,
+                                    )
+                                  }
+                                  placeholder={t("placeholders.floorExample")}
+                                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
+                                  {listing.floorNumber === 0
+                                    ? t("floor.ground")
+                                    : `${listing.floorNumber}${t("floor.floorSuffix")}`}{" "}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </div>
 
+                      {/* Règles animaux/fumeurs/soirées */}
+                      <div className="border-t border-slate-100 dark:border-slate-700"></div>
+                      <div className="grid grid-cols-12 gap-6">
+                        <div className="col-span-12 lg:col-span-3">
+                          <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                            {t("details.rules")}
+                          </label>
+                        </div>
+                        <div className="col-span-12 lg:col-span-9 space-y-2">
+                          <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                            <span className="text-sm">
+                              {t("rules.petsAllowed")}
+                            </span>
+                            <Toggle
+                              checked={listing.petsAllowed}
+                              onChange={(v) => setField("petsAllowed", v)}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                            <span className="text-sm">
+                              {t("rules.smokingAllowed")}
+                            </span>
+                            <Toggle
+                              checked={listing.smokingAllowed}
+                              onChange={(v) => setField("smokingAllowed", v)}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                            <span className="text-sm">
+                              {" "}
+                              <span className="text-sm">
+                                {t("rules.quietAfter22")}
+                              </span>
+                            </span>
+                            <Toggle
+                              checked={listing.houseRules?.quietAfter22}
+                              onChange={(v) =>
+                                setField("houseRules", {
+                                  ...listing.houseRules,
+                                  quietAfter22: v,
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg">
+                            <span className="text-sm">
+                              <span className="text-sm">
+                                {t("rules.noParties")}
+                              </span>
+                            </span>
+                            <Toggle
+                              checked={listing.houseRules?.noParties}
+                              onChange={(v) =>
+                                setField("houseRules", {
+                                  ...listing.houseRules,
+                                  noParties: v,
+                                })
+                              }
+                            />
+                          </div>
+                        </div>
+                      </div>
                       <div className="border-t border-slate-100 dark:border-slate-700"></div>
 
                       {/* Localisation */}
@@ -823,6 +1088,9 @@ export default function EditListingPage({
                               onChange={(e) =>
                                 setField("delegation", e.target.value)
                               }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleGeocodeOnEnter();
+                              }}
                               placeholder={t("location.delegation")}
                               className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
                             />
@@ -832,6 +1100,9 @@ export default function EditListingPage({
                               onChange={(e) =>
                                 setField("street", e.target.value)
                               }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleGeocodeOnEnter();
+                              }}
                               placeholder={t("location.street")}
                               className="px-4 py-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm"
                             />
@@ -956,12 +1227,13 @@ export default function EditListingPage({
                                 : t("photos.clickToAdd")}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                              {listing.photos.length}/20 {t("photos.photos")}
+                              {listing?.photos?.length || 0}/20{" "}
+                              {t("photos.photos")}
                             </p>
                           </div>
                         </div>
                       </Tooltip>
-                      {listing.photos.length < 5 && (
+                      {(listing?.photos?.length || 0) < 5 && (
                         <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
                           <AlertCircle
                             size={14}
@@ -969,14 +1241,14 @@ export default function EditListingPage({
                           />
                           <span className="text-xs text-amber-700 dark:text-amber-400 font-medium">
                             {t("photos.minWarning", {
-                              count: 5 - listing.photos.length,
+                              count: 5 - (listing?.photos?.length || 0),
                             })}
                           </span>
                         </div>
                       )}
-                      {listing.photos.length > 0 && (
+                      {(listing?.photos?.length || 0) > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                          {listing.photos.map((photo, idx) => (
+                          {listing?.photos?.map((photo, idx) => (
                             <div
                               key={photo.id}
                               className={`relative group rounded-lg overflow-hidden aspect-square bg-slate-100 dark:bg-slate-700 ${photo.isMain ? "ring-2 ring-indigo-500 ring-offset-1" : ""}`}
@@ -1016,28 +1288,16 @@ export default function EditListingPage({
                               </div>
                             </div>
                           ))}
-                          {listing.photos.length < 20 && (
-                            <Tooltip text={t("tooltips.addPhoto")}>
-                              <button
-                                onClick={() => fileRef.current?.click()}
-                                className="aspect-square rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center justify-center gap-1 text-slate-400 hover:border-indigo-400 hover:text-indigo-600 transition-all"
-                              >
-                                <Plus size={20} />
-                                <span className="text-[10px] font-bold">
-                                  {t("photos.add")}
-                                </span>
-                              </button>
-                            </Tooltip>
-                          )}
                         </div>
                       )}
                     </div>
                   )}
 
-                  {/* PRICING SECTION */}
+                  {/* PRICING SECTION - DYNAMIQUE AVEC BOUTONS ESTIMER */}
                   {active === "pricing" && (
                     <div className="space-y-6">
-                      <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-full w-fit">
+                      {/* Rental Type Tabs - PLEINE LARGEUR */}
+                      <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-full w-full">
                         {[
                           { v: "SHORT_TERM", l: "shortTerm" },
                           { v: "LONG_TERM", l: "longTerm" },
@@ -1046,26 +1306,212 @@ export default function EditListingPage({
                           <button
                             key={v}
                             onClick={() => setField("rentalType", v)}
-                            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${listing.rentalType === v ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
+                            className={`flex-1 py-1.5 rounded-full text-sm font-medium transition-all ${listing.rentalType === v ? "bg-white dark:bg-slate-700 text-indigo-600 shadow-sm" : "text-slate-500 dark:text-slate-400"}`}
                           >
                             {t(`rentalTypes.${l}`)}
                           </button>
                         ))}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
-                        <Tooltip text={t("tooltips.pricePerNight")}>
-                          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Sun size={14} className="text-indigo-500" />
-                              <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                {t("pricing.perNight")}
-                              </label>
+                      {/* SHORT_TERM - 2 colonnes horizontales */}
+                      {listing.rentalType === "SHORT_TERM" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-gradient-to-br from-sky-50 via-indigo-50/30 to-sky-50 dark:from-sky-950/20 dark:via-indigo-950/10 dark:to-sky-950/20 p-4 rounded-xl border border-sky-200 dark:border-sky-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Sparkles size={14} className="text-sky-600" />
+                                <span className="text-xs font-bold text-sky-600 uppercase tracking-wider">
+                                  {t("ai.recommendationBadge")}{" "}
+                                </span>
+                              </div>
+                              <button
+                                onClick={handleAIPriceRecommendation}
+                                disabled={aiLoading}
+                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-sky-600 bg-white/70 rounded-lg border border-sky-200 hover:bg-sky-50 transition-all"
+                              >
+                                {aiLoading ? (
+                                  <Loader2 size={10} className="animate-spin" />
+                                ) : (
+                                  <Sparkles size={10} />
+                                )}
+                                {aiLoading
+                                  ? t("ai.calculating")
+                                  : t("ai.estimate")}{" "}
+                              </button>
                             </div>
                             <div className="flex items-baseline gap-1">
-                              <span className="text-sm font-semibold text-slate-400">
-                                TND
+                              <span className="text-2xl font-black text-sky-700">
+                                {recommendedPrice ?? "—"}
                               </span>
+                              <span className="text-xs text-slate-400">
+                                {t("currency.perNight")}{" "}
+                              </span>
+                            </div>
+                            {recommendedPrice && (
+                              <button
+                                onClick={() =>
+                                  setField("pricePerNight", recommendedPrice)
+                                }
+                                className="mt-2 text-[10px] text-emerald-600 flex items-center gap-1 hover:underline"
+                              >
+                                <Check size={10} /> {t("actions.applyPrice")}
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <label className="text-xs font-medium text-slate-500">
+                              {t("pricing.yourPricePerNight")}
+                            </label>
+                            <input
+                              type="number"
+                              value={listing.pricePerNight ?? ""}
+                              onChange={(e) =>
+                                setField(
+                                  "pricePerNight",
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : null,
+                                )
+                              }
+                              placeholder="0"
+                              className="w-full text-2xl font-bold bg-transparent focus:outline-none mt-1"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* LONG_TERM - 2 colonnes horizontales */}
+                      {listing.rentalType === "LONG_TERM" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-gradient-to-br from-purple-50 via-indigo-50/30 to-purple-50 dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-purple-950/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2">
+                                <Sparkles
+                                  size={14}
+                                  className="text-purple-600"
+                                />
+                                <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">
+                                  IA RECOMMANDATION
+                                </span>
+                              </div>
+                              <button
+                                onClick={handleAIPriceRecommendation}
+                                disabled={aiLoading}
+                                className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-purple-600 bg-white/70 rounded-lg border border-purple-200 hover:bg-purple-50 transition-all"
+                              >
+                                {aiLoading ? (
+                                  <Loader2 size={10} className="animate-spin" />
+                                ) : (
+                                  <Sparkles size={10} />
+                                )}
+                                {aiLoading
+                                  ? t("ai.calculating")
+                                  : t("ai.estimate")}{" "}
+                              </button>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="text-2xl font-black text-purple-700">
+                                {recommendedPriceMonth ?? "—"}
+                              </span>
+                              <span className="text-xs text-slate-400">
+                                {t("currency.perMonth")}{" "}
+                              </span>
+                            </div>
+                            {recommendedPriceMonth && (
+                              <button
+                                onClick={() =>
+                                  setField(
+                                    "pricePerMonth",
+                                    recommendedPriceMonth,
+                                  )
+                                }
+                                className="mt-2 text-[10px] text-emerald-600 flex items-center gap-1 hover:underline"
+                              >
+                                <Check size={10} /> {t("actions.applyPrice")}
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <label className="text-xs font-medium text-slate-500">
+                              {t("pricing.yourPricePerMonth")}
+                            </label>
+                            <input
+                              type="number"
+                              value={listing.pricePerMonth ?? ""}
+                              onChange={(e) =>
+                                setField(
+                                  "pricePerMonth",
+                                  e.target.value
+                                    ? parseFloat(e.target.value)
+                                    : null,
+                                )
+                              }
+                              placeholder="0"
+                              className="w-full text-2xl font-bold bg-transparent focus:outline-none mt-1"
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* BOTH - 2 colonnes côte à côte */}
+                      {listing.rentalType === "BOTH" && (
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Colonne GAUCHE - NUIT */}
+                          <div className="flex flex-col gap-4">
+                            <div className="bg-gradient-to-br from-sky-50 via-indigo-50/30 to-sky-50 dark:from-sky-950/20 dark:via-indigo-950/10 dark:to-sky-950/20 p-4 rounded-xl border border-sky-200 dark:border-sky-800">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Sparkles
+                                    size={14}
+                                    className="text-sky-600"
+                                  />
+                                  <span className="text-xs font-bold text-sky-600 uppercase tracking-wider">
+                                    IA RECOMMANDATION
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={handleAIPriceRecommendation}
+                                  disabled={aiLoading}
+                                  className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-sky-600 bg-white/70 rounded-lg border border-sky-200 hover:bg-sky-50 transition-all"
+                                >
+                                  {aiLoading ? (
+                                    <Loader2
+                                      size={10}
+                                      className="animate-spin"
+                                    />
+                                  ) : (
+                                    <Sparkles size={10} />
+                                  )}
+                                  {aiLoading
+                                    ? t("ai.calculating")
+                                    : t("ai.estimate")}{" "}
+                                </button>
+                              </div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-sky-700">
+                                  {recommendedPrice ?? "—"}
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  {t("currency.perNight")}{" "}
+                                </span>
+                              </div>
+                              {recommendedPrice && (
+                                <button
+                                  onClick={() =>
+                                    setField("pricePerNight", recommendedPrice)
+                                  }
+                                  className="mt-2 text-[10px] text-emerald-600 flex items-center gap-1 hover:underline"
+                                >
+                                  <Check size={10} /> {t("actions.apply")}
+                                </button>
+                              )}
+                            </div>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <label className="text-xs font-medium text-slate-500">
+                                {t("pricing.yourPricePerNight")}
+                              </label>
                               <input
                                 type="number"
                                 value={listing.pricePerNight ?? ""}
@@ -1078,26 +1524,68 @@ export default function EditListingPage({
                                   )
                                 }
                                 placeholder="0"
-                                className="flex-1 text-2xl font-bold bg-transparent focus:outline-none"
+                                className="w-full text-2xl font-bold bg-transparent focus:outline-none mt-1"
                               />
                             </div>
-                            <p className="text-xs text-slate-400 mt-2">
-                              {t("units.night")}
-                            </p>
                           </div>
-                        </Tooltip>
-                        <Tooltip text={t("tooltips.pricePerMonth")}>
-                          <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Calendar size={14} className="text-indigo-500" />
-                              <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                                {t("pricing.perMonth")}
-                              </label>
+
+                          {/* Colonne DROITE - MOIS */}
+                          <div className="flex flex-col gap-4">
+                            <div className="bg-gradient-to-br from-purple-50 via-indigo-50/30 to-purple-50 dark:from-purple-950/20 dark:via-indigo-950/10 dark:to-purple-950/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <Sparkles
+                                    size={14}
+                                    className="text-purple-600"
+                                  />
+                                  <span className="text-xs font-bold text-purple-600 uppercase tracking-wider">
+                                    IA RECOMMANDATION
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={handleAIPriceRecommendation}
+                                  disabled={aiLoading}
+                                  className="flex items-center gap-1 px-2 py-1 text-[10px] font-semibold text-purple-600 bg-white/70 rounded-lg border border-purple-200 hover:bg-purple-50 transition-all"
+                                >
+                                  {aiLoading ? (
+                                    <Loader2
+                                      size={10}
+                                      className="animate-spin"
+                                    />
+                                  ) : (
+                                    <Sparkles size={10} />
+                                  )}
+                                  {aiLoading
+                                    ? t("ai.calculating")
+                                    : t("ai.estimate")}{" "}
+                                </button>
+                              </div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-2xl font-black text-purple-700">
+                                  {recommendedPriceMonth ?? "—"}
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  {t("currency.perMonth")}{" "}
+                                </span>
+                              </div>
+                              {recommendedPriceMonth && (
+                                <button
+                                  onClick={() =>
+                                    setField(
+                                      "pricePerMonth",
+                                      recommendedPriceMonth,
+                                    )
+                                  }
+                                  className="mt-2 text-[10px] text-emerald-600 flex items-center gap-1 hover:underline"
+                                >
+                                  <Check size={10} /> {t("actions.apply")}
+                                </button>
+                              )}
                             </div>
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-sm font-semibold text-slate-400">
-                                TND
-                              </span>
+                            <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+                              <label className="text-xs font-medium text-slate-500">
+                                {t("pricing.yourPricePerMonth")}
+                              </label>
                               <input
                                 type="number"
                                 value={listing.pricePerMonth ?? ""}
@@ -1110,17 +1598,15 @@ export default function EditListingPage({
                                   )
                                 }
                                 placeholder="0"
-                                className="flex-1 text-2xl font-bold bg-transparent focus:outline-none"
+                                className="w-full text-2xl font-bold bg-transparent focus:outline-none mt-1"
                               />
                             </div>
-                            <p className="text-xs text-slate-400 mt-2">
-                              {t("units.month")}
-                            </p>
                           </div>
-                        </Tooltip>
-                      </div>
+                        </div>
+                      )}
 
-                      <div className="space-y-3">
+                      {/* Frais supplémentaires - commun à tous les types */}
+                      <div className="space-y-3 mt-4">
                         {[
                           {
                             field: "securityDeposit",
@@ -1169,7 +1655,7 @@ export default function EditListingPage({
                                     className="w-14 text-right text-sm font-medium bg-transparent focus:outline-none"
                                   />
                                   <span className="text-xs text-slate-400">
-                                    TND
+                                    {t("currency.tnd")}{" "}
                                   </span>
                                 </div>
                               )}
@@ -1185,7 +1671,6 @@ export default function EditListingPage({
                       </div>
                     </div>
                   )}
-
                   {/* PUBLISH SECTION */}
                   {active === "publish" && (
                     <div className="space-y-6">
@@ -1323,7 +1808,10 @@ export default function EditListingPage({
                                 listing.description.length >= 100
                               ),
                             },
-                            { key: "photos", done: listing.photos.length >= 5 },
+                            {
+                              key: "photos",
+                              done: (listing?.photos?.length || 0) >= 5,
+                            },
                             {
                               key: "location",
                               done: !!(listing.governorate && listing.latitude),
@@ -1455,6 +1943,31 @@ export default function EditListingPage({
               <Save size={11} />
             </button>
           </Tooltip>
+        </div>
+      )}
+      {/* Toast Notification - comme dans detail */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
     </div>

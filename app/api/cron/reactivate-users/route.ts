@@ -9,11 +9,11 @@ export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("authorization");
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      console.error("❌ Cron: Authentification échouée");
+      console.error(" Cron: Authentification échouée");
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    console.log("🚀 [CRON] Début réactivation utilisateurs");
+    console.log(" [CRON] Début réactivation utilisateurs");
     const now = new Date();
 
     const usersToReactivate = await prisma.user.findMany({
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`📊 ${usersToReactivate.length} utilisateur(s) à réactiver`);
+    console.log(` ${usersToReactivate.length} utilisateur(s) à réactiver`);
 
     if (usersToReactivate.length === 0) {
       return NextResponse.json({ success: true, count: 0 });
@@ -55,13 +55,13 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    console.log(`✅ ${usersToReactivate.length} utilisateurs réactivés`);
+    console.log(` ${usersToReactivate.length} utilisateurs réactivés`);
     return NextResponse.json({
       success: true,
       count: usersToReactivate.length,
     });
   } catch (error) {
-    console.error("❌ Erreur cron:", error);
+    console.error(" Erreur cron:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

@@ -17,7 +17,7 @@ const intlMiddleware = createMiddleware({
   localePrefix: "always",
 });
 
-// ✅ Fonction pour obtenir la locale depuis la requête
+// Fonction pour obtenir la locale depuis la requête
 function getLocaleFromRequest(req: any): string {
   const pathname = req.nextUrl.pathname;
   const pathSegments = pathname.split("/").filter(Boolean);
@@ -35,12 +35,12 @@ export default clerkMiddleware(async (auth, req) => {
   const { pathname } = req.nextUrl;
   const locale = getLocaleFromRequest(req);
 
-  // ✅ Redirection de /sign-in vers /{locale}/login
+  //  Redirection de /sign-in vers /{locale}/login
   if (pathname === "/sign-in" || pathname.startsWith("/sign-in?")) {
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url));
   }
 
-  // ✅ Redirection de /login sans locale vers /{locale}/login
+  //  Redirection de /login sans locale vers /{locale}/login
   if (pathname === "/login" || pathname.startsWith("/login?")) {
     if (!pathname.includes(`/${locale}/login`)) {
       return NextResponse.redirect(
@@ -52,7 +52,7 @@ export default clerkMiddleware(async (auth, req) => {
 
   const { userId, sessionClaims, getToken } = await auth();
 
-  // 🔥 Récupérer le token avec le template personnalisé
+  //  Récupérer le token avec le template personnalisé
   const token = await getToken({ template: "my-app-template" });
 
   // Décoder le token pour extraire le rôle
@@ -61,19 +61,17 @@ export default clerkMiddleware(async (auth, req) => {
     try {
       const decoded = JSON.parse(atob(token.split(".")[1]));
       roleFromToken = decoded.role;
-      console.log("🔐 Rôle depuis le token JWT:", roleFromToken);
+      console.log(" Rôle depuis le token JWT:", roleFromToken);
     } catch (e) {
       console.error("Erreur décodage token:", e);
     }
   }
 
-  // ✅ ADDED — bypass everything for verify-catch
+  //  ADDED — bypass everything for verify-catch
   if (pathname.includes("/inscription/verify-catch")) {
     return intlMiddleware(req);
   }
-  // ========================================
-  // 🌐 LANGUAGE PERSISTENCE - HANDLE REDIRECTS
-  // ========================================
+  //  LANGUAGE PERSISTENCE - HANDLE REDIRECTS
   // Extract pathname without query parameters
   const currentPathname = req.nextUrl.pathname;
 
@@ -113,21 +111,16 @@ export default clerkMiddleware(async (auth, req) => {
       // Don't redirect if it's the root path without locale - let intlMiddleware handle it
       if (currentPathname !== "/") {
         const newPath = `/${storedLang}${currentPathname}`;
-        console.log(`🌐 Redirecting to preferred language: ${newPath}`);
+        console.log(` Redirecting to preferred language: ${newPath}`);
         return NextResponse.redirect(new URL(newPath, req.url));
       }
     }
   }
-  // ========================================
   // END OF LANGUAGE PERSISTENCE
-  // ========================================
-  // ========================================
-  // API routes — AJOUT des routes publiques
-  // ========================================
   if (pathname.startsWith("/api/")) {
     const publicApiRoutes = [
       "/api/contact",
-      "/api/users/avatar", // ← AJOUTER
+      "/api/users/avatar", 
       "/api/users/increment-login-attempts",
       "/api/users/reset-login-attempts",
       "/api/users/update-last-login",
@@ -173,40 +166,34 @@ export default clerkMiddleware(async (auth, req) => {
     );
 
     if (isPublicApiRoute) {
-      console.log("🔓 [API PUBLIQUE] Accès autorisé:", pathname);
+      console.log(" [API PUBLIQUE] Accès autorisé:", pathname);
       return NextResponse.next();
     }
-    console.log("🔐 [API CHECK]", pathname);
+    console.log(" [API CHECK]", pathname);
 
-    console.log("🔐 [API PRIVEE] Vérification pour:", pathname);
+    console.log(" [API PRIVEE] Vérification pour:", pathname);
     if (!userId) {
-      console.log("❌ [API PRIVEE] Non authentifié");
+      console.log(" [API PRIVEE] Non authentifié");
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
-    console.log("✅ [API PRIVEE] Authentifié, userId:", userId);
+    console.log(" [API PRIVEE] Authentifié, userId:", userId);
     return NextResponse.next();
   }
 
-  // ========================================
   // TOUJOURS appliquer intl d'abord
-  // ========================================
   const intlResponse = intlMiddleware(req);
 
   if (intlResponse.status >= 300 && intlResponse.status < 400) {
     return intlResponse;
   }
 
-  // ========================================
   // Déterminer locale et chemin
-  // ========================================
   const pathParts = pathname.split("/").filter(Boolean);
   const localeFromPath =
     pathParts[0] && isValidLocale(pathParts[0]) ? pathParts[0] : defaultLocale;
   const pathWithoutLocale = "/" + pathParts.slice(1).join("/");
 
-  // ========================================
   // GESTION DE LA REDIRECTION APRÈS LOGIN
-  // ========================================
   if (userId) {
     const redirectUrl = req.cookies.get("redirectAfterLogin")?.value;
 
@@ -243,7 +230,7 @@ export default clerkMiddleware(async (auth, req) => {
       redirectUrl &&
       !pathWithoutLocale.includes("verify-catch")
     ) {
-      console.log("🔄 Redirection vers:", redirectUrl);
+      console.log(" Redirection vers:", redirectUrl);
       const response = NextResponse.redirect(new URL(redirectUrl, req.url));
       response.cookies.delete("redirectAfterLogin");
       return response;
@@ -281,7 +268,7 @@ export default clerkMiddleware(async (auth, req) => {
       pathname.includes("/_next") || pathname.includes("/favicon.ico");
 
     if (!isPublic && !isStaticAsset && !pathname.startsWith("/api/")) {
-      console.log("🔒 Page protégée, stockage de l'URL:", pathname);
+      console.log(" Page protégée, stockage de l'URL:", pathname);
 
       const redirectUrl = pathWithoutLocale + req.nextUrl.search;
       const response = NextResponse.redirect(
@@ -300,19 +287,17 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  // ========================================
   // Zone admin — protégée avec vérification du rôle ADMIN
-  // ========================================
   if (pathWithoutLocale.startsWith("/admin")) {
-    console.log("🔐 Accès admin tenté pour:", pathWithoutLocale);
-    console.log("🔐 userId:", userId);
+    console.log(" Accès admin tenté pour:", pathWithoutLocale);
+    console.log(" userId:", userId);
 
-    // 🔥 Utiliser le rôle du token JWT d'abord
+    //  Utiliser le rôle du token JWT d'abord
     const userRole = roleFromToken;
-    console.log("🔐 Rôle depuis token JWT:", userRole);
+    console.log(" Rôle depuis token JWT:", userRole);
 
     if (!userId) {
-      console.log("🔴 Pas d'userId, redirection vers login");
+      console.log(" Pas d'userId, redirection vers login");
       const redirectUrl = pathWithoutLocale + req.nextUrl.search;
       const response = NextResponse.redirect(
         new URL(`/${localeFromPath}/login`, req.url),
@@ -329,7 +314,7 @@ export default clerkMiddleware(async (auth, req) => {
       return response;
     }
 
-    // 🔑 Récupérer le rôle depuis la base de données (fallback si token n'a pas le rôle)
+    //  Récupérer le rôle depuis la base de données (fallback si token n'a pas le rôle)
     let role = userRole;
 
     if (!role) {
@@ -342,25 +327,23 @@ export default clerkMiddleware(async (auth, req) => {
         });
 
         role = user?.role;
-        console.log("🔐 Rôle récupéré depuis DB (fallback):", role);
+        console.log(" Rôle récupéré depuis DB (fallback):", role);
       } catch (error) {
-        console.error("❌ Erreur récupération rôle depuis DB:", error);
+        console.error(" Erreur récupération rôle depuis DB:", error);
         return NextResponse.redirect(new URL(`/${localeFromPath}/`, req.url));
       }
     }
 
     if (role !== "ADMIN") {
-      console.log("❌ Accès admin refusé - rôle:", role);
+      console.log(" Accès admin refusé - rôle:", role);
       return NextResponse.redirect(new URL(`/${localeFromPath}/`, req.url));
     }
 
-    console.log("✅ Accès admin autorisé pour:", userId);
+    console.log(" Accès admin autorisé pour:", userId);
     return intlResponse;
   }
 
-  // ========================================
   // Pages publiques
-  // ========================================
   const publicPaths = [
     "/complete-profile",
     "/choose-role",
@@ -393,15 +376,13 @@ export default clerkMiddleware(async (auth, req) => {
     return intlResponse;
   }
 
-  // ========================================
   // Routes protégées
-  // ========================================
   if (!userId) {
     return NextResponse.redirect(new URL(`/${localeFromPath}/login`, req.url));
   }
 
   if (pathWithoutLocale.startsWith("/admin/verifications")) {
-    console.log("🔐 Accès à la page verifications:", pathWithoutLocale);
+    console.log(" Accès à la page verifications:", pathWithoutLocale);
   }
 
   return addNoCacheHeaders(intlResponse);

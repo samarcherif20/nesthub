@@ -68,7 +68,7 @@ export async function POST(req: Request) {
           }
         });
 
-        console.log(`✅ Session créée pour ${user.email}`);
+        console.log(` Session créée pour ${user.email}`);
       }
     } catch (error) {
       console.error("Error recording session:", error);

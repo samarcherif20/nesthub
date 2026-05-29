@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
         data: admins.map(admin => ({
           userId: admin.id,
           type: "SYSTEM_ALERT",
-          title: "🆕 Nouvelle demande de vérification CIN",
+          title: " Nouvelle demande de vérification CIN",
           content: `${user.firstName || "Un utilisateur"} ${user.lastName || ""} (${user.email}) a soumis une nouvelle demande de vérification d'identité.`,
           isRead: false,
         })),
@@ -110,15 +110,15 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         type: "SYSTEM_ALERT",
-        title: "✅ Demande de vérification envoyée",
+        title: " Demande de vérification envoyée",
         content: "Votre demande a été soumise avec succès. Un administrateur va la traiter dans les plus brefs délais.",
         isRead: false,
       },
     });
 
-    console.log(`✅ Demande de vérification créée: ${verificationRequest.id}`);
-    console.log(`✅ cinData mis à jour pour user: ${user.id}`);
-    console.log(`✅ Notifications envoyées à ${admins.length} admin(s)`);
+    console.log(` Demande de vérification créée: ${verificationRequest.id}`);
+    console.log(` cinData mis à jour pour user: ${user.id}`);
+    console.log(` Notifications envoyées à ${admins.length} admin(s)`);
 
     return NextResponse.json({
       success: true,

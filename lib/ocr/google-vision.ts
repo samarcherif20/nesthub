@@ -111,7 +111,7 @@ export async function extractCINFromImage(imageBuffer: Buffer): Promise<Extracte
     const fullText = result.textAnnotations?.[0]?.description || '';
     const confidence = result.textAnnotations?.[0]?.confidence || 0.8;
     
-    console.log('📝 Google Vision - Texte détecté:', fullText.substring(0, 200));
+    console.log(' Google Vision - Texte détecté:', fullText.substring(0, 200));
     
     const { firstName, lastName } = extractName(fullText);
     
@@ -128,7 +128,7 @@ export async function extractCINFromImage(imageBuffer: Buffer): Promise<Extracte
     };
     
   } catch (error) {
-    console.error('❌ Google Vision error:', error);
+    console.error(' Google Vision error:', error);
     throw error;
   }
 }

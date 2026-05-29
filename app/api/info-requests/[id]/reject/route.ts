@@ -57,7 +57,7 @@ export async function POST(
       data: {
         userId: infoRequest.tenantId,
         type: "INFO_REQUEST_REJECTED",
-        title: "❌ Demande refusée",
+        title: " Demande refusée",
         content: `${rejectionMessage}. Vous pouvez faire une nouvelle demande avec d'autres dates.`,
         data: {
           infoRequestId: infoRequest.id,

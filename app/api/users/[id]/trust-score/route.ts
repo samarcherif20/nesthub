@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@clerk/nextjs/server";
 
-// 🔑 Définir le type des params
+//  Définir le type des params
 type RouteParams = {
   params: Promise<{ id: string }> | { id: string };
 };
@@ -19,7 +19,7 @@ export async function GET(
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    // ⚠️ IMPORTANT: await params dans Next.js 15+
+    //  IMPORTANT: await params dans Next.js 15+
     const { id } = await params;
     
     // Vérifier si l'utilisateur demandé existe

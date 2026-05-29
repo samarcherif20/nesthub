@@ -19,18 +19,16 @@ import {
   Archive,
   ArrowLeft,
   AlertTriangle,
+  Clock,
+  X,
 } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
 import {
   useListingHistory,
   formatValue,
   getTimeKey,
   pip,
   ACTION_CONFIG,
-  STATUS_LABELS,
-  FIELD_LABELS,
 } from "./hooks/useListingHistory";
 import { TbHomeOff } from "react-icons/tb";
 
@@ -58,11 +56,30 @@ function getEquipmentLabel(eqKey: string, t: any): string {
   return equipmentLabels[eqKey] || eqKey.replace(/([A-Z])/g, " $1").trim();
 }
 
-// Skeleton loader pour le contenu principal
+// Fonction pour obtenir le nom d'affichage (avec support admin)
+function getUserDisplayName(user: any, t: any): string {
+  if (user?.isAdmin === true) {
+    return t("user.admin");
+  }
+  if (user?.displayName) {
+    return user.displayName;
+  }
+  if (user?.role === "ADMIN") {
+    return t("user.admin");
+  }
+  if (user?.firstName && user?.lastName) {
+    return `${user.firstName} ${user.lastName}`;
+  }
+  if (user?.firstName) return user.firstName;
+  if (user?.username) return user.username;
+  if (user?.email) return user.email.split("@")[0];
+  return t("user.default");
+}
+
+// Skeleton loader
 function ContentSkeleton({ t }: { t: any }) {
   return (
     <div className="space-y-8">
-      {/* Breadcrumb skeleton */}
       <div className="flex items-center gap-2 mb-6">
         <div className="h-4 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
         <ChevronRight size={14} className="text-slate-400" />
@@ -70,8 +87,6 @@ function ContentSkeleton({ t }: { t: any }) {
         <ChevronRight size={14} className="text-slate-400" />
         <div className="h-4 w-20 bg-slate-200 dark:bg-slate-700 rounded animate-pulse" />
       </div>
-
-      {/* Header skeleton */}
       <div className="flex flex-col md:flex-row justify-between gap-6 mb-8">
         <div>
           <div className="h-8 w-48 bg-slate-200 dark:bg-slate-700 rounded animate-pulse mb-2" />
@@ -79,8 +94,6 @@ function ContentSkeleton({ t }: { t: any }) {
         </div>
         <div className="h-10 w-32 bg-slate-200 dark:bg-slate-700 rounded-xl animate-pulse" />
       </div>
-
-      {/* Filters skeleton */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <div className="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl">
           <div className="h-3 w-20 bg-slate-200 dark:bg-slate-700 rounded mb-3 animate-pulse" />
@@ -99,8 +112,6 @@ function ContentSkeleton({ t }: { t: any }) {
           </div>
         </div>
       </div>
-
-      {/* Timeline skeleton */}
       <div className="relative border-l-2 border-slate-200 dark:border-slate-700 ml-8 space-y-8">
         {[1, 2, 3].map((i) => (
           <div key={i} className="relative">
@@ -160,19 +171,6 @@ function PriceDiff({
   );
 }
 
-function StatusIcon({ status }: { status: string }) {
-  const config = STATUS_LABELS[status];
-  if (!config) return null;
-  const icons: Record<string, React.ElementType> = {
-    CheckCircle: CheckCircle,
-    EyeOff: EyeOff,
-    AlertCircle: AlertCircle,
-    Archive: Archive,
-  };
-  const Icon = icons[config.icon as string] || CheckCircle;
-  return <Icon size={14} className={config.color} />;
-}
-
 function getActionIcon(iconName: string) {
   const icons: Record<string, React.ElementType> = {
     Tag: Tag,
@@ -180,6 +178,7 @@ function getActionIcon(iconName: string) {
     Wrench: Wrench,
     FileText: FileText,
     CheckCircle: CheckCircle,
+    Clock: Clock,
   };
   return icons[iconName] || FileText;
 }
@@ -219,16 +218,6 @@ function extractEquipmentList(value: any): string[] {
   return [];
 }
 
-function getUserFullName(user: any, t: any): string {
-  if (user?.firstName && user?.lastName) {
-    return `${user.firstName} ${user.lastName}`;
-  }
-  if (user?.firstName) return user.firstName;
-  if (user?.username) return user.username;
-  if (user?.email) return user.email.split("@")[0];
-  return t("user.default");
-}
-
 export default function ListingHistoryPage({
   params,
 }: {
@@ -239,6 +228,11 @@ export default function ListingHistoryPage({
   const contentRef = React.useRef<HTMLDivElement>(null);
   const [exporting, setExporting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  
+  const [toast, setToast] = React.useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   const {
     loading,
@@ -253,29 +247,19 @@ export default function ListingHistoryPage({
     groupedHistory,
     filterOptions,
     periodOptions,
+    getUserDisplayName,
   } = useListingHistory(id, setError);
 
   const handleExportPDF = async () => {
     if (exporting) return;
-
     setExporting(true);
     setError(null);
-
     try {
-      // Build URL with current filters
       let url = `/api/listings/${id}/history/export?days=${days}`;
       if (filterType) url += `&actionType=${filterType}`;
-
-      // Fetch the HTML content
       const response = await fetch(url);
-
-      if (!response.ok) {
-        throw new Error("Export failed");
-      }
-
+      if (!response.ok) throw new Error("Export failed");
       const html = await response.text();
-
-      // Create a blob and download
       const blob = new Blob([html], { type: "text/html" });
       const link = document.createElement("a");
       const downloadUrl = URL.createObjectURL(blob);
@@ -285,19 +269,30 @@ export default function ListingHistoryPage({
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
+      
+      setToast({
+        type: "success",
+        message: t("actions.exportSuccess"),
+      });
+      setTimeout(() => setToast(null), 3000);
+      
     } catch (error) {
       console.error("Export error:", error);
       setError(t("errors.exportFailed"));
-      setTimeout(() => setError(null), 5000);
+      
+      setToast({
+        type: "error",
+        message: t("errors.exportFailed"),
+      });
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setExporting(false);
     }
   };
 
-  // Afficher le skeleton pendant le chargement
-    if (loading) {
+  if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-white dark:bg-slate-950 min-h-screen">
+      <div className="flex-1 flex items-center justify-center min-h-screen">
         <div className="flex flex-col items-center gap-3">
           <LoadingSpinner />
           <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -310,7 +305,7 @@ export default function ListingHistoryPage({
 
   if (!listingTitle) {
     return (
-      <div className="fixed inset-0 bg-white dark:bg-slate-950 flex items-center justify-center p-4">
+      <div className="fixed inset-0 flex items-center justify-center p-4">
         <div className="text-center max-w-md mx-auto">
           <div className="relative mb-5">
             <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/20 via-purple-500/20 to-purple-500/20 rounded-2xl blur-2xl animate-pulse"></div>
@@ -347,7 +342,7 @@ export default function ListingHistoryPage({
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto bg-white dark:bg-slate-950">
+    <div className="flex-1 flex flex-col overflow-y-auto">
       <div className="w-full px-0 py-6 md:py-8">
         <div ref={contentRef}>
           {/* Breadcrumb */}
@@ -372,7 +367,6 @@ export default function ListingHistoryPage({
               </span>
             </nav>
 
-            {/* Error Message */}
             {error && (
               <div className="mb-6 bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 rounded-lg p-4">
                 <div className="flex items-center gap-2">
@@ -395,17 +389,7 @@ export default function ListingHistoryPage({
                 </p>
               </div>
               <div className="flex gap-3">
-                <button
-                  onClick={handleExportPDF}
-                  disabled={exporting}
-                  className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 px-4 py-2 rounded-xl font-medium text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Download
-                    size={16}
-                    className={exporting ? "animate-pulse" : ""}
-                  />
-                  {exporting ? t("actions.exporting") : t("actions.export")}
-                </button>
+                {/* Bouton export supprimé */}
               </div>
             </div>
 
@@ -465,7 +449,6 @@ export default function ListingHistoryPage({
             {Object.entries(groupedHistory).map(([dateKey, entries]) => (
               <div key={dateKey} className="relative">
                 <div className="absolute -left-[41px] top-0 bg-white dark:bg-slate-950 border-4 border-indigo-500 w-5 h-5 rounded-full z-10 shadow-sm"></div>
-
                 <div className="mb-3">
                   <span className="text-sm font-bold text-slate-600 dark:text-slate-400">
                     {dateKey}
@@ -482,7 +465,9 @@ export default function ListingHistoryPage({
                   const isStatus = entry.fieldName === "status";
                   const isPhoto = entry.fieldName === "photos";
                   const isEquipment = entry.fieldName === "equipment";
-                  const userName = getUserFullName(entry.changedByUser, t);
+                  const isPendingRevision =
+                    entry.actionType === "PENDING_REVISION";
+                  const userName = getUserDisplayName(entry.changedByUser, t);
 
                   const oldStatusValue = isStatus
                     ? extractStatusValue(entry.oldValue)
@@ -497,8 +482,9 @@ export default function ListingHistoryPage({
                     ? extractEquipmentList(entry.newValue)
                     : [];
 
-                  // Obtenir le label traduit du champ
                   const getFieldLabel = () => {
+                    if (isPendingRevision)
+                      return t("fieldLabels.pendingRevision");
                     if (entry.fieldName === "pricePerNight")
                       return t("fieldLabels.pricePerNight");
                     if (entry.fieldName === "pricePerMonth")
@@ -531,11 +517,9 @@ export default function ListingHistoryPage({
                         <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-                              {entry.changedByUser.profilePictureUrl ? (
+                              {entry.changedByUser.profilePictureUrl && pip(entry.changedByUser.profilePictureUrl) ? (
                                 <img
-                                  src={pip(
-                                    entry.changedByUser.profilePictureUrl,
-                                  )}
+                                  src={pip(entry.changedByUser.profilePictureUrl) || undefined}
                                   alt=""
                                   className="w-full h-full object-cover"
                                 />
@@ -546,21 +530,34 @@ export default function ListingHistoryPage({
                               )}
                             </div>
                             <div>
-                              <p className="text-sm font-bold text-slate-900 dark:text-white">
+                              <p className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                                 {userName}
+                                {isPendingRevision && (
+                                  <span className="ml-2 px-2 py-0.5 rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 text-[9px] font-bold uppercase flex items-center gap-1">
+                                    <Clock size={8} />{" "}
+                                    {t("status.pendingValidation")}
+                                  </span>
+                                )}
                               </p>
                               <p className="text-[10px] uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-bold">
-                                {entry.actionType === "PRICE_UPDATE" &&
+                                {isPendingRevision && t("roles.system")}
+                                {!isPendingRevision &&
+                                  entry.actionType === "PRICE_UPDATE" &&
                                   t("roles.owner")}
-                                {entry.actionType === "STATUS_CHANGE" &&
+                                {!isPendingRevision &&
+                                  entry.actionType === "STATUS_CHANGE" &&
                                   t("roles.owner")}
-                                {entry.actionType === "PHOTO_UPDATE" &&
+                                {!isPendingRevision &&
+                                  entry.actionType === "PHOTO_UPDATE" &&
                                   t("roles.owner")}
-                                {entry.actionType === "EQUIPMENT_UPDATE" &&
+                                {!isPendingRevision &&
+                                  entry.actionType === "EQUIPMENT_UPDATE" &&
                                   t("roles.coOwner")}
-                                {entry.actionType === "UPDATE" &&
+                                {!isPendingRevision &&
+                                  entry.actionType === "UPDATE" &&
                                   t("roles.coOwner")}
-                                {entry.actionType === "CREATE" &&
+                                {!isPendingRevision &&
+                                  entry.actionType === "CREATE" &&
                                   t("roles.owner")}
                               </p>
                             </div>
@@ -580,124 +577,163 @@ export default function ListingHistoryPage({
                             {getFieldLabel()}
                           </h3>
 
-                          {(entry.oldValue !== null ||
-                            entry.newValue !== null) && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {/* Ancienne valeur */}
-                              {entry.oldValue !== null && (
-                                <div
-                                  className={`rounded-xl p-4 ${isPhoto ? "relative" : "bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-800"}`}
-                                >
-                                  <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                    {t("timeline.oldValue")}
-                                  </p>
-                                  {isPhoto ? (
-                                    <div className="relative w-full">
-                                      <img
-                                        src={pip(entry.oldValue)}
-                                        alt={t("photo.old")}
-                                        className="w-full h-auto max-h-[400px] object-contain rounded-lg border-4 border-rose-500 shadow-lg"
-                                      />
-                                      <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-lg">
-                                        <span className="text-white font-bold text-xs bg-red-600 px-2 py-1 rounded">
-                                          {t("timeline.deleted")}
-                                        </span>
+                          {isPendingRevision ? (
+                            <div className="rounded-xl p-4 bg-orange-50 dark:bg-orange-950/20 border border-orange-100 dark:border-orange-800">
+                              <p className="text-sm text-orange-700 dark:text-orange-400">
+                                {t("timeline.pendingRevisionMessage")}
+                              </p>
+                            </div>
+                          ) : (
+                            <>
+                              {(entry.oldValue !== null ||
+                                entry.newValue !== null) && (
+                                <>
+                                  {/* AFFICHAGE POUR LES CHANGEMENTS DE STATUT */}
+                                  {isStatus ? (
+                                    <div className="rounded-xl p-4 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-800">
+                                      <p className="text-[10px] font-bold uppercase text-indigo-600 dark:text-indigo-400 mb-2">
+                                        {t("timeline.statusChange")}
+                                      </p>
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                                        <div className="flex-1">
+                                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t("timeline.oldValue")}</p>
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 text-sm font-medium">
+                                            {oldStatusValue
+                                              ? t(`status.${oldStatusValue.toLowerCase()}`) || oldStatusValue
+                                              : "—"}
+                                          </span>
+                                        </div>
+                                        <span className="text-slate-400 text-lg font-bold hidden sm:block">→</span>
+                                        <span className="text-slate-400 text-lg font-bold sm:hidden">↓</span>
+                                        <div className="flex-1">
+                                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t("timeline.newValue")}</p>
+                                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-sm font-medium">
+                                            {newStatusValue
+                                              ? t(`status.${newStatusValue.toLowerCase()}`) || newStatusValue
+                                              : "—"}
+                                          </span>
+                                        </div>
                                       </div>
                                     </div>
+                                  ) : isPrice ? (
+                                    // AFFICHAGE POUR LES PRIX
+                                    <div className="rounded-xl p-4 bg-purple-50 dark:bg-purple-950/20 border border-purple-100 dark:border-purple-800">
+                                      <p className="text-[10px] font-bold uppercase text-purple-600 dark:text-purple-400 mb-2">
+                                        {t("timeline.priceChange")}
+                                      </p>
+                                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                                        <div className="flex-1">
+                                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t("timeline.oldValue")}</p>
+                                          <span className="text-rose-600 dark:text-rose-400 line-through text-sm font-medium">
+                                            {formatValue(entry.oldValue, entry.fieldName, t)}
+                                          </span>
+                                        </div>
+                                        <span className="text-slate-400 text-lg font-bold hidden sm:block">→</span>
+                                        <span className="text-slate-400 text-lg font-bold sm:hidden">↓</span>
+                                        <div className="flex-1">
+                                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t("timeline.newValue")}</p>
+                                          <span className="text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+                                            {formatValue(entry.newValue, entry.fieldName, t)}
+                                          </span>
+                                        </div>
+                                      </div>
+                                      {entry.oldValue !== null && entry.newValue !== null && (
+                                        <div className="mt-3 pt-2 border-t border-purple-200 dark:border-purple-700">
+                                          <PriceDiff old={entry.oldValue} next={entry.newValue} t={t} />
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : isEquipment ? (
+                                    // AFFICHAGE POUR LES ÉQUIPEMENTS
+                                    <div className="rounded-xl p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800">
+                                      <p className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 mb-2">
+                                        {t("timeline.equipmentChange")}
+                                      </p>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2">{t("timeline.oldValue")}</p>
+                                          <div className="space-y-1">
+                                            {oldEquipmentList.length > 0 ? oldEquipmentList.map((eq) => (
+                                              <div key={eq} className="text-sm text-rose-600 dark:text-rose-400 line-through">
+                                                {getEquipmentLabel(eq, t)}
+                                              </div>
+                                            )) : <span className="text-sm text-slate-400">—</span>}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-2">{t("timeline.newValue")}</p>
+                                          <div className="space-y-1">
+                                            {newEquipmentList.length > 0 ? newEquipmentList.map((eq) => (
+                                              <div key={eq} className="text-sm text-emerald-600 dark:text-emerald-400">
+                                                ✓ {getEquipmentLabel(eq, t)}
+                                              </div>
+                                            )) : <span className="text-sm text-slate-400">—</span>}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : isPhoto ? (
+                                    // AFFICHAGE POUR LES PHOTOS
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {entry.oldValue !== null && pip(entry.oldValue) && (
+                                        <div className="relative rounded-xl overflow-hidden border-2 border-rose-500">
+                                          <p className="absolute top-2 left-2 z-10 text-white text-[9px] font-bold bg-black/50 px-2 py-0.5 rounded">{t("photo.old")}</p>
+                                          <img
+                                            src={pip(entry.oldValue) || undefined}
+                                            alt={t("photo.old")}
+                                            className="w-full h-32 object-cover"
+                                          />
+                                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                                            <span className="text-white font-bold text-xs bg-rose-600 px-2 py-1 rounded">
+                                              {t("timeline.deleted")}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {entry.newValue !== null && pip(entry.newValue) && (
+                                        <div className="relative rounded-xl overflow-hidden border-2 border-emerald-500">
+                                          <p className="absolute top-2 left-2 z-10 text-white text-[9px] font-bold bg-black/50 px-2 py-0.5 rounded">{t("photo.new")}</p>
+                                          <img
+                                            src={pip(entry.newValue) || undefined}
+                                            alt={t("photo.new")}
+                                            className="w-full h-32 object-cover"
+                                          />
+                                          <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                            <span className="text-white font-bold text-xs bg-emerald-600 px-2 py-1 rounded">
+                                              {t("timeline.new")}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   ) : (
-                                    <div className="text-sm text-rose-600 dark:text-rose-400 line-through break-all">
-                                      {formatValue(
-                                        entry.oldValue,
-                                        entry.fieldName,
+                                    // AFFICHAGE NORMAL POUR LES AUTRES CHAMPS
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      {entry.oldValue !== null && (
+                                        <div className="rounded-xl p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-800">
+                                          <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                            {t("timeline.oldValue")}
+                                          </p>
+                                          <div className="text-sm text-rose-600 dark:text-rose-400 line-through break-all">
+                                            {formatValue(entry.oldValue, entry.fieldName, t)}
+                                          </div>
+                                        </div>
+                                      )}
+                                      {entry.newValue !== null && (
+                                        <div className="rounded-xl p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800">
+                                          <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
+                                            {t("timeline.newValue")}
+                                          </p>
+                                          <div className="text-sm text-emerald-700 dark:text-emerald-400 font-semibold break-all">
+                                            {formatValue(entry.newValue, entry.fieldName, t)}
+                                          </div>
+                                        </div>
                                       )}
                                     </div>
                                   )}
-                                </div>
+                                </>
                               )}
-
-                              {/* Nouvelle valeur */}
-                              {entry.newValue !== null && (
-                                <div
-                                  className={`rounded-xl p-4 ${isPhoto ? "relative" : "bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800"} ${entry.oldValue !== null ? "md:border-l md:border-slate-200 dark:md:border-slate-700 md:pl-4" : ""}`}
-                                >
-                                  <p className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 mb-1">
-                                    {t("timeline.newValue")}
-                                  </p>
-                                  {isPhoto ? (
-                                    <div className="relative w-full">
-                                      <img
-                                        src={pip(entry.newValue)}
-                                        alt={t("photo.new")}
-                                        className="w-full h-auto max-h-[400px] object-contain rounded-lg border-4 border-emerald-500 shadow-lg"
-                                      />
-                                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 rounded-lg">
-                                        <span className="text-white font-bold text-xs bg-emerald-600 px-2 py-1 rounded">
-                                          {t("timeline.new")}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  ) : isStatus ? (
-                                    <div className="text-sm text-emerald-700 dark:text-emerald-400 font-semibold break-all">
-                                      {t(
-                                        `status.${newStatusValue?.toLowerCase()}`,
-                                      ) || newStatusValue}
-                                    </div>
-                                  ) : (
-                                    <div className="text-sm text-emerald-700 dark:text-emerald-400 font-semibold break-all">
-                                      {formatValue(
-                                        entry.newValue,
-                                        entry.fieldName,
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {/* Price difference */}
-                          {isPrice &&
-                            entry.oldValue !== null &&
-                            entry.newValue !== null && (
-                              <div className="mt-2">
-                                <PriceDiff
-                                  old={entry.oldValue}
-                                  next={entry.newValue}
-                                  t={t}
-                                />
-                              </div>
-                            )}
-
-                          {/* Equipment changes list - AVEC TRADUCTION */}
-                          {isEquipment && entry.oldValue && entry.newValue && (
-                            <div className="mt-2 space-y-2">
-                              {newEquipmentList
-                                .filter((eq) => !oldEquipmentList.includes(eq))
-                                .map((eq) => (
-                                  <div
-                                    key={eq}
-                                    className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"
-                                  >
-                                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                                      ✓ {t("equipment.added")} :
-                                    </span>
-                                    <span>{getEquipmentLabel(eq, t)}</span>
-                                  </div>
-                                ))}
-                              {oldEquipmentList
-                                .filter((eq) => !newEquipmentList.includes(eq))
-                                .map((eq) => (
-                                  <div
-                                    key={eq}
-                                    className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"
-                                  >
-                                    <span className="text-rose-600 dark:text-rose-400 font-medium">
-                                      ✗ {t("equipment.removed")} :
-                                    </span>
-                                    <span>{getEquipmentLabel(eq, t)}</span>
-                                  </div>
-                                ))}
-                            </div>
+                            </>
                           )}
                         </div>
                       </div>
@@ -740,7 +776,6 @@ export default function ListingHistoryPage({
                   const range = [];
                   const rangeWithDots = [];
                   let l;
-
                   for (let i = 1; i <= totalPages; i++) {
                     if (
                       i === 1 ||
@@ -750,7 +785,6 @@ export default function ListingHistoryPage({
                       range.push(i);
                     }
                   }
-
                   for (const i of range) {
                     if (l) {
                       if (i - l === 2) {
@@ -774,11 +808,7 @@ export default function ListingHistoryPage({
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page as number)}
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${
-                          currentPage === page
-                            ? "bg-indigo-600 text-white shadow-sm"
-                            : "border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
-                        }`}
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-medium transition-colors ${currentPage === page ? "bg-indigo-600 text-white shadow-sm" : "border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"}`}
                       >
                         {page}
                       </button>
@@ -797,6 +827,32 @@ export default function ListingHistoryPage({
           </div>
         </div>
       </div>
+
+      {/* TOAST NOTIFICATION */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

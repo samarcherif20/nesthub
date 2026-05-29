@@ -55,6 +55,7 @@ import {
   Dog,
   Ban,
   Loader2,
+  Camera,
 } from "lucide-react";
 
 import MapPickerWrapper from "@/components/ui/maps/MapPickerWrapper";
@@ -332,10 +333,8 @@ export default function OwnerListingDetailPage({
       });
 
       if (res.ok) {
-        // ✅ Mettre à jour l'état local
         setListing({ ...listing, status: pendingStatus });
 
-        // ✅ Afficher le toast personnalisé
         setToast({
           type: "success",
           message:
@@ -344,11 +343,9 @@ export default function OwnerListingDetailPage({
               : t("toast.listingHidden"),
         });
 
-        // Fermer le modal
         setShowStatusModal(false);
         setPendingStatus(null);
 
-        // Masquer le toast après 3 secondes
         setTimeout(() => setToast(null), 3000);
       } else {
         const error = await res.json();
@@ -595,57 +592,74 @@ export default function OwnerListingDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Gallery */}
-            <div className="grid grid-cols-3 gap-3 h-90">
-              <div
-                className="col-span-2 row-span-2 rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
-                onClick={() => setShowGalleryModal(true)}
-              >
-                {previewPhotos[0] && (
-                  <img
-                    src={pip(previewPhotos[0].url)}
-                    alt={listing.title}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                )}
-                <div className="absolute bottom-3 left-3">
-                  <span className="text-white text-xs font-bold bg-indigo-700/60 px-2.5 py-1 rounded-full backdrop-blur-sm">
-                    {t("gallery.mainPhoto")}
-                  </span>
+            {/* Gallery with Empty State */}
+            {listing.photos.length === 0 ? (
+              <div className="rounded-2xl bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900 flex flex-col items-center justify-center p-12 border border-indigo-100 dark:border-indigo-900/40">
+                <div className="w-16 h-16 rounded-xl bg-white/50 dark:bg-slate-700/50 flex items-center justify-center mb-4">
+                  <Camera className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                 </div>
+                <p className="text-slate-600 dark:text-slate-400 text-sm font-medium mb-3">
+                  {t("gallery.noPhotos")}
+                </p>
+                <button
+                  onClick={handleEdit}
+                  className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg text-xs font-semibold hover:shadow-md transition-all"
+                >
+                  {t("actions.addPhotos")}
+                </button>
               </div>
-              <div
-                className="rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
-                onClick={() => setShowGalleryModal(true)}
-              >
-                {previewPhotos[1] && (
-                  <img
-                    src={pip(previewPhotos[1].url)}
-                    alt={`${listing.title} - 2`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                )}
-              </div>
-              <div
-                className="rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
-                onClick={() => setShowGalleryModal(true)}
-              >
-                {previewPhotos[2] && (
-                  <img
-                    src={pip(previewPhotos[2].url)}
-                    alt={`${listing.title} - 3`}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                )}
-                {remainingPhotosCount > 0 && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-md">
-                    <span className="text-white font-bold text-lg">
-                      +{remainingPhotosCount} {t("gallery.morePhotos")}
+            ) : (
+              <div className="grid grid-cols-3 gap-3 h-90">
+                <div
+                  className="col-span-2 row-span-2 rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
+                  onClick={() => setShowGalleryModal(true)}
+                >
+                  {previewPhotos[0] && (
+                    <img
+                      src={pip(previewPhotos[0].url)}
+                      alt={listing.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  )}
+                  <div className="absolute bottom-3 left-3">
+                    <span className="text-white text-xs font-bold bg-indigo-700/60 px-2.5 py-1 rounded-full backdrop-blur-sm">
+                      {t("gallery.mainPhoto")}
                     </span>
                   </div>
-                )}
+                </div>
+                <div
+                  className="rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
+                  onClick={() => setShowGalleryModal(true)}
+                >
+                  {previewPhotos[1] && (
+                    <img
+                      src={pip(previewPhotos[1].url)}
+                      alt={`${listing.title} - 2`}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  )}
+                </div>
+                <div
+                  className="rounded-2xl overflow-hidden relative group cursor-pointer bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
+                  onClick={() => setShowGalleryModal(true)}
+                >
+                  {previewPhotos[2] && (
+                    <img
+                      src={pip(previewPhotos[2].url)}
+                      alt={`${listing.title} - 3`}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  )}
+                  {remainingPhotosCount > 0 && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center backdrop-blur-md">
+                      <span className="text-white font-bold text-lg">
+                        +{remainingPhotosCount} {t("gallery.morePhotos")}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Description */}
             <section
@@ -670,7 +684,7 @@ export default function OwnerListingDetailPage({
                 </button>
               )}
 
-              {/* Caractéristiques */}
+              {/* Caractéristiques - CORRIGÉES AVEC TRADUCTIONS */}
               <div className="flex flex-wrap gap-2.5 mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
                   <Bed className="w-4 h-4" /> {listing.rooms} {t("specs.rooms")}
@@ -681,11 +695,11 @@ export default function OwnerListingDetailPage({
                 </div>
                 <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
                   <Utensils className="w-4 h-4" />{" "}
-                  {listing.numberOfKitchens || 1} cuisine(s)
+                  {listing.numberOfKitchens || 1} {t("specs.kitchens")}
                 </div>
                 <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
                   <Users className="w-4 h-4" />{" "}
-                  {listing.maxGuests ? listing.maxGuests : "Non spécifié"}
+                  {listing.maxGuests ? listing.maxGuests : t("specs.notSpecified")}
                 </div>
                 {listing.surfaceArea && (
                   <div className="px-3 py-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5 uppercase tracking-wider border border-slate-200 dark:border-slate-700">
@@ -695,13 +709,13 @@ export default function OwnerListingDetailPage({
                 )}
               </div>
 
-              {/* Caractéristiques supplémentaires */}
+              {/* Caractéristiques supplémentaires - CORRIGÉES AVEC TRADUCTIONS */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
                 {listing.hasBalcony && (
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                     <Trees className="w-4 h-4 text-emerald-500" />
                     <span className="text-xs text-slate-600 dark:text-slate-400">
-                      Balcon
+                      {t("features.balcony")}
                     </span>
                   </div>
                 )}
@@ -709,7 +723,7 @@ export default function OwnerListingDetailPage({
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                     <Trees className="w-4 h-4 text-emerald-500" />
                     <span className="text-xs text-slate-600 dark:text-slate-400">
-                      Jardin
+                      {t("features.garden")}
                     </span>
                   </div>
                 )}
@@ -717,7 +731,7 @@ export default function OwnerListingDetailPage({
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                     <Car className="w-4 h-4 text-emerald-500" />
                     <span className="text-xs text-slate-600 dark:text-slate-400">
-                      Garage/Parking
+                      {t("features.garage")}
                     </span>
                   </div>
                 )}
@@ -725,7 +739,7 @@ export default function OwnerListingDetailPage({
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                     <Home className="w-4 h-4 text-emerald-500" />
                     <span className="text-xs text-slate-600 dark:text-slate-400">
-                      Meublé
+                      {t("features.furnished")}
                     </span>
                   </div>
                 )}
@@ -733,7 +747,7 @@ export default function OwnerListingDetailPage({
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                     <Dog className="w-4 h-4 text-emerald-500" />
                     <span className="text-xs text-slate-600 dark:text-slate-400">
-                      Animaux acceptés
+                      {t("features.petsAllowed")}
                     </span>
                   </div>
                 )}
@@ -741,48 +755,67 @@ export default function OwnerListingDetailPage({
                   <div className="flex items-center gap-2 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50">
                     <Ban className="w-4 h-4 text-emerald-500" />
                     <span className="text-xs text-slate-600 dark:text-slate-400">
-                      Fumeurs acceptés
+                      {t("features.smokingAllowed")}
                     </span>
                   </div>
                 )}
               </div>
             </section>
 
-            {/* Amenities */}
+            {/* Amenities with Empty State */}
             <section
               className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
             >
               <h2 className="text-lg font-headline font-bold text-slate-900 dark:text-white mb-4">
                 {t("sections.amenities")}
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {(showAllAmenities ? allEquipment : mainEquipment).map(
-                  ([key]) => (
-                    <EquipmentItem key={key} eqKey={key} t={t} />
-                  ),
-                )}
-              </div>
-              {allEquipment.length > 6 && (
-                <button
-                  onClick={() => setShowAllAmenities(!showAllAmenities)}
-                  className="mt-4 text-indigo-600 dark:text-indigo-400 text-sm font-bold hover:underline"
-                >
-                  {showAllAmenities
-                    ? t("actions.showLess")
-                    : t("actions.showAllAmenities", {
-                        count: allEquipment.length,
-                      })}
-                </button>
+              {allEquipment.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-800 mx-auto mb-3 flex items-center justify-center">
+                    <Home className="w-7 h-7 text-slate-400" />
+                  </div>
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">
+                    {t("sections.noAmenities")}
+                  </p>
+                  <button
+                    onClick={handleEdit}
+                    className="mt-3 text-indigo-600 dark:text-indigo-400 text-sm font-semibold hover:underline"
+                  >
+                    {t("actions.addAmenities")}
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {(showAllAmenities ? allEquipment : mainEquipment).map(
+                      ([key]) => (
+                        <EquipmentItem key={key} eqKey={key} t={t} />
+                      ),
+                    )}
+                  </div>
+                  {allEquipment.length > 6 && (
+                    <button
+                      onClick={() => setShowAllAmenities(!showAllAmenities)}
+                      className="mt-4 text-indigo-600 dark:text-indigo-400 text-sm font-bold hover:underline"
+                    >
+                      {showAllAmenities
+                        ? t("actions.showLess")
+                        : t("actions.showAllAmenities", {
+                            count: allEquipment.length,
+                          })}
+                    </button>
+                  )}
+                </>
               )}
             </section>
 
-            {/* House Rules */}
+            {/* House Rules - CORRIGÉ AVEC TRADUCTION */}
             {houseRulesList.length > 0 && (
               <section
                 className={`bg-white dark:bg-slate-900 rounded-2xl p-6 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
               >
                 <h2 className="text-lg font-headline font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  Règlement intérieur
+                  {t("sections.houseRules")}
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {houseRulesList.map((rule: string, index: number) => (
@@ -847,7 +880,7 @@ export default function OwnerListingDetailPage({
 
           {/* Right Column */}
           <div className="lg:col-span-1 space-y-5">
-            {/* Next Bookings */}
+            {/* Next Bookings - CORRIGÉ AVEC TRADUCTION */}
             <section
               className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
             >
@@ -860,7 +893,7 @@ export default function OwnerListingDetailPage({
                   href={`/${locale}/dashboard/owner/reservations`}
                   className="text-purple-700 dark:text-purple-400 text-xs font-bold hover:underline"
                 >
-                  Voir toutes les réservations
+                  {t("actions.viewAllBookings")}
                 </Link>
               </div>
               <div className="space-y-2">
@@ -903,7 +936,7 @@ export default function OwnerListingDetailPage({
               </div>
             </section>
 
-            {/* Availability Calendar */}
+            {/* Availability Calendar - CORRIGÉ AVEC TRADUCTION */}
             <section
               className={`bg-white dark:bg-slate-900 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/40 ${card3d}`}
             >
@@ -916,7 +949,7 @@ export default function OwnerListingDetailPage({
                   href={`/${locale}/dashboard/owner/calendar`}
                   className="text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:underline"
                 >
-                  Voir le calendrier
+                  {t("actions.viewCalendar")}
                 </Link>
               </div>
 
@@ -980,7 +1013,7 @@ export default function OwnerListingDetailPage({
                   @
                   {listing.owner?.username ||
                     listing.owner?.firstName ||
-                    "hôte"}
+                    t("sections.host")}
                 </p>
                 <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold">
                   {t("sections.mainOwner")}

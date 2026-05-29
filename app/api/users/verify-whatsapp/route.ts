@@ -7,10 +7,10 @@ export async function POST(req: Request) {
   try {
     const { userId, phoneNumber, code } = await req.json();
 
-    console.log("🔍 verify-whatsapp appelé");
-    console.log("📦 Données reçues:", { userId, phoneNumber, code });
-    console.log("📦 OTP store size:", otpStore.size);
-    console.log("📦 OTP store keys:", Array.from(otpStore.keys()));
+    console.log(" verify-whatsapp appelé");
+    console.log(" Données reçues:", { userId, phoneNumber, code });
+    console.log(" OTP store size:", otpStore.size);
+    console.log(" OTP store keys:", Array.from(otpStore.keys()));
 
     if (!userId || !phoneNumber || !code) {
       return NextResponse.json(
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const stored = otpStore.get(userId);
 
     console.log(
-      "📦 OTP stocké pour",
+      " OTP stocké pour",
       userId,
       ":",
       stored
@@ -46,7 +46,7 @@ export async function POST(req: Request) {
     // Check phone number matches
     if (stored.phone !== phoneNumber) {
       console.log(
-        `❌ Phone mismatch: stored=${stored.phone}, received=${phoneNumber}`,
+        ` Phone mismatch: stored=${stored.phone}, received=${phoneNumber}`,
       );
       return NextResponse.json(
         { error: "Numéro de téléphone incorrect" },
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     // Check if expired
     if (stored.expiresAt < new Date()) {
       otpStore.delete(userId);
-      console.log("⏰ OTP expiré pour:", userId);
+      console.log(" OTP expiré pour:", userId);
       return NextResponse.json(
         { error: "Code expiré. Demandez un nouveau code." },
         { status: 400 },
@@ -66,16 +66,16 @@ export async function POST(req: Request) {
 
     // Check code
     if (stored.code !== code) {
-      console.log(`❌ Code incorrect. Attendu: ${stored.code}, Reçu: ${code}`);
+      console.log(` Code incorrect. Attendu: ${stored.code}, Reçu: ${code}`);
       return NextResponse.json({ error: "Code incorrect" }, { status: 400 });
     }
 
     // Supprimer le code utilisé
     otpStore.delete(userId);
 
-    console.log("✅ OTP vérifié pour:", userId);
+    console.log(" OTP vérifié pour:", userId);
 
-    // ✅ Sauvegarder dans Prisma
+    //  Sauvegarder dans Prisma
     try {
       await prisma.user.update({
         where: { clerkId: userId },
@@ -85,11 +85,11 @@ export async function POST(req: Request) {
           phoneVerifiedAt: new Date(),
         },
       });
-      console.log("✅ Phone verified sauvegardé en DB");
-      // 🆕 AJOUTER ICI - Déclencher le recalcul du score
+      console.log(" Phone verified sauvegardé en DB");
+      //  AJOUTER ICI - Déclencher le recalcul du score
       await onUserVerified(userId);
     } catch (prismaError: any) {
-      console.error("⚠️ Erreur Prisma (non bloquant):", prismaError.message);
+      console.error(" Erreur Prisma (non bloquant):", prismaError.message);
       // On continue même si Prisma échoue car l'OTP est vérifié
     }
 
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
       message: "Numéro vérifié avec succès",
     });
   } catch (error: any) {
-    console.error("❌ Erreur verify-whatsapp:", error);
+    console.error(" Erreur verify-whatsapp:", error);
     return NextResponse.json(
       { error: error.message || "Erreur serveur" },
       { status: 500 },

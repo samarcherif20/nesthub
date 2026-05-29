@@ -1,7 +1,7 @@
 // components/pdf/ContractPDF.tsx
 import { Document, Page, Text, View, StyleSheet, Font } from "@react-pdf/renderer";
 
-// ✅ AJOUT - Police qui supporte bien les caractères français
+// Police qui supporte bien les caractères français
 Font.register({
   family: "Helvetica",
   fonts: [
@@ -10,7 +10,7 @@ Font.register({
   ],
 });
 
-// ✅ AJOUT - Fallback pour les caractères spéciaux
+// Fallback pour les caractères spéciaux
 Font.registerHyphenationCallback((word) => [word]);
 
 const styles = StyleSheet.create({

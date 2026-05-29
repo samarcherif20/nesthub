@@ -9,7 +9,7 @@ export async function GET(
   try {
     const { username } = await params;
 
-    console.log(`🔍 [Profile API] Recherche de l'utilisateur: "${username}"`);
+    console.log(` [Profile API] Recherche de l'utilisateur: "${username}"`);
 
     if (!username) {
       return NextResponse.json({ error: "Username manquant" }, { status: 400 });
@@ -99,15 +99,15 @@ export async function GET(
     });
 
     if (!user) {
-      console.log(`❌ [Profile API] Utilisateur non trouvé: "${username}"`);
+      console.log(` [Profile API] Utilisateur non trouvé: "${username}"`);
       return NextResponse.json(
         { error: "Utilisateur non trouvé" },
         { status: 404 },
       );
     }
 
-    console.log(`✅ [Profile API] Utilisateur trouvé: ${user.username}`);
-    console.log(`📸 Nombre de listings: ${user.listings?.length || 0}`);
+    console.log(` [Profile API] Utilisateur trouvé: ${user.username}`);
+    console.log(` Nombre de listings: ${user.listings?.length || 0}`);
 
     const isHost = user.role === "PROPERTY_OWNER" || user.role === "BOTH";
     const totalListings = user.listings?.length || 0;
@@ -137,7 +137,7 @@ export async function GET(
       roleBadgeText = "Membre";
     }
 
-    // ✅ Fonction pour formater le prix selon le type de location - SANS VALEURS PAR DÉFAUT
+    //  Fonction pour formater le prix selon le type de location - SANS VALEURS PAR DÉFAUT
     function formatListingPrice(listing: any): string {
       const rentalType = listing.rentalType;
       const pricePerNight = listing.pricePerNight;
@@ -179,7 +179,7 @@ export async function GET(
       return "Prix sur demande";
     }
 
-    // ✅ Construction des listings - SANS valeurs par défaut pour les prix
+    //  Construction des listings - SANS valeurs par défaut pour les prix
     const formattedListings = user.listings?.map((listing) => {
       const allImages = listing.photos?.map(photo => photo.url) || [];
       const mainImage = allImages.length > 0 ? allImages[0] : null;
@@ -187,7 +187,7 @@ export async function GET(
       // Prix formaté pour l'affichage (peut être "Prix sur demande")
       const displayPrice = formatListingPrice(listing);
       
-      console.log(`📸 Listing "${listing.title}" - Type: ${listing.rentalType} - Prix: ${displayPrice}`);
+      console.log(` Listing "${listing.title}" - Type: ${listing.rentalType} - Prix: ${displayPrice}`);
       
       return {
         id: listing.id,
@@ -207,7 +207,7 @@ export async function GET(
       };
     }) || [];
 
-    // ✅ Construction des avis - SANS avatar par défaut
+    //  Construction des avis - SANS avatar par défaut
     const formattedReviews = user.reviewsReceived?.map((review) => ({
       id: review.id,
       rating: review.rating,
@@ -223,7 +223,7 @@ export async function GET(
       }),
     })) || [];
 
-    // ✅ Construction de la réponse - SANS valeurs par défaut pour le profil
+    //  Construction de la réponse - SANS valeurs par défaut pour le profil
     const response = {
       profile: {
         id: user.id,
@@ -257,10 +257,10 @@ export async function GET(
       isTenant: user.role === "TENANT",
     };
 
-    console.log(`✅ [Profile API] Réponse envoyée pour ${user.username}`);
+    console.log(` [Profile API] Réponse envoyée pour ${user.username}`);
     return NextResponse.json(response);
   } catch (error) {
-    console.error("❌ [Profile API] Erreur:", error);
+    console.error(" [Profile API] Erreur:", error);
     return NextResponse.json(
       { error: "Erreur serveur lors du chargement du profil" },
       { status: 500 },

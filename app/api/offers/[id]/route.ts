@@ -114,7 +114,7 @@ export async function GET(
 
     console.log("[DEBUG] Owner createdAt brut:", offer.owner?.createdAt);
     console.log(
-      "🔍 [DEBUG] Owner createdAt type:",
+      " [DEBUG] Owner createdAt type:",
       typeof offer.owner?.createdAt,
     );
 

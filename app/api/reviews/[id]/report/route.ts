@@ -41,7 +41,7 @@ export async function POST(
     // Optionnel: créer un rapport dans la table ListingReport
     await prisma.listingReport.create({
       data: {
-        listingId: review.bookingId, // Utiliser bookingId comme référence
+        listingId: review.bookingId, 
         reporterId: user.id,
         reason: "Avis inapproprié",
         description: "Signalement d'avis par utilisateur",

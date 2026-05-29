@@ -7,17 +7,17 @@ export const maxDuration = 300;
 
 export async function POST(req: NextRequest) {
   try {
-    // ✅ Ajoute cette vérification d'auth
+    //  Ajoute cette vérification d'auth
     const authHeader = req.headers.get("authorization");
     const isValidAuth = authHeader === `Bearer ${process.env.CRON_SECRET}`;
     const isDev = process.env.NODE_ENV === "development";
 
     if (!isValidAuth && !isDev) {
-      console.error("❌ Cron: Authentification échouée");
+      console.error(" Cron: Authentification échouée");
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
-    console.log("🕐 Cron: Libération des réservations expirées");
+    console.log(" Cron: Libération des réservations expirées");
     const now = new Date();
 
     const expiredBookings = await prisma.pendingBooking.findMany({
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    console.log(`📊 ${expiredBookings.length} réservation(s) expirée(s)`);
+    console.log(` ${expiredBookings.length} réservation(s) expirée(s)`);
     let releasedCount = 0;
 
     for (const booking of expiredBookings) {
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
           data: {
             userId: offer.tenantId,
             type: "OFFER_EXPIRED",
-            title: "⏰ Offre expirée",
+            title: " Offre expirée",
             content: `Votre délai de paiement pour "${offer.listing.title}" a expiré. Les dates sont à nouveau disponibles.`,
             channels: ["IN_APP", "EMAIL"],
           },
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       message: `${releasedCount} réservation(s) libérée(s)`,
     });
   } catch (error) {
-    console.error("❌ Erreur cron:", error);
+    console.error(" Erreur cron:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

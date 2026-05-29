@@ -182,7 +182,7 @@ export function useListings(pageSize: number = 5) {
     }
   }, [authFetch, buildListingsUrl, showAlert]);
 
-  // ✅ CORRIGÉ : fetchStats avec calculs réels des croissances
+  // fetchStats avec calculs réels des croissances
   const fetchStats = useCallback(async () => {
     setStatsLoading(true);
     try {
@@ -221,7 +221,7 @@ export function useListings(pageSize: number = 5) {
         archived: archivedData.pagination?.totalCount ?? 0,
       });
 
-      // ✅ CORRIGÉ : Récupérer TOUTES les annonces pour les stats (pageSize=1000)
+      //Récupérer TOUTES les annonces pour les stats (pageSize=1000)
       const allListingsRes = await authFetch(
         `/api/listings/my?status=ALL&page=1&pageSize=1000`,
       );
@@ -251,7 +251,7 @@ export function useListings(pageSize: number = 5) {
               )
             : 0;
 
-        // ✅ CALCUL DES CROISSANCES RÉELLES
+        //  CALCUL DES CROISSANCES RÉELLES
         const now = new Date();
         const lastMonthStart = new Date(
           now.getFullYear(),
@@ -336,7 +336,7 @@ export function useListings(pageSize: number = 5) {
         });
       }
     } catch (e) {
-      console.error("❌ Erreur stats:", e);
+      console.error(" Erreur stats:", e);
     } finally {
       setStatsLoading(false);
     }

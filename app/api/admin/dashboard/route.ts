@@ -3,9 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    // ============================================
     // 1. KPI PRINCIPAUX
-    // ============================================
     const totalUsers = await prisma.user.count();
     const activeListings = await prisma.listing.count({
       where: { status: "ACTIVE" },
@@ -32,9 +30,7 @@ export async function GET() {
       where: { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } },
     });
 
-    // ============================================
     // 2. CALCUL DES CROISSANCES
-    // ============================================
     const now = new Date();
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -98,9 +94,7 @@ export async function GET() {
             revenueLastMonth._sum.amount) *
           100;
 
-    // ============================================
     // 3. RÉPARTITION UTILISATEURS
-    // ============================================
     const [tenants, owners, both, coHosts, admins] = await Promise.all([
       prisma.user.count({ where: { role: "TENANT" } }),
       prisma.user.count({ where: { role: "PROPERTY_OWNER" } }),
@@ -109,9 +103,7 @@ export async function GET() {
       prisma.user.count({ where: { role: "ADMIN" } }),
     ]);
 
-    // ============================================
     // 4. STATUT DES COMPTES
-    // ============================================
     const [active, pending, suspended, locked, banned, inactive] =
       await Promise.all([
         prisma.user.count({ where: { status: "ACTIVE" } }),
@@ -122,9 +114,7 @@ export async function GET() {
         prisma.user.count({ where: { status: "INACTIVE" } }),
       ]);
 
-    // ============================================
     // 5. REVENUS PAR MOIS (12 derniers mois)
-    // ============================================
     const last12Months = Array.from({ length: 12 }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
@@ -176,9 +166,7 @@ export async function GET() {
       }),
     );
 
-    // ============================================
     // 6. TENDANCES DES RÉSERVATIONS (12 dernières semaines)
-    // ============================================
     const last12Weeks = Array.from({ length: 12 }, (_, i) => {
       const d = new Date();
       d.setDate(d.getDate() - i * 7);
@@ -215,9 +203,7 @@ export async function GET() {
       }),
     );
 
-    // ============================================
     // 7. UTILISATEURS RÉCENTS
-    // ============================================
     const recentUsers = await prisma.user.findMany({
       take: 6,
       orderBy: { createdAt: "desc" },
@@ -241,23 +227,20 @@ export async function GET() {
       },
     });
 
-    // ============================================
     // 8. FILE DE VÉRIFICATION (Identités)
-    // ============================================
-    const verificationQueueIdentities = await prisma.verificationRequest.findMany({
-      where: { status: "PENDING" },
-      take: 5,
-      orderBy: { submittedAt: "desc" },
-      include: {
-        user: {
-          select: { id: true, firstName: true, lastName: true, email: true },
+    const verificationQueueIdentities =
+      await prisma.verificationRequest.findMany({
+        where: { status: "PENDING" },
+        take: 5,
+        orderBy: { submittedAt: "desc" },
+        include: {
+          user: {
+            select: { id: true, firstName: true, lastName: true, email: true },
+          },
         },
-      },
-    });
+      });
 
-    // ============================================
     // 8bis. LISTINGS EN ATTENTE DE VALIDATION (Propriétés)
-    // ============================================
     const pendingListings = await prisma.listing.findMany({
       where: { status: "PENDING_REVIEW" },
       take: 5,
@@ -272,9 +255,7 @@ export async function GET() {
       },
     });
 
-    // ============================================
     // Fusionner les deux files d'attente
-    // ============================================
     const combinedQueue = [
       // Vérifications d'identité
       ...verificationQueueIdentities.map((v) => ({
@@ -285,7 +266,8 @@ export async function GET() {
           `${v.user.firstName || ""} ${v.user.lastName || ""}`.trim() ||
           v.user.email,
         type: "identity",
-        urgency: v.confidenceScore && v.confidenceScore < 50 ? "high" : "normal",
+        urgency:
+          v.confidenceScore && v.confidenceScore < 50 ? "high" : "normal",
         submittedAt: v.submittedAt,
       })),
       // Vérifications de propriétés (listings)
@@ -301,16 +283,15 @@ export async function GET() {
     ];
 
     // Trier par date (plus récent en premier)
-    combinedQueue.sort((a, b) => 
-      new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+    combinedQueue.sort(
+      (a, b) =>
+        new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime(),
     );
 
     // Prendre les 5 plus récents
     const finalVerificationQueue = combinedQueue.slice(0, 5);
 
-    // ============================================
     // 9. LITIGES OUVERTS
-    // ============================================
     const disputes = await prisma.dispute.findMany({
       where: { status: "OPEN" },
       take: 4,
@@ -320,9 +301,7 @@ export async function GET() {
       },
     });
 
-    // ============================================
     // 10. SIGNALEMENTS
-    // ============================================
     const reports = await prisma.userReport.findMany({
       where: { status: "PENDING" },
       take: 4,
@@ -337,9 +316,7 @@ export async function GET() {
       },
     });
 
-    // ============================================
     // 11. AUDIT LOGS
-    // ============================================
     const auditLogs = await prisma.auditLog.findMany({
       take: 5,
       orderBy: { createdAt: "desc" },
@@ -348,9 +325,7 @@ export async function GET() {
       },
     });
 
-    // ============================================
     // 12. STATUT DES ANNONCES
-    // ============================================
     const [
       listingActive,
       listingPending,
@@ -365,9 +340,7 @@ export async function GET() {
       prisma.listing.count({ where: { status: "REJECTED" } }),
     ]);
 
-    // ============================================
     // 13. TOP GOUVERNORATS
-    // ============================================
     const topGovernorates = await prisma.listing.groupBy({
       by: ["governorate"],
       _count: { id: true },
@@ -394,9 +367,7 @@ export async function GET() {
       }),
     );
 
-    // ============================================
     // 14. RADAR METRICS
-    // ============================================
     const radarMetrics = {
       currentUsers: await prisma.user.count({
         where: { createdAt: { gte: currentMonthStart } },
@@ -447,9 +418,7 @@ export async function GET() {
       previousConversion: 55,
     };
 
-    // ============================================
     // 15. RINGS DATA
-    // ============================================
     const activeListingsCount = await prisma.listing.count({
       where: { status: "ACTIVE" },
     });
@@ -501,9 +470,7 @@ export async function GET() {
       health: healthRate,
     };
 
-    // ============================================
     // 16. SPARKLINE DATA
-    // ============================================
     const last12MonthsSpark = Array.from({ length: 12 }, (_, i) => {
       const d = new Date();
       d.setMonth(d.getMonth() - i);
@@ -546,9 +513,7 @@ export async function GET() {
       };
     })();
 
-    // ============================================
     // RÉPONSE FINALE COMPLÈTE
-    // ============================================
     return NextResponse.json({
       kpi: {
         totalUsers,

@@ -379,7 +379,6 @@ export default function AdminProfilePage() {
 
   const handleUpdateLanguage = async (langCode: string) => {
     await updateLanguage(langCode);
-    // ✅ Rediriger vers la nouvelle locale
     router.push(`/${langCode}/admin/profile`);
     showToast("success", t("success.languageUpdated"));
   };

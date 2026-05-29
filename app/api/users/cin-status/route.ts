@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
       where: { clerkId: userId },
       select: { 
         id: true,
-        isIdentityVerified: true,  // ✅ ADD THIS
-        verifiedAt: true,          // ✅ ADD THIS
+        isIdentityVerified: true,  
+        verifiedAt: true,          
       },
     });
 
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
-    // ✅ CRITICAL: If user is already verified, return VALIDATED immediately
+    //  CRITICAL: If user is already verified, return VALIDATED immediately
     if (user.isIdentityVerified === true) {
       return NextResponse.json({
         status: "VALIDATED",

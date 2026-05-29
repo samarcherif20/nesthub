@@ -1,28 +1,27 @@
 // lib/types/user.ts
 
-// ===== STATUS =====
-// Aligné avec Prisma + LOCKED pour les blocages auto
+//  STATUS
 export type UserStatus =
   | "ACTIVE"
-  | "TEMPORARILY_SUSPENDED" // Suspension temporaire (admin)
-  | "PERMANENTLY_BANNED" // Bannissement définitif
-  | "PENDING_VALIDATION" // En attente de validation email
-  | "SECURITY_LOCKED" // ← AJOUTER : blocage auto (trop de tentatives)
-  | "MANUALLY_BLOCKED" // ← AJOUTER : blocage manuel non punitif
-  | "REJECTED" // Compte rejeté
-  | "INACTIVE"; // Inactif (pas de connexion depuis X jours)
+  | "TEMPORARILY_SUSPENDED"
+  | "PERMANENTLY_BANNED"
+  | "PENDING_VALIDATION"
+  | "SECURITY_LOCKED"
+  | "MANUALLY_BLOCKED"
+  | "REJECTED"
+  | "INACTIVE";
 
-// ===== ROLES =====
+//  ROLES
 export type UserRole = "ADMIN" | "PROPERTY_OWNER" | "TENANT";
 
-// ===== ESCALATION =====
+//  ESCALATION
 // 0: Aucun, 1: Avertissement, 2: Suspension 1j, 3: Suspension 7-30j, 4: Ban
-export type EscalationLevel = 0 | 1 | 2 | 3 | 4; // ← AJOUTER 4
+export type EscalationLevel = 0 | 1 | 2 | 3 | 4;
 
-// ===== VÉRIFICATION =====
-export type VerificationStatus = "PENDING" | "VALIDATED" | "REJECTED"; // ← ALIGNER avec Prisma
+//  VÉRIFICATION
+export type VerificationStatus = "PENDING" | "VALIDATED" | "REJECTED";
 
-// ===== ACTIONS ADMIN =====
+//  ACTIONS ADMIN
 export type ActionType =
   | "SUSPEND"
   | "BAN"
@@ -35,10 +34,10 @@ export type ActionType =
   | "REJECT_VERIFICATION"
   | "VALIDATE_VERIFICATION";
 
-// ===== USER INTERFACE =====
+//  USER INTERFACE
 export interface User {
   id: string;
-  clerkId: string | null; // ← NULL possible
+  clerkId: string | null;
   email: string;
   username: string | null;
   firstName: string | null;
@@ -49,20 +48,20 @@ export interface User {
   // 3 dimensions indépendantes
   role: UserRole;
   status: UserStatus;
-  escalationLevel: EscalationLevel; // ← OBLIGATOIRE (pas optionnel)
+  escalationLevel: EscalationLevel;
 
   // Vérification
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   isIdentityVerified: boolean;
-  verificationStatus?: VerificationStatus; // ← AJOUTER : dérivé des requêtes
+  verificationStatus?: VerificationStatus;
 
   // Données CIN
   cinNumber: string | null;
 
   // Scores
   reliabilityScore: number;
-  fraudScore?: number;        // ← AJOUTE CETTE LIGNE
+  fraudScore?: number;
 
   // Dates
   createdAt: string;
@@ -70,17 +69,17 @@ export interface User {
   suspendedUntil?: string | null;
 
   // Sécurité
-  failedLoginAttempts?: number; // ← Remplacer loginAttempts
+  failedLoginAttempts?: number;
 
   // Relations
   verificationRequests?: VerificationRequest[];
 }
 
-// ===== VERIFICATION REQUEST =====
+//  VERIFICATION REQUEST
 export interface VerificationRequest {
   id: string;
   userId: string;
-  status: "PENDING" | "VALIDATED" | "REJECTED"; // ← ALIGNER avec Prisma (VALIDATED, pas APPROVED)
+  status: "PENDING" | "VALIDATED" | "REJECTED";
   submittedAt: string;
   reviewedAt?: string | null;
   reviewedBy?: string | null;
@@ -90,7 +89,7 @@ export interface VerificationRequest {
   selfieUrl?: string | null;
 }
 
-// ===== ADMIN NOTE =====
+//  ADMIN NOTE
 export interface AdminNote {
   id: string;
   userId: string;
@@ -105,7 +104,7 @@ export interface AdminNote {
   createdAt: string;
 }
 
-// ===== USER ACTION LOG =====
+//  USER ACTION LOG
 export interface UserActionLog {
   id: string;
   userId: string;
@@ -113,29 +112,27 @@ export interface UserActionLog {
   level?: EscalationLevel;
   reason?: string;
   motif?: string;
-  duration?: number; // en jours
-  content?: string; // pour les notes
+  duration?: number;
+  content?: string;
   previousStatus?: UserStatus;
   newStatus?: UserStatus;
   createdAt: string;
-  performedBy: string; // admin ID
+  performedBy: string;
   admin?: {
-    // ← AJOUTER pour les infos admin
     firstName: string | null;
     lastName: string | null;
     email: string;
   };
   user?: {
-    // ← AJOUTER pour les infos user
     firstName: string | null;
     lastName: string | null;
     email: string;
   };
 }
 
-// ===== STATS DASHBOARD =====
+//  STATS DASHBOARD
 export interface StatsData {
-  pendingValidationUsers: number; // ← AJOUTE CETTE LIGNE
+  pendingValidationUsers: number;
 
   totalUsers: number;
   newUsers30d: number;
@@ -143,14 +140,14 @@ export interface StatsData {
   pendingUsers: number;
   suspendedUsers: number;
   bannedUsers: number;
-  lockedUsers: number; // SECURITY_LOCKED + MANUALLY_BLOCKED
-  inactiveUsers: number; // ← AJOUTER
-  verifiedIdentity: number; // Pourcentage (0-100)
+  lockedUsers: number;
+  inactiveUsers: number;
+  verifiedIdentity: number;
   pendingApprovals: number;
   averageReliability: number;
 }
 
-// ===== PAGINATION =====
+//  PAGINATION
 export interface PaginationData {
   page: number;
   limit: number;
@@ -158,12 +155,12 @@ export interface PaginationData {
   totalPages: number;
 }
 
-// ===== FILTERS =====
+//  FILTERS
 export interface UserFilters {
   search: string;
-  role: string; // 'ALL' ou un rôle
-  status: string; // 'ALL' ou un statut
-  verificationStatus: string; // 'ALL', 'VERIFIED', 'PENDING', 'REJECTED'
+  role: string;
+  status: string;
+  verificationStatus: string;
   dateFrom: string;
   dateTo: string;
   minReliability: string;

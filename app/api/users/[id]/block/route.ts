@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-// ✅ GET - Vérifier le statut de blocage
+//  GET - Vérifier le statut de blocage
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -67,7 +67,7 @@ export async function GET(
   }
 }
 
-// ✅ POST - Bloquer ou débloquer un utilisateur
+//  POST - Bloquer ou débloquer un utilisateur
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -105,7 +105,7 @@ export async function POST(
     });
 
     if (existingBlock) {
-      // ✅ DÉBLOQUER
+      //  DÉBLOQUER
       await prisma.block.delete({
         where: {
           blockerId_blockedId: {
@@ -115,20 +115,20 @@ export async function POST(
         }
       });
       
-      // ❌ NE PAS débloquer la conversation (laisser isBlocked pour la modération seulement)
+      //  NE PAS débloquer la conversation (laisser isBlocked pour la modération seulement)
       // La conversation reste active, seul le blocage utilisateur est supprimé
       
       return NextResponse.json({ success: true, action: "unblocked" });
     } else {
-      // ✅ BLOQUER
+      //  BLOQUER
       await prisma.block.create({
         data: {
           blockerId: currentUser.id,
           blockedId: blockedUserId
         }
       });
-      
-      // ❌ NE PAS bloquer la conversation (isBlocked est réservé à la modération)
+    
+      //  NE PAS bloquer la conversation (isBlocked est réservé à la modération)
       // Le blocage utilisateur est géré séparément via la table Block
       
       return NextResponse.json({ success: true, action: "blocked" });

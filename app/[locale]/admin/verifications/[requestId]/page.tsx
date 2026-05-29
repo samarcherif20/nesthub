@@ -36,7 +36,7 @@ interface Toast {
 const pip = (url: string) =>
   `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
 
-// ✅ MOTIFS DE REJET TRADUITS
+//  MOTIFS DE REJET TRADUITS
 const getRejectionReasons = (t: any) => [
   t("rejectionReasons.blurry"),
   t("rejectionReasons.expired"),
@@ -53,7 +53,7 @@ export default function VerificationDetailPage() {
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
 
-  // ✅ TOAST
+  //  TOAST
   const [toast, setToast] = useState<Toast | null>(null);
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -68,7 +68,7 @@ export default function VerificationDetailPage() {
   const [rotation, setRotation] = useState(0);
   const [flipped, setFlipped] = useState(false);
 
-  // ✅ APPEL DU HOOK SANS PARAMÈTRES (COMME AVANT)
+  //  APPEL DU HOOK SANS PARAMÈTRES (COMME AVANT)
   const {
     loading,
     submitting,
@@ -92,7 +92,7 @@ export default function VerificationDetailPage() {
     fetchRequest,
   } = useVerificationDetail(requestId);
 
-  // ✅ GESTION DES ERREURS/SUCCÈS AVEC TOAST (sans modifier le hook)
+  //  GESTION DES ERREURS/SUCCÈS AVEC TOAST (sans modifier le hook)
   useEffect(() => {
     if (error) {
       showToast("error", error);
@@ -107,7 +107,7 @@ export default function VerificationDetailPage() {
     }
   }, [success, resetSuccess]);
 
-  // ✅ MOTIFS TRADUITS
+  //  MOTIFS TRADUITS
   const rejectionReasons = getRejectionReasons(t);
 
   // ── admin guard ────────────────────────────────────────────────────────
@@ -236,7 +236,7 @@ export default function VerificationDetailPage() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* ✅ TOAST NOTIFICATION */}
+      {/*  TOAST NOTIFICATION */}
       {toast && (
         <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
           <div

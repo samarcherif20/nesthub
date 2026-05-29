@@ -23,13 +23,13 @@ export async function POST(request: NextRequest) {
     const updatedUser = await prisma.user.update({
       where: { clerkId: clerkUserId },
       data: {
-        status: 'ACTIVE',  // Remettre en ACTIF
-        failedLoginAttempts: 0,  // Réinitialiser les tentatives
+        status: 'ACTIVE', 
+        failedLoginAttempts: 0, 
         updatedAt: new Date()
       }
     })
 
-    console.log(`✅ Compte déverrouillé: ${user.email}`)
+    console.log(` Compte déverrouillé: ${user.email}`)
 
     return NextResponse.json({ 
       success: true, 

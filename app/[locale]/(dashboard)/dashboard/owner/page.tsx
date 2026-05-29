@@ -84,11 +84,7 @@ const propertyColors = [
   "from-rose-500 to-red-600",
 ];
 
-const STAY_TYPES = [
-  "longStay",
-  "shortStay",
-  "standardStay",
-] as const;
+const STAY_TYPES = ["longStay", "shortStay", "standardStay"] as const;
 const STAY_COLORS = [
   "rgba(59, 130, 246, 0.9)",
   "rgba(6, 182, 212, 0.9)",
@@ -441,8 +437,12 @@ export default function OwnerAnalyticsPage() {
 
   const [period, setPeriod] = useState<"30days" | "90days" | "year">("90days");
   const { data, loading, refreshing, refresh } = useOwnerAnalytics(period);
-  const [activeChart, setActiveChart] = useState<"line" | "bar" | "radar">("line");
-  const [dynamicPeriod, setDynamicPeriod] = useState<"7days" | "30days" | "90days" | "year">("30days");
+  const [activeChart, setActiveChart] = useState<"line" | "bar" | "radar">(
+    "line",
+  );
+  const [dynamicPeriod, setDynamicPeriod] = useState<
+    "7days" | "30days" | "90days" | "year"
+  >("30days");
   const [tasks, setTasks] = useState<any[]>([]);
   const [isDark, setIsDark] = useState(false);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
@@ -1132,16 +1132,16 @@ export default function OwnerAnalyticsPage() {
             </tbody>
           </table>
         </div>
-       {totalListingPages > 1 && (
-  <div className="mb-6">
-    <Pagination
-      currentPage={listingPage}
-      totalPages={totalListingPages}
-      onPageChange={setListingPage}
-      t={t}
-    />
-  </div>
-)}
+        {totalListingPages > 1 && (
+          <div className="mb-6">
+            <Pagination
+              currentPage={listingPage}
+              totalPages={totalListingPages}
+              onPageChange={setListingPage}
+              t={t}
+            />
+          </div>
+        )}
       </div>
 
       {/* Payments + Tasks + Activity */}

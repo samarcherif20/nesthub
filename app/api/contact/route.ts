@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
             fullName,
             email,
             phone,
-            isConnected: !!dbUser, // ← AJOUTER : Indiquer si c'est un utilisateur connecté
+            isConnected: !!dbUser, 
             message: message.substring(0, 200),
           },
         })),

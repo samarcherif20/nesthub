@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAuth } from "@clerk/nextjs/server";
 
-// 🔥 FONCTION POUR GÉNÉRER UNE IMAGE PLACEHOLDER EN SVG (élégante)
+//  FONCTION POUR GÉNÉRER UNE IMAGE PLACEHOLDER EN SVG (élégante)
 function generatePlaceholderSVG(title: string = "NESTHUB"): string {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="400" viewBox="0 0 600 400">
     <defs>

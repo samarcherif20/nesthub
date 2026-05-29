@@ -1,13 +1,14 @@
 // app/[locale]/(dashboard)/owner/calendar/hooks/useCalendar.ts
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-// Ajoute cette fonction après les imports, vers ligne 15-20
+
 function formatDateForAPI(date: Date): string {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
+
 export interface CalendarDay {
   date: Date;
   isCurrentMonth: boolean;
@@ -57,6 +58,10 @@ export interface Listing {
   type: string;
   governorate: string;
   photos: Array<{ url: string; isMain: boolean }>;
+  username?: string;
+  owner?: {
+    username?: string;
+  };
 }
 
 export const BOOKING_COLORS = [
@@ -64,44 +69,35 @@ export const BOOKING_COLORS = [
     bg: "#6366f1",
     light: "rgba(99,102,241,0.15)",
     dark: "rgba(99,102,241,0.25)",
+    bar: "#6366f1",
   },
   {
     bg: "#8b5cf6",
     light: "rgba(139,92,246,0.15)",
     dark: "rgba(139,92,246,0.25)",
+    bar: "#8b5cf6",
   },
   {
     bg: "#0ea5e9",
     light: "rgba(14,165,233,0.15)",
     dark: "rgba(14,165,233,0.25)",
+    bar: "#0ea5e9",
   },
   {
     bg: "#10b981",
     light: "rgba(16,185,129,0.15)",
     dark: "rgba(16,185,129,0.25)",
+    bar: "#10b981",
   },
   {
     bg: "#f59e0b",
     light: "rgba(245,158,11,0.15)",
     dark: "rgba(245,158,11,0.25)",
+    bar: "#f59e0b",
   },
 ];
 
-export const FR_MONTHS = [
-  "Janvier",
-  "Février",
-  "Mars",
-  "Avril",
-  "Mai",
-  "Juin",
-  "Juillet",
-  "Août",
-  "Septembre",
-  "Octobre",
-  "Novembre",
-  "Décembre",
-];
-export const FR_DAYS_SHORT = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+//  SUPPRIME FR_MONTHS et FR_DAYS_SHORT - ils seront gérés par le composant SimpleCalendar avec locale
 
 export function isSameDay(a: Date, b: Date): boolean {
   return (
@@ -170,7 +166,6 @@ export function buildGrid(
   const lastDay = new Date(year, month + 1, 0);
   const days: CalendarDay[] = [];
 
-  // AJOUTE CETTE FONCTION À L'INTÉRIEUR
   const formatDate = (date: Date): string => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -203,11 +198,9 @@ export function buildGrid(
     const dateStr = formatDate(d);
     const isPast = d < todayMidnight;
 
-    // Vérifier si bloqué
     const blockedEntry = blockedDates.find((b) => b.date === dateStr);
     const isBlocked = !!blockedEntry && !isPast;
 
-    // Vérifier si réservé
     const booking = bookings.find((b) => {
       const ci = new Date(b.checkIn);
       ci.setHours(0, 0, 0, 0);
@@ -232,7 +225,6 @@ export function buildGrid(
       ? (booking.colorIndex ?? 0) % BOOKING_COLORS.length
       : 0;
 
-    // Vérifier les prix spéciaux
     const priceRule = pricingRules.find((r) => {
       const start = new Date(r.startDate);
       const end = new Date(r.endDate);
@@ -250,6 +242,7 @@ export function buildGrid(
       isCheckIn,
       isCheckOut,
       bookingId: booking?.id,
+      //  PAS DE TEXTE ICI - LAISSE undefined, le composant gérera l'affichage
       bookingGuest: booking?.tenant?.username
         ? booking.tenant.username
         : booking?.tenant?.firstName
@@ -264,7 +257,6 @@ export function buildGrid(
     });
   }
 
-  // Compléter pour avoir 42 jours (6 semaines)
   const remaining = 42 - days.length;
   for (let i = 1; i <= remaining; i++) {
     const d = new Date(year, month + 1, i);
@@ -282,7 +274,7 @@ export function buildGrid(
   return days;
 }
 
-export function useCalendar() {
+export function useCalendar(t?: any) {
   const { getToken } = useAuth();
 
   const [listings, setListings] = useState<Listing[]>([]);
@@ -313,7 +305,6 @@ export function useCalendar() {
     [getToken],
   );
 
-  // Charger les listings
   useEffect(() => {
     setLoadingListings(true);
     authFetch("/api/listings/my?status=ACTIVE&page=1&pageSize=20")
@@ -327,16 +318,12 @@ export function useCalendar() {
       .finally(() => setLoadingListings(false));
   }, [authFetch]);
 
-  // Rafraîchir les disponibilités
   const fetchAvailability = useCallback(async () => {
     if (!selectedListing) return;
     setLoadingCal(true);
     try {
       const y = currentDate.getFullYear();
       const m = currentDate.getMonth() + 1;
-      console.log(
-        `🔄 Fetch availability pour ${selectedListing.id} - ${y}/${m}`,
-      );
 
       const res = await authFetch(
         `/api/listings/availability?listingId=${selectedListing.id}&year=${y}&month=${m}`,
@@ -344,16 +331,9 @@ export function useCalendar() {
 
       if (res.ok) {
         const data = await res.json();
-        console.log(
-          `📊 Données reçues: blockedDates=${data.blockedDates?.length}, pricingRules=${data.pricingRules?.length}, bookings=${data.bookings?.length}`,
-        );
 
         const normalizedBlockedDates = normalizeBlockedDates(
           data.blockedDates ?? [],
-        );
-        console.log(
-          `📅 normalizedBlockedDates:`,
-          normalizedBlockedDates.map((b) => b.date),
         );
 
         const formattedBookings: Booking[] = (data.bookings ?? []).map(
@@ -362,13 +342,14 @@ export function useCalendar() {
             checkIn: b.checkIn,
             checkOut: b.checkOut,
             status: b.status,
+            //  PAS DE TEXTE "Guest" ICI - laisse undefined ou utilise t si nécessaire
             guestName: b.tenant?.username
               ? b.tenant.username
               : b.tenant?.firstName
                 ? b.tenant.firstName
                 : b.guestName
                   ? b.guestName.split(" ")[0]
-                  : "Guest",
+                  : undefined,
             guestEmail: b.tenant?.email || b.guestEmail,
             totalPrice: b.totalPrice,
             nights: Math.ceil(
@@ -383,8 +364,6 @@ export function useCalendar() {
         setBlockedDates(normalizedBlockedDates);
         setBookings(formattedBookings);
         setPricingRules(data.pricingRules ?? []);
-      } else {
-        console.error("Erreur API:", await res.text());
       }
     } catch (e) {
       console.error("Erreur fetchAvailability:", e);
@@ -397,7 +376,6 @@ export function useCalendar() {
     fetchAvailability();
   }, [fetchAvailability, selectedListing?.id]);
 
-  // Construction du grid (recalculé à chaque changement des données)
   const days = buildGrid(
     currentDate.getFullYear(),
     currentDate.getMonth(),
@@ -423,14 +401,13 @@ export function useCalendar() {
     selectedDays.some((d) => isSameDay(d, date));
 
   const handleDayMouseEnter = (day: CalendarDay) => {
-    if (
-      !isSelecting ||
-      !rangeStart ||
-      !day.isCurrentMonth ||
-      day.isPast ||
-      day.isBooked ||
-      day.isBlocked
-    )
+  if (
+    !isSelecting ||
+    !rangeStart ||
+    !day.isCurrentMonth ||
+    day.isPast ||
+    day.isBooked
+  )
       return;
     const start = rangeStart;
     const end = day.date;
@@ -445,31 +422,31 @@ export function useCalendar() {
     setSelectedDays(newSelected);
   };
 
-  const handleDayClick = (day: CalendarDay) => {
-    if (!day.isCurrentMonth || day.isPast || day.isBooked || day.isBlocked)
-      return;
-    if (!isSelecting) {
-      setRangeStart(day.date);
-      setSelectedDays([day.date]);
-      setIsSelecting(true);
-    } else {
-      if (rangeStart) {
-        const start = rangeStart;
-        const end = day.date;
-        const newSelected: Date[] = [];
-        const minDate = start < end ? start : end;
-        const maxDate = start < end ? end : start;
-        let current = new Date(minDate);
-        while (current <= maxDate) {
-          newSelected.push(new Date(current));
-          current.setDate(current.getDate() + 1);
-        }
-        setSelectedDays(newSelected);
+ const handleDayClick = (day: CalendarDay) => {
+  if (!day.isCurrentMonth || day.isPast || day.isBooked) return;
+  
+  if (!isSelecting) {
+    setRangeStart(day.date);
+    setSelectedDays([day.date]);
+    setIsSelecting(true);
+  } else {
+    if (rangeStart) {
+      const start = rangeStart;
+      const end = day.date;
+      const newSelected: Date[] = [];
+      const minDate = start < end ? start : end;
+      const maxDate = start < end ? end : start;
+      let current = new Date(minDate);
+      while (current <= maxDate) {
+        newSelected.push(new Date(current));
+        current.setDate(current.getDate() + 1);
       }
-      setIsSelecting(false);
-      setRangeStart(null);
+      setSelectedDays(newSelected);
     }
-  };
+    setIsSelecting(false);
+    setRangeStart(null);
+  }
+};
 
   const clearSelection = () => {
     setSelectedDays([]);
@@ -501,9 +478,6 @@ export function useCalendar() {
       if (res.ok) {
         clearSelection();
         await fetchAvailability();
-      } else {
-        const error = await res.text();
-        console.error("Erreur block:", error);
       }
     } catch (e) {
       console.error(e);
@@ -536,30 +510,41 @@ export function useCalendar() {
     }
   };
 
-  const setPriceForDates = async (price: number, specificDates?: Date[]) => {
-    const datesToPrice = specificDates || selectedDays;
-    if (!selectedListing || datesToPrice.length === 0 || !price) return;
-    setSaving(true);
-    try {
-      const res = await authFetch("/api/listings/availability", {
-        method: "POST",
-        body: JSON.stringify({
-          listingId: selectedListing.id,
-          action: "setPrice",
-          dates: datesToPrice.map((d) => formatDateForAPI(d)),
-          customPrice: price,
-        }),
-      });
-      if (res.ok) {
-        clearSelection();
-        await fetchAvailability();
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setSaving(false);
+const setPriceForDates = async (price: number | null, specificDates?: Date[]) => {
+  const datesToPrice = specificDates || selectedDays;
+  if (!selectedListing || datesToPrice.length === 0) return;
+  if (price === null || price === undefined) return; // ← permet price = 0
+  
+  setSaving(true);
+  try {
+    // 🔥 Si price === 0, on envoie une action spéciale
+    const action = price === 0 ? "unsetPrice" : "setPrice";
+    
+    const body: any = {
+      listingId: selectedListing.id,
+      action: action,
+      dates: datesToPrice.map((d) => formatDateForAPI(d)),
+    };
+    
+    if (action === "setPrice") {
+      body.customPrice = price;
     }
-  };
+    
+    const res = await authFetch("/api/listings/availability", {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    
+    if (res.ok) {
+      clearSelection();
+      await fetchAvailability();
+    }
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setSaving(false);
+  }
+};
 
   const upcomingBookings = bookings
     .filter((b) => new Date(b.checkIn) >= today)
@@ -597,7 +582,5 @@ export function useCalendar() {
     setPriceForDates,
     fetchAvailability,
     BOOKING_COLORS,
-    FR_MONTHS,
-    FR_DAYS_SHORT,
   };
 }

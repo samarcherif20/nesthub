@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
 
-// ✅ GET - Récupérer les détails d'une réservation
+//  GET - Récupérer les détails d'une réservation
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -53,7 +53,7 @@ export async function GET(
             profilePictureUrl: true,
             cinNumber: true,
             isIdentityVerified: true,
-            createdAt: true, // ✅ AJOUTÉ pour joinedYear
+            createdAt: true,
             stats: {
               select: { averageRating: true, totalReviews: true },
             },
@@ -79,7 +79,6 @@ export async function GET(
           select: { id: true },
         },
         payments: {
-          // ✅ AJOUTÉ pour les infos de paiement
           take: 1,
           orderBy: { createdAt: "desc" },
           select: {
@@ -99,7 +98,7 @@ export async function GET(
       );
     }
 
-    // ✅ Compter les annonces actives du propriétaire
+    //  Compter les annonces actives du propriétaire
     const listingsCount = booking.owner
       ? await prisma.listing.count({
           where: {
@@ -119,16 +118,14 @@ export async function GET(
     }
 
     const hasReview = !!booking.review;
-
-    // 🔍 DEBUG LOGS
-    console.log("🔍 [API BOOKING] Listing:", {
+    console.log(" [API BOOKING] Listing:", {
       id: booking.listing.id,
       title: booking.listing.title,
       latitude: booking.listing.latitude,
       longitude: booking.listing.longitude,
     });
 
-    console.log("🔍 [API BOOKING] Owner:", {
+    console.log(" [API BOOKING] Owner:", {
       id: booking.owner?.id,
       firstName: booking.owner?.firstName,
       lastName: booking.owner?.lastName,
@@ -164,12 +161,13 @@ export async function GET(
         latitude: booking.listing.latitude,
         longitude: booking.listing.longitude,
         description: booking.listing.description,
-        image: booking.listing.photos?.[0]?.url || null, // ← AJOUTE CETTE LIGNE
+        image: booking.listing.photos?.[0]?.url || null,
+        photos: booking.listing.photos,
         houseRules: booking.listing.houseRules,
         equipment: booking.listing.equipment,
         location: [booking.listing.governorate, booking.listing.delegation]
           .filter(Boolean)
-          .join(", "), // ← AJOUTE CETTE LIGNE
+          .join(", "),
       },
       owner: {
         id: booking.owner?.id,
@@ -185,8 +183,8 @@ export async function GET(
         reviewCount: booking.owner?.stats?.totalReviews,
         joinedYear: booking.owner?.createdAt
           ? new Date(booking.owner.createdAt).getFullYear()
-          : null, // ✅ AJOUTÉ
-        listingsCount: listingsCount, // ✅ AJOUTÉ
+          : null,
+        listingsCount: listingsCount,
       },
       tenant: {
         id: booking.tenant?.id,
@@ -201,15 +199,15 @@ export async function GET(
       },
       revealedInfo: booking.revealedInfo,
       contract: booking.contract,
-      payment: booking.payments?.[0] || null, // ✅ AJOUTÉ
+      payment: booking.payments?.[0] || null,
     });
   } catch (error) {
-    console.error("❌ [API] Erreur:", error);
+    console.error(" [API] Erreur:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
 
-// ✅ POST pour la prolongation avec détails enrichis
+//  POST pour la prolongation avec détails enrichis
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -306,7 +304,7 @@ export async function POST(
       data: {
         userId: booking.ownerId!,
         type: "BOOKING_REQUEST",
-        title: "📅 Demande de prolongation de séjour",
+        title: "Demande de prolongation de séjour",
         content: `${tenantName} souhaite prolonger son séjour à "${listingTitle}" du ${formattedCurrentCheckOut} au ${formattedNewCheckOut}. Supplément: ${additionalPrice.toLocaleString()} TND`,
         data: {
           bookingId: booking.id,
@@ -324,12 +322,6 @@ export async function POST(
       },
     });
 
-    console.log(`✅ Demande de prolongation envoyée pour la réservation ${id}`);
-    console.log(`   - Locataire: ${tenantName}`);
-    console.log(`   - Logement: ${listingTitle}`);
-    console.log(`   - Nuits supplémentaires: ${additionalNights}`);
-    console.log(`   - Supplément: ${additionalPrice} TND`);
-
     return NextResponse.json({
       success: true,
       additionalNights,
@@ -337,7 +329,7 @@ export async function POST(
       message: "Demande envoyée au propriétaire",
     });
   } catch (error) {
-    console.error("❌ Erreur prolongation:", error);
+    console.error(" Erreur prolongation:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }
