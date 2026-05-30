@@ -5,32 +5,27 @@ import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   IoCloseOutline,
   IoCloudUploadOutline,
   IoDocumentTextOutline,
   IoImageOutline,
   IoCheckmarkCircleOutline,
-  IoWarningOutline,
+  IoAlertCircleOutline,
   IoCalendarOutline,
   IoLocationOutline,
   IoWalletOutline,
-  IoTimeOutline,
   IoHomeOutline,
   IoBuildOutline,
-  IoSparklesOutline,
-  IoAlertCircleOutline,
-  IoSendOutline,
   IoScaleOutline,
   IoChatbubblesOutline,
-  IoShieldCheckmarkOutline,
-  IoHeadsetOutline,
-  IoChevronForwardOutline,
+  IoPersonOutline,
 } from "react-icons/io5";
 import { MdOutlineCleaningServices } from "react-icons/md";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useTheme } from "next-themes";
+import { RiUserVoiceLine } from "react-icons/ri";
 
 // Types
 interface Booking {
@@ -42,6 +37,13 @@ interface Booking {
     governorate: string;
     delegation: string;
     images?: string[];
+    image?: string;
+  };
+  tenant?: {
+    id: string;
+    username: string;
+    name: string;
+    avatar?: string;
   };
   checkIn: string;
   checkOut: string;
@@ -57,14 +59,38 @@ interface DisputeModalProps {
   preselectedBookingId?: string;
 }
 
-// Catégories de litige (identiques à ton HTML)
+// Catégories de litige
 const DISPUTE_TYPES = [
-  { value: "damages", label: "Dommages", icon: "🔨", desc: "Biens endommagés, cassés ou détériorés" },
-  { value: "cleanliness", label: "Propreté", icon: "🧹", desc: "Logement non propre à l'arrivée" },
-  { value: "payment", label: "Paiement", icon: "💰", desc: "Facturation incorrecte ou frais non justifiés" },
-  { value: "noise", label: "Bruit", icon: "🔊", desc: "Troubles de voisinage ou bruit excessif" },
-  { value: "amenities", label: "Équipements manquants", icon: "🔧", desc: "Services ou équipements non fournis" },
-  { value: "other", label: "Autre", icon: "📝", desc: "Votre situation ne correspond à aucune catégorie" },
+  {
+    value: "DAMAGES",
+    labelKey: "damages",
+    icon: <IoBuildOutline className="text-sm" />,
+  },
+  {
+    value: "CLEANLINESS",
+    labelKey: "cleanliness",
+    icon: <MdOutlineCleaningServices className="text-sm" />,
+  },
+  {
+    value: "PAYMENT",
+    labelKey: "payment",
+    icon: <IoWalletOutline className="text-sm" />,
+  },
+  {
+    value: "NOISE",
+    labelKey: "noise",
+    icon: <RiUserVoiceLine className="text-sm" />,
+  },
+  {
+    value: "AMENITIES",
+    labelKey: "amenities",
+    icon: <IoHomeOutline className="text-sm" />,
+  },
+  {
+    value: "OTHER",
+    labelKey: "other",
+    icon: <IoChatbubblesOutline className="text-sm" />,
+  },
 ];
 
 const getImageUrl = (url: string) => {
@@ -73,11 +99,16 @@ const getImageUrl = (url: string) => {
   return `/api/listings/image?url=${encodeURIComponent(url)}`;
 };
 
-export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId }: DisputeModalProps) {
+export function DisputeModal({
+  isOpen,
+  onClose,
+  onSuccess,
+  preselectedBookingId,
+}: DisputeModalProps) {
   const { getToken } = useAuth();
   const router = useRouter();
-  const { theme, systemTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const t = useTranslations("DisputeModal");
+
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -85,16 +116,17 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
   const [dragActive, setDragActive] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("");
+  const [priority, setPriority] = useState("MEDIUM"); // 🔥 AJOUTÉ
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const [filesPreview, setFilesPreview] = useState<string[]>([]);
-  const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" | "warning" } | null>(null);
-  const [submitted, setSubmitted] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error" | "info" | "warning";
+  } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const isDark = theme === "dark" || (theme === "system" && systemTheme === "dark");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -103,36 +135,54 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
   useEffect(() => {
     if (isOpen && mounted) {
       fetchCompletedBookings();
-      if (preselectedBookingId) {
-        // Trouver et sélectionner le booking
-        const booking = bookings.find(b => b.id === preselectedBookingId);
-        if (booking) setSelectedBooking(booking);
-      }
     }
-  }, [isOpen, mounted, preselectedBookingId]);
+  }, [isOpen, mounted]);
+
+  useEffect(() => {
+    if (preselectedBookingId && bookings.length > 0 && !selectedBooking) {
+      const booking = bookings.find((b) => b.id === preselectedBookingId);
+      if (booking) setSelectedBooking(booking);
+    }
+  }, [preselectedBookingId, bookings, selectedBooking]);
 
   useEffect(() => {
     return () => {
-      filesPreview.forEach((url) => URL.revokeObjectURL(url));
+      filesPreview.forEach((url) => {
+        if (url !== "pdf") URL.revokeObjectURL(url);
+      });
     };
   }, [filesPreview]);
 
-  const showToast = useCallback((message: string, type: "success" | "error" | "info" | "warning" = "info") => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 4000);
-  }, []);
+  const showToast = useCallback(
+    (
+      message: string,
+      type: "success" | "error" | "info" | "warning" = "info",
+    ) => {
+      setToast({ message, type });
+      setTimeout(() => setToast(null), 4000);
+    },
+    [],
+  );
 
   const fetchCompletedBookings = async () => {
+    setLoading(true);
     try {
       const token = await getToken();
-      const res = await fetch("/api/bookings?status=COMPLETED&pageSize=50", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        "/api/bookings?role=owner&status=COMPLETED&pageSize=50",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       const data = await res.json();
       const bookingsList = Array.isArray(data) ? data : data.bookings || [];
-      setBookings(bookingsList);
+      const completedOnly = bookingsList.filter(
+        (b: Booking) => b.status === "COMPLETED",
+      );
+      setBookings(completedOnly);
     } catch (error) {
       console.error("Erreur chargement réservations:", error);
+      showToast(t("toast.loadError"), "error");
     } finally {
       setLoading(false);
     }
@@ -154,27 +204,34 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
   }, []);
 
   const handleFiles = (newFiles: File[]) => {
-    const validFiles = newFiles.filter(f => f.type.startsWith("image/") || f.type === "application/pdf");
-    const invalidFiles = newFiles.filter(f => !f.type.startsWith("image/") && f.type !== "application/pdf");
-    
+    const validFiles = newFiles.filter(
+      (f) => f.type.startsWith("image/") || f.type === "application/pdf",
+    );
+    const invalidFiles = newFiles.filter(
+      (f) => !f.type.startsWith("image/") && f.type !== "application/pdf",
+    );
+
     if (invalidFiles.length > 0) {
-      showToast(`${invalidFiles.length} fichier(s) non supportés (PNG, JPG, PDF uniquement)`, "error");
+      showToast(
+        t("toast.unsupportedFiles", { count: invalidFiles.length }),
+        "error",
+      );
     }
     if (validFiles.length === 0) return;
 
-    const newPreviews = validFiles.map(file => {
+    const newPreviews = validFiles.map((file) => {
       if (file.type.startsWith("image/")) return URL.createObjectURL(file);
       return "pdf";
     });
 
-    setFiles(prev => [...prev, ...validFiles]);
-    setFilesPreview(prev => [...prev, ...newPreviews]);
+    setFiles((prev) => [...prev, ...validFiles]);
+    setFilesPreview((prev) => [...prev, ...newPreviews]);
   };
 
   const removeFile = (index: number) => {
     if (filesPreview[index] !== "pdf") URL.revokeObjectURL(filesPreview[index]);
-    setFiles(prev => prev.filter((_, i) => i !== index));
-    setFilesPreview(prev => prev.filter((_, i) => i !== index));
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+    setFilesPreview((prev) => prev.filter((_, i) => i !== index));
   };
 
   const uploadFiles = async (fileList: File[]): Promise<string[]> => {
@@ -202,19 +259,19 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
 
   const handleSubmit = async () => {
     if (!selectedBooking) {
-      showToast("Veuillez sélectionner une réservation", "error");
+      showToast(t("toast.noBooking"), "error");
       return;
     }
     if (!selectedCategory) {
-      showToast("Veuillez sélectionner une catégorie", "error");
+      showToast(t("toast.noCategory"), "error");
       return;
     }
     if (!subject.trim()) {
-      showToast("Veuillez indiquer un sujet", "error");
+      showToast(t("toast.noSubject"), "error");
       return;
     }
     if (!description.trim()) {
-      showToast("Veuillez décrire la situation", "error");
+      showToast(t("toast.noDescription"), "error");
       return;
     }
 
@@ -232,27 +289,25 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
         },
         body: JSON.stringify({
           bookingId: selectedBooking.id,
-          type: selectedCategory.toUpperCase(),
+          type: selectedCategory,
           subject: subject,
           description: description,
           evidence: evidenceUrls,
+          priority: priority, // 🔥 Envoyer la priorité choisie
         }),
       });
 
       if (res.ok) {
-        showToast("Litige soumis avec succès !", "success");
-        setSubmitted(true);
-        setTimeout(() => {
-          onClose();
-          if (onSuccess) onSuccess();
-          router.push("/disputes");
-        }, 2000);
+        showToast(t("toast.success"), "success");
+        onClose();
+        if (onSuccess) onSuccess();
+        router.refresh();
       } else {
         const error = await res.json();
-        showToast(error.error || "Erreur lors de la soumission", "error");
+        showToast(error.error || t("toast.submitError"), "error");
       }
     } catch (error) {
-      showToast("Erreur de connexion", "error");
+      showToast(t("toast.connectionError"), "error");
     } finally {
       setSubmitting(false);
     }
@@ -260,57 +315,30 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
 
   if (!isOpen || !mounted) return null;
 
-  // Écran de succès
-  if (submitted) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          className={`w-full max-w-sm rounded-2xl p-8 text-center ${
-            isDark ? "bg-slate-900" : "bg-white"
-          } shadow-2xl border ${isDark ? "border-white/10" : "border-gray-100"}`}
-        >
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 flex items-center justify-center">
-              <IoCheckmarkCircleOutline className="text-3xl text-white" />
-            </div>
-          </div>
-          <h2 className={`text-xl font-bold mb-2 ${isDark ? "text-white" : "text-gray-900"}`}>
-            Litige soumis
-          </h2>
-          <p className={`text-sm mb-5 ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-            Notre équipe examinera votre demande sous 24h.
-          </p>
-          <button
-            onClick={onClose}
-            className={`w-full py-3 rounded-xl font-semibold transition ${
-              isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            Fermer
-          </button>
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-on-surface/30 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <AnimatePresence>
         {toast && (
-          <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[100]">
-            <div className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-2xl text-sm font-bold shadow-2xl backdrop-blur-2xl border ${
-              toast.type === "success" 
-                ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300 dark:bg-emerald-500/10"
-                : toast.type === "error"
-                ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-300 dark:bg-rose-500/10"
-                : "bg-sky-500/10 text-sky-700 border-sky-500/20 dark:text-sky-300 dark:bg-sky-500/10"
-            }`}>
-              {toast.type === "success" ? <IoCheckmarkCircleOutline /> : <IoAlertCircleOutline />}
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[100]">
+            <div
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold shadow-xl backdrop-blur-sm border ${
+                toast.type === "success"
+                  ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-300"
+                  : toast.type === "error"
+                    ? "bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-300"
+                    : "bg-indigo-500/10 text-indigo-700 border-indigo-500/20 dark:text-indigo-300"
+              }`}
+            >
+              {toast.type === "success" ? (
+                <IoCheckmarkCircleOutline className="text-base" />
+              ) : (
+                <IoAlertCircleOutline className="text-base" />
+              )}
               <span>{toast.message}</span>
-              <button onClick={() => setToast(null)} className="ml-2 p-1 rounded-lg hover:bg-black/5">
+              <button
+                onClick={() => setToast(null)}
+                className="ml-2 p-1 rounded-lg hover:bg-black/5"
+              >
                 <IoCloseOutline className="text-sm" />
               </button>
             </div>
@@ -322,195 +350,247 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className={`w-full max-w-2xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col max-h-[90vh] overflow-hidden ${
-          isDark ? "bg-slate-900" : "bg-white"
-        }`}
+        className="w-full max-w-2xl rounded-2xl shadow-xl flex flex-col max-h-[90vh] overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700"
       >
-        {/* Header - exactement comme ton HTML */}
-        <div className={`px-8 py-6 flex items-center justify-between sticky top-0 z-10 ${
-          isDark ? "bg-slate-900/95" : "bg-white/95"
-        } backdrop-blur-sm border-b ${isDark ? "border-white/10" : "border-gray-100"}`}>
-          <h2 className={`font-headline text-xl font-bold tracking-tight ${isDark ? "text-white" : "text-on-surface"}`}>
-            Ouvrir un nouveau litige
-          </h2>
+        {/* Header */}
+        <div className="px-6 py-5 flex items-center justify-between sticky top-0 z-10 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border-b border-indigo-100 dark:border-indigo-800/50">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-sky-500 to-purple-500 flex items-center justify-center shadow-md">
+              <IoScaleOutline className="text-white text-lg" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                {t("info.title")}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t("info.description")}
+              </p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-high transition-colors duration-200"
+            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/50 dark:hover:bg-slate-800 transition-colors"
           >
-            <span className="material-symbols-outlined text-on-surface-variant">close</span>
+            <IoCloseOutline className="text-slate-500 dark:text-slate-400" />
           </button>
         </div>
 
-        {/* Content - Scrollable */}
-        <div className="px-8 py-4 overflow-y-auto space-y-8 pb-10">
-          {/* Step Info - comme ton HTML */}
-          <div className={`flex items-center gap-4 p-4 rounded-xl ${
-            isDark ? "bg-slate-800/50" : "bg-surface-container-low"
-          }`}>
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white">
-              <span className="material-symbols-outlined">gavel</span>
-            </div>
-            <div>
-              <p className="font-medium text-on-surface">Espace de Conciliation</p>
-              <p className="text-sm text-on-surface-variant">Veuillez fournir des détails précis pour une résolution rapide.</p>
-            </div>
-          </div>
-
+        {/* Content */}
+        <div className="px-6 py-5 overflow-y-auto space-y-6 pb-6">
           {/* Booking Selection */}
           <div className="space-y-2">
-            <label className={`font-label text-xs font-semibold uppercase tracking-wider ${
-              isDark ? "text-gray-400" : "text-on-surface-variant"
-            }`}>
-              Réservation concernée
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {t("booking.label")}
             </label>
             {loading ? (
               <div className="flex justify-center py-8">
                 <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
               </div>
             ) : bookings.length === 0 ? (
-              <div className={`text-center py-8 rounded-xl ${isDark ? "bg-slate-800/50" : "bg-gray-50"}`}>
-                <p className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`}>
-                  Aucune réservation terminée
+              <div className="text-center py-8 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {t("booking.noBookings")}
                 </p>
               </div>
             ) : (
-              <div className="relative">
-                <select
-                  value={selectedBooking?.id || ""}
-                  onChange={(e) => {
-                    const booking = bookings.find(b => b.id === e.target.value);
-                    setSelectedBooking(booking || null);
-                  }}
-                  className={`w-full rounded-xl px-4 py-3.5 appearance-none focus:ring-4 focus:ring-primary/10 transition-all font-body ${
-                    isDark
-                      ? "bg-slate-800 border-white/10 text-white"
-                      : "bg-surface-container-high border-0 text-on-surface"
-                  }`}
-                >
-                  <option value="">Sélectionnez une réservation...</option>
-                  {bookings.map((booking) => (
-                    <option key={booking.id} value={booking.id}>
-                      {booking.listing.title} - du {format(new Date(booking.checkIn), "dd MMM", { locale: fr })} au {format(new Date(booking.checkOut), "dd MMM", { locale: fr })}
-                    </option>
-                  ))}
-                </select>
-                <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-on-surface-variant">
-                  expand_more
-                </span>
+              <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                {bookings.map((booking) => {
+                  const listingImageUrl =
+                    booking.listing.image || booking.listing.images?.[0];
+                  const tenantName =
+                    booking.tenant?.username ||
+                    booking.tenant?.name ||
+                    "Locataire";
+                  const isSelected = selectedBooking?.id === booking.id;
+
+                  return (
+                    <div
+                      key={booking.id}
+                      onClick={() => setSelectedBooking(booking)}
+                      className={`cursor-pointer rounded-xl border-2 transition-all p-3 ${
+                        isSelected
+                          ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20 shadow-md"
+                          : "border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
+                      }`}
+                    >
+                      <div className="flex gap-3">
+                        <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 bg-slate-100 dark:bg-slate-800">
+                          {listingImageUrl ? (
+                            <img
+                              src={getImageUrl(listingImageUrl)}
+                              alt={booking.listing.title}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = "";
+                                e.currentTarget.parentElement?.classList.add(
+                                  "flex",
+                                  "items-center",
+                                  "justify-center",
+                                );
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <IoHomeOutline className="text-slate-400 text-xl" />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">
+                              {booking.listing.title}
+                            </p>
+                            <p className="text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                              {booking.totalPrice.toLocaleString()} TND
+                            </p>
+                          </div>
+
+                          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                            <IoCalendarOutline className="text-[10px]" />
+                            {format(new Date(booking.checkIn), "dd MMM yyyy", {
+                              locale: fr,
+                            })}{" "}
+                            →{" "}
+                            {format(new Date(booking.checkOut), "dd MMM yyyy", {
+                              locale: fr,
+                            })}
+                            <span className="ml-1 text-[10px]">
+                              ({booking.nights} nuits)
+                            </span>
+                          </p>
+
+                          <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-0.5">
+                            <IoPersonOutline className="text-[10px]" />
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              {tenantName}
+                            </span>
+                            <span className="text-[10px]">(Locataire)</span>
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
 
-          {/* Category Chips - exactement comme ton HTML */}
+          {/* Category Selection */}
           <div className="space-y-3">
-            <label className={`font-label text-xs font-semibold uppercase tracking-wider ${
-              isDark ? "text-gray-400" : "text-on-surface-variant"
-            }`}>
-              Catégorie du litige
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {t("category.label")}
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {DISPUTE_TYPES.map((cat) => (
-                <label key={cat.value} className="cursor-pointer group">
-                  <input
-                    type="radio"
-                    name="category"
-                    value={cat.value}
-                    checked={selectedCategory === cat.value}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="hidden peer"
-                  />
-                  <span className={`px-4 py-2 rounded-full border-0 transition-all text-sm inline-flex items-center gap-1.5 ${
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`group relative px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 flex items-center gap-2.5 ${
                     selectedCategory === cat.value
-                      ? "bg-primary text-white"
-                      : isDark
-                        ? "bg-slate-800 text-gray-300 peer-hover:bg-slate-700"
-                        : "bg-surface-container-high text-on-surface-variant peer-hover:bg-surface-container-highest"
-                  }`}>
-                    <span>{cat.icon}</span>
-                    {cat.label}
+                      ? "bg-gradient-to-r from-sky-600 to-purple-600 text-white shadow-lg shadow-sky-500/25 scale-[1.02]"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-[1.01]"
+                  }`}
+                >
+                  <span
+                    className={`text-base ${selectedCategory === cat.value ? "text-white" : "text-slate-400 dark:text-slate-500"}`}
+                  >
+                    {cat.icon}
                   </span>
-                </label>
+                  <span className="flex-1 text-left">
+                    {t(`category.${cat.labelKey}`)}
+                  </span>
+                  {selectedCategory === cat.value && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full shadow-md"></span>
+                  )}
+                </button>
               ))}
             </div>
           </div>
 
+          {/* 🔥 PRIORITY SELECT - AJOUTÉ */}
+          <div className="space-y-2">
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {t("priority.label")}
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => setPriority("LOW")}
+                className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  priority === "LOW"
+                    ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                {t("priority.low")}
+              </button>
+              <button
+                onClick={() => setPriority("MEDIUM")}
+                className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  priority === "MEDIUM"
+                    ? "bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-500"></span>
+                {t("priority.medium")}
+              </button>
+              <button
+                onClick={() => setPriority("HIGH")}
+                className={`px-3 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  priority === "HIGH"
+                    ? "bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                {t("priority.high")}
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1">
+              {t("priority.description")}
+            </p>
+          </div>
+
           {/* Subject Input */}
           <div className="space-y-2">
-            <label className={`font-label text-xs font-semibold uppercase tracking-wider ${
-              isDark ? "text-gray-400" : "text-on-surface-variant"
-            }`}>
-              Sujet du litige
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {t("subject.label")}
             </label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Ex: Climatisation défectueuse à l'arrivée"
-              className={`w-full rounded-xl px-4 py-3.5 focus:ring-4 focus:ring-primary/10 transition-all font-body ${
-                isDark
-                  ? "bg-slate-800 border-white/10 text-white placeholder:text-gray-500"
-                  : "bg-surface-container-high border-0 text-on-surface"
-              }`}
+              placeholder={t("subject.placeholder")}
+              className="w-full rounded-xl px-4 py-3 bg-slate-50 dark:bg-slate-800 border-0 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm"
             />
           </div>
 
-          {/* Description - WYSIWYG mockup comme ton HTML */}
+          {/* Description */}
           <div className="space-y-2">
-            <label className={`font-label text-xs font-semibold uppercase tracking-wider ${
-              isDark ? "text-gray-400" : "text-on-surface-variant"
-            }`}>
-              Description détaillée
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {t("description.label")}
             </label>
-            <div className="rounded-xl overflow-hidden border border-outline-variant/30 flex flex-col">
-              <div className={`p-2 flex gap-1 border-b border-outline-variant/30 ${
-                isDark ? "bg-slate-800" : "bg-surface-container-high"
-              }`}>
-                <button type="button" className="w-8 h-8 rounded hover:bg-surface-container-highest flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm">format_bold</span>
-                </button>
-                <button type="button" className="w-8 h-8 rounded hover:bg-surface-container-highest flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm">format_italic</span>
-                </button>
-                <button type="button" className="w-8 h-8 rounded hover:bg-surface-container-highest flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm">format_list_bulleted</span>
-                </button>
-                <div className="w-[1px] h-4 bg-outline-variant/30 mx-1 self-center"></div>
-                <button type="button" className="w-8 h-8 rounded hover:bg-surface-container-highest flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm">link</span>
-                </button>
-                <button type="button" className="w-8 h-8 rounded hover:bg-surface-container-highest flex items-center justify-center">
-                  <span className="material-symbols-outlined text-sm">image</span>
-                </button>
-              </div>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className={`w-full p-4 border-0 focus:ring-0 font-body resize-none ${
-                  isDark
-                    ? "bg-slate-900 text-white placeholder:text-gray-500"
-                    : "bg-surface-container-lowest text-on-surface"
-                }`}
-                placeholder="Décrivez l'incident avec le plus de précisions possibles..."
-                rows={5}
-              />
-            </div>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full p-4 rounded-xl bg-slate-50 dark:bg-slate-800 border-0 focus:ring-2 focus:ring-indigo-500/20 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm resize-none"
+              placeholder={t("description.placeholder")}
+              rows={5}
+            />
           </div>
 
-          {/* Drag & Drop Upload - exactement comme ton HTML */}
+          {/* Drag & Drop Upload */}
           <div className="space-y-2">
-            <label className={`font-label text-xs font-semibold uppercase tracking-wider ${
-              isDark ? "text-gray-400" : "text-on-surface-variant"
-            }`}>
-              Preuves (Photos / PDF)
+            <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              {t("evidence.label")}
             </label>
             <div
-              id="drop-zone"
-              className={`border-2 border-dashed rounded-2xl p-8 flex flex-col items-center justify-center gap-3 transition-colors group cursor-pointer ${
+              className={`border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-3 transition-colors cursor-pointer ${
                 dragActive
-                  ? "border-primary bg-primary/5"
-                  : isDark
-                    ? "border-white/20 hover:border-white/40 bg-slate-800/50"
-                    : "border-outline-variant hover:bg-surface-container-low bg-surface-container-low/50"
+                  ? "border-indigo-500 bg-indigo-50/50 dark:bg-indigo-950/20"
+                  : "border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 bg-slate-50/30 dark:bg-slate-800/30"
               }`}
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
@@ -518,23 +598,22 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
               onDrop={handleDrop}
               onClick={() => fileInputRef.current?.click()}
             >
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform ${
-                isDark ? "bg-slate-700" : "bg-white"
-              }`}>
-                <IoCloudUploadOutline className={`text-2xl ${isDark ? "text-indigo-400" : "text-primary"}`} />
+              <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                <IoCloudUploadOutline className="text-2xl text-indigo-500 dark:text-indigo-400" />
               </div>
               <div className="text-center">
-                <p className={`font-semibold ${isDark ? "text-white" : "text-on-surface"}`}>
-                  Glissez-déposez vos fichiers ici
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t("evidence.dragText")}
                 </p>
-                <p className={`text-xs mt-1 ${isDark ? "text-gray-500" : "text-on-surface-variant"}`}>
-                  PNG, JPG ou PDF jusqu'à 10MB
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-1">
+                  {t("evidence.formats")}
                 </p>
               </div>
-              <button type="button" className={`mt-2 font-semibold text-sm underline-offset-4 hover:underline ${
-                isDark ? "text-indigo-400" : "text-primary"
-              }`}>
-                Parcourir les fichiers
+              <button
+                type="button"
+                className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                {t("evidence.browse")}
               </button>
               <input
                 ref={fileInputRef}
@@ -548,28 +627,28 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
               />
             </div>
 
-            {/* Files Preview */}
             {filesPreview.length > 0 && (
-              <div className="mt-3 space-y-2">
+              <div className="mt-3 space-y-2 max-h-32 overflow-y-auto">
                 {files.map((file, index) => (
-                  <div key={index} className={`flex items-center justify-between p-2 rounded-lg ${
-                    isDark ? "bg-slate-800" : "bg-gray-50"
-                  }`}>
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50"
+                  >
                     <div className="flex items-center gap-2">
                       {filesPreview[index] === "pdf" ? (
-                        <IoDocumentTextOutline className="text-red-500 text-xl" />
+                        <IoDocumentTextOutline className="text-red-500 text-base" />
                       ) : (
-                        <IoImageOutline className="text-indigo-500 text-xl" />
+                        <IoImageOutline className="text-indigo-500 text-base" />
                       )}
-                      <span className={`text-xs ${isDark ? "text-gray-400" : "text-gray-600"}`}>
+                      <span className="text-xs text-slate-600 dark:text-slate-400 truncate max-w-[200px]">
                         {file.name}
                       </span>
                     </div>
                     <button
                       onClick={() => removeFile(index)}
-                      className={`p-1 rounded ${isDark ? "hover:bg-white/10" : "hover:bg-gray-200"}`}
+                      className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
                     >
-                      <IoCloseOutline className={`text-sm ${isDark ? "text-gray-400" : "text-gray-500"}`} />
+                      <IoCloseOutline className="text-sm text-slate-500" />
                     </button>
                   </div>
                 ))}
@@ -578,32 +657,35 @@ export function DisputeModal({ isOpen, onClose, onSuccess, preselectedBookingId 
           </div>
         </div>
 
-        {/* Footer - exactement comme ton HTML */}
-        <div className={`px-8 py-6 flex items-center justify-end gap-4 border-t ${
-          isDark ? "border-white/10" : "border-outline-variant/10"
-        }`}>
+        {/* Footer */}
+        <div className="px-6 py-5 flex items-center justify-end gap-3 border-t border-slate-200 dark:border-slate-700">
           <button
             onClick={onClose}
-            className={`px-6 py-3 rounded-full font-semibold transition-all ${
-              isDark
-                ? "text-gray-400 hover:bg-white/10"
-                : "text-on-surface-variant hover:bg-surface-container-high"
-            }`}
+            className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
           >
-            Annuler
+            {t("buttons.cancel")}
           </button>
           <button
             onClick={handleSubmit}
-            disabled={submitting || uploadingFiles || !selectedBooking || !selectedCategory || !subject || !description}
-            className="px-8 py-3 rounded-full font-semibold text-white bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+            disabled={
+              submitting ||
+              uploadingFiles ||
+              !selectedBooking ||
+              !selectedCategory ||
+              !subject ||
+              !description
+            }
+            className="px-6 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-sky-600 to-purple-600 hover:from-sky-700 hover:to-purple-700 shadow-md shadow-indigo-500/25 hover:shadow-lg transition-all disabled:opacity-50 disabled:hover:scale-100 flex items-center gap-2"
           >
             {submitting || uploadingFiles ? (
-              <span className="flex items-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                {uploadingFiles ? "Upload..." : "Soumission..."}
-              </span>
+              <>
+                <span className="w-4 h-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                {uploadingFiles
+                  ? t("buttons.uploading")
+                  : t("buttons.submitting")}
+              </>
             ) : (
-              "Soumettre le litige"
+              t("buttons.submit")
             )}
           </button>
         </div>

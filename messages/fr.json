@@ -191,7 +191,22 @@
     "accountLockedTooManyAttempts": "Trop de tentatives de connexion. Votre compte est verrouillé pour 15 minutes.",
     "incorrectPasswordWithAttempts": "Mot de passe incorrect. Il vous reste {remaining} tentative(s) avant que votre compte ne soit verrouillé.",
 
-    "profileTypeRequiredForBoth": "Vous avez un compte Propriétaire ET Locataire. Veuillez choisir le type de profil que vous souhaitez utiliser aujourd'hui."
+    "profileTypeRequiredForBoth": "Vous avez un compte Propriétaire ET Locataire. Veuillez choisir le type de profil que vous souhaitez utiliser aujourd'hui.",
+    "secureAccess": "Vérification d'identité renforcée",
+    "enterCodeSentTo": "Un code de validation temporaire a été transmis à l'adresse électronique suivante",
+    "verificationCode": "Code de validation (6 caractères)",
+    "trustDevice": "Mémoriser cet appareil pour les connexions ultérieures",
+    "trustDeviceTooltip": "Cette option permet de bénéficier d'un accès simplifié sans double authentification depuis ce navigateur, sous réserve que l'appareil reste sous votre contrôle exclusif. Nous déconseillons cette option sur les équipements partagés ou publics.",
+    "verify": "Valider le code",
+    "back": "Retour à la connexion",
+    "limitedTimeCode": "Dispositif de sécurité temporaire",
+    "codeExpiresIn": "Ce code de vérification n'est valable que pendant une durée limitée. Il expirera automatiquement dans",
+    "didNotReceiveCode": "Le message de vérification ne vous est pas parvenu ?",
+    "sending": "Génération et envoi d'un nouveau code...",
+    "resend": "Solliciter un nouveau code de vérification",
+    "securityBadge": "Protocole de sécurité avancé - Échange chiffré conforme aux standards TLS 1.3",
+
+    "2faAlt": "Schéma illustratif du processus d'authentification à deux facteurs"
   },
   "admin": {
     "dashboard": "Tableau de bord",
@@ -1506,34 +1521,36 @@
     "success": {
       "message": "Un lien de réinitialisation a été envoyé à {email}"
     },
+
     "title": "Mot de passe oublié",
-    "subtitle": "Entrez votre email pour recevoir un lien de réinitialisation",
-    "emailLabel": "Email",
+    "subtitle": "Saisissez votre adresse email pour recevoir un lien de réinitialisation sécurisé",
+    "emailLabel": "Adresse email",
     "emailPlaceholder": "votre@email.com",
-    "sendResetLink": "Envoyer le lien",
+    "sendResetLink": "Envoyer le lien ",
     "sending": "Envoi en cours...",
-    "backToLogin": "Retour à la connexion",
-    "securityBadge": "Chiffrement AES-256 • Conforme RGPD",
+    "backToLogin": "Retourner à la connexion",
+    "securityBadge": "Chiffrement AES-256 • Protection des données (RGPD)",
     "legal": "Mentions légales",
+
     "privacy": "Confidentialité"
   },
   "ResetPassword": {
-    "title": "Réinitialiser le mot de passe",
-    "subtitle": "Créez un nouveau mot de passe sécurisé",
-    "subtitleWithEmail": "Créez un nouveau mot de passe pour {email}",
-    "successTitle": "Mot de passe modifié !",
-    "successMessage": "Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la page de connexion.",
+    "title": "Création d'un nouveau mot de passe",
+    "subtitle": "Veuillez définir un mot de passe robuste pour sécuriser l'accès à votre compte",
+    "subtitleWithEmail": "Définissez un nouveau mot de passe pour le compte associé à {email}",
+    "successTitle": "Mot de passe mis à jour avec succès",
+    "successMessage": "Votre mot de passe a été réinitialisé. Vous allez être redirigé automatiquement vers la page de connexion dans quelques instants.",
     "newPasswordLabel": "Nouveau mot de passe",
-    "newPasswordPlaceholder": "••••••••",
-    "confirmPasswordLabel": "Confirmer le mot de passe",
-    "confirmPasswordPlaceholder": "••••••••",
-    "resetPassword": "Réinitialiser",
-    "resetting": "Réinitialisation...",
-    "backToLogin": "Retour à la connexion",
-    "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
-    "securityBadge": "Chiffrement AES-256 • Conforme RGPD",
-    "legal": "Mentions légales",
-    "privacy": "Confidentialité",
+    "newPasswordPlaceholder": "Saisissez votre nouveau mot de passe",
+    "confirmPasswordLabel": "Confirmation du nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Ressaisissez votre nouveau mot de passe",
+    "resetPassword": "Valider la modification",
+    "resetting": "Mise à jour en cours...",
+    "backToLogin": "Retourner à la connexion",
+    "passwordsDoNotMatch": "Les mots de passe saisis ne correspondent pas. Veuillez vérifier et réessayer.",
+    "securityBadge": "Protection AES-256 • Conformité RGPD • Stockage sécurisé des identifiants",
+    "legal": "Mentions légales ",
+    "privacy": "confidentialité",
     "errors": {
       "passwordRequired": "Le mot de passe est requis",
       "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères",
@@ -1545,9 +1562,19 @@
       "general": "Une erreur est survenue",
       "connection": "Erreur de connexion"
     },
+    "strengthVeryWeak": "Très faible",
     "strengthWeak": "Faible",
     "strengthMedium": "Moyen",
-    "strengthStrong": "Fort"
+    "strengthStrong": "Fort",
+    "strengthVeryStrong": "Très fort",
+    "passwordMinLength": "Min. 8 caractères",
+    "passwordUppercase": "Majuscule (A-Z)",
+    "passwordLowercase": "Minuscule (a-z)",
+    "passwordNumber": "Chiffre (0-9)",
+    "passwordSpecialChar": "Caractère spécial (!@#$%^&*)",
+
+    "passwordMatch": "Les mots de passe correspondent",
+    "passwordNoMatch": "Les mots de passe ne correspondent pas"
   },
 
   "VerificationsHistory": {
@@ -3158,62 +3185,148 @@
     }
   },
   "Profile": {
-    "loading": {
-      "message": "Chargement de votre profil..."
-    },
     "page": {
-      "badge": "Espace propriétaire",
-      "title": "Mon Profil",
-      "description": "Gérez vos informations personnelles et votre niveau de confiance."
+      "title": "  Mon Profil",
+      "description": "Gérez vos informations personnelles et préférences"
     },
-    "actions": {
-      "edit": "Modifier",
-      "cancel": "Annuler",
-      "save": "Enregistrer",
-      "saving": "Enregistrement...",
-      "add": "Ajouter"
+    "loading": {
+      "message": "Chargement du profil..."
     },
     "sections": {
       "personalInfo": "Informations personnelles",
-      "availability": "Disponibilités de contact"
+      "availability": "Disponibilités"
     },
-    "avatar": {
-      "title": "Photo de profil",
-      "description": "Une photo claire aide les propriétaires et locataires à vous faire confiance. JPG ou PNG, max 5 Mo.",
+    "actions": {
       "edit": "Modifier",
-      "delete": "Supprimer"
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "add": "Ajouter"
     },
     "fields": {
+      "username": "Nom d'utilisateur",
+      "usernamePlaceholder": "nom_utilisateur",
       "firstName": "Prénom",
       "lastName": "Nom",
       "userType": "Type d'utilisateur",
       "notEditable": "Non modifiable",
       "email": "Email",
       "phone": "Téléphone",
+      "phonePlaceholder": "+216 00 000 000",
       "profession": "Profession",
-      "bio": "Biographie",
-      "bioPlaceholder": "Parlez-nous de vous, de vos propriétés…",
-      "languages": "Langues parlées"
+      "bio": "Bio",
+      "bioPlaceholder": "Parlez-nous de vous...",
+      "languages": "Langues"
+    },
+    "avatar": {
+      "title": "Photo de profil",
+      "description": "JPG, PNG ou JPEG. Max 2 Mo.",
+      "alt": "Profil",
+      "edit": "Changer",
+      "delete": "Supprimer"
+    },
+    "validation": {
+      "checking": "Vérification...",
+      "available": "Nom d'utilisateur disponible"
     },
     "availability": {
-      "description": "Créneaux préférés pour les appels et visites"
+      "description": "Définissez vos jours et horaires de travail",
+      "clickToEdit": "Cliquez pour modifier",
+      "days": {
+        "monday": "Lun",
+        "tuesday": "Mar",
+        "wednesday": "Mer",
+        "thursday": "Jeu",
+        "friday": "Ven",
+        "saturday": "Sam",
+        "sunday": "Dim",
+        "lun - ven": "Lun - Ven",
+        "samedi": "Sam",
+        "dimanche": "Dim"
+      },
+      "hours": {
+        "fullDay": "09:00 - 19:00 (Journée)",
+        "morning": "10:00 - 15:00 (Matinée)",
+        "earlyMorning": "08:00 - 12:00 (Matin)",
+        "afternoon": "14:00 - 20:00 (Après-midi)",
+        "byAppointment": "Sur rendez-vous",
+        "closed": "Fermé"
+      }
+    },
+    "languages": {
+      "select": "Sélectionner..."
     },
     "trust": {
       "title": "Score de confiance",
-      "idVerified": "Pièce d'identité vérifiée",
+      "idVerified": "Identité vérifiée",
       "positiveReviews": "{count} avis positifs",
       "memberSince": "Membre depuis {date}"
     },
+    "trustLevels": {
+      "new": "Nouveau",
+      "reliable": "Fiable",
+      "expert": "Expert",
+      "superhost": "Superhôte"
+    },
+    "userTypes": {
+      "owner": "Propriétaire",
+      "tenant": "Locataire",
+      "both": "Les deux",
+      "default": "Utilisateur"
+    },
+    "badges": {
+      "verified": "Vérifié",
+      "superhost": "Superhôte",
+      "expert": "Expert",
+      "reliable": "Fiable"
+    },
     "verification": {
-      "title": "Vérification",
-      "status": "Statut OCR",
-      "verified": "Validé",
-      "pending": "En attente",
-      "idType": "CIN Tunisienne",
-      "description": "La vérification d'identité renforce la confiance et vous permet de louer plus rapidement.",
-      "update": "Mettre à jour les documents",
+      "title": "Vérification d'identité",
+      "status": "Statut",
+      "idType": "Carte d'identité (CIN)",
+      "description": "Vérifiez votre identité pour accéder à toutes les fonctionnalités et établir la confiance avec les autres utilisateurs.",
+      "statuses": {
+        "validated": " Vérifié",
+        "rejected": " Rejeté",
+        "pending": " En attente"
+      },
+      "rejectionReason": "Motif",
+      "validatedButton": " Identité vérifiée",
+      "sendReminder": "Envoyer un rappel",
+      "reminderSent": "Rappel envoyé",
+      "reapply": "Réappliquer maintenant",
       "start": "Commencer la vérification",
-      "verifiedDate": "Vérifiée le {date}"
+      "waitTime": "Veuillez patienter {hours} heures avant d'envoyer un autre rappel",
+      "reminderSentMessage": "Un rappel a été envoyé à l'administrateur. Vous serez notifié une fois votre identité vérifiée."
+    },
+    "stats": {
+      "title": "Statistiques",
+      "properties": "Propriétés",
+      "bookings": "Réservations",
+      "reviews": "Avis reçus",
+      "earnings": "Gains totaux",
+      "responseRate": "Taux de réponse",
+      "responseTime": "Temps de réponse",
+      "completionRate": "Complétion du profil"
+    },
+    "toasts": {
+      "profileUpdated": "Profil mis à jour avec succès !",
+      "profileUpdateError": "Erreur lors de la mise à jour du profil",
+      "pictureUploaded": "Photo de profil mise à jour !",
+      "pictureUploadError": "Erreur lors du téléchargement de l'image",
+      "pictureRemoved": "Photo de profil supprimée",
+      "pictureRemoveError": "Erreur lors de la suppression de l'image",
+      "languageAdded": "Langue ajoutée",
+      "languageRemoved": "Langue supprimée",
+      "availabilityUpdated": "Disponibilités mises à jour !",
+      "usernameAvailable": "Nom d'utilisateur disponible !",
+      "usernameTaken": "Ce nom d'utilisateur est déjà pris",
+      "usernameError": "Erreur lors de la vérification du nom d'utilisateur",
+      "verificationStarted": "Vérification d'identité commencée",
+      "verificationSubmitted": "Documents soumis avec succès !",
+      "verificationError": "Erreur lors de la soumission",
+      "reminderSent": "Rappel envoyé à l'administrateur",
+      "reminderError": "Erreur lors de l'envoi du rappel",
+      "reminderWait": "Veuillez patienter avant d'envoyer un autre rappel"
     }
   },
   "settings": {
@@ -3553,6 +3666,12 @@
   },
 
   "MessagesPage": {
+    "roleAdmin": "support",
+    "filters": {
+      "all": "Tous",
+      "groups": "Groupes",
+      "private": "Privés"
+    },
     "loading": "Chargement des messages...",
     "title": "Messages",
     "selectConversation": "Sélectionnez une conversation",
@@ -3572,7 +3691,8 @@
     },
     "actions": {
       "accept": "Accepter la demande",
-      "reject": "Refuser"
+      "reject": "Refuser",
+      "viewContract": "Voir le contrat"
     },
     "sidebar": {
       "property": "Propriété",
@@ -3593,7 +3713,8 @@
       "expiration": "Expiration",
       "noOffer": "Aucune offre en cours",
       "quickActions": "Actions rapides",
-      "note": "En acceptant, vous pré-approuvez la réservation. Le locataire aura 24h pour finaliser le paiement."
+      "note": "En acceptant, vous pré-approuvez la réservation. Le locataire aura 24h pour finaliser le paiement.",
+      "notVerified": "Non vérifié"
     },
     "messages": {
       "noOffer": "Aucune offre en attente",
@@ -3614,7 +3735,9 @@
       "title": "Aucune conversation",
       "description": "Les messages des voyageurs apparaîtront ici dès qu'ils vous contacteront.",
       "button": "Voir mes annonces",
-      "helpLink": "Comment gérer mes messages ?"
+      "helpLink": "Comment gérer mes messages ?",
+      "noGroups": "Aucun groupe",
+      "noPrivate": "Aucune conversation privée"
     }
   },
   "ListingPage": {
@@ -4141,46 +4264,7 @@
     "processing": "Traitement en cours...",
     "cancel": "Annuler"
   },
-  "Settings": {
-    "title": "Paramètres de l'Application",
-    "description": "Configurez les variables globales, les protocoles de sécurité et la logique métier de la plateforme.",
-    "searchPlaceholder": "Rechercher des paramètres...",
-    "loading": "Chargement des paramètres...",
-    "categories": "Gestion des Catégories",
-    "newCategory": "Nouvelle catégorie",
-    "addCategory": "Ajouter",
-    "commissionSettings": "Paramètres de Commission",
-    "standardCommission": "Commission Standard",
-    "premiumCommission": "Commission Premium",
-    "searchConfiguration": "Configuration de la Recherche",
-    "defaultSearchRadius": "Rayon de recherche par défaut",
-    "displayPriority": "Priorité d'affichage",
-    "newestFirst": "Nouveaux inscrits d'abord",
-    "topRatedFirst": "Mieux notés d'abord",
-    "highCommissionFirst": "Commission élevée d'abord",
-    "popularDestinations": "Destinations Populaires",
-    "addDestination": "+ Ajouter",
-    "moderationRules": "Règles de Modération",
-    "autoHideSuspicious": "Auto-masquage suspect",
-    "autoHideDescription": "Masquer automatiquement les annonces signalées plus de X fois.",
-    "reports": "signalements",
-    "blacklistedKeywords": "Liste noire des mots-clés",
-    "addKeyword": "Ajouter un mot-clé",
-    "add": "Ajouter",
-    "supportServices": "Services de Support",
-    "helpCenter": "Centre d'aide",
-    "testLink": "Tester le lien",
-    "emergencyNumber": "Numéro d'urgence",
-    "emergencyHint": "Visible uniquement pour les hôtes Premium",
-    "emailRouting": "Routage Email",
-    "manageAliases": "Gérer les alias",
-    "reset": "Réinitialiser",
-    "saveChanges": "Enregistrer",
-    "saveSuccess": "Paramètres sauvegardés avec succès",
-    "saveError": "Erreur lors de la sauvegarde",
-    "connectionError": "Erreur de connexion",
-    "resetSuccess": "Paramètres réinitialisés"
-  },
+
   "CompleteProfile": {
     "importedFromPassport": "importé depuis votre passeport",
     "ribPlaceholder": "TN59 1234...",
@@ -4270,11 +4354,11 @@
   "Common": {
     "logoutConfirm": "Déconnexion",
     "logoutMessage": "Voulez-vous vraiment quitter votre espace ?",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "logout": "Déconnexion",
+    "connected": "Connecté"
   },
   "ChooseRole": {
-    "connected": "Connecté",
-    "logout": "Déconnexion",
     "greeting": "Bienvenue",
     "user": "invité",
     "title": "Sous quel ciel souhaitez-vous poser vos valises ",
@@ -4320,7 +4404,13 @@
     "tenant": "Locataire",
     "logoutConfirm": "Déconnexion",
     "logoutMessage": "Voulez-vous vraiment quitter votre espace ?",
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "toast": {
+      "rememberedOwner": " Votre choix (Propriétaire) a été mémorisé pour vos prochaines visites !",
+      "rememberedTenant": " Votre choix (Locataire) a été mémorisé pour vos prochaines visites !",
+      "notRemembered": " Votre choix n'a pas été mémorisé. Vous devrez choisir à nouveau la prochaine fois.",
+      "error": " Une erreur est survenue. Veuillez réessayer."
+    }
   },
   "TrustStrip": {
     "ssl": "100% Sécurisé",
@@ -4330,7 +4420,7 @@
   },
   "Footer": {
     "rights": "Tous droits réservés",
-    "help": "Aide",
+    "contact": "Contact",
     "privacy": "Confidentialité",
     "terms": "Conditions"
   },
@@ -4390,77 +4480,80 @@
 
   "OwnerDisputes": {
     "page": {
-      "title": "Gestion des Litiges",
-      "description": "Gérez vos différends en cours, téléchargez des preuves et suivez les médiations de vos propriétés."
+      "title": "Mes litiges",
+      "description": "Consultez et suivez l'évolution de vos litiges"
     },
-    "stats": {
-      "openDisputes": "Litiges Actifs",
-      "inReview": "En Révision",
-      "resolvedMonth": "Résolus (Mois)",
-      "totalDisputes": "Total Litiges"
+    "loading": "Chargement de vos litiges...",
+    "refreshing": "Rafraîchissement...",
+    "live": "En direct",
+    "dispute": "litige",
+    "disputes": "litiges",
+    "disputeId": "Litige",
+    "createdAt": "Date d'ouverture",
+    "updatedAt": "Dernière modification",
+    "resolvedAt": "Date de résolution",
+    "priority": "Priorité",
+    "description": "Description du litige",
+    "evidence": "Preuves jointes",
+    "document": "Document",
+    "bookingInfo": "Informations de la réservation",
+    "selectDispute": "Aucun litige sélectionné",
+    "selectDisputeDescription": "Cliquez sur un litige pour voir tous les détails",
+    "ownerInfo": "Un modérateur NESTHUB examine actuellement ce litige",
+    "adminHandles": "Vous serez notifié dès qu'une décision sera prise",
+    "alerts": {
+      "loadError": "Erreur lors du chargement des litiges"
     },
     "status": {
-      "open": "Action Requise",
-      "openDesc": "Ce litige nécessite votre attention immédiate",
-      "inReview": "En Révision",
-      "inReviewDesc": "Notre équipe analyse actuellement ce dossier",
+      "open": "Ouvert",
+      "openDesc": "En attente d'examen par un modérateur",
+      "inReview": "En cours",
+      "inReviewDesc": "En cours d'analyse par notre équipe",
       "resolved": "Résolu",
-      "resolvedDesc": "Ce litige a été résolu avec succès",
-      "closed": "Clôturé",
-      "closedDesc": "Ce dossier est fermé"
+      "resolvedDesc": "Une décision a été prise",
+      "closed": "Fermé",
+      "closedDesc": "Litige clos"
     },
-    "disputeTypes": {
-      "damage": "Dommages matériels",
-      "damageFurniture": "Dommages Mobilier Salon",
-      "payment": "Problème de paiement",
-      "paymentLate": "Retard Paiement Loyer",
-      "cancellation": "Annulation",
-      "cancellationBooking": "Annulation Réservation",
+    "types": {
+      "damages": "Dégâts matériels",
+      "cleaning": "Propreté",
+      "payment": "Paiement",
+      "noise": "Bruit",
+      "amenities": "Équipements manquants",
       "other": "Autre litige"
     },
-    "filters": {
-      "title": "Filtres",
-      "status": "Statut",
-      "allStatus": "Tous les statuts",
-      "search": "Recherche",
-      "searchPlaceholder": "ID, Propriété, Client...",
-      "reset": "Réinitialiser"
+    "priority": {
+      "low": "Faible",
+      "medium": "Moyenne",
+      "high": "Élevée"
     },
-    "tabs": {
-      "all": "Tous",
-      "open": "Actifs",
-      "inReview": "En Révision",
-      "resolved": "Résolus"
+    "stats": {
+      "openDisputes": "Litiges actifs",
+      "inReview": "En examen",
+      "resolved": "Résolus",
+      "avgResolution": "Résolution moyenne",
+      "days": "jours"
+    },
+    "filters": {
+      "searchPlaceholder": "Rechercher un litige...",
+      "allStatus": "Tous les statuts",
+      "allPriority": "Toutes priorité",
+      "clearFilters": "Effacer les filtres"
+    },
+    "sort": {
+      "newest": "Plus récent",
+      "oldest": "Plus ancien",
+      "priority": "Priorité"
     },
     "actions": {
-      "exportCSV": "Exporter en CSV",
-      "refresh": "Actualiser",
-      "viewDetails": "Voir Détails",
-      "accept": "Accepter",
-      "reject": "Rejeter",
-      "escalate": "Escalader"
+      "viewDetails": "Voir les détails"
     },
     "emptyState": {
-      "title": "Aucun litige trouvé",
-      "description": "Aucun dossier ne correspond à vos critères de recherche.",
-      "helpLink": "Comment gérer un litige ?"
-    },
-    "selectDispute": "Sélectionnez un litige",
-    "selectDisputeDescription": "Choisissez un dossier dans la liste pour voir l'historique des échanges, les preuves et prendre une action.",
-    "messagePlaceholder": "Écrire un message...",
-    "messageInfo": "Ce message sera visible par l'équipe de médiation",
-    "description": "Description",
-    "lastMessage": "Dernier message",
-    "amount": "Montant",
-    "amountLabel": "Montant du litige",
-    "loading": "Chargement des litiges en cours...",
-    "alerts": {
-      "messageSent": "Message envoyé avec succès",
-      "messageError": "Erreur lors de l'envoi du message"
-    },
-    "aiTip": {
-      "title": "Astuce IA",
-      "description": "Les litiges ouverts sont généralement résolus en moins de 48h. Fournissez des preuves claires pour accélérer le processus."
+      "title": "Aucun litige",
+      "description": "Vous n'avez aucun litige en cours",
+      "noResults": "Aucun résultat",
+      "tryDifferent": "Aucun litige ne correspond à vos critères",
+      "helpLink": "En savoir plus sur les litiges"
     }
   },
 
@@ -5775,7 +5868,8 @@
       "message": "Message",
       "cancel": "Annuler",
       "review": "Donner un avis",
-      "reviewGiven": "Avis donné"
+      "reviewGiven": "Avis donné",
+      "openDispute": "Ouvrir un litige"
     },
     "stats": {
       "pending": "En attente",
@@ -5807,7 +5901,8 @@
       "rejectError": "Erreur lors du refus",
       "networkError": "Erreur de connexion",
       "reviewSuccess": " Avis publié avec succès ! Le locataire recevra une notification.",
-      "reviewError": "Erreur lors de la publication de l'avis"
+      "reviewError": "Erreur lors de la publication de l'avis",
+      "disputeCreated": "Litige soumis avec succès"
     },
     "rejectReason": {
       "default": "Dates non disponibles"
@@ -5890,6 +5985,415 @@
       "confirm": "Confirmer l'annulation",
       "cancelling": "Annulation en cours...",
       "back": "Retour"
+    }
+  },
+  "ChatBox": {
+    "loading": "Chargement de votre conversation...",
+    "header": {
+      "dispute": "Litige",
+      "disputeConversation": "Conversation de litige"
+    },
+    "typing": "est en train d'écrire...",
+    "status": {
+      "online": "En ligne",
+      "offline": "Hors ligne",
+      "reconnecting": "Reconnexion…",
+      "locked": "Verrouillé"
+    },
+    "menu": {
+      "report": "Signaler la conversation",
+      "blocked": "Utilisateur bloqué",
+      "blockCooldown": "Bloqué (reste {hours}h)",
+      "blockUser": "Bloquer cet utilisateur"
+    },
+    "safety": {
+      "title": "Algorithme de protection NESTHUB",
+      "defaultMessage": "Notre système de sécurité a détecté un risque potentiel. Cette discussion est sous surveillance temporaire."
+    },
+    "payment": {
+      "offerAccepted": "Offre acceptée !",
+      "proceedToPayment": "Procédez au paiement pour finaliser votre réservation",
+      "payNow": "Payer maintenant"
+    },
+    "block": {
+      "youAreBlocked": "{name} vous a bloqué. Vous ne pouvez plus lui envoyer de messages.",
+      "userBlocked": "{name} a été bloqué",
+      "userUnblocked": "{name} a été débloqué",
+      "blockError": "Erreur lors du blocage",
+      "unblockError": "Erreur lors du déblocage",
+      "systemMessageBlock": " Vous avez bloqué {name}. Vous ne recevrez plus ses messages.",
+      "systemMessageUnblock": " Vous avez débloqué {name}. Vous pouvez à nouveau lui envoyer des messages.",
+      "messageBlocked": "Message bloqué",
+      "cooldown": "Bloque uniquement toutes les 48h. Encore {hours}h",
+      "blockTitle": "Bloquer {name}",
+      "blockDescription": "Vous ne pourrez plus lui envoyer de messages",
+      "reversible": "Cette action est réversible après 48 heures",
+      "cancel": "Annuler",
+      "confirm": "Bloquer",
+      "youBlocked": "Vous avez bloqué {name}",
+      "noMoreMessages": "Vous ne recevrez plus ses messages",
+      "unblock": "Débloquer"
+    },
+    "report": {
+      "cooldown": "Vous pouvez signaler une conversation toutes les 5 minutes",
+      "defaultReason": "Comportement inapproprié",
+      "success": "Conversation signalée à l'équipe de modération",
+      "error": "Erreur lors du signalement"
+    },
+    "voice": {
+      "loading": "Chargement...",
+      "unavailable": "Audio non disponible",
+      "tooShort": "Message vocal trop court",
+      "microphoneError": "Impossible d'accéder au microphone"
+    },
+    "reply": {
+      "to": "Réponse à",
+      "replyTo": "↳ Réponse à"
+    },
+    "system": {
+      "user": "L'utilisateur",
+      "createdOffer": "a créé une offre de réservation d'une durée de",
+      "night": "nuit",
+      "nights": "nuits",
+      "from": "du",
+      "to": "au",
+      "for": "pour",
+      "traveler": "voyageur",
+      "travelers": "voyageurs",
+      "estimatedAt": "estimée à",
+      "ownerHas24h": "Le propriétaire dispose de 24 heures pour répondre.",
+      "bookingConfirmed": "Réservation confirmée",
+      "bookingValidated": "La réservation a été validée."
+    },
+    "offer": {
+      "dateNotDefined": "Date non définie",
+      "reservationOffer": "Offre de réservation",
+      "estimatedPrice": "Prix estimé",
+      "traveler": "voyageur",
+      "travelers": "voyageurs",
+      "sending": "Envoi en cours...",
+      "createOffer": "Créer l'offre de réservation",
+      "expiresIn24h": "Cette offre expirera dans 24h après création",
+      "created": "Offre créée avec succès !",
+      "createdOfferMessage": "a créé une offre de réservation d'une durée de {nights} nuit{s} du {checkIn} au {checkOut} pour {guests} voyageur(s) estimée à {totalPrice} TND. Le propriétaire dispose de 24 heures pour répondre.",
+      "createError": "Erreur lors de la création"
+    },
+    "context": {
+      "reply": "Répondre",
+      "delete": "Supprimer"
+    },
+    "confirm": {
+      "delete": "Êtes-vous sûr de vouloir supprimer ce message ?"
+    },
+    "toast": {
+      "messageDeleted": "Message supprimé",
+      "deleteError": "Erreur lors de la suppression",
+      "connectionError": "Erreur de connexion",
+      "sendError": "Erreur lors de l'envoi",
+      "voiceSent": "Message vocal envoyé"
+    },
+    "availability": {
+      "vacationMode": "Le propriétaire est actuellement en vacances.",
+      "notAvailableToday": "Le propriétaire n'est pas disponible aujourd'hui.",
+      "closedToday": "Le propriétaire est fermé aujourd'hui.",
+      "availableAt": "Le propriétaire sera disponible à {hour}:{minute}."
+    },
+    "listing": {
+      "perNight": "nuit",
+      "bedroom": "ch.",
+      "bedrooms": "ch.",
+      "person": "pers.",
+      "persons": "pers."
+    },
+    "empty": {
+      "noMessages": "Aucun message",
+      "beFirst": "Soyez le premier à envoyer un message"
+    },
+    "moderation": {
+      "reported": "SIGNALÉ",
+      "violation": "Ce message viole nos conditions de sécurité"
+    },
+    "emoji": {
+      "search": "Rechercher..."
+    },
+    "input": {
+      "placeholder": "Écrire un message…",
+      "replyPlaceholder": "Répondre à {name}..."
+    },
+    "footer": {
+      "secureMessages": "Messages sécurisés · Ne partagez pas vos informations personnelles"
+    },
+    "suspended": {
+      "title": "Cette conversation est temporairement suspendue pour votre sécurité",
+      "description": "Afin de protéger vos données personnelles et d'éviter toute fraude, le système Atlas a restreint l'envoi de messages. Un modérateur NestHub examine actuellement cet échange.",
+      "reportProblem": "Signaler un problème",
+      "viewRules": "Consulter nos règles",
+      "securityAlert": "Alerte sécurité active"
+    }
+  },
+  "DisputeModal": {
+    "title": "Ouvrir un nouveau litige",
+    "info": {
+      "title": "Espace de Conciliation",
+      "description": "Veuillez fournir des détails précis pour une résolution rapide."
+    },
+    "booking": {
+      "label": "Réservation concernée",
+      "select": "Sélectionnez une réservation...",
+      "noBookings": "Aucune réservation terminée"
+    },
+    "category": {
+      "label": "Catégorie du litige",
+      "damages": "Dommages",
+      "damagesDesc": "Biens endommagés, cassés ou détériorés",
+      "cleanliness": "Propreté",
+      "cleanlinessDesc": "Logement non propre à l'arrivée",
+      "payment": "Paiement",
+      "paymentDesc": "Facturation incorrecte ou frais non justifiés",
+      "noise": "Bruit",
+      "noiseDesc": "Troubles de voisinage ou bruit excessif",
+      "amenities": "Carence",
+      "amenitiesDesc": "Services ou équipements non fournis",
+      "other": "Autre",
+      "otherDesc": "Votre situation ne correspond à aucune catégorie"
+    },
+    "priority": {
+      "label": "Priorité du litige",
+      "low": "Faible",
+      "medium": "Moyenne",
+      "high": "Élevée",
+      "description": "Évaluez la gravité du problème (ex: TV volée = Priorité élevée)"
+    },
+    "subject": {
+      "label": "Sujet du litige",
+      "placeholder": "Ex: Climatisation défectueuse à l'arrivée"
+    },
+    "description": {
+      "label": "Description détaillée",
+      "placeholder": "Décrivez l'incident avec le plus de précisions possibles..."
+    },
+    "evidence": {
+      "label": "Preuves (Photos / PDF)",
+      "dragText": "Glissez-déposez vos fichiers ici",
+      "formats": "PNG, JPG ou PDF jusqu'à 10MB",
+      "browse": "Parcourir les fichiers"
+    },
+    "buttons": {
+      "cancel": "Annuler",
+      "submit": "Soumettre le litige",
+      "submitting": "Soumission...",
+      "uploading": "Upload..."
+    },
+    "success": {
+      "title": "Litige soumis",
+      "description": "Notre équipe examinera votre demande sous 24h.",
+      "close": "Fermer"
+    },
+    "toast": {
+      "loadError": "Erreur lors du chargement des réservations",
+      "unsupportedFiles": "{count} fichier(s) non supportés (PNG, JPG, PDF uniquement)",
+      "noBooking": "Veuillez sélectionner une réservation",
+      "noCategory": "Veuillez sélectionner une catégorie",
+      "noSubject": "Veuillez indiquer un sujet",
+      "noDescription": "Veuillez décrire la situation",
+      "success": "Litige soumis avec succès !",
+      "submitError": "Erreur lors de la soumission",
+      "connectionError": "Erreur de connexion"
+    }
+  },
+
+  "Settings": {
+    "page": {
+      "title": "Paramètres",
+      "description": "Gérez vos préférences de compte et vos paramètres de sécurité"
+    },
+    "loading": "Chargement des paramètres...",
+    "actions": {
+      "modify": "Modifier",
+      "save": "Sauvegarder",
+      "cancel": "Annuler"
+    },
+    "security": {
+      "title": "Sécurité",
+      "currentPassword": "Mot de passe actuel",
+      "newPassword": "Nouveau mot de passe",
+      "confirmPassword": "Confirmation",
+      "updateButton": "Mettre à jour le mot de passe",
+      "passwordsDoNotMatch": "Les mots de passe ne correspondent pas",
+      "passwordsMatch": "Les mots de passe correspondent",
+      "passwordSecurity": "Sécurité du mot de passe",
+      "criteria": {
+        "length": "Au moins 8 caractères",
+        "case": "Majuscule et minuscule",
+        "number": "Au moins un chiffre",
+        "special": "Caractère spécial recommandé"
+      }
+    },
+    "password": {
+      "strength": {
+        "veryWeak": "Très faible",
+        "weak": "Faible",
+        "medium": "Moyen",
+        "strong": "Fort",
+        "veryStrong": "Très fort"
+      },
+
+      "errors": {
+        "currentRequired": "Veuillez entrer votre mot de passe actuel",
+        "newRequired": "Veuillez entrer un nouveau mot de passe",
+        "notMatch": "Les mots de passe ne correspondent pas",
+        "tooWeak": "Le nouveau mot de passe n'est pas assez fort",
+        "incorrect": "Mot de passe actuel incorrect"
+      },
+      "success": "Mot de passe mis à jour avec succès !"
+    },
+    "sessions": {
+      "title": "Sessions actives",
+      "current": "Actuelle",
+      "unknownDevice": "Appareil inconnu",
+      "unknownLocation": "Localisation inconnue",
+      "unknownIp": "IP inconnue",
+      "revoke": "Révoquer",
+      "revoked": "Session révoquée avec succès",
+      "revokeError": "Erreur lors de la révocation"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "quietHours": "Heures calmes",
+      "quietHoursDescription": "Aucune notification de {start} à {end}",
+      "quietHoursSaved": "Heures calmes mises à jour",
+      "quietHoursError": "Erreur lors de la mise à jour",
+      "categories": {
+        "bookings": {
+          "name": "Réservations",
+          "desc": "Demandes, confirmations"
+        },
+        "payments": {
+          "name": "Paiements",
+          "desc": "Reçus, remboursements"
+        },
+        "messages": {
+          "name": "Messages",
+          "desc": "Nouveaux messages"
+        },
+        "reviews": {
+          "name": "Avis",
+          "desc": "Nouveaux avis"
+        },
+        "listings": {
+          "name": "Annonces",
+          "desc": "Activation, suspension"
+        },
+        "alerts": {
+          "name": "Alertes",
+          "desc": "Nouvelles correspondances"
+        },
+        "disputes": {
+          "name": "Litiges",
+          "desc": "Ouverts et résolus"
+        },
+        "offers": {
+          "name": "Offres",
+          "desc": "Reçues et acceptées"
+        }
+      }
+    },
+    "preferences": {
+      "title": "Préférences",
+      "language": "Langue",
+      "theme": "Thème",
+      "themeLight": "Clair",
+      "themeDark": "Sombre",
+      "themeSystem": "Système"
+    },
+    "language": {
+      "success": "Langue mise à jour avec succès",
+      "error": "Erreur lors du changement de langue"
+    },
+    "vacation": {
+      "title": "Mode vacances",
+      "description": "Activez ce mode pour suspendre temporairement vos annonces",
+      "startDate": "Date de début",
+      "endDate": "Date de fin",
+      "messagePlaceholder": "Message d'absence...",
+      "active": "Mode vacances activé - vos dates sont bloquées",
+      "enabled": "Mode vacances activé",
+      "disabled": "Mode vacances désactivé",
+      "error": "Erreur lors du changement",
+      "messageSaved": "Message de vacances sauvegardé",
+      "saveError": "Erreur lors de la sauvegarde"
+    },
+    "privacy": {
+      "title": "Données et vie privée",
+      "description": "Exportez ou supprimez vos données personnelles",
+      "exportCsv": "CSV",
+      "exportJson": "JSON",
+      "exportSuccess": "Données exportées avec succès au format {format}",
+      "exportError": "Erreur lors de l'exportation",
+      "deactivate": "Désactiver mon compte",
+      "deactivateDescription": "Vous pourrez réactiver votre compte plus tard",
+      "confirmDeactivate": "Êtes-vous sûr de vouloir désactiver votre compte ?",
+      "confirm": "Confirmer",
+      "cancel": "Annuler",
+      "deactivateSuccess": "Votre compte a été désactivé avec succès",
+      "deactivateError": "Erreur lors de la désactivation"
+    }
+  },
+  "UpgradeRole": {
+    "loading": {
+      "tenant": "Chargement de l'Espace Locataire",
+      "owner": "Chargement du Dashboard Propriétaire",
+      "preparing": "Préparation de votre environnement…"
+    },
+
+    "title": {
+      "part1": "Là où l'Offre",
+      "part2": "Rencontre la Demande"
+    },
+    "subtitle": {
+      "upgrade": "Activez gratuitement le mode double identité pour accéder aux deux univers NESTHUB.",
+      "both": "Vous avez maintenant accès aux deux univers NESTHUB. Choisissez votre rôle ci-dessous."
+    },
+
+    "tenant": {
+      "title": "Locataire",
+      "description": "Accédez aux meilleures résidences en Tunisie. Recherche intelligente, réservation sécurisée et conciergerie incluse.",
+      "features": "Recherche Avancée, Paiement Sécurisé",
+      "explore": "Explorer"
+    },
+    "owner": {
+      "title": "Propriétaire",
+      "description": "Gagnez et gérez votre patrimoine immobilier. Publiez vos annonces, recevez des réservations et maximisez vos revenus.",
+      "features": "Dashboard Complet, Paiements Sécurisés",
+      "manage": "Gérer"
+    },
+    "button": {
+      "activate": "Activer",
+      "initialize": "Initialiser Nexus",
+      "dualIdentity": "Double Identité"
+    },
+    "modal": {
+      "title": "Double Identité Activée",
+      "description": "Vous avez accès aux deux univers NESTHUB. Où souhaitez-vous aller ?",
+      "tenant": "Espace Locataire",
+      "tenantDesc": "Rechercher & réserver des résidences",
+      "owner": "Espace Propriétaire",
+      "ownerDesc": "Gérer vos biens & revenus",
+      "stay": "Rester sur cette page"
+    },
+    "toast": {
+      "dualActivated": "Mode Double Identité activé avec succès !",
+      "activationError": "Erreur lors de l'activation du mode double identité.",
+      "connectionError": "Erreur de connexion au serveur."
+    },
+    "footer": {
+      "privacy": "Confidentialité",
+      "terms": "Conditions",
+      "legal": "Mentions",
+      "contact": "Contact",
+      "rights": "Tous droits réservés",
+      "tagline": "Plateforme de Location Intelligente",
+      "free": "Activation Gratuite"
     }
   }
 }

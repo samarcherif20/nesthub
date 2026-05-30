@@ -23,13 +23,12 @@ export async function GET(req: NextRequest) {
         { status: 404 },
       );
     }
-    // AJOUTE CES LIGNES APRÈS `const user = await prisma.user.findUnique(...)`
 
     const searchParams = req.nextUrl.searchParams;
     const specificUserId = searchParams.get("userId");
     const specificListingId = searchParams.get("listingId");
 
-    // 🔥 SI on demande une conversation spécifique (bouton message)
+    //  SI on demande une conversation spécifique (bouton message)
     if (specificUserId && specificListingId) {
       // Vérifier que le listing existe
       const listing = await prisma.listing.findUnique({
@@ -111,6 +110,8 @@ export async function GET(req: NextRequest) {
             lastName: true,
             profilePictureUrl: true,
             username: true,
+            isIdentityVerified: true,
+            role: true,
           },
         },
         tenant: {
@@ -120,6 +121,8 @@ export async function GET(req: NextRequest) {
             lastName: true,
             profilePictureUrl: true,
             username: true,
+            isIdentityVerified: true,
+            role: true,
           },
         },
         messages: {
@@ -129,7 +132,6 @@ export async function GET(req: NextRequest) {
       },
       orderBy: { updatedAt: "desc" },
     });
-
     //  Récupérer les offres pour chaque conversation séparément
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conv) => {
@@ -144,17 +146,57 @@ export async function GET(req: NextRequest) {
         const otherUser = conv.ownerId === user.id ? conv.tenant : conv.owner;
         const lastMessage = conv.messages[0];
 
+        //  Récupérer les stats du locataire (avis REÇUS par le locataire)
+        const tenantStats = await prisma.userStats.findUnique({
+          where: { userId: otherUser.id },
+          select: {
+            reliabilityScore: true,
+            averageRating: true,
+            totalBookings: true,
+          },
+        });
+
+        //  Récupérer la note moyenne du LISTING (avis SUR la propriété)
+        const listingReviews = await prisma.review.aggregate({
+          where: {
+            targetId: conv.listing.id,
+            targetType: "LISTING",
+            isPublished: true,
+          },
+          _avg: { rating: true },
+          _count: { rating: true },
+        });
+
         //  Récupérer l'offre en attente pour cette conversation (via infoRequest)
         let activeOffer = null;
+        let isPaid = false;
+        let contractUrl = null;
+
         if (conv.infoRequestId) {
           const offer = await prisma.offer.findFirst({
             where: {
               infoRequestId: conv.infoRequestId,
-              //status: "PENDING",
             },
             orderBy: { createdAt: "desc" },
           });
           activeOffer = offer;
+
+          // Vérifier si le paiement a été effectué
+          if (activeOffer) {
+            const payment = await prisma.paymentTransaction.findFirst({
+              where: { offerId: activeOffer.id, status: "SUCCESS" },
+            });
+            isPaid = !!payment;
+
+            //  Récupérer le contrat si disponible
+            if (activeOffer.status === "ACCEPTED") {
+              const booking = await prisma.booking.findFirst({
+                where: { offerId: activeOffer.id },
+                include: { contract: true },
+              });
+              contractUrl = booking?.contract?.pdfUrl || null;
+            }
+          }
         }
 
         // Construire le nom complet
@@ -176,15 +218,20 @@ export async function GET(req: NextRequest) {
             maxGuests: conv.listing.maxGuests,
             bedrooms: conv.listing.rooms,
             location: location,
-            rating: 4.5,
+            rating: listingReviews._avg.rating || 0,
+            reviewCount: listingReviews._count.rating || 0,
             image: conv.listing.photos[0]?.url,
           },
           otherUser: {
             id: otherUser.id,
-            username: otherUsername,
+            username: otherUser.role === "ADMIN" ? "Admin" : otherUsername,
             image: otherUser.profilePictureUrl,
             isOnline: false,
-            isVerified: false,
+            isVerified: otherUser.isIdentityVerified || false,
+            reliabilityScore: tenantStats?.reliabilityScore || 50,
+            averageRating: tenantStats?.averageRating || 0,
+            totalStays: tenantStats?.totalBookings || 0,
+            role: otherUser.role,
           },
           infoRequest: conv.infoRequest
             ? {
@@ -196,7 +243,6 @@ export async function GET(req: NextRequest) {
                 expiresAt: conv.infoRequest.expiresAt?.toISOString(),
               }
             : null,
-          //  AJOUT : Inclure l'offre dans la réponse
           offer: activeOffer
             ? {
                 id: activeOffer.id,
@@ -204,6 +250,8 @@ export async function GET(req: NextRequest) {
                 totalPrice: activeOffer.totalPrice,
                 createdAt: activeOffer.createdAt.toISOString(),
                 expiresAt: activeOffer.expiresAt?.toISOString(),
+                isPaid: isPaid,
+                contractUrl: contractUrl,
               }
             : null,
           lastMessage: lastMessage?.content || null,
@@ -212,7 +260,6 @@ export async function GET(req: NextRequest) {
         };
       }),
     );
-
     return NextResponse.json(conversationsWithUnread);
   } catch (error) {
     console.error("Erreur GET conversations:", error);

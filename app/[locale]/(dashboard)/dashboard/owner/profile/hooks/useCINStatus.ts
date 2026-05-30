@@ -1,7 +1,11 @@
 // app/[locale]/profile/hooks/useCINStatus.ts
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { toast } from "sonner";
+
+interface ToastState {
+  type: "success" | "error";
+  message: string;
+}
 
 interface CINStatus {
   status: "PENDING" | "VALIDATED" | "REJECTED" | "REAPPLIED" | null;
@@ -11,8 +15,10 @@ interface CINStatus {
   isIdentityVerified: boolean;
 }
 
-export function useCINStatus() {
-  const { getToken, userId: clerkUserId } = useAuth(); // ✅ Récupérer userId Clerk
+export function useCINStatus(
+  setToast: React.Dispatch<React.SetStateAction<ToastState | null>>,
+) {
+  const { getToken, userId: clerkUserId } = useAuth();
   const [cinStatus, setCinStatus] = useState<CINStatus>({
     status: null,
     rejectionReason: null,
@@ -23,24 +29,28 @@ export function useCINStatus() {
   const [loading, setLoading] = useState(true);
   const [showCINModal, setShowCINModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null); // ✅ AJOUTER
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const fetchCINStatus = useCallback(async () => {
     try {
       const token = await getToken({ template: "my-app-template" });
-      
-      // ✅ Récupérer l'ID utilisateur depuis la BDD
+
       const profileResponse = await fetch("/api/users/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
+
       if (profileResponse.ok) {
         const profileData = await profileResponse.json();
         if (profileData.user?.id) {
           setCurrentUserId(profileData.user.id);
         }
       }
-      
+
       const response = await fetch("/api/users/cin-status", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -67,7 +77,6 @@ export function useCINStatus() {
     versoFile: File | null,
   ) => {
     setSubmitting(true);
-    const toastId = toast.loading("Upload en cours et vérification OCR...");
 
     try {
       const token = await getToken({ template: "my-app-template" });
@@ -76,16 +85,12 @@ export function useCINStatus() {
       formData.append("cinRecto", rectoFile);
       if (versoFile) formData.append("cinVerso", versoFile);
 
-      // Add a placeholder profile photo (required by your upload API)
       const placeholderBlob = new Blob([""], { type: "image/jpeg" });
       const placeholderFile = new File([placeholderBlob], "placeholder.jpg", {
         type: "image/jpeg",
       });
       formData.append("profilePhoto", placeholderFile);
 
-      toast.loading("Traitement OCR en cours...", { id: toastId });
-
-      // Step 1: Upload and OCR
       const uploadResponse = await fetch("/api/registration/upload-cin", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
@@ -98,11 +103,6 @@ export function useCINStatus() {
       }
 
       const uploadData = await uploadResponse.json();
-
-      // ✅ STEP 2: Create verification request in database
-      toast.loading("Création de la demande de vérification...", {
-        id: toastId,
-      });
 
       const createRequestResponse = await fetch(
         "/api/users/verification-request",
@@ -126,16 +126,14 @@ export function useCINStatus() {
         throw new Error(error.error || "Failed to create verification request");
       }
 
-      toast.success("Demande de vérification envoyée avec succès !", {
-        id: toastId,
-      });
+      showToast("success", "Demande de vérification envoyée avec succès !");
       setShowCINModal(false);
       await fetchCINStatus();
     } catch (error) {
       console.error("Error submitting CIN:", error);
-      toast.error(
+      showToast(
+        "error",
         error instanceof Error ? error.message : "Erreur lors de l'envoi",
-        { id: toastId },
       );
     } finally {
       setSubmitting(false);
@@ -154,6 +152,6 @@ export function useCINStatus() {
     submitting,
     handleCINSubmission,
     refreshStatus: fetchCINStatus,
-    currentUserId, // ✅ EXPORTER currentUserId
+    currentUserId,
   };
 }

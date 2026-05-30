@@ -5,7 +5,6 @@ import { useUser, useAuth } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { useRouter, usePathname } from "next/navigation";
 import { useLocale } from "next-intl";
-import { toast } from "sonner";
 import {
   Calendar,
   CreditCard,
@@ -15,7 +14,6 @@ import {
   Home,
   Shield,
   Gift,
-  Settings,
 } from "lucide-react";
 
 interface NotificationCategory {
@@ -27,7 +25,15 @@ interface NotificationCategory {
   enabled: boolean;
 }
 
-export function useSettings() {
+// Interface pour le toast
+interface ToastState {
+  type: "success" | "error";
+  message: string;
+}
+
+export function useSettings(
+  setToast: React.Dispatch<React.SetStateAction<ToastState | null>>
+) {
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -45,6 +51,12 @@ export function useSettings() {
     message: string;
   } | null>(null);
 
+  // Helper pour les toasts personnalisés
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const [profile, setProfile] = useState({
     firstName: "",
     lastName: "",
@@ -56,12 +68,14 @@ export function useSettings() {
   const [security, setSecurity] = useState<{ sessions: any[] }>({
     sessions: [],
   });
+
   const [vacation, setVacation] = useState({
     enabled: false,
     message: "",
     startDate: "",
     endDate: "",
   });
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -69,15 +83,79 @@ export function useSettings() {
     showCurrent: false,
     showNew: false,
     showConfirm: false,
-    strength: 1,
+    strength: 0,
     isSubmitting: false,
     success: false,
   });
 
+  // Configuration des catégories de notifications
   const [notificationCategories, setNotificationCategories] = useState<
     NotificationCategory[]
   >([
-    // ... ton code existant
+    {
+      id: "bookings",
+      name: "Réservations",
+      icon: <Calendar size={16} />,
+      iconBg: "bg-blue-100 dark:bg-blue-900/30",
+      iconColor: "text-blue-600 dark:text-blue-400",
+      enabled: true,
+    },
+    {
+      id: "payments",
+      name: "Paiements",
+      icon: <CreditCard size={16} />,
+      iconBg: "bg-purple-100 dark:bg-purple-900/30",
+      iconColor: "text-purple-600 dark:text-purple-400",
+      enabled: true,
+    },
+    {
+      id: "messages",
+      name: "Messages",
+      icon: <MessageSquare size={16} />,
+      iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
+      iconColor: "text-indigo-600 dark:text-indigo-400",
+      enabled: true,
+    },
+    {
+      id: "reviews",
+      name: "Avis",
+      icon: <Star size={16} />,
+      iconBg: "bg-yellow-100 dark:bg-yellow-900/30",
+      iconColor: "text-yellow-600 dark:text-yellow-400",
+      enabled: true,
+    },
+    {
+      id: "listings",
+      name: "Annonces",
+      icon: <Home size={16} />,
+      iconBg: "bg-teal-100 dark:bg-teal-900/30",
+      iconColor: "text-teal-600 dark:text-teal-400",
+      enabled: true,
+    },
+    {
+      id: "alerts",
+      name: "Alertes",
+      icon: <Bell size={16} />,
+      iconBg: "bg-amber-100 dark:bg-amber-900/30",
+      iconColor: "text-amber-600 dark:text-amber-400",
+      enabled: true,
+    },
+    {
+      id: "disputes",
+      name: "Litiges",
+      icon: <Shield size={16} />,
+      iconBg: "bg-red-100 dark:bg-red-900/30",
+      iconColor: "text-red-600 dark:text-red-400",
+      enabled: true,
+    },
+    {
+      id: "offers",
+      name: "Offres",
+      icon: <Gift size={16} />,
+      iconBg: "bg-green-100 dark:bg-green-900/30",
+      iconColor: "text-green-600 dark:text-green-400",
+      enabled: true,
+    },
   ]);
 
   const [quietHours, setQuietHours] = useState({
@@ -89,7 +167,7 @@ export function useSettings() {
   const calculateStrength = useCallback((password: string) => {
     let strength = 0;
     if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password) && /[a-z]/.test(password)) strength++;
     if (/[0-9]/.test(password)) strength++;
     if (/[^A-Za-z0-9]/.test(password)) strength++;
     if (password.length >= 12) strength++;
@@ -110,18 +188,25 @@ export function useSettings() {
 
   const passwordCriteria = {
     length: passwordForm.newPassword.length >= 8,
-    uppercase: /[A-Z]/.test(passwordForm.newPassword),
+    uppercase:
+      /[A-Z]/.test(passwordForm.newPassword) &&
+      /[a-z]/.test(passwordForm.newPassword),
     number: /[0-9]/.test(passwordForm.newPassword),
     special: /[^A-Za-z0-9]/.test(passwordForm.newPassword),
   };
 
   const getStrengthLabel = () => {
     const strength = passwordForm.strength;
-    if (strength === 1) return { text: "Faible", color: "#ef4444" };
-    if (strength === 2) return { text: "Moyen", color: "#f97316" };
-    if (strength === 3) return { text: "Bon", color: "#eab308" };
-    if (strength === 4) return { text: "Fort", color: "#22c55e" };
-    return { text: "Très fort", color: "#10b981" };
+    if (strength === 1)
+      return { text: "Très faible", color: "#ef4444", width: "20%" };
+    if (strength === 2)
+      return { text: "Faible", color: "#f97316", width: "40%" };
+    if (strength === 3)
+      return { text: "Moyen", color: "#eab308", width: "60%" };
+    if (strength === 4) return { text: "Fort", color: "#22c55e", width: "80%" };
+    if (strength === 5)
+      return { text: "Très fort", color: "#10b981", width: "100%" };
+    return { text: "Très faible", color: "#ef4444", width: "20%" };
   };
 
   // Charger les données utilisateur
@@ -179,7 +264,7 @@ export function useSettings() {
         }
       } catch (error) {
         console.error("Erreur chargement:", error);
-        toast.error("Erreur lors du chargement des données");
+        showToast("error", "Erreur lors du chargement des données");
       } finally {
         setLoading(false);
       }
@@ -216,32 +301,30 @@ export function useSettings() {
       document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;
       const pathWithoutLocale = pathname.replace(`/${currentLocale}`, "");
       router.push(`/${locale}${pathWithoutLocale || "/"}`);
-      toast.success("Langue mise à jour avec succès");
+      showToast("success", "Langue mise à jour avec succès");
     } catch (error: any) {
       console.error("Erreur mise à jour langue:", error);
       setProfile((prev) => ({ ...prev, preferredLocale: previousLocale }));
-      throw new Error(error.message || "Erreur lors du changement de langue");
+      showToast("error", error.message || "Erreur lors du changement de langue");
+      throw error;
     }
   };
 
   // Changer le mot de passe
   const changePassword = async () => {
     if (!passwordForm.currentPassword) {
-      const error = new Error("Veuillez entrer votre mot de passe actuel");
-      toast.error(error.message);
-      throw error;
+      showToast("error", "Veuillez entrer votre mot de passe actuel");
+      throw new Error("Veuillez entrer votre mot de passe actuel");
     }
 
     if (!isPasswordValid) {
-      const error = new Error("Le nouveau mot de passe n'est pas assez fort");
-      toast.error(error.message);
-      throw error;
+      showToast("error", "Le nouveau mot de passe n'est pas assez fort");
+      throw new Error("Le nouveau mot de passe n'est pas assez fort");
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      const error = new Error("Les mots de passe ne correspondent pas");
-      toast.error(error.message);
-      throw error;
+      showToast("error", "Les mots de passe ne correspondent pas");
+      throw new Error("Les mots de passe ne correspondent pas");
     }
 
     setPasswordForm((prev) => ({ ...prev, isSubmitting: true }));
@@ -264,7 +347,7 @@ export function useSettings() {
 
       if (response.ok) {
         setPasswordForm((prev) => ({ ...prev, success: true }));
-        toast.success("Mot de passe mis à jour avec succès !");
+        showToast("success", "Mot de passe mis à jour avec succès !");
         setTimeout(() => {
           setPasswordForm((prev) => ({
             ...prev,
@@ -273,11 +356,13 @@ export function useSettings() {
             confirmPassword: "",
             isSubmitting: false,
             success: false,
+            strength: 0,
           }));
         }, 2000);
       } else {
-        const errorMsg = data.error || data.message || "Erreur lors du changement";
-        toast.error(errorMsg);
+        const errorMsg =
+          data.error || data.message || "Mot de passe actuel incorrect";
+        showToast("error", errorMsg);
         setPasswordForm((prev) => ({
           ...prev,
           isSubmitting: false,
@@ -289,13 +374,13 @@ export function useSettings() {
       console.error("Erreur changement mot de passe:", error);
       setPasswordForm((prev) => ({ ...prev, isSubmitting: false }));
       if (error.message && !error.message.includes("Veuillez")) {
-        toast.error(error.message || "Erreur de connexion");
+        showToast("error", error.message || "Erreur de connexion");
       }
       throw error;
     }
   };
 
-  // ✅ UNE SEULE FONCTION toggleVacationMode
+  // Toggle vacation mode
   const toggleVacationMode = async () => {
     setVacationError(null);
     try {
@@ -321,20 +406,23 @@ export function useSettings() {
       }
 
       setVacation((prev) => ({ ...prev, enabled: !prev.enabled }));
-      const message = vacation.enabled ? "Mode vacances désactivé" : "Mode vacances activé";
+      const message = vacation.enabled
+        ? "Mode vacances désactivé"
+        : "Mode vacances activé";
       setVacationStatus({ type: "success", message });
-      toast.success(message);
+      showToast("success", message);
       setVacationError(null);
     } catch (error: any) {
       console.error("Erreur toggle vacation mode:", error);
       const errorMsg = error.message || "Erreur lors de la modification";
       setVacationError(errorMsg);
       setVacationStatus({ type: "error", message: errorMsg });
-      toast.error(errorMsg);
+      showToast("error", errorMsg);
       throw error;
     }
   };
 
+  // Sauvegarder le message de vacances
   const saveVacationMessage = async () => {
     setSaving(true);
     try {
@@ -358,10 +446,10 @@ export function useSettings() {
         throw new Error(error.error || "Erreur lors de la sauvegarde");
       }
 
-      toast.success("Message de vacances sauvegardé");
+      showToast("success", "Message de vacances sauvegardé");
     } catch (error: any) {
       console.error("Erreur sauvegarde message:", error);
-      toast.error(error.message || "Erreur lors de la sauvegarde");
+      showToast("error", error.message || "Erreur lors de la sauvegarde");
       throw error;
     } finally {
       setSaving(false);
@@ -386,10 +474,10 @@ export function useSettings() {
         ...prev,
         sessions: prev.sessions.filter((s) => s.id !== sessionId),
       }));
-      toast.success("Session révoquée avec succès");
+      showToast("success", "Session révoquée avec succès");
     } catch (error: any) {
       console.error("Erreur révocation session:", error);
-      toast.error(error.message || "Erreur lors de la révocation");
+      showToast("error", error.message || "Erreur lors de la révocation");
       throw error;
     }
   };
@@ -426,10 +514,10 @@ export function useSettings() {
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      toast.success(`Données exportées avec succès au format ${format.toUpperCase()}`);
+      showToast("success", `Données exportées avec succès au format ${format.toUpperCase()}`);
     } catch (error: any) {
       console.error("Erreur exportation:", error);
-      toast.error(error.message || "Erreur lors de l'exportation");
+      showToast("error", error.message || "Erreur lors de l'exportation");
       throw error;
     } finally {
       setIsExporting(false);
@@ -451,12 +539,12 @@ export function useSettings() {
         throw new Error(error.error || "Erreur lors de la désactivation");
       }
 
-      toast.success("Votre compte a été désactivé avec succès");
+      showToast("success", "Votre compte a été désactivé avec succès");
       await clerkUser?.reload();
       router.push("/");
     } catch (error: any) {
       console.error("Erreur désactivation:", error);
-      toast.error(error.message || "Erreur lors de la désactivation");
+      showToast("error", error.message || "Erreur lors de la désactivation");
       throw error;
     } finally {
       setIsDeactivating(false);
@@ -464,34 +552,43 @@ export function useSettings() {
   };
 
   // Toggle notification category
-  const toggleNotificationCategory = (categoryId: string) => {
-    setNotificationCategories((prev) =>
-      prev.map((cat) =>
-        cat.id === categoryId ? { ...cat, enabled: !cat.enabled } : cat,
-      ),
+  const toggleNotificationCategory = async (categoryId: string) => {
+    // Sauvegarder l'état avant modification
+    const previousCategories = [...notificationCategories];
+    
+    // Mettre à jour l'état local immédiatement
+    const updatedCategories = notificationCategories.map((cat) =>
+      cat.id === categoryId ? { ...cat, enabled: !cat.enabled } : cat,
     );
+    setNotificationCategories(updatedCategories);
 
-    const savePref = async () => {
-      try {
-        const token = await getToken({ template: "my-app-template" });
-        const preferences: Record<string, boolean> = {};
-        notificationCategories.forEach((cat) => {
-          preferences[cat.id] = cat.enabled;
-        });
-        await fetch("/api/users/notifications/preferences", {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ categories: preferences, quietHours }),
-        });
-      } catch (error) {
-        console.error("Erreur sauvegarde préférences:", error);
-        toast.error("Erreur lors de la sauvegarde des préférences");
+    try {
+      const token = await getToken({ template: "my-app-template" });
+      const preferences: Record<string, boolean> = {};
+      updatedCategories.forEach((cat) => {
+        preferences[cat.id] = cat.enabled;
+      });
+
+      const response = await fetch("/api/users/notifications/preferences", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ categories: preferences, quietHours }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Erreur lors de la sauvegarde");
       }
-    };
-    savePref();
+
+      showToast("success", "Préférences de notifications mises à jour");
+    } catch (error) {
+      console.error("Erreur sauvegarde préférences:", error);
+      // Revert avec l'état sauvegardé
+      setNotificationCategories(previousCategories);
+      showToast("error", "Erreur lors de la sauvegarde des préférences");
+    }
   };
 
   // Mettre à jour les heures calmes
@@ -513,10 +610,10 @@ export function useSettings() {
         throw new Error(error.error || "Erreur lors de la mise à jour");
       }
 
-      toast.success("Heures calmes mises à jour avec succès");
+      showToast("success", "Heures calmes mises à jour avec succès");
     } catch (error: any) {
       console.error("Erreur mise à jour heures calmes:", error);
-      toast.error(error.message || "Erreur lors de la mise à jour");
+      showToast("error", error.message || "Erreur lors de la mise à jour");
       throw error;
     }
   };

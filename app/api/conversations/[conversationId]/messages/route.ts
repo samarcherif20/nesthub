@@ -54,6 +54,8 @@ export async function GET(
             firstName: true,
             lastName: true,
             profilePictureUrl: true,
+                    role: true,  
+
           },
         },
       },
@@ -89,9 +91,9 @@ export async function GET(
       id: msg.id,
       content: msg.content,
       senderId: msg.senderId,
-      senderName:
-        `${msg.sender.firstName || ""} ${msg.sender.lastName || ""}`.trim() ||
-        "Utilisateur",
+      senderName: msg.sender.role === "ADMIN" 
+    ? "Admin" 
+    : `${msg.sender.firstName || ""} ${msg.sender.lastName || ""}`.trim() || "Utilisateur",
       senderImage: msg.sender.profilePictureUrl,
       createdAt: msg.createdAt.toISOString(),
       isBlocked: msg.isBlocked,
@@ -139,6 +141,8 @@ export async function POST(
         firstName: true,
         lastName: true,
         profilePictureUrl: true,
+            role: true, 
+
       },
     });
 
@@ -407,8 +411,9 @@ export async function POST(
       id: message.id,
       content: message.content,
       senderId: message.senderId,
-      senderName:
-        `${message.sender.firstName || ""} ${message.sender.lastName || ""}`.trim(),
+      senderName: user.role === "ADMIN" 
+    ? "Admin" 
+    : `${message.sender.firstName || ""} ${message.sender.lastName || ""}`.trim(),
       createdAt: message.createdAt.toISOString(),
       isBlocked: message.isBlocked,
       isRead: message.isRead,

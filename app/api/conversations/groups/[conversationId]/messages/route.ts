@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ conversationId: string }> }
+  { params }: { params: Promise<{ conversationId: string }> },
 ) {
   try {
     const { userId } = await auth();
@@ -19,7 +19,10 @@ export async function GET(
     });
 
     if (!currentUser) {
-      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
     }
 
     const { conversationId } = await params;
@@ -34,10 +37,13 @@ export async function GET(
     });
 
     if (!participant) {
-      return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Accès non autorisé" },
+        { status: 403 },
+      );
     }
 
-    // Récupérer les messages du groupe
+    // Récupérer les messages du groupe avec le rôle de l'expéditeur
     const messages = await prisma.groupConversationMessage.findMany({
       where: { groupId },
       include: {
@@ -46,6 +52,7 @@ export async function GET(
             id: true,
             username: true,
             profilePictureUrl: true,
+            role: true,
           },
         },
       },
@@ -62,7 +69,10 @@ export async function GET(
       id: msg.id,
       content: msg.content,
       senderId: msg.senderId,
-      senderName: msg.sender.username || "Utilisateur",
+      senderName:
+        msg.sender.role === "ADMIN"
+          ? "Admin"
+          : msg.sender.username || "Utilisateur",
       senderImage: msg.sender.profilePictureUrl,
       createdAt: msg.createdAt.toISOString(),
       isBlocked: false,
@@ -81,7 +91,7 @@ export async function GET(
 // POST - Envoyer un message dans un groupe
 export async function POST(
   req: NextRequest,
-  { params }: { params: Promise<{ conversationId: string }> }
+  { params }: { params: Promise<{ conversationId: string }> },
 ) {
   try {
     const { userId } = await auth();
@@ -89,13 +99,17 @@ export async function POST(
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
+    // Récupérer l'utilisateur avec son rôle
     const currentUser = await prisma.user.findUnique({
       where: { clerkId: userId },
-      select: { id: true, username: true, profilePictureUrl: true },
+      select: { id: true, username: true, profilePictureUrl: true, role: true },
     });
 
     if (!currentUser) {
-      return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
     }
 
     const { conversationId } = await params;
@@ -111,7 +125,10 @@ export async function POST(
     });
 
     if (!participant) {
-      return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Accès non autorisé" },
+        { status: 403 },
+      );
     }
 
     // Créer le message
@@ -153,11 +170,15 @@ export async function POST(
       },
     });
 
+    // Retourner le message avec le bon nom (Admin si rôle ADMIN)
     return NextResponse.json({
       id: message.id,
       content: message.content,
       senderId: message.senderId,
-      senderName: message.sender.username,
+      senderName:
+        currentUser.role === "ADMIN"
+          ? "Admin"
+          : message.sender.username || "Utilisateur",
       senderImage: message.sender.profilePictureUrl,
       createdAt: message.createdAt.toISOString(),
       isSystem: message.isSystem,

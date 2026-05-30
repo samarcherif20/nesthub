@@ -14,7 +14,7 @@ import {
 } from "framer-motion";
 import CountUp from "react-countup";
 import { RiLogoutCircleLine } from "react-icons/ri";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle, AlertCircle, X } from "lucide-react";
 
 // Composants UI
 import { useChooseRole } from "./hooks/useChooseRole";
@@ -112,13 +112,18 @@ function Aurora({ activeRole }: { activeRole: Role | null }) {
   return (
     <div className="fixed inset-0 -z-20 overflow-hidden pointer-events-none">
       <div
-        className={`absolute inset-0 ${isDark ? "bg-slate-950" : "bg-[#f0f2f8]"}`}
+        className={`absolute inset-0 transition-colors duration-500 ${
+          isDark ? "bg-slate-950" : "bg-[#f0f2f8]"
+        }`}
       />
       <div
-        className="absolute inset-0 opacity-30 dark:opacity-10"
+        className="absolute inset-0 transition-opacity duration-500"
         style={{
-          backgroundImage: `radial-gradient(circle, ${isDark ? "#334155" : "#c0cce0"} 1px, transparent 1px)`,
+          backgroundImage: `radial-gradient(circle, ${
+            isDark ? "#334155" : "#c0cce0"
+          } 1px, transparent 1px)`,
           backgroundSize: "36px 36px",
+          opacity: isDark ? 0.3 : 0.15,
         }}
       />
 
@@ -126,8 +131,12 @@ function Aurora({ activeRole }: { activeRole: Role | null }) {
         animate={{
           background:
             activeRole === "owner"
-              ? `radial-gradient(ellipse at 20% 30%, ${isDark ? "rgba(139,92,246,0.15)" : "rgba(113,42,226,0.12)"} 0%, transparent 60%)`
-              : `radial-gradient(ellipse at 20% 30%, ${isDark ? "rgba(14,165,233,0.12)" : "rgba(0,92,171,0.1)"} 0%, transparent 60%)`,
+              ? `radial-gradient(ellipse at 20% 30%, ${
+                  isDark ? "rgba(139,92,246,0.15)" : "rgba(113,42,226,0.08)"
+                } 0%, transparent 60%)`
+              : `radial-gradient(ellipse at 20% 30%, ${
+                  isDark ? "rgba(14,165,233,0.12)" : "rgba(0,92,171,0.06)"
+                } 0%, transparent 60%)`,
         }}
         transition={{ duration: 1.2, ease: "easeInOut" }}
         className="absolute inset-0"
@@ -136,8 +145,12 @@ function Aurora({ activeRole }: { activeRole: Role | null }) {
         animate={{
           background:
             activeRole === "tenant"
-              ? `radial-gradient(ellipse at 80% 70%, ${isDark ? "rgba(14,165,233,0.15)" : "rgba(0,117,214,0.12)"} 0%, transparent 55%)`
-              : `radial-gradient(ellipse at 80% 70%, ${isDark ? "rgba(139,92,246,0.12)" : "rgba(138,76,252,0.1)"} 0%, transparent 55%)`,
+              ? `radial-gradient(ellipse at 80% 70%, ${
+                  isDark ? "rgba(14,165,233,0.15)" : "rgba(0,117,214,0.08)"
+                } 0%, transparent 55%)`
+              : `radial-gradient(ellipse at 80% 70%, ${
+                  isDark ? "rgba(139,92,246,0.12)" : "rgba(138,76,252,0.06)"
+                } 0%, transparent 55%)`,
         }}
         transition={{ duration: 1.2, ease: "easeInOut" }}
         className="absolute inset-0"
@@ -147,7 +160,7 @@ function Aurora({ activeRole }: { activeRole: Role | null }) {
 }
 
 // ═══════════════════════════════════════════════════
-// HEADER AVEC DÉGRADÉ TRÈS CLAIR ET CONTENU HARMONISÉ
+// HEADER
 // ═══════════════════════════════════════════════════
 function Header({
   user,
@@ -179,35 +192,29 @@ function Header({
     return user?.name?.charAt(0).toUpperCase() || "U";
   };
 
-  // Style du header : dégradé TRÈS CLAIR
   const getHeaderStyle = () => {
     if (scrolled) {
       return {
-        background: isDark 
-          ? "rgba(15, 23, 42, 0.92)"
-          : "rgba(255, 255, 255, 0.92)",
-        border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"}`,
+        background: isDark
+          ? "rgba(15, 23, 42, 0.95)"
+          : "rgba(255, 255, 255, 0.95)",
+        border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)"}`,
         boxShadow: isDark
-          ? "0 4px 24px -4px rgba(0,0,0,0.4)"
-          : "0 4px 24px -4px rgba(0,0,0,0.08)",
+          ? "0 4px 24px -4px rgba(0,0,0,0.5)"
+          : "0 4px 24px -4px rgba(0,0,0,0.1)",
       };
     } else {
-      // Dégradé TRÈS CLAIR (blanc → bleu très pâle → violet très pâle)
       return {
-        background: "linear-gradient(135deg, rgba(255,255,255,0.95), rgba(220,240,255,0.92), rgba(240,230,255,0.92))",
-        // Bordure avec LE MÊME DÉGRADÉ (plus visible)
-        border: "1px solid rgba(200, 215, 240, 0.6)",
-        boxShadow: "0 4px 24px -4px rgba(0,0,0,0.06)",
+        background: isDark
+          ? "rgba(15, 23, 42, 0.85)"
+          : "linear-gradient(135deg, rgba(255,255,255,0.98), rgba(240,245,255,0.95), rgba(245,240,255,0.95))",
+        border: `1px solid ${isDark ? "rgba(255,255,255,0.1)" : "rgba(200, 215, 240, 0.8)"}`,
+        boxShadow: isDark
+          ? "0 4px 24px -4px rgba(0,0,0,0.3)"
+          : "0 4px 24px -4px rgba(0,0,0,0.08)",
       };
     }
   };
-
-  // Couleur du texte selon le scroll et le thème
-  const textColor = scrolled
-    ? isDark
-      ? "text-white"
-      : "text-gray-800"
-    : "text-gray-700"; // Changé: texte gris foncé pour contraster avec fond clair
 
   const headerStyle = getHeaderStyle();
 
@@ -227,7 +234,6 @@ function Header({
           border: headerStyle.border,
         }}
       >
-        {/* Logo */}
         <div className="flex items-center gap-3">
           <div className="relative w-8 h-8 shrink-0">
             <Image
@@ -247,40 +253,41 @@ function Header({
           </div>
         </div>
 
-        {/* Right section - CONTENU HARMONISÉ avec le fond clair */}
         <div className="flex items-center gap-3">
           {user && (
             <>
               <div
-                className={`flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl transition-all duration-300
+                className={`flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl transition-all duration-300 border
                   ${
                     scrolled
                       ? isDark
-                        ? "bg-slate-800/50 border-slate-700"
-                        : "bg-gray-100/80 border-gray-200"
-                      : "bg-white/60 backdrop-blur-sm border-white/80 shadow-sm"
-                  } border`}
+                        ? "bg-slate-800/60 border-slate-700"
+                        : "bg-gray-100/90 border-gray-200"
+                      : isDark
+                        ? "bg-slate-800/40 border-slate-700/60"
+                        : "bg-white/80 backdrop-blur-sm border-white shadow-sm"
+                  }`}
               >
                 <div className="relative w-8 h-8">
                   {getAvatarUrl() ? (
                     <img
                       src={getAvatarUrl()!}
                       alt={user.name}
-                      className="w-full h-full rounded-lg object-cover ring-2 ring-blue-300/50"
+                      className="w-full h-full rounded-lg object-cover ring-2 ring-blue-400/50 dark:ring-blue-500/30"
                       onError={() => setAvatarError(true)}
                     />
                   ) : (
                     <div
-                      className={`w-full h-full rounded-lg flex items-center justify-center font-bold ${
+                      className={`w-full h-full rounded-lg flex items-center justify-center font-bold text-white ${
                         scrolled && !isDark
-                          ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
-                          : "bg-gradient-to-r from-blue-500 to-purple-500 text-white"
+                          ? "bg-gradient-to-r from-blue-600 to-purple-600"
+                          : "bg-gradient-to-r from-blue-600 to-purple-600"
                       }`}
                     >
                       {getInitial()}
                     </div>
                   )}
-                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white shadow-sm" />
+                  <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800 shadow-sm" />
                 </div>
                 <div className="hidden sm:block leading-tight">
                   <p
@@ -289,13 +296,23 @@ function Header({
                         ? isDark
                           ? "text-gray-400"
                           : "text-gray-500"
-                        : "text-gray-500"
+                        : isDark
+                          ? "text-gray-500"
+                          : "text-gray-500"
                     }`}
                   >
-                   {t("connected")}
+                    {t("connected")}
                   </p>
                   <p
-                    className={`text-[13px] font-bold transition-colors duration-300 ${textColor}`}
+                    className={`text-[13px] font-bold transition-colors duration-300 ${
+                      scrolled
+                        ? isDark
+                          ? "text-white"
+                          : "text-gray-800"
+                        : isDark
+                          ? "text-gray-200"
+                          : "text-gray-800"
+                    }`}
                   >
                     {user.name.length > 15
                       ? user.name.slice(0, 12) + "..."
@@ -312,7 +329,9 @@ function Header({
                       ? isDark
                         ? "text-gray-300 hover:text-red-400 hover:bg-red-500/10"
                         : "text-gray-600 hover:text-red-500 hover:bg-red-50"
-                      : "text-gray-600 hover:text-red-500 hover:bg-white/50"
+                      : isDark
+                        ? "text-gray-400 hover:text-red-400 hover:bg-red-500/10"
+                        : "text-gray-600 hover:text-red-500 hover:bg-white/60"
                   }`}
               >
                 <RiLogoutBoxLine className="text-base" />
@@ -325,6 +344,7 @@ function Header({
     </motion.header>
   );
 }
+
 // ═══════════════════════════════════════════════════
 // REMEMBER TOGGLE
 // ═══════════════════════════════════════════════════
@@ -351,7 +371,7 @@ function RememberToggle({
               ? "linear-gradient(90deg,#14b8a6,#8b5cf6)"
               : isDark
                 ? "#334155"
-                : "#d1d5db",
+                : "#e2e8f0",
           }}
           transition={{ duration: 0.3 }}
           className="absolute inset-0 rounded-full"
@@ -362,7 +382,13 @@ function RememberToggle({
           className="absolute top-[3px] w-[20px] h-[20px] bg-white rounded-full shadow-md"
         />
       </div>
-      <span className="text-[13px] font-semibold text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-gray-300 transition-colors text-left leading-snug">
+      <span
+        className={`text-[13px] font-semibold transition-colors text-left leading-snug ${
+          isDark
+            ? "text-gray-400 group-hover:text-gray-300"
+            : "text-gray-500 group-hover:text-gray-700"
+        }`}
+      >
         {t("rememberChoice")}
       </span>
     </button>
@@ -392,7 +418,9 @@ function TrustStrip() {
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.85 + i * 0.07 }}
-          className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 text-[11px] font-semibold"
+          className={`flex items-center gap-1.5 text-[11px] font-semibold transition-colors duration-300 ${
+            isDark ? "text-gray-500" : "text-gray-400"
+          }`}
         >
           <item.Icon className="text-sm" />
           {item.label}
@@ -416,37 +444,54 @@ function Footer() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 1 }}
-      className="relative z-10 mt-auto py-6 px-6 border-t"
+      className="relative z-10 mt-auto py-6 px-6 border-t transition-colors duration-500"
       style={{
-        background: isDark ? "rgba(15,23,42,0.4)" : "rgba(255,255,255,0.4)",
+        background: isDark ? "rgba(15,23,42,0.6)" : "rgba(255,255,255,0.5)",
         backdropFilter: "blur(12px)",
         borderColor: isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
       }}
     >
       <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <p className="text-[11px] text-gray-400 dark:text-gray-500 uppercase tracking-widest font-bold">
+          <p
+            className={`text-[11px] uppercase tracking-widest font-bold transition-colors duration-300 ${
+              isDark ? "text-gray-500" : "text-gray-400"
+            }`}
+          >
             © 2026 NESTHUB · {t("rights")}
           </p>
         </div>
         <div className="flex items-center gap-5">
-          <a
-            href={`/${locale}/help`}
-            className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#005cab] dark:hover:text-[#60a5fa] transition-colors uppercase tracking-wider font-semibold"
-          >
-            {t("help")}
-          </a>
+         
           <a
             href={`/${locale}/privacy`}
-            className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#005cab] dark:hover:text-[#60a5fa] transition-colors uppercase tracking-wider font-semibold"
+            className={`text-[11px] transition-colors uppercase tracking-wider font-semibold ${
+              isDark
+                ? "text-gray-500 hover:text-blue-400"
+                : "text-gray-400 hover:text-blue-600"
+            }`}
           >
             {t("privacy")}
           </a>
           <a
             href={`/${locale}/terms`}
-            className="text-[11px] text-gray-400 dark:text-gray-500 hover:text-[#005cab] dark:hover:text-[#60a5fa] transition-colors uppercase tracking-wider font-semibold"
+            className={`text-[11px] transition-colors uppercase tracking-wider font-semibold ${
+              isDark
+                ? "text-gray-500 hover:text-blue-400"
+                : "text-gray-400 hover:text-blue-600"
+            }`}
           >
             {t("terms")}
+          </a>
+           <a
+            href={`/${locale}/#contact-section`}
+            className={`text-[11px] transition-colors uppercase tracking-wider font-semibold ${
+              isDark
+                ? "text-gray-500 hover:text-blue-400"
+                : "text-gray-400 hover:text-blue-600"
+            }`}
+          >
+            {t("contact")}
           </a>
         </div>
       </div>
@@ -759,30 +804,52 @@ function LogoutModal({
   onClose: () => void;
   onConfirm: () => void;
 }) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const t = useTranslations("ChooseRole");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-xl shadow-2xl p-6 text-center border border-slate-200 dark:border-slate-800">
-        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-xl flex items-center justify-center mx-auto mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div
+        className={`w-full max-w-md rounded-xl shadow-2xl p-6 text-center border transition-all duration-300 ${
+          isDark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"
+        }`}
+      >
+        <div
+          className={`w-16 h-16 rounded-xl flex items-center justify-center mx-auto mb-4 transition-colors duration-300 ${
+            isDark ? "bg-red-900/20" : "bg-red-100"
+          }`}
+        >
           <RiLogoutCircleLine className="text-3xl text-red-600" />
         </div>
-        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+        <h2
+          className={`text-xl font-bold mb-2 transition-colors duration-300 ${
+            isDark ? "text-white" : "text-slate-900"
+          }`}
+        >
           {t("logoutConfirm")}
         </h2>
-        <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+        <p
+          className={`text-sm mb-6 transition-colors duration-300 ${
+            isDark ? "text-slate-400" : "text-slate-600"
+          }`}
+        >
           {t("logoutMessage")}
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={onClose}
-            className="flex-1 py-2.5 px-4 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300 font-medium text-sm transition-colors cursor-pointer"
+            className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-300 cursor-pointer ${
+              isDark
+                ? "bg-slate-800 hover:bg-slate-700 text-slate-300"
+                : "bg-slate-100 hover:bg-slate-200 text-slate-700"
+            }`}
           >
             {t("cancel")}
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm shadow-lg shadow-red-600/20 transition-colors cursor-pointer"
+            className="flex-1 py-2.5 px-4 rounded-lg bg-red-600 hover:bg-red-700 text-white font-medium text-sm shadow-lg shadow-red-600/20 transition-all duration-300 cursor-pointer"
           >
             {t("logoutConfirm")}
           </button>
@@ -791,6 +858,7 @@ function LogoutModal({
     </div>
   );
 }
+
 // ═══════════════════════════════════════════════════
 // TRANSITION SCREEN
 // ═══════════════════════════════════════════════════
@@ -909,6 +977,8 @@ function CTAButton({
   t: any;
 }) {
   const [hov, setHov] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
   const CardIcon =
     roleData?.key === "tenant" ? RiCompassDiscoverFill : RiBuildingFill;
 
@@ -943,9 +1013,12 @@ function CTAButton({
         style={{
           background:
             disabled || !roleData
-              ? "#e5e7eb"
+              ? isDark
+                ? "#334155"
+                : "#f1f5f9"
               : `linear-gradient(135deg, ${roleData.from} 0%, ${roleData.via} 50%, ${roleData.accentHex} 100%)`,
-          color: disabled || !roleData ? "#9ca3af" : "#fff",
+          color:
+            disabled || !roleData ? (isDark ? "#64748b" : "#94a3b8") : "#fff",
           cursor: disabled || loading ? "not-allowed" : "pointer",
           boxShadow:
             disabled || !roleData
@@ -954,7 +1027,7 @@ function CTAButton({
         }}
       >
         {loading ? (
-          <LoadingSpinner className="animate-spin h-5 w-5" />
+          <Loader2 className="animate-spin h-5 w-5" />
         ) : (
           <>
             {!disabled && roleData && (
@@ -975,7 +1048,11 @@ function CTAButton({
             )}
             {disabled ? (
               <span className="flex items-center gap-2.5">
-                <TbFingerprint className="text-xl text-gray-400" />
+                <TbFingerprint
+                  className={`text-xl ${
+                    isDark ? "text-gray-500" : "text-gray-400"
+                  }`}
+                />
                 {t("selectSpace")}
               </span>
             ) : (
@@ -1004,24 +1081,80 @@ function CTAButton({
 }
 
 // ═══════════════════════════════════════════════════
-// PAGE PRINCIPALE
+// TOAST NOTIFICATION
+// ═══════════════════════════════════════════════════
+function ToastNotification({
+  toast,
+  setToast,
+}: {
+  toast: { message: string; type: "success" | "error" } | null;
+  setToast: (value: null) => void;
+}) {
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => {
+        setToast(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast, setToast]);
+
+  if (!toast) return null;
+
+  return (
+    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+      <div
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg transition-all duration-300 ${
+          toast.type === "success"
+            ? "bg-green-500 text-white"
+            : "bg-red-500 text-white"
+        } ${isDark ? "shadow-black/30" : "shadow-black/10"}`}
+      >
+        {toast.type === "success" ? (
+          <CheckCircle className="w-5 h-5" />
+        ) : (
+          <AlertCircle className="w-5 h-5" />
+        )}
+        <span className="text-sm font-medium">{toast.message}</span>
+        <button
+          onClick={() => setToast(null)}
+          className="ml-2 hover:opacity-70 transition-opacity"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════
+// PAGE PRINCIPALE - CORRIGÉE
 // ═══════════════════════════════════════════════════
 export default function ChooseRolePage() {
   const t = useTranslations("ChooseRole");
   const locale = useLocale();
+  const [toast, setToast] = useState<{
+    message: string;
+    type: "success" | "error";
+  } | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { theme } = useTheme();
+  const isDark = theme === "dark";
+  const router = useRouter();
+
   const {
     user,
     selected,
     remember,
     transitioning,
     loading,
-    submitting,
     showLogoutModal,
-    isDark,
     setRemember,
     setShowLogoutModal,
     handleSelect,
-    handleConfirm,
     handleLogout,
     handleCloseLogoutModal,
   } = useChooseRole();
@@ -1035,6 +1168,57 @@ export default function ChooseRolePage() {
         ? roleDataOwner
         : null;
 
+  const handleConfirmWithToast = async () => {
+    if (!selected) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      sessionStorage.removeItem("pendingLoginEmail");
+      sessionStorage.removeItem("pendingLoginPassword");
+
+      if (remember) {
+        localStorage.setItem("selectedRole", selected);
+        localStorage.setItem("rememberChoice", "true");
+
+        const message =
+          selected === "owner"
+            ? t("toast.rememberedOwner")
+            : t("toast.rememberedTenant");
+
+        setToast({
+          message: message,
+          type: "success",
+        });
+      } else {
+        localStorage.removeItem("selectedRole");
+        localStorage.removeItem("rememberChoice");
+
+        setToast({
+          message: t("toast.notRemembered"),
+          type: "success",
+        });
+      }
+
+      setTimeout(() => {
+        setIsSubmitting(false);
+        if (selected === "owner") {
+          router.push("/dashboard/owner");
+        } else {
+          router.push("/search");
+        }
+      }, 2000);
+    } catch (error) {
+      console.error("Error:", error);
+      setToast({
+        message: t("toast.error"),
+        type: "error",
+      });
+      setIsSubmitting(false);
+    }
+  };
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950">
@@ -1045,14 +1229,16 @@ export default function ChooseRolePage() {
           color="primary"
           text={t("loading")}
           speed="normal"
-        />{" "}
+        />
       </div>
     );
   }
 
   return (
     <div
-      className="min-h-screen flex flex-col bg-white dark:bg-slate-950"
+      className={`min-h-screen flex flex-col transition-colors duration-500 ${
+        isDark ? "bg-slate-950" : "bg-white"
+      }`}
       style={{ fontFamily: "'Inter', sans-serif" }}
     >
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');`}</style>
@@ -1068,6 +1254,9 @@ export default function ChooseRolePage() {
           />
         )}
       </AnimatePresence>
+
+      {/* Toast Notification */}
+      <ToastNotification toast={toast} setToast={setToast} />
 
       <Header user={user} onLogout={() => setShowLogoutModal(true)} />
 
@@ -1088,14 +1277,11 @@ export default function ChooseRolePage() {
                 stiffness: 300,
                 damping: 18,
               }}
-              className="inline-flex items-center gap-2.5 mb-6 px-5 py-2.5 rounded-full text-sm font-bold shadow-sm"
-              style={{
-                background: isDark
-                  ? "rgba(30,41,59,0.8)"
-                  : "rgba(255,255,255,0.8)",
-                backdropFilter: "blur(16px)",
-                border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}`,
-              }}
+              className={`inline-flex items-center gap-2.5 mb-6 px-5 py-2.5 rounded-full text-sm font-bold shadow-sm ${
+                isDark
+                  ? "bg-slate-800/80 text-gray-300 border-white/10"
+                  : "bg-white/80 text-gray-600 border-black/10"
+              } backdrop-blur-[16px] border`}
             >
               <motion.span
                 animate={{ rotate: [0, 16, -10, 16, 0] }}
@@ -1109,10 +1295,10 @@ export default function ChooseRolePage() {
               >
                 👋
               </motion.span>
-              <span className={`${isDark ? "text-gray-300" : "text-gray-600"}`}>
+              <span>
                 {t("greeting")},{" "}
                 <span
-                  className={`${isDark ? "text-white" : "text-gray-900"} font-black`}
+                  className={`font-black ${isDark ? "text-white" : "text-gray-900"}`}
                 >
                   {user?.name.split(" ")[0] || t("user")}
                 </span>{" "}
@@ -1121,7 +1307,9 @@ export default function ChooseRolePage() {
             </motion.div>
 
             <h1
-              className={`text-[2.7rem] sm:text-5xl font-extrabold leading-[1.07] mb-5 ${isDark ? "text-white" : "text-gray-900"}`}
+              className={`text-[2.7rem] sm:text-5xl font-extrabold leading-[1.07] mb-5 ${
+                isDark ? "text-white" : "text-gray-900"
+              }`}
             >
               {t("title")}{" "}
               <span className="relative inline-block">
@@ -1139,7 +1327,9 @@ export default function ChooseRolePage() {
             </h1>
 
             <p
-              className={`text-base leading-relaxed font-medium ${isDark ? "text-gray-400" : "text-gray-500"}`}
+              className={`text-base leading-relaxed font-medium ${
+                isDark ? "text-gray-400" : "text-gray-500"
+              }`}
             >
               {t("description")}
             </p>
@@ -1149,14 +1339,11 @@ export default function ChooseRolePage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-sm"
-            style={{
-              background: isDark
-                ? "rgba(30,41,59,0.75)"
-                : "rgba(255,255,255,0.75)",
-              backdropFilter: "blur(20px)",
-              border: `1px solid ${isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.07)"}`,
-            }}
+            className={`flex items-center gap-3 px-5 py-3 rounded-2xl shadow-sm ${
+              isDark
+                ? "bg-slate-800/75 border-slate-700/50"
+                : "bg-white/75 border-white/80"
+            } backdrop-blur-[20px] border`}
           >
             <MdOutlineVerified className="text-xl text-[#712ae2] dark:text-[#a78bfa] flex-shrink-0" />
             <span
@@ -1171,9 +1358,7 @@ export default function ChooseRolePage() {
               <span className="inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300">
                 <RiCompassDiscoverLine className="text-xs" /> {t("traveler")}
               </span>
-              <span
-                className={`${isDark ? "text-gray-600" : "text-gray-300"} font-bold`}
-              >
+              <span className={isDark ? "text-gray-600" : "text-gray-300"}>
                 +
               </span>
               <span className="inline-flex items-center gap-1.5 text-[11px] font-black px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300">
@@ -1214,8 +1399,8 @@ export default function ChooseRolePage() {
             <CTAButton
               roleData={selectedRoleData}
               disabled={!selected}
-              onClick={handleConfirm}
-              loading={submitting}
+              onClick={handleConfirmWithToast}
+              loading={isSubmitting}
               t={t}
             />
             <TrustStrip />
@@ -1225,7 +1410,6 @@ export default function ChooseRolePage() {
 
       <Footer />
 
-      {/* Modal de déconnexion */}
       {showLogoutModal && (
         <LogoutModal
           onClose={handleCloseLogoutModal}

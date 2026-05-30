@@ -13,11 +13,19 @@ interface Conversation {
     bedrooms?: number;
     maxGuests?: number;
     cleaningFee?: number;
+    rating?: number;
+    reviewCount?: number;
   };
   otherUser: {
     id: string;
-    name: string;
+    username: string;
     image?: string;
+    isVerified?: boolean;
+    reliabilityScore?: number;
+    averageRating?: number;
+    totalStays?: number;    
+    role?: string;  
+
   };
   infoRequest?: {
     id: string;
@@ -31,6 +39,8 @@ interface Conversation {
     totalPrice: number;
     createdAt: string;
     expiresAt: string;
+    isPaid?: boolean;
+    contractUrl?: string;
   };
   lastMessage?: string;
   unreadCount: number;
@@ -163,6 +173,32 @@ export function useOwnerMessages() {
       setIsProcessing(false);
     }
   };
+  // Fonction pour ouvrir le contrat
+const openContract = (contractUrl: string) => {
+  if (!contractUrl) return;
+  
+  // Si c'est une URL data (base64 intégré)
+  if (contractUrl.startsWith("data:application/pdf")) {
+    // Créer un blob à partir du base64
+    const base64Data = contractUrl.split(",")[1];
+    const binaryData = atob(base64Data);
+    const arrayBuffer = new Uint8Array(binaryData.length);
+    for (let i = 0; i < binaryData.length; i++) {
+      arrayBuffer[i] = binaryData.charCodeAt(i);
+    }
+    const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+    const blobUrl = URL.createObjectURL(blob);
+    
+    // Ouvrir dans un nouvel onglet
+    window.open(blobUrl, "_blank");
+    
+    // Nettoyer l'URL après un délai
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 60000);
+  } else {
+    // Sinon, ouvrir directement
+    window.open(contractUrl, "_blank");
+  }
+};
 
   return {
     conversations,
@@ -178,5 +214,7 @@ export function useOwnerMessages() {
     handleAcceptOffer,
     handleRejectOffer,
     setToast,
+      openContract,  
+
   };
 }

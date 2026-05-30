@@ -44,12 +44,17 @@ import {
   RiUserHeartLine,
 } from "react-icons/ri";
 import { MdOutlineVerified } from "react-icons/md";
-import { TbLanguage } from "react-icons/tb";
+import { TbLanguage, TbTargetArrow } from "react-icons/tb";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { useProfile } from "./hooks/useProfile";
-// Add at the top with other imports
 import { useCINStatus } from "./hooks/useCINStatus";
 import IdentityPage from "@/components/ui/modals/IdentityModal";
+import {
+  IoCheckmarkCircle,
+  IoShieldCheckmark,
+  IoStarSharp,
+} from "react-icons/io5";
+
 const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
 
@@ -57,6 +62,11 @@ const block3d =
   "shadow-[0_6px_0_0_rgba(0,0,0,0.05),0_12px_28px_-6px_rgba(0,0,0,0.09)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.35),0_12px_28px_-6px_rgba(0,0,0,0.45)]";
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.04),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.25),0_8px_16px_-4px_rgba(0,0,0,0.30)]";
+
+interface ToastState {
+  type: "success" | "error";
+  message: string;
+}
 
 function Field({ label, icon: Icon, children, badge }: any) {
   return (
@@ -72,20 +82,20 @@ function Field({ label, icon: Icon, children, badge }: any) {
   );
 }
 
-function VerifiedBadge() {
+function VerifiedBadge({ t }: { t: any }) {
   return (
     <span className="flex items-center gap-1 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/40 px-2 py-0.5 rounded-full uppercase tracking-wider">
-      <MdOutlineVerified size={10} /> Vérifié
+      <MdOutlineVerified size={10} /> {t("badges.verified")}
     </span>
   );
 }
 
-function TrustBar({ score }: { score: number }) {
+function TrustBar({ score, t }: { score: number; t: any }) {
   const milestones = [
-    { label: "Nouveau", threshold: 0 },
-    { label: "Fiable", threshold: 40 },
-    { label: "Expert", threshold: 70 },
-    { label: "Superhôte", threshold: 90 },
+    { label: t("trustLevels.new"), threshold: 0 },
+    { label: t("trustLevels.reliable"), threshold: 40 },
+    { label: t("trustLevels.expert"), threshold: 70 },
+    { label: t("trustLevels.superhost"), threshold: 90 },
   ];
   return (
     <div>
@@ -111,14 +121,14 @@ function TrustBar({ score }: { score: number }) {
   );
 }
 
-function getUserTypeLabel(userType: string) {
+function getUserTypeLabel(userType: string, t: any) {
   switch (userType) {
     case "owner":
       return (
         <span className="flex items-center gap-1.5">
           <HomeIcon size={12} className="text-sky-600 dark:text-sky-400" />
           <span className="text-slate-700 dark:text-slate-300">
-            Property Owner
+            {t("userTypes.owner")}
           </span>
         </span>
       );
@@ -126,7 +136,9 @@ function getUserTypeLabel(userType: string) {
       return (
         <span className="flex items-center gap-1.5">
           <Key size={12} className="text-emerald-600 dark:text-emerald-400" />
-          <span className="text-slate-700 dark:text-slate-300">Tenant</span>
+          <span className="text-slate-700 dark:text-slate-300">
+            {t("userTypes.tenant")}
+          </span>
         </span>
       );
     case "professional":
@@ -136,7 +148,9 @@ function getUserTypeLabel(userType: string) {
             size={12}
             className="text-purple-600 dark:text-purple-400"
           />
-          <span className="text-slate-700 dark:text-slate-300">Both</span>
+          <span className="text-slate-700 dark:text-slate-300">
+            {t("userTypes.both")}
+          </span>
         </span>
       );
     default:
@@ -144,7 +158,7 @@ function getUserTypeLabel(userType: string) {
         <span className="flex items-center gap-1.5">
           <User size={12} className="text-slate-500 dark:text-slate-400" />
           <span className="text-slate-500 dark:text-slate-400">
-            Utilisateur
+            {t("userTypes.default")}
           </span>
         </span>
       );
@@ -153,6 +167,7 @@ function getUserTypeLabel(userType: string) {
 
 export default function ProfilePage() {
   const t = useTranslations("Profile");
+  const [toast, setToast] = React.useState<ToastState | null>(null);
   const {
     loading,
     saving,
@@ -195,7 +210,6 @@ export default function ProfilePage() {
     responseTime,
     completionRate,
     badges,
-    // ✅ Nouveaux champs pour validation username
     usernameError,
     isCheckingUsername,
     usernameTouched,
@@ -221,8 +235,9 @@ export default function ProfilePage() {
     startEditSlot,
     cancelEditSlot,
     setEditingSlot,
+    memberSince,
     setTempHours,
-  } = useProfile();
+  } = useProfile(setToast);
   const {
     cinStatus,
     loading: cinLoading,
@@ -230,8 +245,8 @@ export default function ProfilePage() {
     setShowCINModal,
     submitting: cinSubmitting,
     handleCINSubmission,
-    currentUserId, // ✅ AJOUTER CETTE LIGNE
-  } = useCINStatus();
+    currentUserId,
+  } = useCINStatus(setToast);
 
   if (loading) {
     return (
@@ -240,7 +255,7 @@ export default function ProfilePage() {
           variant="spinner"
           size="lg"
           color="primary"
-          text="Chargement du profil..."
+          text={t("loading.message")}
           speed="normal"
         />
       </div>
@@ -254,8 +269,51 @@ export default function ProfilePage() {
         : "focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
     }`;
 
+  // Common hours options
+  const hoursOptions = [
+    { value: "09:00 - 19:00", label: t("availability.hours.fullDay") },
+    { value: "10:00 - 15:00", label: t("availability.hours.morning") },
+    { value: "08:00 - 12:00", label: t("availability.hours.earlyMorning") },
+    { value: "14:00 - 20:00", label: t("availability.hours.afternoon") },
+    { value: "by_appointment", label: t("availability.hours.byAppointment") },
+    { value: "closed", label: t("availability.hours.closed") },
+  ];
+
+  const getHoursDisplay = (hours: string) => {
+    if (hours === "by_appointment")
+      return t("availability.hours.byAppointment");
+    if (hours === "closed") return t("availability.hours.closed");
+    return hours;
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50/20 dark:bg-slate-900/0">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* PAGE HEADER */}
       <div className="bg-white dark:bg-slate-900/0 border-b border-slate-100 dark:border-slate-800">
         <div className="px-6 lg:px-10 py-7">
@@ -308,7 +366,7 @@ export default function ProfilePage() {
                               ? profilePictureUrl
                               : pipAvatar(profilePictureUrl)
                           }
-                          alt="Profil"
+                          alt={t("avatar.alt")}
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -364,12 +422,8 @@ export default function ProfilePage() {
 
                 {/* FORM GRID - USERNAME EN PREMIER */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {/* ✅ USERNAME EN PREMIER (prend toute la ligne si tu veux, ici première position) */}
                   <div className="sm:col-span-2">
-                    <Field
-                      label={t("fields.username") || "Nom d'utilisateur"}
-                      icon={RiUserLine}
-                    >
+                    <Field label={t("fields.username")} icon={RiUserLine}>
                       <div>
                         <input
                           type="text"
@@ -383,13 +437,13 @@ export default function ProfilePage() {
                           }}
                           disabled={!isEditing}
                           className={`${inputBase(!isEditing)} ${usernameError ? "border-red-500 focus:border-red-500" : ""}`}
-                          placeholder="nom_utilisateur"
+                          placeholder={t("fields.usernamePlaceholder")}
                         />
                         {isCheckingUsername && (
                           <div className="flex items-center gap-1 mt-1">
                             <Loader2 className="w-3 h-3 animate-spin text-slate-400" />
                             <span className="text-[10px] text-slate-400">
-                              Vérification...
+                              {t("validation.checking")}
                             </span>
                           </div>
                         )}
@@ -404,8 +458,8 @@ export default function ProfilePage() {
                           !isCheckingUsername &&
                           isEditing && (
                             <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1">
-                              <CheckCircle size={10} /> Nom d'utilisateur
-                              disponible
+                              <CheckCircle size={10} />{" "}
+                              {t("validation.available")}
                             </p>
                           )}
                       </div>
@@ -442,14 +496,14 @@ export default function ProfilePage() {
                     }
                   >
                     <div className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
-                      {getUserTypeLabel(userType)}
+                      {getUserTypeLabel(userType, t)}
                     </div>
                   </Field>
 
                   <Field
                     label={t("fields.email")}
                     icon={RiUserLine}
-                    badge={emailVerified ? <VerifiedBadge /> : undefined}
+                    badge={emailVerified ? <VerifiedBadge t={t} /> : undefined}
                   >
                     <input
                       type="email"
@@ -462,14 +516,14 @@ export default function ProfilePage() {
                   <Field
                     label={t("fields.phone")}
                     icon={RiUserLine}
-                    badge={phoneVerified ? <VerifiedBadge /> : undefined}
+                    badge={phoneVerified ? <VerifiedBadge t={t} /> : undefined}
                   >
                     <input
                       type="tel"
                       value={phone}
                       disabled
                       className={inputBase(true)}
-                      placeholder="+216 00 000 000"
+                      placeholder={t("fields.phonePlaceholder")}
                     />
                   </Field>
 
@@ -503,6 +557,7 @@ export default function ProfilePage() {
                       disabled={!isEditing}
                       rows={4}
                       className={`${inputBase(!isEditing)} resize-none`}
+                      placeholder={t("fields.bioPlaceholder")}
                     />
                   </Field>
                 </div>
@@ -537,7 +592,7 @@ export default function ProfilePage() {
                             onChange={(e) => setNewLanguage(e.target.value)}
                             className="px-2 py-1.5 border border-slate-200 dark:border-slate-600 rounded-lg text-xs bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                           >
-                            <option value="">Sélectionner…</option>
+                            <option value="">{t("languages.select")}</option>
                             {commonLanguages
                               .filter((l) => !languages.includes(l))
                               .map((l) => (
@@ -595,7 +650,7 @@ export default function ProfilePage() {
                   </div>
                   {isEditing && (
                     <span className="text-[9px] text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-2 py-1 rounded-full">
-                      Cliquez pour modifier
+                      {t("availability.clickToEdit")}
                     </span>
                   )}
                 </div>
@@ -617,7 +672,7 @@ export default function ProfilePage() {
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-[9px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                          {slot.day}
+                          {t(`availability.days.${slot.day.toLowerCase()}`)}
                         </span>
                         {isEditing && (
                           <div
@@ -646,22 +701,11 @@ export default function ProfilePage() {
                             onChange={(e) => setTempHours(e.target.value)}
                             className="flex-1 px-2 py-1 text-xs rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                           >
-                            <option value="09:00 - 19:00">
-                              09:00 - 19:00 (Journée)
-                            </option>
-                            <option value="10:00 - 15:00">
-                              10:00 - 15:00 (Matinée)
-                            </option>
-                            <option value="08:00 - 12:00">
-                              08:00 - 12:00 (Matin)
-                            </option>
-                            <option value="14:00 - 20:00">
-                              14:00 - 20:00 (Après-midi)
-                            </option>
-                            <option value="Sur rendez-vous">
-                              Sur rendez-vous
-                            </option>
-                            <option value="Fermé">Fermé</option>
+                            {hoursOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
                           <button
                             onClick={() =>
@@ -681,7 +725,7 @@ export default function ProfilePage() {
                       ) : (
                         <div className="flex items-center justify-between">
                           <span className="block font-bold text-sm text-slate-900 dark:text-white">
-                            {slot.hours}
+                            {getHoursDisplay(slot.hours)}
                           </span>
                           {isEditing && slot.enabled && (
                             <button
@@ -760,7 +804,7 @@ export default function ProfilePage() {
                     /100
                   </span>
                 </div>
-                <TrustBar score={trustScore} />
+                <TrustBar score={trustScore} t={t} />
                 <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800 space-y-3">
                   {[
                     { ok: idVerified, label: t("trust.idVerified") },
@@ -773,7 +817,8 @@ export default function ProfilePage() {
                     {
                       ok: true,
                       label: t("trust.memberSince", {
-                        date: new Date().getFullYear().toString(),
+                        date:
+                          memberSince || new Date().getFullYear().toString(),
                       }),
                     },
                   ].map(({ ok, label }) => (
@@ -848,10 +893,10 @@ export default function ProfilePage() {
                       }`}
                     >
                       {cinStatus.status === "VALIDATED"
-                        ? "✓ Vérifié"
+                        ? t("verification.statuses.validated")
                         : cinStatus.status === "REJECTED"
-                          ? "✗ Rejeté"
-                          : "⏳ En attente"}
+                          ? t("verification.statuses.rejected")
+                          : t("verification.statuses.pending")}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -865,7 +910,8 @@ export default function ProfilePage() {
                       {cinStatus.status === "REJECTED" &&
                         cinStatus.rejectionReason && (
                           <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-0.5">
-                            Motif : {cinStatus.rejectionReason}
+                            {t("verification.rejectionReason")} :{" "}
+                            {cinStatus.rejectionReason}
                           </p>
                         )}
                     </div>
@@ -876,21 +922,15 @@ export default function ProfilePage() {
                   {t("verification.description")}
                 </p>
 
-                {/* ============================================ */}
-                {/* CASE 1: VALIDATED - NO BUTTON */}
-                {/* ============================================ */}
                 {cinStatus.status === "VALIDATED" && (
                   <button
                     disabled
                     className="w-full py-3 rounded-xl text-sm font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-not-allowed"
                   >
-                    ✓ Identité vérifiée
+                    ✓ {t("verification.validatedButton")}
                   </button>
                 )}
 
-                {/* ============================================ */}
-                {/* CASE 2: PENDING - ONLY REMINDER BUTTON */}
-                {/* ============================================ */}
                 {cinStatus.status === "PENDING" && (
                   <button
                     onClick={sendVerificationReminder}
@@ -900,19 +940,16 @@ export default function ProfilePage() {
                     {sendingReminder ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : reminderSent ? (
-                      "✓ Rappel envoyé"
+                      `✓ ${t("verification.reminderSent")}`
                     ) : (
                       <>
                         <Clock className="w-4 h-4" />
-                        Envoyer un rappel
+                        {t("verification.sendReminder")}
                       </>
                     )}
                   </button>
                 )}
 
-                {/* ============================================ */}
-                {/* CASE 3: REJECTED - REAPPLY BUTTON (ANIMATED) */}
-                {/* ============================================ */}
                 {cinStatus.status === "REJECTED" && cinStatus.canReapply && (
                   <button
                     onClick={() => setShowCINModal(true)}
@@ -931,13 +968,10 @@ export default function ProfilePage() {
                         d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
                       />
                     </svg>
-                    Réappliquer maintenant
+                    {t("verification.reapply")}
                   </button>
                 )}
 
-                {/* ============================================ */}
-                {/* CASE 4: NO STATUS / INITIAL - START BUTTON */}
-                {/* ============================================ */}
                 {!cinStatus.status && (
                   <button
                     onClick={() => setShowCINModal(true)}
@@ -948,20 +982,19 @@ export default function ProfilePage() {
                   </button>
                 )}
 
-                {/* Wait time message */}
                 {waitTimeRemaining !== null && (
                   <div className="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                       <p className="text-xs text-amber-700 dark:text-amber-400">
-                        Vous avez déjà envoyé un rappel récemment. Veuillez
-                        patienter {waitTimeRemaining} heures.{" "}
+                        {t("verification.waitTime", {
+                          hours: waitTimeRemaining,
+                        })}
                       </p>
                     </div>
                   </div>
                 )}
 
-                {/* Reminder sent message */}
                 {reminderSent &&
                   cinStatus.status === "PENDING" &&
                   !waitTimeRemaining && (
@@ -969,8 +1002,7 @@ export default function ProfilePage() {
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                          Un rappel a été envoyé à l'administrateur. Vous serez
-                          notifié une fois votre identité vérifiée.
+                          {t("verification.reminderSentMessage")}
                         </p>
                       </div>
                     </div>
@@ -992,7 +1024,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Statistiques
+                    {t("stats.title")}
                   </h3>
                 </div>
 
@@ -1006,7 +1038,7 @@ export default function ProfilePage() {
                       {totalProperties}
                     </p>
                     <p className="text-[9px] text-slate-500 dark:text-slate-400">
-                      Propriétés
+                      {t("stats.properties")}
                     </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-center">
@@ -1018,7 +1050,7 @@ export default function ProfilePage() {
                       {totalBookings}
                     </p>
                     <p className="text-[9px] text-slate-500 dark:text-slate-400">
-                      Réservations
+                      {t("stats.bookings")}
                     </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-center">
@@ -1030,7 +1062,7 @@ export default function ProfilePage() {
                       {totalReviews}
                     </p>
                     <p className="text-[9px] text-slate-500 dark:text-slate-400">
-                      Avis reçus
+                      {t("stats.reviews")}
                     </p>
                   </div>
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-3 text-center">
@@ -1042,31 +1074,70 @@ export default function ProfilePage() {
                       {totalEarnings.toLocaleString()} TND
                     </p>
                     <p className="text-[9px] text-slate-500 dark:text-slate-400">
-                      Gains totaux
+                      {t("stats.earnings")}
                     </p>
                   </div>
                 </div>
 
                 {badges.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1.5 justify-center">
-                    {badges.map((badge) => (
-                      <span
-                        key={badge}
-                        className="text-[8px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
-                      >
-                        {badge === "SUPERHOST" && "⭐ Superhôte"}
-                        {badge === "EXPERT" && "🎯 Expert"}
-                        {badge === "RELIABLE" && "✅ Fiable"}
-                        {badge === "VERIFIED" && "🔒 Vérifié"}
-                      </span>
-                    ))}
+                    {badges.map((badge) => {
+                      // Ne rendre que les badges que tu connais
+                      if (badge === "SUPERHOST") {
+                        return (
+                          <span
+                            key={badge}
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                          >
+                            <IoStarSharp size={10} />
+                            {t("badges.superhost")}
+                          </span>
+                        );
+                      }
+                      if (badge === "EXPERT") {
+                        return (
+                          <span
+                            key={badge}
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                          >
+                            <TbTargetArrow size={10} />
+                            {t("badges.expert")}
+                          </span>
+                        );
+                      }
+                      if (badge === "RELIABLE") {
+                        return (
+                          <span
+                            key={badge}
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                          >
+                            <IoCheckmarkCircle size={10} />
+                            {t("badges.reliable")}
+                          </span>
+                        );
+                      }
+                      if (badge === "VERIFIED") {
+                        return (
+                          <span
+                            key={badge}
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400"
+                          >
+                            <IoShieldCheckmark size={10} />
+                            {t("badges.verified")}
+                          </span>
+                        );
+                      }
+
+                      // Badge inconnu - on ne l'affiche pas
+                      return null;
+                    })}
                   </div>
                 )}
 
                 <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 dark:text-slate-400">
-                      Taux de réponse
+                      {t("stats.responseRate")}
                     </span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                       {responseRate}%
@@ -1074,7 +1145,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center justify-between text-xs mt-2">
                     <span className="text-slate-500 dark:text-slate-400">
-                      Temps de réponse
+                      {t("stats.responseTime")}
                     </span>
                     <span className="font-semibold text-slate-900 dark:text-white">
                       {responseTime}
@@ -1082,7 +1153,7 @@ export default function ProfilePage() {
                   </div>
                   <div className="flex items-center justify-between text-xs mt-2">
                     <span className="text-slate-500 dark:text-slate-400">
-                      Complétion profil
+                      {t("stats.completionRate")}
                     </span>
                     <span className="font-semibold text-indigo-600 dark:text-indigo-400">
                       {completionRate}%
@@ -1094,15 +1165,16 @@ export default function ProfilePage() {
           </aside>
         </div>
       </div>
-      {/* CIN Upload Modal - Only shows when showCINModal is true */}
+
+      {/* CIN Upload Modal */}
       {showCINModal && (
         <IdentityPage
           onClose={() => setShowCINModal(false)}
           onSuccess={async (data) => {
             await handleCINSubmission(data.rectoFile, data.versoFile);
           }}
-          userId={currentUserId} // ← Passe l'ID utilisateur
-          initialRejectionReason={cinStatus.rejectionReason}
+          userId={currentUserId}
+          initialRejectionReason={cinStatus.rejectionReason ?? undefined}
         />
       )}
     </div>

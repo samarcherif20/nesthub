@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import ReviewModal from "@/components/ui/modals/OwnerReviewModal";
+import { DisputeModal } from "@/components/ui/modals/DisputeModal ";
 import { useReview } from "./hooks/useReview";
 import {
   IoCheckmarkCircleOutline,
@@ -25,6 +26,7 @@ import {
   IoChevronForwardOutline,
   IoMoonOutline,
   IoArrowForwardOutline,
+  IoAlertCircleOutline,
 } from "react-icons/io5";
 import { TbBrandBooking, TbHomePlus } from "react-icons/tb";
 import {
@@ -566,7 +568,7 @@ function RequestCard({
                 {t("actions.viewListing")}
               </Link>
 
-              {/* Bouton "Donner un avis" - UNIQUEMENT si COMPLETED ET pas encore d'avis */}
+              {/* Bouton "Donner un avis" */}
               {booking.status === "COMPLETED" &&
                 !booking.hasReview &&
                 onOpenReview && (
@@ -582,7 +584,7 @@ function RequestCard({
                   </button>
                 )}
 
-              {/* Badge "Avis donné" si déjà fait */}
+              {/* Badge "Avis donné" */}
               {booking.status === "COMPLETED" && booking.hasReview && (
                 <div className="flex-1 text-center py-2.5 rounded-xl text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2">
                   <CheckCircle className="w-4 h-4" />
@@ -639,6 +641,10 @@ export default function OwnerReservationsPage({
     message: string;
     type: "success" | "error";
   } | null>(null);
+
+  // États pour le modal de litige
+  const [showDisputeModal, setShowDisputeModal] = useState(false);
+  const [selectedBookingForDispute, setSelectedBookingForDispute] = useState<BookingRequest | null>(null);
 
   // Utilisation du hook useReview
   const {
@@ -791,7 +797,7 @@ export default function OwnerReservationsPage({
         .fu { animation: fadeUp .5s cubic-bezier(.22,1,.36,1) both }
       `}</style>
 
-      {/* Header avec tabs */}
+      {/* Header avec tabs + Bouton Ouvrir un litige (uniquement sur l'onglet PAST) */}
       <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-4xl md:text-4xl font-black tracking-tight mb-1.5 text-slate-900 dark:text-white">
@@ -802,51 +808,65 @@ export default function OwnerReservationsPage({
           </p>
         </div>
 
-        <div className="flex gap-1.5 bg-gray-200/50 dark:bg-gray-900/40 backdrop-blur-xl p-1 rounded-2xl border border-white/50 dark:border-gray-800">
-          {[
-            {
-              key: "PENDING" as Tab,
-              label: t("tabs.pending"),
-              icon: <IoTimeOutline className="text-sm" />,
-              count: stats.pendingCount,
-            },
-            {
-              key: "ACCEPTED" as Tab,
-              label: t("tabs.confirmed"),
-              icon: <IoCheckmarkCircleOutline className="text-sm" />,
-              count: stats.acceptedCount,
-            },
-            {
-              key: "PAST" as Tab,
-              label: t("tabs.past"),
-              icon: <IoCalendarOutline className="text-sm" />,
-              count: stats.pastCount,
-            },
-          ].map(({ key, label, icon, count }) => (
+        <div className="flex items-center gap-3">
+          {/* Bouton "Ouvrir un litige" - Apparaît UNIQUEMENT sur l'onglet PAST */}
+          {tab === "PAST" && (
             <button
-              key={key}
-              onClick={() => setTab(key)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${
-                tab === key
-                  ? "bg-gradient-to-r from-sky-600 to-purple-600 text-white shadow-md shadow-sky-500/25"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
-              }`}
+              onClick={() => setShowDisputeModal(true)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-red-600 hover:from-rose-600 hover:to-red-700 text-white text-sm font-semibold shadow-lg shadow-rose-500/25 hover:shadow-xl hover:shadow-rose-500/30 transition-all duration-300 hover:scale-[1.02] active:scale-95"
             >
-              {icon}
-              {label}
-              {count > 0 && (
-                <span
-                  className={`text-[10px] min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center ${
-                    tab === key
-                      ? "bg-white/20 text-white"
-                      : "bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400"
-                  }`}
-                >
-                  {count > 99 ? "99+" : count}
-                </span>
-              )}
+              <IoAlertCircleOutline className="text-base" />
+              {t("actions.openDispute")}
             </button>
-          ))}
+          )}
+
+          {/* Tabs existants */}
+          <div className="flex gap-1.5 bg-gray-200/50 dark:bg-gray-900/40 backdrop-blur-xl p-1 rounded-2xl border border-white/50 dark:border-gray-800">
+            {[
+              {
+                key: "PENDING" as Tab,
+                label: t("tabs.pending"),
+                icon: <IoTimeOutline className="text-sm" />,
+                count: stats.pendingCount,
+              },
+              {
+                key: "ACCEPTED" as Tab,
+                label: t("tabs.confirmed"),
+                icon: <IoCheckmarkCircleOutline className="text-sm" />,
+                count: stats.acceptedCount,
+              },
+              {
+                key: "PAST" as Tab,
+                label: t("tabs.past"),
+                icon: <IoCalendarOutline className="text-sm" />,
+                count: stats.pastCount,
+              },
+            ].map(({ key, label, icon, count }) => (
+              <button
+                key={key}
+                onClick={() => setTab(key)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                  tab === key
+                    ? "bg-gradient-to-r from-sky-600 to-purple-600 text-white shadow-md shadow-sky-500/25"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
+                }`}
+              >
+                {icon}
+                {label}
+                {count > 0 && (
+                  <span
+                    className={`text-[10px] min-w-[20px] h-5 px-1.5 rounded-full font-bold flex items-center justify-center ${
+                      tab === key
+                        ? "bg-white/20 text-white"
+                        : "bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400"
+                    }`}
+                  >
+                    {count > 99 ? "99+" : count}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -924,7 +944,7 @@ export default function OwnerReservationsPage({
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar - Version complète */}
         <div className="space-y-5 lg:sticky lg:top-6">
           <div className="bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl rounded-3xl border border-sky-100 dark:border-sky-900/40 p-5">
             <p className="text-[9px] font-bold uppercase tracking-[.2em] text-slate-400 dark:text-slate-500 mb-4">
@@ -1055,6 +1075,22 @@ export default function OwnerReservationsPage({
           checkIn={selectedBooking.checkIn}
           checkOut={selectedBooking.checkOut}
           onSubmit={handleSubmitReview}
+        />
+      )}
+
+      {/* MODAL DE LITIGE */}
+      {showDisputeModal && (
+        <DisputeModal
+          isOpen={showDisputeModal}
+          onClose={() => {
+            setShowDisputeModal(false);
+            setSelectedBookingForDispute(null);
+          }}
+          onSuccess={() => {
+            loadBookings();
+            setToast({ message: t("toast.disputeCreated"), type: "success" });
+          }}
+          preselectedBookingId={selectedBookingForDispute?.id}
         />
       )}
     </div>

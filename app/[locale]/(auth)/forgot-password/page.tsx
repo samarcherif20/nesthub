@@ -14,7 +14,7 @@ import { useForgotPassword } from "./hooks/useForgotPassword";
 
 export default function ForgotPasswordPage() {
   const t = useTranslations("ForgotPassword");
-  const locale = useLocale(); 
+  const locale = useLocale();
 
   const {
     email,
@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
     closeError,
     closeSuccess,
     handleBackToLogin,
-} = useForgotPassword(t);
+  } = useForgotPassword(t);
 
   // État pour l'erreur système (bandeau)
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -37,7 +37,12 @@ export default function ForgotPasswordPage() {
 
   // Surveiller les erreurs système (email non trouvé, serveur, etc.)
   useEffect(() => {
-    if (error && !error.includes("email") && !error.includes("requis") && !error.includes("invalide")) {
+    if (
+      error &&
+      !error.includes("email") &&
+      !error.includes("requis") &&
+      !error.includes("invalide")
+    ) {
       setSystemError(error);
       setShowSystemError(true);
       // Timer pour masquer l'erreur après 5 secondes
@@ -68,7 +73,7 @@ export default function ForgotPasswordPage() {
       <div className="absolute top-0 left-0 right-0 h-24 bg-linear-to-r from-blue-50 via-blue-400 to-purple-400 transform -skew-y-2 origin-top-left"></div>
 
       {/* Logo - Positionné sur la ligne inclinée */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
@@ -92,14 +97,14 @@ export default function ForgotPasswordPage() {
       </motion.div>
 
       {/* Main Card with Split Layout */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 30, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, type: "spring", damping: 20 }}
         className="relative z-10 w-full max-w-5xl bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-primary/5 overflow-hidden flex flex-col md:flex-row"
       >
         {/* LEFT SIDE - Image */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: -30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
@@ -115,14 +120,15 @@ export default function ForgotPasswordPage() {
         </motion.div>
 
         {/* RIGHT SIDE - Form */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: 30 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
           className="md:w-4/5 p-6 md:p-8"
         >
           {/* Alert Container - UNIQUEMENT POUR LE SUCCÈS */}
-          <div className="fixed top-5 right-5 z-[100] space-y-2 w-full max-w-sm">
+          <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[100] space-y-2 w-full max-w-sm">
+            {" "}
             <AnimatePresence>
               {successMessage && (
                 <motion.div
@@ -165,7 +171,7 @@ export default function ForgotPasswordPage() {
           </AnimatePresence>
 
           {/* Header */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
@@ -198,7 +204,11 @@ export default function ForgotPasswordPage() {
                   onBlur={handleBlur}
                   placeholder={t("emailPlaceholder")}
                   className={`w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-slate-800 border-2 rounded-xl focus:ring-0 focus:border-primary outline-none transition-all text-slate-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 ${
-                    touched && error && (error.includes("email") || error.includes("requis") || error.includes("invalide"))
+                    touched &&
+                    error &&
+                    (error.includes("email") ||
+                      error.includes("requis") ||
+                      error.includes("invalide"))
                       ? "border-red-300 dark:border-red-700"
                       : "border-gray-200 dark:border-slate-700 focus:border-primary"
                   }`}
@@ -207,23 +217,27 @@ export default function ForgotPasswordPage() {
               </div>
               {/* Validation error - sous le champ (email invalide, champ vide) */}
               <AnimatePresence>
-                {touched && error && (error.includes("email") || error.includes("requis") || error.includes("invalide")) && (
-                  <motion.p
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="mt-2 text-xs text-red-500 flex items-center gap-1"
-                  >
-                    <MdOutlineDangerous size={14} />
-                    {error}
-                  </motion.p>
-                )}
+                {touched &&
+                  error &&
+                  (error.includes("email") ||
+                    error.includes("requis") ||
+                    error.includes("invalide")) && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="mt-2 text-xs text-red-500 flex items-center gap-1"
+                    >
+                      <MdOutlineDangerous size={14} />
+                      {error}
+                    </motion.p>
+                  )}
               </AnimatePresence>
             </motion.div>
 
             {/* Buttons Container - Back à gauche, Submit à droite */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.5 }}
@@ -261,7 +275,7 @@ export default function ForgotPasswordPage() {
           </form>
 
           {/* Security Badge */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.6 }}
@@ -272,25 +286,29 @@ export default function ForgotPasswordPage() {
           </motion.div>
 
           {/* Footer Links */}
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.4, delay: 0.7 }}
             className="mt-6 pt-4 text-[10px] text-slate-400 dark:text-slate-600 flex justify-between w-full border-t border-slate-100 dark:border-slate-800/50"
           >
             <div className="flex gap-3">
-              <Link href={`/${locale}/legal`}
+              <Link
+                href={`/${locale}/legal`}
                 className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
               >
                 {t("legal")}
               </Link>
-              <Link href={`/${locale}/privacy`}
+              <Link
+                href={`/${locale}/privacy`}
                 className="hover:text-slate-900 dark:hover:text-slate-300 transition-colors"
               >
                 {t("privacy")}
               </Link>
             </div>
-            <span className="text-slate-400 dark:text-slate-600">© 2026 NESTHUB</span>
+            <span className="text-slate-400 dark:text-slate-600">
+              © 2026 NESTHUB
+            </span>
           </motion.div>
         </motion.div>
       </motion.div>

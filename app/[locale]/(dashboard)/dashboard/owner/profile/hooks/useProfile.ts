@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
-import { toast } from "sonner";
 
 interface AvailabilitySlot {
   day: string;
@@ -10,6 +9,7 @@ interface AvailabilitySlot {
   enabled: boolean;
 }
 
+// Interface pour les données du profil (alignée avec l'API)
 interface UserProfile {
   id: string;
   firstName: string;
@@ -32,18 +32,52 @@ interface UserProfile {
   phoneVerified: boolean;
 }
 
+// Interface pour les stats (alignée avec l'API)
+interface UserStats {
+  totalListings: number;
+  totalBookings: number;
+  totalReviews: number;
+  totalEarned: number;
+  responseRate: number;
+  responseTime: string;
+  completionRate: number;
+  badges: string[];
+  reliabilityScore: number;
+  averageRating: number;
+  memberSince: string;
+}
+
 const defaultAvailability: AvailabilitySlot[] = [
-  { day: "Lun - Ven", hours: "09:00 - 19:00", enabled: true },
-  { day: "Samedi", hours: "10:00 - 15:00", enabled: true },
-  { day: "Dimanche", hours: "Fermé", enabled: false },
+  { day: "Monday", hours: "09:00 - 19:00", enabled: true },
+  { day: "Tuesday", hours: "09:00 - 19:00", enabled: true },
+  { day: "Wednesday", hours: "09:00 - 19:00", enabled: true },
+  { day: "Thursday", hours: "09:00 - 19:00", enabled: true },
+  { day: "Friday", hours: "09:00 - 19:00", enabled: true },
+  { day: "Saturday", hours: "10:00 - 15:00", enabled: true },
+  { day: "Sunday", hours: "Fermé", enabled: false },
 ];
 
 const commonLanguages = [
-  "Français", "Arabe", "Anglais", "Espagnol", "Allemand",
-  "Italien", "Turc", "Russe", "Chinois", "Portugais",
+  "Français",
+  "Arabe",
+  "Anglais",
+  "Espagnol",
+  "Allemand",
+  "Italien",
+  "Turc",
+  "Russe",
+  "Chinois",
+  "Portugais",
 ];
 
-export function useProfile() {
+interface ToastState {
+  type: "success" | "error";
+  message: string;
+}
+
+export function useProfile(
+  setToast: React.Dispatch<React.SetStateAction<ToastState | null>>,
+) {
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
 
@@ -60,15 +94,21 @@ export function useProfile() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [userType, setUserType] = useState<"tenant" | "owner" | "professional">("owner");
+  const [userType, setUserType] = useState<"tenant" | "owner" | "professional">(
+    "owner",
+  );
   const [bio, setBio] = useState("");
   const [profession, setProfession] = useState("");
   const [languages, setLanguages] = useState<string[]>(["Français", "Arabe"]);
-  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
-  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
-  const [availability, setAvailability] = useState<AvailabilitySlot[]>(defaultAvailability);
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(
+    null,
+  );
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(
+    null,
+  );
+  const [availability, setAvailability] =
+    useState<AvailabilitySlot[]>(defaultAvailability);
 
-  // ✅ États pour la validation du username
   const [usernameError, setUsernameError] = useState("");
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [usernameTouched, setUsernameTouched] = useState(false);
@@ -82,6 +122,7 @@ export function useProfile() {
   const [responseTime, setResponseTime] = useState("--");
   const [completionRate, setCompletionRate] = useState(0);
   const [badges, setBadges] = useState<string[]>([]);
+  const [memberSince, setMemberSince] = useState("");
 
   // Trust score
   const [trustScore, setTrustScore] = useState(0);
@@ -93,7 +134,9 @@ export function useProfile() {
 
   const [sendingReminder, setSendingReminder] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
-  const [waitTimeRemaining, setWaitTimeRemaining] = useState<number | null>(null);
+  const [waitTimeRemaining, setWaitTimeRemaining] = useState<number | null>(
+    null,
+  );
 
   const [editingSlot, setEditingSlot] = useState<string | null>(null);
   const [tempHours, setTempHours] = useState("");
@@ -105,55 +148,66 @@ export function useProfile() {
   const bioMaxLength = 300;
   const bioLength = bio.length;
 
-  // ✅ Fonction pour vérifier l'unicité du username
-  const checkUsernameUniqueness = useCallback(async (usernameValue: string) => {
-    // Ne pas vérifier si le username n'a pas changé
-    if (usernameValue === originalUsername) {
-      setUsernameError("");
-      return true;
-    }
-    
-    // Validation de base
-    if (usernameValue.length < 3) {
-      setUsernameError("Le nom d'utilisateur doit contenir au moins 3 caractères");
-      return false;
-    }
-    
-    if (!/^[a-zA-Z0-9_]+$/.test(usernameValue)) {
-      setUsernameError("Utilisez uniquement des lettres, chiffres et underscores");
-      return false;
-    }
-    
-    setIsCheckingUsername(true);
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const response = await fetch(`/api/users/by-username/${encodeURIComponent(usernameValue)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (response.status === 404) {
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const checkUsernameUniqueness = useCallback(
+    async (usernameValue: string) => {
+      if (usernameValue === originalUsername) {
         setUsernameError("");
         return true;
       }
-      
-      if (response.ok) {
-        const user = await response.json();
-        if (user.id !== userId) {
-          setUsernameError("Ce nom d'utilisateur est déjà pris");
-          return false;
-        }
-      }
-      setUsernameError("");
-      return true;
-    } catch (error) {
-      console.error("Erreur vérification username:", error);
-      return true;
-    } finally {
-      setIsCheckingUsername(false);
-    }
-  }, [getToken, originalUsername, userId]);
 
-  // ✅ Verrouillage du clavier pour le debounce
+      if (usernameValue.length < 3) {
+        setUsernameError(
+          "Le nom d'utilisateur doit contenir au moins 3 caractères",
+        );
+        return false;
+      }
+
+      if (!/^[a-zA-Z0-9_]+$/.test(usernameValue)) {
+        setUsernameError(
+          "Utilisez uniquement des lettres, chiffres et underscores",
+        );
+        return false;
+      }
+
+      setIsCheckingUsername(true);
+      try {
+        const token = await getToken({ template: "my-app-template" });
+        const response = await fetch(
+          `/api/users/by-username/${encodeURIComponent(usernameValue)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+
+        if (response.status === 404) {
+          setUsernameError("");
+          return true;
+        }
+
+        if (response.ok) {
+          const userData = await response.json();
+          if (userData.id !== userId) {
+            setUsernameError("Ce nom d'utilisateur est déjà pris");
+            return false;
+          }
+        }
+        setUsernameError("");
+        return true;
+      } catch (error) {
+        console.error("Erreur vérification username:", error);
+        return true;
+      } finally {
+        setIsCheckingUsername(false);
+      }
+    },
+    [getToken, originalUsername, userId],
+  );
+
   useEffect(() => {
     if (!usernameTouched) return;
     const timer = setTimeout(() => {
@@ -174,7 +228,7 @@ export function useProfile() {
 
       if (response.ok) {
         const data = await response.json();
-        const user = data.user as UserProfile;
+        const user = data.user;
 
         setFirstName(user.firstName || "");
         setLastName(user.lastName || "");
@@ -195,6 +249,7 @@ export function useProfile() {
         setPhoneVerified(user.phoneVerified ?? false);
         setPositiveReviews(user.positiveReviews || 0);
         setTrustScore(user.trustScore || 50);
+        setMemberSince(user.memberSince || new Date().getFullYear().toString());
       }
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -212,22 +267,32 @@ export function useProfile() {
       if (response.ok) {
         const data = await response.json();
         const stats = data.stats;
-        
+
+        // ✅ Aligné avec les champs retournés par l'API
         setTotalProperties(stats.totalListings || 0);
         setTotalBookings(stats.totalBookings || 0);
         setTotalReviews(stats.totalReviews || 0);
+        setTotalEarnings(stats.totalEarned || 0);
         setResponseRate(stats.responseRate || 0);
         setResponseTime(stats.responseTime || "--");
         setCompletionRate(stats.completionRate || 0);
         setBadges(stats.badges || []);
-        setTotalEarnings(stats.totalEarned || 0);
+
+        // ✅ Mettre à jour trustScore avec reliabilityScore si disponible
+        if (stats.reliabilityScore) {
+          setTrustScore(stats.reliabilityScore);
+        }
+
+        // ✅ Mettre à jour memberSince si l'API le fournit
+        if (stats.memberSince) {
+          setMemberSince(stats.memberSince);
+        }
       }
     } catch (error) {
       console.error("Error fetching stats:", error);
     }
   }, [getToken]);
 
-  // Upload photo de profil
   const uploadProfilePicture = useCallback(async () => {
     if (!profilePictureFile) return;
     setUploadingPicture(true);
@@ -245,32 +310,29 @@ export function useProfile() {
       if (response.ok) {
         const data = await response.json();
         setProfilePictureUrl(data.profilePictureUrl);
-        toast.success("Photo de profil mise à jour avec succès !");
+        showToast("success", "Photo de profil mise à jour avec succès !");
         return true;
       } else {
         throw new Error("Upload failed");
       }
     } catch (error) {
       console.error("Error uploading picture:", error);
-      toast.error("Échec du téléchargement de la photo");
+      showToast("error", "Échec du téléchargement de la photo");
       return false;
     } finally {
       setUploadingPicture(false);
     }
   }, [profilePictureFile, getToken]);
 
-  // Sauvegarder le profil
   const handleSave = useCallback(async () => {
-    // ✅ Vérifier que le username est valide avant d'envoyer
     const isUsernameValid = await checkUsernameUniqueness(username);
     if (!isUsernameValid) {
-      toast.error("Veuillez corriger le nom d'utilisateur");
+      showToast("error", "Veuillez corriger le nom d'utilisateur");
       return;
     }
-    
+
     setSaving(true);
-    const toastId = toast.loading("Enregistrement en cours...");
-    
+
     try {
       const token = await getToken({ template: "my-app-template" });
 
@@ -299,14 +361,13 @@ export function useProfile() {
         if (profilePictureFile) {
           await uploadProfilePicture();
         }
-        
-        toast.success("Profil mis à jour avec succès !", { id: toastId });
+
+        showToast("success", "Profil mis à jour avec succès !");
         setIsEditing(false);
         setOriginalData(null);
         setOriginalUsername(username);
         setUsernameTouched(false);
-        
-        // Recharger les données
+
         await fetchUserData();
         await fetchUserStats();
       } else {
@@ -314,11 +375,30 @@ export function useProfile() {
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error(error instanceof Error ? error.message : "Échec de l'enregistrement", { id: toastId });
+      showToast(
+        "error",
+        error instanceof Error ? error.message : "Échec de l'enregistrement",
+      );
     } finally {
       setSaving(false);
     }
-  }, [firstName, lastName, username, phone, userType, bio, profession, languages, availability, profilePictureFile, getToken, uploadProfilePicture, fetchUserData, fetchUserStats, checkUsernameUniqueness]);
+  }, [
+    firstName,
+    lastName,
+    username,
+    phone,
+    userType,
+    bio,
+    profession,
+    languages,
+    availability,
+    profilePictureFile,
+    getToken,
+    uploadProfilePicture,
+    fetchUserData,
+    fetchUserStats,
+    checkUsernameUniqueness,
+  ]);
 
   const handleEdit = useCallback(() => {
     setOriginalData({
@@ -333,8 +413,17 @@ export function useProfile() {
     });
     setOriginalUsername(username);
     setIsEditing(true);
-    toast.info("Mode édition activé", { duration: 2000 });
-  }, [firstName, lastName, username, userType, bio, profession, languages, availability]);
+    showToast("success", "Mode édition activé");
+  }, [
+    firstName,
+    lastName,
+    username,
+    userType,
+    bio,
+    profession,
+    languages,
+    availability,
+  ]);
 
   const handleCancel = useCallback(() => {
     if (originalData) {
@@ -352,39 +441,48 @@ export function useProfile() {
     setOriginalData(null);
     setUsernameError("");
     setUsernameTouched(false);
-    toast.info("Modifications annulées", { duration: 2000 });
+    showToast("success", "Modifications annulées");
   }, [originalData]);
 
-  const addLanguage = useCallback((lang: string) => {
-    if (lang && !languages.includes(lang)) {
-      setLanguages(prev => [...prev, lang]);
-      toast.success(`Langue "${lang}" ajoutée`);
-    }
-    setNewLanguage("");
-    setShowLanguageInput(false);
-  }, [languages]);
+  const addLanguage = useCallback(
+    (lang: string) => {
+      if (lang && !languages.includes(lang)) {
+        setLanguages((prev) => [...prev, lang]);
+        showToast("success", `Langue "${lang}" ajoutée`);
+      }
+      setNewLanguage("");
+      setShowLanguageInput(false);
+    },
+    [languages],
+  );
 
   const removeLanguage = useCallback((lang: string) => {
-    setLanguages(prev => prev.filter(l => l !== lang));
-    toast.info(`Langue "${lang}" supprimée`);
+    setLanguages((prev) => prev.filter((l) => l !== lang));
+    showToast("success", `Langue "${lang}" supprimée`);
   }, []);
 
-  const handleProfilePictureChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image trop volumineuse. Taille maximale : 5 Mo.");
-        return;
+  const handleProfilePictureChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        if (file.size > 5 * 1024 * 1024) {
+          showToast("error", "Image trop volumineuse. Taille maximale : 5 Mo.");
+          return;
+        }
+        if (!file.type.startsWith("image/")) {
+          showToast(
+            "error",
+            "Veuillez sélectionner un fichier image (JPG, PNG).",
+          );
+          return;
+        }
+        setProfilePictureFile(file);
+        const localPreview = URL.createObjectURL(file);
+        setProfilePictureUrl(localPreview);
       }
-      if (!file.type.startsWith("image/")) {
-        toast.error("Veuillez sélectionner un fichier image (JPG, PNG).");
-        return;
-      }
-      setProfilePictureFile(file);
-      const localPreview = URL.createObjectURL(file);
-      setProfilePictureUrl(localPreview);
-    }
-  }, []);
+    },
+    [],
+  );
 
   const removeProfilePicture = useCallback(() => {
     setProfilePictureFile(null);
@@ -392,22 +490,26 @@ export function useProfile() {
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-    toast.info("Photo de profil supprimée");
+    showToast("success", "Photo de profil supprimée");
   }, []);
 
   const updateAvailabilitySlot = useCallback((day: string, hours: string) => {
-    setAvailability(prev => prev.map(slot => 
-      slot.day === day ? { ...slot, hours, enabled: true } : slot
-    ));
+    setAvailability((prev) =>
+      prev.map((slot) =>
+        slot.day === day ? { ...slot, hours, enabled: true } : slot,
+      ),
+    );
     setEditingSlot(null);
     setTempHours("");
-    toast.success(`Disponibilité mise à jour pour ${day}`);
+    showToast("success", `Disponibilité mise à jour pour ${day}`);
   }, []);
 
   const toggleAvailabilityDay = useCallback((day: string) => {
-    setAvailability(prev => prev.map(slot =>
-      slot.day === day ? { ...slot, enabled: !slot.enabled } : slot
-    ));
+    setAvailability((prev) =>
+      prev.map((slot) =>
+        slot.day === day ? { ...slot, enabled: !slot.enabled } : slot,
+      ),
+    );
   }, []);
 
   const startEditSlot = useCallback((day: string, currentHours: string) => {
@@ -422,11 +524,10 @@ export function useProfile() {
 
   const sendVerificationReminder = useCallback(async () => {
     setSendingReminder(true);
-    const toastId = toast.loading("Envoi du rappel...");
 
     try {
       const token = await getToken({ template: "my-app-template" });
-      
+
       const response = await fetch("/api/admin/verification-reminder", {
         method: "POST",
         headers: {
@@ -442,19 +543,22 @@ export function useProfile() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success("Rappel envoyé à l'administrateur !", { id: toastId });
+        showToast("success", "Rappel envoyé à l'administrateur !");
         setReminderSent(true);
         setWaitTimeRemaining(null);
       } else if (response.status === 429) {
         const waitTime = data.waitTime || 24;
         setWaitTimeRemaining(waitTime);
-        toast.error(`Veuillez patienter ${waitTime} heures avant d'envoyer un nouveau rappel`, { id: toastId });
+        showToast(
+          "error",
+          `Veuillez patienter ${waitTime} heures avant d'envoyer un nouveau rappel`,
+        );
       } else {
         throw new Error(data.error || "Failed to send reminder");
       }
     } catch (error) {
       console.error("Error sending reminder:", error);
-      toast.error("Erreur lors de l'envoi du rappel", { id: toastId });
+      showToast("error", "Erreur lors de l'envoi du rappel");
     } finally {
       setSendingReminder(false);
     }
@@ -474,9 +578,18 @@ export function useProfile() {
   }, [clerkUser, getToken, isUserLoaded, fetchUserData, fetchUserStats]);
 
   const trustLevel = (() => {
-    if (trustScore >= 90) return { label: "Superhôte", color: "text-amber-600 dark:text-amber-400" };
-    if (trustScore >= 75) return { label: "Expert", color: "text-emerald-600 dark:text-emerald-400" };
-    if (trustScore >= 50) return { label: "Fiable", color: "text-blue-600 dark:text-blue-400" };
+    if (trustScore >= 90)
+      return {
+        label: "Superhôte",
+        color: "text-amber-600 dark:text-amber-400",
+      };
+    if (trustScore >= 75)
+      return {
+        label: "Expert",
+        color: "text-emerald-600 dark:text-emerald-400",
+      };
+    if (trustScore >= 50)
+      return { label: "Fiable", color: "text-blue-600 dark:text-blue-400" };
     return { label: "Nouveau", color: "text-slate-500 dark:text-slate-400" };
   })();
 
@@ -514,11 +627,9 @@ export function useProfile() {
     waitTimeRemaining,
     editingSlot,
     tempHours,
-    // ✅ Nouveaux états pour la validation
     usernameError,
     isCheckingUsername,
     usernameTouched,
-    // Statistiques
     totalProperties,
     totalBookings,
     totalReviews,
@@ -527,7 +638,7 @@ export function useProfile() {
     responseTime,
     completionRate,
     badges,
-    // Setters
+    memberSince,
     setFirstName,
     setLastName,
     setUsername,

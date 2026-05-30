@@ -31,12 +31,12 @@ import {
   Gift,
   XCircle,
   CalendarIcon,
+  X,
 } from "lucide-react";
 
 import { RiSmartphoneLine } from "react-icons/ri";
 import { TbDeviceDesktop } from "react-icons/tb";
 import { useSettings } from "./hooks/useSettings";
-import Alert from "@/components/ui/Alert";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 // ── shadow tokens ─────────────────────────────────────────────────────────────
@@ -44,6 +44,12 @@ const block3d =
   "shadow-[0_6px_0_0_rgba(0,0,0,0.05),0_12px_28px_-6px_rgba(0,0,0,0.09)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.35),0_12px_28px_-6px_rgba(0,0,0,0.45)]";
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.04),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.25),0_8px_16px_-4px_rgba(0,0,0,0.30)]";
+
+// Interface pour le toast
+interface ToastState {
+  type: "success" | "error";
+  message: string;
+}
 
 // ── Toggle ─────────────────────────────────────────────────────────────────────
 function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
@@ -92,7 +98,11 @@ function SectionHeader({
 }
 
 export default function SettingsPage() {
+  const t = useTranslations("Settings");
   const { resolvedTheme } = useTheme();
+
+  // Toast state comme dans ProfilePage
+  const [toast, setToast] = React.useState<ToastState | null>(null);
 
   const {
     loading,
@@ -122,12 +132,13 @@ export default function SettingsPage() {
     updateQuietHours,
     setVacation,
     vacationError,
-  } = useSettings();
+} = useSettings(setToast); 
 
-  const [alert, setAlert] = useState<{
-    type: "success" | "error" | "info";
-    message: string;
-  } | null>(null);
+  // Fonction showToast comme dans ProfilePage
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
 
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [editingQuietHours, setEditingQuietHours] = useState(false);
@@ -163,23 +174,43 @@ export default function SettingsPage() {
     message: string;
   } | null>(null);
 
-  const showAlert = (type: "success" | "error" | "info", message: string) => {
-    setAlert({ type, message });
-    setTimeout(() => setAlert(null), 5000);
-  };
-
   const getStrengthLabelWithWidth = () => {
     const strength = passwordForm.strength;
     if (strength === 1)
-      return { text: "Très faible", color: "#ef4444", width: "20%" };
+      return {
+        text: t("password.strength.veryWeak"),
+        color: "#ef4444",
+        width: "20%",
+      };
     if (strength === 2)
-      return { text: "Faible", color: "#f97316", width: "40%" };
+      return {
+        text: t("password.strength.weak"),
+        color: "#f97316",
+        width: "40%",
+      };
     if (strength === 3)
-      return { text: "Moyen", color: "#eab308", width: "60%" };
-    if (strength === 4) return { text: "Fort", color: "#22c55e", width: "80%" };
+      return {
+        text: t("password.strength.medium"),
+        color: "#eab308",
+        width: "60%",
+      };
+    if (strength === 4)
+      return {
+        text: t("password.strength.strong"),
+        color: "#22c55e",
+        width: "80%",
+      };
     if (strength === 5)
-      return { text: "Très fort", color: "#10b981", width: "100%" };
-    return { text: "Très faible", color: "#ef4444", width: "20%" };
+      return {
+        text: t("password.strength.veryStrong"),
+        color: "#10b981",
+        width: "100%",
+      };
+    return {
+      text: t("password.strength.veryWeak"),
+      color: "#ef4444",
+      width: "20%",
+    };
   };
 
   const strengthInfo = getStrengthLabelWithWidth();
@@ -188,32 +219,30 @@ export default function SettingsPage() {
     e.preventDefault();
     setPasswordError(null);
 
-    // Validations côté frontend
     if (!passwordForm.currentPassword) {
-      setPasswordError("Veuillez entrer votre mot de passe actuel");
+      setPasswordError(t("password.errors.currentRequired"));
       return;
     }
 
     if (!passwordForm.newPassword) {
-      setPasswordError("Veuillez entrer un nouveau mot de passe");
+      setPasswordError(t("password.errors.newRequired"));
       return;
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError("Les mots de passe ne correspondent pas");
+      setPasswordError(t("password.errors.notMatch"));
       return;
     }
 
     if (!isPasswordValid) {
-      setPasswordError("Le nouveau mot de passe n'est pas assez fort");
+      setPasswordError(t("password.errors.tooWeak"));
       return;
     }
 
     try {
       await changePassword();
       setPasswordError(null);
-      showAlert("success", "Mot de passe mis à jour avec succès !");
-      // Réinitialiser le formulaire après succès
+      showToast("success", t("password.success"));
       setPasswordForm((prev) => ({
         ...prev,
         currentPassword: "",
@@ -221,10 +250,9 @@ export default function SettingsPage() {
         confirmPassword: "",
       }));
     } catch (error: any) {
-      const errorMsg = error.message || "Mot de passe actuel incorrect";
+      const errorMsg = error.message || t("password.errors.incorrect");
       setPasswordError(errorMsg);
-      showAlert("error", errorMsg);
-      // Vider le champ du mot de passe actuel
+      showToast("error", errorMsg);
       setPasswordForm((prev) => ({ ...prev, currentPassword: "" }));
     }
   };
@@ -235,13 +263,13 @@ export default function SettingsPage() {
       await updateLanguage(locale);
       setLanguageStatus({
         type: "success",
-        message: "Langue mise à jour avec succès",
+        message: t("language.success"),
       });
-      showAlert("success", "Langue mise à jour avec succès");
+      showToast("success", t("language.success"));
     } catch (error: any) {
-      const errorMsg = error.message || "Erreur lors du changement de langue";
+      const errorMsg = error.message || t("language.error");
       setLanguageStatus({ type: "error", message: errorMsg });
-      showAlert("error", errorMsg);
+      showToast("error", errorMsg);
     }
   };
 
@@ -250,14 +278,14 @@ export default function SettingsPage() {
     try {
       await toggleVacationMode();
       const message = vacation.enabled
-        ? "Mode vacances désactivé"
-        : "Mode vacances activé";
+        ? t("vacation.disabled")
+        : t("vacation.enabled");
       setVacationStatus({ type: "success", message });
-      showAlert("success", message);
+      showToast("success", message);
     } catch (error: any) {
-      const errorMsg = error.message || "Erreur lors du changement";
+      const errorMsg = error.message || t("vacation.error");
       setVacationStatus({ type: "error", message: errorMsg });
-      showAlert("error", errorMsg);
+      showToast("error", errorMsg);
     }
   };
 
@@ -267,13 +295,13 @@ export default function SettingsPage() {
       await saveVacationMessage();
       setVacationStatus({
         type: "success",
-        message: "Message de vacances sauvegardé",
+        message: t("vacation.messageSaved"),
       });
-      showAlert("success", "Message de vacances sauvegardé");
+      showToast("success", t("vacation.messageSaved"));
     } catch (error: any) {
-      const errorMsg = error.message || "Erreur lors de la sauvegarde";
+      const errorMsg = error.message || t("vacation.saveError");
       setVacationStatus({ type: "error", message: errorMsg });
-      showAlert("error", errorMsg);
+      showToast("error", errorMsg);
     }
   };
 
@@ -283,13 +311,13 @@ export default function SettingsPage() {
       await revokeSession(sessionId);
       setSessionStatus({
         type: "success",
-        message: "Session révoquée avec succès",
+        message: t("sessions.revoked"),
       });
-      showAlert("success", "Session révoquée avec succès");
+      showToast("success", t("sessions.revoked"));
     } catch (error: any) {
-      const errorMsg = error.message || "Erreur lors de la révocation";
+      const errorMsg = error.message || t("sessions.revokeError");
       setSessionStatus({ type: "error", message: errorMsg });
-      showAlert("error", errorMsg);
+      showToast("error", errorMsg);
     }
   };
 
@@ -300,13 +328,13 @@ export default function SettingsPage() {
       await deactivateAccount();
       setDeactivateStatus({
         type: "success",
-        message: "Votre compte a été désactivé avec succès",
+        message: t("privacy.deactivateSuccess"),
       });
-      showAlert("success", "Votre compte a été désactivé avec succès");
+      showToast("success", t("privacy.deactivateSuccess"));
     } catch (error: any) {
-      const errorMsg = error.message || "Erreur lors de la désactivation";
+      const errorMsg = error.message || t("privacy.deactivateError");
       setDeactivateStatus({ type: "error", message: errorMsg });
-      showAlert("error", errorMsg);
+      showToast("error", errorMsg);
     }
   };
 
@@ -317,13 +345,13 @@ export default function SettingsPage() {
       setEditingQuietHours(false);
       setQuietHoursStatus({
         type: "success",
-        message: "Heures calmes mises à jour",
+        message: t("notifications.quietHoursSaved"),
       });
-      showAlert("success", "Heures calmes mises à jour");
+      showToast("success", t("notifications.quietHoursSaved"));
     } catch (error: any) {
-      const errorMsg = error.message || "Erreur lors de la mise à jour";
+      const errorMsg = error.message || t("notifications.quietHoursError");
       setQuietHoursStatus({ type: "error", message: errorMsg });
-      showAlert("error", errorMsg);
+      showToast("error", errorMsg);
     }
   };
 
@@ -333,13 +361,16 @@ export default function SettingsPage() {
       await exportUserData(format);
       setExportStatus({
         type: "success",
-        message: `Données exportées en ${format.toUpperCase()}`,
+        message: t("privacy.exportSuccess", { format: format.toUpperCase() }),
       });
-      showAlert("success", `Données exportées en ${format.toUpperCase()}`);
+      showToast(
+        "success",
+        t("privacy.exportSuccess", { format: format.toUpperCase() }),
+      );
     } catch (error: any) {
-      const errorMsg = error.message || "Erreur lors de l'exportation";
+      const errorMsg = error.message || t("privacy.exportError");
       setExportStatus({ type: "error", message: errorMsg });
-      showAlert("error", errorMsg);
+      showToast("error", errorMsg);
     }
   };
 
@@ -350,7 +381,7 @@ export default function SettingsPage() {
           variant="spinner"
           size="lg"
           color="primary"
-          text="Chargement des paramètres..."
+          text={t("loading")}
           speed="normal"
         />
       </div>
@@ -359,24 +390,39 @@ export default function SettingsPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto bg-slate-50/20 dark:bg-slate-900/0">
-      {alert && (
-        <div className="fixed top-20 right-6 z-50 max-w-sm animate-in slide-in-from-top-2 fade-in duration-300">
-          <Alert
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-            autoClose={5000}
-          />
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : "bg-red-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
       <div className="bg-white dark:bg-slate-900/0 border-b border-slate-100 dark:border-slate-800">
         <div className="px-6 lg:px-10 py-7">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-            Paramètres
+            {t("page.title")}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-xl">
-            Gérez vos préférences de compte et vos paramètres de sécurité
+            {t("page.description")}
           </p>
         </div>
       </div>
@@ -393,12 +439,11 @@ export default function SettingsPage() {
               <div className="p-7">
                 <SectionHeader
                   icon={Shield}
-                  title="Sécurité"
+                  title={t("security.title")}
                   grad="from-indigo-500 to-violet-600"
                 />
 
                 <form onSubmit={handleChangePassword} className="space-y-6">
-                  {/* Message d'erreur mot de passe */}
                   {passwordError && (
                     <div className="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-2">
                       <XCircle
@@ -413,7 +458,7 @@ export default function SettingsPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
-                      Mot de passe actuel
+                      {t("security.currentPassword")}
                     </label>
                     <div className="relative">
                       <Lock
@@ -455,7 +500,7 @@ export default function SettingsPage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
-                        Nouveau mot de passe
+                        {t("security.newPassword")}
                       </label>
                       <div className="relative">
                         <Lock
@@ -495,7 +540,7 @@ export default function SettingsPage() {
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1.5">
-                        Confirmation
+                        {t("security.confirmPassword")}
                       </label>
                       <div className="relative">
                         <Lock
@@ -539,14 +584,14 @@ export default function SettingsPage() {
                       </div>
                       {passwordForm.confirmPassword && !passwordsMatch && (
                         <p className="text-[10px] text-red-500 mt-1 flex items-center gap-1">
-                          <AlertCircle size={10} /> Les mots de passe ne
-                          correspondent pas
+                          <AlertCircle size={10} />{" "}
+                          {t("security.passwordsDoNotMatch")}
                         </p>
                       )}
                       {passwordForm.confirmPassword && passwordsMatch && (
                         <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1">
-                          <CheckCircle size={10} /> Les mots de passe
-                          correspondent
+                          <CheckCircle size={10} />{" "}
+                          {t("security.passwordsMatch")}
                         </p>
                       )}
                     </div>
@@ -574,7 +619,7 @@ export default function SettingsPage() {
 
                       <div className="bg-slate-50 dark:bg-slate-800/30 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
                         <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-wider">
-                          Sécurité du mot de passe
+                          {t("security.passwordSecurity")}
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex items-center gap-2">
@@ -588,7 +633,7 @@ export default function SettingsPage() {
                             <span
                               className={`text-[10px] ${passwordCriteria.length ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}
                             >
-                              Au moins 8 caractères
+                              {t("security.criteria.length")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -602,7 +647,7 @@ export default function SettingsPage() {
                             <span
                               className={`text-[10px] ${passwordCriteria.uppercase ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}
                             >
-                              Majuscule et minuscule
+                              {t("security.criteria.case")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -616,7 +661,7 @@ export default function SettingsPage() {
                             <span
                               className={`text-[10px] ${passwordCriteria.number ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}
                             >
-                              Au moins un chiffre
+                              {t("security.criteria.number")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -630,7 +675,7 @@ export default function SettingsPage() {
                             <span
                               className={`text-[10px] ${passwordCriteria.special ? "text-emerald-600 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}
                             >
-                              Caractère spécial recommandé
+                              {t("security.criteria.special")}
                             </span>
                           </div>
                         </div>
@@ -657,7 +702,7 @@ export default function SettingsPage() {
                       <Loader2 size={14} className="animate-spin" />
                     ) : (
                       <>
-                        <Shield size={14} /> Mettre à jour le mot de passe
+                        <Shield size={14} /> {t("security.updateButton")}
                       </>
                     )}
                   </button>
@@ -666,7 +711,7 @@ export default function SettingsPage() {
                 {security.sessions.length > 0 && (
                   <div className="mt-8">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-4">
-                      Sessions actives — {security.sessions.length}
+                      {t("sessions.title")} — {security.sessions.length}
                     </p>
                     <div className="space-y-2.5">
                       {security.sessions.map((s: any) => {
@@ -692,11 +737,11 @@ export default function SettingsPage() {
                               <div>
                                 <div className="flex items-center gap-2">
                                   <p className="text-sm font-bold text-slate-900 dark:text-white">
-                                    {s.device || "Appareil inconnu"}
+                                    {s.device || t("sessions.unknownDevice")}
                                   </p>
                                   {s.isCurrent && (
                                     <span className="text-[9px] font-bold bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full">
-                                      Actuelle
+                                      {t("sessions.current")}
                                     </span>
                                   )}
                                 </div>
@@ -706,8 +751,9 @@ export default function SettingsPage() {
                                     className="text-slate-400"
                                   />
                                   <span className="text-[10px] text-slate-400">
-                                    {s.location || "Localisation inconnue"} ·{" "}
-                                    {s.ip || "IP inconnue"}
+                                    {s.location ||
+                                      t("sessions.unknownLocation")}{" "}
+                                    · {s.ip || t("sessions.unknownIp")}
                                   </span>
                                 </div>
                               </div>
@@ -717,7 +763,7 @@ export default function SettingsPage() {
                                 onClick={() => handleRevokeSession(s.id)}
                                 className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-rose-200"
                               >
-                                Révoquer
+                                {t("sessions.revoke")}
                               </button>
                             )}
                           </div>
@@ -737,183 +783,39 @@ export default function SettingsPage() {
               <div className="p-7">
                 <SectionHeader
                   icon={Bell}
-                  title="Notifications"
+                  title={t("notifications.title")}
                   grad="from-emerald-500 to-cyan-500"
                 />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <Calendar
-                          size={18}
-                          className="text-blue-600 dark:text-blue-400"
-                        />
+                  {notificationCategories.map((cat) => (
+                    <div
+                      key={cat.id}
+                      className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-700"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={`w-10 h-10 rounded-xl ${cat.iconBg} flex items-center justify-center`}
+                        >
+                          {React.cloneElement(cat.icon as React.ReactElement, {
+                            className: cat.iconColor,
+                          })}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white">
+                            {t(`notifications.categories.${cat.id}.name`)}
+                          </p>
+                          <p className="text-[10px] text-slate-500">
+                            {t(`notifications.categories.${cat.id}.desc`)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-slate-900 dark:text-white">
-                          Réservations
-                        </p>
-                        <p className="text-[10px] text-slate-500">
-                          Demandes, confirmations
-                        </p>
-                      </div>
+                      <Toggle
+                        on={cat.enabled}
+                        onToggle={() => toggleNotificationCategory(cat.id)}
+                      />
                     </div>
-                    <Toggle
-                      on={
-                        notificationCategories.find((c) => c.id === "bookings")
-                          ?.enabled ?? true
-                      }
-                      onToggle={() => toggleNotificationCategory("bookings")}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center">
-                        <CreditCard size={18} className="text-purple-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Paiements</p>
-                        <p className="text-[10px] text-slate-500">
-                          Reçus, remboursements
-                        </p>
-                      </div>
-                    </div>
-                    <Toggle
-                      on={
-                        notificationCategories.find((c) => c.id === "payments")
-                          ?.enabled ?? true
-                      }
-                      onToggle={() => toggleNotificationCategory("payments")}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-100 flex items-center justify-center">
-                        <MessageSquare size={18} className="text-indigo-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Messages</p>
-                        <p className="text-[10px] text-slate-500">
-                          Nouveaux messages
-                        </p>
-                      </div>
-                    </div>
-                    <Toggle
-                      on={
-                        notificationCategories.find((c) => c.id === "messages")
-                          ?.enabled ?? true
-                      }
-                      onToggle={() => toggleNotificationCategory("messages")}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-yellow-100 flex items-center justify-center">
-                        <Star size={18} className="text-yellow-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Avis</p>
-                        <p className="text-[10px] text-slate-500">
-                          Nouveaux avis
-                        </p>
-                      </div>
-                    </div>
-                    <Toggle
-                      on={
-                        notificationCategories.find((c) => c.id === "reviews")
-                          ?.enabled ?? true
-                      }
-                      onToggle={() => toggleNotificationCategory("reviews")}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-teal-100 flex items-center justify-center">
-                        <Home size={18} className="text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Annonces</p>
-                        <p className="text-[10px] text-slate-500">
-                          Activation, suspension
-                        </p>
-                      </div>
-                    </div>
-                    <Toggle
-                      on={
-                        notificationCategories.find((c) => c.id === "listings")
-                          ?.enabled ?? true
-                      }
-                      onToggle={() => toggleNotificationCategory("listings")}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
-                        <Bell size={18} className="text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Alertes</p>
-                        <p className="text-[10px] text-slate-500">
-                          Nouvelles correspondances
-                        </p>
-                      </div>
-                    </div>
-                    <Toggle
-                      on={
-                        notificationCategories.find((c) => c.id === "alerts")
-                          ?.enabled ?? true
-                      }
-                      onToggle={() => toggleNotificationCategory("alerts")}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                        <Shield size={18} className="text-red-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Litiges</p>
-                        <p className="text-[10px] text-slate-500">
-                          Ouverts et résolus
-                        </p>
-                      </div>
-                    </div>
-                    <Toggle
-                      on={
-                        notificationCategories.find((c) => c.id === "disputes")
-                          ?.enabled ?? true
-                      }
-                      onToggle={() => toggleNotificationCategory("disputes")}
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center">
-                        <Gift size={18} className="text-green-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold">Offres</p>
-                        <p className="text-[10px] text-slate-500">
-                          Reçues et acceptées
-                        </p>
-                      </div>
-                    </div>
-                    <Toggle
-                      on={
-                        notificationCategories.find((c) => c.id === "offers")
-                          ?.enabled ?? true
-                      }
-                      onToggle={() => toggleNotificationCategory("offers")}
-                    />
-                  </div>
+                  ))}
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
@@ -927,12 +829,13 @@ export default function SettingsPage() {
                       </div>
                       <div>
                         <p className="text-sm font-bold text-slate-900 dark:text-white">
-                          Heures calmes
+                          {t("notifications.quietHours")}
                         </p>
                         <p className="text-[10px] text-slate-500">
-                          Aucune notification de{" "}
-                          <strong>{quietHours.start}</strong> à{" "}
-                          <strong>{quietHours.end}</strong>
+                          {t("notifications.quietHoursDescription", {
+                            start: quietHours.start,
+                            end: quietHours.end,
+                          })}
                         </p>
                       </div>
                     </div>
@@ -944,7 +847,7 @@ export default function SettingsPage() {
                         }}
                         className="px-4 py-2 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                       >
-                        Modifier
+                        {t("actions.modify")}
                       </button>
                     ) : (
                       <div className="flex items-center gap-2">
@@ -975,13 +878,13 @@ export default function SettingsPage() {
                           onClick={handleSaveQuietHours}
                           className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-xs font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all"
                         >
-                          Sauvegarder
+                          {t("actions.save")}
                         </button>
                         <button
                           onClick={() => setEditingQuietHours(false)}
                           className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-all"
                         >
-                          Annuler
+                          {t("actions.cancel")}
                         </button>
                       </div>
                     )}
@@ -1004,14 +907,14 @@ export default function SettingsPage() {
                     <Globe size={14} className="text-white" />
                   </div>
                   <h3 className="font-bold text-slate-900 dark:text-white">
-                    Préférences
+                    {t("preferences.title")}
                   </h3>
                 </div>
 
                 <div className="space-y-5">
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 block">
-                      Langue
+                      {t("preferences.language")}
                     </label>
                     <select
                       value={profile.preferredLocale}
@@ -1041,13 +944,25 @@ export default function SettingsPage() {
 
                   <div>
                     <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 mb-2 block">
-                      Thème
+                      {t("preferences.theme")}
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { val: "light", icon: Sun, label: "Clair" },
-                        { val: "dark", icon: Moon, label: "Sombre" },
-                        { val: "system", icon: Laptop, label: "Système" },
+                        {
+                          val: "light",
+                          icon: Sun,
+                          label: t("preferences.themeLight"),
+                        },
+                        {
+                          val: "dark",
+                          icon: Moon,
+                          label: t("preferences.themeDark"),
+                        },
+                        {
+                          val: "system",
+                          icon: Laptop,
+                          label: t("preferences.themeSystem"),
+                        },
                       ].map(({ val, icon: Icon, label }) => (
                         <button
                           key={val}
@@ -1063,6 +978,7 @@ export default function SettingsPage() {
                 </div>
               </div>
             </div>
+
             {/* VACATION MODE */}
             <div
               className={`bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden ${block3d}`}
@@ -1075,7 +991,7 @@ export default function SettingsPage() {
                       <Plane size={14} className="text-white" />
                     </div>
                     <h3 className="font-bold text-slate-900 dark:text-white">
-                      Mode vacances
+                      {t("vacation.title")}
                     </h3>
                   </div>
                   <Toggle
@@ -1084,14 +1000,13 @@ export default function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-slate-500 mb-4">
-                  Activez ce mode pour suspendre temporairement vos annonces.
+                  {t("vacation.description")}
                 </p>
                 <div className="transition-all duration-300">
-                  {/* Champs de dates */}
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div>
                       <label className="block text-[10px] font-semibold text-slate-500 mb-1">
-                        Date de début
+                        {t("vacation.startDate")}
                       </label>
                       <div className="relative">
                         <CalendarIcon
@@ -1114,7 +1029,7 @@ export default function SettingsPage() {
                     </div>
                     <div>
                       <label className="block text-[10px] font-semibold text-slate-500 mb-1">
-                        Date de fin
+                        {t("vacation.endDate")}
                       </label>
                       <div className="relative">
                         <CalendarIcon
@@ -1140,7 +1055,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  {/* Champ message */}
                   <textarea
                     value={vacation.message}
                     onChange={(e) =>
@@ -1151,15 +1065,14 @@ export default function SettingsPage() {
                     }
                     onBlur={handleSaveVacationMessage}
                     rows={3}
-                    placeholder="Message d'absence..."
+                    placeholder={t("vacation.messagePlaceholder")}
                     className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs p-3 resize-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-400"
                   />
 
-                  {/* Indicateur de statut */}
                   {vacation.enabled && (
                     <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-2 flex items-center gap-1">
                       <CheckCircle size={10} />
-                      Mode vacances activé - vos dates sont bloquées
+                      {t("vacation.active")}
                     </p>
                   )}
                 </div>
@@ -1178,6 +1091,7 @@ export default function SettingsPage() {
                 )}
               </div>
             </div>
+
             {/* DATA PRIVACY */}
             <div
               className={`bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden ${block3d}`}
@@ -1189,12 +1103,12 @@ export default function SettingsPage() {
                     <Download size={14} className="text-white" />
                   </div>
                   <h3 className="font-bold text-slate-900 dark:text-white">
-                    Données et vie privée
+                    {t("privacy.title")}
                   </h3>
                 </div>
 
                 <p className="text-xs text-slate-500 mb-4">
-                  Exportez ou supprimez vos données personnelles.
+                  {t("privacy.description")}
                 </p>
 
                 <div className="grid grid-cols-2 gap-2 mb-6">
@@ -1208,7 +1122,7 @@ export default function SettingsPage() {
                     ) : (
                       <Download size={12} />
                     )}{" "}
-                    CSV
+                    {t("privacy.exportCsv")}
                   </button>
                   <button
                     onClick={() => handleExportData("json")}
@@ -1220,7 +1134,7 @@ export default function SettingsPage() {
                     ) : (
                       <Download size={12} />
                     )}{" "}
-                    JSON
+                    {t("privacy.exportJson")}
                   </button>
                 </div>
 
@@ -1231,16 +1145,16 @@ export default function SettingsPage() {
                       className="w-full text-left group p-3 rounded-xl hover:bg-red-50 transition-colors"
                     >
                       <p className="text-sm font-bold text-rose-600 flex items-center gap-2">
-                        <Power size={15} /> Désactiver mon compte
+                        <Power size={15} /> {t("privacy.deactivate")}
                       </p>
                       <p className="text-[10px] text-slate-400 mt-1">
-                        Vous pourrez réactiver votre compte plus tard.
+                        {t("privacy.deactivateDescription")}
                       </p>
                     </button>
                   ) : (
                     <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/10 border border-red-200">
                       <p className="text-xs font-semibold text-red-700 mb-3">
-                        Êtes-vous sûr de vouloir désactiver votre compte ?
+                        {t("privacy.confirmDeactivate")}
                       </p>
                       <div className="flex gap-3">
                         <button
@@ -1253,13 +1167,13 @@ export default function SettingsPage() {
                           ) : (
                             <Power size={12} />
                           )}{" "}
-                          Confirmer
+                          {t("privacy.confirm")}
                         </button>
                         <button
                           onClick={() => setShowDeactivateConfirm(false)}
                           className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-300 transition-all"
                         >
-                          Annuler
+                          {t("privacy.cancel")}
                         </button>
                       </div>
                     </div>

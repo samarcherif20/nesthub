@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
     const currentUser = await prisma.user.findUnique({
       where: { clerkId: userId },
-      select: { id: true },
+      select: { id: true, role: true }, // 🔥 AJOUTE role ici
     });
 
     if (!currentUser) {
@@ -54,7 +54,8 @@ export async function GET(request: NextRequest) {
               select: {
                 id: true,
                 username: true,
-                profilePictureUrl: true
+                profilePictureUrl: true,
+                role: true, 
               }
             }
           }
@@ -69,8 +70,6 @@ export async function GET(request: NextRequest) {
     // Calculer les messages non lus pour chaque groupe
     const groupsWithUnread = await Promise.all(
       groups.map(async (group) => {
-        // Compter les messages non lus pour cet utilisateur dans ce groupe
-        // (à adapter selon ta logique de lecture des messages de groupe)
         const unreadCount = await prisma.groupConversationMessage.count({
           where: {
             groupId: group.id,
@@ -92,7 +91,7 @@ export async function GET(request: NextRequest) {
             id: p.user.id,
             username: p.user.username || `User_${p.user.id.slice(0, 8)}`,
             image: p.user.profilePictureUrl,
-            role: p.user.id === currentUser.id ? "YOU" : "OTHER"
+            role: p.user.role, 
           })),
           dispute: group.dispute ? {
             id: group.dispute.id,

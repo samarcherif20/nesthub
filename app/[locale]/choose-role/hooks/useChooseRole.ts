@@ -20,14 +20,12 @@ interface UseChooseRoleReturn {
   remember: boolean;
   transitioning: boolean;
   loading: boolean;
-  submitting: boolean;
   showLogoutModal: boolean;
   isDark: boolean;
   setSelected: (role: "tenant" | "owner" | null) => void;
   setRemember: (value: boolean) => void;
   setShowLogoutModal: (value: boolean) => void;
   handleSelect: (role: "tenant" | "owner") => void;
-  handleConfirm: () => Promise<void>;
   handleLogout: () => Promise<void>;
   handleCloseLogoutModal: () => void;
 }
@@ -47,15 +45,28 @@ export function useChooseRole(): UseChooseRoleReturn {
   const [remember, setRemember] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+
+  // Charger le choix mémorisé au démarrage
+  useEffect(() => {
+    const savedRole = localStorage.getItem("selectedRole");
+    const savedRemember = localStorage.getItem("rememberChoice") === "true";
+
+    if (
+      savedRole &&
+      (savedRole === "tenant" || savedRole === "owner") &&
+      savedRemember
+    ) {
+      setSelected(savedRole);
+      setRemember(true);
+    }
+  }, []);
 
   // Charger les données utilisateur
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Utiliser Clerk si déjà connecté
         if (clerkUser) {
           const response = await fetch(
             `/api/users/by-clerk-id/${clerkUser.id}`,
@@ -77,7 +88,6 @@ export function useChooseRole(): UseChooseRoleReturn {
           }
         }
 
-        // Fallback: récupérer depuis sessionStorage
         const email = sessionStorage.getItem("pendingLoginEmail");
         if (email) {
           const response = await fetch(
@@ -109,7 +119,7 @@ export function useChooseRole(): UseChooseRoleReturn {
     }
   }, [clerkUser, isLoaded]);
 
-  // Vérifier l'authentification - NE PAS REDIRIGER VERS LOGIN si on a un email en attente
+  // Vérifier l'authentification
   useEffect(() => {
     if (!loading && isLoaded && !isSignedIn) {
       const email = sessionStorage.getItem("pendingLoginEmail");
@@ -123,44 +133,12 @@ export function useChooseRole(): UseChooseRoleReturn {
     setSelected((prev) => (prev === role ? null : role));
   }, []);
 
-  // Dans useChooseRole.ts - remplace handleConfirm
-  const handleConfirm = useCallback(async () => {
-    if (!selected || !user) return;
-
-    setSubmitting(true);
-
-    try {
-      sessionStorage.removeItem("pendingLoginEmail");
-      sessionStorage.removeItem("pendingLoginPassword");
-
-      // ⭐ STOCKER LE CHOIX DANS localStorage
-      if (remember) {
-        localStorage.setItem("selectedRole", selected);
-      } else {
-        localStorage.removeItem("selectedRole");
-      }
-
-      setTransitioning(true);
-
-      setTimeout(() => {
-        if (selected === "owner") {
-          router.push("/dashboard/owner");
-        } else {
-          router.push("/search");
-        }
-      }, 3000);
-    } catch (error) {
-      console.error("Error:", error);
-      setTransitioning(false);
-    } finally {
-      setSubmitting(false);
-    }
-  }, [selected, user, remember, router]);
-
+  // Déconnexion - Supprimer toutes les données
   const handleLogout = useCallback(async () => {
     localStorage.removeItem("rememberMe");
     localStorage.removeItem("redirectAfterLogin");
     localStorage.removeItem("selectedRole");
+    localStorage.removeItem("rememberChoice");
 
     sessionStorage.clear();
     await signOut();
@@ -191,14 +169,12 @@ export function useChooseRole(): UseChooseRoleReturn {
     remember,
     transitioning,
     loading,
-    submitting,
     showLogoutModal,
     isDark,
     setSelected,
     setRemember,
     setShowLogoutModal,
     handleSelect,
-    handleConfirm,
     handleLogout,
     handleCloseLogoutModal,
   };
