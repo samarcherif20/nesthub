@@ -1119,7 +1119,11 @@ model Review {
   // Timestamps
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
+ checkIn      Int?     // Arrivée (1-5)
+  accuracy     Int?     // Précision (1-5)
+  location     Int?     // Emplacement (1-5)
+  value        Int?     // Qualité-prix (1-5)
+  privateNote  String?  @db.Text  // Note privée pour l'hôte
   // Relations
   reviewer User @relation("ReviewsWritten", fields: [reviewerId], references: [id])
   target   User @relation("ReviewsReceived", fields: [targetId], references: [id])

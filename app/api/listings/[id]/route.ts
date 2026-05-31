@@ -115,7 +115,9 @@ function mergeWithPendingRevision(original: any, pending: any): any {
   // ✅ CORRECTION : Gérer tous les cas de photos (ajout, suppression, modification)
   // Si pending.photos existe (même un tableau vide), on remplace complètement les photos
   if (pending.photos !== undefined) {
-    console.log(`Fusion des photos: pending.photos = ${JSON.stringify(pending.photos)}`);
+    console.log(
+      `Fusion des photos: pending.photos = ${JSON.stringify(pending.photos)}`,
+    );
     if (Array.isArray(pending.photos)) {
       // Nettoyer les photos pour enlever les champs temporaires
       const cleanPhotos = pending.photos.map((photo: any) => ({
@@ -126,7 +128,9 @@ function mergeWithPendingRevision(original: any, pending: any): any {
         position: photo.position,
       }));
       merged.photos = cleanPhotos;
-      console.log(`Photos remplacées par ${cleanPhotos.length} photo(s) de la révision`);
+      console.log(
+        `Photos remplacées par ${cleanPhotos.length} photo(s) de la révision`,
+      );
     } else {
       console.log(`pending.photos n'est pas un tableau:`, pending.photos);
     }
@@ -596,7 +600,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       rejectedAt: displayData.rejectedAt,
       rejectedBy: displayData.rejectedBy,
       hasPendingRevision: listing.hasPendingRevision || false,
-      pendingRevisionSubmittedAt: listing.pendingRevisionSubmittedAt, // ← AJOUTE
+      pendingRevisionSubmittedAt: listing.pendingRevisionSubmittedAt,
 
       pendingRevisionData,
 
@@ -640,6 +644,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       viewCount: displayData.viewCount,
       bookingCount: displayData.bookingCount,
       favoriteCount: displayData.favoriteCount,
+      trustScore: displayData.trustScore,
+      trustLabel: displayData.trustLabel,
+      trustBadge: displayData.trustBadge,
+      scamProbability: displayData.scamProbability,
       createdAt: displayData.createdAt,
       updatedAt: displayData.updatedAt,
       publishedAt: displayData.publishedAt,
@@ -939,51 +947,56 @@ export const PATCH = withAuth(
 
       console.log(`Statut change par ADMIN: ${oldStatus} -> ${newStatus}`);
     }
-   // CAS 2: Mise a jour d'une annonce ACTIVE → CREER UNE REVISION
-else if (
-  existingListing.status === "ACTIVE" &&
-  Object.keys(updateFields).length > 0
-) {
-  console.log(`CAS 2: Annonce ACTIVE - Creation d'une revision`);
+    // CAS 2: Mise a jour d'une annonce ACTIVE → CREER UNE REVISION
+    else if (
+      existingListing.status === "ACTIVE" &&
+      Object.keys(updateFields).length > 0
+    ) {
+      console.log(`CAS 2: Annonce ACTIVE - Creation d'une revision`);
 
-  // ✅ Inclure les photos dans la révision (même si tableau vide)
-  let revisionData = filterAllowedFields(updateFields);
-  
-  // Si des photos sont envoyées (même tableau vide), les inclure
-  if (updateFields.photos !== undefined && Array.isArray(updateFields.photos)) {
-    // Nettoyer les photos pour la révision
-    const cleanPhotos = updateFields.photos.map((photo: any) => ({
-      id: photo.id,
-      url: photo.url,
-      thumbnailUrl: photo.thumbnailUrl,
-      isMain: photo.isMain,
-      position: photo.position,
-    }));
-    revisionData.photos = cleanPhotos;
-    console.log(`📸 ${cleanPhotos.length} photos incluses dans la révision`);
-  }
-  
-  console.log(`Champs pour revision:`, Object.keys(revisionData));
+      // ✅ Inclure les photos dans la révision (même si tableau vide)
+      let revisionData = filterAllowedFields(updateFields);
 
-  if (Object.keys(revisionData).length === 0) {
-    console.log(`Aucun champ valide a reviser`);
-    return NextResponse.json(
-      { error: "Aucun champ valide a modifier" },
-      { status: 400 },
-    );
-  }
+      // Si des photos sont envoyées (même tableau vide), les inclure
+      if (
+        updateFields.photos !== undefined &&
+        Array.isArray(updateFields.photos)
+      ) {
+        // Nettoyer les photos pour la révision
+        const cleanPhotos = updateFields.photos.map((photo: any) => ({
+          id: photo.id,
+          url: photo.url,
+          thumbnailUrl: photo.thumbnailUrl,
+          isMain: photo.isMain,
+          position: photo.position,
+        }));
+        revisionData.photos = cleanPhotos;
+        console.log(
+          `📸 ${cleanPhotos.length} photos incluses dans la révision`,
+        );
+      }
 
-  result = await prisma.listing.update({
-    where: { id },
-    data: {
-      pendingRevision: revisionData,
-      hasPendingRevision: true,
-      pendingRevisionSubmittedAt: new Date(),
-      updatedAt: new Date(),
-    },
-  });
+      console.log(`Champs pour revision:`, Object.keys(revisionData));
 
-  console.log(`Revision creee - hasPendingRevision: true`);
+      if (Object.keys(revisionData).length === 0) {
+        console.log(`Aucun champ valide a reviser`);
+        return NextResponse.json(
+          { error: "Aucun champ valide a modifier" },
+          { status: 400 },
+        );
+      }
+
+      result = await prisma.listing.update({
+        where: { id },
+        data: {
+          pendingRevision: revisionData,
+          hasPendingRevision: true,
+          pendingRevisionSubmittedAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+      console.log(`Revision creee - hasPendingRevision: true`);
 
       try {
         // Récupérer tous les admins

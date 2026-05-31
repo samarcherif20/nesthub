@@ -3,9 +3,11 @@
 import { ChevronRightIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useRef, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 const NexusCard = () => {
   const router = useRouter();
+  const t = useTranslations("NexusCard");
   const [showModal, setShowModal] = useState(false);
   const [hasNotifications, setHasNotifications] = useState(false);
   const nexusRef = useRef<HTMLDivElement>(null);
@@ -266,21 +268,21 @@ const NexusCard = () => {
               className={`font-mono text-[9px] tracking-[0.25em] uppercase font-medium mb-4 sm:mb-5 transition-colors duration-300
               ${isDark ? "text-violet-300/70" : "text-violet-600/70"}`}
             >
-              VOUS AVEZ LA PLUS BELLE PART
+              {t("badge")}
             </div>
 
             <h2 className="text-[40px] sm:text-[52px] leading-[0.85] font-light tracking-[-0.04em] mb-4 sm:mb-5">
-              L'œil du
+              {t("titleLine1")}
               <br />
               <span
-                className={` text-[40px]  mb-8 font-medium bg-clip-text text-transparent transition-all duration-300 
+                className={`text-[40px] mb-8 font-medium bg-clip-text text-transparent transition-all duration-300 
                 ${
                   isDark
                     ? "bg-gradient-to-r from-white via-violet-200 to-cyan-200"
                     : "bg-gradient-to-r from-zinc-800 via-violet-700 to-cyan-700"
                 }`}
               >
-                propriétaire
+                {t("titleLine2")}
               </span>
             </h2>
 
@@ -288,18 +290,14 @@ const NexusCard = () => {
               className={`text-[13px] sm:text-[14px] leading-[1.6] font-light max-w-[42ch] tracking-[-0.01em] transition-colors duration-300
               ${isDark ? "text-zinc-300" : "text-zinc-600"}`}
             >
-              Votre dar à la Médina, votre villa à Gammarth — elles ont une âme,
-              pas un calendrier. Nous trouvons ceux qui la méritent. Vous, vous
-              encaissez.
+              {t("description")}
               <span
                 className={`block mt-5 mb-5 text-[11px] sm:text-[12px] transition-colors duration-300
                 ${isDark ? "text-violet-300" : "text-violet-600"}`}
               >
-                Sans jamais croiser un voyageur.
+                {t("descriptionNote")}
               </span>
             </p>
-
-           
 
             {/* Bouton CTA - Redirige vers /switch-role */}
             <button
@@ -312,7 +310,7 @@ const NexusCard = () => {
                 }`}
               type="button"
             >
-              <span>Je Découvre</span>
+              <span>{t("ctaButton")}</span>
               <ChevronRightIcon
                 className={`w-4 h-4 transition-transform group-hover:translate-x-0.5 ${isDark ? "text-zinc-950" : "text-white"}`}
               />
@@ -328,7 +326,7 @@ const NexusCard = () => {
                   className={`font-mono text-[8px] sm:text-[9px] font-light transition-colors duration-300
                   ${isDark ? "text-zinc-400/80" : "text-zinc-500"}`}
                 >
-                  Transformez l'âme de votre lieu en revenus
+                  {t("footerText")}
                 </span>
                 <span
                   className={`w-1 h-1 rounded-full ${isDark ? "bg-violet-400/50" : "bg-violet-500/50"}`}

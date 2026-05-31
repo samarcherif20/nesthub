@@ -3,7 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
+// @ts-ignore
 import "leaflet/dist/leaflet.css";
 import {
   IoHeartOutline,
@@ -16,7 +18,6 @@ import {
   IoHomeOutline,
   IoEyeOutline,
   IoSearchOutline,
-  IoCloseOutline,
   IoLocation,
 } from "react-icons/io5";
 import { FaStar, FaGoogle } from "react-icons/fa";
@@ -31,25 +32,13 @@ import {
   ArrowRight,
   Ban,
   SlidersHorizontal,
-  ArrowLeft,
 } from "lucide-react";
+import { CheckCircle, AlertCircle } from "lucide-react";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import AlertBanner from "@/components/ui/Alert";
 import { useMapData } from "./hooks/useMapData";
+import { IoIosArrowBack, IoIosArrowForward } from "react-icons/io";
 
-// Fix Leaflet default icon issue
-import L from "leaflet";
-
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
-});
-
+// Imports dynamiques pour Leaflet (SSR: false)
 const MapContainer = dynamic(
   () => import("react-leaflet").then((mod) => mod.MapContainer),
   { ssr: false },
@@ -62,9 +51,6 @@ const Marker = dynamic(
   () => import("react-leaflet").then((mod) => mod.Marker),
   { ssr: false },
 );
-const Popup = dynamic(() => import("react-leaflet").then((mod) => mod.Popup), {
-  ssr: false,
-});
 
 const gradientButton = `
   bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 
@@ -84,15 +70,80 @@ const getImageUrl = (url: string | null | undefined): string => {
   return url;
 };
 
+// Composant pour afficher les étoiles
+const StarRating = ({ rating }: { rating?: number }) => {
+  if (!rating) return null;
+
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {[...Array(fullStars)].map((_, i) => (
+        <FaStar
+          key={`full-${i}`}
+          className="h-3 w-3 fill-amber-400 text-amber-400"
+        />
+      ))}
+      {hasHalfStar && (
+        <div className="relative">
+          <FaStar className="h-3 w-3 text-amber-400" />
+          <div className="absolute inset-0 overflow-hidden w-1/2">
+            <FaStar className="h-3 w-3 fill-amber-400 text-amber-400" />
+          </div>
+        </div>
+      )}
+      {[...Array(emptyStars)].map((_, i) => (
+        <FaStar
+          key={`empty-${i}`}
+          className="h-3 w-3 text-slate-300 dark:text-slate-600"
+        />
+      ))}
+    </div>
+  );
+};
+
 export default function MapPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
   const t = useTranslations("MapPage");
   const mapRef = useRef<any>(null);
+
+  const [leafletReady, setLeafletReady] = useState(false);
+  const [toast, setToast] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
+
+  const showToast = (type: "success" | "error" | "info", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  useEffect(() => {
+    const initLeaflet = async () => {
+      const L = await import("leaflet");
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+      L.Icon.Default.mergeOptions({
+        iconRetinaUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
+        iconUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
+        shadowUrl:
+          "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png",
+      });
+      setLeafletReady(true);
+    };
+
+    initLeaflet();
+  }, []);
 
   const {
     filteredListings,
     loading,
+    error,
     favorites,
-    L: leafletLoaded,
     imageErrors,
     filters,
     showFilters,
@@ -102,52 +153,44 @@ export default function MapPage() {
     updatePriceRange,
     updateSelectedType,
     updateMinRating,
+    updateSortBy,
     resetFilters,
     handleImageError,
     getUserLocation,
     openInGoogleMaps,
-    getDirections,
     totalListings,
     filteredCount,
     favoritesCount,
   } = useMapData();
 
-  const [alert, setAlert] = useState<{
-    type: "success" | "error" | "info" | "warning";
-    message: string;
-  } | null>(null);
+  if (error) {
+    showToast("error", error);
+  }
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-
-  const showAlert = (
-    type: "success" | "error" | "info" | "warning",
-    message: string,
-  ) => {
-    setAlert({ type, message });
-    setTimeout(() => setAlert(null), 3000);
-  };
 
   const handleToggleFavorite = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     const isFav = !favorites.includes(id);
     toggleFavorite(id);
-    showAlert("success", isFav ? t("alerts.added") : t("alerts.removed"));
+    showToast("success", isFav ? t("alerts.added") : t("alerts.removed"));
   };
 
   const handleResetFilters = () => {
     resetFilters();
-    showAlert("info", t("alerts.reset"));
+    showToast("info", t("alerts.reset"));
   };
 
   const handleApplyFilters = () => {
     setShowFilters(false);
-    showAlert("success", t("alerts.applied"));
+    showToast("success", t("alerts.applied"));
   };
 
   const selectedListing = filteredListings.find((l) => l.id === selectedId);
 
-  if (!leafletLoaded || loading) {
+  if (!leafletReady || loading) {
     return (
       <LoadingSpinner
         fullScreen={true}
@@ -164,13 +207,33 @@ export default function MapPage() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-[#f8fafe] text-slate-800 transition-colors dark:bg-slate-950 dark:text-slate-100">
-      {alert && (
-        <div className="fixed top-6 left-1/2 z-[70] -translate-x-1/2 rounded-full bg-slate-900/92 px-5 py-3 text-sm font-bold text-white shadow-2xl backdrop-blur-xl dark:bg-white/92 dark:text-slate-900">
-          {alert.message}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : toast.type === "error"
+                  ? "bg-red-500 text-white"
+                  : "bg-sky-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* MAP */}
       <MapContainer
         ref={mapRef}
         center={center}
@@ -183,7 +246,6 @@ export default function MapPage() {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-
         {filteredListings.map((listing) => (
           <Marker
             key={listing.id}
@@ -197,16 +259,13 @@ export default function MapPage() {
         ))}
       </MapContainer>
 
-      {/* ZOOM CONTROLS + MY LOCATION + GOOGLE MAPS */}
+      {/* ZOOM CONTROLS */}
       <div className="absolute right-6 bottom-24 z-20 flex flex-col gap-2">
         <button
           type="button"
-          onClick={() => {
-            if (mapRef.current) {
-              mapRef.current.zoomIn();
-            }
-          }}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
+          onClick={() => mapRef.current?.zoomIn()}
+          title={t("zoomIn")}
+          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
         >
           <svg
             className="h-5 w-5"
@@ -224,12 +283,9 @@ export default function MapPage() {
         </button>
         <button
           type="button"
-          onClick={() => {
-            if (mapRef.current) {
-              mapRef.current.zoomOut();
-            }
-          }}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
+          onClick={() => mapRef.current?.zoomOut()}
+          title={t("zoomOut")}
+          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
         >
           <svg
             className="h-5 w-5"
@@ -245,21 +301,19 @@ export default function MapPage() {
             />
           </svg>
         </button>
-
-        {/* ✅ BOUTON MA POSITION */}
         <button
           type="button"
           onClick={() => getUserLocation(mapRef.current)}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
-          title="Ma position"
+          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
+          title={t("myLocation")}
         >
           <IoLocation className="h-5 w-5" />
         </button>
-
         <button
           type="button"
           onClick={() => setSidebarOpen((p) => !p)}
-          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
+          className="flex h-11 w-11 cursor-pointer items-center justify-center rounded-full border border-white/70 bg-white/85 text-slate-700 shadow-lg backdrop-blur-xl transition-all hover:scale-105 dark:border-white/10 dark:bg-slate-900/85 dark:text-white"
+          title={sidebarOpen ? t("hideSidebar") : t("showSidebar")}
         >
           {sidebarOpen ? (
             <svg
@@ -293,22 +347,21 @@ export default function MapPage() {
         </button>
       </div>
 
-      {/* SIDEBAR - (garder ton code existant, inchangé) */}
+      {/* SIDEBAR */}
       {sidebarOpen && (
         <div className="absolute left-4 top-4 bottom-4 z-20 flex w-[400px] flex-col overflow-hidden rounded-3xl border border-white/70 bg-white/82 shadow-[0_24px_70px_rgba(15,23,42,0.12)] backdrop-blur-xl transition-transform duration-300 dark:border-white/10 dark:bg-slate-950/82">
-          {/* ... ton code existant du sidebar ... */}
           <div className="flex-shrink-0 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-purple-50 p-4 dark:border-white/10 dark:from-slate-900 dark:to-purple-900/50">
             <Link
-              href="/fr/search"
-              className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition-all hover:shadow-md dark:border-white/10 dark:bg-slate-800"
+              href={`/${locale}/search`}
+              className="mb-3 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm transition-all hover:shadow-md dark:border-white/10 dark:bg-slate-800"
+              title={t("backToSearch")}
             >
-              <IoArrowBackOutline className="text-slate-500 transition-all group-hover:-translate-x-1 dark:text-slate-400" />
+              <IoIosArrowBack className="text-slate-500 transition-all group-hover:-translate-x-1 dark:text-slate-400" />
               <span className="text-xs font-bold uppercase tracking-wide text-slate-700 dark:text-slate-300">
                 {t("backToSearch")}
               </span>
             </Link>
 
-            {/* Search input */}
             <div className="relative">
               <IoSearchOutline className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -322,37 +375,50 @@ export default function MapPage() {
                 <button
                   type="button"
                   onClick={() => updateSearchTerm("")}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                  className="absolute right-2 top-1/2 cursor-pointer -translate-y-1/2 rounded-full p-1 text-slate-400 transition-colors hover:text-slate-600 dark:hover:text-slate-200"
+                  title={t("clearSearch")}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               )}
             </div>
 
-            {/* Filters button */}
             <button
               type="button"
               onClick={() => setShowFilters((p) => !p)}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 transition-all hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              className="mt-2 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-2 text-xs font-medium text-slate-600 transition-all hover:bg-slate-50 dark:border-white/10 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              title={showFilters ? t("hideFilters") : t("showFilters")}
             >
               <SlidersHorizontal className="h-3.5 w-3.5" />
-              {showFilters ? "Masquer les filtres" : "Afficher les filtres"}
+              {showFilters ? t("hideFilters") : t("showFilters")}
               {(filters.priceRange[1] < 5000 ||
                 filters.minRating > 0 ||
                 filters.selectedType !== "all") && (
                 <span className="ml-1 rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-300">
-                  Actif
+                  {t("active")}
                 </span>
               )}
             </button>
 
-            {/* Filters panel */}
+            <div className="mt-2">
+              <select
+                value={filters.sortBy}
+                onChange={(e) => updateSortBy(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-2 focus:ring-indigo-500/20 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
+                title={t("sortBy")}
+              >
+                <option value="relevance">{t("sortBestRated")}</option>
+                <option value="price_asc">{t("sortPriceAsc")}</option>
+                <option value="price_desc">{t("sortPriceDesc")}</option>
+                <option value="rating">{t("sortRating")}</option>
+              </select>
+            </div>
+
             {showFilters && (
               <div className="mt-3 space-y-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-800">
-                {/* Price range */}
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-                    Prix max — {filters.priceRange[1]} TND
+                    {t("maxPrice")} — {filters.priceRange[1]} TND
                   </label>
                   <input
                     type="range"
@@ -369,80 +435,76 @@ export default function MapPage() {
                     className="h-2 w-full cursor-pointer rounded-lg bg-indigo-200 accent-indigo-500 dark:bg-indigo-900"
                   />
                 </div>
-
-                {/* Type select */}
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-                    Type de bien
+                    {t("propertyType")}
                   </label>
                   <select
                     value={filters.selectedType}
                     onChange={(e) => updateSelectedType(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500 dark:border-white/10 dark:bg-slate-700 dark:text-slate-200"
                   >
-                    <option value="all">Tous les types</option>
-                    <option value="VILLA">Villa</option>
-                    <option value="HOUSE">Maison</option>
-                    <option value="APARTMENT">Appartement</option>
-                    <option value="STUDIO">Studio</option>
-                    <option value="DUPLEX">Duplex</option>
+                    <option value="all">{t("allTypes")}</option>
+                    <option value="VILLA">{t("villa")}</option>
+                    <option value="HOUSE">{t("house")}</option>
+                    <option value="APARTMENT">{t("apartment")}</option>
+                    <option value="STUDIO">{t("studio")}</option>
+                    <option value="DUPLEX">{t("duplex")}</option>
                   </select>
                 </div>
-
-                {/* Rating select */}
                 <div>
                   <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:text-slate-400">
-                    Note minimum —{" "}
+                    {t("minRating")} —{" "}
                     {filters.minRating > 0
-                      ? `${filters.minRating}+ ⭐`
-                      : "Toutes"}
+                      ? `${filters.minRating}+ stars`
+                      : t("allRatings")}
                   </label>
                   <select
                     value={filters.minRating}
                     onChange={(e) => updateMinRating(Number(e.target.value))}
                     className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-xs font-semibold text-slate-700 outline-none focus:ring-1 focus:ring-indigo-500 dark:border-white/10 dark:bg-slate-700 dark:text-slate-200"
                   >
-                    <option value={0}>Toutes les notes</option>
-                    <option value={4}>4+ étoiles</option>
-                    <option value={4.5}>4.5+ étoiles</option>
+                    <option value={0}>{t("allRatings")}</option>
+                    <option value={4}>4+ stars</option>
+                    <option value={4.5}>4.5+ stars</option>
                   </select>
                 </div>
-
-                {/* Buttons */}
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={handleResetFilters}
-                    className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-medium text-indigo-600 transition-all hover:bg-indigo-50 dark:border-white/10 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
+                    className="flex-1 cursor-pointer rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-medium text-indigo-600 transition-all hover:bg-indigo-50 dark:border-white/10 dark:text-indigo-400 dark:hover:bg-indigo-950/30"
+                    title={t("resetFilters")}
                   >
-                    Réinitialiser
+                    {t("reset")}
                   </button>
                   <button
                     type="button"
                     onClick={handleApplyFilters}
-                    className={`flex-1 rounded-xl ${gradientButton} px-4 py-2.5 text-xs font-bold shadow-md shadow-blue-500/15 transition-all hover:scale-[1.01]`}
+                    className={`flex-1 cursor-pointer rounded-xl ${gradientButton} px-4 py-2.5 text-xs font-bold shadow-md shadow-blue-500/15 transition-all hover:scale-[1.01]`}
+                    title={t("applyFilters")}
                   >
-                    Appliquer
+                    {t("apply")}
                   </button>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Listings list */}
           <div className="flex-1 overflow-y-auto px-3 py-3">
             {filteredCount === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <Ban className="mb-4 h-10 w-10 text-slate-300 dark:text-slate-600" />
                 <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-                  Aucun logement
+                  {t("noListings")}
                 </p>
                 <button
                   type="button"
                   onClick={handleResetFilters}
-                  className={`mt-3 rounded-full ${gradientButton} px-5 py-2 text-xs font-bold text-white`}
+                  className={`mt-3 cursor-pointer rounded-full ${gradientButton} px-5 py-2 text-xs font-bold text-white`}
+                  title={t("resetAllFilters")}
                 >
-                  Tout réinitialiser
+                  {t("resetAll")}
                 </button>
               </div>
             ) : (
@@ -458,6 +520,12 @@ export default function MapPage() {
                       key={listing.id}
                       onClick={() => {
                         setSelectedId(isSelected ? null : listing.id);
+                        if (mapRef.current && !isSelected) {
+                          mapRef.current.setView(
+                            [listing.latitude, listing.longitude],
+                            14,
+                          );
+                        }
                       }}
                       className={`cursor-pointer p-3 rounded-xl transition-all duration-300 bg-white dark:bg-slate-900 border ${
                         isSelected
@@ -489,7 +557,12 @@ export default function MapPage() {
                               onClick={(e) =>
                                 handleToggleFavorite(listing.id, e)
                               }
-                              className="flex-shrink-0 transition-transform duration-200 hover:scale-110"
+                              className="flex-shrink-0 cursor-pointer transition-transform duration-200 hover:scale-110"
+                              title={
+                                favorites.includes(listing.id)
+                                  ? t("removeFromFavorites")
+                                  : t("addToFavorites")
+                              }
                             >
                               {favorites.includes(listing.id) ? (
                                 <IoHeart className="text-rose-500 text-sm" />
@@ -513,10 +586,11 @@ export default function MapPage() {
                               <IoWaterOutline className="text-xs" />{" "}
                               {listing.bathrooms}
                             </span>
-                            <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                              <FaStar className="text-yellow-500 text-xs" />
-                              {listing.rating || 4.5}
-                            </span>
+                            {listing.rating && (
+                              <span className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                                <StarRating rating={listing.rating} />
+                              </span>
+                            )}
                           </div>
                           <p
                             className={`font-bold text-sm mt-1 ${gradientText}`}
@@ -535,7 +609,6 @@ export default function MapPage() {
             )}
           </div>
 
-          {/* Footer */}
           <div className="flex-shrink-0 border-t border-slate-100 px-4 py-3 dark:border-white/10">
             <div className="flex items-center justify-between text-[11px] font-semibold text-slate-400 dark:text-slate-500">
               <span className="flex items-center gap-1">
@@ -546,32 +619,25 @@ export default function MapPage() {
                 <IoHeart className="h-3 w-3 fill-rose-500 text-rose-500" />{" "}
                 {favoritesCount}
               </span>
-              <Link href="/fr/search">
-                <button className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 shadow-sm transition-all hover:border-blue-200 hover:text-blue-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
-                  <ArrowLeft className="h-3 w-3" /> Retour
-                </button>
-              </Link>
             </div>
           </div>
         </div>
       )}
 
-      {/* FLOATING COUNTER */}
       <div className="absolute bottom-6 left-1/2 z-20 -translate-x-1/2">
         <div className="flex items-center gap-4 rounded-full border border-white/70 bg-white/85 px-5 py-3 shadow-[0_12px_40px_rgba(15,23,42,0.14)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/85">
           <span className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
             <IoHomeOutline className="h-4 w-4 text-indigo-500" />{" "}
-            {filteredCount} résultats
+            {filteredCount} {t("results")}
           </span>
           <span className="h-5 w-px bg-slate-200 dark:bg-white/10" />
           <span className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
             <IoHeart className="h-4 w-4 fill-rose-500 text-rose-500" />{" "}
-            {favoritesCount} favoris
+            {favoritesCount} {t("favorites")}
           </span>
         </div>
       </div>
 
-      {/* DETAIL CARD - AJOUT DES BOUTONS GOOGLE MAPS */}
       {selectedListing && (
         <div className="absolute right-6 top-24 z-20 w-[380px] overflow-hidden rounded-3xl border border-white/70 bg-white/92 shadow-[0_28px_80px_rgba(15,23,42,0.18)] backdrop-blur-xl transition-all duration-300 dark:border-white/10 dark:bg-slate-950/92">
           <div className="relative h-52 overflow-hidden">
@@ -589,14 +655,15 @@ export default function MapPage() {
             <button
               type="button"
               onClick={() => setSelectedId(null)}
-              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg backdrop-blur-md transition-all hover:scale-110 dark:bg-slate-900/90 dark:text-white"
+              className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg backdrop-blur-md transition-all hover:scale-110 dark:bg-slate-900/90 dark:text-white"
+              title={t("close")}
             >
               <X className="h-4 w-4" />
             </button>
             <div className="absolute left-4 top-4 flex flex-wrap gap-2">
               {selectedListing.isVerified && (
                 <span className="rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-bold text-white">
-                  <ShieldCheck className="inline h-3 w-3" /> Vérifié
+                  <ShieldCheck className="inline h-3 w-3" /> {t("verified")}
                 </span>
               )}
             </div>
@@ -615,54 +682,71 @@ export default function MapPage() {
                   {selectedListing.pricePerNight} TND
                 </p>
                 <p className="text-[9px] font-bold uppercase tracking-[0.14em] text-slate-400">
-                  / nuit
+                  / {t("night")}
                 </p>
               </div>
             </div>
           </div>
           <div className="p-5">
-            <div className="mb-4 flex items-center gap-2">
-              <Crown className="h-4 w-4 text-amber-500" />
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                Score NESTHUB {(selectedListing as any).trustScore || 90}/100
-              </span>
-              <div className="ml-auto h-2 max-w-[120px] flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600"
-                  style={{
-                    width: `${(selectedListing as any).trustScore || 90}%`,
-                  }}
-                />
+            {selectedListing.trustScore && (
+              <div className="mb-4 flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-500" />
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  {t("nesthubScore")} : {selectedListing.trustScore}%
+                </span>
+                <div className="ml-auto h-2 max-w-[120px] flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600"
+                    style={{ width: `${selectedListing.trustScore}%` }}
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
             <div className="mb-4 grid grid-cols-4 gap-2">
-              {[
-                [FaStar, `${selectedListing.rating || 4.5}`],
-                [BedDouble, `${selectedListing.bedrooms} ch.`],
-                [Bath, `${selectedListing.bathrooms} sdb`],
-                [Users, `${selectedListing.maxGuests || 2} pers.`],
-              ].map(([Icon, label]) => (
-                <div
-                  key={String(label)}
-                  className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-2 py-3 dark:bg-white/5"
-                >
-                  <Icon className="h-3.5 w-3.5 text-slate-400" />
+              {selectedListing.rating && (
+                <div className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-2 py-3 dark:bg-white/5">
+                  <FaStar className="h-3.5 w-3.5 text-slate-400" />
                   <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-300">
-                    {String(label)}
+                    {selectedListing.rating}
                   </span>
                 </div>
-              ))}
+              )}
+              {selectedListing.bedrooms > 0 && (
+                <div className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-2 py-3 dark:bg-white/5">
+                  <BedDouble className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-300">
+                    {selectedListing.bedrooms} {t("bedrooms")}
+                  </span>
+                </div>
+              )}
+              {selectedListing.bathrooms > 0 && (
+                <div className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-2 py-3 dark:bg-white/5">
+                  <Bath className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-300">
+                    {selectedListing.bathrooms} {t("bathrooms")}
+                  </span>
+                </div>
+              )}
+              {selectedListing.maxGuests && selectedListing.maxGuests > 0 && (
+                <div className="flex flex-col items-center gap-1 rounded-xl bg-slate-50 px-2 py-3 dark:bg-white/5">
+                  <Users className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-[10px] font-extrabold text-slate-600 dark:text-slate-300">
+                    {selectedListing.maxGuests} {t("guests")}
+                  </span>
+                </div>
+              )}
             </div>
 
-            {/* ✅ BOUTONS GOOGLE MAPS AJOUTÉS */}
             <div className="flex gap-2 mb-3">
               <button
                 type="button"
                 onClick={() => openInGoogleMaps(selectedListing)}
-                className="flex-1 rounded-xl bg-red-500 hover:bg-red-700 text-white py-2.5 text-xs font-bold shadow-md transition-all hover:scale-[1.01] flex items-center justify-center gap-2"
+                className="flex-1 cursor-pointer rounded-xl bg-red-500 py-2.5 text-xs font-bold text-white shadow-md transition-all hover:scale-[1.01] hover:bg-red-700 flex items-center justify-center gap-2"
+                title={t("openInGoogleMaps")}
               >
                 <FaGoogle className="h-3.5 w-3.5" />
-                Ouvrir dans Google Maps
+                {t("openInGoogleMaps")}
               </button>
             </div>
 
@@ -670,11 +754,16 @@ export default function MapPage() {
               <button
                 type="button"
                 onClick={(e) => handleToggleFavorite(selectedListing.id, e)}
-                className={`flex-1 rounded-xl py-3 text-xs font-bold transition-all ${
+                className={`flex-1 cursor-pointer rounded-xl py-3 text-xs font-bold transition-all ${
                   favorites.includes(selectedListing.id)
                     ? "border-2 border-rose-200 bg-rose-50 text-rose-600 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-400"
                     : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
                 }`}
+                title={
+                  favorites.includes(selectedListing.id)
+                    ? t("removeFromFavorites")
+                    : t("addToFavorites")
+                }
               >
                 <span className="inline-flex items-center gap-1.5">
                   {favorites.includes(selectedListing.id) ? (
@@ -683,17 +772,18 @@ export default function MapPage() {
                     <IoHeartOutline className="h-3.5 w-3.5" />
                   )}
                   {favorites.includes(selectedListing.id)
-                    ? "Favori"
-                    : "Sauvegarder"}
+                    ? t("favorite")
+                    : t("save")}
                 </span>
               </button>
               <Link
-                href={`/fr/listings/${selectedListing.id}`}
-                className={`flex-1 rounded-xl ${gradientButton} py-3 text-xs font-bold shadow-md shadow-blue-500/15 transition-all hover:scale-[1.01]`}
+                href={`/${locale}/listings/${selectedListing.id}`}
+                className={`flex-1 cursor-pointer rounded-xl ${gradientButton} py-3 text-xs font-bold shadow-md shadow-blue-500/15 transition-all hover:scale-[1.01]`}
+                title={t("viewDetails")}
               >
                 <span className="flex items-center justify-center gap-1.5 w-full text-center">
-                  <ArrowRight className="h-3.5 w-3.5" />
-                  Voir la fiche
+                  <span>{t("viewDetails")}</span>
+                  <IoIosArrowForward className="h-3.5 w-3.5" />
                 </span>
               </Link>
             </div>
@@ -732,11 +822,11 @@ export default function MapPage() {
           border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb {
-          background: #8b5cf6; /* violet */
+          background: #8b5cf6;
           border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #7c3aed; /* violet foncé */
+          background: #7c3aed;
         }
         .dark ::-webkit-scrollbar-thumb {
           background: #8b5cf6;

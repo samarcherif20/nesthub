@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import {
   IoCalendarOutline,
   IoPeopleOutline,
@@ -44,11 +45,12 @@ interface EditableBookingCardProps {
   onSendSystemMessage: (message: string) => void;
   isOfferAccepted?: boolean;
   offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
+  isPaid?: boolean;
 }
 
-function fmtDate(dateStr: string) {
+function fmtDate(dateStr: string, locale: string = "fr") {
   if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("fr-FR", {
+  return new Date(dateStr).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -60,7 +62,6 @@ function formatDateForInput(dateStr: string) {
   return new Date(dateStr).toISOString().split("T")[0];
 }
 
-// ✅ FONCTION POUR NORMALISER LES DATES AVANT ENVOI
 function normalizeDateForAPI(dateStr: string): string {
   if (!dateStr) return "";
   return new Date(dateStr).toISOString().split("T")[0];
@@ -74,6 +75,49 @@ function nightsBetween(a: string, b: string): number {
   );
 }
 
+// Composant d'étoiles pour la note
+function StarRating({ rating }: { rating: number }) {
+  const t = useTranslations("MessagesPage");
+  const fullStars = Math.floor(rating);
+  const hasHalfStar = rating % 1 >= 0.5;
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+  return (
+    <div className="flex items-center gap-0.5">
+      {rating > 0 ? (
+        <>
+          {[...Array(fullStars)].map((_, i) => (
+            <IoStarSharp key={`full-${i}`} className="text-amber-400 text-[10px] fill-amber-400" />
+          ))}
+          {hasHalfStar && (
+            <div className="relative">
+              <IoStarSharp className="text-gray-300 dark:text-gray-600 text-[10px]" />
+              <div className="absolute inset-0 overflow-hidden w-1/2">
+                <IoStarSharp className="text-amber-400 text-[10px] fill-amber-400" />
+              </div>
+            </div>
+          )}
+          {[...Array(emptyStars)].map((_, i) => (
+            <IoStarSharp key={`empty-${i}`} className="text-gray-300 dark:text-gray-600 text-[10px]" />
+          ))}
+          <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 ml-1">
+            {rating.toFixed(1)}
+          </span>
+        </>
+      ) : (
+        <>
+          {[...Array(5)].map((_, i) => (
+            <IoStarSharp key={`empty-${i}`} className="text-gray-300 dark:text-gray-600 text-[10px]" />
+          ))}
+          <span className="text-[10px] text-slate-400 dark:text-slate-500 ml-1">
+            {t("booking.noRating")}
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
 export function EditableBookingCard({
   listing,
   infoRequestId,
@@ -84,7 +128,9 @@ export function EditableBookingCard({
   onSendSystemMessage,
   isOfferAccepted = false,
   offerStatus,
+  isPaid = false,
 }: EditableBookingCardProps) {
+  const t = useTranslations("MessagesPage");
   const [checkIn, setCheckIn] = useState(initialCheckIn);
   const [checkOut, setCheckOut] = useState(initialCheckOut);
   const [guests, setGuests] = useState(initialGuests);
@@ -101,7 +147,13 @@ export function EditableBookingCard({
 
   const listingImageUrl = listing.image ? pipListingImage(listing.image) : null;
 
-  const isLocked = isOfferAccepted || offerStatus === "ACCEPTED";
+  // Désactiver l'édition si offre acceptée ET paiement effectué
+  const isLocked = (isOfferAccepted || offerStatus === "ACCEPTED") && isPaid;
+  const isOfferPending = offerStatus === "PENDING" && !isPaid;
+
+  // Valeurs par défaut pour l'affichage
+  const maxGuests = listing.maxGuests ?? null;
+  const bedrooms = listing.bedrooms ?? null;
 
   const hasChanges = () => {
     return (
@@ -115,7 +167,6 @@ export function EditableBookingCard({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // ✅ NORMALISER LES DATES AVANT COMPARAISON
     const normalizedCheckIn = normalizeDateForAPI(checkIn);
     const normalizedCheckOut = normalizeDateForAPI(checkOut);
 
@@ -123,19 +174,19 @@ export function EditableBookingCard({
     const checkOutDate = new Date(normalizedCheckOut);
 
     if (checkInDate < today) {
-      setError("La date d'arrivée ne peut pas être dans le passé");
+      setError(t("booking.errors.pastDate"));
       return false;
     }
     if (checkOutDate <= checkInDate) {
-      setError("La date de départ doit être après la date d'arrivée");
+      setError(t("booking.errors.invalidDates"));
       return false;
     }
-    if (guests < 1) {
-      setError("Minimum 1 voyageur");
+    if (guests && guests < 1) {
+      setError(t("booking.errors.minGuests"));
       return false;
     }
-    if (listing.maxGuests && guests > listing.maxGuests) {
-      setError(`Maximum ${listing.maxGuests} voyageurs`);
+    if (maxGuests && guests && guests > maxGuests) {
+      setError(t("booking.errors.maxGuests", { max: maxGuests }));
       return false;
     }
     return true;
@@ -143,7 +194,7 @@ export function EditableBookingCard({
 
   const handleSave = async () => {
     if (isLocked) {
-      setError("Les dates sont verrouillées car l'offre a été acceptée");
+      setError(t("booking.errors.locked"));
       return;
     }
     if (!validateDates()) return;
@@ -152,7 +203,6 @@ export function EditableBookingCard({
     setError(null);
 
     try {
-      // ✅ ENVOYER LES DATES AU FORMAT YYYY-MM-DD UNIFORMÉMENT
       const formattedCheckIn = normalizeDateForAPI(checkIn);
       const formattedCheckOut = normalizeDateForAPI(checkOut);
 
@@ -162,20 +212,33 @@ export function EditableBookingCard({
         body: JSON.stringify({
           checkIn: formattedCheckIn,
           checkOut: formattedCheckOut,
-          guests,
+          guests: guests || 1,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Erreur lors de la modification");
+        throw new Error(errorData.error || t("booking.errors.updateFailed"));
       }
 
       const data = await response.json();
 
-      const oldDates = `${fmtDate(initialCheckIn)} → ${fmtDate(initialCheckOut)}`;
-      const newDates = `${fmtDate(checkIn)} → ${fmtDate(checkOut)}`;
-      const systemMessage = `🔄 **Demande modifiée**\n\n📅 Période : ${oldDates} → ${newDates}\n👥 Voyageurs : ${initialGuests} → ${guests} personne${guests > 1 ? "s" : ""}\n\n💰 Nouveau prix : ${totalPrice.toLocaleString("fr-FR")} TND`;
+      const oldDates = `${fmtDate(initialCheckIn, t.locale)} → ${fmtDate(initialCheckOut, t.locale)}`;
+      const newDates = `${fmtDate(checkIn, t.locale)} → ${fmtDate(checkOut, t.locale)}`;
+      const guestText = guests 
+        ? `${guests} ${guests > 1 ? t("booking.guestsPlural") : t("booking.guestsSingular")}`
+        : t("booking.notSpecified");
+      const oldGuestText = initialGuests 
+        ? `${initialGuests} ${initialGuests > 1 ? t("booking.guestsPlural") : t("booking.guestsSingular")}`
+        : t("booking.notSpecified");
+      
+      const systemMessage = t("booking.systemMessage.updated", {
+        oldDates,
+        newDates,
+        oldGuests: oldGuestText,
+        newGuests: guestText,
+        total: totalPrice.toLocaleString("fr-FR"),
+      });
 
       onSendSystemMessage(systemMessage);
       onUpdate(data.infoRequest);
@@ -195,6 +258,17 @@ export function EditableBookingCard({
     setError(null);
   };
 
+  const handleGuestsChange = (value: string) => {
+    const numValue = parseInt(value);
+    if (isNaN(numValue) || numValue < 0) {
+      setGuests(0);
+    } else if (maxGuests && numValue > maxGuests) {
+      setGuests(maxGuests);
+    } else {
+      setGuests(numValue);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300">
       {/* Header */}
@@ -206,29 +280,39 @@ export function EditableBookingCard({
             </div>
             <div>
               <h3 className="font-bold text-slate-800 dark:text-white text-sm">
-                Détails du séjour
+                {t("booking.title")}
               </h3>
               <p className="text-[10px] text-slate-400 dark:text-slate-500">
                 {isLocked
-                  ? "Réservation confirmée"
-                  : "Votre demande d'information"}
+                  ? t("booking.confirmed")
+                  : isOfferPending
+                  ? t("booking.offerPending")
+                  : t("booking.infoRequest")}
               </p>
             </div>
           </div>
-          {!isEditing && !isLocked && (
+          {!isEditing && !isLocked && isOfferPending && (
             <button
               onClick={() => setIsEditing(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-gradient-to-r from-sky-50 to-purple-50 dark:from-sky-950/30 dark:to-purple-950/30 text-sky-600 dark:text-sky-400 hover:from-sky-100 hover:to-purple-100 transition-all"
             >
               <IoPencilOutline className="text-xs" />
-              Modifier
+              {t("booking.edit")}
             </button>
           )}
           {isLocked && (
             <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-100 dark:bg-emerald-950/40">
               <IoCheckmarkCircleOutline className="text-emerald-600 dark:text-emerald-400 text-xs" />
               <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
-                Offre acceptée
+                {t("booking.paidAndConfirmed")}
+              </span>
+            </div>
+          )}
+          {isOfferPending && !isLocked && !isEditing && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-amber-100 dark:bg-amber-950/40">
+              <IoTimeOutline className="text-amber-600 dark:text-amber-400 text-xs" />
+              <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+                {t("booking.offerPendingBadge")}
               </span>
             </div>
           )}
@@ -263,31 +347,38 @@ export function EditableBookingCard({
               </p>
             )}
             <div className="flex items-center gap-2 mt-2 flex-wrap">
-              {listing.rating && (
-                <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/30">
-                  <IoStarSharp className="text-amber-400 text-[10px]" />
-                  <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
-                    {listing.rating}
-                  </span>
+              <StarRating rating={listing.rating || 0} />
+              
+              {/* Chambres - Affiche "Non spécifié" si null */}
+              {bedrooms !== null && bedrooms > 0 ? (
+                <span className="flex items-center gap-0.5 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                  <IoBedOutline className="text-[10px]" />
+                  {bedrooms} {bedrooms > 1 ? t("booking.bedroomsPlural") : t("booking.bedroomsSingular")}
+                </span>
+              ) : bedrooms === null && (
+                <span className="flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                  <IoBedOutline className="text-[10px]" />
+                  {t("booking.notSpecified")}
                 </span>
               )}
-              {listing.bedrooms && (
-                <span className="flex items-center gap-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-                  <IoBedOutline className="text-xs" />
-                  {listing.bedrooms} ch.
+              
+              {/* Max voyageurs - Affiche "Non spécifié" si null ou 0 */}
+              {maxGuests !== null && maxGuests > 0 ? (
+                <span className="flex items-center gap-0.5 text-[10px] text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                  <IoPeopleOutline className="text-[10px]" />
+                  {maxGuests} {maxGuests > 1 ? t("booking.maxGuestsPlural") : t("booking.maxGuestsSingular")}
                 </span>
-              )}
-              {listing.maxGuests && (
-                <span className="flex items-center gap-0.5 text-[10px] text-slate-500 dark:text-slate-400">
-                  <IoPeopleOutline className="text-xs" />
-                  {listing.maxGuests} pers.
+              ) : (
+                <span className="flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full">
+                  <IoPeopleOutline className="text-[10px]" />
+                  {t("booking.notSpecified")}
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Dates */}
+        {/* Dates - reste identique */}
         <div
           className={`rounded-xl p-4 space-y-3 ${
             isLocked
@@ -300,43 +391,37 @@ export function EditableBookingCard({
               <IoCalendarOutline className="text-white text-sm" />
             </div>
             <span className="text-[11px] font-semibold uppercase tracking-wider bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
-              Dates du séjour
+              {t("booking.dates")}
             </span>
             {isLocked && (
               <IoTimeOutline className="text-slate-400 text-xs ml-auto" />
             )}
           </div>
 
-          {isEditing && !isLocked ? (
+          {isEditing && !isLocked && isOfferPending ? (
             <div className="space-y-2">
               <div>
                 <label className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 block">
-                  Arrivée
+                  {t("booking.checkIn")}
                 </label>
                 <input
                   type="date"
-                  value={formatDateForInput(checkIn)}
+                  value={formatDateForInput(checkIn) || ""}
                   onChange={(e) => setCheckIn(e.target.value)}
                   min={new Date().toISOString().split("T")[0]}
                   className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
-                  disabled={isLocked}
                 />
               </div>
               <div>
                 <label className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 block">
-                  Départ
+                  {t("booking.checkOut")}
                 </label>
                 <input
                   type="date"
-                  value={formatDateForInput(checkOut)}
+                  value={formatDateForInput(checkOut) || ""}
                   onChange={(e) => setCheckOut(e.target.value)}
-                  min={
-                    checkIn
-                      ? formatDateForInput(checkIn)
-                      : new Date().toISOString().split("T")[0]
-                  }
+                  min={checkIn ? formatDateForInput(checkIn) : new Date().toISOString().split("T")[0]}
                   className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
-                  disabled={isLocked}
                 />
               </div>
             </div>
@@ -344,33 +429,35 @@ export function EditableBookingCard({
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Arrivée
+                  {t("booking.checkIn")}
                 </span>
                 <span className="text-sm font-semibold text-slate-800 dark:text-white">
-                  {fmtDate(checkIn)}
+                  {fmtDate(checkIn, t.locale) || t("booking.notSpecified")}
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Départ
+                  {t("booking.checkOut")}
                 </span>
                 <span className="text-sm font-semibold text-slate-800 dark:text-white">
-                  {fmtDate(checkOut)}
+                  {fmtDate(checkOut, t.locale) || t("booking.notSpecified")}
                 </span>
               </div>
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Durée
-                </span>
-                <span className="text-sm font-bold bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
-                  {nights} nuit{nights > 1 ? "s" : ""}
-                </span>
-              </div>
+              {nights > 0 && (
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    {t("booking.duration")}
+                  </span>
+                  <span className="text-sm font-bold bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
+                    {nights} {nights > 1 ? t("booking.nightsPlural") : t("booking.nightsSingular")}
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Guests */}
+        {/* Guests - reste identique */}
         <div
           className={`rounded-xl p-4 space-y-3 ${
             isLocked
@@ -383,40 +470,43 @@ export function EditableBookingCard({
               <IoPeopleOutline className="text-white text-sm" />
             </div>
             <span className="text-[11px] font-semibold uppercase tracking-wider bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
-              Voyageurs
+              {t("booking.guests")}
             </span>
           </div>
 
-          {isEditing && !isLocked ? (
+          {isEditing && !isLocked && isOfferPending ? (
             <div>
               <label className="text-[10px] text-slate-500 dark:text-slate-400 mb-1 block">
-                Nombre de personnes
+                {t("booking.numberOfGuests")}
               </label>
               <input
                 type="number"
-                value={guests}
-                onChange={(e) =>
-                  setGuests(Math.max(1, parseInt(e.target.value) || 1))
-                }
-                min="1"
-                max={listing.maxGuests || 10}
+                value={guests || ""}
+                onChange={(e) => handleGuestsChange(e.target.value)}
+                placeholder={t("booking.guestsPlaceholder")}
+                min="0"
+                max={maxGuests || 10}
                 className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-purple-500 outline-none"
-                disabled={isLocked}
               />
+              <p className="text-[10px] text-slate-400 mt-1">
+                {t("booking.guestsOptional")}
+              </p>
             </div>
           ) : (
             <div className="flex justify-between items-center">
               <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                Personnes
+                {t("booking.guests")}
               </span>
               <span className="text-sm font-semibold text-slate-800 dark:text-white">
-                {guests} personne{guests > 1 ? "s" : ""}
+                {guests && guests > 0 
+                  ? `${guests} ${guests > 1 ? t("booking.guestsPlural") : t("booking.guestsSingular")}`
+                  : t("booking.notSpecified")}
               </span>
             </div>
           )}
         </div>
 
-        {/* Price */}
+        {/* Price - reste identique */}
         {nights > 0 && listing.pricePerNight && (
           <div
             className={`rounded-xl p-4 ${
@@ -430,29 +520,28 @@ export function EditableBookingCard({
                 <IoWalletOutline className="text-white text-sm" />
               </div>
               <span className="text-[11px] font-semibold uppercase tracking-wider bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
-                Détail du prix
+                {t("booking.priceDetails")}
               </span>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-400">
                 <span>
-                  {listing.pricePerNight.toLocaleString("fr-FR")} TND × {nights}{" "}
-                  nuit{nights > 1 ? "s" : ""}
+                  {listing.pricePerNight.toLocaleString("fr-FR")} TND × {nights} {nights > 1 ? t("booking.nightsPlural") : t("booking.nightsSingular")}
                 </span>
                 <span>{basePrice.toLocaleString("fr-FR")} TND</span>
               </div>
               <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-400">
-                <span>Frais de ménage</span>
+                <span>{t("booking.cleaningFee")}</span>
                 <span>{cleaningFee} TND</span>
               </div>
               <div className="flex justify-between text-[11px] text-slate-600 dark:text-slate-400">
-                <span>Frais de service</span>
+                <span>{t("booking.serviceFee")}</span>
                 <span>{serviceFee} TND</span>
               </div>
               <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between font-extrabold">
                 <span className="bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent">
-                  Total
+                  {t("booking.total")}
                 </span>
                 <span className="bg-gradient-to-r from-sky-600 to-purple-600 bg-clip-text text-transparent text-base">
                   {totalPrice.toLocaleString("fr-FR")} TND
@@ -462,13 +551,24 @@ export function EditableBookingCard({
           </div>
         )}
 
-        {/* Message verrouillé si offre acceptée */}
+        {/* Messages status */}
         {isLocked && (
-          <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 text-center border border-emerald-200 dark:border-emerald-800/30 ">
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 rounded-xl p-3 text-center border border-emerald-200 dark:border-emerald-800/30">
             <div className="flex items-center justify-center gap-2">
               <IoCheckmarkCircleOutline className="text-emerald-500 text-sm" />
               <p className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium">
-                Les dates sont verrouillées
+                {t("booking.lockedMessage")}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {isOfferPending && !isLocked && !isEditing && (
+          <div className="bg-amber-50 dark:bg-amber-950/20 rounded-xl p-3 text-center border border-amber-200 dark:border-amber-800/30">
+            <div className="flex items-center justify-center gap-2">
+              <IoTimeOutline className="text-amber-500 text-sm" />
+              <p className="text-amber-600 dark:text-amber-400 text-[11px] font-medium">
+                {t("booking.pendingMessage")}
               </p>
             </div>
           </div>
@@ -484,7 +584,7 @@ export function EditableBookingCard({
         )}
 
         {/* Action buttons */}
-        {isEditing && !isLocked && (
+        {isEditing && !isLocked && isOfferPending && (
           <div className="flex gap-3 pt-2">
             <button
               onClick={handleCancel}
@@ -492,7 +592,7 @@ export function EditableBookingCard({
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all disabled:opacity-50"
             >
               <IoCloseOutline className="text-base" />
-              Annuler
+              {t("booking.cancel")}
             </button>
             <button
               onClick={handleSave}
@@ -504,7 +604,7 @@ export function EditableBookingCard({
               ) : (
                 <IoSaveOutline className="text-base" />
               )}
-              Enregistrer
+              {t("booking.save")}
             </button>
           </div>
         )}

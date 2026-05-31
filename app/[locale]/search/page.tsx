@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
+
 import { useUser } from "@clerk/nextjs";
 import { useSearch, categories, allAmenities } from "./hooks/useSearch";
 import NexusCard from "@/components/ui/NexusCard";
@@ -25,14 +27,6 @@ import {
   FaUser,
   FaTh,
   FaList,
-  FaTree,
-  FaWifi,
-  FaTv,
-  FaUtensils,
-  FaParking,
-  FaSwimmer,
-  FaDumbbell,
-  FaHotTub,
   FaShieldAlt,
   FaCamera,
   FaCompass,
@@ -41,23 +35,19 @@ import {
   MdOutlineVilla,
   MdOutlinePeople,
   MdOutlineLocationOn,
-  MdOutlineWaves,
+  MdOutlineKeyboardDoubleArrowUp,
 } from "react-icons/md";
-import { TbAirConditioning, TbBuildingCommunity } from "react-icons/tb";
+import { TbBuildingCommunity } from "react-icons/tb";
 import { GiModernCity } from "react-icons/gi";
 import {
-  IoChatbubbleOutline,
-  IoHomeOutline,
   IoCalendarOutline,
-  IoPersonOutline,
   IoSearchOutline,
   IoSparkles,
   IoCompass,
   IoShieldCheckmarkOutline,
-  IoCameraOutline,
   IoFlashOutline,
 } from "react-icons/io5";
-import AlertBanner from "@/components/ui/Alert";
+import { CheckCircle, AlertCircle, X, ArrowUp } from "lucide-react";
 import Pagination from "@/components/ui/Pagination";
 import { ChatDrawer } from "@/components/ui/chat/ChatDrawer";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
@@ -77,80 +67,27 @@ const HERO_SLIDES = [
   {
     image:
       "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1800&q=80",
-    title: "Séjours d'exception en Tunisie",
-    subtitle:
-      "Des demeures d'exception et des refuges authentiques pour des vacances inoubliables",
-    label: "Moteur de recherche premium",
+    titleKey: "heroSlide1Title",
+    subtitleKey: "heroSlide1Subtitle",
+    labelKey: "heroSlide1Label",
   },
   {
     image:
       "https://images.unsplash.com/photo-1494526585095-c41746248156?auto=format&fit=crop&w=1800&q=80",
-    title: "Expériences uniques, souvenirs impérissables",
-    subtitle:
-      "Chaque propriété fait l'objet d'une vérification rigoureuse pour votre tranquillité",
-    label: "Découverte certifiée",
+    titleKey: "heroSlide2Title",
+    subtitleKey: "heroSlide2Subtitle",
+    labelKey: "heroSlide2Label",
   },
   {
     image:
       "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=1800&q=80",
-    title: "L'élégance discrète, à portée de clic",
-    subtitle:
-      "Affinez votre recherche par destination, équipements et budget pour dénicher la perle rare",
-    label: "Sélection curatée",
+    titleKey: "heroSlide3Title",
+    subtitleKey: "heroSlide3Subtitle",
+    labelKey: "heroSlide3Label",
   },
 ];
 
-const TRUST_BADGES = [
-  {
-    icon: IoShieldCheckmarkOutline,
-    title: "Propriétés authentifiées",
-    text: "Chaque logement est rigoureusement validé par notre équipe",
-  },
-  {
-    icon: IoSparkles,
-    title: "Esthétique curatoriale",
-    text: "Une sélection éditoriale des demeures les plus remarquables",
-  },
-  {
-    icon: IoCompass,
-    title: "Navigation premium",
-    text: "Fluidité, élégance et efficacité redéfinies",
-  },
-  {
-    icon: IoFlashOutline,
-    title: "Indice de confiance",
-    text: "Des indicateurs transparents pour réserver l'esprit serein",
-  },
-];
-
-const WHY_DIFFERENT = [
-  {
-    icon: FaShieldAlt,
-    title: "Confiabilité absolue",
-    text: "Scores de fiabilité, badges d'authentification et hiérarchie visuelle éliminent toute hésitation.",
-  },
-  {
-    icon: FaCamera,
-    title: "Expérience éditoriale",
-    text: "Photographies immersives, espacement aéré et narration captivante éveillent le désir avant toute comparaison tarifaire.",
-  },
-  {
-    icon: FaCompass,
-    title: "Ambassadeur du luxe",
-    text: "Une interface qui se veut curatoriale, distinctive — l'incarnation parfaite d'une recherche d'exception.",
-  },
-];
-
-const FOOTER_LINKS = [
-  "Confidentialité",
-  "Conditions générales",
-  "Assistance",
-  "Presse",
-  "Carrières",
-  "Communauté",
-];
-
-// Category icon helper with inspiration styling
+// Category icon helper
 const getCategoryIcon = (catId: string, isActive: boolean) => {
   const baseClass = "text-2xl transition-all duration-300";
   const activeClass = "text-white";
@@ -203,39 +140,47 @@ const getCategoryIcon = (catId: string, isActive: boolean) => {
   }
 };
 
-const getAmenityIcon = (amenity: string) => {
-  return amenity;
-};
-
 export default function SearchPage() {
+  const params = useParams();
+  const locale = (params?.locale as string) || "fr";
   const t = useTranslations("SearchPage");
   const { user } = useUser();
   const [mounted, setMounted] = useState(false);
-  const [alert, setAlert] = useState<{
-    type: "success" | "error" | "info" | "warning";
+  const [toast, setToast] = useState<{
+    type: "success" | "error" | "info";
     message: string;
   } | null>(null);
   const [ratingFilter, setRatingFilter] = useState<number | null>(null);
   const [bedroomsFilter, setBedroomsFilter] = useState<number | null>(null);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
-  const [showMapPreview, setShowMapPreview] = useState(false);
-const [showNexusCard, setShowNexusCard] = useState(false);
-useEffect(() => {
-  const handleScroll = () => {
-    const heroSection = document.querySelector('section');
-    if (heroSection) {
-      const heroBottom = heroSection.getBoundingClientRect().bottom;
-      // Affiche la carte quand on a dépassé la hero section
-      setShowNexusCard(heroBottom < 100);
-    }
+  const [showNexusCard, setShowNexusCard] = useState(false);
+  const [showGoUpButton, setShowGoUpButton] = useState(false);
+  const showToast = (type: "success" | "error" | "info", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
   };
-  
-  window.addEventListener('scroll', handleScroll);
-  handleScroll(); // Vérifie au chargement
-  
-  return () => window.removeEventListener('scroll', handleScroll);
-}, []);
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowGoUpButton(window.scrollY > 300);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+  useEffect(() => {
+    const handleScroll = () => {
+      const heroSection = document.querySelector("section");
+      if (heroSection) {
+        const heroBottom = heroSection.getBoundingClientRect().bottom;
+        setShowNexusCard(heroBottom < 100);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   useEffect(() => {
     setMounted(true);
     const interval = setInterval(() => {
@@ -282,30 +227,19 @@ useEffect(() => {
     selectCategory,
   } = useSearch();
 
-  const showAlert = (
-    type: "success" | "error" | "info" | "warning",
-    message: string,
-  ) => {
-    setAlert({ type, message });
-    setTimeout(() => setAlert(null), 3000);
-  };
-
   const handleToggleFavorite = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     toggleFavorite(id, e);
     const isFav = favorites.includes(id);
-    showAlert(
-      "success",
-      isFav ? "Retiré de vos favoris" : "Ajouté à vos favoris",
-    );
+    showToast("success", isFav ? t("favoriteRemoved") : t("favoriteAdded"));
   };
 
   const handleResetFilters = () => {
     resetFilters();
     setRatingFilter(null);
     setBedroomsFilter(null);
-    showAlert("info", "Tous les critères ont été réinitialisés");
+    showToast("info", t("filtersReset"));
   };
 
   const activeFiltersCount =
@@ -315,6 +249,8 @@ useEffect(() => {
     (bedroomsFilter ? 1 : 0);
 
   let filteredListings = [...listings];
+
+  // Appliquer les filtres de note et chambres
   if (ratingFilter)
     filteredListings = filteredListings.filter(
       (l) => (l.rating || 0) >= ratingFilter,
@@ -324,40 +260,72 @@ useEffect(() => {
       (l) => l.bedrooms >= bedroomsFilter,
     );
 
-  const featuredMatch = filteredListings[0];
+  // Appliquer le tri (SORT) selon sortBy
+  if (sortBy === "price_asc") {
+    filteredListings.sort((a, b) => {
+      const priceA = a.pricePerNight || a.price || a.pricePerMonth || 0;
+      const priceB = b.pricePerNight || b.price || b.pricePerMonth || 0;
+      return priceA - priceB;
+    });
+  } else if (sortBy === "price_desc") {
+    filteredListings.sort((a, b) => {
+      const priceA = a.pricePerNight || a.price || a.pricePerMonth || 0;
+      const priceB = b.pricePerNight || b.price || b.pricePerMonth || 0;
+      return priceB - priceA;
+    });
+  } else if (sortBy === "rating") {
+    filteredListings.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  } else if (sortBy === "relevance") {
+    // Pour "Les mieux évalués" = tri par note décroissante
+    filteredListings.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  }
 
-  const getAmenitiesArray = (listing: any) => {
-    if (Array.isArray(listing.amenities)) return listing.amenities;
-    if (typeof listing.amenities === "string")
-      return listing.amenities.split(",");
-    return [];
-  };
-  if (loading && listings.length === 0) {
+  if (!mounted || (loading && listings.length === 0)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
         <div className="flex flex-col items-center gap-4">
           <LoadingSpinner />
-          <p className="text-sm  text-slate-500 dark:text-slate-400">
-            Chargement des propriétés...
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            {t("loading")}
           </p>
         </div>
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+              toast.type === "success"
+                ? "bg-green-500 text-white"
+                : toast.type === "error"
+                  ? "bg-red-500 text-white"
+                  : "bg-sky-500 text-white"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <CheckCircle className="w-5 h-5" />
+            ) : (
+              <AlertCircle className="w-5 h-5" />
+            )}
+            <span className="text-sm font-medium">{toast.message}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="ml-2 hover:opacity-70"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {showNexusCard && (
         <div className="hidden xl:block fixed right-8 top-1/2 -translate-y-1/2 z-30">
           <NexusCard />
-        </div>
-      )}
-      {alert && (
-        <div className="fixed top-24 right-8 z-[60] animate-in slide-in-from-top-2 fade-in duration-300">
-          <AlertBanner
-            type={alert.type}
-            message={alert.message}
-            onClose={() => setAlert(null)}
-          />
         </div>
       )}
 
@@ -369,12 +337,14 @@ useEffect(() => {
           <div className="absolute inset-0">
             {HERO_SLIDES.map((slide, index) => (
               <div
-                key={slide.title}
-                className={`absolute inset-0 transition-opacity duration-1000 ${heroIndex === index ? "opacity-100" : "opacity-0"}`}
+                key={slide.titleKey}
+                className={`absolute inset-0 transition-opacity duration-1000 ${
+                  heroIndex === index ? "opacity-100" : "opacity-0"
+                }`}
               >
                 <img
                   src={slide.image}
-                  alt={slide.title}
+                  alt={t(slide.titleKey)}
                   className="h-full w-full object-cover"
                 />
               </div>
@@ -385,15 +355,15 @@ useEffect(() => {
 
           <div className="relative mx-auto max-w-7xl px-4 pt-20 pb-28 sm:px-6">
             <div className="max-w-3xl">
-              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-white/90 backdrop-blur-md">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border-white/20 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.24em] text-white/90 backdrop-blur-md">
                 <IoSparkles className="h-3.5 w-3.5" />
-                {HERO_SLIDES[heroIndex].label}
+                {t(HERO_SLIDES[heroIndex].labelKey)}
               </div>
               <h1 className="text-5xl font-extrabold tracking-tight text-white md:text-7xl">
-                {HERO_SLIDES[heroIndex].title}
+                {t(HERO_SLIDES[heroIndex].titleKey)}
               </h1>
               <p className="mt-5 max-w-2xl text-lg leading-relaxed text-white/80 md:text-xl">
-                {HERO_SLIDES[heroIndex].subtitle}
+                {t(HERO_SLIDES[heroIndex].subtitleKey)}
               </p>
             </div>
 
@@ -403,7 +373,7 @@ useEffect(() => {
                 <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_0.9fr_auto]">
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
                     <label className="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-400">
-                      Destination
+                      {t("destination")}
                     </label>
                     <div className="relative">
                       <MdOutlineLocationOn className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -417,7 +387,7 @@ useEffect(() => {
                           }
                         }}
                         className="w-full bg-transparent py-1 pl-10 pr-4 text-sm font-semibold text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
-                        placeholder="Sidi Bou Saïd, Hammamet, Djerba..."
+                        placeholder={t("searchPlaceholder")}
                         type="text"
                       />
                     </div>
@@ -425,7 +395,7 @@ useEffect(() => {
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
                     <label className="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-400">
-                      Dates
+                      {t("dates")}
                     </label>
                     <div className="grid grid-cols-2 gap-2">
                       <div className="relative">
@@ -440,7 +410,7 @@ useEffect(() => {
                             })
                           }
                           className="w-full bg-transparent py-1 pl-10 pr-2 text-sm font-semibold text-slate-900 outline-none dark:text-white dark:[color-scheme:dark]"
-                          placeholder="Arrivée"
+                          placeholder={t("arrival")}
                         />
                       </div>
                       <div className="relative">
@@ -455,7 +425,7 @@ useEffect(() => {
                             })
                           }
                           className="w-full bg-transparent py-1 pl-10 pr-2 text-sm font-semibold text-slate-900 outline-none dark:text-white dark:[color-scheme:dark]"
-                          placeholder="Départ"
+                          placeholder={t("departure")}
                         />
                       </div>
                     </div>
@@ -463,7 +433,7 @@ useEffect(() => {
 
                   <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
                     <label className="mb-1 block text-[11px] font-bold uppercase tracking-[0.18em] text-sky-600 dark:text-sky-400">
-                      Voyageurs
+                      {t("travelers")}
                     </label>
                     <div className="relative">
                       <MdOutlinePeople className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -476,7 +446,7 @@ useEffect(() => {
                       >
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                           <option key={n} value={n}>
-                            {n} {n === 1 ? "voyageur" : "voyageurs"}
+                            {n} {n === 1 ? t("traveler") : t("travelersPlural")}
                           </option>
                         ))}
                       </select>
@@ -487,7 +457,7 @@ useEffect(() => {
                     onClick={() => handleSearch()}
                     className={`inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-4 text-sm font-bold transition-all hover:scale-[1.01] ${gradientButton}`}
                   >
-                    <IoSearchOutline className="h-4 w-4" /> Rechercher
+                    <IoSearchOutline className="h-4 w-4" /> {t("searchBtn")}
                   </button>
                 </div>
               </div>
@@ -496,44 +466,63 @@ useEffect(() => {
             {/* Stats */}
             <div className="mt-12 flex items-center justify-center gap-8">
               {[
-                { value: "250+", label: "Propriétés d'exception" },
-                { value: "98%", label: "Clients conquis" },
-                { value: "15+", label: "Destinations exclusives" },
+                { value: "250+", labelKey: "statsProperties" },
+                { value: "98%", labelKey: "statsCustomers" },
+                { value: "15+", labelKey: "statsDestinations" },
               ].map((stat) => (
-                <div key={stat.label} className="text-center">
+                <div key={stat.labelKey} className="text-center">
                   <p className={`text-2xl font-extrabold ${gradientText}`}>
                     {stat.value}
                   </p>
                   <p className="text-xs font-medium text-white/60 mt-0.5">
-                    {stat.label}
+                    {t(stat.labelKey)}
                   </p>
                 </div>
               ))}
             </div>
-           
           </div>
         </section>
 
         {/* Trust Badges Section */}
         <section className="relative z-10 mx-auto -mt-8 max-w-7xl px-4 pb-4 sm:px-6">
           <div className="grid gap-4 md:grid-cols-4">
-            {TRUST_BADGES.map((badge) => (
+            {[
+              {
+                icon: IoShieldCheckmarkOutline,
+                titleKey: "trustBadge1Title",
+                textKey: "trustBadge1Text",
+              },
+              {
+                icon: IoSparkles,
+                titleKey: "trustBadge2Title",
+                textKey: "trustBadge2Text",
+              },
+              {
+                icon: IoCompass,
+                titleKey: "trustBadge3Title",
+                textKey: "trustBadge3Text",
+              },
+              {
+                icon: IoFlashOutline,
+                titleKey: "trustBadge4Title",
+                textKey: "trustBadge4Text",
+              },
+            ].map((badge) => (
               <div
-                key={badge.title}
+                key={badge.titleKey}
                 className="rounded-[26px] border border-white/70 bg-white/82 p-5 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/78"
               >
                 <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
                   <badge.icon className="h-5 w-5" />
                 </div>
                 <p className="text-sm font-bold text-slate-900 dark:text-white">
-                  {badge.title}
+                  {t(badge.titleKey)}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  {badge.text}
+                  {t(badge.textKey)}
                 </p>
               </div>
             ))}
-            
           </div>
         </section>
 
@@ -541,31 +530,59 @@ useEffect(() => {
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-indigo-500/20 dark:bg-slate-900/70 dark:text-indigo-300">
-                <IoSparkles className="h-3.5 w-3.5" /> Univers et ambiances
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-indigo-500/20 dark:bg-slate-900/70 dark:text-indigo-300">
+                <IoSparkles className="h-3.5 w-3.5" /> {t("universAmbiances")}
               </div>
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-5xl">
-                Bien plus que des filtres.{" "}
+                {t("collectionsStory")}{" "}
                 <span className={gradientText}>
-                  Des collections qui racontent une histoire.
+                  {t("collectionsStoryGradient")}
                 </span>
               </h2>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
-                Chaque catégorie incarne un univers distinct : rivages
-                méditerranéens, héritage ancestral, éclats contemporains,
-                quiétude absolue. C'est ainsi qu'une page de recherche
-                transcende l'ordinaire pour devenir mémorable.
+                {t("categoriesDescription")}
               </p>
             </div>
-            <button className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-800 shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-100 dark:hover:text-indigo-300">
-              Parcourir l'intégralité des ambiances{" "}
-              <FaTimes className="h-3 w-3 rotate-45" />
-            </button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {categories.map((cat) => {
               const isActive = selectedCategory === cat.id;
+
+              // Déterminer le nom et la description selon la catégorie
+              let categoryName = "";
+              let categoryDesc = "";
+
+              switch (cat.id) {
+                case "all":
+                  categoryName = t("categoryAll");
+                  categoryDesc = t("categoryAllDesc");
+                  break;
+                case "Villa":
+                  categoryName = t("categoryVilla");
+                  categoryDesc = t("categoryVillaDesc");
+                  break;
+                case "Appartement":
+                  categoryName = t("categoryAppartement");
+                  categoryDesc = t("categoryAppartementDesc");
+                  break;
+                case "Maison":
+                  categoryName = t("categoryMaison");
+                  categoryDesc = t("categoryMaisonDesc");
+                  break;
+                case "Studio":
+                  categoryName = t("categoryStudio");
+                  categoryDesc = t("categoryStudioDesc");
+                  break;
+                case "Duplex":
+                  categoryName = t("categoryDuplex");
+                  categoryDesc = t("categoryDuplexDesc");
+                  break;
+                default:
+                  categoryName = cat.id;
+                  categoryDesc = t("categoryDesc");
+              }
+
               return (
                 <button
                   key={cat.id}
@@ -586,16 +603,20 @@ useEffect(() => {
                     {getCategoryIcon(cat.id, isActive)}
                   </div>
                   <h3
-                    className={`text-sm font-bold ${isActive ? "text-white" : "text-slate-900 dark:text-white"}`}
+                    className={`text-sm font-bold ${
+                      isActive ? "text-white" : "text-slate-900 dark:text-white"
+                    }`}
                   >
-                    {cat.id === "all" ? "Toutes" : cat.id}
+                    {categoryName}
                   </h3>
                   <p
-                    className={`mt-2 text-xs ${isActive ? "text-white/80" : "text-slate-500 dark:text-slate-400"}`}
+                    className={`mt-2 text-xs ${
+                      isActive
+                        ? "text-white/80"
+                        : "text-slate-500 dark:text-slate-400"
+                    }`}
                   >
-                    {cat.id === "all"
-                      ? "L'intégralité des expériences NESTHUB"
-                      : "Un univers esthétique pleinement assumé"}
+                    {categoryDesc}
                   </p>
                 </button>
               );
@@ -607,17 +628,17 @@ useEffect(() => {
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
             <div>
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-indigo-500/20 dark:bg-slate-900/70 dark:text-indigo-300">
-                <IoSparkles className="h-3.5 w-3.5" /> Résultats d'exception
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-indigo-500/20 dark:bg-slate-900/70 dark:text-indigo-300">
+                <IoSparkles className="h-3.5 w-3.5" /> {t("exceptionalResults")}
               </div>
               <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-5xl">
-                Une recherche qui mérite un{" "}
-                <span className={gradientText}>écrin éditorial premium.</span>
+                {t("premiumEditorial")}{" "}
+                <span className={gradientText}>
+                  {t("premiumEditorialGradient")}
+                </span>
               </h2>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-500 dark:text-slate-400 md:text-base">
-                Narration immersive, hiérarchisation tarifaire affirmée,
-                indicateurs de confiance et rythme visuel — chaque résultat est
-                conçu pour captiver votre regard.
+                {t("resultsDescription")}
               </p>
             </div>
 
@@ -625,13 +646,23 @@ useEffect(() => {
               <div className="flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-slate-800">
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`rounded-lg p-2 transition-all ${viewMode === "grid" ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"}`}
+                  className={`rounded-lg p-2 transition-all ${
+                    viewMode === "grid"
+                      ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                  title={t("gridView")}
                 >
                   <FaTh className="text-lg" />
                 </button>
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`rounded-lg p-2 transition-all ${viewMode === "list" ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400" : "text-gray-500 dark:text-gray-400"}`}
+                  className={`rounded-lg p-2 transition-all ${
+                    viewMode === "list"
+                      ? "bg-white text-indigo-600 shadow-sm dark:bg-slate-700 dark:text-indigo-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                  title={t("listView")}
                 >
                   <FaList className="text-lg" />
                 </button>
@@ -641,17 +672,17 @@ useEffect(() => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               >
-                <option value="relevance">Les mieux évalués</option>
-                <option value="price_asc">Tarif croissant</option>
-                <option value="price_desc">Tarif décroissant</option>
-                <option value="rating">Notes les plus élevées</option>
+                <option value="relevance">{t("sortBestRated")}</option>
+                <option value="price_asc">{t("sortPriceAsc")}</option>
+                <option value="price_desc">{t("sortPriceDesc")}</option>
+                <option value="rating">{t("sortRating")}</option>
               </select>
               <button
                 onClick={() => setIsFilterOpen(true)}
                 className="lg:hidden flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 dark:border-slate-700 dark:bg-slate-800 dark:text-gray-300"
               >
                 <FaFilter className="text-lg" />
-                Filtrer
+                {t("filterBtn")}
                 {activeFiltersCount > 0 && (
                   <span className="rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-1.5 py-0.5 text-xs text-white">
                     {activeFiltersCount}
@@ -705,7 +736,7 @@ useEffect(() => {
                 onClick={handleResetFilters}
                 className="text-xs text-slate-400 transition hover:text-indigo-600"
               >
-                Tout effacer
+                {t("clearAll")}
               </button>
             </div>
           )}
@@ -717,17 +748,17 @@ useEffect(() => {
                 <div className="mb-6 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.22em] text-indigo-500">
-                      Affinement
+                      {t("refinement")}
                     </p>
                     <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">
-                      Personnalisez votre quête
+                      {t("customize")}
                     </h3>
                   </div>
                   <button
                     onClick={handleResetFilters}
                     className="text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-300"
                   >
-                    Réinitialiser
+                    {t("resetBtn")}
                   </button>
                 </div>
 
@@ -735,7 +766,7 @@ useEffect(() => {
                   {/* Price Range */}
                   <div>
                     <label className="mb-3 block text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      Budget maximum — {priceRange[1]} TND
+                      {t("maxBudget")} — {priceRange[1]} TND
                     </label>
                     <input
                       type="range"
@@ -760,13 +791,13 @@ useEffect(() => {
                   {/* Rating Filter */}
                   <div>
                     <h4 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      Note minimale
+                      {t("minRating")}
                     </h4>
                     <div className="flex gap-2">
                       {[
-                        { value: null, label: "Toutes" },
-                        { value: 4, label: "4 étoiles +" },
-                        { value: 4.5, label: "4.5 étoiles +" },
+                        { value: null, label: t("all") },
+                        { value: 4, label: t("stars4") },
+                        { value: 4.5, label: t("stars45") },
                       ].map((option) => (
                         <button
                           key={option.value ?? "all"}
@@ -789,7 +820,7 @@ useEffect(() => {
                   {/* Bedrooms Filter */}
                   <div>
                     <h4 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      Chambres à coucher
+                      {t("bedroomsCount")}
                     </h4>
                     <div className="flex gap-2">
                       {[null, 1, 2, 3, 4].map((value) => (
@@ -802,7 +833,7 @@ useEffect(() => {
                               : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
                           }`}
                         >
-                          {value ? `${value}+` : "Toutes"}
+                          {value ? `${value}+` : t("all")}
                         </button>
                       ))}
                     </div>
@@ -811,7 +842,7 @@ useEffect(() => {
                   {/* Amenities */}
                   <div>
                     <h4 className="mb-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
-                      Équipements et prestations
+                      {t("amenitiesList")}
                       {selectedAmenities.length > 0 && (
                         <span className="ml-2 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-2 py-0.5 text-xs text-white">
                           {selectedAmenities.length}
@@ -842,7 +873,7 @@ useEffect(() => {
                     onClick={handleSearch}
                     className={`w-full rounded-2xl py-3.5 text-sm font-bold transition-all hover:scale-[1.01] ${gradientButton}`}
                   >
-                    Appliquer les critères
+                    {t("applyBtn")}
                   </button>
                 </div>
               </div>
@@ -861,21 +892,33 @@ useEffect(() => {
                   ))}
                 </div>
               ) : filteredListings.length === 0 ? (
-                <div className="rounded-[30px] border border-white/70 bg-white/85 py-20 text-center shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
-                  <IoSearchOutline className="mx-auto mb-4 h-14 w-14 text-slate-300 dark:text-slate-600" />
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
-                    Aucune propriété trouvée
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                    Ajustez vos critères de recherche ou explorez une autre
-                    destination
-                  </p>
-                  <button
-                    onClick={handleResetFilters}
-                    className={`mt-5 rounded-full px-6 py-3 text-sm font-bold text-white ${gradientButton}`}
-                  >
-                    Réinitialiser la recherche
-                  </button>
+                <div className="flex min-h-[805px] flex-col items-center justify-center rounded-[30px] border border-white/70 bg-white/85 py-20 text-center shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
+                  <div className="flex max-w-md flex-col items-center gap-6 px-6">
+                    <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-sky-500/10 via-indigo-500/10 to-purple-600/10 backdrop-blur-sm mx-auto animate-pulse">
+                      <IoSearchOutline className="h-22 w-12 text-slate-300 dark:text-slate-600" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">
+                      {t("noResults")}
+                    </h3>
+                    <div className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
+                      <p className="flex items-center justify-center gap-2">
+                        <span>{t("noResultsDesc1")}</span>
+                      </p>
+                      <p className="flex items-center justify-center gap-2">
+                        <span>{t("noResultsDesc2")}</span>
+                      </p>
+                      <p className="flex items-center justify-center gap-2">
+                        <span>{t("noResultsDesc3")}</span>
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleResetFilters}
+                      className={`mt-2 inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white transition-all hover:scale-[1.02] ${gradientButton}`}
+                    >
+                      <FaTimes className="h-3.5 w-3.5" />
+                      {t("resetFiltersBtn")}
+                    </button>
+                  </div>
                 </div>
               ) : viewMode === "grid" ? (
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -888,7 +931,7 @@ useEffect(() => {
                       gradientButton={gradientButton}
                       t={t}
                       gradientText={gradientText}
-                      getAmenityIcon={getAmenityIcon}
+                      locale={locale}
                     />
                   ))}
                 </div>
@@ -903,7 +946,7 @@ useEffect(() => {
                       gradientButton={gradientButton}
                       t={t}
                       gradientText={gradientText}
-                      getAmenityIcon={getAmenityIcon}
+                      locale={locale}
                     />
                   ))}
                 </div>
@@ -929,35 +972,52 @@ useEffect(() => {
           <div className="rounded-[34px] border border-white/70 bg-white/85 p-8 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/80">
             <div className="mb-8 flex flex-wrap items-end justify-between gap-6">
               <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-white/80 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-indigo-500/20 dark:bg-slate-900/70 dark:text-indigo-300">
-                  <IoSparkles className="h-3.5 w-3.5" /> L'excellence en action
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-indigo-600 shadow-sm backdrop-blur-md dark:border-indigo-500/20 dark:bg-slate-900/70 dark:text-indigo-300">
+                  <IoSparkles className="h-3.5 w-3.5" />{" "}
+                  {t("excellenceInAction")}
                 </div>
                 <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white md:text-5xl">
-                  Une interface qui sublime{" "}
-                  <span className={gradientText}>la plateforme elle-même.</span>
+                  {t("interfaceSublimes")}{" "}
+                  <span className={gradientText}>
+                    {t("interfaceSublimesGradient")}
+                  </span>
                 </h2>
               </div>
               <div className="max-w-md text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                Notre ambition dépasse le simple filtrage d'inventaire. Nous
-                souhaitons rendre chaque résultat de recherche fiable, désirable
-                et profondément persuasif.
+                {t("ambitionText")}
               </div>
             </div>
 
             <div className="grid gap-5 md:grid-cols-3">
-              {WHY_DIFFERENT.map((item) => (
+              {[
+                {
+                  icon: FaShieldAlt,
+                  titleKey: "absoluteReliability",
+                  textKey: "absoluteReliabilityText",
+                },
+                {
+                  icon: FaCamera,
+                  titleKey: "editorialExperience",
+                  textKey: "editorialExperienceText",
+                },
+                {
+                  icon: FaCompass,
+                  titleKey: "luxuryAmbassador",
+                  textKey: "luxuryAmbassadorText",
+                },
+              ].map((item) => (
                 <div
-                  key={item.title}
+                  key={item.titleKey}
                   className="rounded-[26px] bg-slate-50 p-5 dark:bg-white/5"
                 >
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/20">
                     <item.icon className="h-5 w-5" />
                   </div>
                   <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                    {item.title}
+                    {t(item.titleKey)}
                   </h3>
                   <p className="mt-2 text-sm leading-relaxed text-slate-500 dark:text-slate-400">
-                    {item.text}
+                    {t(item.textKey)}
                   </p>
                 </div>
               ))}
@@ -966,32 +1026,38 @@ useEffect(() => {
         </section>
 
         {/* Footer */}
-        <footer className="border-t border-slate-200 bg-white/70 py-10 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/70">
+        <footer className="border-t border-slate-200 bg-indigo-100/20 py-10 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/70">
           <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <div>
               <p className="text-sm font-bold tracking-tight text-slate-900 dark:text-white">
-                NESTHUB Recherche
+                {t("footerTitle")}
               </p>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                L'art de découvrir les séjours les plus remarquables de Tunisie.
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400 whitespace-pre-line">
+                {t("footerText")}
               </p>
             </div>
             <div className="flex flex-wrap gap-6 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-              {FOOTER_LINKS.map((link) => (
-                <button
-                  key={link}
-                  className="transition-colors hover:text-slate-700 dark:hover:text-white"
+              {[
+                { key: "footerPrivacy", href: `/${locale}/privacy` },
+                { key: "footerTerms", href: `/${locale}/terms` },
+                { key: "footerContact", href: `/${locale}/#contact-support` },
+              ].map((link) => (
+                <Link
+                  key={link.key}
+                  href={link.href}
+                  className="cursor-pointer transition-colors hover:text-slate-700 dark:hover:text-white"
                 >
-                  {link}
-                </button>
+                  {t(link.key)}
+                </Link>
               ))}
             </div>
           </div>
         </footer>
       </main>
+
       {/* Map Button - Floating Animation */}
       <div className="fixed bottom-24 left-1/2 z-40 -translate-x-1/2 animate-in fade-in slide-in-from-bottom-5 duration-500">
-        <Link href="/fr/map">
+        <Link href={`/${locale}/map`}>
           <button
             className={`group inline-flex items-center gap-2 rounded-full ${gradientButton} px-6 py-3 text-sm font-bold shadow-2xl shadow-indigo-500/25 transition-all duration-300 hover:scale-105 hover:shadow-indigo-500/40 active:scale-95 animate-float`}
             style={{
@@ -1000,83 +1066,59 @@ useEffect(() => {
           >
             <FaMapMarkedAlt className="h-4 w-4 transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
             <span className="transition-all duration-300 group-hover:tracking-wider">
-              Explorer la carte
+              {t("exploreCarte")}{" "}
             </span>
           </button>
         </Link>
       </div>
 
-      {/* Map Preview */}
-      {showMapPreview && (
-        <div className="fixed inset-x-6 bottom-40 z-40 overflow-hidden rounded-[30px] border border-white/70 bg-white/85 shadow-[0_24px_70px_rgba(15,23,42,0.16)] backdrop-blur-md dark:border-white/10 dark:bg-slate-900/85">
-          <div className="relative h-80 overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=1800&q=80"
-              alt="Aperçu carte"
-              className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-950/30 to-indigo-950/35" />
-            {filteredListings.slice(0, 4).map((listing, index) => (
-              <button
-                key={listing.id}
-                className={`absolute rounded-full bg-white px-3 py-1 text-xs font-bold text-slate-900 shadow-lg dark:bg-slate-900 dark:text-white ${
-                  [
-                    "left-[18%] top-[32%]",
-                    "left-[45%] top-[20%]",
-                    "left-[62%] top-[48%]",
-                    "left-[78%] top-[30%]",
-                  ][index]
-                }`}
-              >
-                {listing.pricePerNight || listing.price || 0} TND
-              </button>
-            ))}
-            <div className="absolute left-6 top-6 rounded-full bg-white/90 px-4 py-2 text-sm font-bold text-slate-900 shadow-md backdrop-blur-md dark:bg-slate-900/90 dark:text-white">
-              Aperçu cartographique en direct
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Chat Button */}
-      <div className="fixed bottom-24 right-6 z-40">
+      {/* Go Up Button */}
+      <div
+        className={`fixed bottom-24 right-6 z-40 transition-all duration-300 ${
+          showGoUpButton
+            ? "opacity-100 translate-y-0 pointer-events-auto"
+            : "opacity-0 translate-y-10 pointer-events-none"
+        }`}
+      >
         <button
-          onClick={() => setIsChatDrawerOpen(true)}
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
           className={`rounded-full p-3 shadow-2xl transition-all hover:scale-105 active:scale-95 ${gradientButton}`}
+          aria-label="Remonter en haut"
+          title="Remonter en haut"
         >
-          <FaComments className="text-xl" />
+          <MdOutlineKeyboardDoubleArrowUp className="text-xl" />
         </button>
       </div>
 
       {/* Mobile Bottom Navigation */}
       <nav className="fixed bottom-0 left-0 z-50 flex w-full items-center justify-around rounded-t-3xl bg-white/80 px-4 pb-6 pt-2 backdrop-blur-xl dark:bg-slate-900/80 md:hidden shadow-lg">
         <Link
-          href="/fr/search"
+          href={`/${locale}/search`}
           className="flex flex-col items-center justify-center rounded-2xl bg-indigo-50 px-5 py-2 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400"
         >
           <IoSearchOutline className="text-xl" />
-          <span className="mt-1 text-[11px] font-medium">Explorer</span>
+          <span className="mt-1 text-[11px] font-medium">{t("explore")}</span>
         </Link>
         <Link
-          href="/fr/favorites"
+          href={`/${locale}/favorites`}
           className="flex flex-col items-center justify-center px-5 py-2 text-slate-500 dark:text-slate-400"
         >
           <FaRegHeart className="text-xl" />
-          <span className="mt-1 text-[11px] font-medium">Favoris</span>
+          <span className="mt-1 text-[11px] font-medium">{t("favorites")}</span>
         </Link>
         <button
           onClick={() => setIsChatDrawerOpen(true)}
           className="flex flex-col items-center justify-center px-5 py-2 text-slate-500 dark:text-slate-400"
         >
           <FaComments className="text-xl" />
-          <span className="mt-1 text-[11px] font-medium">Messages</span>
+          <span className="mt-1 text-[11px] font-medium">{t("messages")}</span>
         </button>
         <Link
-          href="/fr/profile"
+          href={`/${locale}/profile`}
           className="flex flex-col items-center justify-center px-5 py-2 text-slate-500 dark:text-slate-400"
         >
           <FaUser className="text-xl" />
-          <span className="mt-1 text-[11px] font-medium">Profil</span>
+          <span className="mt-1 text-[11px] font-medium">{t("profile")}</span>
         </Link>
       </nav>
 
@@ -1087,9 +1129,7 @@ useEffect(() => {
       />
     </div>
   );
-}
-
-// ListingCard Component
+} // ListingCard Component - Version améliorée
 function ListingCard({
   listing,
   isFavorite,
@@ -1097,11 +1137,11 @@ function ListingCard({
   gradientButton,
   t,
   gradientText,
-  getAmenityIcon,
+  locale,
 }: any) {
   const displayPrice =
     listing.pricePerNight || listing.price || listing.pricePerMonth || 0;
-  const priceUnit = "par nuit";
+  const priceUnit = t("perNight");
 
   const getImageUrl = (url: string) => {
     if (!url) return "/images/placeholder.jpg";
@@ -1111,12 +1151,27 @@ function ListingCard({
   };
 
   const [imgSrc, setImgSrc] = useState(getImageUrl(listing.image));
+
+  // Badges dynamiques
   const isNew =
     listing.createdAt &&
     new Date(listing.createdAt) >
       new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const isPopular = (listing.viewCount || 0) > 100;
   const isPremium = listing.isVerified;
+
+  // Couleur du badge de confiance - basée sur le score
+  const getTrustBadgeColor = (score: number) => {
+    if (score >= 80)
+      return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
+    if (score >= 60)
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
+    if (score >= 40)
+      return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300";
+    if (score >= 20)
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300";
+    return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+  };
 
   const getAmenitiesArray = (listing: any) => {
     if (Array.isArray(listing.amenities)) return listing.amenities;
@@ -1125,120 +1180,202 @@ function ListingCard({
     return [];
   };
 
+  // Fonction pour afficher les étoiles
+  const renderStars = (rating: number) => {
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+    return (
+      <div className="flex items-center gap-0.5">
+        {[...Array(fullStars)].map((_, i) => (
+          <FaStar
+            key={`full-${i}`}
+            className="h-3 w-3 fill-amber-400 text-amber-400"
+          />
+        ))}
+        {hasHalfStar && (
+          <div className="relative">
+            <FaStar className="h-3 w-3 text-amber-400" />
+            <div className="absolute inset-0 overflow-hidden w-1/2">
+              <FaStar className="h-3 w-3 fill-amber-400 text-amber-400" />
+            </div>
+          </div>
+        )}
+        {[...Array(emptyStars)].map((_, i) => (
+          <FaStar
+            key={`empty-${i}`}
+            className="h-3 w-3 text-slate-300 dark:text-slate-600"
+          />
+        ))}
+      </div>
+    );
+  };
+
   return (
-    <Link href={`/fr/listings/${listing.id}`} className="group cursor-pointer">
-      <div className="group overflow-hidden rounded-[28px] border border-white/70 bg-white/85 shadow-[0_18px_50px_rgba(15,23,42,0.08)] backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_26px_70px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-slate-900/80">
-        {" "}
+    <Link
+      href={`/${locale}/listings/${listing.id}`}
+      className="group cursor-pointer"
+    >
+      <div className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 dark:border-slate-800 dark:bg-slate-900">
+        {/* Image Section */}
         <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
           <img
             src={imgSrc}
             alt={listing.title}
-            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             onError={() => setImgSrc("/images/placeholder.jpg")}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/10 to-transparent" />
 
-          <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
+          {/* Badges supérieurs */}
+          <div className="absolute left-3 top-3 flex flex-wrap gap-2">
             {isPremium && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                <FaGem className="h-3 w-3" /> Prestige
+              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+                <FaGem className="h-2.5 w-2.5" /> {t("premium")}
               </span>
             )}
-            {isPopular && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                <FaFire className="h-3 w-3" /> Tendance
+            {isPopular && !isPremium && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-orange-500 to-red-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+                <FaFire className="h-2.5 w-2.5" /> {t("trending")}
               </span>
             )}
-            {isNew && !isPopular && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                <FaClock className="h-3 w-3" /> Nouveauté
+            {isNew && !isPopular && !isPremium && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md">
+                <FaClock className="h-2.5 w-2.5" /> {t("new")}
               </span>
             )}
           </div>
 
+          {/* Bouton favoris */}
           <button
             onClick={(e) => onToggleFavorite(listing.id, e)}
-            className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-slate-700 shadow-lg backdrop-blur-md transition-all hover:scale-105 dark:bg-slate-900/90 dark:text-white"
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-sm transition-all hover:scale-110 active:scale-95 dark:bg-slate-800/90"
           >
             {isFavorite ? (
-              <FaHeart className="h-5 w-5 fill-rose-500 text-rose-500" />
+              <FaHeart className="h-4 w-4 fill-red-500 text-red-500" />
             ) : (
-              <FaHeart className="h-5 w-5" />
+              <FaHeart className="h-4 w-4 text-slate-600 dark:text-slate-400" />
             )}
           </button>
 
-          <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
-            <div>
-              <p className="mb-2 inline-flex rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-md">
-                {listing.collection || "Sélection"}
-              </p>
-              <h3 className="text-xl font-extrabold tracking-tight text-white">
-                {listing.title}
-              </h3>
-              <p className="mt-1 inline-flex items-center gap-1 text-xs text-white/80">
-                <MdOutlineLocationOn className="h-3.5 w-3.5" />{" "}
-                {listing.location}
-              </p>
-            </div>
-            <div className="rounded-2xl bg-white/92 px-4 py-3 text-right shadow-lg backdrop-blur-md dark:bg-slate-900/92">
-              <p className="text-xl font-extrabold text-slate-900 dark:text-white">
-                {displayPrice.toLocaleString()}
-              </p>
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
-                TND {priceUnit}
-              </p>
-            </div>
+          {/* Prix flottant */}
+          <div className="absolute bottom-3 right-3 rounded-xl bg-white/95 px-3 py-1.5 text-right shadow-lg backdrop-blur-sm dark:bg-slate-900/95">
+            <p className="text-lg font-black text-slate-900 dark:text-white">
+              {displayPrice.toLocaleString()}
+            </p>
+            <p className="text-[9px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              TND {priceUnit}
+            </p>
+          </div>
+
+          {/* Titre et localisation */}
+          <div className="absolute bottom-3 left-3 right-24">
+            <h3 className="text-base font-bold text-white line-clamp-1 drop-shadow-md">
+              {listing.title}
+            </h3>
+            <p className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-white/80">
+              <MdOutlineLocationOn className="h-3 w-3" /> {listing.location}
+            </p>
           </div>
         </div>
-        <div className="p-5">
+
+        {/* Détails de la carte */}
+        <div className="p-4">
+          {/* Note avec étoiles et caractéristiques - AFFICHAGE CONDITIONNEL */}
           <div className="mb-3 flex items-center justify-between">
-            <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
-              <span className="inline-flex items-center gap-1">
-                <FaBed className="h-3.5 w-3.5" /> {listing.bedrooms}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <FaBath className="h-3.5 w-3.5" /> {listing.bathrooms}
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <MdOutlinePeople className="h-3.5 w-3.5" /> {listing.maxGuests}
-              </span>
+            <div className="flex items-center gap-2">
+              {/*  ÉTOILES - seulement si rating existe */}
+              {listing.rating ? (
+                <div className="flex items-center gap-2">
+                  {renderStars(listing.rating)}
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                    {listing.rating.toFixed(1)}
+                  </span>
+                  {listing.reviewCount > 0 && (
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                      ({listing.reviewCount})
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <FaStar
+                      key={i}
+                      className="h-3 w-3 text-slate-300 dark:text-slate-600"
+                    />
+                  ))}
+                  <span className="text-xs text-slate-400 ml-1">
+                    {t("new")}
+                  </span>
+                </div>
+              )}
             </div>
-            <div className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-white/5 dark:text-slate-200">
-              <FaStar className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-              {listing.rating || 4.5}
+
+            {/* Caractéristiques - n'afficher que si les valeurs existent */}
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+              {listing.bedrooms > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <FaBed className="h-3 w-3" /> {listing.bedrooms}
+                </span>
+              )}
+              {listing.bathrooms > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <FaBath className="h-3 w-3" /> {listing.bathrooms}
+                </span>
+              )}
+              {listing.maxGuests > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <MdOutlinePeople className="h-3 w-3" /> {listing.maxGuests}
+                </span>
+              )}
             </div>
           </div>
 
-          <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-2">
-            {listing.description ||
-              listing.tagline ||
-              "Une propriété d'exception vous attend"}
+          {/* Description courte */}
+          <p className="mb-3 text-xs leading-relaxed text-slate-600 line-clamp-2 dark:text-slate-400">
+            {listing.description || t("defaultDescription")}
           </p>
 
-          {listing.amenities && (
-            <div className="mt-4 flex flex-wrap gap-2">
+          {/* Équipements - seulement si disponibles */}
+          {listing.amenities && getAmenitiesArray(listing).length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-1.5">
               {getAmenitiesArray(listing)
-                .slice(0, 4)
+                .slice(0, 3)
                 .map((amenity: string) => (
                   <span
                     key={amenity}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
+                    className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-400"
                   >
-                    {getAmenityIcon(amenity)}
                     {amenity}
                   </span>
                 ))}
+              {getAmenitiesArray(listing).length > 3 && (
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[9px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-500">
+                  +{getAmenitiesArray(listing).length - 3}
+                </span>
+              )}
             </div>
           )}
 
-          <div className="mt-5 flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-600 dark:text-emerald-400">
-              Score de confiance {listing.trustScore || 95}/100
-            </p>
-            <button
-              className={`inline-flex items-center gap-1 text-sm font-bold text-indigo-600 transition-all hover:gap-2 dark:text-indigo-300`}
-            >
-              Découvrir <FaTimes className="h-3 w-3 rotate-45" />
+          {/* Footer avec SCORE DE CONFIANCE (chiffre clair) et bouton */}
+          <div className="flex items-center justify-between border-t border-slate-100 pt-3 dark:border-slate-800">
+            {listing.trustScore && (
+              <div
+                className={`flex items-center gap-1.5 rounded-full px-2 py-0.5 ${getTrustBadgeColor(listing.trustScore)}`}
+              >
+                <span className="text-[11px] font-bold">✓</span>
+                <span className="text-[11px] font-semibold">
+                  {t("trustScore")} : {listing.trustScore}%
+                </span>
+              </div>
+            )}
+
+            <button className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 transition-all hover:gap-2 dark:text-indigo-400">
+              {t("discover")}
+              <FaTimes className="h-2.5 w-2.5 rotate-45 transition-transform group-hover:rotate-0" />
             </button>
           </div>
         </div>
@@ -1247,7 +1384,7 @@ function ListingCard({
   );
 }
 
-// ListingRow Component
+// ListingRow Component - Version corrigée
 function ListingRow({
   listing,
   isFavorite,
@@ -1255,11 +1392,11 @@ function ListingRow({
   gradientButton,
   t,
   gradientText,
-  getAmenityIcon,
+  locale,
 }: any) {
   const displayPrice =
     listing.pricePerNight || listing.price || listing.pricePerMonth || 0;
-  const priceUnit = "par nuit";
+  const priceUnit = t("perNight");
 
   const getImageUrl = (url: string) => {
     if (!url) return "/images/placeholder.jpg";
@@ -1277,11 +1414,69 @@ function ListingRow({
     return [];
   };
 
+  // Fonction pour afficher les étoiles selon la note (rating)
+  const renderStars = (rating: number) => {
+    const roundedRating = Math.round(rating * 2) / 2;
+    const fullStars = Math.floor(rating);
+    const hasHalfStar = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+
+    return (
+      <div className="flex items-center gap-0.5">
+        {/* Étoiles pleines */}
+        {[...Array(fullStars)].map((_, i) => (
+          <FaStar
+            key={`full-${i}`}
+            className="h-3 w-3 fill-amber-400 text-amber-400"
+          />
+        ))}
+
+        {/* Demi-étoile */}
+        {hasHalfStar && (
+          <div className="relative">
+            <FaStar className="h-3 w-3 text-amber-400" />
+            <div
+              className="absolute inset-0 overflow-hidden"
+              style={{ width: "50%" }}
+            >
+              <FaStar className="h-3 w-3 fill-amber-400 text-amber-400" />
+            </div>
+          </div>
+        )}
+
+        {/* Étoiles vides */}
+        {[...Array(emptyStars)].map((_, i) => (
+          <FaStar
+            key={`empty-${i}`}
+            className="h-3 w-3 text-slate-300 dark:text-slate-600"
+          />
+        ))}
+
+        {/* Affichage de la note en chiffre */}
+        <span className="ml-1 text-xs font-semibold text-slate-700 dark:text-slate-300">
+          {rating.toFixed(1)}
+        </span>
+      </div>
+    );
+  };
+  // Couleur du badge de confiance - basée sur le score
+  const getTrustBadgeColor = (score: number) => {
+    if (score >= 80)
+      return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300";
+    if (score >= 60)
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300";
+    if (score >= 40)
+      return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300";
+    if (score >= 20)
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300";
+    return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300";
+  };
+
   return (
-    <Link href={`/fr/listings/${listing.id}`}>
+    <Link href={`/${locale}/listings/${listing.id}`}>
       <div className="group rounded-[28px] border border-white/70 bg-white/85 p-4 shadow-[0_16px_40px_rgba(15,23,42,0.06)] backdrop-blur-md transition-all duration-300 hover:scale-[1.01] hover:shadow-[0_20px_60px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-slate-900/80">
-        {" "}
         <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+          {/* Image */}
           <div className="relative h-48 overflow-hidden rounded-2xl bg-slate-100 dark:bg-slate-800">
             <img
               src={imgSrc}
@@ -1301,38 +1496,71 @@ function ListingRow({
             </button>
           </div>
 
+          {/* Contenu */}
           <div className="flex flex-col justify-between">
             <div>
               <div className="mb-2 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-sky-50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-sky-700 dark:bg-sky-500/10 dark:text-sky-300">
-                  {listing.collection || "Sélection"}
+                  {listing.collection || t("collection")}
                 </span>
                 {listing.isVerified && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white">
-                    <FaGem className="h-3 w-3" /> Certifié
+                    <FaGem className="h-3 w-3" /> {t("certified")}
                   </span>
                 )}
               </div>
               <h3 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                 {listing.title}
               </h3>
-              <div className="mt-2 flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
-                <span className="inline-flex items-center gap-1">
-                  <MdOutlineLocationOn className="h-4 w-4" /> {listing.location}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <FaStar className="h-4 w-4 fill-amber-400 text-amber-400" />{" "}
-                  {listing.rating || 4.5} ({listing.reviewCount || 0} avis)
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <MdOutlinePeople className="h-4 w-4" /> {listing.maxGuests}{" "}
-                  voyageurs
-                </span>
+
+              {/* NOTE AVEC ÉTOILES - AFFICHAGE CONDITIONNEL */}
+              <div className="flex items-center gap-2">
+                {listing.rating ? (
+                  <>
+                    {renderStars(listing.rating)}
+                    {listing.reviewCount > 0 && (
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        ({listing.reviewCount} {t("reviews")})
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    {[...Array(5)].map((_, i) => (
+                      <FaStar
+                        key={i}
+                        className="h-3 w-3 text-slate-300 dark:text-slate-600"
+                      />
+                    ))}
+                    <span className="text-xs text-slate-400 ml-1">
+                      {t("new")}
+                    </span>
+                  </div>
+                )}
+
+                {/* Localisation - seulement si existe */}
+                {listing.location && (
+                  <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                    <MdOutlineLocationOn className="h-4 w-4" />{" "}
+                    {listing.location}
+                  </span>
+                )}
+
+                {/* Nombre de voyageurs - seulement si défini */}
+                {listing.maxGuests > 0 && (
+                  <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
+                    <MdOutlinePeople className="h-4 w-4" /> {listing.maxGuests}{" "}
+                    {t("guests")}
+                  </span>
+                )}
               </div>
+
               <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-2">
                 {listing.description || listing.tagline}
               </p>
-              {listing.amenities && (
+
+              {/* Équipements */}
+              {listing.amenities && getAmenitiesArray(listing).length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {getAmenitiesArray(listing)
                     .slice(0, 5)
@@ -1341,13 +1569,14 @@ function ListingRow({
                         key={amenity}
                         className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-medium text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300"
                       >
-                        {getAmenityIcon(amenity)} {amenity}
+                        {amenity}
                       </span>
                     ))}
                 </div>
               )}
             </div>
 
+            {/* Prix et bouton */}
             <div className="mt-5 flex items-end justify-between gap-4">
               <div>
                 <p className="text-2xl font-extrabold text-slate-900 dark:text-white">
@@ -1360,7 +1589,7 @@ function ListingRow({
               <button
                 className={`inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:scale-[1.01] ${gradientButton}`}
               >
-                Réserver <FaTimes className="h-3 w-3 rotate-45" />
+                {t("book")} <FaTimes className="h-3 w-3 rotate-45" />
               </button>
             </div>
           </div>

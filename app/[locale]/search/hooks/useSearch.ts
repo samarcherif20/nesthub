@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
 
 export interface Listing {
   id: string;
   title: string;
+  description?: string;
   location: string;
   price: number;
   rating: number;
@@ -19,6 +21,11 @@ export interface Listing {
   amenities: string[];
   pricePerNight?: number;
   pricePerMonth?: number;
+  createdAt?: string;
+  viewCount?: number;
+  trustScore?: number;
+  trustLabel?: string;
+  trustBadge?: string;
 }
 
 export const categories = [
@@ -66,11 +73,11 @@ const equipmentMap: Record<string, string> = {
   "Sèche-linge": "dryer",
 };
 
-// ✅ FONCTION PIP POUR LES IMAGES
 const pip = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
 
 export function useSearch() {
+  const { user, isLoaded } = useUser();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -93,24 +100,53 @@ export function useSearch() {
 
   const [isMounted, setIsMounted] = useState(false);
 
-  const [favorites, setFavorites] = useState<string[]>(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("favorites");
-      return saved ? JSON.parse(saved) : [];
-    }
-    return [];
-  });
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // ✅ FONCTION POUR NETTOYER LES URLs PROXIFIÉES
+  // Charger les favoris depuis l'API BDD ou localStorage
+  const loadFavorites = useCallback(async () => {
+    if (!isLoaded) return;
+
+    try {
+      if (user) {
+        // Utilisateur connecté → API BDD
+        const response = await fetch("/api/users/favorites");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setFavorites(data.favorites.map((f: any) => f.id));
+          }
+        }
+      } else {
+        // Non connecté → localStorage
+        const saved = localStorage.getItem("favorites");
+        if (saved) {
+          setFavorites(JSON.parse(saved));
+        }
+      }
+    } catch (err) {
+      console.error("Erreur chargement favoris:", err);
+    }
+  }, [user, isLoaded]);
+
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  useEffect(() => {
+    const handleFavoritesUpdate = () => loadFavorites();
+    window.addEventListener("favorites-updated", handleFavoritesUpdate);
+    return () =>
+      window.removeEventListener("favorites-updated", handleFavoritesUpdate);
+  }, [loadFavorites]);
+
   const cleanImageUrl = useCallback(
     (photoUrl: string | null | undefined): string | null => {
       if (!photoUrl) return null;
 
-      // Si c'est déjà une URL proxifiée, extraire l'URL réelle
       if (photoUrl.startsWith("/api/listings/image")) {
         try {
           const urlParams = new URLSearchParams(photoUrl.split("?")[1]);
@@ -127,16 +163,13 @@ export function useSearch() {
     [],
   );
 
-  // ✅ FONCTION getImageUrl CORRIGÉE
   const getImageUrl = useCallback(
     (photoUrl: string | null | undefined) => {
       if (!photoUrl) return "/images/placeholder.jpg";
 
-      // Nettoyer l'URL au cas où elle serait déjà proxifiée
       const cleanUrl = cleanImageUrl(photoUrl);
       if (!cleanUrl) return "/images/placeholder.jpg";
 
-      // Appliquer pip UNIQUEMENT aux URLs Vercel (comme dans la partie propriétaire)
       if (cleanUrl.includes("vercel-storage.com")) {
         return pip(cleanUrl);
       }
@@ -146,7 +179,6 @@ export function useSearch() {
     [cleanImageUrl],
   );
 
-  // Fonction de recherche corrigée
   const fetchListings = useCallback(
     async (params: {
       page: number;
@@ -154,8 +186,8 @@ export function useSearch() {
       amenities: string[];
       price: [number, number];
       destination: string;
-      checkIn?: string; // ← AJOUTE
-      checkOut?: string; // ← AJOUTE
+      checkIn?: string;
+      checkOut?: string;
       guests: number;
       sort: string;
     }) => {
@@ -166,7 +198,6 @@ export function useSearch() {
         urlParams.set("pageSize", itemsPerPage.toString());
 
         if (params.destination.trim() !== "") {
-          // Utilise le nouveau paramètre searchLocation
           urlParams.set("searchLocation", params.destination.trim());
         }
         if (params.checkIn && params.checkOut) {
@@ -174,13 +205,11 @@ export function useSearch() {
           urlParams.set("checkOut", params.checkOut);
         }
 
-        // Catégorie
         const selectedCat = categories.find((c) => c.id === params.category);
         if (selectedCat && selectedCat.type && selectedCat.id !== "all") {
           urlParams.set("type", selectedCat.type);
         }
 
-        // Prix
         if (params.price[1] < 5000) {
           urlParams.set("maxPrice", params.price[1].toString());
         }
@@ -188,17 +217,14 @@ export function useSearch() {
           urlParams.set("minPrice", params.price[0].toString());
         }
 
-        // Nombre de voyageurs
         if (params.guests > 1) {
           urlParams.set("guests", params.guests.toString());
         }
 
-        // Tri
         if (params.sort !== "relevance") {
           urlParams.set("sortBy", params.sort);
         }
 
-        // Équipements
         if (params.amenities.length > 0) {
           const equipmentKeys = params.amenities.map(
             (a) => equipmentMap[a] || a.toLowerCase(),
@@ -211,11 +237,9 @@ export function useSearch() {
 
         if (response.ok && data.listings) {
           const formattedListings = data.listings.map((item: any) => {
-            // 🔥 Récupérer l'URL de la première photo et la nettoyer
             let rawPhotoUrl = item.photos?.[0]?.url;
-
-            // Nettoyer l'URL si elle est déjà proxifiée
             let cleanPhotoUrl = rawPhotoUrl;
+
             if (
               cleanPhotoUrl &&
               cleanPhotoUrl.startsWith("/api/listings/image")
@@ -236,23 +260,28 @@ export function useSearch() {
             return {
               id: item.id,
               title: item.title,
+              description: item.description,
               location: `${item.governorate || ""}, ${item.delegation || ""}`
                 .replace(/^, /, "")
                 .replace(/, $/, ""),
               price: item.pricePerNight || item.pricePerMonth || 0,
               pricePerNight: item.pricePerNight,
               pricePerMonth: item.pricePerMonth,
-              rating: item.rating || 4.5,
-              reviewCount: item.reviewCount || 0,
-              // 🔥 Appliquer getImageUrl sur la photo nettoyée
+              rating: item.rating,
+              reviewCount: item.reviewCount,
               image: getImageUrl(cleanPhotoUrl),
               type: item.type?.toLowerCase() || "appartement",
               badges: item.isVerified ? ["Vérifié"] : [],
               isVerified: item.isVerified || false,
-              bedrooms: item.rooms || 1,
-              bathrooms: item.bathrooms || 1,
-              maxGuests: item.maxGuests || 2,
+              bedrooms: item.rooms,
+              bathrooms: item.bathrooms,
+              maxGuests: item.maxGuests,
               amenities: item.equipment || [],
+              createdAt: item.createdAt,
+              viewCount: item.viewCount,
+              trustScore: item.trustScore,
+              trustLabel: item.trustLabel,
+              trustBadge: item.trustBadge,
             };
           });
 
@@ -274,7 +303,6 @@ export function useSearch() {
     [getImageUrl],
   );
 
-  // Chargement initial uniquement (1 seule fois au montage)
   useEffect(() => {
     fetchListings({
       page: currentPage,
@@ -286,7 +314,7 @@ export function useSearch() {
       sort: sortBy,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // ← Tableau de dépendances VIDE !
+  }, []);
 
   const selectCategory = useCallback((categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -320,18 +348,19 @@ export function useSearch() {
     selectedAmenities,
     priceRange,
     searchDestination,
-    searchDates, 
+    searchDates,
     searchGuests,
     sortBy,
     fetchListings,
   ]);
+
   const resetFilters = useCallback(() => {
     setSelectedCategory("all");
     setSelectedAmenities([]);
     setPriceRange([0, 5000]);
     setSortBy("relevance");
     setSearchDestination("");
-    setSearchDates({ checkIn: "", checkOut: "" }); // ← déjà présent
+    setSearchDates({ checkIn: "", checkOut: "" });
     setSearchGuests(1);
     setCurrentPage(1);
     fetchListings({
@@ -340,29 +369,63 @@ export function useSearch() {
       amenities: [],
       price: [0, 5000],
       destination: "",
-      checkIn: "", // ← AJOUTE
-      checkOut: "", // ← AJOUTE
+      checkIn: "",
+      checkOut: "",
       guests: 1,
       sort: "relevance",
     });
   }, [fetchListings]);
 
+  // ✅ TOGGLE FAVORITE AVEC API BDD
   const toggleFavorite = useCallback(
-    (listingId: string, e: React.MouseEvent) => {
+    async (listingId: string, e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
 
-      setFavorites((prev) => {
-        const newFavorites = prev.includes(listingId)
-          ? prev.filter((id) => id !== listingId)
-          : [...prev, listingId];
+      const wasFavorite = favorites.includes(listingId);
 
-        localStorage.setItem("favorites", JSON.stringify(newFavorites));
+      // Optimistic update
+      setFavorites((prev) =>
+        wasFavorite
+          ? prev.filter((id) => id !== listingId)
+          : [...prev, listingId],
+      );
+
+      try {
+        if (user) {
+          // Utilisateur connecté → API BDD
+          if (wasFavorite) {
+            await fetch(`/api/users/favorites?listingId=${listingId}`, {
+              method: "DELETE",
+            });
+          } else {
+            await fetch("/api/users/favorites", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ listingId }),
+            });
+          }
+        } else {
+          // Non connecté → localStorage
+          const saved = localStorage.getItem("favorites");
+          const updated = wasFavorite
+            ? JSON.parse(saved || "[]").filter((id: string) => id !== listingId)
+            : [...(JSON.parse(saved || "[]")), listingId];
+          localStorage.setItem("favorites", JSON.stringify(updated));
+        }
+
         window.dispatchEvent(new Event("favorites-updated"));
-        return newFavorites;
-      });
+      } catch (err) {
+        // Rollback en cas d'erreur
+        console.error("Erreur toggle favorite:", err);
+        setFavorites((prev) =>
+          wasFavorite
+            ? [...prev, listingId]
+            : prev.filter((id) => id !== listingId),
+        );
+      }
     },
-    [],
+    [favorites, user],
   );
 
   const goToPage = useCallback((page: number) => {

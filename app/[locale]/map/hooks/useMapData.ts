@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
 
 export interface Listing {
   id: string;
@@ -20,6 +21,13 @@ export interface Listing {
   rating?: number;
   reviewCount?: number;
   maxGuests?: number;
+  trustScore?: number;
+  trustLabel?: string;
+  trustBadge?: string;
+  scamProbability?: number;
+  viewCount?: number;
+  bookingCount?: number;
+  favoriteCount?: number;
 }
 
 export interface FilterState {
@@ -27,21 +35,28 @@ export interface FilterState {
   priceRange: [number, number];
   selectedType: string;
   minRating: number;
+  sortBy: string;
 }
 
 export function useMapData() {
+  const { user, isLoaded } = useUser();
   const [listings, setListings] = useState<Listing[]>([]);
   const [filteredListings, setFilteredListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [L, setL] = useState<any>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     searchTerm: "",
     priceRange: [0, 5000],
     selectedType: "all",
     minRating: 0,
+    sortBy: "relevance",
   });
   const [showFilters, setShowFilters] = useState(false);
 
@@ -61,108 +76,226 @@ export function useMapData() {
     });
   }, []);
 
-  // Charger les favoris
-  useEffect(() => {
-    const saved = localStorage.getItem("favorites");
-    if (saved) {
-      setFavorites(JSON.parse(saved));
-    }
+  // Charger les favoris depuis l'API BDD ou localStorage
+  const loadFavorites = useCallback(async () => {
+    if (!isLoaded) return;
 
-    const handleFavoritesUpdate = () => {
-      const updated = localStorage.getItem("favorites");
-      if (updated) {
-        setFavorites(JSON.parse(updated));
+    try {
+      if (user) {
+        // Utilisateur connecté → API BDD
+        const response = await fetch("/api/users/favorites");
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setFavorites(data.favorites.map((f: any) => f.id));
+          }
+        }
+      } else {
+        // Non connecté → localStorage
+        const saved = localStorage.getItem("favorites");
+        if (saved) {
+          setFavorites(JSON.parse(saved));
+        }
       }
-    };
+    } catch (err) {
+      console.error("Erreur chargement favoris:", err);
+    }
+  }, [user, isLoaded]);
 
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+
+  useEffect(() => {
+    const handleFavoritesUpdate = () => loadFavorites();
     window.addEventListener("favorites-updated", handleFavoritesUpdate);
     return () =>
       window.removeEventListener("favorites-updated", handleFavoritesUpdate);
-  }, []);
+  }, [loadFavorites]);
 
-  // Charger les annonces
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const response = await fetch("/api/listings?page=1&pageSize=100");
-        const data = await response.json();
+  // Fonction de tri
+  const sortListings = useCallback(
+    (listingsToSort: Listing[], sortBy: string) => {
+      const sorted = [...listingsToSort];
 
-        const listingsWithCoords = (data.listings || [])
-          .filter((l: any) => l.latitude && l.longitude)
-          .map((l: any) => {
-            const firstPhoto = l.photos?.[0]?.url || l.image || "";
-            return {
-              id: l.id,
-              title: l.title,
-              location: `${l.governorate || ""}, ${l.delegation || ""}`,
-              pricePerNight: l.pricePerNight || 0,
-              image: firstPhoto,
-              images: l.photos?.map((p: any) => p.url) || [],
-              latitude: l.latitude,
-              longitude: l.longitude,
-              governorate: l.governorate,
-              delegation: l.delegation,
-              type: l.type,
-              isVerified: l.isVerified || false,
-              bedrooms: l.rooms || 1,
-              bathrooms: l.bathrooms || 1,
-              rating: l.rating || 4.5,
-              reviewCount: l.reviewCount || 0,
-              maxGuests: l.maxGuests || 2,
-            };
-          });
+      switch (sortBy) {
+        case "price_asc":
+          return sorted.sort(
+            (a, b) => (a.pricePerNight || 0) - (b.pricePerNight || 0),
+          );
+        case "price_desc":
+          return sorted.sort(
+            (a, b) => (b.pricePerNight || 0) - (a.pricePerNight || 0),
+          );
+        case "rating":
+          return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-        setListings(listingsWithCoords);
-        setFilteredListings(listingsWithCoords);
-      } catch (error) {
-        console.error("Erreur chargement:", error);
-      } finally {
-        setLoading(false);
+        default:
+          return sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       }
-    };
+    },
+    [],
+  );
 
-    fetchListings();
-  }, []);
+  // Charger les annonces depuis l'API
+  const fetchListings = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        "/api/listings?page=1&pageSize=100&status=ACTIVE",
+      );
+      const data = await response.json();
 
-  // Filtrer les annonces
+      const listingsWithCoords = (data.listings || [])
+        .filter((l: any) => l.latitude && l.longitude)
+        .map((l: any) => {
+          const firstPhoto = l.photos?.[0]?.url || l.image || "";
+
+          // Calculer la note moyenne à partir des reviews
+          let avgRating = undefined;
+          if (l.reviews && l.reviews.length > 0) {
+            const sum = l.reviews.reduce(
+              (acc: number, review: any) => acc + (review.rating || 0),
+              0,
+            );
+            avgRating = parseFloat((sum / l.reviews.length).toFixed(1));
+          }
+
+          return {
+            id: l.id,
+            title: l.title,
+            location: `${l.governorate || ""}, ${l.delegation || ""}`,
+            pricePerNight: l.pricePerNight || 0,
+            image: firstPhoto,
+            images: l.photos?.map((p: any) => p.url) || [],
+            latitude: l.latitude,
+            longitude: l.longitude,
+            governorate: l.governorate,
+            delegation: l.delegation,
+            type: l.type,
+            isVerified: l.isVerified || false,
+            bedrooms: l.rooms || 1,
+            bathrooms: l.bathrooms || 1,
+            rating: avgRating,
+            reviewCount: l.reviews?.length || 0,
+            maxGuests: l.maxGuests || 2,
+            trustScore: l.trustScore,
+            trustLabel: l.trustLabel,
+            trustBadge: l.trustBadge,
+            scamProbability: l.scamProbability,
+            viewCount: l.viewCount,
+            bookingCount: l.bookingCount,
+            favoriteCount: l.favoriteCount,
+          };
+        });
+
+      setListings(listingsWithCoords);
+
+      // Appliquer le tri initial
+      const sorted = sortListings(listingsWithCoords, filters.sortBy);
+      setFilteredListings(sorted);
+    } catch (err) {
+      console.error("Erreur chargement:", err);
+      setError("Erreur lors du chargement des annonces");
+    } finally {
+      setLoading(false);
+    }
+  }, [filters.sortBy, sortListings]);
+
+  // Charger au montage
   useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  // Filtrer ET trier les annonces (sans appeler l'API)
+  useEffect(() => {
+    if (listings.length === 0) return;
+
     let filtered = [...listings];
 
+    // Filtre par recherche
     if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
       filtered = filtered.filter(
         (l) =>
-          l.title.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-          l.governorate?.toLowerCase().includes(filters.searchTerm.toLowerCase()) ||
-          l.delegation?.toLowerCase().includes(filters.searchTerm.toLowerCase()),
+          l.title.toLowerCase().includes(searchLower) ||
+          l.governorate?.toLowerCase().includes(searchLower) ||
+          l.delegation?.toLowerCase().includes(searchLower),
       );
     }
 
+    // Filtre par prix
     filtered = filtered.filter(
       (l) =>
-        l.pricePerNight >= filters.priceRange[0] && l.pricePerNight <= filters.priceRange[1],
+        (l.pricePerNight || 0) >= filters.priceRange[0] &&
+        (l.pricePerNight || 0) <= filters.priceRange[1],
     );
 
+    // Filtre par type
     if (filters.selectedType !== "all") {
       filtered = filtered.filter((l) => l.type === filters.selectedType);
     }
 
+    // Filtre par note minimum
     if (filters.minRating > 0) {
       filtered = filtered.filter((l) => (l.rating || 0) >= filters.minRating);
     }
 
-    setFilteredListings(filtered);
-  }, [filters, listings]);
+    // Appliquer le tri
+    const sorted = sortListings(filtered, filters.sortBy);
 
-  const toggleFavorite = useCallback((listingId: string) => {
-    setFavorites((prev) => {
-      const newFavorites = prev.includes(listingId)
-        ? prev.filter((id) => id !== listingId)
-        : [...prev, listingId];
-      localStorage.setItem("favorites", JSON.stringify(newFavorites));
-      window.dispatchEvent(new Event("favorites-updated"));
-      return newFavorites;
-    });
-  }, []);
+    setFilteredListings(sorted);
+  }, [filters, listings, sortListings]);
+
+  // ✅ TOGGLE FAVORITE AVEC API BDD
+  const toggleFavorite = useCallback(
+    async (listingId: string) => {
+      const wasFavorite = favorites.includes(listingId);
+      
+      // Optimistic update
+      setFavorites((prev) =>
+        wasFavorite
+          ? prev.filter((id) => id !== listingId)
+          : [...prev, listingId],
+      );
+
+      try {
+        if (user) {
+          // Utilisateur connecté → API BDD
+          if (wasFavorite) {
+            await fetch(`/api/users/favorites?listingId=${listingId}`, {
+              method: "DELETE",
+            });
+          } else {
+            await fetch("/api/users/favorites", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ listingId }),
+            });
+          }
+        } else {
+          // Non connecté → localStorage
+          const saved = localStorage.getItem("favorites");
+          const updated = wasFavorite
+            ? JSON.parse(saved || "[]").filter((id: string) => id !== listingId)
+            : [...(JSON.parse(saved || "[]")), listingId];
+          localStorage.setItem("favorites", JSON.stringify(updated));
+        }
+        
+        window.dispatchEvent(new Event("favorites-updated"));
+      } catch (err) {
+        // Rollback en cas d'erreur
+        console.error("Erreur toggle favorite:", err);
+        setFavorites((prev) =>
+          wasFavorite
+            ? [...prev, listingId]
+            : prev.filter((id) => id !== listingId),
+        );
+      }
+    },
+    [favorites, user],
+  );
 
   const updateSearchTerm = (term: string) => {
     setFilters((prev) => ({ ...prev, searchTerm: term }));
@@ -180,12 +313,17 @@ export function useMapData() {
     setFilters((prev) => ({ ...prev, minRating: rating }));
   };
 
+  const updateSortBy = (sortBy: string) => {
+    setFilters((prev) => ({ ...prev, sortBy }));
+  };
+
   const resetFilters = () => {
     setFilters({
       searchTerm: "",
       priceRange: [0, 5000],
       selectedType: "all",
       minRating: 0,
+      sortBy: "relevance",
     });
   };
 
@@ -193,7 +331,6 @@ export function useMapData() {
     setImageErrors((prev) => ({ ...prev, [id]: true }));
   };
 
-  // ✅ NOUVELLE FONCTION : Récupérer la position de l'utilisateur
   const getUserLocation = useCallback((mapInstance: any) => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -206,18 +343,16 @@ export function useMapData() {
         },
         (error) => {
           console.error("Erreur géolocalisation:", error);
-        }
+        },
       );
     }
   }, []);
 
-  // ✅ NOUVELLE FONCTION : Ouvrir dans Google Maps
   const openInGoogleMaps = (listing: Listing) => {
     const url = `https://www.google.com/maps/search/?api=1&query=${listing.latitude},${listing.longitude}`;
     window.open(url, "_blank");
   };
 
-  // ✅ NOUVELLE FONCTION : Itinéraire depuis position utilisateur
   const getDirections = (listing: Listing) => {
     if (userLocation) {
       const url = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${listing.latitude},${listing.longitude}`;
@@ -231,6 +366,7 @@ export function useMapData() {
     listings,
     filteredListings,
     loading,
+    error,
     favorites,
     L,
     imageErrors,
@@ -243,11 +379,13 @@ export function useMapData() {
     updatePriceRange,
     updateSelectedType,
     updateMinRating,
+    updateSortBy,
     resetFilters,
     handleImageError,
     getUserLocation,
     openInGoogleMaps,
     getDirections,
+    refetchListings: fetchListings,
     totalListings: listings.length,
     filteredCount: filteredListings.length,
     favoritesCount: favorites.length,

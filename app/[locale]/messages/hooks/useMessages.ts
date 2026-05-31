@@ -21,10 +21,11 @@ export interface Conversation {
   };
   otherUser: {
     id: string;
-    username: string;  // ← CHANGER name → username
+    username: string;
     image?: string;
     isOnline?: boolean;
     isVerified?: boolean;
+    role?: string;
   };
   infoRequest?: {
     id: string;
@@ -46,12 +47,36 @@ export interface Conversation {
   unreadCount: number;
 }
 
-// ✅ Constante GRAD exportée
-export const GRAD =
-  "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600";
+export interface GroupConversation {
+  id: string;
+  name: string;
+  listing?: {
+    id: string;
+    title: string;
+    image?: string;
+  };
+  participants: {
+    id: string;
+    username: string;
+    image?: string;
+    role?: string;
+  }[];
+  dispute?: {
+    id: string;
+    status: string;
+    type: string;
+  };
+  lastMessage?: string;
+  lastMessageAt?: string;
+  unreadCount: number;
+  status: string;
+}
 
-// ✅ Fonctions utilitaires exportées
-export function formatRelativeTime(dateStr: string): string {
+// Constante GRAD exportée
+export const GRAD = "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600";
+
+// Fonctions utilitaires exportées
+export function formatRelativeTime(dateStr?: string): string {
   if (!dateStr) return "";
 
   const date = new Date(dateStr);
@@ -78,22 +103,29 @@ export function formatRelativeTime(dateStr: string): string {
   });
 }
 
-export const pipAvatar = (url: string) =>
-  `/api/users/avatar?url=${encodeURIComponent(url)}`;
+export const pipAvatar = (url?: string) => {
+  if (!url) return "";
+  return `/api/users/avatar?url=${encodeURIComponent(url)}`;
+};
 
-// ✅ Hook useMessages modifié
+export const pipListingImage = (url?: string) => {
+  if (!url) return "";
+  return `/api/listings/image?url=${encodeURIComponent(url)}`;
+};
+
+// Hook useMessages
 export function useMessages() {
   const { user } = useUser();
   const searchParams = useSearchParams();
   const conversationIdFromUrl = searchParams.get("conversation");
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [groups, setGroups] = useState<GroupConversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<GroupConversation | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState<"all" | "unread" | "read">(
-    "all",
-  );
+  const [filterType, setFilterType] = useState<"all" | "unread" | "read" | "groups">("all");
   const [isMobileView, setIsMobileView] = useState(false);
   const [showChat, setShowChat] = useState(false);
 
@@ -109,62 +141,119 @@ export function useMessages() {
 
   // Load conversations
   const loadConversations = useCallback(async () => {
-    setIsLoading(true);
     try {
       const res = await fetch("/api/conversations");
       if (!res.ok) return;
       const data = await res.json();
       setConversations(data);
-      
-      // ✅ NE SÉLECTIONNE UNE CONVERSATION QUE SI:
-      // 1. Il y a un conversationId dans l'URL
-      // 2. Cette conversation existe dans la liste
-      // 3. On n'est PAS sur mobile (ou on gère mobile différemment)
-      if (conversationIdFromUrl && !isMobileView) {
-        const targetConv = data.find((c: Conversation) => c.id === conversationIdFromUrl);
-        if (targetConv) {
-          setSelectedConv(targetConv);
-        }
-      }
-      // ✅ PAS de sélection automatique de la première conversation sinon
-      
+    } catch (e) {
+      console.error("Error loading conversations:", e);
+    }
+  }, []);
+
+  // Load groups
+  const loadGroups = useCallback(async () => {
+    try {
+      const res = await fetch("/api/conversations/groups");
+      if (!res.ok) return;
+      const data = await res.json();
+      setGroups(data);
+    } catch (e) {
+      console.error("Error loading groups:", e);
+    }
+  }, []);
+
+  // Load all data
+  const loadAllData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([loadConversations(), loadGroups()]);
     } catch (e) {
       console.error(e);
     } finally {
       setIsLoading(false);
     }
-  }, [conversationIdFromUrl, isMobileView]);
+  }, [loadConversations, loadGroups]);
 
   useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
+    loadAllData();
+  }, [loadAllData]);
 
-  // Sélection manuelle d'une conversation (quand l'utilisateur clique)
+  // Sélection depuis l'URL
+  useEffect(() => {
+    if (!conversationIdFromUrl) return;
+    if (isLoading) return;
+
+    // Cas: Groupe
+    if (conversationIdFromUrl.startsWith("group_")) {
+      const groupToOpen = groups.find(
+        (g) => `group_${g.id}` === conversationIdFromUrl
+      );
+      if (groupToOpen && !selectedGroup) {
+        setSelectedGroup(groupToOpen);
+        setSelectedConv(null);
+        if (isMobileView) setShowChat(true);
+      }
+      return;
+    }
+
+    // Cas: Conversation privée
+    if (conversations.length > 0 && !selectedConv) {
+      const convToOpen = conversations.find(
+        (c) => c.id === conversationIdFromUrl
+      );
+      if (convToOpen) {
+        setSelectedConv(convToOpen);
+        setSelectedGroup(null);
+        if (isMobileView) setShowChat(true);
+      }
+    }
+  }, [conversationIdFromUrl, conversations, groups, selectedConv, selectedGroup, isLoading, isMobileView]);
+
+  // Sélection manuelle d'une conversation
   const handleSelectConv = useCallback(
-    (conv: Conversation) => {
-       if (!conv.otherUser.username) {
-      console.warn("Utilisateur sans username:", conv.otherUser);
-    }
-    setSelectedConv(conv);
-    if (isMobileView) {
-      setShowChat(true);
-    }
+    (conv: Conversation | GroupConversation, isGroup: boolean) => {
+      if (isGroup) {
+        setSelectedGroup(conv as GroupConversation);
+        setSelectedConv(null);
+        // Marquer comme lu
+        setGroups((prev) =>
+          prev.map((g) =>
+            g.id === conv.id ? { ...g, unreadCount: 0 } : g
+          )
+        );
+      } else {
+        setSelectedConv(conv as Conversation);
+        setSelectedGroup(null);
+        // Marquer comme lu
+        setConversations((prev) =>
+          prev.map((c) =>
+            c.id === conv.id ? { ...c, unreadCount: 0 } : c
+          )
+        );
+      }
       
-      // ✅ Mettre à jour l'URL sans recharger la page (optionnel)
+      if (isMobileView) {
+        setShowChat(true);
+      }
+      
+      // Mettre à jour l'URL
       if (typeof window !== "undefined") {
         const url = new URL(window.location.href);
-        url.searchParams.set("conversation", conv.id);
+        const paramValue = isGroup ? `group_${conv.id}` : conv.id;
+        url.searchParams.set("conversation", paramValue);
         window.history.pushState({}, "", url.toString());
       }
     },
-    [isMobileView],
+    [isMobileView]
   );
 
   const handleBack = useCallback(() => {
     setShowChat(false);
     setSelectedConv(null);
+    setSelectedGroup(null);
     
-    // ✅ Retirer le paramètre de l'URL
+    // Retirer le paramètre de l'URL
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.delete("conversation");
@@ -200,22 +289,49 @@ export function useMessages() {
       c.listing.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const filtered = filteredBySearch.filter((c) => {
-    if (filterType === "unread") return c.unreadCount > 0;
-    if (filterType === "read") return c.unreadCount === 0;
-    return true;
-  });
+  // Filtrer les groupes
+  const filteredGroups = groups.filter(
+    (g) =>
+      g.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      g.listing?.title?.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
+
+  // Appliquer le filtre de type
+  let filtered = filteredBySearch;
+  let filteredGroupsResult = filteredGroups;
+
+  if (filterType === "unread") {
+    filtered = filteredBySearch.filter((c) => c.unreadCount > 0);
+    filteredGroupsResult = filteredGroups.filter((g) => g.unreadCount > 0);
+  } else if (filterType === "read") {
+    filtered = filteredBySearch.filter((c) => c.unreadCount === 0);
+    filteredGroupsResult = filteredGroups.filter((g) => g.unreadCount === 0);
+  } else if (filterType === "groups") {
+    filtered = [];
+    filteredGroupsResult = filteredGroups;
+  }
 
   const unreadCount = conversations.filter((c) => c.unreadCount > 0).length;
+  const unreadGroupsCount = groups.filter((g) => g.unreadCount > 0).length;
+
+  // Conversation ou groupe actuellement sélectionné
+  const currentConversation = selectedConv;
+  const currentGroup = selectedGroup;
+  const isGroupChat = !!selectedGroup;
 
   return {
     conversations,
-    selectedConv,
+    groups,
+    selectedConv: currentConversation,
+    selectedGroup: currentGroup,
+    isGroupChat,
     isLoading,
     searchQuery,
     filterType,
     unreadCount,
+    unreadGroupsCount,
     filtered,
+    filteredGroups: filteredGroupsResult,
     isMobileView,
     showChat,
     setSearchQuery,
@@ -225,6 +341,7 @@ export function useMessages() {
     handleUpdateInfoRequest,
     handleSendSystemMessage,
     loadConversations,
-
+    loadGroups,
+    loadAllData,
   };
 }

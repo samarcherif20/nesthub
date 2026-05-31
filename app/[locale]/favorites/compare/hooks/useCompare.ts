@@ -9,6 +9,10 @@ export interface CompareListing {
   governorate: string;
   delegation: string;
   pricePerNight: number;
+  pricePerMonth?: number;
+  securityDeposit?: number;
+  cleaningFee?: number;
+  weekendPriceMultiplier?: number;
   rating: number;
   reviewCount: number;
   image: string;
@@ -19,96 +23,34 @@ export interface CompareListing {
   bathrooms: number;
   maxGuests: number;
   surfaceArea: number;
+  floorNumber?: number;
+  hasElevator: boolean;
+  hasBalcony: boolean;
+  hasGarden: boolean;
+  hasGarage: boolean;
+  numberOfKitchens: number;
+  isFurnished: boolean;
+  petsAllowed: boolean;
+  smokingAllowed: boolean;
   amenities: string[];
   equipment: Record<string, unknown>;
+  services: string[];
+  houseRules: string[];
   description: string;
   trustScore?: number;
+  trustLabel?: string;
+  trustBadge?: string;
+  scamProbability?: number;
+  scamFlags?: string[];
   collection?: string;
+  viewCount: number;
+  bookingCount: number;
+  favoriteCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export type SortKey = "rating" | "price" | "beds" | "guests";
-
-export type AlertType = "success" | "error" | "info" | "warning";
-
-export interface AlertState {
-  type: AlertType;
-  message: string;
-}
-
-export interface Testimonial {
-  text: string;
-  author: string;
-  initial: string;
-  date: string;
-  rating: number;
-}
-
-export const EQUIPMENT_FR: Record<string, string> = {
-  wifi: "Wi-Fi",
-  parking: "Parking",
-  swimmingPool: "Piscine",
-  airConditioning: "Climatisation",
-  kitchen: "Cuisine équipée",
-  tv: "Télévision",
-  heating: "Chauffage",
-  washingMachine: "Machine à laver",
-  dryer: "Sèche-linge",
-  dishwasher: "Lave-vaisselle",
-  oven: "Four",
-  microwave: "Micro-ondes",
-  coffeeMaker: "Cafetière",
-  refrigerator: "Réfrigérateur",
-  balcony: "Balcon",
-  garden: "Jardin",
-  terrace: "Terrasse",
-  beachAccess: "Accès plage",
-  seaView: "Vue mer",
-  mountainView: "Vue montagne",
-  cityView: "Vue ville",
-  elevator: "Ascenseur",
-  gym: "Salle de sport",
-  sauna: "Sauna",
-  jacuzzi: "Jacuzzi",
-  fireplace: "Cheminée",
-  barbecue: "Barbecue",
-  babyBed: "Lit bébé",
-  allowedPets: "Animaux acceptés",
-  workDesk: "Bureau",
-  allowedSmoking: "Fumeurs acceptés",
-  eventsAllowed: "Événements autorisés",
-  concierge: "Conciergerie",
-  airportShuttle: "Navette aéroport",
-  dailyCleaning: "Ménage quotidien",
-  breakfast: "Petit-déjeuner",
-  ac: "Climatisation",
-  pool: "Piscine",
-};
-
-export const formatAmenityName = (amenity: string): string => {
-  const lowerKey = amenity.toLowerCase();
-  if (EQUIPMENT_FR[lowerKey]) {
-    return EQUIPMENT_FR[lowerKey];
-  }
-  if (lowerKey === "ac") return "Climatisation";
-  if (lowerKey === "pool") return "Piscine";
-  if (lowerKey === "wifi") return "Wi-Fi";
-  if (lowerKey === "tv") return "Télévision";
-  const formatted = amenity
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/_/g, ' ')
-    .trim();
-  return formatted.charAt(0).toUpperCase() + formatted.slice(1).toLowerCase();
-};
-
-export const extractAmenities = (equipment: Record<string, unknown>): string[] => {
-  if (!equipment) return [];
-  if (Array.isArray(equipment)) {
-    return equipment as string[];
-  }
-  return Object.keys(equipment).filter(
-    (k) => equipment[k] === true || equipment[k] === "true"
-  );
-};
 
 export const getImageUrl = (url: string | null | undefined): string => {
   if (!url) return "https://placehold.co/600x400/e2e8f0/6366f1?text=NestHub";
@@ -117,6 +59,26 @@ export const getImageUrl = (url: string | null | undefined): string => {
     return `/api/listings/image?url=${encodeURIComponent(url)}`;
   if (url.startsWith("/api/listings/image")) return url;
   return "https://placehold.co/600x400/e2e8f0/6366f1?text=NestHub";
+};
+
+// Fonction pour encoder les URLs des avatars
+export const getAvatarUrl = (url: string | null | undefined): string => {
+  if (!url) return "";
+  if (url.startsWith("http") && url.includes("vercel-storage.com")) {
+    return `/api/listings/image?url=${encodeURIComponent(url)}`;
+  }
+  if (url.startsWith("/api/listings/image")) return url;
+  return url;
+};
+
+export const extractAmenities = (
+  equipment: Record<string, unknown>,
+): string[] => {
+  if (!equipment) return [];
+  if (Array.isArray(equipment)) return equipment as string[];
+  return Object.keys(equipment).filter(
+    (k) => equipment[k] === true || equipment[k] === "true",
+  );
 };
 
 export const computeScore = (listing: CompareListing): number => {
@@ -132,115 +94,180 @@ export function useCompare() {
   const [compareIds, setCompareIds] = useState<string[]>([]);
   const [listings, setListings] = useState<CompareListing[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [alert, setAlert] = useState<AlertState | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("rating");
-  const [removingId, setRemovingId] = useState<string | null>(null);
   const [showShareMenu, setShowShareMenu] = useState(false);
-  const [testimonial, setTestimonial] = useState<Testimonial | null>(null);
 
-  const showAlert = useCallback((type: AlertType, message: string) => {
-    setAlert({ type, message });
-    setTimeout(() => setAlert(null), 3000);
-  }, []);
+  // IA States
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showAiPanel, setShowAiPanel] = useState(true);
+  const [userPrompt, setUserPrompt] = useState("");
+  const [aiRecommendedId, setAiRecommendedId] = useState<string | null>(null);
+  const [aiScores, setAiScores] = useState<Record<string, number>>({});
+
+  // Review dynamique pour le expertChoice
+  const [dynamicReview, setDynamicReview] = useState<{
+    comment: string;
+    author: string;
+    initial: string;
+    rating: number;
+    date: string;
+
+    profilePicture?: string | null;
+  } | null>(null);
 
   useEffect(() => setMounted(true), []);
 
-  // Récupérer un avis réel pour un logement
-  const fetchTestimonialForListing = useCallback(async (listingId: string, listingTitle: string, listingRating: number) => {
+// Dans useCompare.ts - Modifie fetchReviewForListing
+
+const fetchReviewForListing = useCallback(
+  async (listingId: string, listingTitle: string, listingRating: number) => {
     try {
-      const res = await fetch(`/api/reviews?listingId=${listingId}&limit=1`);
-      if (res.ok) {
-        const data = await res.json();
+      const response = await fetch(
+        `/api/reviews?listingId=${listingId}&limit=1`,
+      );
+      if (response.ok) {
+        const data = await response.json();
         if (data.reviews && data.reviews.length > 0) {
           const review = data.reviews[0];
+          const profilePictureUrl = review.reviewer?.profilePictureUrl
+            ? getAvatarUrl(review.reviewer.profilePictureUrl)
+            : null;
+          
+          // PRIORITÉ: username > firstName + lastName > email > "Client vérifié"
+          let authorName = "Client vérifié";
+          
+          if (review.reviewer?.username) {
+            authorName = review.reviewer.username;
+          } else if (review.reviewer?.firstName) {
+            authorName = `${review.reviewer.firstName} ${review.reviewer.lastName || ""}`.trim();
+          } else if (review.reviewer?.email) {
+            authorName = review.reviewer.email.split('@')[0];
+          }
+          
           return {
-            text: review.comment || `Séjour exceptionnel dans "${listingTitle}" ! Je recommande vivement ce logement.`,
-            author: review.reviewer?.firstName 
-              ? `${review.reviewer.firstName} ${review.reviewer.lastName || ''}`.trim()
-              : "Client vérifié",
-            initial: (review.reviewer?.firstName?.charAt(0) || listingTitle.charAt(0)).toUpperCase(),
-            date: new Date(review.createdAt).getFullYear().toString(),
+            comment: review.comment || `Séjour exceptionnel dans "${listingTitle}" ! Je recommande vivement ce logement.`,
+            author: authorName,  
+            initial: (review.reviewer?.firstName?.charAt(0) || review.reviewer?.username?.charAt(0) || listingTitle.charAt(0)).toUpperCase(),
             rating: review.rating || listingRating,
+            date: new Date(review.createdAt).getFullYear().toString(),
+            profilePicture: profilePictureUrl,
           };
         }
       }
-      // Avis par défaut basé sur le logement
-      return {
-        text: `"${listingTitle} est une propriété exceptionnelle. Avec ${listing.rating}/5 étoiles, c'est un choix parfait pour un séjour de qualité. Je recommande vivement !"`,
-        author: "Client vérifié",
-        initial: listingTitle.charAt(0).toUpperCase(),
-        date: new Date().getFullYear().toString(),
-        rating: listingRating,
-      };
-    } catch {
+      return null;
+    } catch (error) {
+      console.error("Erreur fetch review:", error);
       return null;
     }
-  }, []);
+  },
+  [],
+);
 
-  const fetchListings = useCallback(async (ids: string[]) => {
-    setLoading(true);
-    try {
-      const results = await Promise.all(
-        ids.map(async (id) => {
-          const res = await fetch(`/api/listings/${id}`);
-          if (!res.ok) return null;
-          const data = await res.json();
-
-          const imageUrl =
-            data.images?.[0] ??
-            data.photos?.[0]?.url ??
-            data.photos?.[0] ??
-            data.image ??
-            data.mainImage ??
-            "";
-
-          const amenities = extractAmenities(data.equipment ?? {});
-
-          const locationParts = [data.governorate, data.delegation].filter(Boolean);
-          const location = locationParts.join(", ") || data.location || "Emplacement non spécifié";
-
-          return {
-            id: data.id,
-            title: data.title,
-            location,
-            governorate: data.governorate ?? "",
-            delegation: data.delegation ?? "",
-            pricePerNight: data.pricePerNight,
-            rating: data.rating ?? 4.5,
-            reviewCount: data.reviewCount ?? 0,
-            image: getImageUrl(imageUrl),
-            images: data.images ?? [],
-            type: data.type?.toUpperCase() ?? "APPARTEMENT",
-            isVerified: data.isVerified ?? false,
-            bedrooms: data.bedrooms ?? data.rooms ?? 1,
-            bathrooms: data.bathrooms ?? 1,
-            maxGuests: data.maxGuests ?? 2,
-            surfaceArea: data.surfaceArea ?? 0,
-            amenities,
-            equipment: data.equipment ?? {},
-            description: data.description ?? "",
-            trustScore: data.trustScore ?? 85,
-            collection: data.collection ?? null,
-          } as CompareListing;
-        })
+  // Mettre à jour dynamicReview avec profilePicture
+  const updateReviewForExpertChoice = useCallback(
+    async (listingId: string, listingTitle: string, listingRating: number) => {
+      const reviewData = await fetchReviewForListing(
+        listingId,
+        listingTitle,
+        listingRating,
       );
-      const validListings = results.filter((l): l is CompareListing => l !== null);
-      setListings(validListings);
-      
-      // Récupérer un avis pour le meilleur logement
-      if (validListings.length > 0) {
-        const best = validListings.reduce((best, cur) => 
-          computeScore(cur) > computeScore(best) ? cur : best, validListings[0]);
-        const testimonialData = await fetchTestimonialForListing(best.id, best.title, best.rating);
-        if (testimonialData) setTestimonial(testimonialData);
+      if (reviewData) {
+        setDynamicReview(reviewData);
+      } else {
+        // Avis par défaut
+        setDynamicReview({
+          comment: `"${listingTitle} est une propriété exceptionnelle. Avec ${listingRating || 4.5}/5 étoiles, c'est un choix parfait pour un séjour de qualité. Je recommande vivement !"`,
+          author: "Client vérifié",
+          initial: listingTitle.charAt(0).toUpperCase(),
+          rating: listingRating || 4.5,
+          date: new Date().getFullYear().toString(),
+          profilePicture: null,
+        });
       }
-    } catch {
-      showAlert("error", "Erreur lors du chargement des propriétés");
-    } finally {
-      setLoading(false);
-    }
-  }, [showAlert, fetchTestimonialForListing]);
+    },
+    [fetchReviewForListing],
+  );
+
+  const fetchListings = useCallback(
+    async (ids: string[]) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const results = await Promise.all(
+          ids.map(async (id) => {
+            const res = await fetch(`/api/listings/${id}`);
+            if (!res.ok) return null;
+            const data = await res.json();
+
+            const imageUrl = data.photos?.[0]?.url || data.image || "";
+            const amenities = extractAmenities(data.equipment ?? {});
+
+            return {
+              id: data.id,
+              title: data.title,
+              location:
+                `${data.governorate || ""}, ${data.delegation || ""}`.replace(
+                  /^, /,
+                  "",
+                ),
+              governorate: data.governorate ?? "",
+              delegation: data.delegation ?? "",
+              pricePerNight: data.pricePerNight,
+              rating: data.rating,
+              reviewCount: data.reviewCount,
+              image: getImageUrl(imageUrl),
+              images: data.images ?? [],
+              type: data.type,
+              isVerified: data.isVerified ?? false,
+              bedrooms: data.rooms ?? 1,
+              bathrooms: data.bathrooms ?? 1,
+              maxGuests: data.maxGuests,
+              surfaceArea: data.surfaceArea,
+              hasBalcony: data.hasBalcony,
+              hasGarden: data.hasGarden,
+              hasGarage: data.hasGarage,
+              hasElevator: data.hasElevator,
+              numberOfKitchens: data.numberOfKitchens,
+              isFurnished: data.isFurnished,
+              petsAllowed: data.petsAllowed,
+              amenities,
+              equipment: data.equipment ?? {},
+              description: data.description ?? "",
+              trustScore: data.trustScore,
+              viewCount: data.viewCount,
+              bookingCount: data.bookingCount,
+              favoriteCount: data.favoriteCount,
+              createdAt: data.createdAt,
+              updatedAt: data.updatedAt,
+            } as CompareListing;
+          }),
+        );
+        const validListings = results.filter(
+          (l): l is CompareListing => l !== null,
+        );
+        setListings(validListings);
+
+        // Initialiser l'avis pour le premier listing
+        if (validListings.length > 0) {
+          const firstListing = validListings[0];
+          await updateReviewForExpertChoice(
+            firstListing.id,
+            firstListing.title,
+            firstListing.rating,
+          );
+        }
+      } catch (error) {
+        console.error("Erreur chargement:", error);
+        setError("Erreur lors du chargement des propriétés");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [updateReviewForExpertChoice],
+  );
 
   useEffect(() => {
     if (!mounted) return;
@@ -254,96 +281,161 @@ export function useCompare() {
     }
   }, [mounted, fetchListings]);
 
-  const removeFromCompare = useCallback((id: string, title: string) => {
-    setRemovingId(id);
-    setTimeout(() => {
+  // Fonction de suppression standard
+  const removeFromCompare = useCallback(
+    (id: string) => {
       const newIds = compareIds.filter((i) => i !== id);
       setCompareIds(newIds);
       localStorage.setItem("compare_listings", JSON.stringify(newIds));
       setListings((prev) => prev.filter((l) => l.id !== id));
-      setRemovingId(null);
-      window.dispatchEvent(new Event("favorites-updated"));
-      showAlert("info", `"${title}" retiré de la comparaison`);
-    }, 300);
-  }, [compareIds, showAlert]);
+    },
+    [compareIds],
+  );
+
+  // Alias pour la suppression avec confirmation (même fonction, juste pour la clarté)
+  const removeFromCompareWithConfirm = useCallback(
+    (id: string) => {
+      removeFromCompare(id);
+    },
+    [removeFromCompare],
+  );
 
   const clearAll = useCallback(() => {
     setListings([]);
     setCompareIds([]);
-    setTestimonial(null);
+    setDynamicReview(null);
     localStorage.removeItem("compare_listings");
-    window.dispatchEvent(new Event("favorites-updated"));
-    showAlert("info", "Comparaison réinitialisée");
-  }, [showAlert]);
+  }, []);
 
   const copyLink = useCallback(() => {
     navigator.clipboard.writeText(window.location.href);
     setShowShareMenu(false);
-    showAlert("success", "Lien copié dans le presse-papier !");
-  }, [showAlert]);
+  }, []);
 
   const handleImageError = useCallback((id: string) => {
     setImageErrors((prev) => ({ ...prev, [id]: true }));
   }, []);
 
-  const sortedListings = [...listings].sort((a, b) => {
-    if (sortKey === "rating") return b.rating - a.rating;
-    if (sortKey === "price") return a.pricePerNight - b.pricePerNight;
-    if (sortKey === "beds") return b.bedrooms - a.bedrooms;
-    if (sortKey === "guests") return b.maxGuests - a.maxGuests;
-    return 0;
-  });
+  // Analyse IA
+  const analyzeWithAI = useCallback(
+    async (prompt: string) => {
+      if (!prompt.trim() || listings.length === 0) return;
+
+      setAiLoading(true);
+      try {
+        const response = await fetch("/api/ai/compare", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt,
+            listingIds: listings.map((l) => l.id),
+          }),
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          setAiAnalysis(data);
+          if (data.bestMatch) {
+            setAiRecommendedId(data.bestMatch);
+            // Mettre à jour l'avis pour le nouveau expertChoice
+            const recommendedListing = listings.find(
+              (l) => l.id === data.bestMatch,
+            );
+            if (recommendedListing) {
+              await updateReviewForExpertChoice(
+                recommendedListing.id,
+                recommendedListing.title,
+                recommendedListing.rating,
+              );
+            }
+          }
+          if (data.scores) {
+            setAiScores(data.scores);
+          }
+          return { success: true, message: "Analyse IA terminée !" };
+        } else {
+          return {
+            success: false,
+            message: data.error || "Erreur lors de l'analyse",
+          };
+        }
+      } catch (error) {
+        console.error("Erreur analyse IA:", error);
+        return { success: false, message: "Erreur lors de l'analyse IA" };
+      } finally {
+        setAiLoading(false);
+      }
+    },
+    [listings, updateReviewForExpertChoice],
+  );
+
+  const getListingScore = useCallback(
+    (listingId: string, fallbackScore: number): number => {
+      if (aiScores[listingId]) {
+        return aiScores[listingId];
+      }
+      return fallbackScore;
+    },
+    [aiScores],
+  );
+
+  const isRecommendedByAI = useCallback(
+    (listingId: string): boolean => {
+      return aiRecommendedId === listingId;
+    },
+    [aiRecommendedId],
+  );
 
   const allAmenities = Array.from(
-    new Set(listings.flatMap((l) => l.amenities))
+    new Set(listings.flatMap((l) => l.amenities)),
   ).sort();
-
-  const bestListing = listings.length > 0
-    ? listings.reduce((best, cur) => (computeScore(cur) > computeScore(best) ? cur : best), listings[0])
-    : null;
-
-  const avgPrice = listings.length > 0
-    ? Math.round(listings.reduce((s, l) => s + l.pricePerNight, 0) / listings.length)
+  const avgPrice = listings.length
+    ? Math.round(
+        listings.reduce((s, l) => s + l.pricePerNight, 0) / listings.length,
+      )
     : 0;
-  
-  const avgRating = listings.length > 0
-    ? (listings.reduce((s, l) => s + l.rating, 0) / listings.length).toFixed(1)
+  const avgRating = listings.length
+    ? (
+        listings.reduce((s, l) => s + (l.rating || 0), 0) / listings.length
+      ).toFixed(1)
     : "—";
-  
-  const avgBeds = listings.length > 0
-    ? (listings.reduce((s, l) => s + l.bedrooms, 0) / listings.length).toFixed(1)
+  const avgBeds = listings.length
+    ? (listings.reduce((s, l) => s + l.bedrooms, 0) / listings.length).toFixed(
+        1,
+      )
     : "—";
-
-  const characteristicsRowCount = 1 + allAmenities.length;
-  const characteristicsHeight = characteristicsRowCount * 48;
 
   return {
-    // State
     mounted,
-    listings: sortedListings,
+    listings,
     loading,
+    error,
     imageErrors,
-    alert,
     sortKey,
-    removingId,
     showShareMenu,
     allAmenities,
-    bestListing,
-    testimonial,
+    bestListing: listings[0],
     avgPrice,
     avgRating,
     avgBeds,
-    characteristicsRowCount,
-    characteristicsHeight,
-    
-    // Actions
+    aiAnalysis,
+    aiLoading,
+    showAiPanel,
+    userPrompt,
+    aiRecommendedId,
+    aiScores,
+    dynamicReview,
     setSortKey,
     setShowShareMenu,
+    setShowAiPanel,
+    setUserPrompt,
     removeFromCompare,
+    removeFromCompareWithConfirm,
     clearAll,
     copyLink,
     handleImageError,
-    showAlert,
-    setAlert,
+    analyzeWithAI,
+    getListingScore,
+    isRecommendedByAI,
   };
 }

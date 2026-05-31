@@ -10,6 +10,7 @@ import {
   IoChatbubbleOutline,
   IoArrowBackOutline,
 } from "react-icons/io5";
+import { UsersRound, CheckCircle2, AlertTriangle, Info, X } from "lucide-react";
 import { ChatBox } from "@/components/ui/chat/ChatBox";
 import { EditableBookingCard } from "@/components/ui/chat/EditableBookingCard";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
@@ -20,6 +21,48 @@ import {
   pipAvatar,
   GRAD,
 } from "./hooks/useMessages";
+
+// ─── Toast Component ─────────────────────────────────────────────────────────
+function Toast({
+  message,
+  type,
+  onClose,
+}: {
+  message: string;
+  type: "success" | "error" | "info";
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 4000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  const styles = {
+    success: "bg-green-500",
+    error: "bg-red-500",
+    info: "bg-sky-500",
+  };
+
+  const icons = {
+    success: <CheckCircle2 className="w-5 h-5" />,
+    error: <AlertTriangle className="w-5 h-5" />,
+    info: <Info className="w-5 h-5" />,
+  };
+
+  return (
+    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+      <div
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${styles[type]} text-white`}
+      >
+        {icons[type]}
+        <span className="text-sm font-medium">{message}</span>
+        <button onClick={onClose} className="ml-2 hover:opacity-70">
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ─── Avatar Component ─────────────────────────────────────────────────────────
 function Avatar({
@@ -65,7 +108,65 @@ function Avatar({
   );
 }
 
-// ─── Conversation Item Component ──────────────────────────────────────────────
+// ─── Group Avatar Component ───────────────────────────────────────────────────
+function GroupAvatar({
+  participants,
+}: {
+  participants?: {
+    id: string;
+    username: string;
+    image?: string;
+    role?: string;
+  }[];
+}) {
+  const visibleParticipants = participants?.slice(0, 3) || [];
+  const remainingCount = (participants?.length || 0) - 3;
+
+  const getDisplayName = (p: { username: string; role?: string }) => {
+    if (p.role === "ADMIN") return "Admin";
+    return p.username;
+  };
+
+  const tooltipText = participants?.map((p) => getDisplayName(p)).join(", ") || "";
+
+  return (
+    <div className="relative flex-shrink-0 group">
+      <div className="flex -space-x-3">
+        {visibleParticipants.map((p, idx) => (
+          <div
+            key={p.id}
+            className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white dark:border-slate-900 shadow-md"
+            style={{ zIndex: visibleParticipants.length - idx }}
+          >
+            {p.image ? (
+              <img
+                src={pipAvatar(p.image)}
+                alt=""
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+                {getDisplayName(p).charAt(0).toUpperCase()}
+              </div>
+            )}
+          </div>
+        ))}
+        {remainingCount > 0 && (
+          <div className="relative w-12 h-12 rounded-full bg-purple-500 text-white text-xs font-bold flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-md">
+            +{remainingCount}
+          </div>
+        )}
+      </div>
+      {tooltipText && (
+        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50 shadow-lg">
+          {tooltipText}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Conversation Item Component (privé) ──────────────────────────────────────
 function ConvItem({
   conv,
   isActive,
@@ -147,6 +248,62 @@ function ConvItem({
   );
 }
 
+// ─── Group Conversation Item Component ────────────────────────────────────────
+function GroupConvItem({
+  group,
+  isActive,
+  onClick,
+  t,
+}: {
+  group: any;
+  isActive: boolean;
+  onClick: () => void;
+  t: any;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left transition-all duration-200 rounded-xl ${
+        isActive
+          ? "bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-950/40 dark:to-purple-900/30 ring-1 ring-purple-200 dark:ring-purple-800"
+          : "hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
+      }`}
+    >
+      <div className="flex items-center gap-3 p-4">
+        <GroupAvatar participants={group.participants} />
+        <div className="flex-1 min-w-0">
+          <div className="flex justify-between items-baseline gap-2 mb-0.5">
+            <span className="text-sm font-semibold truncate text-gray-900 dark:text-white flex items-center gap-1.5">
+              <UsersRound className="w-3.5 h-3.5 text-purple-500" />
+              {group.name || t("conversations.disputeGroup")}
+            </span>
+            <span className="text-[10px] font-medium shrink-0 text-gray-400 dark:text-gray-500">
+              {formatRelativeTime(group.lastMessageAt)}
+            </span>
+          </div>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate font-medium mb-1">
+            {group.listing?.title || t("conversations.unknownListing")}
+          </p>
+          {group.lastMessage && (
+            <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-1">
+              {group.lastMessage.length > 50
+                ? group.lastMessage.slice(0, 50) + "..."
+                : group.lastMessage}
+            </p>
+          )}
+        </div>
+        {group.unreadCount > 0 && (
+          <div
+            className="w-5 h-5 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm"
+          >
+            {group.unreadCount > 9 ? "9+" : group.unreadCount}
+          </div>
+        )}
+      </div>
+    </button>
+  );
+}
+
 // ─── Resizable Div Component ──────────────────────────────────────────────────
 function ResizableDiv({
   children,
@@ -217,15 +374,13 @@ function ResizableDiv({
 function EmptyState({
   title,
   message,
-  t,
 }: {
   title: string;
   message: string;
-  t: any;
 }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8">
-      <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
+      <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center mb-4">
         <IoChatbubbleOutline className="w-8 h-8 text-sky-500 dark:text-sky-400" />
       </div>
       <p className="text-slate-500 dark:text-slate-400 font-medium">{title}</p>
@@ -239,14 +394,28 @@ function EmptyState({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TenantMessagesPage() {
   const t = useTranslations("MessagesPage");
+  const [toast, setToast] = useState<{
+    type: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
+
+  const showToast = (type: "success" | "error" | "info", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 4000);
+  };
+
   const {
     conversations,
+    groups,
     selectedConv,
+    selectedGroup,
+    isGroupChat,
     isLoading,
     searchQuery,
     filterType,
     unreadCount,
     filtered,
+    filteredGroups,
     isMobileView,
     showChat,
     setSearchQuery,
@@ -261,12 +430,17 @@ export default function TenantMessagesPage() {
   const [isPaid, setIsPaid] = useState(false);
   const [isCheckingPayment, setIsCheckingPayment] = useState(false);
 
+  // Déterminer la conversation/groupe actif
+  const activeConversation = selectedConv;
+  const activeGroup = selectedGroup;
+  const isActiveGroup = isGroupChat;
+
   // Vérifier le statut de paiement quand la conversation sélectionnée change
   useEffect(() => {
     const checkPaymentStatus = async () => {
       if (
-        !selectedConv?.offer?.id ||
-        selectedConv.offer?.status !== "ACCEPTED"
+        !activeConversation?.offer?.id ||
+        activeConversation.offer?.status !== "ACCEPTED"
       ) {
         setIsPaid(false);
         return;
@@ -275,7 +449,7 @@ export default function TenantMessagesPage() {
       setIsCheckingPayment(true);
       try {
         const res = await fetch(
-          `/api/bookings/by-offer/${selectedConv.offer.id}`,
+          `/api/bookings/by-offer/${activeConversation.offer.id}`,
         );
         if (res.ok) {
           const data = await res.json();
@@ -292,7 +466,7 @@ export default function TenantMessagesPage() {
     };
 
     checkPaymentStatus();
-  }, [selectedConv?.offer?.id, selectedConv?.offer?.status]);
+  }, [activeConversation?.offer?.id, activeConversation?.offer?.status]);
 
   if (isLoading) {
     return (
@@ -316,9 +490,16 @@ export default function TenantMessagesPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
         <TenantHeader />
+        {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
         <div className="h-[calc(100vh-73px)] p-4">
           <div className="h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm rounded-2xl shadow-xl border border-white/50 dark:border-slate-700/50 overflow-hidden flex flex-col">
-            {showChat && selectedConv ? (
+            {showChat && (activeConversation || activeGroup) ? (
               <div className="h-full flex flex-col overflow-hidden">
                 <div className="flex items-center gap-3 p-3 border-b border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 flex-shrink-0">
                   <button
@@ -327,42 +508,68 @@ export default function TenantMessagesPage() {
                   >
                     <IoArrowBackOutline className="w-5 h-5" />
                   </button>
-                  <Avatar
-                    src={selectedConv.otherUser.image}
-                    name={selectedConv.otherUser.username}
-                    size={36}
-                  />
-                  <div>
-                    <p className="font-medium text-slate-900 dark:text-white">
-                      {selectedConv.otherUser.username}
-                    </p>
-                    <p className="text-xs text-slate-500">
-                      {selectedConv.listing.title}
-                    </p>
-                  </div>
+                  {!isActiveGroup && activeConversation ? (
+                    <>
+                      <Avatar
+                        src={activeConversation.otherUser.image}
+                        name={activeConversation.otherUser.username}
+                        size={36}
+                      />
+                      <div>
+                        <p className="font-medium text-slate-900 dark:text-white">
+                          {activeConversation.otherUser.username}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {activeConversation.listing.title}
+                        </p>
+                      </div>
+                    </>
+                  ) : activeGroup && (
+                    <>
+                      <GroupAvatar participants={activeGroup.participants} />
+                      <div>
+                        <p className="font-medium text-slate-900 dark:text-white">
+                          {activeGroup.name || t("conversations.disputeGroup")}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {activeGroup.listing?.title || t("conversations.unknownListing")}
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <ChatBox
-                    conversationId={selectedConv.id}
-                    recipientId={selectedConv.otherUser.id}
-                    recipientName={selectedConv.otherUser.username}
-                    recipientImage={selectedConv.otherUser.image}
-                    listingTitle={selectedConv.listing.title}
-                    offerId={selectedConv.offer?.id}
-                    offerStatus={selectedConv.offer?.status}
+                    conversationId={isActiveGroup ? `group_${activeGroup?.id}` : activeConversation?.id || ""}
+                    recipientId={isActiveGroup ? "group" : activeConversation?.otherUser.id || ""}
+                    recipientName={
+                      isActiveGroup
+                        ? activeGroup?.name || t("conversations.disputeGroup")
+                        : activeConversation?.otherUser.username || ""
+                    }
+                    recipientImage={!isActiveGroup ? activeConversation?.otherUser.image : undefined}
+                    listingTitle={
+                      isActiveGroup
+                        ? activeGroup?.listing?.title || ""
+                        : activeConversation?.listing.title || ""
+                    }
+                    offerId={!isActiveGroup ? activeConversation?.offer?.id : undefined}
+                    offerStatus={!isActiveGroup ? activeConversation?.offer?.status : undefined}
                     isPaid={isPaid}
                     listing={{
-                      id: selectedConv.listing.id,
-                      title: selectedConv.listing.title,
-                      image: selectedConv.listing.image,
-                      pricePerNight: selectedConv.listing.pricePerNight,
-                      location: selectedConv.listing.location,
-                      bedrooms: selectedConv.listing.bedrooms,
-                      maxGuests: selectedConv.listing.maxGuests,
-                      cleaningFee: selectedConv.listing.cleaningFee,
-                      infoRequestId: selectedConv.infoRequest?.id,
+                      id: isActiveGroup ? activeGroup?.listing?.id || "" : activeConversation?.listing.id || "",
+                      title: isActiveGroup ? activeGroup?.listing?.title || "" : activeConversation?.listing.title || "",
+                      image: isActiveGroup ? activeGroup?.listing?.image : activeConversation?.listing.image,
+                      pricePerNight: activeConversation?.listing.pricePerNight,
+                      location: activeConversation?.listing.location,
+                      bedrooms: activeConversation?.listing.bedrooms,
+                      maxGuests: activeConversation?.listing.maxGuests,
+                      cleaningFee: activeConversation?.listing.cleaningFee,
+                      infoRequestId: activeConversation?.infoRequest?.id,
                     }}
                     userRole="TENANT"
+                    isGroup={isActiveGroup}
+                    groupParticipants={activeGroup?.participants}
                   />
                 </div>
               </div>
@@ -386,26 +593,28 @@ export default function TenantMessagesPage() {
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                  {filtered.length === 0 ? (
+                  {filtered.length === 0 && filteredGroups.length === 0 ? (
                     <EmptyState
-                      title={
-                        searchQuery ? t("noResults") : t("noConversations")
-                      }
-                      message={
-                        searchQuery
-                          ? t("noResultsHint")
-                          : t("noConversationsHint")
-                      }
-                      t={t}
+                      title={searchQuery ? t("noResults") : t("noConversations")}
+                      message={searchQuery ? t("noResultsHint") : t("noConversationsHint")}
                     />
                   ) : (
                     <div className="py-2">
+                      {filteredGroups.map((group) => (
+                        <GroupConvItem
+                          key={`group_${group.id}`}
+                          group={group}
+                          isActive={activeGroup?.id === group.id}
+                          onClick={() => handleSelectConv(group, true)}
+                          t={t}
+                        />
+                      ))}
                       {filtered.map((conv) => (
                         <ConvItem
                           key={conv.id}
                           conv={conv}
-                          isActive={false}
-                          onClick={() => handleSelectConv(conv)}
+                          isActive={activeConversation?.id === conv.id}
+                          onClick={() => handleSelectConv(conv, false)}
                           t={t}
                         />
                       ))}
@@ -421,11 +630,20 @@ export default function TenantMessagesPage() {
   }
 
   // Vue desktop
-  const hasInfoRequest = !!selectedConv?.infoRequest;
+  const hasInfoRequest = !!activeConversation?.infoRequest && !isActiveGroup;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-sky-50 via-white to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950">
       <TenantHeader />
+
+      {/* Toast */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       <div className="h-[calc(100vh-90px)] p-4 md:p-6 lg:p-8 overflow-hidden">
         <div className="h-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md rounded-2xl shadow-2xl border border-white/50 dark:border-slate-700/50 overflow-hidden -mt-4">
@@ -435,7 +653,7 @@ export default function TenantMessagesPage() {
               <div className="h-full border-r border-slate-200/50 dark:border-slate-800/50 flex flex-col overflow-hidden">
                 <div className="p-5 border-b border-slate-200/50 dark:border-slate-800/50 flex-shrink-0">
                   <h1 className="text-2xl font-bold bg-gradient-to-r from-sky-600 to-indigo-600 bg-clip-text text-transparent mb-4">
-                    {t("conversations")}
+                    {t("conversationsTitle")}
                   </h1>
 
                   {/* Filtres */}
@@ -448,7 +666,7 @@ export default function TenantMessagesPage() {
                           : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
                       }`}
                     >
-                      {t("filters.all")} ({conversations.length})
+                      {t("filters.all")} ({conversations.length + groups.length})
                     </button>
                     <button
                       onClick={() => setFilterType("unread")}
@@ -462,14 +680,15 @@ export default function TenantMessagesPage() {
                       {t("filters.unread")} ({unreadCount})
                     </button>
                     <button
-                      onClick={() => setFilterType("read")}
-                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
-                        filterType === "read"
-                          ? "bg-indigo-500 text-white shadow-md"
+                      onClick={() => setFilterType("groups")}
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5 ${
+                        filterType === "groups"
+                          ? "bg-purple-500 text-white shadow-md"
                           : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
                       }`}
                     >
-                      {t("filters.read")} ({conversations.length - unreadCount})
+                      <UsersRound className="w-3 h-3" />
+                      {t("filters.groups")} ({groups.length})
                     </button>
                   </div>
 
@@ -490,26 +709,28 @@ export default function TenantMessagesPage() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2">
-                  {filtered.length === 0 ? (
+                  {filtered.length === 0 && filteredGroups.length === 0 ? (
                     <EmptyState
-                      title={
-                        searchQuery ? t("noResults") : t("noConversations")
-                      }
-                      message={
-                        searchQuery
-                          ? t("noResultsHint")
-                          : t("noConversationsHint")
-                      }
-                      t={t}
+                      title={searchQuery ? t("noResults") : t("noConversations")}
+                      message={searchQuery ? t("noResultsHint") : t("noConversationsHint")}
                     />
                   ) : (
                     <div className="space-y-1">
+                      {filteredGroups.map((group) => (
+                        <GroupConvItem
+                          key={`group_${group.id}`}
+                          group={group}
+                          isActive={activeGroup?.id === group.id}
+                          onClick={() => handleSelectConv(group, true)}
+                          t={t}
+                        />
+                      ))}
                       {filtered.map((conv) => (
                         <ConvItem
                           key={conv.id}
                           conv={conv}
-                          isActive={selectedConv?.id === conv.id}
-                          onClick={() => handleSelectConv(conv)}
+                          isActive={activeConversation?.id === conv.id}
+                          onClick={() => handleSelectConv(conv, false)}
                           t={t}
                         />
                       ))}
@@ -521,49 +742,59 @@ export default function TenantMessagesPage() {
 
             {/* Colonne droite - Chat + Carte intégrée */}
             <div className="flex-1 flex flex-col overflow-hidden">
-              {selectedConv ? (
+              {activeConversation || activeGroup ? (
                 <div className="flex-1 flex gap-4 p-4 overflow-hidden">
                   {/* ChatBox */}
                   <div className="flex-1 overflow-hidden rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
                     <ChatBox
-                      conversationId={selectedConv.id}
-                      recipientId={selectedConv.otherUser.id}
-                      recipientName={selectedConv.otherUser.username}
-                      recipientImage={selectedConv.otherUser.image}
-                      listingTitle={selectedConv.listing.title}
-                      offerId={selectedConv.offer?.id}
-                      offerStatus={selectedConv.offer?.status}
+                      conversationId={isActiveGroup ? `group_${activeGroup?.id}` : activeConversation?.id || ""}
+                      recipientId={isActiveGroup ? "group" : activeConversation?.otherUser.id || ""}
+                      recipientName={
+                        isActiveGroup
+                          ? activeGroup?.name || t("conversations.disputeGroup")
+                          : activeConversation?.otherUser.username || ""
+                      }
+                      recipientImage={!isActiveGroup ? activeConversation?.otherUser.image : undefined}
+                      recipientRole={!isActiveGroup ? activeConversation?.otherUser.role : undefined}
+                      listingTitle={
+                        isActiveGroup
+                          ? activeGroup?.listing?.title || ""
+                          : activeConversation?.listing.title || ""
+                      }
+                      offerId={!isActiveGroup ? activeConversation?.offer?.id : undefined}
+                      offerStatus={!isActiveGroup ? activeConversation?.offer?.status : undefined}
                       isPaid={isPaid}
                       listing={{
-                        id: selectedConv.listing.id,
-                        title: selectedConv.listing.title,
-                        image: selectedConv.listing.image,
-                        pricePerNight: selectedConv.listing.pricePerNight,
-                        location: selectedConv.listing.location,
-                        bedrooms: selectedConv.listing.bedrooms,
-                        maxGuests: selectedConv.listing.maxGuests,
-                        cleaningFee: selectedConv.listing.cleaningFee,
-                        infoRequestId: selectedConv.infoRequest?.id,
+                        id: isActiveGroup ? activeGroup?.listing?.id || "" : activeConversation?.listing.id || "",
+                        title: isActiveGroup ? activeGroup?.listing?.title || "" : activeConversation?.listing.title || "",
+                        image: isActiveGroup ? activeGroup?.listing?.image : activeConversation?.listing.image,
+                        pricePerNight: activeConversation?.listing.pricePerNight,
+                        location: activeConversation?.listing.location,
+                        bedrooms: activeConversation?.listing.bedrooms,
+                        maxGuests: activeConversation?.listing.maxGuests,
+                        cleaningFee: activeConversation?.listing.cleaningFee,
+                        infoRequestId: activeConversation?.infoRequest?.id,
                       }}
                       userRole="TENANT"
+                      isGroup={isActiveGroup}
+                      groupParticipants={activeGroup?.participants}
                     />
                   </div>
 
-                  {/* Carte du logement */}
-                  {hasInfoRequest && selectedConv.infoRequest && (
+                  {/* Carte du logement (uniquement pour les conversations privées avec infoRequest) */}
+                  {hasInfoRequest && activeConversation?.infoRequest && (
                     <div className="w-[280px] flex-shrink-0 overflow-y-auto">
                       <EditableBookingCard
-                        listing={selectedConv.listing}
-                        infoRequestId={selectedConv.infoRequest.id}
-                        initialCheckIn={selectedConv.infoRequest.checkIn}
-                        initialCheckOut={selectedConv.infoRequest.checkOut}
-                        initialGuests={selectedConv.infoRequest.guests}
+                        listing={activeConversation.listing}
+                        infoRequestId={activeConversation.infoRequest.id}
+                        initialCheckIn={activeConversation.infoRequest.checkIn}
+                        initialCheckOut={activeConversation.infoRequest.checkOut}
+                        initialGuests={activeConversation.infoRequest.guests}
                         onUpdate={handleUpdateInfoRequest}
                         onSendSystemMessage={handleSendSystemMessage}
-                        isOfferAccepted={
-                          selectedConv.offer?.status === "ACCEPTED"
-                        }
-                        offerStatus={selectedConv.offer?.status}
+                        isOfferAccepted={activeConversation.offer?.status === "ACCEPTED"}
+                        offerStatus={activeConversation.offer?.status}
+                        isPaid={isPaid}
                       />
                     </div>
                   )}

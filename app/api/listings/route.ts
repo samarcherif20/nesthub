@@ -288,8 +288,70 @@ export async function GET(request: NextRequest) {
     const [listings, totalCount] = await Promise.all([
       prisma.listing.findMany({
         where,
-        include: {
-          photos: { where: { isMain: true }, take: 1 },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true, // ← AJOUTE
+          type: true,
+          governorate: true,
+          delegation: true,
+          street: true,
+          latitude: true,
+          longitude: true,
+          rooms: true, // ← AJOUTE
+          bathrooms: true, // ← AJOUTE
+          maxGuests: true, // ← AJOUTE
+          surfaceArea: true,
+          floorNumber: true,
+          hasElevator: true,
+          hasBalcony: true,
+          hasGarden: true,
+          hasGarage: true,
+          numberOfKitchens: true,
+          rentalType: true,
+          pricePerNight: true,
+          pricePerMonth: true,
+          securityDeposit: true,
+          cleaningFee: true,
+          weekendPriceMultiplier: true,
+          equipment: true, // ← AJOUTE
+          services: true,
+          houseRules: true,
+          customRules: true,
+          isFurnished: true,
+          petsAllowed: true,
+          smokingAllowed: true,
+          viewCount: true, // ← AJOUTE
+          bookingCount: true, // ← AJOUTE
+          favoriteCount: true, // ← AJOUTE
+          isArchived: true,
+          isBlocked: true,
+          blockReason: true,
+          vacationMode: true,
+          vacationMessage: true,
+          vacationStartDate: true,
+          vacationEndDate: true,
+          status: true,
+          publishedAt: true,
+          createdAt: true, // ← AJOUTE
+          updatedAt: true,
+          archivedAt: true,
+          rejectionReason: true,
+          rejectedAt: true,
+          validatedAt: true,
+          trustScore: true, // ← AJOUTE
+          trustLabel: true, // ← AJOUTE
+          trustBadge: true, // ← AJOUTE
+          scamProbability: true,
+          scamFlags: true,
+          lastScoredAt: true,
+          ownerId: true,
+          photos: {
+            where: { isMain: true },
+            take: 1,
+            select: { url: true, thumbnailUrl: true },
+          },
           owner: {
             select: {
               id: true,
@@ -667,7 +729,15 @@ export async function PATCH(request: NextRequest) {
 
       updateData.status = status;
       result = await prisma.listing.update({ where: { id }, data: updateData });
-
+      //  Recalcul du trust score quand l'annonce devient ACTIVE
+      if (oldStatus === "PENDING_REVIEW" && newStatus === "ACTIVE") {
+        const { updateListingTrustScore } =
+          await import("@/lib/risk-scoring/ai-listing-scoring");
+        await updateListingTrustScore(id, true);
+        console.log(
+          ` Trust score calculé pour l'annonce ${id} (devenue active)`,
+        );
+      }
       await prisma.listingHistory.create({
         data: {
           listingId: id,
@@ -694,6 +764,9 @@ export async function PATCH(request: NextRequest) {
         notificationContent = `Votre annonce "${existingListing.title}" a été activée par l'administrateur.`;
         notificationType = "LISTING_ACTIVATED";
         notificationSent = true;
+        const { updateListingTrustScore } =
+          await import("@/lib/risk-scoring/ai-listing-scoring");
+        await updateListingTrustScore(id, true);
       } else if (newStatus === "INACTIVE") {
         notificationTitle = " Annonce désactivée";
         notificationContent = `Votre annonce "${existingListing.title}" a été désactivée par l'administrateur.`;
@@ -723,6 +796,16 @@ export async function PATCH(request: NextRequest) {
         }
       }
       result = await prisma.listing.update({ where: { id }, data: updateData });
+      const importantFields = ["title", "description", "pricePerNight"];
+      const hasImportantChange = importantFields.some(
+        (field) => updateFields[field] !== undefined,
+      );
+
+      if (hasImportantChange) {
+        const { updateListingTrustScore } =
+          await import("@/lib/risk-scoring/ai-listing-scoring");
+        await updateListingTrustScore(id, true);
+      }
       await prisma.listingHistory.create({
         data: {
           listingId: id,

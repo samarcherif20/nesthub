@@ -3,6 +3,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useUser } from "@clerk/nextjs";
 
 export type Tab = "UPCOMING" | "PAST" | "CANCELLED";
 
@@ -21,7 +23,12 @@ export interface Reservation {
   nights: number;
   guests: number;
   totalPrice: number;
+  pricePerNight?: number;
   isPaid?: boolean;
+  hasReview?: boolean;
+  cleaningFee?: number;
+  serviceFee?: number;
+  review?: { rating?: number; comment?: string };
   reference?: string;
   listing: {
     id: string;
@@ -31,6 +38,7 @@ export interface Reservation {
     location?: string;
     rating?: number;
     type?: string;
+    pricePerNight?: number;
   };
   owner: {
     id?: string;
@@ -38,6 +46,8 @@ export interface Reservation {
     lastName?: string | null;
     name?: string;
     image?: string | null;
+    username?: string;
+    profilePictureUrl?: string | null;
   };
   conversationId?: string;
   bookingOfferId?: string;
@@ -45,6 +55,8 @@ export interface Reservation {
 
 export function useReservations() {
   const router = useRouter();
+  const { user, isLoaded } = useUser();
+  const t = useTranslations("ReservationsPage");
   const [tab, setTab] = useState<Tab>("UPCOMING");
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,14 +64,184 @@ export function useReservations() {
     message: string;
     type: "success" | "error" | "info";
   } | null>(null);
+  const [loading, setLoading] = useState<string | null>(null);
+  
+  // État pour les favoris
+  const [favorites, setFavorites] = useState<string[]>([]);
 
   const showToast = useCallback(
     (message: string, type: "success" | "error" | "info" = "info") => {
       setToast({ message, type });
-      setTimeout(() => setToast(null), 3000);
+      setTimeout(() => setToast(null), 4000);
     },
     [],
   );
+
+  // ✅ Charger les favoris depuis l'API BDD - VERSION CORRIGÉE
+  const loadFavorites = useCallback(async () => {
+    if (!isLoaded || !user) return;
+
+    try {
+      const response = await fetch("/api/users/favorites");
+      if (response.ok) {
+        const data = await response.json();
+        console.log("📦 loadFavorites response:", data);
+        
+        // Extraire les IDs des favoris
+        let favoriteIds: string[] = [];
+        
+        if (data.success && data.favorites && Array.isArray(data.favorites)) {
+          // Format: { success: true, favorites: [{ id, listingId, ... }] }
+          favoriteIds = data.favorites.map((f: any) => f.listingId || f.id);
+        } else if (data.favorites && Array.isArray(data.favorites)) {
+          favoriteIds = data.favorites.map((f: any) => f.listingId || f);
+        } else if (Array.isArray(data)) {
+          favoriteIds = data;
+        }
+        
+        console.log("✅ Favorite IDs loaded:", favoriteIds);
+        setFavorites(favoriteIds);
+      }
+    } catch (error) {
+      console.error("❌ Erreur chargement favoris:", error);
+    }
+  }, [user, isLoaded]);
+
+  // ✅ Ajouter aux favoris - VERSION CORRIGÉE
+  const addToFavorites = useCallback(async (listingId: string) => {
+    if (!listingId) {
+      console.error("❌ listingId manquant");
+      return false;
+    }
+    
+    if (!user) {
+      console.error("❌ Utilisateur non connecté");
+      showToast(t("toast.loginRequired"), "error");
+      return false;
+    }
+    
+    console.log("➕ Ajout favori:", listingId);
+    
+    try {
+      const response = await fetch("/api/users/favorites", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId: listingId.toString() }),
+      });
+      
+      const data = await response.json();
+      console.log("📦 Add favorite response:", data);
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Erreur lors de l'ajout");
+      }
+      
+      // ✅ Mettre à jour l'état local
+      setFavorites((prev) => {
+        if (!prev.includes(listingId)) {
+          return [...prev, listingId];
+        }
+        return prev;
+      });
+      
+      showToast(t("toast.addedToFavorites"), "success");
+      window.dispatchEvent(new Event("favorites-updated"));
+      return true;
+      
+    } catch (error) {
+      console.error("❌ Erreur ajout favori:", error);
+      showToast(t("toast.favoriteError"), "error");
+      return false;
+    }
+  }, [user, showToast, t]);
+
+  // ✅ Retirer des favoris - VERSION CORRIGÉE
+  const removeFromFavorites = useCallback(async (listingId: string) => {
+    if (!listingId) return false;
+    
+    if (!user) {
+      console.error("❌ Utilisateur non connecté");
+      return false;
+    }
+    
+    console.log("➖ Retrait favori:", listingId);
+    
+    try {
+      const response = await fetch(`/api/users/favorites?listingId=${listingId}`, {
+        method: "DELETE",
+      });
+      
+      const data = await response.json();
+      console.log("📦 Remove favorite response:", data);
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Erreur lors de la suppression");
+      }
+      
+      // ✅ Mettre à jour l'état local
+      setFavorites((prev) => prev.filter(id => id !== listingId));
+      
+      showToast(t("toast.removedFromFavorites"), "info");
+      window.dispatchEvent(new Event("favorites-updated"));
+      return true;
+      
+    } catch (error) {
+      console.error("❌ Erreur retrait favori:", error);
+      showToast(t("toast.favoriteError"), "error");
+      return false;
+    }
+  }, [user, showToast, t]);
+
+  // ✅ Toggle favori - VERSION CORRIGÉE
+  const toggleFavorite = useCallback(async (listingId: string, e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (!listingId) {
+      console.error("❌ listingId manquant");
+      return;
+    }
+    
+    const isCurrentlyFavorite = favorites.includes(listingId);
+    console.log(`🔄 Toggle favori: ${listingId}, actuellement: ${isCurrentlyFavorite}`);
+    
+    if (isCurrentlyFavorite) {
+      await removeFromFavorites(listingId);
+    } else {
+      await addToFavorites(listingId);
+    }
+  }, [favorites, addToFavorites, removeFromFavorites]);
+
+  // Télécharger le reçu PDF
+  const downloadReceipt = useCallback(async (bookingId: string) => {
+    setLoading(bookingId);
+    try {
+      const response = await fetch(`/api/bookings/${bookingId}/receipt`);
+      
+      if (!response.ok) {
+        throw new Error("Erreur lors du téléchargement");
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `recu_reservation_${bookingId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      showToast(t("toast.receiptDownloaded"), "success");
+    } catch (error) {
+      console.error("Erreur téléchargement reçu:", error);
+      showToast(t("toast.receiptError"), "error");
+    } finally {
+      setLoading(null);
+    }
+  }, [showToast, t]);
 
   const loadReservations = useCallback(async () => {
     setIsLoading(true);
@@ -71,7 +253,7 @@ export function useReservations() {
       };
 
       const response = await fetch(
-        `/api/bookings?role=tenant&status=${statusMap[tab]}&pageSize=20`,
+        `/api/bookings?role=tenant&status=${statusMap[tab]}&pageSize=50`,
       );
 
       if (!response.ok) {
@@ -79,77 +261,141 @@ export function useReservations() {
       }
 
       const data = await response.json();
-      const raw: Reservation[] = Array.isArray(data)
-        ? data
-        : (data.bookings ?? []);
+      const raw = data.bookings ?? [];
 
       setReservations(
-        raw.map((r) => ({
-          ...r,
-          // ✅ CORRECTION: Calculer isPaid basé sur paymentStatus ou status
-          isPaid:
-            r.paymentStatus === "PAID" ||
-            r.status === "CONFIRMED" ||
-            r.status === "COMPLETED",
-          nights:
-            r.nights ||
-            Math.ceil(
-              (new Date(r.checkOut).getTime() - new Date(r.checkIn).getTime()) /
-                86400000,
-            ),
+        raw.map((r: any) => ({
+          id: r.id,
+          status: r.status,
+          paymentStatus: r.paymentStatus,
+          checkIn: r.checkIn,
+          checkOut: r.checkOut,
+          nights: r.nights,
+          guests: r.guests,
+          totalPrice: r.totalPrice,
+          pricePerNight: r.pricePerNight || 0,
+          cleaningFee: r.cleaningFee || 0,
+          serviceFee: r.serviceFee || 0,
+          isPaid: r.isPaid || false,
+          hasReview: r.hasReview || false,
+          review: r.review,
           listing: {
-            ...r.listing,
-            image: r.listing.image ?? null,
+            id: r.listing?.id,
+            title: r.listing?.title || "Propriété",
+            image: r.listing?.image ?? null,
+            location: r.listing?.location || "",
+            pricePerNight: r.pricePerNight || r.listing?.pricePerNight || 0,
+            type: r.listing?.type || "APARTMENT",
           },
           owner: {
-            ...r.owner,
+            id: r.owner?.id,
             firstName: r.owner?.firstName ?? null,
             lastName: r.owner?.lastName ?? null,
-            image: r.owner?.image ?? null,
+            name: r.owner?.name || r.owner?.username || "Hôte",
+            image: r.owner?.image || r.owner?.profilePictureUrl || null,
+            username: r.owner?.username,
+            profilePictureUrl: r.owner?.profilePictureUrl || r.owner?.image,
           },
         })),
       );
     } catch (error) {
       console.error("Erreur chargement réservations:", error);
-      showToast("Erreur de chargement des réservations", "error");
+      showToast(t("toast.loadError"), "error");
     } finally {
       setIsLoading(false);
     }
-  }, [tab, showToast]);
+  }, [tab, showToast, t]);
 
-  const handlePay = (res: Reservation) => {
-    const params = new URLSearchParams({
-      bookingId: res.id,
-      ...(res.bookingOfferId ? { offerId: res.bookingOfferId } : {}),
+  const performAction = useCallback(async (id: string, action: () => Promise<void>) => {
+    setLoading(id);
+    await action();
+    setLoading(null);
+  }, []);
+
+  const handleCancel = useCallback(async (id: string) => {
+    if (!confirm(t("cancelConfirm"))) return;
+    
+    await performAction(id, async () => {
+      const res = await fetch(`/api/bookings/${id}/cancel`, { method: "POST" });
+      if (res.ok) {
+        setReservations((prev) => prev.map((b) => b.id === id ? { ...b, status: "CANCELLED" } : b));
+        showToast(t("toast.cancelled"), "success");
+      } else {
+        const err = await res.json();
+        showToast(err.error ?? t("toast.cancelError"), "error");
+      }
     });
-    router.push(`/fr/payment?${params.toString()}`);
-  };
+  }, [performAction, showToast, t]);
 
-  const handleCancel = async (id: string) => {
-    if (!confirm("Confirmer l'annulation de cette réservation ?")) return;
+  const handlePay = useCallback((res: Reservation) => {
+    router.push(`/fr/payment?bookingId=${res.id}`);
+  }, [router]);
 
+  const handleSubmitReview = useCallback(async (bookingId: string, reviewData: any) => {
     try {
-      const response = await fetch(`/api/bookings/${id}/cancel`, {
+      const formData = new FormData();
+      formData.append("rating", reviewData.rating.toString());
+      formData.append("publicComment", reviewData.publicComment);
+      formData.append("privateNote", reviewData.privateNote);
+      formData.append("criteria", JSON.stringify(reviewData.criteria));
+      
+      if (reviewData.photos?.length) {
+        reviewData.photos.forEach((photo: File) => formData.append("photos", photo));
+      }
+
+      const res = await fetch(`/api/bookings/${bookingId}/review`, {
         method: "POST",
+        body: formData,
       });
 
-      if (response.ok) {
-        showToast("Réservation annulée", "info");
+      if (res.ok) {
         setReservations((prev) =>
-          prev.map((b) => (b.id === id ? { ...b, status: "CANCELLED" } : b)),
+          prev.map((b) => b.id === bookingId ? { ...b, hasReview: true } : b)
         );
+        showToast(t("toast.reviewSubmitted"), "success");
+        return true;
       } else {
-        const error = await response.json();
-        showToast(error.error || "Erreur lors de l'annulation", "error");
+        const err = await res.json();
+        showToast(err.error ?? t("toast.reviewError"), "error");
+        return false;
       }
-    } catch {
-      showToast("Erreur de connexion", "error");
+    } catch (error) {
+      console.error("Erreur lors de l'envoi de l'avis:", error);
+      showToast(t("toast.connectionError"), "error");
+      return false;
     }
-  };
+  }, [showToast, t]);
 
+  const reloadReservations = useCallback(async () => {
+    await loadReservations();
+  }, [loadReservations]);
+
+  // ✅ Écouter les mises à jour des favoris depuis d'autres composants
+  useEffect(() => {
+    const handleFavoritesUpdate = () => {
+      console.log("🔄 Événement favorites-updated reçu");
+      loadFavorites();
+    };
+    window.addEventListener("favorites-updated", handleFavoritesUpdate);
+    return () => window.removeEventListener("favorites-updated", handleFavoritesUpdate);
+  }, [loadFavorites]);
+
+  // ✅ Charger les réservations et les favoris au montage
   useEffect(() => {
     loadReservations();
-  }, [loadReservations]);
+    if (isLoaded && user) {
+      loadFavorites();
+    }
+  }, [loadReservations, loadFavorites, isLoaded, user]);
+
+  // Calculs des statistiques
+  const upcoming = reservations.filter((b) => ["PENDING", "ACCEPTED", "CONFIRMED"].includes(b.status));
+  const past = reservations.filter((b) => b.status === "COMPLETED");
+  const cancelled = reservations.filter((b) => ["CANCELLED", "REJECTED"].includes(b.status));
+  
+  const spent = past.reduce((s, b) => s + b.totalPrice, 0);
+  const nightsCount = past.reduce((s, b) => s + b.nights, 0);
+  const reviewedCount = past.filter((b) => b.hasReview).length;
 
   return {
     tab,
@@ -157,9 +403,22 @@ export function useReservations() {
     reservations,
     isLoading,
     toast,
+    loading,
+    upcoming,
+    past,
+    cancelled,
+    spent,
+    nightsCount,
+    reviewedCount,
+    favorites,
+    toggleFavorite,
+    addToFavorites,
+    removeFromFavorites,
+    downloadReceipt,
     showToast,
     handlePay,
     handleCancel,
-    loadReservations,
+    handleSubmitReview,
+    loadReservations: reloadReservations,
   };
 }
