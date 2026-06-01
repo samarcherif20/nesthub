@@ -689,7 +689,7 @@ export default function Reservations() {
                           </Link>
 
                           {isExpanded && (
-                            <div className="mt-4 grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2 dark:bg-white/5">
+                            <div className="mt-4 grid gap-4 rounded-xl bg-slate-50 p-4 sm:grid-cols-2 dark:bg-white/5 mt">
                               <div className="space-y-2 text-sm">
                                 <div className="flex justify-between">
                                   <span className="text-slate-500">
@@ -732,8 +732,8 @@ export default function Reservations() {
                                   </span>
                                 </div>
                               </div>
-                              <div>
-                                <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                              <div className="ml-20">
+                                <p className="mb-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400 ">
                                   {t("timeline.title")}
                                 </p>
                                 {[
@@ -856,7 +856,7 @@ export default function Reservations() {
 
                           {b.status === "COMPLETED" && (
                             <>
-                              {!b.hasReview ? (
+                              {!b.hasListingReview ? (
                                 <button
                                   onClick={() => setSelectedBookingForReview(b)}
                                   disabled={loading === b.id}

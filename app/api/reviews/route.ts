@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
     const targetType = searchParams.get("targetType") || "LISTING";
     const targetId = searchParams.get("targetId");
     const tab = searchParams.get("tab") || "received";
+    const bookingId = searchParams.get("bookingId");
 
     // Si on demande les avis d'une annonce spécifique (public)
     if (targetId && targetType === "LISTING") {
@@ -51,6 +52,29 @@ export async function GET(request: NextRequest) {
         averageRating,
         totalCount: reviews.length,
       });
+    }
+
+    // Si on demande l'avis pour un booking spécifique
+    if (bookingId && clerkId) {
+      const user = await prisma.user.findUnique({
+        where: { clerkId },
+        select: { id: true },
+      });
+
+      if (user) {
+        const existingReview = await prisma.review.findFirst({
+          where: {
+            bookingId: bookingId,
+            reviewerId: user.id,
+            targetType: targetType,
+          },
+        });
+
+        return NextResponse.json({
+          hasReview: !!existingReview,
+          review: existingReview,
+        });
+      }
     }
 
     // Pour les avis personnels (nécessite authentification)
@@ -154,7 +178,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       bookingId,
-      targetType, // "LISTING" ou "TENANT"
+      targetType,
       rating,
       comment,
       privateNote,
@@ -165,21 +189,17 @@ export async function POST(request: NextRequest) {
       recommend,
     } = body;
 
-    // Extraire les critères du formulaire
-    const {
-      cleanliness: critCleanliness = 0,
-      communication: critCommunication = 0,
-      checkIn = 0,
-      accuracy = 0,
-      location = 0,
-      value = 0,
-    } = criteria || {};
-
     if (!bookingId) {
       return NextResponse.json({ error: "bookingId requis" }, { status: 400 });
     }
 
-    // Vérifier la réservation
+    if (!targetType || !["LISTING", "TENANT"].includes(targetType)) {
+      return NextResponse.json(
+        { error: "targetType invalide. Utilisez LISTING ou TENANT" },
+        { status: 400 },
+      );
+    }
+
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
       include: {
@@ -195,36 +215,41 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Vérifier que la réservation est terminée
     if (booking.status !== "COMPLETED") {
       return NextResponse.json(
-        { error: "La réservation doit être terminée" },
+        { error: "La réservation doit être terminée pour laisser un avis" },
         { status: 400 },
       );
     }
 
-    // Vérifier qu'un avis n'existe pas déjà
-    const existingReview = await prisma.review.findUnique({
-      where: { bookingId },
+    const existingReview = await prisma.review.findFirst({
+      where: {
+        bookingId: bookingId,
+        targetType: targetType,
+      },
     });
 
     if (existingReview) {
       return NextResponse.json(
-        { error: "Avis déjà existant" },
+        { 
+          error: `Un avis de type "${targetType === 'LISTING' ? 'sur l\'annonce' : 'sur le locataire'}" existe déjà pour cette réservation`,
+          existingReview: existingReview,
+          targetType: targetType,
+        },
         { status: 400 },
       );
     }
 
     let reviewData: any = {};
-    let targetId: string;
-    let targetTypeValue: string;
-    let notificationContent: string;
+    let targetId: string = "";
+    let targetTypeValue: string = "";
+    let notificationContent: string = "";
+    let notificationTitle: string = "";
 
     // ============================================
     // CAS 1: Avis sur l'annonce (par le locataire)
     // ============================================
     if (targetType === "LISTING") {
-      // Vérifier que l'utilisateur est le locataire
       if (booking.tenantId !== user.id) {
         return NextResponse.json(
           { error: "Seul le locataire peut noter l'annonce" },
@@ -232,18 +257,40 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      targetId = booking.listing.id;
+      const ownerId = booking.ownerId;
+      
+      if (!ownerId) {
+        return NextResponse.json(
+          { error: "Propriétaire non trouvé" },
+          { status: 404 },
+        );
+      }
+
+      const owner = await prisma.user.findUnique({
+        where: { id: ownerId }
+      });
+
+      if (!owner) {
+        return NextResponse.json(
+          { error: "Propriétaire non trouvé" },
+          { status: 404 },
+        );
+      }
+
+      targetId = ownerId;
       targetTypeValue = "LISTING";
 
-      // Calculer la note moyenne des 6 critères
+      const {
+        cleanliness: critCleanliness = 0,
+        communication: critCommunication = 0,
+        checkIn = 0,
+        accuracy = 0,
+        location = 0,
+        value = 0,
+      } = criteria || {};
+
       const avgRating = Math.round(
-        (critCleanliness +
-          critCommunication +
-          checkIn +
-          accuracy +
-          location +
-          value) /
-          6,
+        (critCleanliness + critCommunication + checkIn + accuracy + location + value) / 6,
       );
 
       reviewData = {
@@ -258,9 +305,9 @@ export async function POST(request: NextRequest) {
         privateNote: privateNote || null,
       };
 
+      notificationTitle = "✨ Nouvel avis sur votre annonce";
       notificationContent = `@${user.username} a laissé un avis sur votre annonce "${booking.listing.title}" - Note: ${avgRating}/5 ⭐`;
 
-      // Mettre à jour le trust score du listing
       try {
         const { updateListingTrustScore } =
           await import("@/lib/risk-scoring/ai-listing-scoring");
@@ -268,12 +315,16 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.log("Trust score update skipped");
       }
+
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: { hasListingReview: true },
+      });
     }
     // ============================================
     // CAS 2: Avis sur le locataire (par le propriétaire)
     // ============================================
     else if (targetType === "TENANT") {
-      // Vérifier que l'utilisateur est le propriétaire
       if (booking.ownerId !== user.id) {
         return NextResponse.json(
           { error: "Seul le propriétaire peut noter le locataire" },
@@ -281,15 +332,12 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!cleanliness || !communication || !houseRules) {
-        return NextResponse.json(
-          { error: "Toutes les notes sont requises" },
-          { status: 400 },
-        );
-      }
+      const finalCleanliness = cleanliness || rating || 0;
+      const finalCommunication = communication || rating || 0;
+      const finalHouseRules = houseRules || rating || 0;
 
       const avgRating = Math.round(
-        (cleanliness + communication + houseRules) / 3,
+        (finalCleanliness + finalCommunication + finalHouseRules) / 3,
       );
 
       targetId = booking.tenant.id;
@@ -297,17 +345,22 @@ export async function POST(request: NextRequest) {
 
       reviewData = {
         rating: avgRating,
-        cleanliness,
-        communication,
-        houseRules,
+        cleanliness: finalCleanliness,
+        communication: finalCommunication,
+        houseRules: finalHouseRules,
         recommend: recommend || false,
         comment: comment || null,
         privateNote: privateNote || null,
       };
 
+      notificationTitle = "📝 Nouvel avis sur votre séjour";
       notificationContent = `@${user.username} a laissé un avis sur votre séjour dans "${booking.listing.title}" - Note: ${avgRating}/5 ⭐`;
 
-      // Mettre à jour les stats de l'utilisateur cible
+      await prisma.booking.update({
+        where: { id: bookingId },
+        data: { hasTenantReview: true },
+      });
+
       const allUserReviews = await prisma.review.findMany({
         where: {
           targetId: booking.tenant.id,
@@ -317,17 +370,15 @@ export async function POST(request: NextRequest) {
         select: { rating: true },
       });
 
-      const averageRating =
-        allUserReviews.length > 0
-          ? allUserReviews.reduce((acc, r) => acc + r.rating, 0) /
-            allUserReviews.length
-          : avgRating;
+      const totalReviews = allUserReviews.length + 1;
+      const sumRatings = allUserReviews.reduce((acc, r) => acc + r.rating, 0) + avgRating;
+      const averageRating = sumRatings / totalReviews;
 
       await prisma.userStats.upsert({
         where: { userId: booking.tenant.id },
         update: {
           averageRating,
-          totalReviews: allUserReviews.length,
+          totalReviews: totalReviews,
         },
         create: {
           userId: booking.tenant.id,
@@ -339,11 +390,6 @@ export async function POST(request: NextRequest) {
           fraudScore: 0,
         },
       });
-    } else {
-      return NextResponse.json(
-        { error: "targetType invalide. Utilisez LISTING ou TENANT" },
-        { status: 400 },
-      );
     }
 
     // Créer l'avis
@@ -361,10 +407,9 @@ export async function POST(request: NextRequest) {
     // Créer la notification
     await prisma.notification.create({
       data: {
-        userId:
-          targetTypeValue === "LISTING" ? booking.ownerId! : booking.tenant.id,
+        userId: targetTypeValue === "LISTING" ? booking.ownerId! : booking.tenant.id,
         type: "NEW_REVIEW",
-        title: "✨ Nouvel avis reçu",
+        title: notificationTitle,
         content: notificationContent,
         data: {
           reviewId: review.id,
@@ -374,6 +419,7 @@ export async function POST(request: NextRequest) {
           listingTitle: booking.listing.title,
           reviewerUsername: user.username,
           reviewerId: user.id,
+          targetType: targetTypeValue,
         },
         channels: ["IN_APP", "EMAIL"],
       },
@@ -382,10 +428,103 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       review,
-      message: "Avis publié avec succès",
+      message: targetType === "LISTING" 
+        ? "Votre avis sur l'annonce a été publié avec succès" 
+        : "Votre avis sur le locataire a été publié avec succès",
     });
   } catch (error) {
     console.error("Erreur création avis:", error);
-    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
+    return NextResponse.json({ error: "Erreur serveur lors de la création de l'avis" }, { status: 500 });
+  }
+}
+
+// DELETE - Supprimer un avis
+export async function DELETE(request: NextRequest) {
+  try {
+    const { userId: clerkId } = getAuth(request);
+    if (!clerkId) {
+      return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
+      );
+    }
+
+    const searchParams = request.nextUrl.searchParams;
+    const reviewId = searchParams.get("reviewId");
+    const bookingId = searchParams.get("bookingId");
+    const targetType = searchParams.get("targetType");
+
+    if (!reviewId && (!bookingId || !targetType)) {
+      return NextResponse.json(
+        { error: "reviewId ou (bookingId + targetType) requis" },
+        { status: 400 },
+      );
+    }
+
+    let reviewToDelete;
+
+    if (reviewId) {
+      reviewToDelete = await prisma.review.findUnique({
+        where: { id: reviewId },
+      });
+    } else {
+      reviewToDelete = await prisma.review.findFirst({
+        where: {
+          bookingId: bookingId!,
+          targetType: targetType!,
+          reviewerId: user.id,
+        },
+      });
+    }
+
+    if (!reviewToDelete) {
+      return NextResponse.json(
+        { error: "Avis non trouvé" },
+        { status: 404 },
+      );
+    }
+
+    if (reviewToDelete.reviewerId !== user.id) {
+      return NextResponse.json(
+        { error: "Vous n'êtes pas autorisé à supprimer cet avis" },
+        { status: 403 },
+      );
+    }
+
+    await prisma.review.delete({
+      where: { id: reviewToDelete.id },
+    });
+
+    if (reviewToDelete.targetType === "LISTING") {
+      await prisma.booking.update({
+        where: { id: reviewToDelete.bookingId },
+        data: { hasListingReview: false },
+      });
+    } else if (reviewToDelete.targetType === "TENANT") {
+      await prisma.booking.update({
+        where: { id: reviewToDelete.bookingId },
+        data: { hasTenantReview: false },
+      });
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Avis supprimé avec succès",
+    });
+  } catch (error) {
+    console.error("Erreur suppression avis:", error);
+    return NextResponse.json(
+      { error: "Erreur serveur lors de la suppression" },
+      { status: 500 },
+    );
   }
 }

@@ -1,4 +1,3 @@
-// hooks/useReservations.ts
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -26,6 +25,8 @@ export interface Reservation {
   pricePerNight?: number;
   isPaid?: boolean;
   hasReview?: boolean;
+  hasListingReview?: boolean;
+  hasTenantReview?: boolean;
   cleaningFee?: number;
   serviceFee?: number;
   review?: { rating?: number; comment?: string };
@@ -65,9 +66,8 @@ export function useReservations() {
     type: "success" | "error" | "info";
   } | null>(null);
   const [loading, setLoading] = useState<string | null>(null);
-  
-  // État pour les favoris
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [receivedReviews, setReceivedReviews] = useState<any[]>([]);
 
   const showToast = useCallback(
     (message: string, type: "success" | "error" | "info" = "info") => {
@@ -77,7 +77,7 @@ export function useReservations() {
     [],
   );
 
-  // ✅ Charger les favoris depuis l'API BDD - VERSION CORRIGÉE
+  // Charger les favoris
   const loadFavorites = useCallback(async () => {
     if (!isLoaded || !user) return;
 
@@ -85,13 +85,9 @@ export function useReservations() {
       const response = await fetch("/api/users/favorites");
       if (response.ok) {
         const data = await response.json();
-        console.log("📦 loadFavorites response:", data);
-        
-        // Extraire les IDs des favoris
         let favoriteIds: string[] = [];
         
         if (data.success && data.favorites && Array.isArray(data.favorites)) {
-          // Format: { success: true, favorites: [{ id, listingId, ... }] }
           favoriteIds = data.favorites.map((f: any) => f.listingId || f.id);
         } else if (data.favorites && Array.isArray(data.favorites)) {
           favoriteIds = data.favorites.map((f: any) => f.listingId || f);
@@ -99,28 +95,36 @@ export function useReservations() {
           favoriteIds = data;
         }
         
-        console.log("✅ Favorite IDs loaded:", favoriteIds);
         setFavorites(favoriteIds);
       }
     } catch (error) {
-      console.error("❌ Erreur chargement favoris:", error);
+      console.error("Erreur chargement favoris:", error);
     }
   }, [user, isLoaded]);
 
-  // ✅ Ajouter aux favoris - VERSION CORRIGÉE
-  const addToFavorites = useCallback(async (listingId: string) => {
-    if (!listingId) {
-      console.error("❌ listingId manquant");
-      return false;
-    }
+  // ✅ Charger les avis REÇUS (sur le locataire)
+  const loadReceivedReviews = useCallback(async () => {
+    if (!isLoaded || !user) return;
     
+    try {
+      const response = await fetch(`/api/reviews?tab=received&targetType=TENANT`);
+      if (response.ok) {
+        const data = await response.json();
+        setReceivedReviews(data.reviews || []);
+        console.log(`📦 ${data.reviews?.length || 0} avis reçus chargés`);
+      }
+    } catch (error) {
+      console.error("Erreur chargement avis reçus:", error);
+    }
+  }, [user, isLoaded]);
+
+  // Ajouter aux favoris
+  const addToFavorites = useCallback(async (listingId: string) => {
+    if (!listingId) return false;
     if (!user) {
-      console.error("❌ Utilisateur non connecté");
       showToast(t("toast.loginRequired"), "error");
       return false;
     }
-    
-    console.log("➕ Ajout favori:", listingId);
     
     try {
       const response = await fetch("/api/users/favorites", {
@@ -129,84 +133,49 @@ export function useReservations() {
         body: JSON.stringify({ listingId: listingId.toString() }),
       });
       
-      const data = await response.json();
-      console.log("📦 Add favorite response:", data);
+      if (!response.ok) throw new Error();
       
-      if (!response.ok) {
-        throw new Error(data.error || "Erreur lors de l'ajout");
-      }
-      
-      // ✅ Mettre à jour l'état local
-      setFavorites((prev) => {
-        if (!prev.includes(listingId)) {
-          return [...prev, listingId];
-        }
-        return prev;
-      });
-      
+      setFavorites((prev) => prev.includes(listingId) ? prev : [...prev, listingId]);
       showToast(t("toast.addedToFavorites"), "success");
       window.dispatchEvent(new Event("favorites-updated"));
       return true;
-      
     } catch (error) {
-      console.error("❌ Erreur ajout favori:", error);
       showToast(t("toast.favoriteError"), "error");
       return false;
     }
   }, [user, showToast, t]);
 
-  // ✅ Retirer des favoris - VERSION CORRIGÉE
+  // Retirer des favoris
   const removeFromFavorites = useCallback(async (listingId: string) => {
     if (!listingId) return false;
-    
-    if (!user) {
-      console.error("❌ Utilisateur non connecté");
-      return false;
-    }
-    
-    console.log("➖ Retrait favori:", listingId);
+    if (!user) return false;
     
     try {
       const response = await fetch(`/api/users/favorites?listingId=${listingId}`, {
         method: "DELETE",
       });
       
-      const data = await response.json();
-      console.log("📦 Remove favorite response:", data);
+      if (!response.ok) throw new Error();
       
-      if (!response.ok) {
-        throw new Error(data.error || "Erreur lors de la suppression");
-      }
-      
-      // ✅ Mettre à jour l'état local
       setFavorites((prev) => prev.filter(id => id !== listingId));
-      
       showToast(t("toast.removedFromFavorites"), "info");
       window.dispatchEvent(new Event("favorites-updated"));
       return true;
-      
     } catch (error) {
-      console.error("❌ Erreur retrait favori:", error);
       showToast(t("toast.favoriteError"), "error");
       return false;
     }
   }, [user, showToast, t]);
 
-  // ✅ Toggle favori - VERSION CORRIGÉE
+  // Toggle favori
   const toggleFavorite = useCallback(async (listingId: string, e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
-    
-    if (!listingId) {
-      console.error("❌ listingId manquant");
-      return;
-    }
+    if (!listingId) return;
     
     const isCurrentlyFavorite = favorites.includes(listingId);
-    console.log(`🔄 Toggle favori: ${listingId}, actuellement: ${isCurrentlyFavorite}`);
-    
     if (isCurrentlyFavorite) {
       await removeFromFavorites(listingId);
     } else {
@@ -219,10 +188,7 @@ export function useReservations() {
     setLoading(bookingId);
     try {
       const response = await fetch(`/api/bookings/${bookingId}/receipt`);
-      
-      if (!response.ok) {
-        throw new Error("Erreur lors du téléchargement");
-      }
+      if (!response.ok) throw new Error();
       
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -236,13 +202,13 @@ export function useReservations() {
       
       showToast(t("toast.receiptDownloaded"), "success");
     } catch (error) {
-      console.error("Erreur téléchargement reçu:", error);
       showToast(t("toast.receiptError"), "error");
     } finally {
       setLoading(null);
     }
   }, [showToast, t]);
 
+  // Charger les réservations
   const loadReservations = useCallback(async () => {
     setIsLoading(true);
     try {
@@ -256,9 +222,7 @@ export function useReservations() {
         `/api/bookings?role=tenant&status=${statusMap[tab]}&pageSize=50`,
       );
 
-      if (!response.ok) {
-        throw new Error(`Erreur ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Erreur ${response.status}`);
 
       const data = await response.json();
       const raw = data.bookings ?? [];
@@ -277,7 +241,9 @@ export function useReservations() {
           cleaningFee: r.cleaningFee || 0,
           serviceFee: r.serviceFee || 0,
           isPaid: r.isPaid || false,
-          hasReview: r.hasReview || false,
+          hasReview: r.hasListingReview || r.hasTenantReview || false,
+          hasListingReview: r.hasListingReview || false,
+          hasTenantReview: r.hasTenantReview || false,
           review: r.review,
           listing: {
             id: r.listing?.id,
@@ -331,32 +297,49 @@ export function useReservations() {
     router.push(`/fr/payment?bookingId=${res.id}`);
   }, [router]);
 
+  // Soumettre un avis sur l'annonce
   const handleSubmitReview = useCallback(async (bookingId: string, reviewData: any) => {
     try {
-      const formData = new FormData();
-      formData.append("rating", reviewData.rating.toString());
-      formData.append("publicComment", reviewData.publicComment);
-      formData.append("privateNote", reviewData.privateNote);
-      formData.append("criteria", JSON.stringify(reviewData.criteria));
-      
-      if (reviewData.photos?.length) {
-        reviewData.photos.forEach((photo: File) => formData.append("photos", photo));
-      }
+      const payload = {
+        bookingId,
+        targetType: "LISTING",
+        rating: reviewData.rating || 0,
+        criteria: {
+          cleanliness: reviewData.criteria?.cleanliness || 0,
+          communication: reviewData.criteria?.communication || 0,
+          checkIn: reviewData.criteria?.checkIn || 0,
+          accuracy: reviewData.criteria?.accuracy || 0,
+          location: reviewData.criteria?.location || 0,
+          value: reviewData.criteria?.value || 0,
+        },
+        comment: reviewData.publicComment || "",
+        privateNote: reviewData.privateNote || "",
+      };
 
-      const res = await fetch(`/api/bookings/${bookingId}/review`, {
+      const response = await fetch("/api/reviews", {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
+      const data = await response.json();
+
+      if (response.ok) {
         setReservations((prev) =>
-          prev.map((b) => b.id === bookingId ? { ...b, hasReview: true } : b)
+          prev.map((b) => 
+            b.id === bookingId 
+              ? { ...b, hasListingReview: true, hasReview: true } 
+              : b
+          )
         );
         showToast(t("toast.reviewSubmitted"), "success");
         return true;
       } else {
-        const err = await res.json();
-        showToast(err.error ?? t("toast.reviewError"), "error");
+        if (data.error && data.error.includes("existe déjà")) {
+          showToast("Un avis sur cette annonce existe déjà pour cette réservation", "error");
+        } else {
+          showToast(data.error ?? t("toast.reviewError"), "error");
+        }
         return false;
       }
     } catch (error) {
@@ -366,36 +349,28 @@ export function useReservations() {
     }
   }, [showToast, t]);
 
-  const reloadReservations = useCallback(async () => {
-    await loadReservations();
-  }, [loadReservations]);
-
-  // ✅ Écouter les mises à jour des favoris depuis d'autres composants
   useEffect(() => {
-    const handleFavoritesUpdate = () => {
-      console.log("🔄 Événement favorites-updated reçu");
-      loadFavorites();
-    };
+    const handleFavoritesUpdate = () => loadFavorites();
     window.addEventListener("favorites-updated", handleFavoritesUpdate);
     return () => window.removeEventListener("favorites-updated", handleFavoritesUpdate);
   }, [loadFavorites]);
 
-  // ✅ Charger les réservations et les favoris au montage
   useEffect(() => {
     loadReservations();
     if (isLoaded && user) {
       loadFavorites();
+      loadReceivedReviews(); // ✅ Charge les avis reçus
     }
-  }, [loadReservations, loadFavorites, isLoaded, user]);
+  }, [loadReservations, loadFavorites, loadReceivedReviews, isLoaded, user]);
 
-  // Calculs des statistiques
   const upcoming = reservations.filter((b) => ["PENDING", "ACCEPTED", "CONFIRMED"].includes(b.status));
   const past = reservations.filter((b) => b.status === "COMPLETED");
   const cancelled = reservations.filter((b) => ["CANCELLED", "REJECTED"].includes(b.status));
   
   const spent = past.reduce((s, b) => s + b.totalPrice, 0);
   const nightsCount = past.reduce((s, b) => s + b.nights, 0);
-  const reviewedCount = past.filter((b) => b.hasReview).length;
+  // ✅ reviewedCount = nombre d'avis REÇUS sur le locataire
+  const reviewedCount = receivedReviews.length;
 
   return {
     tab,
@@ -411,6 +386,7 @@ export function useReservations() {
     nightsCount,
     reviewedCount,
     favorites,
+    receivedReviews,
     toggleFavorite,
     addToFavorites,
     removeFromFavorites,
@@ -419,6 +395,6 @@ export function useReservations() {
     handlePay,
     handleCancel,
     handleSubmitReview,
-    loadReservations: reloadReservations,
+    loadReservations,
   };
 }

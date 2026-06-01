@@ -30,14 +30,22 @@ export async function GET(req: NextRequest) {
                     isIdentityVerified: true
                   }
                 },
+                // ✅ CORRECTION 1: review → reviews (pluriel)
                 bookings: {
                   where: {
-                    review: {
-                      isNot: null
+                    reviews: {  // ← reviews (pluriel)
+                      some: {}  // Au moins un avis
                     }
                   },
                   include: {
-                    review: true
+                    reviews: {  // ← reviews (pluriel)
+                      take: 1,
+                      select: {
+                        rating: true,
+                        comment: true,
+                        targetType: true
+                      }
+                    }
                   }
                 }
               }
@@ -57,10 +65,10 @@ export async function GET(req: NextRequest) {
     const favorites = user.favorites.map((fav) => {
       const listing = fav.listing;
       
-      // Calculer la note moyenne à partir des reviews des bookings
+      // ✅ CORRECTION 2: Utiliser reviews (pluriel) au lieu de review
       const reviews = listing.bookings
-        .filter(b => b.review !== null)
-        .map(b => b.review);
+        .filter(b => b.reviews && b.reviews.length > 0)
+        .flatMap(b => b.reviews);  // ← flatMap pour aplatir le tableau
       
       let averageRating = null;
       let reviewCount = 0;
@@ -148,29 +156,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const favorite = await prisma.favorite.upsert({
+    // Vérifier si le favori existe déjà
+    const existingFavorite = await prisma.favorite.findUnique({
       where: {
         userId_listingId: {
           userId: user.id,
           listingId: listingId,
         },
       },
-      update: {},
-      create: {
-        userId: user.id,
-        listingId: listingId,
-      },
     });
 
-    await prisma.listing.update({
-      where: { id: listingId },
-      data: { favoriteCount: { increment: 1 } },
-    });
+    let favorite;
+    let message;
+
+    if (existingFavorite) {
+      // Si déjà existant, on ne fait rien ou on le supprime (toggle)
+      // Ici on choisit de le garder
+      favorite = existingFavorite;
+      message = "Déjà dans les favoris";
+    } else {
+      favorite = await prisma.favorite.create({
+        data: {
+          userId: user.id,
+          listingId: listingId,
+        },
+      });
+
+      await prisma.listing.update({
+        where: { id: listingId },
+        data: { favoriteCount: { increment: 1 } },
+      });
+      message = "Ajouté aux favoris";
+    }
 
     return NextResponse.json({
       success: true,
       favorite,
-      message: "Ajouté aux favoris",
+      message,
     });
   } catch (error) {
     console.error("Erreur POST /api/users/favorites:", error);
@@ -214,7 +236,8 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    await prisma.favorite.delete({
+    // Vérifier si le favori existe avant de le supprimer
+    const favorite = await prisma.favorite.findUnique({
       where: {
         userId_listingId: {
           userId: user.id,
@@ -223,10 +246,21 @@ export async function DELETE(req: NextRequest) {
       },
     });
 
-    await prisma.listing.update({
-      where: { id: listingId },
-      data: { favoriteCount: { decrement: 1 } },
-    });
+    if (favorite) {
+      await prisma.favorite.delete({
+        where: {
+          userId_listingId: {
+            userId: user.id,
+            listingId: listingId,
+          },
+        },
+      });
+
+      await prisma.listing.update({
+        where: { id: listingId },
+        data: { favoriteCount: { decrement: 1 } },
+      });
+    }
 
     return NextResponse.json({
       success: true,

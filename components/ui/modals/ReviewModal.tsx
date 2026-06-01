@@ -3,11 +3,11 @@
 
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
-import { 
-  IoCloseOutline, 
-  IoStar, 
-  IoStarOutline, 
-  IoCalendarOutline, 
+import {
+  IoCloseOutline,
+  IoStar,
+  IoStarOutline,
+  IoCalendarOutline,
   IoPersonOutline,
   IoSendOutline,
   IoSpeedometerOutline,
@@ -17,7 +17,7 @@ import {
   IoCashOutline,
   IoTimeOutline,
   IoHomeOutline,
-  IoCheckmarkCircle
+  IoCheckmarkCircle,
 } from "react-icons/io5";
 
 interface ReviewModalProps {
@@ -28,10 +28,17 @@ interface ReviewModalProps {
 }
 
 // Helper pour les images
-const pipListing = (url: string) => `/api/listings/image?url=${encodeURIComponent(url)}`;
-const pipAvatar = (url: string) => `/api/users/avatar?url=${encodeURIComponent(url)}`;
+const pipListing = (url: string) =>
+  `/api/listings/image?url=${encodeURIComponent(url)}`;
+const pipAvatar = (url: string) =>
+  `/api/users/avatar?url=${encodeURIComponent(url)}`;
 
-export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalProps) {
+export function ReviewModal({
+  isOpen,
+  onClose,
+  onSubmit,
+  booking,
+}: ReviewModalProps) {
   const t = useTranslations("ReviewModal");
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
@@ -86,7 +93,7 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
   };
 
   const handleCriteriaChange = (criterion: string, value: number) => {
-    setCriteria(prev => ({ ...prev, [criterion]: value }));
+    setCriteria((prev) => ({ ...prev, [criterion]: value }));
   };
 
   const handleSubmit = async () => {
@@ -116,7 +123,13 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
     }
   };
 
-  const StarRating = ({ value, onChange }: { value: number; onChange: (v: number) => void }) => {
+  const StarRating = ({
+    value,
+    onChange,
+  }: {
+    value: number;
+    onChange: (v: number) => void;
+  }) => {
     return (
       <div className="flex gap-1">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -138,9 +151,19 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
     );
   };
 
-  const CriteriaSlider = ({ icon: Icon, label, value, onChange }: { icon: any; label: string; value: number; onChange: (v: number) => void }) => {
+  const CriteriaSlider = ({
+    icon: Icon,
+    label,
+    value,
+    onChange,
+  }: {
+    icon: any;
+    label: string;
+    value: number;
+    onChange: (v: number) => void;
+  }) => {
     const percentage = (value / 5) * 100;
-    
+
     return (
       <div className="space-y-1.5">
         <div className="flex justify-between items-center">
@@ -148,7 +171,9 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
             <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white shadow-sm">
               <Icon className="text-xs" />
             </div>
-            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">{label}</span>
+            <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              {label}
+            </span>
           </div>
           <span className="text-xs font-bold text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/30 px-2 py-0.5 rounded-full">
             {value === 0 ? "—" : value.toFixed(1)}
@@ -164,7 +189,7 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
             onChange={(e) => onChange(parseFloat(e.target.value))}
             className="w-full h-2 bg-slate-100 dark:bg-slate-700 rounded-full appearance-none cursor-pointer"
             style={{
-              background: `linear-gradient(to right, #0ea5e9 ${percentage}%, #e2e8f0 ${percentage}%)`
+              background: `linear-gradient(to right, #0ea5e9 ${percentage}%, #e2e8f0 ${percentage}%)`,
             }}
           />
         </div>
@@ -172,19 +197,26 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
     );
   };
 
-  const averageCriteria = Object.values(criteria).reduce((a, b) => a + b, 0) / Object.values(criteria).length;
-  const hostName = booking?.owner?.username || booking?.owner?.firstName || t("host");
-  
-  const listingImage = booking?.listing?.photos?.[0]?.url || booking?.listing?.image;
+  const averageCriteria =
+    Object.values(criteria).reduce((a, b) => a + b, 0) /
+    Object.values(criteria).length;
+  const hostName =
+    booking?.owner?.username || booking?.owner?.firstName || t("host");
+
+  const listingImage =
+    booking?.listing?.photos?.[0]?.url || booking?.listing?.image;
   const ownerAvatar = booking?.owner?.profilePictureUrl;
-  const listingLocation = booking?.listing?.location || 
-    `${booking?.listing?.delegation || ""}, ${booking?.listing?.governorate || ""}`.replace(/^, /, "");
+  const listingLocation =
+    booking?.listing?.location ||
+    `${booking?.listing?.delegation || ""}, ${booking?.listing?.governorate || ""}`.replace(
+      /^, /,
+      "",
+    );
 
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div className="max-w-5xl w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
-          
           {/* Left Side - Background Image with Overlay */}
           <div className="relative w-full md:w-5/12 overflow-hidden">
             {listingImage && !imgError ? (
@@ -200,7 +232,7 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
             ) : (
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-900 to-purple-900" />
             )}
-            
+
             <div className="relative h-full flex flex-col justify-between p-6 md:p-8 min-h-[300px] md:min-h-full">
               <div>
                 <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full mb-4">
@@ -211,9 +243,7 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
                 <h2 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-2">
                   {t("title")}
                 </h2>
-                <p className="text-white/70 text-sm">
-                  {t("subtitle")}
-                </p>
+                <p className="text-white/70 text-sm">{t("subtitle")}</p>
               </div>
 
               <div className="mt-6 space-y-4">
@@ -230,7 +260,8 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
                   <div className="flex items-center gap-2 text-white/80">
                     <IoCalendarOutline className="text-sm" />
                     <span className="text-xs">
-                      {booking && formatDate(booking.checkIn)} — {booking && formatDate(booking.checkOut)}
+                      {booking && formatDate(booking.checkIn)} —{" "}
+                      {booking && formatDate(booking.checkOut)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2 text-white/80">
@@ -292,7 +323,9 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
                   <StarRating value={rating} onChange={handleRatingClick} />
                 </div>
                 {rating === 0 && (
-                  <p className="text-[10px] text-amber-500 mt-1">{t("clickToRate")}</p>
+                  <p className="text-[10px] text-amber-500 mt-1">
+                    {t("clickToRate")}
+                  </p>
                 )}
               </div>
 
@@ -406,16 +439,6 @@ export function ReviewModal({ isOpen, onClose, onSubmit, booking }: ReviewModalP
           </div>
         </div>
       </div>
-
-      {/* Success Toast */}
-      {showSuccess && (
-        <div className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-bottom-5 duration-300">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white px-5 py-2.5 rounded-full shadow-lg flex items-center gap-2">
-            <IoCheckmarkCircle className="text-base" />
-            <span className="text-xs font-medium">{t("success")}</span>
-          </div>
-        </div>
-      )}
     </>
   );
 }

@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
     endOfNext30Days.setDate(endOfNext30Days.getDate() + 30);
     endOfNext30Days.setHours(23, 59, 59, 999);
 
-    //  Récupérer les stats en parallèle (séparément)
+    // Récupérer les stats en parallèle
     const weeklyRequestsPromise = prisma.booking.count({
       where: {
         ...whereClause,
@@ -150,8 +150,16 @@ export async function GET(req: NextRequest) {
             orderBy: { createdAt: "desc" },
             select: { status: true, paidAt: true },
           },
-          review: {
-            select: { id: true, rating: true, comment: true },
+          // ✅ CORRECTION : review → reviews (pluriel)
+          reviews: {
+            take: 1,  // Prendre un seul avis (le plus récent)
+            orderBy: { createdAt: "desc" },
+            select: { 
+              id: true, 
+              rating: true, 
+              comment: true,
+              targetType: true 
+            },
           },
         },
         orderBy: { createdAt: "desc" },
@@ -189,6 +197,7 @@ export async function GET(req: NextRequest) {
         pastCount += stat._count.status;
     }
 
+    // ✅ CORRECTION : Utiliser hasListingReview et hasTenantReview
     const formattedBookings = bookings.map((booking) => {
       const isPaid =
         booking.paymentStatus === "PAID" ||
@@ -197,6 +206,11 @@ export async function GET(req: NextRequest) {
       const location = [booking.listing.governorate, booking.listing.delegation]
         .filter(Boolean)
         .join(", ");
+
+      // Vérifier quels types d'avis existent
+      const hasListingReview = booking.hasListingReview || false;
+      const hasTenantReview = booking.hasTenantReview || false;
+      const firstReview = booking.reviews?.[0];
 
       return {
         id: booking.id,
@@ -212,8 +226,11 @@ export async function GET(req: NextRequest) {
         cleaningFee: booking.cleaningFee || 0,
         serviceFee: booking.serviceFee || 0,
         isPaid,
-        hasReview: !!booking.review,
-        reviewRating: booking.review?.rating,
+        hasReview: hasListingReview || hasTenantReview, // Pour compatibilité
+        hasListingReview: hasListingReview,  // ✅ NOUVEAU
+        hasTenantReview: hasTenantReview,    // ✅ NOUVEAU
+        review: firstReview,                 // Pour compatibilité
+        reviewRating: firstReview?.rating,
         tenantMessage: booking.tenantMessage,
         createdAt: booking.createdAt,
         confirmedAt: booking.confirmedAt,
@@ -250,7 +267,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    console.log(` ${formattedBookings.length} réservations chargées`);
+    console.log(`✅ ${formattedBookings.length} réservations chargées`);
 
     // Retourner les stats dans la réponse
     return NextResponse.json({

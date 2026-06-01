@@ -158,7 +158,7 @@ model User {
   listingHistories   ListingHistory[]
   sentInvitations    CoOwnerInvitation[] @relation("CoOwnerInvitationsSent")
   teamMemberships    TeamMember[]
-  contactMessages ContactMessage[]
+  contactMessages    ContactMessage[]
 
   // Conversations (chat)
   conversationsAsOwner  Conversation[] @relation("OwnerConversations")
@@ -175,11 +175,12 @@ model User {
   blocksReceived Block[] @relation("blockedBy")
 
   // Pour les signalements (Report)
-  reportsCreated      Report[]             @relation("reports")
-  reportReceived      Report[]             @relation("reported")
+  reportsCreated      Report[]                       @relation("reports")
+  reportReceived      Report[]                       @relation("reported")
   paymentTransactions PaymentTransaction[] // 👈 Relation inverse pour PaymentTransaction
-  groupConversations GroupConversationParticipant[]
+  groupConversations  GroupConversationParticipant[]
   groupMessages       GroupConversationMessage[]
+
   @@index([email])
   @@index([status])
   @@index([role])
@@ -620,16 +621,15 @@ enum SearchAlertFrequency {
 // ============================================
 
 model Listing {
-  id                 String        @id @default(cuid())
-  title              String        @db.VarChar(100)
-  slug               String        @unique
-  description        String?       @db.Text
-  type               ListingType   @default(APARTMENT)
-  status             ListingStatus @default(DRAFT)
-  hasPendingRevision Boolean       @default(false) // ← AJOUTER CETTE LIGNE
-  pendingRevision    Json? // ← AJOUTE CETTE LIGNE
+  id                         String        @id @default(cuid())
+  title                      String        @db.VarChar(100)
+  slug                       String        @unique
+  description                String?       @db.Text
+  type                       ListingType   @default(APARTMENT)
+  status                     ListingStatus @default(DRAFT)
+  hasPendingRevision         Boolean       @default(false) // ← AJOUTER CETTE LIGNE
+  pendingRevision            Json? // ← AJOUTE CETTE LIGNE
   pendingRevisionSubmittedAt DateTime? // ← AJOUTE CETTE LIGNE
-
 
   // Localisation
   governorate  String
@@ -728,6 +728,7 @@ model Listing {
   validatedAt        DateTime?
   validatedBy        String? // Référence à l'admin
   groupConversations GroupConversation[]
+  reviews            Review[] // ← AJOUTEZ CETTE LIGNE
 
   @@index([ownerId])
   @@index([status])
@@ -910,11 +911,13 @@ model Booking {
   payments              Payment[]
   messages              BookingMessage[]
   coTenants             CoTenant[]
-  review                Review?
   dispute               Dispute?
   notifications         Notification[]
   depositAuthorizations DepositAuthorization[]
   extensions            BookingExtension[] // 👈 AJOUTEZ CETTE LIGNE dans le modèle Booking
+  hasListingReview      Boolean                @default(false) // Avis sur l'annonce
+  hasTenantReview       Boolean                @default(false) // Avis sur le locataire
+  reviews               Review[] // ← AJOUTEZ CETTE LIGNE (relation one-to-many)
 
   @@index([listingId])
   @@index([tenantId])
@@ -1088,54 +1091,67 @@ model Notification {
 }
 
 model Review {
-  id          String    @id @default(cuid())
-  bookingId   String    @unique
-  booking     Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  reviewerId  String
-  targetId    String
-  targetType  String    // "TENANT" ou "OWNER" ou "LISTING"
-  
-  // Note globale (moyenne)
-  rating      Int       // 1-5
-  
-  // Sous-notations pour l'avis sur locataire
-  cleanliness  Int?     // Propreté (1-5)
-  communication Int?    // Communication (1-5)
-  houseRules   Int?     // Respect du règlement (1-5)
-  recommend    Boolean? // Recommanderait ou non
-  
-  // Commentaire
-  comment     String?   @db.Text
-  
-  // Réponse du propriétaire/locataire (optionnel)
-  response    String?   @db.Text
-  responseAt  DateTime?
-  
-  // Statut
-  isPublished Boolean   @default(true)
-  isFlagged   Boolean   @default(false)
-  flagReason  String?
-  
-  // Timestamps
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
- checkIn      Int?     // Arrivée (1-5)
-  accuracy     Int?     // Précision (1-5)
-  location     Int?     // Emplacement (1-5)
-  value        Int?     // Qualité-prix (1-5)
-  privateNote  String?  @db.Text  // Note privée pour l'hôte
-  // Relations
-  reviewer User @relation("ReviewsWritten", fields: [reviewerId], references: [id])
-  target   User @relation("ReviewsReceived", fields: [targetId], references: [id])
+  id         String  @id @default(cuid())
+  bookingId  String
+  booking    Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reviewerId String
+  targetId   String?
+  targetType String // "TENANT", "OWNER", "LISTING"
 
+  // Note globale (moyenne)
+  rating Int // 1-5
+
+  // Sous-notations pour l'avis sur locataire
+  cleanliness   Int? // Propreté (1-5)
+  communication Int? // Communication (1-5)
+  houseRules    Int? // Respect du règlement (1-5)
+  recommend     Boolean? // Recommanderait ou non
+
+  // Sous-notations pour l'avis sur annonce
+  checkIn  Int? // Arrivée (1-5)
+  accuracy Int? // Précision (1-5)
+  location Int? // Emplacement (1-5)
+  value    Int? // Qualité-prix (1-5)
+
+  // Commentaires
+  comment     String? @db.Text
+  privateNote String? @db.Text
+
+  // Réponse
+  response   String?   @db.Text
+  responseAt DateTime?
+
+  // Statut
+  isPublished Boolean @default(true)
+  isFlagged   Boolean @default(false)
+  flagReason  String?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  reviewer User  @relation("ReviewsWritten", fields: [reviewerId], references: [id])
+  target   User? @relation("ReviewsReceived", fields: [targetId], references: [id])
+
+  // Relation optionnelle pour les avis sur les annonces
+  listingId String?
+  listing   Listing? @relation(fields: [listingId], references: [id])
+
+  // ⚠️ IMPORTANT: Enlevez cette contrainte unique si elle existe
+  // @@unique([bookingId])  // ← Supprimez cette ligne si présente
+
+  @@unique([bookingId, targetType]) // Gardez celle-ci pour éviter les doublons par type
   @@index([bookingId])
   @@index([reviewerId])
   @@index([targetId])
   @@index([targetType])
+  @@index([listingId])
   @@index([rating])
   @@index([createdAt])
   @@map("reviews")
 }
+
 model ListingReport {
   id          String    @id @default(cuid())
   listingId   String
@@ -1179,9 +1195,9 @@ model Dispute {
   updatedAt       DateTime  @updatedAt
   resolvedAt      DateTime?
 
-  openedByUser  User             @relation("OpenedDisputes", fields: [openedBy], references: [id])
-  assignedAdmin User?            @relation("AssignedDisputes", fields: [assignedTo], references: [id])
-  messages      DisputeMessage[]
+  openedByUser      User               @relation("OpenedDisputes", fields: [openedBy], references: [id])
+  assignedAdmin     User?              @relation("AssignedDisputes", fields: [assignedTo], references: [id])
+  messages          DisputeMessage[]
   groupConversation GroupConversation?
 
   @@index([bookingId])
@@ -1743,19 +1759,20 @@ model BookingExtension {
   @@index([status])
   @@map("booking_extensions")
 }
+
 model ContactMessage {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   fullName  String
   email     String
   phone     String?
-  userId    String?  // ← AJOUTER CETTE LIGNE (pour les utilisateurs connectés)
-  message   String   @db.Text
-  status    String   @default("PENDING")
+  userId    String? // ← AJOUTER CETTE LIGNE (pour les utilisateurs connectés)
+  message   String    @db.Text
+  status    String    @default("PENDING")
   repliedBy String?
-  reply     String?  @db.Text
+  reply     String?   @db.Text
   repliedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   user User? @relation(fields: [userId], references: [id]) // ← AJOUTER
 
@@ -1764,22 +1781,23 @@ model ContactMessage {
   @@index([email])
   @@index([userId]) // ← AJOUTER
   @@map("contact_messages")
-}// ============================================
+}
+// ============================================
 // GROUP CONVERSATIONS (pour les litiges)
 // ============================================
 
 model GroupConversation {
-  id          String   @id @default(cuid())
-  name        String?                           // Nom du groupe (ex: "Litige: Villa à Hammamet")
-  listingId   String
-  listing     Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
-  disputeId   String?   @unique                 // Lien unique vers le litige
-  dispute     Dispute?  @relation(fields: [disputeId], references: [id])
-  status      String   @default("ACTIVE")       // ACTIVE, CLOSED, ARCHIVED
-  lastMessage String?  @db.Text
+  id            String   @id @default(cuid())
+  name          String? // Nom du groupe (ex: "Litige: Villa à Hammamet")
+  listingId     String
+  listing       Listing  @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  disputeId     String?  @unique // Lien unique vers le litige
+  dispute       Dispute? @relation(fields: [disputeId], references: [id])
+  status        String   @default("ACTIVE") // ACTIVE, CLOSED, ARCHIVED
+  lastMessage   String?  @db.Text
   lastMessageAt DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   participants GroupConversationParticipant[]
   messages     GroupConversationMessage[]
@@ -1790,13 +1808,13 @@ model GroupConversation {
 }
 
 model GroupConversationParticipant {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   groupId     String
   group       GroupConversation @relation(fields: [groupId], references: [id], onDelete: Cascade)
   userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  unreadCount Int      @default(0)
-  joinedAt    DateTime @default(now())
+  user        User              @relation(fields: [userId], references: [id])
+  unreadCount Int               @default(0)
+  joinedAt    DateTime          @default(now())
   leftAt      DateTime?
 
   @@unique([groupId, userId])
@@ -1806,16 +1824,16 @@ model GroupConversationParticipant {
 }
 
 model GroupConversationMessage {
-  id          String   @id @default(cuid())
+  id          String            @id @default(cuid())
   groupId     String
   group       GroupConversation @relation(fields: [groupId], references: [id], onDelete: Cascade)
   senderId    String
-  sender      User     @relation(fields: [senderId], references: [id])
-  content     String   @db.Text
-  attachments Json?    @default("[]")
-  isSystem    Boolean  @default(false)
-  readBy      Json?    @default("[]")           // IDs des utilisateurs qui ont lu
-  createdAt   DateTime @default(now())
+  sender      User              @relation(fields: [senderId], references: [id])
+  content     String            @db.Text
+  attachments Json?             @default("[]")
+  isSystem    Boolean           @default(false)
+  readBy      Json?             @default("[]") // IDs des utilisateurs qui ont lu
+  createdAt   DateTime          @default(now())
 
   @@index([groupId])
   @@index([createdAt])

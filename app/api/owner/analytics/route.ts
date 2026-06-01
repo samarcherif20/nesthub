@@ -108,14 +108,22 @@ export async function GET(req: NextRequest) {
 
     // Récupérer toutes les réservations du propriétaire
     const allBookings = await prisma.booking.findMany({
-      where: { ownerId },
-      include: {
-        listing: true,
-        review: true,
-        payments: true,
-      },
-      orderBy: { createdAt: "desc" },
-    });
+  where: { ownerId },
+  include: {
+    listing: true,
+    reviews: {       
+      take: 1,
+      select: {
+        rating: true,
+        comment: true,
+        targetType: true,
+        createdAt: true,
+      }
+    },
+    payments: true,
+  },
+  orderBy: { createdAt: "desc" },
+});
 
     // Filtrer les réservations par période pour les KPI
     let startDate = new Date();
@@ -246,13 +254,13 @@ export async function GET(req: NextRequest) {
         // 4. NOTE MOYENNE
     
     const allReviews = periodBookings
-      .filter((b) => b.review)
-      .map((b) => b.review);
-    const averageRating =
-      allReviews.length > 0
-        ? allReviews.reduce((sum, r) => sum + (r?.rating || 0), 0) /
-          allReviews.length
-        : 0;
+  .filter((b) => b.reviews && b.reviews.length > 0)
+  .map((b) => b.reviews[0]);
+   const averageRating =
+  allReviews.length > 0
+    ? allReviews.reduce((sum, r) => sum + (r.rating || 0), 0) /
+      allReviews.length
+    : 0;
 
         // 5. PRIX MOYEN PAR NUIT ET CROISSANCE
     
@@ -381,13 +389,12 @@ export async function GET(req: NextRequest) {
         const revenue = completed.reduce((sum, b) => sum + b.totalWithFees, 0);
 
         const avgRating =
-          completed.filter((b) => b.review).length > 0
-            ? completed
-                .filter((b) => b.review)
-                .reduce((sum, b) => sum + (b.review?.rating || 0), 0) /
-              completed.filter((b) => b.review).length
-            : 0;
-
+  completed.filter((b) => b.reviews && b.reviews.length > 0).length > 0
+    ? completed
+        .filter((b) => b.reviews && b.reviews.length > 0)
+        .reduce((sum, b) => sum + (b.reviews[0]?.rating || 0), 0) /
+      completed.filter((b) => b.reviews && b.reviews.length > 0).length
+    : 0;
         const lastMonthRevenue = completed
           .filter(
             (b) =>
@@ -494,17 +501,18 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    const recentReviews = allBookings
-      .filter((b) => b.review && b.review.createdAt)
-      .slice(0, 2);
-    recentReviews.forEach((b) => {
-      recentActivity.push({
-        type: "review",
-        title: "Nouvel avis",
-        detail: `${b.listing?.title || "Propriété"} - ${b.review?.rating} étoiles`,
-        time: getTimeAgo(new Date(b.review!.createdAt)),
-      });
-    });
+const recentReviews = allBookings
+  .filter((b) => b.reviews && b.reviews.length > 0 && b.reviews[0].createdAt)
+  .slice(0, 2);
+recentReviews.forEach((b) => {
+  const review = b.reviews[0];
+  recentActivity.push({
+    type: "review",
+    title: "Nouvel avis",
+    detail: `${b.listing?.title || "Propriété"} - ${review?.rating} étoiles`,
+    time: getTimeAgo(new Date(review!.createdAt)),
+  });
+});
 
     const recentPayments = allBookings
       .flatMap((b) => b.payments || [])

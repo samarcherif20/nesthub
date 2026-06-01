@@ -380,32 +380,33 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
     const bookingsWithReviews = await prisma.booking.findMany({
-      where: {
-        listingId: id,
-        review: { isNot: null },
-        status: { in: ["COMPLETED", "CONFIRMED"] },
-      },
+       where: {
+    listingId: id,
+    reviews: { some: {} },  
+    status: { in: ["COMPLETED", "CONFIRMED"] }
+  },
+  include: {
+    reviews: {  
+      take: 1,
       include: {
-        review: {
-          include: {
-            reviewer: {
-              select: {
-                username: true,
-                firstName: true,
-                lastName: true,
-                profilePictureUrl: true,
-              },
-            },
-          },
-        },
-      },
+        reviewer: {
+          select: {
+            username: true,
+            firstName: true,
+            lastName: true,
+            profilePictureUrl: true,
+          }
+        }
+      }
+    }
+  },
       orderBy: { createdAt: "desc" },
       take: 10,
     });
 
     const reviewsList = bookingsWithReviews
-      .filter((b) => b.review)
-      .map((b) => b.review);
+  .filter((b) => b.reviews && b.reviews.length > 0)
+  .flatMap((b) => b.reviews);
 
     console.log(`Annonce trouvee:`);
     console.log(`   - Titre: ${listing.title}`);

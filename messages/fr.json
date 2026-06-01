@@ -4132,36 +4132,7 @@
   },
  
 
-  "TenantHeader": {
-    "role": "Locataire",
-    "login": "Connexion",
-    "nav": {
-      "explorer": "Explorer",
-      "favorites": "Favoris",
-      "messages": "Messages",
-      "reservations": "Réservations"
-    },
-    "menu": {
-      "disputes": "Ligites",
-      "profile": "Mon profil",
-      "dashboard": "Tableau de bord",
-      "reservations": "Mes réservations",
-      "wallet": "Portefeuille",
-      "reviews": "Mes avis",
-      "settings": "Paramètres",
-      "becomeHost": "Devenir propriétaire",
-      "help": "Aide",
-      "theme": "Thème",
-      "logout": "Déconnexion"
-    },
-    "verifiedTenant": "Locataire vérifié",
-    "logout": {
-      "title": "Déconnexion",
-      "message": "Êtes-vous sûr de vouloir vous déconnecter ?",
-      "cancel": "Annuler",
-      "confirm": "Déconnexion"
-    }
-  },
+ 
 
   "search": {
     "placeholder": "Où voulez-vous aller ?...",
@@ -6866,6 +6837,49 @@
       "ratingRequired": "Veuillez donner une note globale",
       "submitError": "Erreur lors de la publication de l'avis"
     }
+  },
+  
+  "TenantHeader": {
+    "explorer": "Explorer",
+    "favorites": "Favoris",
+    "messages": "Messages",
+    "reservations": "Réservations",
+    "login": "Connexion",
+    "verifiedTenant": "Locataire vérifié",
+    "menu": {
+      "profile": "Profil",
+      "reservations": "Mes réservations",
+      "wallet": "Portefeuille",
+      "reviews": "Avis reçus",
+      "disputes": "Litiges",
+      "logout": "Déconnexion"
+    },
+    "notifications": {
+      "active": "Notifications actives",
+      "muted": "Notifications désactivées"
+    },
+    "theme": {
+      "light": "Mode clair",
+      "dark": "Mode sombre"
+    },
+    "logout": {
+      "confirm": "Se déconnecter ?",
+      "message": "Êtes-vous sûr de vouloir vous déconnecter ?",
+      "cancel": "Annuler"
+    },
+    "role": {
+      "tenant": "Locataire",
+      "owner": "Propriétaire",
+      "switchTooltip": "Changer de rôle",
+      "switchTo": "Changer de rôle",
+      "ownerMode": "Mode Propriétaire",
+      "tenantMode": "Mode Locataire",
+      "ownerDesc": "Gérer vos annonces",
+      "tenantDesc": "Réserver des logements",
+      "switchToOwner": "Passer en mode Propriétaire",
+      "switchToTenant": "Passer en mode Locataire"
+    }
   }
-
 }
+
+
