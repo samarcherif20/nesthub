@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { useRouter, usePathname } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 interface Session {
@@ -23,6 +23,8 @@ interface NotificationCategory {
 }
 
 export function useTenantSettings() {
+  const t = useTranslations("ProfileTen");
+  const tCommon = useTranslations("Common");
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -40,11 +42,11 @@ export function useTenantSettings() {
   });
 
   const [notificationCategories, setNotificationCategories] = useState<NotificationCategory[]>([
-    { id: "bookings", name: "Réservations", enabled: true },
-    { id: "payments", name: "Paiements", enabled: true },
-    { id: "messages", name: "Messages", enabled: true },
-    { id: "reviews", name: "Avis", enabled: true },
-    { id: "alerts", name: "Alertes", enabled: true },
+    { id: "bookings", name: t("notifications.categories.bookings"), enabled: true },
+    { id: "payments", name: t("notifications.categories.payments"), enabled: true },
+    { id: "messages", name: t("notifications.categories.messages"), enabled: true },
+    { id: "reviews", name: t("notifications.categories.reviews"), enabled: true },
+    { id: "alerts", name: t("notifications.categories.alerts"), enabled: true },
   ]);
 
   const [quietHours, setQuietHours] = useState({ start: "22:00", end: "07:00" });
@@ -133,14 +135,14 @@ export function useTenantSettings() {
         }
       } catch (error) {
         console.error("Erreur chargement:", error);
-        toast.error("Erreur lors du chargement des paramètres");
+        toast.error(tCommon("error.loading"));
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [clerkUser, getToken, isUserLoaded, currentLocale]);
+  }, [clerkUser, getToken, isUserLoaded, currentLocale, tCommon]);
 
   const updateLanguage = async (locale: string) => {
     if (locale === currentLocale) return;
@@ -163,33 +165,33 @@ export function useTenantSettings() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la mise à jour");
+        throw new Error(error.error || t("language.updateError"));
       }
 
       document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;
       const pathWithoutLocale = pathname.replace(`/${currentLocale}`, "") || "/";
       router.push(`/${locale}${pathWithoutLocale}`);
-      toast.success("Langue mise à jour avec succès");
+      toast.success(t("language.updated"));
     } catch (error: any) {
       setPreferredLocale(previousLocale);
-      toast.error(error.message || "Erreur lors du changement de langue");
+      toast.error(error.message || t("language.updateError"));
       throw error;
     }
   };
 
   const changePassword = async () => {
     if (!passwordForm.currentPassword) {
-      toast.error("Veuillez entrer votre mot de passe actuel");
+      toast.error(t("password.currentRequired"));
       throw new Error("Mot de passe actuel requis");
     }
 
     if (!isPasswordValid) {
-      toast.error("Le nouveau mot de passe n'est pas assez fort");
+      toast.error(t("password.weak"));
       throw new Error("Mot de passe trop faible");
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error("Les mots de passe ne correspondent pas");
+      toast.error(t("password.mismatch"));
       throw new Error("Mots de passe différents");
     }
 
@@ -213,7 +215,7 @@ export function useTenantSettings() {
 
       if (response.ok) {
         setPasswordForm((prev) => ({ ...prev, success: true }));
-        toast.success("Mot de passe mis à jour avec succès !");
+        toast.success(t("password.updated"));
 
         setTimeout(() => {
           setPasswordForm((prev) => ({
@@ -226,7 +228,7 @@ export function useTenantSettings() {
           }));
         }, 2000);
       } else {
-        throw new Error(data.error || data.message || "Erreur lors du changement");
+        throw new Error(data.error || data.message || t("password.updateError"));
       }
     } catch (error: any) {
       setPasswordForm((prev) => ({
@@ -234,7 +236,7 @@ export function useTenantSettings() {
         isSubmitting: false,
         currentPassword: "",
       }));
-      toast.error(error.message || "Erreur lors du changement de mot de passe");
+      toast.error(error.message || t("password.updateError"));
       throw error;
     }
   };
@@ -249,7 +251,7 @@ export function useTenantSettings() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la révocation");
+        throw new Error(error.error || t("sessions.revokeError"));
       }
 
       setSecurity((prev) => ({
@@ -257,9 +259,9 @@ export function useTenantSettings() {
         sessions: prev.sessions.filter((s) => s.id !== sessionId),
       }));
 
-      toast.success("Session révoquée avec succès");
+      toast.success(t("sessions.revoked"));
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la révocation");
+      toast.error(error.message || t("sessions.revokeError"));
       throw error;
     }
   };
@@ -275,7 +277,7 @@ export function useTenantSettings() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Erreur lors de l'exportation");
+        throw new Error(error.error || t("export.error"));
       }
 
       const blob = await response.blob();
@@ -288,9 +290,9 @@ export function useTenantSettings() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`Données exportées avec succès au format ${format.toUpperCase()}`);
+      toast.success(t("export.success", { format: format.toUpperCase() }));
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de l'exportation");
+      toast.error(error.message || t("export.error"));
       throw error;
     } finally {
       setIsExporting(false);
@@ -309,14 +311,14 @@ export function useTenantSettings() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la désactivation");
+        throw new Error(error.error || t("deactivate.error"));
       }
 
-      toast.success("Votre compte a été désactivé avec succès");
+      toast.success(t("deactivate.success"));
       await clerkUser?.reload();
       router.push("/");
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la désactivation");
+      toast.error(error.message || t("deactivate.error"));
       throw error;
     } finally {
       setIsDeactivating(false);
@@ -346,7 +348,7 @@ export function useTenantSettings() {
       });
     } catch (error) {
       console.error("Erreur sauvegarde préférences:", error);
-      toast.error("Erreur lors de la sauvegarde des préférences");
+      toast.error(t("notifications.saveError"));
       // Revert
       setNotificationCategories(notificationCategories);
     }
@@ -368,12 +370,12 @@ export function useTenantSettings() {
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Erreur lors de la mise à jour");
+        throw new Error(error.error || t("quietHours.updateError"));
       }
 
-      toast.success("Heures calmes mises à jour avec succès");
+      toast.success(t("quietHours.updated"));
     } catch (error: any) {
-      toast.error(error.message || "Erreur lors de la mise à jour");
+      toast.error(error.message || t("quietHours.updateError"));
       throw error;
     }
   };

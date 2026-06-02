@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import twilio from "twilio";
+import { prisma } from "@/lib/prisma";
 
 const twilioClient = twilio(
   process.env.TWILIO_ACCOUNT_SID!,
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
   try {
     const { userId, phoneNumber } = await req.json();
 
-    console.log("📱 add-whatsapp appelé pour:", { userId, phoneNumber });
+    console.log(" add-whatsapp appelé pour:", { userId, phoneNumber });
 
     if (!userId || !phoneNumber) {
       return NextResponse.json(
@@ -41,8 +42,26 @@ export async function POST(req: Request) {
 
     // Générer le code
     const otpCode = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
+    //Nettoyer les anciens OTP
+    await prisma.otpCode.deleteMany({
+      where: {
+        userId: userId,
+        used: false,
+      },
+    });
+
+    // Sauvegarder en BDD
+    await prisma.otpCode.create({
+      data: {
+        userId: userId,
+        phoneNumber: phoneNumber,
+        code: otpCode,
+        expiresAt: expiresAt,
+        used: false,
+      },
+    });
     // Stocker en mémoire (clé = userId)
     otpStore.set(userId, { code: otpCode, phone: phoneNumber, expiresAt });
 
@@ -56,7 +75,7 @@ export async function POST(req: Request) {
       await twilioClient.messages.create({
         from: process.env.TWILIO_WHATSAPP_NUMBER!,
         to: `whatsapp:${phoneNumber}`,
-        body: ` *NESTHUB* - Your verification code : *${otpCode}*\n\n This code expires in 10 minutes.\n\n if you didn't ask for this code, just ignore this message.`,
+        body: ` *NESTHUB* - Your verification code : *${otpCode}*\n\n This code expires in 30 minutes.\n\n if you didn't ask for this code, just ignore this message.`,
       });
       console.log(" Message WhatsApp envoyé à:", phoneNumber);
     } catch (twilioError) {
@@ -67,7 +86,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: "Code WhatsApp envoyé",
+      message: "Code WhatsApp envoyé (valable 30 minutes)",
       testCode: process.env.NODE_ENV === "development" ? otpCode : undefined,
     });
   } catch (error: any) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useUser, useAuth } from "@clerk/nextjs";
+import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 
 const commonLanguages = [
@@ -10,6 +11,8 @@ const commonLanguages = [
 ];
 
 export function useTenantProfile() {
+  const t = useTranslations("ProfileTen");
+  const tCommon = useTranslations("Common");
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const { getToken } = useAuth();
 
@@ -68,11 +71,11 @@ export function useTenantProfile() {
       return true;
     }
     if (usernameValue.length < 3) {
-      setUsernameError("Le nom d'utilisateur doit contenir au moins 3 caractères");
+      setUsernameError(t("username.minLength"));
       return false;
     }
     if (!/^[a-zA-Z0-9_]+$/.test(usernameValue)) {
-      setUsernameError("Utilisez uniquement des lettres, chiffres et underscores");
+      setUsernameError(t("username.invalidChars"));
       return false;
     }
     setIsCheckingUsername(true);
@@ -88,7 +91,7 @@ export function useTenantProfile() {
       if (response.ok) {
         const user = await response.json();
         if (user.id !== userId) {
-          setUsernameError("Ce nom d'utilisateur est déjà pris");
+          setUsernameError(t("username.taken"));
           return false;
         }
       }
@@ -100,7 +103,7 @@ export function useTenantProfile() {
     } finally {
       setIsCheckingUsername(false);
     }
-  }, [getToken, originalUsername, userId]);
+  }, [getToken, originalUsername, userId, t]);
 
   useEffect(() => {
     if (!usernameTouched) return;
@@ -181,28 +184,28 @@ export function useTenantProfile() {
       if (response.ok) {
         const data = await response.json();
         setProfilePictureUrl(data.profilePictureUrl);
-        toast.success("Photo de profil mise à jour !");
+        toast.success(t("avatar.updated"));
         return true;
       }
       throw new Error("Upload failed");
     } catch (error) {
       console.error("Error uploading picture:", error);
-      toast.error("Échec du téléchargement");
+      toast.error(t("avatar.uploadFailed"));
       return false;
     } finally {
       setUploadingPicture(false);
     }
-  }, [profilePictureFile, getToken]);
+  }, [profilePictureFile, getToken, t]);
 
   // Sauvegarde
   const handleSave = useCallback(async () => {
     const isUsernameValid = await checkUsernameUniqueness(username);
     if (!isUsernameValid) {
-      toast.error("Veuillez corriger le nom d'utilisateur");
+      toast.error(t("username.invalid"));
       return;
     }
     setSaving(true);
-    const toastId = toast.loading("Enregistrement...");
+    const toastId = toast.loading(tCommon("saving"));
     try {
       const token = await getToken({ template: "my-app-template" });
       const response = await fetch("/api/users/profile", {
@@ -213,22 +216,22 @@ export function useTenantProfile() {
       const data = await response.json();
       if (response.ok) {
         if (profilePictureFile) await uploadProfilePicture();
-        toast.success("Profil mis à jour !", { id: toastId });
+        toast.success(t("profile.updated"), { id: toastId });
         setIsEditing(false);
         setOriginalUsername(username);
         setUsernameTouched(false);
         await fetchUserData();
         await fetchTenantStats();
       } else {
-        throw new Error(data.error || "Save failed");
+        throw new Error(data.error || t("profile.updateError"));
       }
     } catch (error) {
       console.error("Error saving profile:", error);
-      toast.error("Échec de l'enregistrement", { id: toastId });
+      toast.error(tCommon("saveFailed"), { id: toastId });
     } finally {
       setSaving(false);
     }
-  }, [firstName, lastName, username, phone, bio, languages, profilePictureFile, getToken, uploadProfilePicture, fetchUserData, fetchTenantStats, checkUsernameUniqueness]);
+  }, [firstName, lastName, username, phone, bio, languages, profilePictureFile, getToken, uploadProfilePicture, fetchUserData, fetchTenantStats, checkUsernameUniqueness, t, tCommon]);
 
   const handleEdit = useCallback(() => {
     setOriginalData({ firstName, lastName, username, bio, languages: [...languages] });
@@ -253,11 +256,11 @@ export function useTenantProfile() {
   const addLanguage = useCallback((lang: string) => {
     if (lang && !languages.includes(lang)) {
       setLanguages(prev => [...prev, lang]);
-      toast.success(`Langue "${lang}" ajoutée`);
+      toast.success(t("language.added", { language: lang }));
     }
     setNewLanguage("");
     setShowLanguageInput(false);
-  }, [languages]);
+  }, [languages, t]);
 
   const removeLanguage = useCallback((lang: string) => {
     setLanguages(prev => prev.filter(l => l !== lang));
@@ -267,13 +270,13 @@ export function useTenantProfile() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image trop volumineuse (max 5 Mo)");
+        toast.error(t("avatar.tooLarge"));
         return;
       }
       setProfilePictureFile(file);
       setProfilePictureUrl(URL.createObjectURL(file));
     }
-  }, []);
+  }, [t]);
 
   const removeProfilePicture = useCallback(() => {
     setProfilePictureFile(null);
@@ -293,10 +296,10 @@ export function useTenantProfile() {
   }, [clerkUser, getToken, isUserLoaded, fetchUserData, fetchTenantStats]);
 
   const trustLevel = (() => {
-    if (trustScore >= 85) return { label: "Expert voyageur", color: "text-emerald-600 dark:text-emerald-400" };
-    if (trustScore >= 60) return { label: "Voyageur confirmé", color: "text-teal-600 dark:text-teal-400" };
-    if (trustScore >= 30) return { label: "Explorateur", color: "text-blue-600 dark:text-blue-400" };
-    return { label: "Nouveau voyageur", color: "text-slate-500 dark:text-slate-400" };
+    if (trustScore >= 85) return { label: t("trustLevel.expert"), color: "text-emerald-600 dark:text-emerald-400" };
+    if (trustScore >= 60) return { label: t("trustLevel.confirmed"), color: "text-teal-600 dark:text-teal-400" };
+    if (trustScore >= 30) return { label: t("trustLevel.explorer"), color: "text-blue-600 dark:text-blue-400" };
+    return { label: t("trustLevel.new"), color: "text-slate-500 dark:text-slate-400" };
   })();
 
   return {

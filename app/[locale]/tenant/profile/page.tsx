@@ -48,6 +48,7 @@ import IdentityPage from "@/components/ui/modals/IdentityModal";
 import { useCINStatus } from "../../(dashboard)/dashboard/owner/profile/hooks/useCINStatus";
 import { IoChevronForward } from "react-icons/io5";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
+
 const card3d =
   "shadow-[0_4px_0_0_rgba(0,0,0,0.04),0_8px_16px_-4px_rgba(0,0,0,0.07)] dark:shadow-[0_4px_0_0_rgba(0,0,0,0.25),0_8px_16px_-4px_rgba(0,0,0,0.30)]";
 const pipAvatar = (url: string) =>
@@ -57,9 +58,10 @@ const block3d =
   "shadow-[0_6px_0_0_rgba(0,0,0,0.05),0_12px_28px_-6px_rgba(0,0,0,0.09)] dark:shadow-[0_6px_0_0_rgba(0,0,0,0.35),0_12px_28px_-6px_rgba(0,0,0,0.45)]";
 
 function VerifiedBadge() {
+  const t = useTranslations("Profile");
   return (
     <span className="flex items-center gap-1 text-[9px] font-semibold text-emerald-700 dark:text-emerald-400">
-      <MdOutlineVerified size={10} /> Vérifié
+      <MdOutlineVerified size={10} /> {t("verified")}
     </span>
   );
 }
@@ -82,6 +84,9 @@ function Toggle({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 }
 
 export default function TenantProfilePage() {
+  const t = useTranslations("Profile");
+  const tCommon = useTranslations("Common");
+
   const [activeTab, setActiveTab] = useState<"profile" | "security">("profile");
   const [isEditingPassword, setIsEditingPassword] = useState(false);
   const [editingQuietHours, setEditingQuietHours] = useState(false);
@@ -188,15 +193,40 @@ export default function TenantProfilePage() {
   const getStrengthLabelWithWidth = () => {
     const strength = passwordForm.strength;
     if (strength === 1)
-      return { text: "Très faible", color: "#ef4444", width: "20%" };
+      return {
+        text: t("passwordStrength.veryWeak"),
+        color: "#ef4444",
+        width: "20%",
+      };
     if (strength === 2)
-      return { text: "Faible", color: "#f97316", width: "40%" };
+      return {
+        text: t("passwordStrength.weak"),
+        color: "#f97316",
+        width: "40%",
+      };
     if (strength === 3)
-      return { text: "Moyen", color: "#eab308", width: "60%" };
-    if (strength === 4) return { text: "Fort", color: "#22c55e", width: "80%" };
+      return {
+        text: t("passwordStrength.medium"),
+        color: "#eab308",
+        width: "60%",
+      };
+    if (strength === 4)
+      return {
+        text: t("passwordStrength.strong"),
+        color: "#22c55e",
+        width: "80%",
+      };
     if (strength === 5)
-      return { text: "Très fort", color: "#10b981", width: "100%" };
-    return { text: "Très faible", color: "#ef4444", width: "20%" };
+      return {
+        text: t("passwordStrength.veryStrong"),
+        color: "#10b981",
+        width: "100%",
+      };
+    return {
+      text: t("passwordStrength.veryWeak"),
+      color: "#ef4444",
+      width: "20%",
+    };
   };
 
   const strengthInfo = getStrengthLabelWithWidth();
@@ -206,23 +236,27 @@ export default function TenantProfilePage() {
     setPasswordError(null);
 
     if (!passwordForm.currentPassword) {
-      setPasswordError("Veuillez entrer votre mot de passe actuel");
-      showToast("error", "Veuillez entrer votre mot de passe actuel");
+      const msg = t("password.currentRequired");
+      setPasswordError(msg);
+      showToast("error", msg);
       return;
     }
     if (!passwordForm.newPassword) {
-      setPasswordError("Veuillez entrer un nouveau mot de passe");
-      showToast("error", "Veuillez entrer un nouveau mot de passe");
+      const msg = t("password.newRequired");
+      setPasswordError(msg);
+      showToast("error", msg);
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setPasswordError("Les mots de passe ne correspondent pas");
-      showToast("error", "Les mots de passe ne correspondent pas");
+      const msg = t("password.mismatch");
+      setPasswordError(msg);
+      showToast("error", msg);
       return;
     }
     if (!isPasswordValid) {
-      setPasswordError("Le nouveau mot de passe n'est pas assez fort");
-      showToast("error", "Le nouveau mot de passe n'est pas assez fort");
+      const msg = t("password.weak");
+      setPasswordError(msg);
+      showToast("error", msg);
       return;
     }
 
@@ -230,7 +264,7 @@ export default function TenantProfilePage() {
       await changePassword();
       setPasswordError(null);
       setIsEditingPassword(false);
-      showToast("success", "Mot de passe mis à jour avec succès !");
+      showToast("success", t("password.updated"));
       setPasswordForm((prev) => ({
         ...prev,
         currentPassword: "",
@@ -238,7 +272,7 @@ export default function TenantProfilePage() {
         confirmPassword: "",
       }));
     } catch (error: any) {
-      const errorMsg = error.message || "Mot de passe actuel incorrect";
+      const errorMsg = error.message || t("password.updateError");
       setPasswordError(errorMsg);
       showToast("error", errorMsg);
       setPasswordForm((prev) => ({ ...prev, currentPassword: "" }));
@@ -260,36 +294,39 @@ export default function TenantProfilePage() {
     try {
       await updateQuietHours(tempQuietHours.start, tempQuietHours.end);
       setEditingQuietHours(false);
-      showToast("success", "Heures calmes mises à jour");
+      showToast("success", t("quietHours.updated"));
     } catch (error: any) {
-      showToast("error", error.message || "Erreur lors de la mise à jour");
+      showToast("error", error.message || t("quietHours.updateError"));
     }
   };
 
   const handleProfileSave = async () => {
     try {
       await handleSave();
-      showToast("success", "Profil mis à jour avec succès !");
+      showToast("success", t("profile.updated"));
     } catch (error: any) {
-      showToast("error", error.message || "Erreur lors de la mise à jour");
+      showToast("error", error.message || t("profile.updateError"));
     }
   };
 
   const handleRevokeSession = async (sessionId: string) => {
     try {
       await revokeSession(sessionId);
-      showToast("success", "Session révoquée avec succès");
+      showToast("success", t("sessions.revoked"));
     } catch (error: any) {
-      showToast("error", error.message || "Erreur lors de la révocation");
+      showToast("error", error.message || t("sessions.revokeError"));
     }
   };
 
   const handleExportData = async (format: "csv" | "json") => {
     try {
       await exportUserData(format);
-      showToast("success", `Données exportées en ${format.toUpperCase()}`);
+      showToast(
+        "success",
+        t("export.success", { format: format.toUpperCase() }),
+      );
     } catch (error: any) {
-      showToast("error", error.message || "Erreur lors de l'exportation");
+      showToast("error", error.message || t("export.error"));
     }
   };
 
@@ -297,42 +334,40 @@ export default function TenantProfilePage() {
     setShowDeactivateConfirm(false);
     try {
       await deactivateAccount();
-      showToast("success", "Votre compte a été désactivé avec succès");
+      showToast("success", t("deactivate.success"));
     } catch (error: any) {
-      showToast("error", error.message || "Erreur lors de la désactivation");
+      showToast("error", error.message || t("deactivate.error"));
     }
   };
 
   const handleUpdateLanguage = async (locale: string) => {
     try {
       await updateLanguage(locale);
-      showToast("success", "Langue mise à jour avec succès");
+      showToast("success", t("language.updated"));
     } catch (error: any) {
-      showToast(
-        "error",
-        error.message || "Erreur lors du changement de langue",
-      );
+      showToast("error", error.message || t("language.updateError"));
     }
   };
+
   const sendVerificationReminder = async () => {
     setSendingReminder(true);
     try {
-      // Appel API vers ton endpoint de rappel
       const res = await fetch("/api/admin/verification-reminder", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "Demande de vérification d'identité" }),
+        body: JSON.stringify({ message: t("verification.reminderMessage") }),
       });
       if (res.ok) {
         setReminderSent(true);
-        showToast("success", "Rappel envoyé à l'administrateur");
+        showToast("success", t("verification.reminderSent"));
       }
     } catch (error) {
-      showToast("error", "Erreur lors de l'envoi du rappel");
+      showToast("error", tCommon("error.general"));
     } finally {
       setSendingReminder(false);
     }
   };
+
   if (loading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -340,7 +375,7 @@ export default function TenantProfilePage() {
           variant="spinner"
           size="lg"
           color="primary"
-          text="Chargement..."
+          text={tCommon("loading")}
           speed="normal"
         />
       </div>
@@ -381,8 +416,9 @@ export default function TenantProfilePage() {
           </div>
         </div>
       )}
-      <TenantHeader></TenantHeader>
-      {/* SWITCHER - PLUS LONG, BOUTON SÉLECTIONNÉ TRANSPARENT */}
+      <TenantHeader />
+
+      {/* SWITCHER */}
       <div className="max-w-4xl mx-auto px-6 lg:px-10 pt-6">
         <div className="flex justify-center">
           <div className="flex gap-2 bg-gray-100 dark:bg-slate-800 rounded-2xl p-1 w-full max-w-2xl">
@@ -395,7 +431,7 @@ export default function TenantProfilePage() {
               }`}
             >
               <RiUserLine size={16} />
-              Informations personnelles
+              {t("tabs.personalInfo")}
             </button>
             <button
               onClick={() => setActiveTab("security")}
@@ -406,7 +442,7 @@ export default function TenantProfilePage() {
               }`}
             >
               <RiShieldCheckLine size={16} />
-              Sécurité & confidentialité
+              {t("tabs.security")}
             </button>
           </div>
         </div>
@@ -421,17 +457,16 @@ export default function TenantProfilePage() {
             >
               <div className="h-1 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600" />
               <div className="p-7">
-                {/* HEADER AVEC TITRE CENTRÉ */}
                 <div className="relative flex items-center justify-center mb-6">
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Informations personnelles
+                    {t("personalInfo.title")}
                   </h2>
                   {!isEditing && (
                     <button
                       onClick={handleEdit}
                       className="absolute right-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-sky-600 dark:text-sky-400 text-sm font-semibold hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all"
                     >
-                      <RiEditLine size={14} /> Modifier
+                      <RiEditLine size={14} /> {t("actions.edit")}
                     </button>
                   )}
                 </div>
@@ -485,28 +520,28 @@ export default function TenantProfilePage() {
                       <div className="space-y-2">
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                           {profilePictureUrl
-                            ? "Photo de profil"
-                            : "Aucune photo"}
+                            ? t("avatar.hasPhoto")
+                            : t("avatar.noPhoto")}
                         </p>
                       </div>
                     ) : (
                       <>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                          JPG, PNG ou GIF. Taille max 5MB.
+                          {t("avatar.formatInfo")}
                         </p>
                         <div className="flex flex-wrap justify-center sm:justify-start gap-2 mt-3">
                           <button
                             onClick={() => fileInputRef.current?.click()}
                             className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors flex items-center gap-1"
                           >
-                            <RiCameraLine size={12} /> Changer
+                            <RiCameraLine size={12} /> {t("actions.change")}
                           </button>
                           {profilePictureUrl && (
                             <button
                               onClick={removeProfilePicture}
                               className="px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-xl transition-colors flex items-center gap-1"
                             >
-                              <RiCloseLine size={12} /> Supprimer
+                              <RiCloseLine size={12} /> {t("actions.delete")}
                             </button>
                           )}
                         </div>
@@ -520,7 +555,7 @@ export default function TenantProfilePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                        Prénom
+                        {t("form.firstName")}
                       </label>
                       <input
                         type="text"
@@ -528,12 +563,12 @@ export default function TenantProfilePage() {
                         onChange={(e) => setFirstName(e.target.value)}
                         disabled={!isEditing}
                         className={inputBase(!isEditing)}
-                        placeholder="Prénom"
+                        placeholder={t("placeholders.firstName")}
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                        Nom
+                        {t("form.lastName")}
                       </label>
                       <input
                         type="text"
@@ -541,14 +576,14 @@ export default function TenantProfilePage() {
                         onChange={(e) => setLastName(e.target.value)}
                         disabled={!isEditing}
                         className={inputBase(!isEditing)}
-                        placeholder="Nom"
+                        placeholder={t("placeholders.lastName")}
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                      Nom d'utilisateur
+                      {t("form.username")}
                     </label>
                     <div>
                       <input
@@ -560,11 +595,11 @@ export default function TenantProfilePage() {
                         }}
                         disabled={!isEditing}
                         className={`${inputBase(!isEditing)} ${usernameError ? "border-red-500" : ""}`}
-                        placeholder="nom_utilisateur"
+                        placeholder={t("placeholders.username")}
                       />
                       {isCheckingUsername && (
                         <p className="text-xs text-slate-400 mt-1">
-                          Vérification...
+                          {t("username.checking")}
                         </p>
                       )}
                       {usernameError && (
@@ -578,7 +613,7 @@ export default function TenantProfilePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                        Email
+                        {t("form.email")}
                       </label>
                       <input
                         type="email"
@@ -590,14 +625,14 @@ export default function TenantProfilePage() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                        Téléphone
+                        {t("form.phone")}
                       </label>
                       <input
                         type="tel"
                         value={phone}
                         disabled
                         className={inputBase(true)}
-                        placeholder="+216 00 000 000"
+                        placeholder={t("placeholders.phone")}
                       />
                       {phoneVerified && <VerifiedBadge />}
                     </div>
@@ -605,7 +640,7 @@ export default function TenantProfilePage() {
 
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 flex items-center justify-between mb-1.5">
-                      <span>Biographie</span>
+                      <span>{t("form.bio")}</span>
                       <span className="text-slate-400">
                         {bioLength} / {bioMaxLength}
                       </span>
@@ -618,13 +653,13 @@ export default function TenantProfilePage() {
                       disabled={!isEditing}
                       rows={3}
                       className={`${inputBase(!isEditing)} resize-none`}
-                      placeholder="Parlez-nous un peu de vous..."
+                      placeholder={t("placeholders.bio")}
                     />
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2 block">
-                      Langues parlées
+                      {t("form.languages")}
                     </label>
                     <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl min-h-[52px]">
                       {languages.map((lang) => (
@@ -651,7 +686,7 @@ export default function TenantProfilePage() {
                               onChange={(e) => setNewLanguage(e.target.value)}
                               className="px-2 py-1.5 border border-slate-200 rounded-lg text-sm bg-white"
                             >
-                              <option value="">Sélectionner...</option>
+                              <option value="">{t("actions.select")}</option>
                               {commonLanguages
                                 .filter((l) => !languages.includes(l))
                                 .map((l) => (
@@ -665,13 +700,13 @@ export default function TenantProfilePage() {
                               disabled={!newLanguage}
                               className="px-2 py-1.5 bg-gradient-to-r from-sky-500 to-indigo-600 text-white rounded-lg text-sm font-semibold"
                             >
-                              Ajouter
+                              {t("actions.add")}
                             </button>
                             <button
                               onClick={() => setShowLanguageInput(false)}
                               className="px-2 py-1.5 bg-slate-200 rounded-lg text-sm font-semibold"
                             >
-                              Annuler
+                              {t("actions.cancel")}
                             </button>
                           </div>
                         ) : (
@@ -679,7 +714,8 @@ export default function TenantProfilePage() {
                             onClick={() => setShowLanguageInput(true)}
                             className="px-3 py-1.5 border border-dashed border-sky-300 rounded-xl text-sm font-semibold text-sky-600 hover:bg-sky-50 transition-all flex items-center gap-1"
                           >
-                            <Plus className="w-3 h-3" /> Ajouter une langue
+                            <Plus className="w-3 h-3" />{" "}
+                            {t("actions.addLanguage")}
                           </button>
                         ))}
                     </div>
@@ -697,13 +733,13 @@ export default function TenantProfilePage() {
                         ) : (
                           <Save size={16} />
                         )}
-                        Enregistrer
+                        {t("actions.save")}
                       </button>
                       <button
                         onClick={handleCancel}
                         className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors"
                       >
-                        Annuler
+                        {t("actions.cancel")}
                       </button>
                     </div>
                   )}
@@ -711,18 +747,16 @@ export default function TenantProfilePage() {
               </div>
             </div>
 
-            {/* PHRASE VERS SÉCURITÉ */}
             {!isEditing && (
               <div className="mt-6 text-center">
                 <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                  Vous souhaitez modifier votre mot de passe ou vérifier votre
-                  identité ?
+                  {t("security.prompt")}
                 </p>
                 <button
                   onClick={() => setActiveTab("security")}
                   className="inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 font-semibold text-sm hover:underline"
                 >
-                  Aller à Sécurité & confidentialité <IoChevronForward />
+                  {t("security.goToSecurity")} <IoChevronForward />
                 </button>
               </div>
             )}
@@ -732,7 +766,7 @@ export default function TenantProfilePage() {
         {/* TAB SÉCURITÉ & CONFIDENTIALITÉ */}
         {activeTab === "security" && (
           <div className="space-y-6">
-            {/* MOT DE PASSE - FORMULAIRE TOUJOURS VISIBLE */}
+            {/* MOT DE PASSE */}
             <div
               className={`bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden ${block3d}`}
             >
@@ -740,7 +774,7 @@ export default function TenantProfilePage() {
               <div className="p-7">
                 <div className="text-center mb-6">
                   <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Mot de passe
+                    {t("password.title")}
                   </h2>
                   <div className="w-20 h-1 bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 rounded-full mx-auto -translate-y-0.5" />
                 </div>
@@ -755,7 +789,7 @@ export default function TenantProfilePage() {
 
                   <div>
                     <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                      Mot de passe actuel
+                      {t("password.current")}
                     </label>
                     <div className="relative">
                       <Lock
@@ -796,7 +830,7 @@ export default function TenantProfilePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                        Nouveau mot de passe
+                        {t("password.new")}
                       </label>
                       <div className="relative">
                         <Lock
@@ -836,7 +870,7 @@ export default function TenantProfilePage() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-1.5 block">
-                        Confirmation
+                        {t("password.confirm")}
                       </label>
                       <div className="relative">
                         <Lock
@@ -874,7 +908,7 @@ export default function TenantProfilePage() {
                       </div>
                       {passwordForm.confirmPassword && !passwordsMatch && (
                         <p className="text-xs text-red-500 mt-1">
-                          ⚠️ Les mots de passe ne correspondent pas
+                          ⚠️ {t("password.mismatch")}
                         </p>
                       )}
                     </div>
@@ -901,7 +935,7 @@ export default function TenantProfilePage() {
                       </div>
                       <div className="bg-slate-50 rounded-xl p-3">
                         <p className="text-xs font-bold text-slate-500 mb-2 uppercase">
-                          Sécurité du mot de passe
+                          {t("passwordStrength.security")}
                         </p>
                         <div className="grid grid-cols-2 gap-2">
                           <div className="flex items-center gap-2">
@@ -915,7 +949,7 @@ export default function TenantProfilePage() {
                             <span
                               className={`text-xs ${passwordCriteria.length ? "text-emerald-600" : "text-slate-500"}`}
                             >
-                              Au moins 8 caractères
+                              {t("passwordStrength.minLength")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -929,7 +963,7 @@ export default function TenantProfilePage() {
                             <span
                               className={`text-xs ${passwordCriteria.uppercase ? "text-emerald-600" : "text-slate-500"}`}
                             >
-                              Majuscule et minuscule
+                              {t("passwordStrength.uppercase")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -943,7 +977,7 @@ export default function TenantProfilePage() {
                             <span
                               className={`text-xs ${passwordCriteria.number ? "text-emerald-600" : "text-slate-500"}`}
                             >
-                              Au moins un chiffre
+                              {t("passwordStrength.number")}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
@@ -957,7 +991,7 @@ export default function TenantProfilePage() {
                             <span
                               className={`text-xs ${passwordCriteria.special ? "text-emerald-600" : "text-slate-500"}`}
                             >
-                              Caractère spécial
+                              {t("passwordStrength.special")}
                             </span>
                           </div>
                         </div>
@@ -980,7 +1014,7 @@ export default function TenantProfilePage() {
                       ) : (
                         <RiSaveLine size={16} />
                       )}
-                      Enregistrer
+                      {t("actions.save")}
                     </button>
                     <button
                       type="button"
@@ -995,26 +1029,24 @@ export default function TenantProfilePage() {
                       }}
                       className="flex-1 py-3 rounded-xl text-sm font-semibold text-slate-600 border border-slate-200 hover:bg-slate-50 transition-colors flex items-center justify-center gap-2"
                     >
-                      <RiCloseLine size={16} /> Annuler
+                      <RiCloseLine size={16} /> {t("actions.cancel")}
                     </button>
                   </div>
 
-                  {/* LIEN MOT DE PASSE OUBLIÉ */}
                   <div className="text-center mt-4 pt-2 border-t border-slate-100 dark:border-slate-700">
                     <a
                       href={`/${preferredLocale}/forgot-password`}
                       className="text-xs text-sky-600 dark:text-sky-400 hover:underline"
                     >
-                      Mot de passe oublié ?
+                      {t("password.forgot")}
                     </a>
                   </div>
                 </form>
               </div>
             </div>
 
-            {/* SESSIONS ACTIVES + VÉRIFICATION IDENTITÉ - CÔTE À CÔTE */}
+            {/* SESSIONS ACTIVES + VÉRIFICATION IDENTITÉ */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* SESSIONS ACTIVES */}
               {security.sessions.length > 0 && (
                 <div
                   className={`bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden ${block3d}`}
@@ -1027,10 +1059,10 @@ export default function TenantProfilePage() {
                       </div>
                       <div>
                         <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                          Sessions actives
+                          {t("sessions.title")}
                         </h2>
                         <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          Gérez vos sessions connectées
+                          {t("sessions.subtitle")}
                         </p>
                       </div>
                     </div>
@@ -1060,11 +1092,11 @@ export default function TenantProfilePage() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="text-sm font-bold text-slate-900 dark:text-white">
-                                  {s.device || "Appareil inconnu"}
+                                  {s.device || t("sessions.unknownDevice")}
                                 </p>
                                 {s.isCurrent && (
                                   <span className="text-[9px] font-bold bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400 px-2 py-0.5 rounded-full">
-                                    Actuelle
+                                    {t("sessions.current")}
                                   </span>
                                 )}
                               </div>
@@ -1074,8 +1106,8 @@ export default function TenantProfilePage() {
                                   className="text-slate-400 dark:text-slate-500"
                                 />
                                 <span className="text-[10px] text-slate-400 dark:text-slate-500">
-                                  {s.location || "Localisation inconnue"} ·{" "}
-                                  {s.ip || "IP inconnue"}
+                                  {s.location || t("sessions.unknownLocation")}{" "}
+                                  · {s.ip || t("sessions.unknownIp")}
                                 </span>
                               </div>
                             </div>
@@ -1085,7 +1117,7 @@ export default function TenantProfilePage() {
                               onClick={() => handleRevokeSession(s.id)}
                               className="px-3 py-1.5 text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-colors border border-rose-200 dark:border-rose-800"
                             >
-                              Révoquer
+                              {t("sessions.revoke")}
                             </button>
                           )}
                         </div>
@@ -1123,11 +1155,10 @@ export default function TenantProfilePage() {
                     </div>
                     <div>
                       <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                        Vérification d'identité
+                        {t("verification.title")}
                       </h2>
                       <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                        Sécurisez votre profil et débloquez toutes les
-                        fonctionnalités
+                        {t("verification.subtitle")}
                       </p>
                     </div>
                   </div>
@@ -1135,7 +1166,7 @@ export default function TenantProfilePage() {
                   <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 mb-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                        Statut
+                        {t("verification.status")}
                       </span>
                       <span
                         className={`px-2.5 py-1 rounded-full text-[9px] font-semibold uppercase tracking-widest border ${
@@ -1147,10 +1178,10 @@ export default function TenantProfilePage() {
                         }`}
                       >
                         {cinStatus.status === "VALIDATED"
-                          ? "✓ Vérifié"
+                          ? t("verification.verified")
                           : cinStatus.status === "REJECTED"
-                            ? "✗ Rejeté"
-                            : " En attente"}
+                            ? t("verification.rejected")
+                            : t("verification.pending")}
                       </span>
                     </div>
                     <div className="flex items-center gap-3">
@@ -1159,12 +1190,13 @@ export default function TenantProfilePage() {
                       </div>
                       <div>
                         <p className="text-xs font-semibold text-slate-900 dark:text-white">
-                          Carte d'identité nationale (CIN)
+                          {t("verification.cin")}
                         </p>
                         {cinStatus.status === "REJECTED" &&
                           cinStatus.rejectionReason && (
                             <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-0.5">
-                              Motif : {cinStatus.rejectionReason}
+                              {t("verification.rejectionReason")} :{" "}
+                              {cinStatus.rejectionReason}
                             </p>
                           )}
                       </div>
@@ -1172,8 +1204,7 @@ export default function TenantProfilePage() {
                   </div>
 
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 italic leading-relaxed mb-4">
-                    La vérification d'identité est obligatoire pour réserver des
-                    propriétés sur NESTHUB.
+                    {t("verification.required")}
                   </p>
 
                   {cinStatus.status === "VALIDATED" && (
@@ -1181,55 +1212,48 @@ export default function TenantProfilePage() {
                       disabled
                       className="w-full py-3 rounded-xl text-sm font-semibold bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 cursor-not-allowed"
                     >
-                      ✓ Identité vérifiée
+                      {t("verification.verifiedButton")}
                     </button>
                   )}
 
                   {cinStatus.status === "PENDING" && (
                     <button
-                      onClick={() => {
-                        // Appel à sendVerificationReminder
-                        if (typeof sendVerificationReminder === "function") {
-                          sendVerificationReminder();
-                        }
-                      }}
+                      onClick={sendVerificationReminder}
                       disabled={sendingReminder || reminderSent}
                       className="w-full py-3 rounded-xl text-sm font-semibold transition-all bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white shadow-sm flex items-center justify-center gap-2"
                     >
                       {sendingReminder ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : reminderSent ? (
-                        "✓ Rappel envoyé"
+                        `✓ ${t("verification.reminderSent")}`
                       ) : (
                         <>
                           <Clock className="w-4 h-4" />
-                          Envoyer un rappel
+                          {t("verification.reminderButton")}
                         </>
                       )}
                     </button>
                   )}
 
-                  {/* Message d'attente */}
                   {waitTimeRemaining !== null && (
                     <div className="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/40">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400" />
                         <p className="text-xs text-amber-700 dark:text-amber-400">
-                          Vous avez déjà envoyé un rappel récemment. Veuillez
-                          patienter {waitTimeRemaining} heures.
+                          {t("verification.waitMessage", {
+                            hours: waitTimeRemaining,
+                          })}
                         </p>
                       </div>
                     </div>
                   )}
 
-                  {/* Message de confirmation */}
                   {reminderSent && !waitTimeRemaining && (
                     <div className="mt-3 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800/40">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <p className="text-xs text-emerald-700 dark:text-emerald-400">
-                          Un rappel a été envoyé à l'administrateur. Vous serez
-                          notifié une fois votre identité vérifiée.
+                          {t("verification.reminderSentMessage")}
                         </p>
                       </div>
                     </div>
@@ -1241,25 +1265,11 @@ export default function TenantProfilePage() {
                       className="w-full py-3 rounded-xl text-sm font-semibold bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 hover:from-sky-600 hover:via-indigo-600 hover:to-purple-700 text-white transition-all"
                     >
                       <RiCameraLine className="w-4 h-4 inline mr-2" />
-                      Commencer la vérification
+                      {t("verification.startButton")}
                     </button>
                   )}
                 </div>
               </div>
-            </div>
-
-            {/* PHRASE APRÈS LES CARTES */}
-            <div className="text-center">
-              <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                Vous souhaitez modifier votre mot de passe ou vérifier votre
-                identité ?
-              </p>
-              <button
-                onClick={() => setActiveTab("security")}
-                className="inline-flex items-center gap-2 text-sky-600 dark:text-sky-400 font-semibold text-sm hover:underline"
-              >
-                Aller à Sécurité & confidentialité <IoChevronForward />
-              </button>
             </div>
           </div>
         )}

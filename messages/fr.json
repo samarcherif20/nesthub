@@ -6879,7 +6879,424 @@
       "switchToOwner": "Passer en mode Propriétaire",
       "switchToTenant": "Passer en mode Locataire"
     }
+  },
+
+  "ProfileTen": {
+    "language": {
+      "updated": "Langue mise à jour avec succès",
+      "updateError": "Erreur lors du changement de langue",
+      "added": "Langue \"{language}\" ajoutée"
+    },
+    "password": {
+      "updated": "Mot de passe mis à jour avec succès !",
+      "currentRequired": "Veuillez entrer votre mot de passe actuel",
+      "weak": "Le nouveau mot de passe n'est pas assez fort",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "updateError": "Erreur lors du changement de mot de passe"
+    },
+    "sessions": {
+      "revoked": "Session révoquée avec succès",
+      "revokeError": "Erreur lors de la révocation"
+    },
+    "export": {
+      "success": "Données exportées avec succès au format {format}",
+      "error": "Erreur lors de l'exportation"
+    },
+    "deactivate": {
+      "success": "Votre compte a été désactivé avec succès",
+      "error": "Erreur lors de la désactivation"
+    },
+    "quietHours": {
+      "updated": "Heures calmes mises à jour avec succès",
+      "updateError": "Erreur lors de la mise à jour des heures calmes"
+    },
+    "notifications": {
+      "saveError": "Erreur lors de la sauvegarde des préférences",
+      "categories": {
+        "bookings": "Réservations",
+        "payments": "Paiements",
+        "messages": "Messages",
+        "reviews": "Avis",
+        "alerts": "Alertes"
+      }
+    },
+    "trustLevel": {
+      "expert": "Expert voyageur",
+      "confirmed": "Voyageur confirmé",
+      "explorer": "Explorateur",
+      "new": "Nouveau voyageur"
+    },
+    "username": {
+      "minLength": "Le nom d'utilisateur doit contenir au moins 3 caractères",
+      "invalidChars": "Utilisez uniquement des lettres, chiffres et underscores",
+      "taken": "Ce nom d'utilisateur est déjà pris",
+      "invalid": "Veuillez corriger le nom d'utilisateur"
+    },
+    "avatar": {
+      "updated": "Photo de profil mise à jour !",
+      "uploadFailed": "Échec du téléchargement de la photo",
+      "tooLarge": "Image trop volumineuse (max 5 Mo)"
+    },
+    "profile": {
+      "updated": "Profil mis à jour avec succès !",
+      "updateError": "Échec de l'enregistrement du profil"
+    },
+    "passwordStrength": {
+      "veryWeak": "Très faible",
+      "weak": "Faible",
+      "medium": "Moyen",
+      "strong": "Fort",
+      "veryStrong": "Très fort",
+      "security": "Sécurité du mot de passe",
+      "minLength": "Au moins 8 caractères",
+      "uppercase": "Majuscule et minuscule",
+      "number": "Au moins un chiffre",
+      "special": "Caractère spécial"
+    },
+    "verification": {
+      "title": "Vérification d'identité",
+      "subtitle": "Sécurisez votre profil et débloquez toutes les fonctionnalités",
+      "status": "Statut",
+      "verified": "Vérifié",
+      "rejected": "Rejeté",
+      "pending": "En attente",
+      "required": "La vérification d'identité est obligatoire pour réserver des propriétés sur NESTHUB.",
+      "verifiedButton": "✓ Identité vérifiée",
+      "reminderButton": "Envoyer un rappel",
+      "reminderSent": "Rappel envoyé",
+      "reminderSentMessage": "Un rappel a été envoyé à l'administrateur. Vous serez notifié une fois votre identité vérifiée.",
+      "waitMessage": "Vous avez déjà envoyé un rappel récemment. Veuillez patienter {hours} heures.",
+      "startButton": "Commencer la vérification",
+      "rejectionReason": "Motif"
+    }},
+  "Common": {
+    "saving": "Enregistrement en cours...",
+    "saveFailed": "Échec de l'enregistrement",
+    "loading": "Chargement en cours...",
+    "error": {
+      "loading": "Erreur lors du chargement"
+    }
+  },
+
+  "Profile": {
+    "verified": "Vérifié",
+    "tabs": {
+      "personalInfo": "Informations personnelles",
+      "security": "Sécurité & confidentialité"
+    },
+    "personalInfo": {
+      "title": "Informations personnelles"
+    },
+    "actions": {
+      "edit": "Modifier",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "change": "Changer",
+      "delete": "Supprimer",
+      "add": "Ajouter",
+      "select": "Sélectionner...",
+      "addLanguage": "Ajouter une langue"
+    },
+    "avatar": {
+      "hasPhoto": "Photo de profil",
+      "noPhoto": "Aucune photo",
+      "formatInfo": "JPG, PNG ou GIF. Taille max 5MB."
+    },
+    "form": {
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "username": "Nom d'utilisateur",
+      "email": "Email",
+      "phone": "Téléphone",
+      "bio": "Biographie",
+      "languages": "Langues parlées"
+    },
+    "placeholders": {
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "username": "nom_utilisateur",
+      "phone": "+216 00 000 000",
+      "bio": "Parlez-nous un peu de vous..."
+    },
+    "username": {
+      "checking": "Vérification..."
+    },
+    "password": {
+      "title": "Mot de passe",
+      "current": "Mot de passe actuel",
+      "new": "Nouveau mot de passe",
+      "confirm": "Confirmation",
+      "currentRequired": "Veuillez entrer votre mot de passe actuel",
+      "newRequired": "Veuillez entrer un nouveau mot de passe",
+      "mismatch": "Les mots de passe ne correspondent pas",
+      "weak": "Le nouveau mot de passe n'est pas assez fort",
+      "updated": "Mot de passe mis à jour avec succès !",
+      "updateError": "Erreur lors du changement de mot de passe",
+      "forgot": "Mot de passe oublié ?"
+    },
+    "passwordStrength": {
+      "veryWeak": "Très faible",
+      "weak": "Faible",
+      "medium": "Moyen",
+      "strong": "Fort",
+      "veryStrong": "Très fort",
+      "security": "Sécurité du mot de passe",
+      "minLength": "Au moins 8 caractères",
+      "uppercase": "Majuscule et minuscule",
+      "number": "Au moins un chiffre",
+      "special": "Caractère spécial"
+    },
+    "sessions": {
+      "title": "Sessions actives",
+      "subtitle": "Gérez vos sessions connectées",
+      "current": "Actuelle",
+      "unknownDevice": "Appareil inconnu",
+      "unknownLocation": "Localisation inconnue",
+      "unknownIp": "IP inconnue",
+      "revoke": "Révoquer",
+      "revoked": "Session révoquée avec succès",
+      "revokeError": "Erreur lors de la révocation"
+    },
+    "verification": {
+      "title": "Vérification d'identité",
+      "subtitle": "Sécurisez votre profil et débloquez toutes les fonctionnalités",
+      "status": "Statut",
+      "verified": "Vérifié",
+      "rejected": "Rejeté",
+      "pending": "En attente",
+      "cin": "Carte d'identité nationale (CIN)",
+      "required": "La vérification d'identité est obligatoire pour réserver des propriétés sur NESTHUB.",
+      "verifiedButton": "✓ Identité vérifiée",
+      "reminderButton": "Envoyer un rappel",
+      "reminderSent": "Rappel envoyé",
+      "reminderMessage": "Demande de vérification d'identité",
+      "reminderSentMessage": "Un rappel a été envoyé à l'administrateur. Vous serez notifié une fois votre identité vérifiée.",
+      "waitMessage": "Vous avez déjà envoyé un rappel récemment. Veuillez patienter {hours} heures.",
+      "startButton": "Commencer la vérification",
+      "rejectionReason": "Motif"
+    },
+    "export": {
+      "success": "Données exportées avec succès au format {format}",
+      "error": "Erreur lors de l'exportation"
+    },
+    "deactivate": {
+      "success": "Votre compte a été désactivé avec succès",
+      "error": "Erreur lors de la désactivation"
+    },
+    "quietHours": {
+      "updated": "Heures calmes mises à jour avec succès",
+      "updateError": "Erreur lors de la mise à jour des heures calmes"
+    },
+    "language": {
+      "updated": "Langue mise à jour avec succès",
+      "updateError": "Erreur lors du changement de langue"
+    },
+    "security": {
+      "prompt": "Vous souhaitez modifier votre mot de passe ou vérifier votre identité ?",
+      "goToSecurity": "Aller à Sécurité & confidentialité"
+    }
+  },
+  "Common": {
+    "saving": "Enregistrement en cours...",
+    "saveFailed": "Échec de l'enregistrement",
+    "loading": "Chargement en cours...",
+    "error": {
+      "general": "Erreur lors de l'envoi du rappel",
+      "loading": "Erreur lors du chargement"
+    }
+  },
+  "Reviews":{
+  "dashboard": {
+    "badge": "RÉPUTATION",
+    "title": "Tableau de bord",
+    "highlight": "Réputation",
+    "subtitle": "Consultez les retours clients, optimisez vos réponses publiques et suivez en temps réel l'évolution de vos indicateurs de confiance."
+  },
+  "stats": {
+    "globalRating": "Note globale",
+    "reliability": "Fiabilité",
+    "trustScore": "Score de confiance",
+    "memberSince": "Membre depuis",
+    "superTraveler": "Super Voyageur",
+    "stays": "Séjours",
+    "reviewsReceived": "Avis reçus",
+    "basedOn": "Basé sur {count} avis"
+  },
+  "tabs": {
+    "received": "Avis reçus",
+    "given": "Avis donnés"
+  },
+  "filters": {
+    "placeholder": "Rechercher par titre de bien, nom du voyageur, ville...",
+    "clear": "Effacer",
+    "all": "Tous",
+    "replied": "Répondus",
+    "unreplied": "À Répondre",
+    "sortRecent": "Tri : Plus récents",
+    "sortRatingDesc": "Note : Décroissante (5 → 1)",
+    "sortRatingAsc": "Note : Croissante (1 → 5)",
+    "activeFilters": "Filtres actifs :",
+    "resetAll": "Réinitialiser tout",
+    "searchFor": "Recherche",
+    "rating": "Note",
+    "status": "Statut",
+    "stars": "étoiles"
+  }
+  ,
+  "emptyState": {
+    "noReviewsReceived": "Aucun avis reçu pour le moment",
+    "noReviewsGiven": "Aucun avis donné pour le moment",
+    "receivedDescription": "Les avis laissés par vos hôtes apparaîtront ici.",
+    "givenDescription": "Partagez votre expérience après vos séjours.",
+    "simulateReview": "Simuler un avis"
+  },
+  "toasts": {
+    "replySuccess": "Réponse publiée avec succès !",
+    "replyError": "Erreur lors de la publication",
+    "reportSuccess": "Avis signalé. Notre équipe l'examinera sous 24h.",
+    "reportError": "Erreur lors du signalement",
+    "exportSuccess": "Export CSV généré avec succès !",
+    "reviewCreated": "Nouvel avis ajouté avec succès !",
+    "reviewError": "Erreur lors de la création de l'avis",
+    "connectionError": "Erreur de connexion",
+    "loadingError": "Erreur de chargement"
+  },
+  "confirmations": {
+    "reportReview": "Êtes-vous sûr de vouloir signaler cet avis ?"
+  },"reviewCard": {
+  "yourResponse": "Votre réponse",
+  "editResponse": "Modifier votre réponse",
+  "writeResponse": "Écrire une réponse",
+  "responsePlaceholder": "Écrivez votre réponse ici...",
+  "replyTo": "Répondre à",
+  "reportReview": "Signaler cet avis",
+  "reportReason": "Pourquoi signalez-vous cet avis ?",
+  "selectReason": "Sélectionnez une raison",
+  "describeReason": "Décrivez le problème (optionnel)",
+  "submitReport": "Envoyer le signalement",
+  "host": "Hôte",
+    "for": "Pour",
+    "viewListing": "Voir le bien",
+    "report": "Signaler",
+    "reply": "Répondre",
+    "modifyReply": "Modifier la réponse",
+    "enterResponse": "Votre réponse:",
+  "reasons": {
+    "inappropriate": "Contenu inapproprié",
+    "fake": "Avis suspect / faux",
+    "offensive": "Langage offensant",
+    "spam": "Spam / publicité",
+    "other": "Autre raison"
+  }
+},
+"actions": {
+  "publish": "Publier",
+  "edit": "Modifier",
+  "cancel":"Annuler"
+
+}
+},"Wallet":{
+  "badge": "PORTEFEUILLE",
+  "title": "Mes",
+  "titleHighlight": "Transactions",
+  "subtitle": "Suivez tous vos paiements et cautions en un seul endroit.",
+  "stats": {
+    "available": "Solde disponible",
+    "creditAvailable": "Crédit disponible",
+    "totalSpent": "Total dépensé",
+    "totalSpentDesc": "Somme de tous vos paiements",
+    "transactions": "Transactions",
+    "total": "Au total",
+    "average": "Moyenne:",
+    "deposits": "Cautions",
+    "activeGuarantees": "Garanties en cours",
+    "released": "Libérées:"
+  },
+  "filters": {
+    "all": "Toutes",
+    "payments": "Paiements",
+    "deposits": "Cautions",
+    "allStatus": "Tous statuts",
+    "completed": "Terminés",
+    "pending": "En attente",
+    "failed": "Échoués",
+    "allDates": "Toutes dates",
+    "last30Days": "30 derniers jours",
+    "last3Months": "3 derniers mois",
+    "last12Months": "12 derniers mois",
+    "search": "Rechercher..."
+  },
+  "table": {
+    "date": "Date",
+    "stay": "Séjour / Description",
+    "reference": "Référence",
+    "amount": "Montant",
+    "status": "Statut",
+    "actions": "Actions",
+    "details": "Détails"
+  },
+  "deposits": {
+    "title": "Cautions de sécurité",
+    "count": "cautions",
+    "subtitle": "Garanties prélevées ou en attente de libération",
+    "checkout": "Check-out",
+    "authorized": "Autorisée"
+  },
+  "upcoming": {
+    "title": "Paiements à venir",
+    "count": "échéances",
+    "subtitle": "Séjours à payer prochainement",
+    "nights": "nuits",
+    "payBefore": "À payer avant le"
+  },
+  "modal": {
+    "title": "Détail de la transaction",
+    "stay": "Séjour associé",
+    "date": "Date de la transaction",
+    "status": "Statut",
+    "description": "Description",
+    "amount": "Montant",
+    "reference": "Référence",
+    "copy": "Copier la référence",
+    "copied": "Copié !"
+  },
+  "toasts": {
+    "referenceCopied": "Référence copiée dans le presse-papier"
+  },
+  "empty": "Aucune transaction trouvée",
+  "showLess": "Voir moins",
+  "showMore": "Voir {count} transactions supplémentaires"
+},"AdminReviews":{
+  "badge": "REVIEW CONTROL CENTER",
+  "title": "Moderation Hub",
+  "filters": {
+    "all": "All Reviews",
+    "flagged": "Flagged Only",
+    "pending": "Pending Action",
+    "allRatings": "All Ratings",
+    "lowRatings": "Low Ratings (1-2★)",
+    "highRatings": "High Ratings (4-5★)",
+    "stars": "★"
+  },
+  "stats": {
+    "total": "Total Feedback",
+    "avgRating": "Avg. Rating",
+    "flagged": "Flagged Content"
+  },
+  "aiMessage": "Sentiment analysis suggests a 12% rise in positive owner feedback.",
+  "aiSubmessage": "Based on last 7 days of platform activity.",
+  "searchPlaceholder": "Search reviews, properties, or users...",
+  "empty": "No reviews found",
+  "modal": {
+    "title": "Delete Review?",
+    "message": "This action is permanent and will remove the review from both the property page and user history. This cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Confirm Delete"
+  },
+  "toasts": {
+    "reviewHidden": "Review hidden successfully",
+    "reviewShown": "Review shown successfully",
+    "reviewDeleted": "Review deleted permanently"
   }
 }
-
-
+}
