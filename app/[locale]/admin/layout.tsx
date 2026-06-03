@@ -11,7 +11,7 @@ import { useUser, useClerk, useAuth } from "@clerk/nextjs";
 
 // Icônes
 import { LuLayoutDashboard } from "react-icons/lu";
-import { IoPersonOutline } from "react-icons/io5";
+import { IoDocumentTextOutline, IoPersonOutline, IoStarSharp } from "react-icons/io5";
 import { GoShieldLock } from "react-icons/go";
 import { IoSettingsOutline } from "react-icons/io5";
 import { RiLogoutCircleLine } from "react-icons/ri";
@@ -318,7 +318,20 @@ export default function AdminLayout({
       icon: <PiGavelBold size={18} />,
       count: counters.activeDisputes,
       countColor: "bg-amber-500",
-    },
+    },{
+  name: tLayout("reviews"),
+  href: `/${locale}/admin/reviews`,
+  icon: <IoStarSharp size={18} />,
+  count: 0,
+  countColor: "bg-purple-500",
+},
+{
+  name: tLayout("auditLog"),
+  href: `/${locale}/admin/audit`,
+  icon: <IoDocumentTextOutline size={18} />,
+  count: 0,
+  countColor: "bg-slate-500",
+},
     {
       name: tLayout("contact"),
       href: `/${locale}/admin/contact-support`,

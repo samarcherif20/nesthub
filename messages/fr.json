@@ -208,7 +208,8 @@
 
     "2faAlt": "Schéma illustratif du processus d'authentification à deux facteurs"
   },
-  "admin": {
+  "admin": {"reviews": "Avis",
+"auditLog": "Journal d'audit",
     "dashboard": "Tableau de bord",
     "users": "Utilisateurs",
     "invitations": "Invitations",
@@ -7266,37 +7267,250 @@
   "empty": "Aucune transaction trouvée",
   "showLess": "Voir moins",
   "showMore": "Voir {count} transactions supplémentaires"
-},"AdminReviews":{
-  "badge": "REVIEW CONTROL CENTER",
-  "title": "Moderation Hub",
+},
+  
+ 
+  "AdminReviews": {
+  "badge": "CENTRE DE MODÉRATION",
+  "title": "NESTHUB - Centre de Modération",
   "filters": {
-    "all": "All Reviews",
-    "flagged": "Flagged Only",
-    "pending": "Pending Action",
-    "allRatings": "All Ratings",
-    "lowRatings": "Low Ratings (1-2★)",
-    "highRatings": "High Ratings (4-5★)",
+    "all": "Tous les avis",
+    "flagged": "Avis signalés",
+    "pending": "En attente",
+    "allRatings": "Toutes les notes",
+    "lowRatings": "Notes faibles (1-2★)",
+    "highRatings": "Notes élevées (4-5★)",
     "stars": "★"
   },
   "stats": {
-    "total": "Total Feedback",
-    "avgRating": "Avg. Rating",
-    "flagged": "Flagged Content"
+    "total": "Total des avis",
+    "avgRating": "Note moyenne",
+    "flagged": "Contenu signalé"
   },
-  "aiMessage": "Sentiment analysis suggests a 12% rise in positive owner feedback.",
-  "aiSubmessage": "Based on last 7 days of platform activity.",
-  "searchPlaceholder": "Search reviews, properties, or users...",
-  "empty": "No reviews found",
+  "message": "Modérez les avis pour garantir la qualité des échanges.",
+  "submessage": "Les avis signalés nécessitent une attention particulière.",
+  "searchPlaceholder": "Rechercher un avis, un bien ou un utilisateur...",
+  "empty": "Aucun avis trouvé",
   "modal": {
-    "title": "Delete Review?",
-    "message": "This action is permanent and will remove the review from both the property page and user history. This cannot be undone.",
-    "cancel": "Cancel",
-    "confirm": "Confirm Delete"
+    "cancel": "Annuler",
+    "delete": {
+      "title": "Supprimer cet avis ?",
+      "message": "Cette action est irréversible. L'avis sera définitivement supprimé.",
+      "confirm": "Supprimer"
+    },
+    "hide": {
+      "title": "Masquer cet avis ?",
+      "message": "L'avis ne sera plus visible sur le site public. Vous pourrez le réafficher plus tard.",
+      "confirm": "Masquer"
+    },
+    "show": {
+      "title": "Afficher cet avis ?",
+      "message": "L'avis redeviendra visible sur le site public.",
+      "confirm": "Afficher"
+    }
   },
   "toasts": {
-    "reviewHidden": "Review hidden successfully",
-    "reviewShown": "Review shown successfully",
-    "reviewDeleted": "Review deleted permanently"
+    "reviewHidden": "Avis masqué avec succès",
+    "reviewShown": "Avis affiché avec succès",
+    "reviewDeleted": "Avis supprimé définitivement",
+    "error": "Une erreur est survenue"
   }
-}
-}
+},
+  "AuditLog": {
+    
+    "badge": "SYSTÈME",
+    "title": "Journal d'audit",
+    "description": "Surveillance complète des actions administratives sur la plateforme NESTHUB.",
+    "exportCSV": "Exporter CSV",
+    "exportPDF": "Télécharger PDF",
+    "stats": {
+      "totalEvents": "Événements totaux",
+      "securityFlags": "Alertes sécurité",
+      "activeAdmins": "Admins actifs",
+      "highPriority": "Priorité haute",
+      "stable": "Stable"
+    },
+    "filters": {
+      "allDates": "Toutes les dates",
+      "dateRange": "Période",
+      "last24h": "24 dernières heures",
+      "last7days": "7 derniers jours",
+      "last30days": "30 derniers jours",
+      "custom": "Personnalisé",
+      "adminUser": "Administrateur",
+      "allAdmins": "Tous les administrateurs",
+      "actionCategory": "Catégorie d'action",
+      "allCategories": "Toutes les catégories",
+      "targetType": "Type de cible",
+      "allTypes": "Tous les types"
+    },
+    "export": {
+    "headers": {
+      "date": "Date",
+      "administrator": "Administrateur",
+      "email": "Email",
+      "action": "Action",
+      "targetType": "Type cible",
+      "targetId": "ID cible",
+      "details": "Détails",
+      "motif": "Motif",
+      "ipAddress": "Adresse IP"
+    }
+  },
+    "categories": {
+      "deleteListing": "Suppression d'annonce",
+      "userSuspension": "Suspension d'utilisateur",
+      "reviewDeleted": "Avis supprimé",
+      "reviewHidden": "Avis masqué",
+      "reviewShown": "Avis affiché",
+      "moderation": "Modération"
+    },
+    "types": {
+      "review": "Avis",
+      "user": "Utilisateur",
+      "listing": "Annonce",
+      "booking": "Réservation",
+      "contactMessage": "Message contact",
+    "verificationRequest": "Demande vérification"
+    },
+    "table": {
+      "timestamp": "Date et heure",
+      "administrator": "Administrateur",
+      "actionType": "Type d'action",
+      "resourceId": "ID ressource",
+      "ipAddress": "Adresse IP",
+      "details": "Détails",
+      "viewDetails": "Voir"
+    },
+    "modal": {
+          "id": "ID",
+
+      "title": "Détail de l'événement",
+      "date": "Date",
+      "action": "Action",
+      "admin": "Administrateur",
+      "targetType": "Type cible",
+      "targetId": "ID cible",
+      "ipAddress": "Adresse IP",
+      "details": "Détails bruts",
+      "motif": "Motif",
+      "close": "Fermer"
+    },
+    "searchPlaceholder": "Rechercher une action, un ID ou un administrateur...",
+    "empty": "Aucun log trouvé",
+    "toasts": {
+      "exportSuccess": "Export CSV généré avec succès",
+        "pdfExportSuccess": "PDF généré avec succès"
+
+    },
+    "errors": {
+      "loading": "Erreur lors du chargement"
+    }
+  ,"actions": {
+    "deleteListing": "Suppression annonce",
+    "reviewDeleted": "Avis supprimé",
+    "userSuspension": "Suspension user",
+    "escalateUser": "Escalade user",
+    "banUser": "Bannir user",
+    "lockUser": "Verrouiller user",
+    "rejectVerification": "Rejeter vérification",
+    "activateUser": "Activer user",
+    "reviewShown": "Avis visible",
+    "validateVerification": "Vérification validée",
+    "verificationValidated": "Vérification validée",
+    "reviewHidden": "Avis masqué",
+    "reviewVisibilityChanged": "Visibilité modifiée",
+    "addNote": "Note ajoutée",
+    "replyToContact": "Réponse contact",
+    "updateStaticPage": "Màj page statique",
+    "restoreVersion": "Restaurer version",
+    "reviewReported": "Avis signalé",
+    "verificationReminderSent": "Rappel vérification",
+    "loginSuccess": "Connexion réussie",
+    "dbBackup": "Backup BDD",
+    "moderation": "Modération"
+  },
+  "reasons": {
+    "inappropriate": "Contenu inapproprié",
+    "fake": "Avis suspect / faux",
+    "offensive": "Langage offensant",
+    "spam": "Spam / publicité",
+    "other": "Autre raison"
+  },
+  "details": {
+    "reason": "Raison",
+    "reportedBy": "Signalé par",
+    "status": "Statut",
+    "visible": "Visible",
+    "hidden": "Masqué",
+    "rating": "Note",
+    "level": "Niveau",
+    "levelValue": "Niveau {level}",
+    "visitor": "Visiteur",
+    "email": "Email",
+    "replyLength": "Longueur réponse",
+    "characters": "caractères",
+    "standard": "Standard",
+    "message": "Message",
+    "adminsNotified": "Admins notifiés"
+  }
+},
+"ownerDashboard":{
+  "searchPlaceholder": "Rechercher...",
+  "ownerBadge": "Propriétaire",
+  "sidebar": {
+    "title": "Espace Propriétaire",
+    "subtitle": "Gérez vos biens immobiliers",
+    "dashboard": "Tableau de bord",
+    "listings": "Mes Annonces",
+    "history": "Historique",
+    "bookings": "Réservations",
+    "settings": "Paramètres",
+    "addListing": "Ajouter une annonce"
+  },
+  "kpi": {
+    "title": "Aperçu de Performance",
+    "subtitle": "Résumé financier et réputation de votre portefeuille",
+    "last7days": "7 derniers jours",
+    "thisMonth": "Ce mois-ci",
+    "totalRevenue": "Revenu Total",
+    "projectedRevenue": "Gains Projetés",
+    "averageRating": "Note Moyenne",
+    "vsLastMonth": "vs mois dernier",
+    "basedOn": "Basé sur {count} réservations à venir",
+    "reviewsCount": "{count} avis vérifiés"
+  },
+  "earnings": {
+    "title": "Gains par Propriété",
+    "download": "Télécharger le Relevé",
+    "table": {
+      "property": "Propriété",
+      "bookings": "Réservations",
+      "netRevenue": "Revenu Net",
+      "status": "Statut",
+      "action": "Action"
+    },
+    "status": {
+      "active": "Actif",
+      "full": "Complet"
+    }
+  },
+  "reviews": {
+    "received": "Avis Reçus",
+    "given": "Avis Donnés",
+    "filterByDate": "Filtrer par date",
+    "writeResponse": "Écrivez votre réponse ici...",
+    "sendResponse": "Envoyer",
+    "cancel": "Annuler",
+    "respond": "Répondre à l'avis",
+    "modifyResponse": "Modifier la réponse",
+    "yourResponse": "Votre réponse",
+    "evaluationFor": "Évaluation pour",
+    "recommended": "Recommandé",
+    "notRecommended": "Non recommandé",
+    "cleanliness": "Propreté",
+    "communication": "Communication",
+    "noReceived": "Aucun avis reçu pour le moment",
+    "noGiven": "Aucun avis donné pour le moment"
+  }
+}}

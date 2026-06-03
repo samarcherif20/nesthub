@@ -1,4 +1,3 @@
-// app/[locale]/admin/moderation/components/ConfirmActionModal.tsx
 'use client';
 
 import { useEffect, useState } from 'react';  
@@ -9,18 +8,26 @@ import {
   IoFlag, 
   IoCloseOutline, 
   IoChatbubblesOutline,
-  IoWarningOutline 
+  IoWarningOutline,
+  IoTrashOutline,
+  IoEyeOffOutline,
+  IoEyeOutline
 } from 'react-icons/io5';
 
 interface ConfirmActionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  action: "FLAG" | "UNFLAG" | "CLOSE" | "REOPEN" | "BULK_FLAG" | "BULK_CLOSE" | null;
+  action: "FLAG" | "UNFLAG" | "CLOSE" | "REOPEN" | "BULK_FLAG" | "BULK_CLOSE" | "DELETE_REVIEW" | "HIDE_REVIEW" | "SHOW_REVIEW" | null;
   conversationId?: string;
   conversationIds?: string[];
   conversationTitle?: string;
   onConfirm: () => Promise<void>;
   loading?: boolean;
+  title?: string;
+  message?: string;
+  confirmText?: string;
+  cancelText?: string;
+  variant?: "danger" | "warning" | "success";
 }
 
 export default function ConfirmActionModal({ 
@@ -30,19 +37,63 @@ export default function ConfirmActionModal({
   conversationIds,
   conversationTitle,
   onConfirm,
-  loading = false
+  loading = false,
+  title: customTitle,
+  message: customMessage,
+  confirmText: customConfirmText,
+  cancelText = "Annuler",
+  variant
 }: ConfirmActionModalProps) {
   const t = useTranslations('Moderation');
-  const [confirmText, setConfirmText] = useState('');
+  const [confirmWord, setConfirmWord] = useState('');
 
   // Reset quand le modal se ferme
   useEffect(() => {
     if (!isOpen) {
-      setConfirmText('');
+      setConfirmWord('');
     }
   }, [isOpen]);
 
   const getModalConfig = () => {
+    // Actions pour les reviews
+    if (action === "DELETE_REVIEW") {
+      return {
+        icon: <IoTrashOutline className="text-xl" />,
+        iconBg: variant === "danger" ? "bg-red-100 dark:bg-red-900/30" : "bg-red-100 dark:bg-red-900/30",
+        iconColor: "text-red-600 dark:text-red-400",
+        title: customTitle || "Supprimer cet avis",
+        description: customMessage || "Cette action est irréversible. L'avis sera définitivement supprimé.",
+        confirmText: customConfirmText || "SUPPRIMER",
+        buttonColor: "bg-red-600 hover:bg-red-700",
+        confirmWord: customConfirmText?.toUpperCase() || "SUPPRIMER"
+      };
+    }
+    if (action === "HIDE_REVIEW") {
+      return {
+        icon: <IoEyeOffOutline className="text-xl" />,
+        iconBg: variant === "warning" ? "bg-amber-100 dark:bg-amber-900/30" : "bg-amber-100 dark:bg-amber-900/30",
+        iconColor: "text-amber-600 dark:text-amber-400",
+        title: customTitle || "Masquer cet avis",
+        description: customMessage || "L'avis ne sera plus visible sur le site public. Vous pourrez le réafficher plus tard.",
+        confirmText: customConfirmText || "MASQUER",
+        buttonColor: "bg-amber-600 hover:bg-amber-700",
+        confirmWord: customConfirmText?.toUpperCase() || "MASQUER"
+      };
+    }
+    if (action === "SHOW_REVIEW") {
+      return {
+        icon: <IoEyeOutline className="text-xl" />,
+        iconBg: variant === "success" ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-900/30",
+        iconColor: "text-emerald-600 dark:text-emerald-400",
+        title: customTitle || "Afficher cet avis",
+        description: customMessage || "L'avis redeviendra visible sur le site public.",
+        confirmText: customConfirmText || "AFFICHER",
+        buttonColor: "bg-emerald-600 hover:bg-emerald-700",
+        confirmWord: customConfirmText?.toUpperCase() || "AFFICHER"
+      };
+    }
+    
+    // Actions originales pour les conversations
     switch (action) {
       case "FLAG":
         return {
@@ -115,19 +166,20 @@ export default function ConfirmActionModal({
           icon: <IoWarningOutline className="text-xl" />,
           iconBg: "bg-slate-100 dark:bg-slate-800",
           iconColor: "text-slate-600 dark:text-slate-400",
-          title: t("confirm.defaultTitle"),
-          description: t("confirm.defaultDescription"),
-          confirmText: "CONFIRMER",
+          title: customTitle || "Confirmation",
+          description: customMessage || "Êtes-vous sûr de vouloir effectuer cette action ?",
+          confirmText: customConfirmText || "CONFIRMER",
           buttonColor: "bg-indigo-600 hover:bg-indigo-700",
-          confirmWord: "CONFIRMER"
+          confirmWord: customConfirmText?.toUpperCase() || "CONFIRMER"
         };
     }
   };
 
   const config = getModalConfig();
   const isBulk = action === "BULK_FLAG" || action === "BULK_CLOSE";
-  const needsConfirmationWord = !isBulk; // Seulement pour les actions simples
-  const isValid = !needsConfirmationWord || confirmText === config.confirmWord;
+  const isReviewAction = action === "DELETE_REVIEW" || action === "HIDE_REVIEW" || action === "SHOW_REVIEW";
+  const needsConfirmationWord = !isBulk && !isReviewAction;
+  const isValid = !needsConfirmationWord || confirmWord === config.confirmWord;
 
   if (!action) return null;
 
@@ -171,7 +223,7 @@ export default function ConfirmActionModal({
           )}
         </div>
 
-        {/* Security Confirmation Input (only for single actions) */}
+        {/* Security Confirmation Input (only for single actions that are not review actions) */}
         {needsConfirmationWord && (
           <div className="p-3 border border-orange-200 dark:border-orange-900/30 bg-orange-50 dark:bg-orange-900/10 rounded-lg">
             <label className="block text-[10px] font-medium text-orange-800 dark:text-orange-300 mb-1">
@@ -179,8 +231,8 @@ export default function ConfirmActionModal({
             </label>
             <input
               type="text"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+              value={confirmWord}
+              onChange={(e) => setConfirmWord(e.target.value.toUpperCase())}
               className="w-full px-2 py-1.5 text-xs rounded-lg border border-orange-200 dark:border-orange-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-orange-500 focus:border-orange-500 uppercase font-bold text-center tracking-widest"
               placeholder={config.confirmWord}
             />
@@ -191,7 +243,7 @@ export default function ConfirmActionModal({
         {isBulk && (
           <div className="p-3 border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
             <p className="text-[10px] text-amber-800 dark:text-amber-300">
-              ⚠️ {t("confirm.bulkWarning")}
+               {t("confirm.bulkWarning")}
             </p>
           </div>
         )}
@@ -204,7 +256,7 @@ export default function ConfirmActionModal({
           className="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
           type="button"
         >
-          {t("confirm.cancel")}
+          {cancelText}
         </button>
         <button
           onClick={onConfirm}

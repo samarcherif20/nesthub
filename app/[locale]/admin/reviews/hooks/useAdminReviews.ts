@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ export interface AdminReview {
   response: string | null;
   responseAt: string | null;
   createdAt: string;
+  isPublished: boolean;
   isFlagged: boolean;
   flagReason: string | null;
   reviewer: {
@@ -25,7 +26,7 @@ export interface AdminReview {
     firstName: string;
     lastName: string;
     profilePictureUrl: string | null;
-  };
+  } | null;
   booking: {
     id: string;
     reference: string;
@@ -42,7 +43,6 @@ export interface AdminReview {
 
 export function useAdminReviews() {
   const t = useTranslations("AdminReviews");
-  const tCommon = useTranslations("Common");
   const { getToken } = useAuth();
 
   const [loading, setLoading] = useState(true);
@@ -50,9 +50,18 @@ export function useAdminReviews() {
   const [filterType, setFilterType] = useState<"all" | "flagged" | "pending">("all");
   const [ratingFilter, setRatingFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [dateFilter, setDateFilter] = useState<string>("all");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedReview, setSelectedReview] = useState<AdminReview | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [pagination, setPagination] = useState({ page: 1, limit: 20, totalCount: 0, totalPages: 1 });
+  
+  // Ref pour éviter les appels multiples
+  const isFirstRender = useRef(true);
+  // ✅ Ref pour le debounce de la recherche
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const lastSearchTerm = useRef(searchTerm);
 
   // Stats
   const stats = {
@@ -63,56 +72,81 @@ export function useAdminReviews() {
     flaggedCount: reviews.filter(r => r.isFlagged).length,
   };
 
-  const fetchReviews = useCallback(async () => {
+  const fetchReviews = useCallback(async (page = 1) => {
     setLoading(true);
     try {
       const token = await getToken({ template: "my-app-template" });
-      const res = await fetch("/api/admin/reviews", {
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: "20",
+        filter: filterType,
+        ratingFilter: ratingFilter,
+        dateFilter: dateFilter,
+        search: searchTerm,
+      });
+      const res = await fetch(`/api/admin/reviews?${params}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         const data = await res.json();
         setReviews(data.reviews || []);
+        setPagination({
+          page: data.page || page,
+          limit: data.limit || 20,
+          totalCount: data.totalCount || 0,
+          totalPages: data.totalPages || 1,
+        });
       } else {
-        toast.error(tCommon("error.loading"));
+        toast.error(t("errors.loading"));
       }
     } catch (error) {
       console.error(error);
-      toast.error(tCommon("error.loading"));
+      toast.error(t("errors.loading"));
     } finally {
       setLoading(false);
     }
-  }, [getToken, tCommon]);
+  }, [getToken, filterType, ratingFilter, dateFilter, searchTerm, t]);
 
+  // ✅ Déclencher fetchReviews quand les filtres changent (avec debounce pour la recherche)
   useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
+    // Ignorer le premier render
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      fetchReviews(1);
+      return;
+    }
 
-  const filteredReviews = reviews.filter((review) => {
-    if (filterType === "flagged" && !review.isFlagged) return false;
-    if (filterType === "pending" && review.response !== null) return false;
-    
-    if (ratingFilter !== "all") {
-      const rating = parseInt(ratingFilter);
-      if (ratingFilter === "low") {
-        if (review.rating > 2) return false;
-      } else if (ratingFilter === "high") {
-        if (review.rating < 4) return false;
-      } else if (review.rating !== rating) return false;
+    // ✅ Si seul le searchTerm a changé, on applique un debounce
+    if (lastSearchTerm.current !== searchTerm) {
+      lastSearchTerm.current = searchTerm;
+      
+      // Nettoyer le timeout précédent
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+      
+      // Nouveau timeout : attendre 500ms après la dernière frappe
+      searchTimeout.current = setTimeout(() => {
+        fetchReviews(1);
+      }, 500);
+      return;
     }
     
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      const titleMatch = review.booking.listing.title.toLowerCase().includes(term);
-      const reviewerMatch = `${review.reviewer.firstName} ${review.reviewer.lastName}`.toLowerCase().includes(term);
-      const commentMatch = review.comment?.toLowerCase().includes(term) || false;
-      if (!titleMatch && !reviewerMatch && !commentMatch) return false;
-    }
-    
-    return true;
-  });
+    // Pour les autres filtres, déclencher directement
+    fetchReviews(1);
+  }, [filterType, ratingFilter, dateFilter, searchTerm, fetchReviews]);
+
+  // ✅ Nettoyer le timeout au démontage du composant
+  useEffect(() => {
+    return () => {
+      if (searchTimeout.current) {
+        clearTimeout(searchTimeout.current);
+      }
+    };
+  }, []);
 
   const handleToggleVisibility = async (reviewId: string, isHidden: boolean) => {
+    setActionLoading(reviewId);
     try {
       const token = await getToken({ template: "my-app-template" });
       const res = await fetch(`/api/admin/reviews/${reviewId}/visibility`, {
@@ -125,12 +159,14 @@ export function useAdminReviews() {
       });
       if (res.ok) {
         toast.success(isHidden ? t("toasts.reviewHidden") : t("toasts.reviewShown"));
-        fetchReviews();
+        fetchReviews(pagination.page);
       } else {
-        toast.error(tCommon("error.general"));
+        toast.error(t("errors.general"));
       }
     } catch {
-      toast.error(tCommon("error.general"));
+      toast.error(t("errors.general"));
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -145,14 +181,14 @@ export function useAdminReviews() {
       });
       if (res.ok) {
         toast.success(t("toasts.reviewDeleted"));
-        setReviews(prev => prev.filter(r => r.id !== selectedReview.id));
         setShowDeleteModal(false);
         setSelectedReview(null);
+        fetchReviews(pagination.page);
       } else {
-        toast.error(tCommon("error.general"));
+        toast.error(t("errors.general"));
       }
     } catch {
-      toast.error(tCommon("error.general"));
+      toast.error(t("errors.general"));
     } finally {
       setDeleting(false);
     }
@@ -168,10 +204,20 @@ export function useAdminReviews() {
     setSelectedReview(null);
   };
 
+  const handlePageChange = (page: number) => {
+    fetchReviews(page);
+  };
+
+  // Fonction manuelle pour rafraîchir
+  const refreshReviews = () => {
+    fetchReviews(pagination.page);
+  };
+
   return {
     loading,
-    reviews: filteredReviews,
-    allReviewsCount: reviews.length,
+    reviews,
+    pagination,
+    allReviewsCount: pagination.totalCount,
     stats,
     filterType,
     setFilterType,
@@ -179,14 +225,18 @@ export function useAdminReviews() {
     setRatingFilter,
     searchTerm,
     setSearchTerm,
+    dateFilter,
+    setDateFilter,
     showDeleteModal,
     deleting,
     selectedReview,
+    actionLoading,
     handleToggleVisibility,
     handleDeleteReview,
     openDeleteModal,
     closeDeleteModal,
+    handlePageChange,
+    fetchReviews: refreshReviews,
     t,
-    tCommon,
   };
 }

@@ -554,6 +554,9 @@ enum PaymentStatus {
 }
 
 enum NotificationType {
+  REVIEW_HIDDEN     // Avis masqué par admin
+  REVIEW_SHOWN      // Avis réactivé par admin
+  REVIEW_DELETED    // Avis supprimé par admin
   DISPUTE_OPENED // Un nouveau litige a été ouvert (pour l'autre partie)
   DISPUTE_OPENED_ADMIN // Un nouveau litige a été ouvert (pour les admins)
   DISPUTE_MESSAGE // Nouveau message dans un litige
