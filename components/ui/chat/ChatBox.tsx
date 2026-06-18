@@ -39,6 +39,7 @@ import {
   IoVolumeHighOutline,
   IoAttachOutline,
   IoChatbubbleOutline,
+  IoTimeOutline,
 } from "react-icons/io5";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -48,7 +49,7 @@ import LoadingSpinner from "../LoadingSpinner";
 import { useRealtimeChatBox } from "@/hooks/useRealtimeChatBox";
 import { UsersRound } from "lucide-react";
 import { useTranslations } from "next-intl";
-
+import { useRouter, useSearchParams } from "next/navigation";
 // ─── pip helpers ────────────────────────────────────────────────────────────────
 const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
@@ -107,6 +108,8 @@ interface ChatBoxProps {
   offerStatus?: "PENDING" | "ACCEPTED" | "REJECTED" | "EXPIRED";
   isPaid?: boolean;
   isGroup?: boolean;
+  hideHeader?: boolean; // ← AJOUTE CETTE LIGNE
+
   groupParticipants?: {
     id: string;
     username: string;
@@ -501,49 +504,66 @@ function SystemMessage({
 }) {
   // Détecter le type de message pour afficher les bonnes icônes
   const getMessageIcon = (text: string) => {
-    if (text.includes("offre de réservation") || text.includes("Offre de réservation")) {
-      return <IoCalendarOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />;
+    if (
+      text.includes("offre de réservation") ||
+      text.includes("Offre de réservation")
+    ) {
+      return (
+        <IoCalendarOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+      );
     }
     if (text.includes("accepté") || text.includes("acceptée")) {
-      return <IoCheckmarkCircleOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />;
+      return (
+        <IoCheckmarkCircleOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+      );
     }
     if (text.includes("Paiement confirmé")) {
-      return <IoCardOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />;
+      return (
+        <IoCardOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+      );
     }
     if (text.includes("fermée par un modérateur")) {
-      return <IoLockClosedOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />;
+      return (
+        <IoLockClosedOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+      );
     }
     if (text.includes("signalée")) {
-      return <IoFlagOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />;
+      return (
+        <IoFlagOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+      );
     }
     if (text.includes("levé")) {
-      return <IoCheckmarkCircleOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />;
+      return (
+        <IoCheckmarkCircleOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+      );
     }
-    return <IoInformationCircleOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />;
+    return (
+      <IoInformationCircleOutline className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+    );
   };
 
   // Nettoyer le contenu (enlever les balises HTML, émojis et caractères invalides)
   const cleanText = (text: string) => {
-    if (!text) return '';
-    
+    if (!text) return "";
+
     // Enlever les anciennes balises d'icônes HTML
-    let cleaned = text.replace(/<[^>]*>/g, '');
-    
+    let cleaned = text.replace(/<[^>]*>/g, "");
+
     // Enlever les émojis
-    cleaned = cleaned.replace(/[🔄📅👥💰⏰⚠️🚫🗑️🏷️✅❌⭐🔊🎤📎💬]/g, '');
-    
+    cleaned = cleaned.replace(/[🔄📅👥💰⏰⚠️🚫🗑️🏷️✅❌⭐🔊🎤📎💬]/g, "");
+
     // Enlever le caractère de remplacement � (U+FFFD)
-    cleaned = cleaned.replace(/[�]/g, '');
-    
+    cleaned = cleaned.replace(/[�]/g, "");
+
     // Enlever tous les caractères non imprimables
-    cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
-    
+    cleaned = cleaned.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+
     // Enlever les caractères Unicode spéciaux problématiques
-    cleaned = cleaned.replace(/[\uFFFD-\uFFFF]/g, '');
-    
+    cleaned = cleaned.replace(/[\uFFFD-\uFFFF]/g, "");
+
     // Nettoyer les espaces multiples et trim
-    cleaned = cleaned.replace(/\s+/g, ' ').trim();
-    
+    cleaned = cleaned.replace(/\s+/g, " ").trim();
+
     return cleaned;
   };
 
@@ -766,6 +786,7 @@ export function ChatBox({
   isPaid = false,
   isGroup = false,
   groupParticipants,
+  hideHeader, // ← AJOUTE CETTE LIGNE
 }: ChatBoxProps) {
   const { user: clerkUser } = useUser();
   const t = useTranslations("ChatBox");
@@ -792,6 +813,9 @@ export function ChatBox({
   } | null>(null);
   const [isCreatingOffer, setIsCreatingOffer] = useState(false);
   const [isUserBlocked, setIsUserBlocked] = useState(false);
+  const [paymentBlocked, setPaymentBlocked] = useState(false);
+  const searchParams = useSearchParams();
+  const [paymentCooldown, setPaymentCooldown] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showInfoPanel, setShowInfoPanel] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -803,7 +827,26 @@ export function ChatBox({
   const [typingTimeout, setTypingTimeout] = useState<NodeJS.Timeout | null>(
     null,
   );
+  const [booking, setBooking] = useState<any>(null);
+  const [isConfirmingCheckIn, setIsConfirmingCheckIn] = useState(false);
   const [lastReportTime, setLastReportTime] = useState(0);
+  const [localIsPaid, setLocalIsPaid] = useState(isPaid || false);
+
+  // Formatage du temps de cooldown pour le paiement
+  const formatPaymentCooldown = (seconds: number) => {
+    // Assurer que seconds est bien un nombre positif
+    const totalSeconds = Math.max(0, seconds);
+    const minutes = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+
+    if (minutes > 0) {
+      if (secs > 0) {
+        return `${minutes} min ${secs} sec`;
+      }
+      return `${minutes} minute${minutes > 1 ? "s" : ""}`;
+    }
+    return `${secs} seconde${secs > 1 ? "s" : ""}`;
+  };
   const processedIds = useRef<Set<string>>(new Set());
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -837,7 +880,148 @@ export function ChatBox({
       setToast({ message, type }),
     [],
   );
+  // Récupérer la réservation associée à la conversation
+  useEffect(() => {
+    const fetchBooking = async () => {
+      if (!conversationId || isGroup) return;
+      try {
+        const res = await fetch(`/api/conversations/${conversationId}/booking`);
+        if (res.ok) {
+          const data = await res.json();
+          setBooking(data.booking);
+        }
+      } catch (error) {
+        console.error("Erreur récupération réservation:", error);
+      }
+    };
+    fetchBooking();
+  }, [conversationId, isGroup]);
+  const checkPaymentStatus = useCallback(async () => {
+    if (!offerId || offerStatus !== "ACCEPTED") return;
 
+    console.log(" Vérification paiement pour offerId:", offerId);
+
+    try {
+      const res = await fetch(`/api/bookings/by-offer/${offerId}`);
+      if (!res.ok) return;
+
+      const data = await res.json();
+      console.log(" Données reçues:", JSON.stringify(data, null, 2));
+
+      if (data.booking) {
+        const isPaid =
+          data.booking.paymentStatus === "HELD" ||
+          data.booking.paymentStatus === "PAID" ||
+          data.booking.paymentStatus === "RELEASED" ||
+          data.booking.escrowStatus === "HELD" ||
+          data.booking.escrowStatus === "RELEASED" ||
+          data.booking.escrowStatus === "PAID_MANUALLY";
+
+        console.log(" isPaid calculé:", isPaid);
+        setLocalIsPaid(isPaid);
+
+        if (isPaid) {
+          showToastMsg(" Paiement confirmé !", "success");
+        }
+      }
+    } catch (error) {
+      console.error(" Erreur vérification paiement:", error);
+    }
+  }, [offerId, offerStatus]);
+  useEffect(() => {
+    setLocalIsPaid(isPaid || false);
+  }, [isPaid]);
+  useEffect(() => {
+    if (!offerId || offerStatus !== "ACCEPTED") return;
+
+    checkPaymentStatus();
+    const interval = setInterval(checkPaymentStatus, 10000);
+    return () => clearInterval(interval);
+  }, [offerId, offerStatus, checkPaymentStatus]);
+  // Charger l'état du blocage depuis localStorage au chargement
+  useEffect(() => {
+    const checkBlockedStatus = () => {
+      const blockedUntil = localStorage.getItem(`payment_blocked_until`);
+      if (blockedUntil) {
+        const remainingSeconds = Math.floor(
+          (parseInt(blockedUntil) - Date.now()) / 1000,
+        );
+        if (remainingSeconds > 0) {
+          setPaymentBlocked(true);
+          setPaymentCooldown(remainingSeconds);
+
+          // Démarrer le timer
+          const timer = setInterval(() => {
+            setPaymentCooldown((prev) => {
+              if (prev <= 1) {
+                clearInterval(timer);
+                setPaymentBlocked(false);
+                localStorage.removeItem(`payment_blocked_until`);
+                showToastMsg(t("payment.cooldownEnded"), "success");
+
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+
+          return () => clearInterval(timer);
+        } else {
+          localStorage.removeItem(`payment_blocked_until`);
+        }
+      }
+    };
+    checkBlockedStatus();
+  }, [showToastMsg]);
+  // Vérifier le blocage paiement depuis l'URL
+  useEffect(() => {
+    const paymentBlockedParam = searchParams.get("paymentBlocked");
+    const cooldownParam = searchParams.get("cooldown");
+
+    if (paymentBlockedParam === "true" && cooldownParam) {
+      // Nettoyer l'URL immédiatement
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, "", newUrl);
+
+      let cooldownSeconds = parseInt(cooldownParam);
+
+      // Vérifier si déjà bloqué dans localStorage
+      const existingBlock = localStorage.getItem(`payment_blocked_until`);
+      if (existingBlock) {
+        const remaining = Math.floor(
+          (parseInt(existingBlock) - Date.now()) / 1000,
+        );
+        if (remaining > 0) {
+          setPaymentBlocked(true);
+          setPaymentCooldown(remaining);
+          return;
+        }
+      }
+
+      // Stocker dans localStorage
+      const blockedUntil = Date.now() + cooldownSeconds * 1000;
+      localStorage.setItem(`payment_blocked_until`, blockedUntil.toString());
+
+      setPaymentCooldown(cooldownSeconds);
+      setPaymentBlocked(true);
+
+      const timer = setInterval(() => {
+        setPaymentCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setPaymentBlocked(false);
+            localStorage.removeItem(`payment_blocked_until`);
+            showToastMsg(t("payment.cooldownEnded"), "success");
+
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => clearInterval(timer);
+    }
+  }, [searchParams, showToastMsg]);
   useEffect(() => {
     const checkTheme = () =>
       setEmojiTheme(
@@ -863,7 +1047,8 @@ export function ChatBox({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const showPaymentBanner = offerStatus === "ACCEPTED" && !isPaid;
+  //const showPaymentBanner = offerStatus === "ACCEPTED" && !isPaid;
+  const showPaymentBanner = offerStatus === "ACCEPTED" && !localIsPaid;
 
   const loadMessages = useCallback(async () => {
     if (!conversationId) return;
@@ -905,6 +1090,32 @@ export function ChatBox({
       setIsLoading(false);
     }
   }, [conversationId, listing, isGroup]);
+
+  const handleConfirmCheckIn = async () => {
+    if (!booking) return;
+    setIsConfirmingCheckIn(true);
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}/confirm-checkin`, {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToastMsg(data.message, "success");
+        setBooking((prev: any) => ({
+          ...prev,
+          checkInConfirmedAt: new Date().toISOString(),
+          escrowStatus: "RELEASING",
+        }));
+        setTimeout(() => loadMessages(), 2000); // ← maintenant loadMessages existe
+      } else {
+        showToastMsg(data.error || "Erreur", "error");
+      }
+    } catch (error) {
+      showToastMsg("Erreur de connexion", "error");
+    } finally {
+      setIsConfirmingCheckIn(false);
+    }
+  };
 
   useEffect(() => {
     if (!isLoading && messages.length > 0) {
@@ -981,45 +1192,52 @@ export function ChatBox({
     };
   }, []);
 
-  useEffect(() => {
-    if (!socket) return;
+ useEffect(() => {
+  if (!socket) {
+    console.log(" [CHATBOX] Pas de socket pour le typing");
+    return;
+  }
 
-    const handleUserTyping = (data: {
-      userId: string;
-      conversationId: string;
-    }) => {
-      if (
-        data.userId === recipientId &&
-        data.conversationId === conversationId
-      ) {
-        setIsTyping(true);
-        if (typingTimeout) clearTimeout(typingTimeout);
-        const timeout = setTimeout(() => setIsTyping(false), 3000);
-        setTypingTimeout(timeout);
-      }
-    };
+  console.log(" [CHATBOX] Configuration des écouteurs de typing");
 
-    const handleUserStopTyping = (data: {
-      userId: string;
-      conversationId: string;
-    }) => {
-      if (
-        data.userId === recipientId &&
-        data.conversationId === conversationId
-      ) {
-        setIsTyping(false);
-      }
-    };
-
-    socket.on("user-typing", handleUserTyping);
-    socket.on("user-stop-typing", handleUserStopTyping);
-
-    return () => {
-      socket.off("user-typing", handleUserTyping);
-      socket.off("user-stop-typing", handleUserStopTyping);
+  const handleUserTyping = (data: {
+    userId: string;
+    conversationId: string;
+  }) => {
+    console.log(" [CHATBOX] user-typing reçu:", data); // AJOUTE
+    if (
+      data.userId === recipientId &&
+      data.conversationId === conversationId
+    ) {
+      setIsTyping(true);
       if (typingTimeout) clearTimeout(typingTimeout);
-    };
-  }, [socket, recipientId, conversationId, typingTimeout]);
+      const timeout = setTimeout(() => setIsTyping(false), 3000);
+      setTypingTimeout(timeout);
+    }
+  };
+
+  const handleUserStopTyping = (data: {
+    userId: string;
+    conversationId: string;
+  }) => {
+    console.log(" [CHATBOX] user-stop-typing reçu:", data); // AJOUTE
+    if (
+      data.userId === recipientId &&
+      data.conversationId === conversationId
+    ) {
+      setIsTyping(false);
+    }
+  };
+
+  socket.on("user-typing", handleUserTyping);
+  socket.on("user-stop-typing", handleUserStopTyping);
+
+  return () => {
+    socket.off("user-typing", handleUserTyping);
+    socket.off("user-stop-typing", handleUserStopTyping);
+    if (typingTimeout) clearTimeout(typingTimeout);
+  };
+}, [socket, recipientId, conversationId, typingTimeout]);
 
   const checkBlockCooldown = useCallback(() => {
     const lastBlockTime = localStorage.getItem(`block_${recipientId}`);
@@ -1259,17 +1477,28 @@ export function ChatBox({
   };
 
   const adjustHeight = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const el = e.target;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-    setInput(el.value);
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+  const el = e.target;
+  el.style.height = "auto";
+  el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
+  setInput(el.value);
+  
+  console.log("🖊️ [CHATBOX] adjustHeight appelé, valeur:", el.value); // AJOUTE
+  
+  if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+  
+  if (el.value.trim().length > 0) { // AJOUTE CETTE CONDITION
+    console.log("🖊️ [CHATBOX] startTyping appelé avec conversationId:", conversationId); // AJOUTE
     startTyping(conversationId);
-    typingTimeoutRef.current = setTimeout(
-      () => stopTyping(conversationId),
-      2000,
-    );
-  };
+  } else {
+    console.log("✋ [CHATBOX] stopTyping appelé (input vide)"); // AJOUTE
+    stopTyping(conversationId);
+  }
+  
+  typingTimeoutRef.current = setTimeout(() => {
+    console.log(" [CHATBOX] stopTyping après timeout"); // AJOUTE
+    stopTyping(conversationId);
+  }, 2000);
+};
 
   const handleReportConversation = async () => {
     const now = Date.now();
@@ -1403,19 +1632,6 @@ export function ChatBox({
         const formattedCheckOut = checkOutDate.toLocaleDateString("fr-FR");
         const guests = listing.guests || 1;
         const totalPrice = data.offer?.totalPrice || listing.pricePerNight || 0;
-
-        const offerMessage = `${recipientName} ${t(
-          "offer.createdOfferMessage",
-          {
-            nights,
-            checkIn: formattedCheckIn,
-            checkOut: formattedCheckOut,
-            guests,
-            totalPrice: totalPrice.toLocaleString("fr-FR"),
-          },
-        )}`;
-
-        sendSocketMessage(conversationId, offerMessage, recipientId);
       } else {
         showToastMsg(data.error || t("offer.createError"), "error");
       }
@@ -1480,117 +1696,118 @@ export function ChatBox({
           t={t}
         />
       )}
-
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
-        {isGroup ? (
-          <GroupAvatar participants={groupParticipants} size={38} />
-        ) : (
-          <Avatar src={recipientImage} name={recipientName} size={38} />
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
-            {isGroup ? listingTitle || t("header.dispute") : recipientName}
-          </p>
-          {isGroup && (
-            <p className="text-xs text-purple-500 dark:text-purple-400">
-              {t("header.disputeConversation")}
-            </p>
+      {/* Header - conditionnel selon hideHeader */}
+      {!hideHeader && (
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+          {isGroup ? (
+            <GroupAvatar participants={groupParticipants} size={38} />
+          ) : (
+            <Avatar src={recipientImage} name={recipientName} size={38} />
           )}
-          {/* Indicateur "en train d'écrire" */}
-          {isTyping && isConnected && !isGroup && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <div className="flex gap-0.5">
-                <span
-                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "0ms" }}
-                ></span>
-                <span
-                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "150ms" }}
-                ></span>
-                <span
-                  className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
-                  style={{ animationDelay: "300ms" }}
-                ></span>
+          <div className="flex-1 min-w-0">
+            <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+              {isGroup ? listingTitle || t("header.dispute") : recipientName}
+            </p>
+            {isGroup && (
+              <p className="text-xs text-purple-500 dark:text-purple-400">
+                {t("header.disputeConversation")}
+              </p>
+            )}
+            {/* Indicateur "en train d'écrire" */}
+            {isTyping && isConnected && !isGroup && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <div className="flex gap-0.5">
+                  <span
+                    className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  ></span>
+                  <span
+                    className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  ></span>
+                  <span
+                    className="w-1 h-1 bg-indigo-500 rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  ></span>
+                </div>
+                <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
+                  {recipientName} {t("typing")}
+                </span>
               </div>
-              <span className="text-[10px] text-indigo-600 dark:text-indigo-400">
-                {recipientName} {t("typing")}
-              </span>
-            </div>
-          )}
+            )}
 
-          {/* Statut de connexion */}
-          {!isTyping && !isGroup && (
-            <div className="flex items-center gap-1 mt-0.5">
-              <span
-                className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-slate-400"}`}
-              ></span>
-              <span className="text-[10px] text-slate-400">
-                {isConnected ? t("status.online") : t("status.offline")}
-              </span>
+            {/* Statut de connexion */}
+            {!isTyping && !isGroup && (
+              <div className="flex items-center gap-1 mt-0.5">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-slate-400"}`}
+                ></span>
+                <span className="text-[10px] text-slate-400">
+                  {isConnected ? t("status.online") : t("status.offline")}
+                </span>
+              </div>
+            )}
+            {listingTitle && !isGroup && (
+              <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
+                {listingTitle}
+              </p>
+            )}
+          </div>
+          {/* Menu plus - uniquement pour conversations normales ET si le destinataire n'est pas ADMIN */}
+          {!isGroup && recipientRole !== "ADMIN" && (
+            <div className="flex items-center gap-1 shrink-0">
+              <div className="relative" ref={moreRef}>
+                <button
+                  onClick={() => !isAdminLocked && setShowMoreMenu((p) => !p)}
+                  disabled={isAdminLocked}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isAdminLocked ? "text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
+                >
+                  <IoEllipsisVerticalOutline className="text-lg" />
+                </button>
+                {showMoreMenu && (
+                  <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-xl z-30 overflow-hidden">
+                    <button
+                      onClick={handleReportConversation}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700"
+                    >
+                      <IoFlagOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {t("menu.report")}
+                      </span>
+                    </button>
+                    <button
+                      onClick={handleOpenBlockSheet}
+                      disabled={isUserBlocked || blockCooldown}
+                      className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700 disabled:opacity-50"
+                    >
+                      <IoBanOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
+                      <span className="text-slate-700 dark:text-slate-300">
+                        {isUserBlocked
+                          ? t("menu.blocked")
+                          : blockCooldown
+                            ? t("menu.blockCooldown", {
+                                hours: cooldownRemaining,
+                              })
+                            : t("menu.blockUser")}
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-          {listingTitle && !isGroup && (
-            <p className="text-xs text-slate-400 dark:text-slate-500 truncate">
-              {listingTitle}
-            </p>
+          {!isConnected && !isGroup && (
+            <span className="text-[10px] text-amber-500 font-medium">
+              {t("status.reconnecting")}
+            </span>
+          )}
+          {isAdminLocked && (
+            <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full ml-2">
+              {t("status.locked")}
+            </span>
           )}
         </div>
-        {/* Menu plus - uniquement pour conversations normales ET si le destinataire n'est pas ADMIN */}
-        {!isGroup && recipientRole !== "ADMIN" && (
-          <div className="flex items-center gap-1 shrink-0">
-            <div className="relative" ref={moreRef}>
-              <button
-                onClick={() => !isAdminLocked && setShowMoreMenu((p) => !p)}
-                disabled={isAdminLocked}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${isAdminLocked ? "text-slate-300 dark:text-slate-600 cursor-not-allowed opacity-50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800"}`}
-              >
-                <IoEllipsisVerticalOutline className="text-lg" />
-              </button>
-              {showMoreMenu && (
-                <div className="absolute right-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 shadow-xl z-30 overflow-hidden">
-                  <button
-                    onClick={handleReportConversation}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700"
-                  >
-                    <IoFlagOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {t("menu.report")}
-                    </span>
-                  </button>
-                  <button
-                    onClick={handleOpenBlockSheet}
-                    disabled={isUserBlocked || blockCooldown}
-                    className="flex items-center gap-3 w-full px-4 py-3 text-sm text-left hover:bg-slate-50 dark:hover:bg-slate-700/60 transition-colors border-b border-slate-100 dark:border-slate-700 disabled:opacity-50"
-                  >
-                    <IoBanOutline className="text-slate-700 dark:text-slate-300 flex-shrink-0" />
-                    <span className="text-slate-700 dark:text-slate-300">
-                      {isUserBlocked
-                        ? t("menu.blocked")
-                        : blockCooldown
-                          ? t("menu.blockCooldown", {
-                              hours: cooldownRemaining,
-                            })
-                          : t("menu.blockUser")}
-                    </span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        {!isConnected && !isGroup && (
-          <span className="text-[10px] text-amber-500 font-medium">
-            {t("status.reconnecting")}
-          </span>
-        )}
-        {isAdminLocked && (
-          <span className="px-2 py-1 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-[10px] font-bold rounded-full ml-2">
-            {t("status.locked")}
-          </span>
-        )}
-      </div>
+      )}
 
       {/* Safety Banner */}
       {isAdminLocked && (
@@ -1610,7 +1827,25 @@ export function ChatBox({
           </div>
         </div>
       )}
-
+      {/* Payment Blocked Banner */}
+      {paymentBlocked && (
+        <div className="mx-4 mt-2 mb-1 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800/50">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
+              <IoTimeOutline className="text-amber-600 dark:text-amber-400 text-sm" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">
+                Paiement temporairement bloqué
+              </p>
+              <p className="text-[10px] text-amber-600/70 dark:text-amber-500/70">
+                3 tentatives de paiement ont échoué. Réessayez dans{" "}
+                <strong>{formatPaymentCooldown(paymentCooldown)}</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Payment Banner */}
       {showPaymentBanner && offerId && (
         <div className="mx-4 mt-2 mb-1 p-3 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/50">
@@ -1628,15 +1863,24 @@ export function ChatBox({
                 </p>
               </div>
             </div>
-            <button
-              onClick={() =>
-                (window.location.href = `/fr/payment?offerId=${offerId}`)
-              }
-              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-all"
-            >
-              {t("payment.payNow")}
-              <IoArrowForwardOutline className="text-xs" />
-            </button>
+            {paymentBlocked ? (
+              <div className="px-3 py-2 rounded-lg bg-amber-100 dark:bg-amber-900/50">
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <IoTimeOutline className="text-xs" />
+                  Attendre {formatPaymentCooldown(paymentCooldown)}
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={() =>
+                  (window.location.href = `/fr/payment?offerId=${offerId}&conversationId=${conversationId}`)
+                }
+                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 transition-all"
+              >
+                {t("payment.payNow")}
+                <IoArrowForwardOutline className="text-xs" />
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1963,6 +2207,46 @@ export function ChatBox({
               )}
           </>
         )}
+        {/*  BOUTON DE CONFIRMATION D'ARRIVÉE POUR LE LOCATAIRE */}
+        {!isGroup &&
+          isTenant &&
+          booking &&
+          new Date() >= new Date(booking.checkIn) &&
+          !booking.checkInConfirmedAt &&
+          booking.escrowStatus === "HELD" && (
+            <div className="my-3 p-4 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border border-green-200 dark:border-green-800 shadow-sm">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center shrink-0">
+                  <IoLocationOutline className="text-green-600 dark:text-green-400 text-lg" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-bold text-green-700 dark:text-green-400">
+                    {t("checkin.title")}
+                  </h3>
+                  <p className="text-xs text-green-600 dark:text-green-500/70 mt-1">
+                    {t("checkin.description")}
+                  </p>
+                  <button
+                    onClick={handleConfirmCheckIn}
+                    disabled={isConfirmingCheckIn}
+                    className="mt-3 w-full py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50"
+                  >
+                    {isConfirmingCheckIn ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>{t("checkin.confirming")}</span>
+                      </div>
+                    ) : (
+                      <span className="flex items-center justify-center gap-2">
+                        <IoLocationOutline className="text-base" />
+                        {t("checkin.confirmArrival")}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         <div ref={messagesEndRef} />
       </div>
 

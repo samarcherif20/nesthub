@@ -79,8 +79,8 @@ export default function NotificationCheckbox({
   notify,
   setNotify,
   userEmail,
-  label = "Notifier l'utilisateur par email",
-  message = "Un email sera envoyé à {email} pour le notifier.",
+  label ,
+  message ,
   colorScheme = "orange",
   className = "",
 }: NotificationCheckboxProps) {

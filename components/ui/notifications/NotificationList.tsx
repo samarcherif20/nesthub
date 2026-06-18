@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { IoNotificationsOutline } from "react-icons/io5";
 import NotificationItem from "./NotificationItem";
 
@@ -32,11 +33,13 @@ export default function NotificationList({
   onClose,
   processingAction,
 }: NotificationListProps) {
+  const t = useTranslations("NotificationList");
+
   if (loading) {
     return (
       <div className="p-8 text-center">
         <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
-        <p className="text-xs text-gray-400 mt-2">Chargement...</p>
+        <p className="text-xs text-gray-400 mt-2">{t("loading")}</p>
       </div>
     );
   }
@@ -48,7 +51,7 @@ export default function NotificationList({
           <div className="flex justify-center mb-2">
             <IoNotificationsOutline className="text-5xl text-gray-300 dark:text-gray-600" />
           </div>
-          <p className="text-sm text-gray-400">Aucune notification</p>
+          <p className="text-sm text-gray-400">{t("noNotifications")}</p>
         </div>
       </div>
     );

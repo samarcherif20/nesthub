@@ -1,23 +1,33 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';  
-import Modal from '@/components/ui/Modal';
-import { useTranslations } from 'next-intl';
-import { 
-  IoFlagOutline, 
-  IoFlag, 
-  IoCloseOutline, 
+import { useEffect, useState } from "react";
+import Modal from "@/components/ui/Modal";
+import { useTranslations } from "next-intl";
+import {
+  IoFlagOutline,
+  IoFlag,
+  IoCloseOutline,
   IoChatbubblesOutline,
   IoWarningOutline,
   IoTrashOutline,
   IoEyeOffOutline,
-  IoEyeOutline
-} from 'react-icons/io5';
+  IoEyeOutline,
+} from "react-icons/io5";
 
 interface ConfirmActionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  action: "FLAG" | "UNFLAG" | "CLOSE" | "REOPEN" | "BULK_FLAG" | "BULK_CLOSE" | "DELETE_REVIEW" | "HIDE_REVIEW" | "SHOW_REVIEW" | null;
+  action:
+    | "FLAG"
+    | "UNFLAG"
+    | "CLOSE"
+    | "REOPEN"
+    | "BULK_FLAG"
+    | "BULK_CLOSE"
+    | "DELETE_REVIEW"
+    | "HIDE_REVIEW"
+    | "SHOW_REVIEW"
+    | null;
   conversationId?: string;
   conversationIds?: string[];
   conversationTitle?: string;
@@ -30,10 +40,10 @@ interface ConfirmActionModalProps {
   variant?: "danger" | "warning" | "success";
 }
 
-export default function ConfirmActionModal({ 
-  isOpen, 
-  onClose, 
-  action, 
+export default function ConfirmActionModal({
+  isOpen,
+  onClose,
+  action,
   conversationIds,
   conversationTitle,
   onConfirm,
@@ -42,15 +52,15 @@ export default function ConfirmActionModal({
   message: customMessage,
   confirmText: customConfirmText,
   cancelText = "Annuler",
-  variant
+  variant,
 }: ConfirmActionModalProps) {
-  const t = useTranslations('Moderation');
-  const [confirmWord, setConfirmWord] = useState('');
+  const t = useTranslations("Moderation");
+  const [confirmWord, setConfirmWord] = useState("");
 
   // Reset quand le modal se ferme
   useEffect(() => {
     if (!isOpen) {
-      setConfirmWord('');
+      setConfirmWord("");
     }
   }, [isOpen]);
 
@@ -59,40 +69,55 @@ export default function ConfirmActionModal({
     if (action === "DELETE_REVIEW") {
       return {
         icon: <IoTrashOutline className="text-xl" />,
-        iconBg: variant === "danger" ? "bg-red-100 dark:bg-red-900/30" : "bg-red-100 dark:bg-red-900/30",
+        iconBg:
+          variant === "danger"
+            ? "bg-red-100 dark:bg-red-900/30"
+            : "bg-red-100 dark:bg-red-900/30",
         iconColor: "text-red-600 dark:text-red-400",
-        title: customTitle || "Supprimer cet avis",
-        description: customMessage || "Cette action est irréversible. L'avis sera définitivement supprimé.",
-        confirmText: customConfirmText || "SUPPRIMER",
+        title: customTitle || t("confirm.deleteReviewTitle"),
+        description: customMessage || t("confirm.deleteReviewDescription"),
+        confirmText: customConfirmText || t("confirm.deleteReviewConfirm"),
         buttonColor: "bg-red-600 hover:bg-red-700",
-        confirmWord: customConfirmText?.toUpperCase() || "SUPPRIMER"
+        confirmWord:
+          customConfirmText?.toUpperCase() ||
+          t("confirm.deleteReviewConfirm").toUpperCase(),
       };
     }
     if (action === "HIDE_REVIEW") {
       return {
         icon: <IoEyeOffOutline className="text-xl" />,
-        iconBg: variant === "warning" ? "bg-amber-100 dark:bg-amber-900/30" : "bg-amber-100 dark:bg-amber-900/30",
+        iconBg:
+          variant === "warning"
+            ? "bg-amber-100 dark:bg-amber-900/30"
+            : "bg-amber-100 dark:bg-amber-900/30",
         iconColor: "text-amber-600 dark:text-amber-400",
-        title: customTitle || "Masquer cet avis",
-        description: customMessage || "L'avis ne sera plus visible sur le site public. Vous pourrez le réafficher plus tard.",
-        confirmText: customConfirmText || "MASQUER",
+        title: customTitle || t("confirm.hideReviewTitle"),
+        description: customMessage || t("confirm.hideReviewDescription"),
+        confirmText: customConfirmText || t("confirm.hideReviewConfirm"),
         buttonColor: "bg-amber-600 hover:bg-amber-700",
-        confirmWord: customConfirmText?.toUpperCase() || "MASQUER"
+        confirmWord:
+          customConfirmText?.toUpperCase() ||
+          t("confirm.hideReviewConfirm").toUpperCase(),
       };
     }
     if (action === "SHOW_REVIEW") {
       return {
         icon: <IoEyeOutline className="text-xl" />,
-        iconBg: variant === "success" ? "bg-emerald-100 dark:bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-900/30",
+        iconBg:
+          variant === "success"
+            ? "bg-emerald-100 dark:bg-emerald-900/30"
+            : "bg-emerald-100 dark:bg-emerald-900/30",
         iconColor: "text-emerald-600 dark:text-emerald-400",
-        title: customTitle || "Afficher cet avis",
-        description: customMessage || "L'avis redeviendra visible sur le site public.",
-        confirmText: customConfirmText || "AFFICHER",
+        title: customTitle || t("confirm.showReviewTitle"),
+        description: customMessage || t("confirm.showReviewDescription"),
+        confirmText: customConfirmText || t("confirm.showReviewConfirm"),
         buttonColor: "bg-emerald-600 hover:bg-emerald-700",
-        confirmWord: customConfirmText?.toUpperCase() || "AFFICHER"
+        confirmWord:
+          customConfirmText?.toUpperCase() ||
+          t("confirm.showReviewConfirm").toUpperCase(),
       };
     }
-    
+
     // Actions originales pour les conversations
     switch (action) {
       case "FLAG":
@@ -102,9 +127,9 @@ export default function ConfirmActionModal({
           iconColor: "text-orange-600 dark:text-orange-400",
           title: t("confirm.flagTitle"),
           description: t("confirm.flagDescription"),
-          confirmText: "SIGNALER",
+          confirmText: t("confirm.flagConfirm"),
           buttonColor: "bg-orange-600 hover:bg-orange-700",
-          confirmWord: "SIGNALER"
+          confirmWord: t("confirm.flagConfirm").toUpperCase(),
         };
       case "UNFLAG":
         return {
@@ -113,9 +138,9 @@ export default function ConfirmActionModal({
           iconColor: "text-green-600 dark:text-green-400",
           title: t("confirm.unflagTitle"),
           description: t("confirm.unflagDescription"),
-          confirmText: "RETIRER",
+          confirmText: t("confirm.unflagConfirm"),
           buttonColor: "bg-green-600 hover:bg-green-700",
-          confirmWord: "RETIRER"
+          confirmWord: t("confirm.unflagConfirm").toUpperCase(),
         };
       case "CLOSE":
         return {
@@ -124,9 +149,9 @@ export default function ConfirmActionModal({
           iconColor: "text-red-600 dark:text-red-400",
           title: t("confirm.closeTitle"),
           description: t("confirm.closeDescription"),
-          confirmText: "FERMER",
+          confirmText: t("confirm.closeConfirm"),
           buttonColor: "bg-red-600 hover:bg-red-700",
-          confirmWord: "FERMER"
+          confirmWord: t("confirm.closeConfirm").toUpperCase(),
         };
       case "REOPEN":
         return {
@@ -135,49 +160,62 @@ export default function ConfirmActionModal({
           iconColor: "text-emerald-600 dark:text-emerald-400",
           title: t("confirm.reopenTitle"),
           description: t("confirm.reopenDescription"),
-          confirmText: "ROUVRIR",
+          confirmText: t("confirm.reopenConfirm"),
           buttonColor: "bg-emerald-600 hover:bg-emerald-700",
-          confirmWord: "ROUVRIR"
+          confirmWord: t("confirm.reopenConfirm").toUpperCase(),
         };
       case "BULK_FLAG":
         return {
           icon: <IoFlagOutline className="text-xl" />,
           iconBg: "bg-orange-100 dark:bg-orange-900/30",
           iconColor: "text-orange-600 dark:text-orange-400",
-          title: t("confirm.bulkFlagTitle", { count: conversationIds?.length || 0 }),
-          description: t("confirm.bulkFlagDescription", { count: conversationIds?.length || 0 }),
-          confirmText: "SIGNALER",
+          title: t("confirm.bulkFlagTitle", {
+            count: conversationIds?.length || 0,
+          }),
+          description: t("confirm.bulkFlagDescription", {
+            count: conversationIds?.length || 0,
+          }),
+          confirmText: t("confirm.flagConfirm"),
           buttonColor: "bg-orange-600 hover:bg-orange-700",
-          confirmWord: "SIGNALER"
+          confirmWord: t("confirm.flagConfirm").toUpperCase(),
         };
       case "BULK_CLOSE":
         return {
           icon: <IoCloseOutline className="text-xl" />,
           iconBg: "bg-red-100 dark:bg-red-900/30",
           iconColor: "text-red-600 dark:text-red-400",
-          title: t("confirm.bulkCloseTitle", { count: conversationIds?.length || 0 }),
-          description: t("confirm.bulkCloseDescription", { count: conversationIds?.length || 0 }),
-          confirmText: "FERMER",
+          title: t("confirm.bulkCloseTitle", {
+            count: conversationIds?.length || 0,
+          }),
+          description: t("confirm.bulkCloseDescription", {
+            count: conversationIds?.length || 0,
+          }),
+          confirmText: t("confirm.closeConfirm"),
           buttonColor: "bg-red-600 hover:bg-red-700",
-          confirmWord: "FERMER"
+          confirmWord: t("confirm.closeConfirm").toUpperCase(),
         };
       default:
         return {
           icon: <IoWarningOutline className="text-xl" />,
           iconBg: "bg-slate-100 dark:bg-slate-800",
           iconColor: "text-slate-600 dark:text-slate-400",
-          title: customTitle || "Confirmation",
-          description: customMessage || "Êtes-vous sûr de vouloir effectuer cette action ?",
-          confirmText: customConfirmText || "CONFIRMER",
+          title: customTitle || t("confirm.defaultTitle"),
+          description: customMessage || t("confirm.defaultDescription"),
+          confirmText: customConfirmText || t("confirm.defaultConfirm"),
           buttonColor: "bg-indigo-600 hover:bg-indigo-700",
-          confirmWord: customConfirmText?.toUpperCase() || "CONFIRMER"
+          confirmWord:
+            customConfirmText?.toUpperCase() ||
+            t("confirm.defaultConfirm").toUpperCase(),
         };
     }
   };
 
   const config = getModalConfig();
   const isBulk = action === "BULK_FLAG" || action === "BULK_CLOSE";
-  const isReviewAction = action === "DELETE_REVIEW" || action === "HIDE_REVIEW" || action === "SHOW_REVIEW";
+  const isReviewAction =
+    action === "DELETE_REVIEW" ||
+    action === "HIDE_REVIEW" ||
+    action === "SHOW_REVIEW";
   const needsConfirmationWord = !isBulk && !isReviewAction;
   const isValid = !needsConfirmationWord || confirmWord === config.confirmWord;
 
@@ -191,7 +229,9 @@ export default function ConfirmActionModal({
       className="max-w-md"
       title={
         <div className="flex items-center gap-3">
-          <div className={`flex items-center justify-center w-10 h-10 rounded-full ${config.iconBg} ${config.iconColor}`}>
+          <div
+            className={`flex items-center justify-center w-10 h-10 rounded-full ${config.iconBg} ${config.iconColor}`}
+          >
             {config.icon}
           </div>
           <div className="flex flex-col">
@@ -218,7 +258,7 @@ export default function ConfirmActionModal({
           )}
           {isBulk && conversationIds && conversationIds.length > 0 && (
             <p className="text-xs font-medium text-slate-800 dark:text-slate-200 mt-2">
-              {conversationIds.length} conversation(s) concernée(s)
+              {conversationIds.length} {t("confirm.conversationsCount")}
             </p>
           )}
         </div>
@@ -227,7 +267,8 @@ export default function ConfirmActionModal({
         {needsConfirmationWord && (
           <div className="p-3 border border-orange-200 dark:border-orange-900/30 bg-orange-50 dark:bg-orange-900/10 rounded-lg">
             <label className="block text-[10px] font-medium text-orange-800 dark:text-orange-300 mb-1">
-              {t("confirm.confirmLabel")} <span className="font-bold underline">{config.confirmWord}</span>
+              {t("confirm.confirmLabel")}{" "}
+              <span className="font-bold underline">{config.confirmWord}</span>
             </label>
             <input
               type="text"
@@ -243,7 +284,7 @@ export default function ConfirmActionModal({
         {isBulk && (
           <div className="p-3 border border-amber-200 dark:border-amber-900/30 bg-amber-50 dark:bg-amber-900/10 rounded-lg">
             <p className="text-[10px] text-amber-800 dark:text-amber-300">
-               {t("confirm.bulkWarning")}
+              {t("confirm.bulkWarning")}
             </p>
           </div>
         )}

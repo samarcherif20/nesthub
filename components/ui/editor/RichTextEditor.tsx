@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useEditor, EditorContent } from "@tiptap/react";
 import { getExtensions } from "./extensions";
 import LinkModal from "./LinkModal";
@@ -40,19 +41,23 @@ const Toolbar = ({
   onImageClick: () => void;
   compact?: boolean;
 }) => {
+  const t = useTranslations("RichTextEditor");
+
   if (!editor) return null;
 
   const iconSize = compact ? "text-sm" : "text-lg";
   const buttonPadding = compact ? "p-1" : "p-1.5";
 
   return (
-    <div className={`flex-shrink-0 flex flex-wrap items-center gap-0.5 p-1 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30 ${compact ? "p-1" : "p-2"}`}>
+    <div
+      className={`flex-shrink-0 flex flex-wrap items-center gap-0.5 p-1 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/30 ${compact ? "p-1" : "p-2"}`}
+    >
       {/* Undo/Redo */}
       <button
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30`}
-        title="Annuler"
+        title={t("undo")}
       >
         <TbArrowBackUp className={iconSize} />
       </button>
@@ -60,7 +65,7 @@ const Toolbar = ({
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 disabled:opacity-30`}
-        title="Rétablir"
+        title={t("redo")}
       >
         <TbArrowForwardUp className={iconSize} />
       </button>
@@ -71,33 +76,33 @@ const Toolbar = ({
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          editor.isActive("bold") 
-            ? "bg-primary text-white" 
+          editor.isActive("bold")
+            ? "bg-primary text-white"
             : "text-slate-600 dark:text-slate-400"
         }`}
-        title="Gras"
+        title={t("bold")}
       >
         <TbBold className={iconSize} />
       </button>
       <button
         onClick={() => editor.chain().focus().toggleItalic().run()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          editor.isActive("italic") 
-            ? "bg-primary text-white" 
+          editor.isActive("italic")
+            ? "bg-primary text-white"
             : "text-slate-600 dark:text-slate-400"
         }`}
-        title="Italique"
+        title={t("italic")}
       >
         <TbItalic className={iconSize} />
       </button>
       <button
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          editor.isActive("underline") 
-            ? "bg-primary text-white" 
+          editor.isActive("underline")
+            ? "bg-primary text-white"
             : "text-slate-600 dark:text-slate-400"
         }`}
-        title="Souligné"
+        title={t("underline")}
       >
         <TbUnderline className={iconSize} />
       </button>
@@ -108,22 +113,22 @@ const Toolbar = ({
       <button
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          editor.isActive("bulletList") 
-            ? "bg-primary text-white" 
+          editor.isActive("bulletList")
+            ? "bg-primary text-white"
             : "text-slate-600 dark:text-slate-400"
         }`}
-        title="Liste à puces"
+        title={t("bulletList")}
       >
         <TbList className={iconSize} />
       </button>
       <button
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          editor.isActive("orderedList") 
-            ? "bg-primary text-white" 
+          editor.isActive("orderedList")
+            ? "bg-primary text-white"
             : "text-slate-600 dark:text-slate-400"
         }`}
-        title="Liste numérotée"
+        title={t("orderedList")}
       >
         <TbListNumbers className={iconSize} />
       </button>
@@ -134,18 +139,18 @@ const Toolbar = ({
       <button
         onClick={onLinkClick}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          editor.isActive("link") 
-            ? "bg-primary text-white" 
+          editor.isActive("link")
+            ? "bg-primary text-white"
             : "text-slate-600 dark:text-slate-400"
         }`}
-        title="Lien"
+        title={t("link")}
       >
         <TbLink className={iconSize} />
       </button>
       <button
         onClick={onImageClick}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400`}
-        title="Image"
+        title={t("image")}
       >
         <TbPhoto className={iconSize} />
       </button>
@@ -154,22 +159,22 @@ const Toolbar = ({
       <button
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          editor.isActive("codeBlock") 
-            ? "bg-primary text-white" 
+          editor.isActive("codeBlock")
+            ? "bg-primary text-white"
             : "text-slate-600 dark:text-slate-400"
         }`}
-        title="Code"
+        title={t("code")}
       >
         <TbCode className={iconSize} />
       </button>
       <button
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          editor.isActive("blockquote") 
-            ? "bg-primary text-white" 
+          editor.isActive("blockquote")
+            ? "bg-primary text-white"
             : "text-slate-600 dark:text-slate-400"
         }`}
-        title="Citation"
+        title={t("quote")}
       >
         <TbBlockquote className={iconSize} />
       </button>
@@ -180,7 +185,7 @@ const Toolbar = ({
       <button
         onClick={() => editor.chain().focus().unsetAllMarks().run()}
         className={`${buttonPadding} rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400`}
-        title="Effacer le formatage"
+        title={t("clearFormatting")}
       >
         <TbClearFormatting className={iconSize} />
       </button>
@@ -207,7 +212,7 @@ export default function RichTextEditor({
     immediatelyRender: false,
   });
 
-  // ✅ Synchroniser l'éditeur quand la prop value change
+  //  Synchroniser l'éditeur quand la prop value change
   useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       editor.commands.setContent(value);

@@ -202,7 +202,7 @@ export default function WarningUserModal({
             setNotify={setNotify}
             userEmail={user.email}
             label={t("notifyByEmail")}
-            message="Un email sera envoyé à {email} pour lui notifier cet avertissement."
+            message={t("notifyMessage", { email: user.email })}
             colorScheme="orange"
           />
 
@@ -234,10 +234,7 @@ export default function WarningUserModal({
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span>
-                Cet avertissement sera visible dans le dashboard de
-                l'utilisateur.
-              </span>
+              <span>{t("infoMessage")}</span>
             </p>
           </div>
         </div>

@@ -13,6 +13,9 @@ interface Message {
   isRead: boolean;
 }
 
+let socketInstance: any = null;
+let socketInitialized = false;
+
 export function useChatSocket() {
   const { user } = useUser();
   const [socket, setSocket] = useState<any>(null);
@@ -20,12 +23,29 @@ export function useChatSocket() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingUsers, setTypingUsers] = useState<Set<string>>(new Set());
   const currentConvRef = useRef<string | null>(null);
-  const socketRef = useRef<any>(null);
+  const isMountedRef = useRef(true);
 
   useEffect(() => {
-    const userId = user?.id;
+    isMountedRef.current = true;
 
-    const socketInstance = io({
+    // Si pas d'utilisateur, on ne fait rien
+    if (!user?.id) return;
+
+    // SI LE SOCKET EXISTE DÉJÀ, ON LE RÉUTILISE
+    if (socketInstance) {
+      setSocket(socketInstance);
+      setIsConnected(socketInstance.connected);
+
+      // Si le socket n'est pas connecté, on le reconnecte
+      if (!socketInstance.connected) {
+        socketInstance.connect();
+      }
+      return;
+    }
+
+    // CRÉER LE SOCKET UNE SEULE FOIS
+    const userId = user?.id;
+    socketInstance = io({
       path: "/api/socket",
       transports: ["websocket", "polling"],
       reconnection: true,
@@ -35,13 +55,13 @@ export function useChatSocket() {
       auth: { userId: userId },
     });
 
-    socketRef.current = socketInstance;
-
     socketInstance.on("connect", () => {
       console.log("🔌 Socket connected:", socketInstance.id);
-      setIsConnected(true);
+      if (isMountedRef.current) {
+        setIsConnected(true);
+        setSocket(socketInstance);
+      }
 
-      //  RECONNEXION : Rejoindre automatiquement la conversation précédente
       if (currentConvRef.current) {
         console.log(
           ` Reconnexion - Rejoin conversation: ${currentConvRef.current}`,
@@ -52,7 +72,9 @@ export function useChatSocket() {
 
     socketInstance.on("disconnect", (reason) => {
       console.log("🔌 Socket disconnected:", reason);
-      setIsConnected(false);
+      if (isMountedRef.current) {
+        setIsConnected(false);
+      }
     });
 
     socketInstance.on("connect_error", (error) => {
@@ -61,10 +83,12 @@ export function useChatSocket() {
 
     socketInstance.on("new-message", (message: Message) => {
       console.log(" New message received via socket:", message);
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === message.id)) return prev;
-        return [...prev, message];
-      });
+      if (isMountedRef.current) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === message.id)) return prev;
+          return [...prev, message];
+        });
+      }
     });
 
     socketInstance.on("message-blocked", (data) => {
@@ -72,55 +96,66 @@ export function useChatSocket() {
     });
 
     socketInstance.on("user-typing", ({ userId, name }) => {
-      setTypingUsers((prev) => {
-        const newSet = new Set(prev);
-        newSet.add(userId);
-        return newSet;
-      });
-      setTimeout(() => {
+      console.log(" [TYPING] user-typing reçu:", { userId, name });
+
+      if (isMountedRef.current) {
+        setTypingUsers((prev) => {
+          const newSet = new Set(prev);
+          newSet.add(userId);
+          return newSet;
+        });
+
+        setTimeout(() => {
+          if (isMountedRef.current) {
+            setTypingUsers((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(userId);
+              return newSet;
+            });
+          }
+        }, 3000);
+      }
+    });
+
+    socketInstance.on("user-stop-typing", ({ userId }) => {
+      console.log(" [TYPING] user-stop-typing reçu:", { userId });
+
+      if (isMountedRef.current) {
         setTypingUsers((prev) => {
           const newSet = new Set(prev);
           newSet.delete(userId);
           return newSet;
         });
-      }, 2000);
-    });
-
-    socketInstance.on("user-stop-typing", ({ userId }) => {
-      setTypingUsers((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(userId);
-        return newSet;
-      });
-    });
-
-    Promise.resolve().then(() => {
-      setSocket(socketInstance);
-    });
-
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
       }
+    });
+
+    // Stocker le socket dans le state
+    setSocket(socketInstance);
+
+    // NE PAS DÉCONNECTER LE SOCKET ICI !
+    // On garde le socket actif pour les autres composants
+    return () => {
+      isMountedRef.current = false;
+      // ON NE DÉCONNECTE PAS LE SOCKET
+      // socketInstance reste actif
     };
-  }, [user?.id]);
+  }, [user?.id]); // Seulement quand l'utilisateur change
 
   const joinConversation = useCallback((conversationId: string) => {
-    if (socketRef.current && conversationId !== currentConvRef.current) {
+    if (socketInstance && conversationId !== currentConvRef.current) {
       currentConvRef.current = conversationId;
-      socketRef.current.emit("join-conversation", conversationId);
+      socketInstance.emit("join-conversation", conversationId);
       console.log(` Joined conversation: ${conversationId}`);
     }
   }, []);
 
   const sendMessage = useCallback(
     (conversationId: string, content: string, receiverId?: string) => {
-      if (socketRef.current && content.trim()) {
+      if (socketInstance && content.trim()) {
         console.log(
           ` Sending message via socket to ${conversationId}: ${content}`,
         );
-        socketRef.current.emit("send-message", {
+        socketInstance.emit("send-message", {
           conversationId,
           content,
           userId: user?.id,
@@ -131,17 +166,25 @@ export function useChatSocket() {
     [user?.id],
   );
 
-  const startTyping = useCallback((conversationId: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit("typing-start", { conversationId });
-    }
-  }, []);
+  const startTyping = useCallback(
+    (conversationId: string) => {
+      if (socketInstance && isConnected) {
+        console.log("[SOCKET] startTyping émis pour:", conversationId);
+        socketInstance.emit("typing", { conversationId });
+      }
+    },
+    [isConnected],
+  );
 
-  const stopTyping = useCallback((conversationId: string) => {
-    if (socketRef.current) {
-      socketRef.current.emit("typing-stop", { conversationId });
-    }
-  }, []);
+  const stopTyping = useCallback(
+    (conversationId: string) => {
+      if (socketInstance && isConnected) {
+        console.log(" [SOCKET] stopTyping émis pour:", conversationId);
+        socketInstance.emit("stop-typing", { conversationId });
+      }
+    },
+    [isConnected],
+  );
 
   const resetMessages = useCallback(() => {
     setMessages([]);

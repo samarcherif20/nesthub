@@ -42,6 +42,6 @@ export const getExtensions = (placeholder?: string) => [
     },
   }),
   Placeholder.configure({
-    placeholder: placeholder || 'Écrivez votre contenu...',
+    placeholder: placeholder || '...',
   }),
 ]

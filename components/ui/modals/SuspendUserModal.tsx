@@ -98,7 +98,8 @@ export default function SuspendUserModal({
             />
           ) : (
             <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 dark:text-orange-400 font-bold text-xs">
-              {user.firstName?.[0]}{user.lastName?.[0]}
+              {user.firstName?.[0]}
+              {user.lastName?.[0]}
             </div>
           )}
           <div className="flex-1 min-w-0">
@@ -130,11 +131,13 @@ export default function SuspendUserModal({
                     : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-orange-300 dark:hover:border-orange-700"
                 }`}
               >
-                <span className={`text-[10px] font-semibold ${
-                  duration === d
-                    ? "text-orange-600 dark:text-orange-400"
-                    : "text-slate-900 dark:text-white"
-                }`}>
+                <span
+                  className={`text-[10px] font-semibold ${
+                    duration === d
+                      ? "text-orange-600 dark:text-orange-400"
+                      : "text-slate-900 dark:text-white"
+                  }`}
+                >
                   {d === 1
                     ? t("day", { count: 1 })
                     : d === 7
@@ -170,7 +173,7 @@ export default function SuspendUserModal({
             <label className="block text-slate-700 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wider">
               {t("details")}
             </label>
-            
+
             <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-white dark:bg-slate-900">
               <RichTextEditor
                 value={motif}
@@ -189,7 +192,9 @@ export default function SuspendUserModal({
             setNotify={setNotify}
             userEmail={user.email}
             label={t("notify")}
-            message="Un email sera envoyé à {email} pour le notifier de cette suspension."
+            message={t("notifyMessage", {
+              email: user?.email || "l'utilisateur",
+            })}
             colorScheme="orange"
           />
         </div>

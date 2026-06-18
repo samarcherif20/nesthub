@@ -202,6 +202,15 @@ export async function GET(req: NextRequest) {
         // Construire le nom complet
         const otherUsername = otherUser.username || "Utilisateur";
 
+        // Calculer les JOURS pour la demande d'information de CETTE conversation uniquement
+        let totalDays = 0;
+        if (conv.infoRequest) {
+          const checkIn = new Date(conv.infoRequest.checkIn);
+          const checkOut = new Date(conv.infoRequest.checkOut);
+          totalDays = Math.ceil(
+            (checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60 * 24),
+          ); // +1 pour inclure le jour de fin
+        }
         // Construire la location à partir de governorate et delegation
         const location =
           [conv.listing.governorate, conv.listing.delegation]
@@ -221,6 +230,10 @@ export async function GET(req: NextRequest) {
             rating: listingReviews._avg.rating || 0,
             reviewCount: listingReviews._count.rating || 0,
             image: conv.listing.photos[0]?.url,
+            checkIn: conv.infoRequest?.checkIn?.toISOString(),
+            checkOut: conv.infoRequest?.checkOut?.toISOString(),
+            guests: conv.infoRequest?.guests,
+            infoRequestId: conv.infoRequestId, // ← Déjà présent ou à ajouter
           },
           otherUser: {
             id: otherUser.id,
@@ -230,7 +243,7 @@ export async function GET(req: NextRequest) {
             isVerified: otherUser.isIdentityVerified || false,
             reliabilityScore: tenantStats?.reliabilityScore || 50,
             averageRating: tenantStats?.averageRating || 0,
-            totalStays: tenantStats?.totalBookings || 0,
+            totalStays: totalDays,
             role: otherUser.role,
           },
           infoRequest: conv.infoRequest
@@ -248,6 +261,12 @@ export async function GET(req: NextRequest) {
                 id: activeOffer.id,
                 status: activeOffer.status,
                 totalPrice: activeOffer.totalPrice,
+                pricePerNight: activeOffer.pricePerNight, // ← AJOUTER CETTE LIGNE
+                cleaningFee: activeOffer.cleaningFee, // ← AJOUTER CETTE LIGNE
+                serviceFee: activeOffer.serviceFee, // ← AJOUTER CETTE LIGNE
+                checkIn: activeOffer.checkIn.toISOString(), // ← AJOUTER CETTE LIGNE
+                checkOut: activeOffer.checkOut.toISOString(), // ← AJOUTER CETTE LIGNE
+                nights: activeOffer.nights, // ← AJOUTER CETTE LIGNE
                 createdAt: activeOffer.createdAt.toISOString(),
                 expiresAt: activeOffer.expiresAt?.toISOString(),
                 isPaid: isPaid,

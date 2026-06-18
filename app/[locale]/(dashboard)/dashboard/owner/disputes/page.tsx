@@ -178,8 +178,8 @@ function StatsCards({ stats, t }: { stats: { open: number; inReview: number; res
     { title: t("stats.openDisputes"), value: active, Icon: AlertCircle, grad: "from-red-500 to-rose-600", bg: "border-red-100 dark:border-red-900/40", cls: "text-red-600 dark:text-red-400", hint: `${stats.open} ouverts · ${stats.inReview} en examen`, trend: active > 0 ? `+${stats.open}` : "Stable" },
     { title: t("stats.inReview"), value: stats.inReview, Icon: Clock, grad: "from-amber-500 to-orange-500", bg: "border-amber-100 dark:border-amber-900/40", cls: "text-amber-600 dark:text-amber-400", hint: "En cours d'analyse", trend: "En attente" },
     { title: t("stats.resolved"), value: stats.resolved, Icon: CheckCircle, grad: "from-emerald-500 to-emerald-600", bg: "border-emerald-100 dark:border-emerald-900/40", cls: "text-emerald-600 dark:text-emerald-400", hint: `${resolutionRate}% de résolution`, trend: `${resolutionRate}%` },
-    { title: t("stats.avgResolution"), value: "4.2", unit: t("stats.days"), Icon: TrendingUp, grad: "from-indigo-500 to-violet-600", bg: "border-indigo-100 dark:border-indigo-900/40", cls: "text-indigo-600 dark:text-indigo-400", hint: "-18% vs mois dernier", trend: "-18%" },
-  ];
+// Remplacer la 4ème carte (avgResolution) par :
+{ title: t("stats.avgResolution"), value: stats.avgResolutionDays || "0", unit: t("stats.days"), Icon: TrendingUp, grad: "from-indigo-500 to-violet-600", bg: "border-indigo-100 dark:border-indigo-900/40", cls: "text-indigo-600 dark:text-indigo-400", hint: `${stats.trend || 0}% vs mois dernier`, trend: `${stats.trend || 0}%` },  ];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -312,6 +312,8 @@ export default function OwnerDisputesPage({ params }: { params: Promise<{ locale
     setPreviewData,
     toast,
     setToast,
+     avgResolutionDays,  
+    trend,              
   } = useDisputes(t);
 
   if (loading) {
@@ -335,8 +337,7 @@ export default function OwnerDisputesPage({ params }: { params: Promise<{ locale
         </div>
       </header>
 
-      <StatsCards stats={stats} t={t} />
-
+      <StatsCards stats={{ ...stats, avgResolutionDays, trend }} t={t} />
       <Filters
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}
         statusFilter={statusFilter} setStatusFilter={setStatusFilter}

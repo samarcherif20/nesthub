@@ -18,6 +18,9 @@ export interface Conversation {
     maxGuests?: number;
     cleaningFee?: number;
     type?: string;
+    checkIn?: string;
+    checkOut?: string;
+    guests?: number;
   };
   otherUser: {
     id: string;
@@ -278,9 +281,40 @@ export function useMessages() {
     );
   }, []);
 
-  const handleSendSystemMessage = useCallback((message: string) => {
-    console.log("System message to send:", message);
-  }, []);
+  //  CORRECTION ICI : Envoyer le message système au backend
+  const handleSendSystemMessage = useCallback(
+    async (message: string) => {
+      // Si pas de conversation sélectionnée, on ne fait rien
+      if (!selectedConv) {
+        console.log(" Aucune conversation sélectionnée pour envoyer le message système");
+        return;
+      }
+
+      try {
+        console.log(" Envoi message système:", message);
+        console.log(" Conversation ID:", selectedConv.id);
+
+        const response = await fetch(`/api/conversations/${selectedConv.id}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: message,
+            isSystem: true,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(" Erreur envoi message système:", response.status, errorText);
+        } else {
+          console.log("Message système envoyé avec succès");
+        }
+      } catch (error) {
+        console.error(" Erreur envoi message système:", error);
+      }
+    },
+    [selectedConv]
+  );
 
   // Filtrer les conversations
   const filteredBySearch = conversations.filter(

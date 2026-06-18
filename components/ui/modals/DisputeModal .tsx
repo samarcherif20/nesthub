@@ -400,7 +400,8 @@ export function DisputeModal({
                   const tenantName =
                     booking.tenant?.username ||
                     booking.tenant?.name ||
-                    "Locataire";
+                    t("booking.tenant");
+
                   const isSelected = selectedBooking?.id === booking.id;
 
                   return (
@@ -465,7 +466,7 @@ export function DisputeModal({
                             <span className="font-medium text-slate-700 dark:text-slate-300">
                               {tenantName}
                             </span>
-                            <span className="text-[10px]">(Locataire)</span>
+<span className="text-[10px]">({t("booking.tenantLabel")})</span>
                           </p>
                         </div>
                       </div>

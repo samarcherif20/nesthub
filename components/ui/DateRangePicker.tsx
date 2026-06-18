@@ -1,7 +1,7 @@
-// components/ui/DateRangePicker.tsx
 'use client';
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -34,6 +34,7 @@ export default function DateRangePicker({
   onEndDateChange,
   className = '',
 }: DateRangePickerProps) {
+  const t = useTranslations("DateRangePicker");
   const [isOpen, setIsOpen] = React.useState(false);
   
   // Convertir les props ISO en Date pour le calendrier
@@ -62,35 +63,35 @@ export default function DateRangePicker({
   // Présélections rapides
   const presets = [
     {
-      label: "Aujourd'hui",
+      label: t("today"),
       getValue: () => ({
         from: new Date(),
         to: new Date(),
       }),
     },
     {
-      label: "7 derniers jours",
+      label: t("last7Days"),
       getValue: () => ({
         from: subDays(new Date(), 7),
         to: new Date(),
       }),
     },
     {
-      label: "30 derniers jours",
+      label: t("last30Days"),
       getValue: () => ({
         from: subDays(new Date(), 30),
         to: new Date(),
       }),
     },
     {
-      label: "Ce mois-ci",
+      label: t("thisMonth"),
       getValue: () => ({
         from: startOfMonth(new Date()),
         to: endOfMonth(new Date()),
       }),
     },
     {
-      label: "Mois dernier",
+      label: t("lastMonth"),
       getValue: () => {
         const lastMonth = subMonths(new Date(), 1);
         return {
@@ -151,7 +152,7 @@ export default function DateRangePicker({
         return `${formatDisplayDate(tempRange.from)} - ${formatDisplayDate(tempRange.to)}`;
       }
       if (tempRange?.from) {
-        return `À partir du ${formatDisplayDate(tempRange.from)}`;
+        return t("fromDate", { date: formatDisplayDate(tempRange.from) });
       }
     }
     
@@ -159,7 +160,7 @@ export default function DateRangePicker({
       // Pour l'affichage, on convertit l'ISO en français
       return `${formatDisplayDate(new Date(startDate))} - ${formatDisplayDate(new Date(endDate))}`;
     }
-    return "Sélectionner une période";
+    return t("selectPeriod");
   };
 
   return (
@@ -180,7 +181,7 @@ export default function DateRangePicker({
           <div className="flex">
             <div className="w-36 border-r p-2 space-y-1">
               <p className="text-xs font-medium text-muted-foreground px-2 py-1">
-                Périodes
+                {t("periods")}
               </p>
               {presets.map((preset) => (
                 <button
@@ -209,7 +210,7 @@ export default function DateRangePicker({
                   onClick={handleClear}
                   className="text-red-500 hover:text-red-600 hover:bg-red-50"
                 >
-                  Effacer
+                  {t("clear")}
                 </Button>
                 <div className="flex items-center gap-2">
                   <Button
@@ -217,14 +218,14 @@ export default function DateRangePicker({
                     size="sm"
                     onClick={handleCancel}
                   >
-                    Annuler
+                    {t("cancel")}
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleApply}
                     disabled={!tempRange?.from || !tempRange?.to}
                   >
-                    Appliquer
+                    {t("apply")}
                   </Button>
                 </div>
               </div>

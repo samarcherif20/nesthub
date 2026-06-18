@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ conversationId: string }> }  // ← conversationId
+  { params }: { params: Promise<{ conversationId: string }> } 
 ) {
   try {
     const { userId } = await auth();

@@ -3,7 +3,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import Image from "next/image";
 import { ChevronDown, Check } from "lucide-react";
 
@@ -21,6 +21,7 @@ const setLanguageCookie = (locale: string) => {
 };
 
 export default function LanguageSelector() {
+  const t = useTranslations("LanguageSelector");
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
@@ -29,7 +30,10 @@ export default function LanguageSelector() {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -45,14 +49,15 @@ export default function LanguageSelector() {
     router.push(segments.join("/"));
   };
 
-  const currentLanguage = languages.find((l) => l.code === currentLocale) || languages[1];
+  const currentLanguage =
+    languages.find((l) => l.code === currentLocale) || languages[1];
 
   return (
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative group flex h-11 w-auto items-center justify-center gap-2 rounded-full px-4 transition-all duration-500 hover:scale-110 hover:shadow-xl overflow-hidden"
-        aria-label="Changer de langue"
+        aria-label={t("changeLanguage")}
       >
         {/* Gradient background animé - adapté dark/light */}
         <div className="absolute inset-0 rounded-full bg-gradient-to-br from-sky-500/20 via-indigo-500/20 to-purple-600/20 dark:from-sky-500/10 dark:via-indigo-500/10 dark:to-purple-600/10 backdrop-blur-md transition-all duration-500 group-hover:from-sky-500/40 group-hover:via-indigo-500/40 group-hover:to-purple-600/40 dark:group-hover:from-sky-500/20 dark:group-hover:via-indigo-500/20 dark:group-hover:to-purple-600/20" />
@@ -120,11 +125,13 @@ export default function LanguageSelector() {
                 </div>
 
                 {/* Language name - adapté dark/light */}
-                <span className={`flex-1 text-sm font-medium ${
-                  isActive 
-                    ? "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent" 
-                    : "text-slate-700 dark:text-slate-300"
-                }`}>
+                <span
+                  className={`flex-1 text-sm font-medium ${
+                    isActive
+                      ? "bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 bg-clip-text text-transparent"
+                      : "text-slate-700 dark:text-slate-300"
+                  }`}
+                >
                   {language.name}
                 </span>
 

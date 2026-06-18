@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
               paidAt: true,
             },
           },
-          review: {
+          reviews: {
             select: {
               id: true,
               rating: true,
@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
       paymentStatus: booking.paymentStatus,
       createdAt: booking.createdAt,
       payments: booking.payments,
-      hasReview: !!booking.review,
+      hasReview: !!booking.reviews,
     }));
 
     return NextResponse.json({

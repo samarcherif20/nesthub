@@ -4,7 +4,7 @@ import { useLocale } from "next-intl";
 
 export function useForgotPassword(t: any) {
   const router = useRouter();
-  const locale = useLocale();
+  const locale = useLocale(); 
 
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
@@ -23,6 +23,7 @@ export function useForgotPassword(t: any) {
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
     if (touched) setError(null);
+    if (successMessage) setSuccessMessage(null); 
   };
 
   const handleBlur = () => {
@@ -41,20 +42,30 @@ export function useForgotPassword(t: any) {
 
     setLoading(true);
     setError(null);
+    setSuccessMessage(null); 
 
     try {
       const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ 
+          email,
+          locale: locale 
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         setSuccessMessage(t("success.message", { email: email }));
+        setError(null);
       } else {
-        setError(data.error || t("errors.general"));
+        // Gérer l'erreur 404 (email non trouvé)
+        if (response.status === 404) {
+          setError(t("errors.emailNotFound") || "Aucun compte trouvé avec cette adresse email");
+        } else {
+          setError(data.error || t("errors.general"));
+        }
       }
     } catch (err) {
       setError(t("errors.connection"));

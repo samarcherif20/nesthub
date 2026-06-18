@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useIdentityVerification } from "@/hooks/useIdentityVerification";
 export interface Owner {
+  id?: string;
   name: string;
   isVerified: boolean;
   username?: string;
@@ -279,8 +280,8 @@ export function useListingTest(id: string) {
               /^, /,
               "",
             ),
-          vacationMode: data.vacationMode || false,
-          vacationMessage: data.vacationMessage || null,
+          vacationMode: data.vacationMode,
+          vacationMessage: data.vacationMessage,
           vacationStartDate: data.vacationStartDate,
           vacationEndDate: data.vacationEndDate,
           governorate: data.governorate,
@@ -289,61 +290,52 @@ export function useListingTest(id: string) {
           latitude: data.latitude,
           longitude: data.longitude,
           pricePerNight: data.pricePerNight,
-          rating: data.rating ?? 4.5,
-          reviewCount: data.reviewCount ?? 0,
+          rating: data.rating,
+          reviewCount: data.reviewCount,
           images: images,
           type: data.type,
-          isVerified: data.isVerified ?? false,
-          bedrooms: data.rooms ?? data.bedrooms ?? 1,
-          bathrooms: data.bathrooms ?? 1,
+          isVerified: data.isVerified,
+          bedrooms: data.rooms ?? data.bedrooms,
+          bathrooms: data.bathrooms,
           maxGuests: data.maxGuests ?? undefined,
-          surfaceArea: data.surfaceArea ?? 0,
+          surfaceArea: data.surfaceArea,
           amenities: amenities,
           equipment: data.equipment ?? {},
           availability: data.availability ?? {},
           blockedDates: data.blockedDates ?? [],
           pendingDates: data.pendingDates ?? [],
           houseRules: houseRules,
-          cleaningFee: data.cleaningFee ?? 85,
+          cleaningFee: data.cleaningFee,
           owner: {
-            name:
-              data.owner?.username ?? data.owner?.firstName ?? "Hôte NestHub",
+            id: data.owner?.id,
+            name: data.owner?.username ?? data.owner?.firstName,
             username: data.owner?.username,
-            isVerified: data.owner?.isIdentityVerified ?? true,
+            isVerified: data.owner?.isIdentityVerified,
             avatar: data.owner?.profilePictureUrl,
-            bio:
-              data.owner?.bio ||
-              "Passionné par l'hospitalité, je serai ravi de vous accueillir et de rendre votre séjour unique.",
+            bio: data.owner?.bio,
             memberSince: data.owner?.createdAt
               ? new Date(data.owner.createdAt).getFullYear()
-              : 2023,
+              : undefined,
           },
-          numberOfKitchens: data.numberOfKitchens ?? 1,
+          numberOfKitchens: data.numberOfKitchens,
           floorNumber: data.floorNumber,
-          hasElevator: data.hasElevator, // peut être undefined
-          hasBalcony: data.hasBalcony, // peut être undefined
-          hasGarden: data.hasGarden, // peut être undefined
-          hasGarage: data.hasGarage, // peut être undefined
-          isFurnished: data.isFurnished, // peut être undefined
-          petsAllowed: data.petsAllowed ?? false,
-          smokingAllowed: data.smokingAllowed ?? false,
-          services: data.services ?? {},
-          customRules: data.customRules ?? "",
-          rentalType: data.rentalType ?? "SHORT_TERM",
+          hasElevator: data.hasElevator,
+          hasBalcony: data.hasBalcony,
+          hasGarden: data.hasGarden,
+          hasGarage: data.hasGarage,
+          isFurnished: data.isFurnished,
+          petsAllowed: data.petsAllowed,
+          smokingAllowed: data.smokingAllowed,
+          services: data.services,
+          customRules: data.customRules,
+          rentalType: data.rentalType,
           pricePerMonth: data.pricePerMonth,
           securityDeposit: data.securityDeposit,
-          weekendPriceMultiplier: data.weekendPriceMultiplier ?? 1.15,
-          extraFees: data.extraFees ?? [],
-          seasonalRules: data.seasonalRules ?? [],
+          weekendPriceMultiplier: data.weekendPriceMultiplier,
+          extraFees: data.extraFees,
+          seasonalRules: data.seasonalRules,
           reviews: formattedReviews,
-          reviewScores: data.reviewScores || {
-            cleanliness: 4.5,
-            accuracy: 4.5,
-            communication: 4.5,
-            location: 4.5,
-            checkin: 4.5,
-            value: 4.5,
-          },
+          reviewScores: data.reviewScores,
         };
         console.log(" transformedListing après création:", {
           hasElevator: transformedListing.hasElevator,
@@ -391,7 +383,7 @@ export function useListingTest(id: string) {
   })();
 
   const basePrice = listing ? listing.pricePerNight * nights : 0;
-  const cleaningFee = listing?.cleaningFee ?? 85;
+  const cleaningFee = listing?.cleaningFee ?? 0;
   const serviceFee = listing ? Math.round((basePrice + cleaningFee) * 0.05) : 0;
   const totalToPay = basePrice + cleaningFee + serviceFee;
 

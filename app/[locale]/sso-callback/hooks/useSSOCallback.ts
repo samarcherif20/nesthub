@@ -11,6 +11,18 @@ export function useSSOCallback() {
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(true);
 
+  const redirectBasedOnRole = (role: string) => {
+    if (role === "ADMIN") {
+      router.push(`/${locale}/admin/dashboard`);
+    } else if (role === "PROPERTY_OWNER") {
+      router.push(`/${locale}/dashboard/owner`);
+    } else if (role === "BOTH") {
+      router.push(`/${locale}/choose-role`);
+    } else {
+      router.push(`/${locale}/search`);
+    }
+  };
+
   useEffect(() => {
     const handleSSOCallback = async () => {
       if (!isSignInLoaded || !isUserLoaded) {
@@ -18,42 +30,50 @@ export function useSSOCallback() {
       }
 
       try {
-        console.log("🔄 Traitement du callback SSO login...");
+        console.log("Traitement du callback SSO login...");
 
-        // Si déjà connecté, rediriger vers dashboard
         if (user) {
-          console.log("✅ Utilisateur déjà authentifié:", user.id);
+          console.log(" Utilisateur déjà authentifié:", user.id);
           const response = await fetch(`/api/users/by-clerk-id/${user.id}`);
-          
+
           if (response.ok) {
             const dbUser = await response.json();
-            if (dbUser.role === "ADMIN") {
-              router.push(`/${locale}/admin/dashboard`);
-            } else if (dbUser.role === "PROPERTY_OWNER") {
-              router.push(`/${locale}/dashboard/owner`);
-            } else {
-              router.push(`/${locale}/search`);
-            }
+            redirectBasedOnRole(dbUser.role);
           } else {
             router.push(`/${locale}/complete-profile?oauth=true`);
           }
           return;
         }
 
-        // Traitement du callback OAuth login
         if (signIn) {
-          console.log("🔄 Traitement du callback OAuth sign-in...");
+          console.log(" Traitement du callback OAuth sign-in...");
           const result = await signIn.handleRedirectCallback();
-          
-          console.log("📊 Résultat:", result.status);
 
-          if (result.status === "complete" && setActive && result.createdSessionId) {
+          console.log(" Résultat:", result.status);
+
+          if (
+            result.status === "complete" &&
+            setActive &&
+            result.createdSessionId
+          ) {
             await setActive({ session: result.createdSessionId });
-            
-            // Attendre que la session soit active
-            setTimeout(() => {
-              router.push(`/${locale}/search`);
-            }, 1000);
+
+            setTimeout(async () => {
+              try {
+                const userResponse = await fetch(
+                  `/api/users/by-clerk-id/${user?.id}`,
+                );
+                if (userResponse.ok) {
+                  const dbUser = await userResponse.json();
+                  redirectBasedOnRole(dbUser.role);
+                } else {
+                  router.push(`/${locale}/search`);
+                }
+              } catch (error) {
+                console.error("Erreur récupération rôle:", error);
+                router.push(`/${locale}/search`);
+              }
+            }, 1500);
           } else {
             router.push(`/${locale}/login?error=sso_failed`);
           }
@@ -61,7 +81,7 @@ export function useSSOCallback() {
           router.push(`/${locale}/login?error=no_signin`);
         }
       } catch (error) {
-        console.error("❌ Erreur SSO:", error);
+        console.error(" Erreur SSO:", error);
         setError("Erreur lors de la connexion");
         setTimeout(() => {
           router.push(`/${locale}/login?error=sso_error`);

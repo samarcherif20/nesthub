@@ -1,4 +1,3 @@
-// components/ui/SearchBar.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -33,7 +32,8 @@ export default function SearchBar({
   onResultClick,
   className = "",
 }: SearchBarProps) {
-  const t = useTranslations();
+  const tGlobal = useTranslations();
+  const t = useTranslations("SearchBar");
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -54,7 +54,10 @@ export default function SearchBar({
 
   const saveRecentSearch = (query: string) => {
     try {
-      const updated = [query, ...recentSearches.filter((s) => s !== query)].slice(0, 4);
+      const updated = [
+        query,
+        ...recentSearches.filter((s) => s !== query),
+      ].slice(0, 4);
       setRecentSearches(updated);
       localStorage.setItem("recentSearches", JSON.stringify(updated));
     } catch {}
@@ -96,7 +99,7 @@ export default function SearchBar({
     setIsLoading(true);
     try {
       const res = await fetch(
-        `/api/search?q=${encodeURIComponent(searchQuery)}&limit=5`
+        `/api/search?q=${encodeURIComponent(searchQuery)}&limit=5`,
       );
       if (res.ok) {
         const data = await res.json();
@@ -152,7 +155,9 @@ export default function SearchBar({
     localStorage.removeItem("recentSearches");
   };
 
-  const showDropdown = isFocused && (showResults || (searchQuery.length < 2 && recentSearches.length > 0));
+  const showDropdown =
+    isFocused &&
+    (showResults || (searchQuery.length < 2 && recentSearches.length > 0));
 
   return (
     <div ref={searchRef} className={`relative ${className}`}>
@@ -175,7 +180,7 @@ export default function SearchBar({
             if (searchQuery.length >= 2) setShowResults(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder={t("search.placeholder")}
+          placeholder={tGlobal("search.placeholder")}
           className="w-full pl-10 pr-20 py-2.5 bg-transparent text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none transition-all rounded-xl"
         />
 
@@ -193,8 +198,7 @@ export default function SearchBar({
               <IoCloseOutline className="text-gray-400 dark:text-gray-500 text-base" />
             </button>
           ) : (
-            <div className="hidden ">
-            </div>
+            <div className="hidden "></div>
           )}
 
           {/* Search button when query exists */}
@@ -219,7 +223,6 @@ export default function SearchBar({
       {/* ── Dropdown ── */}
       {showDropdown && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl shadow-gray-200/50 dark:shadow-black/30 border border-gray-200 dark:border-gray-800 overflow-hidden z-50">
-
           {/* Recent searches (shown when input is empty/short) */}
           {searchQuery.length < 2 && recentSearches.length > 0 && (
             <div>
@@ -227,14 +230,14 @@ export default function SearchBar({
                 <div className="flex items-center gap-2">
                   <IoTimeOutline className="text-gray-400 dark:text-gray-500 text-sm" />
                   <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Recherches récentes
+                    {t("recentSearches")}
                   </p>
                 </div>
                 <button
                   onClick={clearRecent}
                   className="text-[10px] font-bold text-gray-400 dark:text-gray-500 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
                 >
-                  Effacer
+                  {t("clear")}
                 </button>
               </div>
               {recentSearches.map((query, i) => (
@@ -246,7 +249,9 @@ export default function SearchBar({
                   <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center flex-shrink-0">
                     <IoTimeOutline className="text-gray-400 dark:text-gray-500 text-sm" />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{query}</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    {query}
+                  </span>
                 </button>
               ))}
             </div>
@@ -259,7 +264,7 @@ export default function SearchBar({
                 <div className="p-6 flex flex-col items-center gap-3">
                   <div className="w-8 h-8 rounded-full border-2 border-indigo-200 dark:border-indigo-800 border-t-indigo-500 animate-spin" />
                   <p className="text-xs font-medium text-gray-400 dark:text-gray-500">
-                    Recherche en cours…
+                    {t("searching")}
                   </p>
                 </div>
               ) : results.length > 0 ? (
@@ -268,7 +273,7 @@ export default function SearchBar({
                   <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2">
                     <IoSparklesOutline className="text-indigo-500 text-sm" />
                     <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      {results.length} résultat{results.length > 1 ? "s" : ""}
+                      {t("results", { count: results.length })}
                     </p>
                   </div>
 
@@ -304,12 +309,16 @@ export default function SearchBar({
                             {result.location && (
                               <span className="text-xs text-gray-400 dark:text-gray-500 flex items-center gap-1 font-medium">
                                 <IoLocationOutline className="text-[10px]" />
-                                <span className="truncate max-w-[150px]">{result.location}</span>
+                                <span className="truncate max-w-[150px]">
+                                  {result.location}
+                                </span>
                               </span>
                             )}
                             {result.type && (
                               <>
-                                <span className="text-gray-300 dark:text-gray-700 text-[10px]">·</span>
+                                <span className="text-gray-300 dark:text-gray-700 text-[10px]">
+                                  ·
+                                </span>
                                 <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                                   {result.type}
                                 </span>
@@ -322,10 +331,11 @@ export default function SearchBar({
                         {result.pricePerNight && (
                           <div className="text-right flex-shrink-0">
                             <p className="text-sm font-extrabold text-indigo-600 dark:text-indigo-400">
-                              {result.pricePerNight} <span className="text-xs font-bold">TND</span>
+                              {result.pricePerNight}{" "}
+                              <span className="text-xs font-bold">TND</span>
                             </p>
                             <p className="text-[9px] text-gray-400 dark:text-gray-500 font-medium">
-                              /nuit
+                              {t("perNight")}
                             </p>
                           </div>
                         )}
@@ -339,7 +349,7 @@ export default function SearchBar({
                     className="w-full px-4 py-3 text-center border-t border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/80 transition-colors group flex items-center justify-center gap-2"
                   >
                     <span className="text-sm font-bold text-indigo-600 dark:text-indigo-400">
-                      Voir tous les résultats
+                      {t("viewAllResults")}
                     </span>
                     <IoArrowForwardOutline className="text-indigo-600 dark:text-indigo-400 text-xs group-hover:translate-x-0.5 transition-transform" />
                   </button>
@@ -351,16 +361,16 @@ export default function SearchBar({
                     <IoSearch className="text-gray-400 dark:text-gray-500 text-lg" />
                   </div>
                   <p className="text-sm font-bold text-gray-700 dark:text-gray-300 mb-1">
-                    Aucun résultat
+                    {t("noResults")}
                   </p>
                   <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-                    Aucune propriété ne correspond à « {searchQuery} »
+                    {t("noResultsFor", { query: searchQuery })}
                   </p>
                   <button
                     onClick={handleFullSearch}
                     className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-center gap-1 mx-auto"
                   >
-                    Rechercher sur la page complète
+                    {t("searchFullPage")}
                     <IoArrowForwardOutline className="text-[10px]" />
                   </button>
                 </div>

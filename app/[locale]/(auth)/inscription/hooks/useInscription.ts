@@ -3,10 +3,9 @@ import { useSignUp, useClerk, useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { useTranslations, useLocale } from "next-intl";
 import { useTheme } from "next-themes";
-import { toast } from "sonner";
 import { ValidationPatterns } from "@/lib/utils";
 
-export function useInscription() {
+export function useInscription(showToast?: (message: string, type: "success" | "error" | "warning") => void) {
   const t = useTranslations("Inscription");
   const locale = useLocale();
 
@@ -219,9 +218,7 @@ export function useInscription() {
 
       if (!response.ok) {
         console.warn(` OCR ${side} échoué:`, data.error);
-        toast.warning(t("ocr.notAvailable", { side }), {
-          description: t("ocr.fillManually"),
-        });
+        showToast?.(t("ocr.notAvailable", { side }), "warning");
         return null;
       }
 
@@ -237,17 +234,12 @@ export function useInscription() {
         if (data.profession && !profession) setProfession(data.profession);
       }
 
-      toast.success(t("ocr.success", { side }), {
-        description: t("ocr.extractedSuccess"),
-      });
+      showToast?.(t("ocr.success", { side }), "success");
 
       return data.extracted || null;
     } catch (error) {
       console.error(` Erreur OCR ${side}:`, error);
-      toast.error(t("ocr.errorTitle", { side }), {
-        description:
-          error instanceof Error ? error.message : t("ocr.fillManually"),
-      });
+      showToast?.(t("ocr.errorTitle", { side }), "error");
       return null;
     } finally {
       setIsOcrLoading(false);
@@ -402,18 +394,14 @@ export function useInscription() {
 
     // Handle invalid link error
     if (error === "invalid_link") {
-      toast.error(t("errors.linkInvalid"), {
-        description: t("errors.linkInvalidDescription"),
-      });
+      showToast?.(t("errors.linkInvalid"), "error");
       window.history.replaceState({}, "", `/${locale}/inscription`);
       return;
     }
 
     // Handle expired link error
     if (error === "link_expired") {
-      toast.error(t("errors.linkExpired"), {
-        description: t("errors.linkExpiredDescription"),
-      });
+      showToast?.(t("errors.linkExpired"), "error");
       window.history.replaceState({}, "", `/${locale}/inscription`);
       return;
     }
@@ -424,9 +412,7 @@ export function useInscription() {
       setCurrentStep(2);
       setPendingVerification(false);
       window.history.replaceState({}, "", `/${locale}/inscription`);
-      toast.success(t("alerts.emailVerified"), {
-        description: t("alerts.continueInscription"),
-      });
+      showToast?.(t("alerts.emailVerified"), "success");
     }
   }, [locale, t]);
 
@@ -478,7 +464,7 @@ export function useInscription() {
     const userId = currentUserId || localStorage.getItem("currentUserId");
     if (!userId) {
       setUploadCINError(t("errors.userNotFound"));
-      toast.error(t("errors.error"), { description: t("errors.userNotFound") });
+      showToast?.(t("errors.userNotFound"), "error");
       return false;
     }
 
@@ -491,9 +477,7 @@ export function useInscription() {
         // Vérifier qu'on a les fichiers nécessaires
         if (!passportFile && !passportUrl) {
           setUploadCINError(t("errors.passportRequired"));
-          toast.error(t("errors.error"), {
-            description: t("errors.passportRequired"),
-          });
+          showToast?.(t("errors.passportRequired"), "error");
           return false;
         }
 
@@ -589,13 +573,7 @@ export function useInscription() {
           if (data.extracted.cinNumber && !cinNumber)
             setCinNumber(data.extracted.cinNumber);
         }
-        toast.success(t("passport.analyzed"), {
-          description: data.extracted?.passportNumber
-            ? t("passport.numberDetected", {
-                number: data.extracted.passportNumber,
-              })
-            : t("passport.uploadSuccess"),
-        });
+        showToast?.(t("passport.analyzed"), "success");
 
         return true;
       }
@@ -667,13 +645,7 @@ export function useInscription() {
               setProfession(data.extracted.profession);
           }
 
-          toast.success(t("documents.analyzed"), {
-            description: data.extracted
-              ? t("cin.numberDetected", {
-                  number: data.extracted.cinNumber ?? "?",
-                })
-              : t("documents.uploadSuccess"),
-          });
+          showToast?.(t("documents.analyzed"), "success");
 
           return true;
         }
@@ -681,9 +653,7 @@ export function useInscription() {
         //  CAS 2.2: UPLOAD DESKTOP
         if (!cinRecto || !cinVerso || !profilePhoto) {
           setUploadCINError(t("errors.threeFilesRequired"));
-          toast.error(t("errors.error"), {
-            description: t("errors.threeFilesRequired"),
-          });
+          showToast?.(t("errors.threeFilesRequired"), "error");
           return false;
         }
 
@@ -731,7 +701,7 @@ export function useInscription() {
             setProfession(data.extracted.profession);
         }
 
-        toast.success(t("documents.analyzed"));
+        showToast?.(t("documents.analyzed"), "success");
         return true;
       }
 
@@ -739,7 +709,7 @@ export function useInscription() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Erreur inconnue";
       setUploadCINError(msg);
-      toast.error("Erreur upload", { description: msg });
+      showToast?.("Erreur upload", "error");
       return false;
     } finally {
       setIsUploadingCIN(false);
@@ -749,11 +719,11 @@ export function useInscription() {
   // WHATSAPP
   const handleSendWhatsApp = async () => {
     if (!governorate) {
-      toast.error(t("errors.governorateRequired"));
+      showToast?.(t("errors.governorateRequired"), "error");
       return;
     }
     if (!delegation) {
-      toast.error(t("errors.delegationRequired"));
+      showToast?.(t("errors.delegationRequired"), "error");
       return;
     }
     if (!phoneNumber) {
@@ -1095,9 +1065,7 @@ export function useInscription() {
   const handleConfirmIdentity = async () => {
     //  Vérifier que les données OCR sont disponibles
     if (!cinData || !cinData.firstName) {
-      toast.error(t("ocr.missingData"), {
-        description: t("ocr.analyzeFirst"),
-      });
+      showToast?.(t("ocr.missingData"), "error");
       return;
     }
 
@@ -1207,9 +1175,7 @@ export function useInscription() {
         }
       }
 
-      toast.success(
-        completeProfileData.message || "Profil complété avec succès !",
-      );
+      showToast?.(completeProfileData.message || "Profil complété avec succès !", "success");
       localStorage.removeItem("redirectAfterLogin");
 
       //  Fermer le modal et montrer le welcome
@@ -1217,9 +1183,7 @@ export function useInscription() {
       setShowWelcome(true);
     } catch (error) {
       console.error(" Erreur handleConfirmIdentity:", error);
-      toast.error(t("errors.confirmationError"), {
-        description: error instanceof Error ? error.message : t("errors.retry"),
-      });
+      showToast?.(t("errors.confirmationError"), "error");
       setUploadCINError(
         error instanceof Error ? error.message : "Erreur inconnue",
       );

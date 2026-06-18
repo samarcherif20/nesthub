@@ -15,7 +15,7 @@ export function AutoRefreshProvider({
     const interval = setInterval(() => {
       // Ne pas rafraîchir si l'utilisateur interagit avec un lien
       router.refresh();
-    }, 30000); // 30 secondes au lieu de 10
+    }, 500000); 
 
     // Rafraîchissement quand la page reçoit le focus (uniquement si pas d'interaction)
     let timeoutId: NodeJS.Timeout;

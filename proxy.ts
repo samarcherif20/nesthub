@@ -53,18 +53,35 @@ export default clerkMiddleware(async (auth, req) => {
   const { userId, sessionClaims, getToken } = await auth();
 
   //  Récupérer le token avec le template personnalisé
-  const token = await getToken({ template: "my-app-template" });
-
-  // Décoder le token pour extraire le rôle
   let roleFromToken = null;
-  if (token) {
+
+  if (userId) {
     try {
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      roleFromToken = decoded.role;
-      console.log(" Rôle depuis le token JWT:", roleFromToken);
-    } catch (e) {
-      console.error("Erreur décodage token:", e);
+      const token = await getToken({ template: "my-app-template" });
+      if (token) {
+        const decoded = JSON.parse(atob(token.split(".")[1]));
+        roleFromToken = decoded.role;
+        console.log("Rôle depuis le token JWT:", roleFromToken);
+      } else {
+        console.log(" Token non disponible pour l'utilisateur:", userId);
+      }
+    } catch (error) {
+      console.error(" Erreur récupération token avec template:", error);
+
+      // Fallback: essayer sans template si le template échoue
+      try {
+        const fallbackToken = await getToken();
+        if (fallbackToken) {
+          const decoded = JSON.parse(atob(fallbackToken.split(".")[1]));
+          roleFromToken = decoded.role;
+          console.log(" Fallback - Rôle depuis token standard:", roleFromToken);
+        }
+      } catch (fallbackError) {
+        console.error(" Fallback également échoué:", fallbackError);
+      }
     }
+  } else {
+    console.log(" Utilisateur non connecté");
   }
 
   //  ADDED — bypass everything for verify-catch
@@ -120,7 +137,7 @@ export default clerkMiddleware(async (auth, req) => {
   if (pathname.startsWith("/api/")) {
     const publicApiRoutes = [
       "/api/contact",
-      "/api/users/avatar", 
+      "/api/users/avatar",
       "/api/users/increment-login-attempts",
       "/api/users/reset-login-attempts",
       "/api/users/update-last-login",

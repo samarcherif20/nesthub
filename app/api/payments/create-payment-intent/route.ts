@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
-import { tndToStripeAmount, getCurrentExchangeRate } from "@/lib/currency"; // ✅ Importer les fonctions
+import { tndToStripeAmount, getCurrentExchangeRate } from "@/lib/currency";
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. Créer ou récupérer le customer Stripe
+    // Créer ou récupérer le customer Stripe
     let customerId = user.stripeCustomerId;
     if (!customerId) {
       const customer = await stripe.customers.create({
@@ -59,16 +59,15 @@ export async function POST(req: NextRequest) {
     const amountInCents = await tndToStripeAmount(amountTND);
     const amountEUR = amountInCents / 100;
 
-    console.log(
-      ` ${amountTND} TND → ${amountEUR.toFixed(2)} EUR (taux: ${rate.toFixed(4)})`,
-    );
+    console.log(` ${amountTND} TND → ${amountEUR.toFixed(2)} EUR (taux: ${rate.toFixed(4)})`);
     console.log(` Montant Stripe: ${amountInCents} centimes`);
 
-    // Créer le PaymentIntent en EUR
+    //  CRÉATION DU PAYMENTINTENT AVEC CAPTURE MANUELLE (SÉQUESTRE)
     const paymentIntent = await stripe.paymentIntents.create({
       amount: amountInCents,
       currency: "eur",
       customer: customerId,
+      capture_method: 'manual', // argent bloqué chez Stripe
       metadata: {
         offerId: offer.id,
         listingId: offer.listingId,
@@ -101,7 +100,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Notification
+    // Notification de paiement en cours
     await prisma.notification.create({
       data: {
         userId: user.id,

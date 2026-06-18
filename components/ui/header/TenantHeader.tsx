@@ -2,7 +2,7 @@
 import React from "react";
 import { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useParams } from "next/navigation";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
 import Image from "next/image";
@@ -28,6 +28,7 @@ import {
   Repeat2,
   Building2,
   User2,
+  Settings,
 } from "lucide-react";
 import { ChatDrawer } from "../chat/ChatDrawer";
 import NotificationBell from "../notifications/NotificationBell";
@@ -55,10 +56,38 @@ const avatarColors = [
 
 // ─── Nav Items ───────────────────────────────────────────────────────
 const NAV_ITEMS = [
-  { labelKey: "explorer", href: "/search", icon: Search },
-  { labelKey: "favorites", href: "/favorites", icon: Heart },
-  { labelKey: "messages", href: "/messages", icon: MessageCircle },
-  { labelKey: "reservations", href: "/reservations", icon: CalendarDays },
+  { labelKey: "explorer", href: "/search", icon: Search, role: "TENANT" },
+  { labelKey: "favorites", href: "/favorites", icon: Heart, role: "TENANT" },
+  {
+    labelKey: "messages",
+    href: "/messages",
+    icon: MessageCircle,
+    role: "both",
+  },
+  {
+    labelKey: "reservations",
+    href: "/reservations",
+    icon: CalendarDays,
+    role: "TENANT",
+  },
+  {
+    labelKey: "dashboard",
+    href: "/dashboard/owner",
+    icon: Home,
+    role: "PROPERTY_OWNER",
+  },
+  {
+    labelKey: "properties",
+    href: "/properties",
+    icon: Building2,
+    role: "PROPERTY_OWNER",
+  },
+  {
+    labelKey: "earnings",
+    href: "/earnings",
+    icon: Wallet,
+    role: "PROPERTY_OWNER",
+  },
 ];
 
 // ─── Helper pour détecter le rôle basé sur l'URL ────────────────────
@@ -67,18 +96,17 @@ function detectRoleFromPath(
 ): "TENANT" | "PROPERTY_OWNER" | null {
   if (!pathname) return null;
 
-  // Patterns pour propriétaire (vérifier d'abord car plus spécifiques)
   if (
     pathname.includes("/dashboard/owner") ||
     pathname.includes("/owner/") ||
     pathname.includes("/properties") ||
     pathname.includes("/earnings") ||
-    pathname.includes("/owner-analytics")
+    pathname.includes("/owner-analytics") ||
+    pathname.includes("/bookings")
   ) {
     return "PROPERTY_OWNER";
   }
 
-  // Patterns pour locataire
   if (
     pathname.includes("/search") ||
     pathname.includes("/favorites") ||
@@ -103,16 +131,14 @@ function useRoleManagement(isSignedIn: boolean, pathname: string) {
   const syncIntervalRef = useRef<NodeJS.Timeout>();
   const retryCountRef = useRef(0);
 
-  // Détecter le rôle depuis l'URL
   const roleFromUrl = detectRoleFromPath(pathname);
 
-  // Fonction pour récupérer le rôle actuel depuis l'API
   const fetchCurrentRole = useCallback(
     async (silent: boolean = false) => {
       if (!isSignedIn) return null;
 
       if (!silent) {
-        console.log("🔄 Synchronisation du rôle...");
+        console.log(" Synchronisation du rôle...");
       }
 
       try {
@@ -129,16 +155,11 @@ function useRoleManagement(isSignedIn: boolean, pathname: string) {
 
           let newRole = data.activeRole as "TENANT" | "PROPERTY_OWNER";
 
-          // PRIORITÉ ABSOLUE à l'URL
           if (roleFromUrl) {
             newRole = roleFromUrl;
-            console.log(
-              `📍 Rôle FORCÉ par l'URL: ${newRole} (pathname: ${pathname})`,
-            );
           }
 
           if (newRole !== currentRole) {
-            console.log(`✨ Rôle changé: ${currentRole} -> ${newRole}`);
             setCurrentRole(newRole);
             localStorage.setItem("userRole", newRole);
             sessionStorage.setItem("currentRole", newRole);
@@ -154,7 +175,6 @@ function useRoleManagement(isSignedIn: boolean, pathname: string) {
           return { role: newRole, hasBoth: data.canSwitch };
         }
       } catch (error) {
-        console.error("❌ Erreur:", error);
         retryCountRef.current++;
         if (retryCountRef.current < 5) {
           const delay = Math.min(
@@ -166,18 +186,15 @@ function useRoleManagement(isSignedIn: boolean, pathname: string) {
       }
       return null;
     },
-    [isSignedIn, currentRole, roleFromUrl, pathname],
+    [isSignedIn, currentRole, roleFromUrl],
   );
 
-  // FORCER la mise à jour quand l'URL change
   useEffect(() => {
     if (roleFromUrl && isSignedIn && roleFromUrl !== currentRole) {
-      console.log(`🔄 URL changée: ${currentRole} -> ${roleFromUrl}`);
       setCurrentRole(roleFromUrl);
       localStorage.setItem("userRole", roleFromUrl);
       sessionStorage.setItem("currentRole", roleFromUrl);
 
-      // Notifier l'API
       if (hasBothRoles) {
         fetch("/api/users/switch-role", {
           method: "POST",
@@ -188,7 +205,6 @@ function useRoleManagement(isSignedIn: boolean, pathname: string) {
     }
   }, [roleFromUrl, pathname, isSignedIn, currentRole, hasBothRoles]);
 
-  // Initialisation
   useEffect(() => {
     if (!isSignedIn) return;
     fetchCurrentRole();
@@ -248,7 +264,6 @@ function useRoleManagement(isSignedIn: boolean, pathname: string) {
         }
         return false;
       } catch (error) {
-        console.error("❌ Erreur:", error);
         return false;
       } finally {
         setIsSwitching(false);
@@ -264,22 +279,6 @@ function useRoleManagement(isSignedIn: boolean, pathname: string) {
     isSwitching,
     refreshRole: () => fetchCurrentRole(false),
   };
-}
-
-// ─── Role Badge Component ───────────────────────────────────────────
-function RoleBadge({ role, t }: { role: "TENANT" | "PROPERTY_OWNER"; t: any }) {
-  if (role === "PROPERTY_OWNER") {
-    return (
-      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200/30 dark:border-emerald-800/30">
-        <Building2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-300">
-          {t("role.ownerBadge") || "Propriétaire"}
-        </span>
-      </div>
-    );
-  }
-
- 
 }
 
 // ─── Role Switcher Component ────────────────────────────────────────
@@ -348,6 +347,7 @@ function UserMenu({
   currentRole,
   onRoleSwitch,
   isSwitchingRole,
+  locale,
 }: any) {
   const { setTheme, theme } = useTheme();
   const ref = useRef<HTMLDivElement>(null);
@@ -368,23 +368,36 @@ function UserMenu({
   const menuItems =
     currentRole === "PROPERTY_OWNER"
       ? [
-          { labelKey: "dashboard", icon: Home, href: "/dashboard/owner" },
-          { labelKey: "properties", icon: Building2, href: "/properties" },
-          { labelKey: "bookings", icon: CalendarDays, href: "/bookings" },
-          { labelKey: "earnings", icon: Wallet, href: "/earnings" },
-          { labelKey: "reviews", icon: Star, href: "/reviews" },
-          { labelKey: "disputes", icon: GoLaw, href: "/disputes" },
+          {
+            labelKey: "dashboard",
+            icon: Home,
+            href: `/${locale}/dashboard/owner`,
+          },
+          {
+            labelKey: "properties",
+            icon: Building2,
+            href: `/${locale}/properties`,
+          },
+          {
+            labelKey: "bookings",
+            icon: CalendarDays,
+            href: `/${locale}/bookings`,
+          },
+          { labelKey: "earnings", icon: Wallet, href: `/${locale}/earnings` },
+          { labelKey: "reviews", icon: Star, href: `/${locale}/reviews` },
+          { labelKey: "disputes", icon: GoLaw, href: `/${locale}/disputes` },
+          { labelKey: "settings", icon: Settings, href: `/${locale}/settings` },
         ]
       : [
-          { labelKey: "profile", icon: User, href: "/tenant/profile" },
+          { labelKey: "profile", icon: User, href: `/${locale}/tenant/profile` },
           {
             labelKey: "reservations",
             icon: CalendarDays,
-            href: "/reservations",
+            href: `/${locale}/reservations`,
           },
-          { labelKey: "wallet", icon: Wallet, href: "/wallet" },
-          { labelKey: "reviews", icon: Star, href: "/reviews" },
-          { labelKey: "disputes", icon: GoLaw, href: "/disputes" },
+          { labelKey: "wallet", icon: Wallet, href: `/${locale}/wallet` },
+          { labelKey: "reviews", icon: Star, href: `/${locale}/reviews` },
+          { labelKey: "disputes", icon: GoLaw, href: `/${locale}/disputes` },
         ];
 
   const displayName =
@@ -428,7 +441,6 @@ function UserMenu({
                 </p>
               </div>
             </div>
-            <RoleBadge role={currentRole} t={t} />
           </div>
         </div>
 
@@ -489,7 +501,7 @@ function UserMenu({
           {menuItems.map((item: any) => (
             <Link
               key={item.labelKey}
-              href={`/fr${item.href}`}
+              href={item.href}
               onClick={onClose}
               className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 hover:text-violet-700 dark:hover:text-violet-300 transition-all duration-150 group"
             >
@@ -573,6 +585,9 @@ function MobileMenu({
   currentRole,
   onRoleSwitch,
   isSwitchingRole,
+  favoritesCount,
+  unreadCount,
+  locale,
 }: any) {
   if (!isOpen) return null;
 
@@ -581,6 +596,11 @@ function MobileMenu({
   const initial = displayName.charAt(0).toUpperCase();
   const avatarUrl = getAvatarUrl();
 
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    if (item.role === "both") return true;
+    return item.role === currentRole;
+  });
+
   return (
     <div className="fixed inset-0 z-[100] md:hidden">
       <div
@@ -588,7 +608,7 @@ function MobileMenu({
         onClick={onClose}
       />
       <div className="absolute top-20 left-4 right-4 animate-in slide-in-from-top-4 fade-in duration-300">
-        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 overflow-hidden">
+        <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-2xl rounded-3xl shadow-2xl border border-white/20 dark:border-gray-700/50 overflow-hidden max-h-[80vh] overflow-y-auto">
           {isSignedIn && (
             <div className="p-5 pb-3 border-b border-gray-100 dark:border-gray-800">
               <div className="flex items-center gap-3 mb-3">
@@ -615,7 +635,6 @@ function MobileMenu({
                   </p>
                 </div>
               </div>
-              <RoleBadge role={currentRole} t={t} />
             </div>
           )}
 
@@ -662,19 +681,34 @@ function MobileMenu({
           )}
 
           <div className="p-3">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.labelKey}
-                onClick={() => {
-                  onNavigate(item.href);
-                  onClose();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-all"
-              >
-                <item.icon className="w-5 h-5 text-gray-400" />
-                <span>{t(item.labelKey)}</span>
-              </button>
-            ))}
+            {filteredNavItems.map((item) => {
+              const badge =
+                item.href === "/favorites"
+                  ? favoritesCount
+                  : item.href === "/messages"
+                    ? unreadCount
+                    : 0;
+              return (
+                <button
+                  key={item.labelKey}
+                  onClick={() => {
+                    onNavigate(item.href);
+                    onClose();
+                  }}
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-violet-50 dark:hover:bg-violet-500/10 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <item.icon className="w-5 h-5 text-gray-400" />
+                    <span>{t(item.labelKey)}</span>
+                  </div>
+                  {badge > 0 && (
+                    <span className="min-w-[20px] h-5 flex items-center justify-center text-[10px] font-bold text-white bg-gradient-to-r from-rose-500 to-pink-500 rounded-full px-1.5">
+                      {badge > 99 ? "99+" : badge}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
 
           <div className="p-3 pt-0 border-t border-gray-100 dark:border-gray-800 mt-1">
@@ -750,6 +784,8 @@ export function TenantHeader({}: TenantHeaderProps) {
   const { signOut } = useClerk();
   const pathname = usePathname();
   const router = useRouter();
+  const params = useParams();
+  const locale = (params.locale as string) || "fr";
 
   const {
     currentRole,
@@ -783,16 +819,19 @@ export function TenantHeader({}: TenantHeaderProps) {
     const success = await switchRole(newRole);
     if (success) {
       refreshRole();
-      if (newRole === "PROPERTY_OWNER") router.push("/fr/dashboard/owner");
-      else router.push("/fr/search");
+      if (newRole === "PROPERTY_OWNER")
+        router.push(`/${locale}/dashboard/owner`);
+      else router.push(`/${locale}/search`);
     }
-  }, [currentRole, switchRole, router, refreshRole]);
+  }, [currentRole, switchRole, router, refreshRole, locale]);
 
+  // Charger l'état du mute depuis localStorage
   useEffect(() => {
     const savedMuted = localStorage.getItem("notificationsMuted");
     if (savedMuted !== null) setNotificationsMuted(JSON.parse(savedMuted));
   }, []);
 
+  // Récupérer les données utilisateur
   useEffect(() => {
     const fetchUserData = async () => {
       if (!isSignedIn || !user) {
@@ -812,13 +851,31 @@ export function TenantHeader({}: TenantHeaderProps) {
       }
     };
     fetchUserData();
-  }, [isSignedIn, user, currentRole]);
+  }, [isSignedIn, user]);
 
+  // Charger les favoris DEPUIS L'API (pas localStorage)
   const loadFavorites = useCallback(async () => {
-    if (!isSignedIn || currentRole !== "TENANT") {
+    if (!isSignedIn) {
+      // Si non connecté, essayer localStorage
+      const saved = localStorage.getItem("favorites");
+      if (saved) {
+        try {
+          const favs = JSON.parse(saved);
+          setFavoritesCount(favs.length);
+        } catch {
+          setFavoritesCount(0);
+        }
+      } else {
+        setFavoritesCount(0);
+      }
+      return;
+    }
+
+    if (currentRole !== "TENANT") {
       setFavoritesCount(0);
       return;
     }
+
     try {
       const response = await fetch("/api/users/favorites");
       if (response.ok) {
@@ -832,14 +889,11 @@ export function TenantHeader({}: TenantHeaderProps) {
         setFavoritesCount(favoriteList.length);
       }
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error("Erreur chargement favoris:", error);
     }
   }, [isSignedIn, currentRole]);
 
-  useEffect(() => {
-    loadFavorites();
-  }, [isSignedIn, loadFavorites, currentRole]);
-
+  // Écouter les mises à jour des favoris
   useEffect(() => {
     const handleFavoritesUpdate = () => loadFavorites();
     window.addEventListener("favorites-updated", handleFavoritesUpdate);
@@ -847,6 +901,11 @@ export function TenantHeader({}: TenantHeaderProps) {
       window.removeEventListener("favorites-updated", handleFavoritesUpdate);
   }, [loadFavorites]);
 
+  useEffect(() => {
+    loadFavorites();
+  }, [isSignedIn, loadFavorites, currentRole]);
+
+  // Gestion de l'avatar
   useEffect(() => {
     setAvatarError(false);
   }, [appUser?.profilePictureUrl, user?.imageUrl]);
@@ -862,6 +921,7 @@ export function TenantHeader({}: TenantHeaderProps) {
     appUser?.username || user?.username || user?.firstName || "Utilisateur";
   const initial = displayName.charAt(0).toUpperCase();
 
+  // Détection mobile
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
@@ -869,6 +929,7 @@ export function TenantHeader({}: TenantHeaderProps) {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // Messages non lus
   const fetchUnreadCount = useCallback(async () => {
     if (!isSignedIn) return;
     try {
@@ -890,6 +951,7 @@ export function TenantHeader({}: TenantHeaderProps) {
     }
   }, [isSignedIn, fetchUnreadCount]);
 
+  // Sauvegarde du mute des notifications
   const toggleMuteNotifications = useCallback(async () => {
     const newMutedState = !notificationsMuted;
     setNotificationsMuted(newMutedState);
@@ -901,64 +963,86 @@ export function TenantHeader({}: TenantHeaderProps) {
         body: JSON.stringify({ muted: newMutedState }),
       });
     } catch (error) {
-      console.error("Erreur:", error);
+      console.error("Erreur sauvegarde préférences:", error);
     }
   }, [notificationsMuted]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // Scroll effect
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Refresh role when path changes
   useEffect(() => {
     refreshRole();
   }, [pathname, refreshRole]);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleNavigate = useCallback(
-    (href: string) => router.push(`/fr${href}`),
-    [router],
+    (href: string) => router.push(`/${locale}${href}`),
+    [router, locale],
   );
+
   const handleLogout = async () => {
+    localStorage.removeItem("userRole");
+    sessionStorage.removeItem("currentRole");
     await signOut();
-    router.push("/fr/login");
+    router.push(`/${locale}/login`);
   };
+
   const isActive = (href: string) => {
-    const fullHref = `/fr${href}`;
-    return fullHref === "/fr/search"
-      ? pathname === "/fr/search" || pathname === "/fr"
+    const fullHref = `/${locale}${href}`;
+    return fullHref === `/${locale}/search`
+      ? pathname === `/${locale}/search` || pathname === `/${locale}`
       : pathname?.startsWith(fullHref);
   };
+
   const getBadge = (href: string) => {
     if (href === "/favorites") return favoritesCount;
     if (href === "/messages") return unreadCount;
     return 0;
   };
 
-  if (!mounted || loading)
+  // Filtrer les items de navigation selon le rôle
+  const filteredNavItems = NAV_ITEMS.filter((item) => {
+    if (item.role === "both") return true;
+    return item.role === currentRole;
+  });
+
+  if (!mounted || loading) {
     return (
       <div className="fixed top-0 w-full z-50 h-20 bg-white dark:bg-gray-900" />
     );
+  }
 
   return (
     <>
+      {/* DESKTOP HEADER */}
       {!isMobile ? (
         <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-3 px-3 md:px-6">
           <header
-            className={`relative w-full max-w-7xl rounded-[20px] transition-all duration-500 ease-out ${scrolled ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl shadow-lg shadow-black/5 border border-white/30 dark:border-gray-700/30 scale-[0.98]" : "bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-md shadow-black/5 border border-white/20 dark:border-gray-700/20"}`}
+            className={`relative w-full max-w-7xl rounded-[20px] transition-all duration-500 ease-out ${
+              scrolled
+                ? "bg-white/80 dark:bg-gray-900/80 backdrop-blur-2xl shadow-lg shadow-black/5 border border-white/30 dark:border-gray-700/30 scale-[0.98]"
+                : "bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl shadow-md shadow-black/5 border border-white/20 dark:border-gray-700/20"
+            }`}
           >
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-[3px] rounded-full bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-70" />
             {scrolled && (
               <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50" />
             )}
             <div className="flex items-center justify-between h-14 md:h-16 px-3 md:px-5">
+              {/* Logo */}
               <Link
                 href={
                   currentRole === "PROPERTY_OWNER"
-                    ? "/fr/dashboard/owner"
-                    : "/fr/search"
+                    ? `/${locale}/dashboard/owner`
+                    : `/${locale}/search`
                 }
                 className="flex items-center gap-2 group flex-shrink-0"
               >
@@ -978,15 +1062,20 @@ export function TenantHeader({}: TenantHeaderProps) {
                 </span>
               </Link>
 
+              {/* Navigation Desktop */}
               <nav className="hidden md:flex items-center gap-1">
-                {NAV_ITEMS.map((item) => {
+                {filteredNavItems.map((item) => {
                   const active = isActive(item.href);
                   const badge = getBadge(item.href);
                   return (
                     <button
                       key={item.href}
                       onClick={() => handleNavigate(item.href)}
-                      className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 ${active ? "bg-violet-100/80 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300" : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-white/5"}`}
+                      className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[13px] font-semibold transition-all duration-200 ${
+                        active
+                          ? "bg-violet-100/80 dark:bg-violet-500/15 text-violet-700 dark:text-violet-300"
+                          : "text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-100/60 dark:hover:bg-white/5"
+                      }`}
                     >
                       <item.icon
                         className={`w-4 h-4 ${active ? "text-violet-600 dark:text-violet-400" : ""}`}
@@ -995,7 +1084,7 @@ export function TenantHeader({}: TenantHeaderProps) {
                       <span>{t(item.labelKey)}</span>
                       {badge > 0 && (
                         <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center text-[9px] font-bold text-white bg-gradient-to-r from-rose-500 to-pink-500 rounded-full px-1 shadow-sm shadow-rose-500/30">
-                          {badge > 9 ? "9+" : badge}
+                          {badge > 99 ? "99+" : badge}
                         </span>
                       )}
                       {active && (
@@ -1006,6 +1095,7 @@ export function TenantHeader({}: TenantHeaderProps) {
                 })}
               </nav>
 
+              {/* Actions Droites */}
               <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0">
                 <RoleSwitcher
                   currentRole={currentRole}
@@ -1014,7 +1104,8 @@ export function TenantHeader({}: TenantHeaderProps) {
                   isSwitching={isSwitchingRole}
                   t={t}
                 />
-                <RoleBadge role={currentRole} t={t} />
+
+                {/* Messenger */}
                 <button
                   onClick={() => setLocalMessengerOpen(true)}
                   className="relative w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center transition-all duration-200 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white/5"
@@ -1025,18 +1116,27 @@ export function TenantHeader({}: TenantHeaderProps) {
                   />
                   {unreadCount > 0 && (
                     <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 flex items-center justify-center text-[9px] font-bold text-white bg-gradient-to-r from-rose-500 to-pink-500 rounded-full px-1 shadow-sm shadow-rose-500/30">
-                      {unreadCount > 9 ? "9+" : unreadCount}
+                      {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
                   )}
                 </button>
+
+                {/* Notifications */}
                 <NotificationBell muted={notificationsMuted} />
+
+                {/* Séparateur */}
                 <div className="hidden md:block w-px h-5 bg-gray-200 dark:bg-gray-700" />
 
+                {/* Menu Utilisateur */}
                 {isSignedIn ? (
                   <div className="relative">
                     <button
                       onClick={() => setUserMenuOpen(!userMenuOpen)}
-                      className={`flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl transition-all duration-200 ${userMenuOpen ? "bg-violet-100 dark:bg-violet-500/15" : "hover:bg-gray-100 dark:hover:bg-white/5"}`}
+                      className={`flex items-center gap-2 pl-1 pr-3 py-1 rounded-xl transition-all duration-200 ${
+                        userMenuOpen
+                          ? "bg-violet-100 dark:bg-violet-500/15"
+                          : "hover:bg-gray-100 dark:hover:bg-white/5"
+                      }`}
                     >
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 via-indigo-500 to-sky-500 p-[1.5px] shadow-sm shadow-violet-500/15">
                         <div className="w-full h-full rounded-[7px] bg-white dark:bg-gray-900 flex items-center justify-center overflow-hidden">
@@ -1059,7 +1159,9 @@ export function TenantHeader({}: TenantHeaderProps) {
                         {displayName}
                       </span>
                       <ChevronDown
-                        className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${userMenuOpen ? "rotate-180" : ""}`}
+                        className={`w-3 h-3 text-gray-400 transition-transform duration-200 ${
+                          userMenuOpen ? "rotate-180" : ""
+                        }`}
                       />
                     </button>
                     {userMenuOpen && (
@@ -1080,12 +1182,13 @@ export function TenantHeader({}: TenantHeaderProps) {
                         currentRole={currentRole}
                         onRoleSwitch={handleRoleSwitch}
                         isSwitchingRole={isSwitchingRole}
+                        locale={locale}
                       />
                     )}
                   </div>
                 ) : (
                   <Link
-                    href="/fr/login"
+                    href={`/${locale}/login`}
                     className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-bold text-white bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-600 hover:shadow-lg hover:shadow-violet-500/25 active:scale-[0.97] transition-all duration-200 shadow-md shadow-violet-500/15"
                   >
                     <Sparkles className="w-3.5 h-3.5" />
@@ -1097,15 +1200,15 @@ export function TenantHeader({}: TenantHeaderProps) {
           </header>
         </div>
       ) : (
+        /* MOBILE HEADER */
         <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-3 px-3">
-          {/* Mobile header simplifié */}
           <header className="w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-[20px] shadow-md border border-white/20 dark:border-gray-700/20">
             <div className="flex items-center justify-between h-14 px-4">
               <Link
                 href={
                   currentRole === "PROPERTY_OWNER"
-                    ? "/fr/dashboard/owner"
-                    : "/fr/search"
+                    ? `/${locale}/dashboard/owner`
+                    : `/${locale}/search`
                 }
                 className="flex items-center gap-2"
               >
@@ -1119,7 +1222,6 @@ export function TenantHeader({}: TenantHeaderProps) {
                 </div>
               </Link>
               <div className="flex items-center gap-2">
-                <RoleBadge role={currentRole} t={t} />
                 <button
                   onClick={() => setMobileMenuOpen(true)}
                   className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 flex items-center justify-center text-white shadow-lg"
@@ -1132,13 +1234,17 @@ export function TenantHeader({}: TenantHeaderProps) {
         </div>
       )}
 
+      {/* Espacement pour le header fixe */}
       {!isMobile && <div className="h-20 md:h-24" />}
+      {isMobile && <div className="h-20" />}
 
+      {/* Drawers et Modals */}
       <ChatDrawer
         isOpen={localMessengerOpen}
         onClose={() => setLocalMessengerOpen(false)}
         userRole={currentRole}
       />
+
       <MobileMenu
         isOpen={mobileMenuOpen}
         onClose={() => setMobileMenuOpen(false)}
@@ -1149,13 +1255,17 @@ export function TenantHeader({}: TenantHeaderProps) {
         getAvatarUrl={getAvatarUrl}
         onNavigate={handleNavigate}
         onLogout={() => setShowLogoutModal(true)}
-        onLogin={() => router.push("/fr/login")}
+        onLogin={() => router.push(`/${locale}/login`)}
         t={t}
         hasBothRoles={hasBothRoles}
         currentRole={currentRole}
         onRoleSwitch={handleRoleSwitch}
         isSwitchingRole={isSwitchingRole}
+        favoritesCount={favoritesCount}
+        unreadCount={unreadCount}
+        locale={locale}
       />
+
       <LogoutModal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}

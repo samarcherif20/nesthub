@@ -127,15 +127,15 @@ function Section({
 }) {
   return (
     <div className="border border-gray-200 dark:border-slate-700 rounded-2xl overflow-hidden bg-white dark:bg-slate-900">
-      <div className="px-5 py-3.5 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2.5 bg-gray-50/50 dark:bg-slate-800/50">
-        <span className="text-base text-gray-400 dark:text-slate-500">
+      <div className="px-4 sm:px-5 py-3 border-b border-gray-100 dark:border-slate-800 flex items-center gap-2 bg-gray-50/50 dark:bg-slate-800/50">
+        <span className="text-sm sm:text-base text-gray-400 dark:text-slate-500">
           {icon}
         </span>
-        <h3 className="text-sm font-semibold text-gray-800 dark:text-white">
+        <h3 className="text-xs sm:text-sm font-semibold text-gray-800 dark:text-white">
           {title}
         </h3>
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-4 sm:p-5">{children}</div>
     </div>
   );
 }
@@ -228,31 +228,31 @@ function Lightbox({
     >
       <button
         onClick={onClose}
-        className="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-all"
+        className="absolute top-4 right-4 z-20 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 flex items-center justify-center text-white transition-all"
       >
-        <IoCloseOutline className="text-xl" />
+        <IoCloseOutline className="text-lg sm:text-xl" />
       </button>
 
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-3 py-2">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/50 backdrop-blur-md rounded-full px-2 py-1.5 sm:px-3 sm:py-2">
         <button
           onClick={handleZoomOut}
-          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
         >
-          <IoRemoveOutline className="text-lg" />
+          <IoRemoveOutline className="text-base sm:text-lg" />
         </button>
-        <span className="text-white text-xs font-mono min-w-[40px] text-center">
+        <span className="text-white text-[10px] sm:text-xs font-mono min-w-[35px] sm:min-w-[40px] text-center">
           {Math.round(scale * 100)}%
         </span>
         <button
           onClick={handleZoomIn}
-          className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+          className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
         >
-          <IoAddOutline className="text-lg" />
+          <IoAddOutline className="text-base sm:text-lg" />
         </button>
         {scale !== 1 && (
           <button
             onClick={handleResetZoom}
-            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all text-xs"
+            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all text-xs"
           >
             ⟲
           </button>
@@ -262,18 +262,18 @@ function Lightbox({
       {currentIndex > 0 && (
         <button
           onClick={goPrev}
-          className="absolute left-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-all"
+          className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-all"
         >
-          <IoChevronBackOutline className="text-xl" />
+          <IoChevronBackOutline className="text-base sm:text-xl" />
         </button>
       )}
 
       {currentIndex < images.length - 1 && (
         <button
           onClick={goNext}
-          className="absolute right-6 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-all"
+          className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 border border-white/15 flex items-center justify-center text-white transition-all"
         >
-          <IoChevronForwardOutline className="text-xl" />
+          <IoChevronForwardOutline className="text-base sm:text-xl" />
         </button>
       )}
 
@@ -294,8 +294,8 @@ function Lightbox({
         />
       </div>
 
-      <div className="absolute bottom-6 right-6 z-20 bg-black/50 backdrop-blur-md rounded-full px-3 py-1.5">
-        <span className="text-white text-xs font-mono">
+      <div className="absolute bottom-6 right-2 sm:right-6 z-20 bg-black/50 backdrop-blur-md rounded-full px-2 py-1 sm:px-3 sm:py-1.5">
+        <span className="text-white text-[10px] sm:text-xs font-mono">
           {currentIndex + 1} / {images.length}
         </span>
       </div>
@@ -332,12 +332,12 @@ export default function AdminListingDetailPage() {
 
     return (
       <span className="group relative inline-block">
-        <span className="inline-flex items-center gap-1.5 px-1.5 py-0.5 rounded-md bg-violet-100 dark:bg-violet-900/50 text-violet-800 dark:text-violet-300 font-medium border border-violet-200 dark:border-violet-700">
-          <Sparkles size={10} className="text-violet-500" />
+        <span className="inline-flex items-center gap-1 px-1 py-0.5 rounded-md bg-violet-100 dark:bg-violet-900/50 text-violet-800 dark:text-violet-300 font-medium border border-violet-200 dark:border-violet-700 text-xs sm:text-sm">
+          <Sparkles size={9} className="sm:size-10 text-violet-500" />
           {formatValue(currentValue)}
         </span>
         <span className="absolute bottom-full left-0 mb-1 hidden group-hover:block z-10">
-          <span className="bg-gray-900 text-white text-xs rounded-lg px-2 py-1 whitespace-nowrap shadow-lg">
+          <span className="bg-gray-900 text-white text-[10px] sm:text-xs rounded-lg px-2 py-1 whitespace-nowrap shadow-lg">
             {t("common.oldValue")}: {formatValue(oldValue)}
           </span>
         </span>
@@ -354,8 +354,8 @@ export default function AdminListingDetailPage() {
   }) => {
     if (!isFieldChanged(changes, fieldName)) return null;
     return (
-      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-violet-100 text-violet-700 text-[9px] font-bold">
-        <Sparkles size={8} /> {t("common.modified")}
+      <span className="inline-flex items-center gap-1 px-1 py-0.5 rounded-full bg-violet-100 text-violet-700 text-[8px] sm:text-[9px] font-bold">
+        <Sparkles size={7} className="sm:size-8" /> {t("common.modified")}
       </span>
     );
   };
@@ -421,14 +421,14 @@ export default function AdminListingDetailPage() {
   if (!listing) {
     return (
       <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-center">
-          <IoHomeOutline className="text-4xl text-gray-300 dark:text-slate-600 mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-slate-400 text-sm mb-4">
+        <div className="text-center px-4">
+          <IoHomeOutline className="text-3xl sm:text-4xl text-gray-300 dark:text-slate-600 mx-auto mb-3" />
+          <p className="text-gray-500 dark:text-slate-400 text-xs sm:text-sm mb-4">
             {t("notFound")}
           </p>
           <button
             onClick={() => router.back()}
-            className="px-4 py-2 text-sm bg-sky-600 text-white rounded-xl"
+            className="px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm bg-sky-600 text-white rounded-xl"
           >
             {t("goBack")}
           </button>
@@ -438,24 +438,24 @@ export default function AdminListingDetailPage() {
   }
 
   return (
-    <div className="min-h-screen antialiased">
+    <div className="min-h-screen antialiased max-w-[100vw] overflow-x-hidden">
       {/* Toast Notification */}
       {toast && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
+        <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300 w-[90%] sm:w-auto max-w-[calc(100vw-2rem)]">
           <div
-            className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
+            className={`flex items-center gap-2 sm:gap-3 px-3 py-2 sm:px-4 sm:py-3 rounded-lg shadow-lg ${toast.type === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"}`}
           >
             {toast.type === "success" ? (
-              <CheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             ) : (
-              <AlertCircle className="w-5 h-5" />
+              <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5" />
             )}
-            <span className="text-sm font-medium">{toast.message}</span>
+            <span className="text-xs sm:text-sm font-medium break-words">{toast.message}</span>
             <button
               onClick={() => setToast(null)}
-              className="ml-2 hover:opacity-70"
+              className="ml-1 sm:ml-2 hover:opacity-70"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
@@ -471,25 +471,25 @@ export default function AdminListingDetailPage() {
         />
       )}
 
-      <div className="w-full px-4 lg:px-8 py-6">
+      <div className="w-full px-3 sm:px-4 lg:px-8 py-4 sm:py-6">
         {/* Breadcrumb */}
-        <div className="mb-6">
-          <div className="flex items-center gap-2 text-xs mb-4 overflow-x-auto whitespace-nowrap pb-1 uppercase font-semibold tracking-wider">
+        <div className="mb-4 sm:mb-6">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[10px] sm:text-xs mb-3 sm:mb-4 overflow-x-auto whitespace-nowrap pb-1 uppercase font-semibold tracking-wider">
             <Link
               href={`/${locale}/admin/properties`}
               className="text-gray-500 dark:text-slate-400 hover:text-indigo-600 transition-colors"
             >
               {t("breadcrumbProperties")}
             </Link>
-            <ChevronRight className="text-gray-300 dark:text-slate-600 text-xs" />
+            <ChevronRight className="text-gray-300 dark:text-slate-600 text-[10px] sm:text-xs" />
             <Link
               href={`/${locale}/admin/listings/validation`}
               className="text-gray-500 dark:text-slate-400 hover:text-indigo-600 transition-colors"
             >
               {t("breadcrumbValidations")}
             </Link>
-            <ChevronRight className="text-gray-300 dark:text-slate-600 text-xs" />
-            <span className="text-indigo-600 dark:text-indigo-400 font-bold">
+            <ChevronRight className="text-gray-300 dark:text-slate-600 text-[10px] sm:text-xs" />
+            <span className="text-indigo-600 dark:text-indigo-400 font-bold text-[10px] sm:text-xs">
               {isRevision
                 ? t("breadcrumbModification")
                 : t("breadcrumbNewListing")}{" "}
@@ -497,54 +497,56 @@ export default function AdminListingDetailPage() {
             </span>
           </div>
 
-          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+          <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-3 sm:gap-4">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <div className="flex items-center gap-1.5 sm:gap-2 mb-2 flex-wrap">
                 {isRevision && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-violet-50 dark:bg-violet-950/30 border border-violet-100 text-violet-700 text-[10px] font-bold uppercase rounded-lg">
-                    <IoGitBranchOutline className="text-sm" />{" "}
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2.5 sm:py-1 bg-violet-50 dark:bg-violet-950/30 border border-violet-100 text-violet-700 text-[9px] sm:text-[10px] font-bold uppercase rounded-lg">
+                    <IoGitBranchOutline className="text-xs sm:text-sm" />{" "}
                     {t("badgeModification")}
                   </span>
                 )}
                 {isPending && !isRevision && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-lg">
-                    <IoCreateOutline className="text-sm" />{" "}
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2.5 sm:py-1 bg-amber-50 dark:bg-amber-950/30 border border-amber-100 text-amber-700 text-[9px] sm:text-[10px] font-bold uppercase rounded-lg">
+                    <IoCreateOutline className="text-xs sm:text-sm" />{" "}
                     {t("badgeNewListing")}
                   </span>
                 )}
                 <span
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 border text-[10px] font-bold uppercase rounded-lg ${statusCfg.bg} ${statusCfg.text}`}
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 sm:px-2.5 sm:py-1 border text-[9px] sm:text-[10px] font-bold uppercase rounded-lg ${statusCfg.bg} ${statusCfg.text}`}
                 >
                   <span
-                    className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot}`}
+                    className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full ${statusCfg.dot}`}
                   />
                   {t(`status_${listing.status}`)}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-1.5">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white tracking-tight mb-1 break-words">
                   {listing.title}
                 </h1>
               </div>
-              <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-slate-400">
-                <IoLocationOutline className="text-base" />
-                {listing.delegation}, {listing.governorate}
-                {listing.street ? ` — ${listing.street}` : ""}
+              <div className="flex items-start gap-1.5 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
+                <IoLocationOutline className="text-sm sm:text-base mt-0.5 flex-shrink-0" />
+                <span className="break-words">
+                  {listing.delegation}, {listing.governorate}
+                  {listing.street ? ` — ${listing.street}` : ""}
+                </span>
               </div>
             </div>
             <button
               onClick={() =>
                 window.open(`/${locale}/listings/${listing.id}`, "_blank")
               }
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-medium border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-sky-300 hover:text-sky-600 transition-all flex-shrink-0"
+              className="flex items-center gap-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-[10px] sm:text-xs font-medium border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:border-sky-300 hover:text-sky-600 transition-all flex-shrink-0 self-start"
             >
-              <IoEyeOutline className="text-sm" /> {t("viewOnSite")}
+              <IoEyeOutline className="text-xs sm:text-sm" /> {t("viewOnSite")}
             </button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
           {[
             {
               icon: <IoEyeOutline />,
@@ -576,14 +578,14 @@ export default function AdminListingDetailPage() {
           ].map(({ icon, label, value, color }) => (
             <div
               key={label}
-              className={`flex items-center gap-3 p-4 rounded-xl border ${color}`}
+              className={`flex items-center gap-2 sm:gap-3 p-2.5 sm:p-4 rounded-xl border ${color}`}
             >
-              <span className="text-xl flex-shrink-0">{icon}</span>
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-gray-500 dark:text-slate-400 font-semibold">
+              <span className="text-base sm:text-xl flex-shrink-0">{icon}</span>
+              <div className="min-w-0">
+                <p className="text-[8px] sm:text-[10px] uppercase tracking-widest text-gray-500 dark:text-slate-400 font-semibold">
                   {label}
                 </p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white leading-tight">
+                <p className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white leading-tight break-words">
                   {value}
                 </p>
               </div>
@@ -592,11 +594,11 @@ export default function AdminListingDetailPage() {
         </div>
 
         {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-6 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-4 sm:gap-6 items-start">
           {/* LEFT COLUMN */}
-          <div className="space-y-6 min-w-0">
+          <div className="space-y-4 sm:space-y-6 min-w-0">
             {/* Gallery */}
-            <div className="grid grid-cols-4 gap-2 h-[340px] lg:h-[480px] rounded-2xl overflow-hidden">
+            <div className="grid grid-cols-4 gap-1.5 sm:gap-2 h-[280px] sm:h-[340px] lg:h-[480px] rounded-2xl overflow-hidden">
               <div
                 className="col-span-2 row-span-2 relative overflow-hidden cursor-pointer group bg-gray-100"
                 onClick={() => displayPhotos[0] && setLightboxIndex(0)}
@@ -609,12 +611,12 @@ export default function AdminListingDetailPage() {
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center">
-                    <IoHomeOutline className="text-5xl text-gray-300" />
+                    <IoHomeOutline className="text-3xl sm:text-5xl text-gray-300" />
                   </div>
                 )}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
-                <span className="absolute bottom-3 left-3 flex items-center gap-1 text-[10px] font-bold text-white bg-black/40 backdrop-blur-sm px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                  <IoExpandOutline className="text-xs" /> {t("galleryZoom")}
+                <span className="absolute bottom-2 left-2 sm:bottom-3 sm:left-3 flex items-center gap-1 text-[8px] sm:text-[10px] font-bold text-white bg-black/40 backdrop-blur-sm px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                  <IoExpandOutline className="text-[10px] sm:text-xs" /> {t("galleryZoom")}
                 </span>
               </div>
               {[1, 2, 3, 4].map((idx) => (
@@ -631,12 +633,12 @@ export default function AdminListingDetailPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <IoHomeOutline className="text-2xl text-gray-300" />
+                      <IoHomeOutline className="text-lg sm:text-2xl text-gray-300" />
                     </div>
                   )}
                   {idx === 4 && hasMorePhotos && (
                     <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-[2px]">
-                      <p className="text-white font-bold text-xl">
+                      <p className="text-white font-bold text-base sm:text-xl">
                         +{hiddenPhotosCount + 1}
                       </p>
                     </div>
@@ -646,7 +648,7 @@ export default function AdminListingDetailPage() {
             </div>
 
             {/* Quick Props */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {[
                 {
                   icon: <MdOutlineSquareFoot />,
@@ -730,16 +732,16 @@ export default function AdminListingDetailPage() {
               ].map(({ icon, label, value, suffix, field }) => (
                 <div
                   key={field}
-                  className={`flex items-center gap-3 p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
+                  className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
                 >
-                  <span className="text-lg text-gray-400 dark:text-slate-500">
+                  <span className="text-base sm:text-lg text-gray-400 dark:text-slate-500 flex-shrink-0">
                     {icon}
                   </span>
-                  <div>
-                    <p className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
+                  <div className="min-w-0">
+                    <p className="text-[8px] sm:text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
                       {label}
                     </p>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                    <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white break-words">
                       <HighlightedValue
                         currentValue={value}
                         oldValue={getOldValue(changes, field)}
@@ -815,7 +817,7 @@ export default function AdminListingDetailPage() {
                   title={t("sectionEquipment")}
                   icon={<IoConstructOutline />}
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-3">
                     {Array.from(allEquipmentToShow).map((equipName) => {
                       const cleanName = equipName.toLowerCase().trim();
                       if (EXCLUDED_EQUIPMENT.has(cleanName)) return null;
@@ -829,16 +831,16 @@ export default function AdminListingDetailPage() {
                         return (
                           <div
                             key={equipName}
-                            className="flex items-center gap-3 p-3.5 rounded-xl border border-red-400 bg-red-50/70 dark:bg-red-950/40"
+                            className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-red-400 bg-red-50/70 dark:bg-red-950/40"
                           >
-                            <span className="text-lg text-red-500 dark:text-red-400">
+                            <span className="text-base sm:text-lg text-red-500 dark:text-red-400 flex-shrink-0">
                               {IconComponent}
                             </span>
-                            <div>
-                              <p className="text-[10px] text-red-600 dark:text-red-400 uppercase tracking-widest font-semibold">
+                            <div className="min-w-0">
+                              <p className="text-[8px] sm:text-[10px] text-red-600 dark:text-red-400 uppercase tracking-widest font-semibold">
                                 {t("equipment.removed")}
                               </p>
-                              <p className="text-sm font-bold text-red-800 dark:text-red-300 line-through decoration-red-500">
+                              <p className="text-xs sm:text-sm font-bold text-red-800 dark:text-red-300 line-through decoration-red-500 break-words">
                                 {t(`equipment.${cleanName}`, {
                                   defaultValue: equipName,
                                 })}
@@ -852,24 +854,24 @@ export default function AdminListingDetailPage() {
                         return (
                           <div
                             key={equipName}
-                            className="flex items-center gap-3 p-3.5 rounded-xl border border-violet-400 bg-violet-50/50 dark:bg-violet-950/30 ring-1 ring-violet-400"
+                            className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-violet-400 bg-violet-50/50 dark:bg-violet-950/30 ring-1 ring-violet-400"
                           >
-                            <span className="text-lg text-violet-600 dark:text-violet-400">
+                            <span className="text-base sm:text-lg text-violet-600 dark:text-violet-400 flex-shrink-0">
                               {IconComponent}
                             </span>
-                            <div>
-                              <p className="text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-widest font-semibold">
+                            <div className="min-w-0">
+                              <p className="text-[8px] sm:text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-widest font-semibold">
                                 {t("equipment.added")}
                               </p>
-                              <p className="text-sm font-bold text-violet-800 dark:text-violet-300">
+                              <p className="text-xs sm:text-sm font-bold text-violet-800 dark:text-violet-300 break-words">
                                 {t(`equipment.${cleanName}`, {
                                   defaultValue: equipName,
                                 })}
                               </p>
                             </div>
                             <Sparkles
-                              size={12}
-                              className="text-violet-500 ml-auto"
+                              size={10}
+                              className="sm:size-12 text-violet-500 ml-auto flex-shrink-0"
                             />
                           </div>
                         );
@@ -878,16 +880,16 @@ export default function AdminListingDetailPage() {
                       return (
                         <div
                           key={equipName}
-                          className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                          className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                         >
-                          <span className="text-lg text-gray-400 dark:text-slate-500">
+                          <span className="text-base sm:text-lg text-gray-400 dark:text-slate-500 flex-shrink-0">
                             {IconComponent}
                           </span>
-                          <div>
-                            <p className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
+                          <div className="min-w-0">
+                            <p className="text-[8px] sm:text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
                               {t("equipment.label")}
                             </p>
-                            <p className="text-sm font-bold text-gray-900 dark:text-white">
+                            <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white break-words">
                               {t(`equipment.${cleanName}`, {
                                 defaultValue: equipName,
                               })}
@@ -1006,7 +1008,7 @@ export default function AdminListingDetailPage() {
                   title={t("sectionHouseRules")}
                   icon={<IoShieldCheckmarkOutline />}
                 >
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-2 sm:gap-3">
                     {ALL_RULES.map(
                       ({ key, label, Icon: RuleIconComponent }) => {
                         if (!allRulesToShow.has(key)) return null;
@@ -1017,14 +1019,14 @@ export default function AdminListingDetailPage() {
                           return (
                             <div
                               key={key}
-                              className="flex items-center gap-3 p-3.5 rounded-xl border border-red-400 bg-red-50/70 dark:bg-red-950/40"
+                              className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-red-400 bg-red-50/70 dark:bg-red-950/40"
                             >
-                              <RuleIconComponent className="text-lg text-red-500 dark:text-red-400" />
-                              <div>
-                                <p className="text-[10px] text-red-600 dark:text-red-400 uppercase tracking-widest font-semibold">
+                              <RuleIconComponent className="text-base sm:text-lg text-red-500 dark:text-red-400 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-[8px] sm:text-[10px] text-red-600 dark:text-red-400 uppercase tracking-widest font-semibold">
                                   {t("rules.removed")}
                                 </p>
-                                <p className="text-sm font-bold text-red-800 dark:text-red-300 line-through decoration-red-500">
+                                <p className="text-xs sm:text-sm font-bold text-red-800 dark:text-red-300 line-through decoration-red-500 break-words">
                                   {label}
                                 </p>
                               </div>
@@ -1036,20 +1038,20 @@ export default function AdminListingDetailPage() {
                           return (
                             <div
                               key={key}
-                              className="flex items-center gap-3 p-3.5 rounded-xl border border-violet-400 bg-violet-50/50 dark:bg-violet-950/30 ring-1 ring-violet-400"
+                              className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-violet-400 bg-violet-50/50 dark:bg-violet-950/30 ring-1 ring-violet-400"
                             >
-                              <RuleIconComponent className="text-lg text-violet-600 dark:text-violet-400" />
-                              <div>
-                                <p className="text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-widest font-semibold">
+                              <RuleIconComponent className="text-base sm:text-lg text-violet-600 dark:text-violet-400 flex-shrink-0" />
+                              <div className="min-w-0">
+                                <p className="text-[8px] sm:text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-widest font-semibold">
                                   {t("rules.added")}
                                 </p>
-                                <p className="text-sm font-bold text-violet-800 dark:text-violet-300">
+                                <p className="text-xs sm:text-sm font-bold text-violet-800 dark:text-violet-300 break-words">
                                   {label}
                                 </p>
                               </div>
                               <Sparkles
-                                size={12}
-                                className="text-violet-500 ml-auto"
+                                size={10}
+                                className="sm:size-12 text-violet-500 ml-auto flex-shrink-0"
                               />
                             </div>
                           );
@@ -1058,14 +1060,14 @@ export default function AdminListingDetailPage() {
                         return (
                           <div
                             key={key}
-                            className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+                            className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"
                           >
-                            <RuleIconComponent className="text-lg text-gray-400 dark:text-slate-500" />
-                            <div>
-                              <p className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
+                            <RuleIconComponent className="text-base sm:text-lg text-gray-400 dark:text-slate-500 flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-[8px] sm:text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
                                 {t("rules.label")}
                               </p>
-                              <p className="text-sm font-bold text-gray-900 dark:text-white">
+                              <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white break-words">
                                 {label}
                               </p>
                             </div>
@@ -1085,23 +1087,23 @@ export default function AdminListingDetailPage() {
                 icon={<IoDocumentTextOutline />}
               >
                 <div
-                  className={`p-4 rounded-xl border ${isFieldChanged(changes, "description") ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
+                  className={`p-3 sm:p-4 rounded-xl border ${isFieldChanged(changes, "description") ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
                 >
-                  <div className="flex items-center gap-2 mb-2">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <p className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300">
                       {t("description.current")}
                     </p>
                     <ModifiedBadge fieldName="description" changes={changes} />
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-400 leading-relaxed whitespace-pre-wrap break-words">
                     {listing.description}
                   </p>
                   {isFieldChanged(changes, "description") && (
                     <div className="mt-3 pt-2 border-t border-violet-200 dark:border-violet-800">
-                      <p className="text-[10px] text-violet-600 dark:text-violet-400 font-medium">
+                      <p className="text-[9px] sm:text-[10px] text-violet-600 dark:text-violet-400 font-medium">
                         {t("description.old")}:
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 line-through">
+                      <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 line-through break-words">
                         {getOldValue(changes, "description")}
                       </p>
                     </div>
@@ -1112,8 +1114,8 @@ export default function AdminListingDetailPage() {
 
             {/* Location */}
             <Section title={t("sectionLocation")} icon={<IoMapOutline />}>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="space-y-3 sm:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                   {[
                     {
                       label: t("location.governorate"),
@@ -1136,16 +1138,16 @@ export default function AdminListingDetailPage() {
                   ].map(({ label, value, field, icon }) => (
                     <div
                       key={field}
-                      className={`flex items-center gap-3 p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
+                      className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
                     >
-                      <span className="text-lg text-gray-400 dark:text-slate-500">
+                      <span className="text-base sm:text-lg text-gray-400 dark:text-slate-500 flex-shrink-0">
                         {icon}
                       </span>
-                      <div>
-                        <p className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
+                      <div className="min-w-0">
+                        <p className="text-[8px] sm:text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
                           {label}
                         </p>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                        <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white break-words">
                           <HighlightedValue
                             currentValue={value}
                             oldValue={getOldValue(changes, field)}
@@ -1156,7 +1158,7 @@ export default function AdminListingDetailPage() {
                     </div>
                   ))}
                 </div>
-                <div className="h-64 rounded-xl overflow-hidden border border-gray-200">
+                <div className="h-48 sm:h-64 rounded-xl overflow-hidden border border-gray-200">
                   {listing.latitude && listing.longitude ? (
                     <ListingMap
                       homeLat={listing.latitude}
@@ -1166,8 +1168,8 @@ export default function AdminListingDetailPage() {
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
-                      <IoMapOutline className="text-4xl text-gray-300 mb-2" />
-                      <p className="text-xs text-gray-400">
+                      <IoMapOutline className="text-3xl sm:text-4xl text-gray-300 mb-2" />
+                      <p className="text-[10px] sm:text-xs text-gray-400 text-center px-2">
                         {t("noCoordinates")}
                       </p>
                     </div>
@@ -1175,15 +1177,15 @@ export default function AdminListingDetailPage() {
                 </div>
                 {(isFieldChanged(changes, "latitude") ||
                   isFieldChanged(changes, "longitude")) && (
-                  <div className="flex items-center gap-3 p-3.5 rounded-xl border border-violet-400 bg-violet-50/30 dark:bg-violet-950/20">
-                    <span className="text-lg text-violet-600 dark:text-violet-400">
+                  <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-violet-400 bg-violet-50/30 dark:bg-violet-950/20">
+                    <span className="text-base sm:text-lg text-violet-600 dark:text-violet-400 flex-shrink-0">
                       <IoMapOutline />
                     </span>
                     <div>
-                      <p className="text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-widest font-semibold">
+                      <p className="text-[8px] sm:text-[10px] text-violet-600 dark:text-violet-400 uppercase tracking-widest font-semibold">
                         {t("location.coordinates")}
                       </p>
-                      <p className="text-sm font-bold text-violet-800 dark:text-violet-300">
+                      <p className="text-xs sm:text-sm font-bold text-violet-800 dark:text-violet-300">
                         {t("location.coordinatesChanged")}
                       </p>
                     </div>
@@ -1194,10 +1196,10 @@ export default function AdminListingDetailPage() {
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="space-y-5 lg:sticky lg:top-6">
+          <div className="space-y-4 sm:space-y-5 lg:sticky lg:top-6">
             {/* Pricing */}
             <Section title={t("sectionPricing")} icon={<IoCashOutline />}>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {[
                   {
                     label: t("pricePerNight"),
@@ -1233,17 +1235,19 @@ export default function AdminListingDetailPage() {
                     show && (
                       <div
                         key={field}
-                        className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
+                        className={`flex items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
                       >
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg text-gray-400 dark:text-slate-500">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                          <span className="text-base sm:text-lg text-gray-400 dark:text-slate-500 flex-shrink-0">
                             {icon}
                           </span>
-                          <span className="text-sm text-gray-500">{label}</span>
+                          <span className="text-[11px] sm:text-sm text-gray-500 break-words">
+                            {label}
+                          </span>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex-shrink-0">
                           <ModifiedBadge fieldName={field} changes={changes} />
-                          <span className="text-sm font-bold text-gray-900 ml-2">
+                          <span className="text-xs sm:text-sm font-bold text-gray-900 ml-1 sm:ml-2">
                             <HighlightedValue
                               currentValue={value}
                               oldValue={getOldValue(changes, field)}
@@ -1256,10 +1260,10 @@ export default function AdminListingDetailPage() {
                     ),
                 )}
                 <div className="flex items-center justify-between pt-1 px-1">
-                  <span className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+                  <span className="text-[10px] sm:text-xs text-gray-400 uppercase tracking-wider font-semibold">
                     {t("rentalTypeLabel")}
                   </span>
-                  <span className="text-xs font-medium text-gray-700 px-2 py-0.5 rounded-lg bg-gray-100">
+                  <span className="text-[10px] sm:text-xs font-medium text-gray-700 px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-lg bg-gray-100">
                     <HighlightedValue
                       currentValue={t(`rentalType.${listing.rentalType}`, {
                         defaultValue: listing.rentalType,
@@ -1292,20 +1296,20 @@ export default function AdminListingDetailPage() {
                 <div
                   className={`absolute -top-12 -right-12 w-40 h-40 rounded-full blur-3xl ${isRevision ? "bg-violet-500/20" : "bg-sky-500/20"}`}
                 />
-                <div className="relative z-10 p-6">
-                  <div className="mb-5">
-                    <h3 className="text-xl font-bold text-white">
+                <div className="relative z-10 p-4 sm:p-6">
+                  <div className="mb-4 sm:mb-5">
+                    <h3 className="text-lg sm:text-xl font-bold text-white">
                       {isRevision
                         ? t("validateModificationTitle")
                         : t("validateListingTitle")}
                     </h3>
-                    <p className="text-sm text-white/70 mt-1.5">
+                    <p className="text-xs sm:text-sm text-white/70 mt-1">
                       {isRevision
                         ? t("validateModificationDesc")
                         : t("validateListingDesc")}
                     </p>
                   </div>
-                  <div className="space-y-2.5 mb-5">
+                  <div className="space-y-2 mb-4 sm:mb-5">
                     <button
                       onClick={async () => {
                         const result = await handleValidate("approve");
@@ -1323,12 +1327,12 @@ export default function AdminListingDetailPage() {
                           );
                       }}
                       disabled={actionLoading}
-                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-3 rounded-xl font-semibold shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white py-2.5 sm:py-3 rounded-xl font-semibold shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                     >
                       {actionLoading ? (
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                       ) : (
-                        <IoCheckmarkCircleOutline className="text-lg" />
+                        <IoCheckmarkCircleOutline className="text-base sm:text-lg" />
                       )}
                       {isRevision
                         ? t("btnApproveModification")
@@ -1351,24 +1355,24 @@ export default function AdminListingDetailPage() {
                           );
                       }}
                       disabled={actionLoading || !rejectionReason}
-                      className="w-full bg-rose-500 hover:bg-rose-600 text-white py-3 rounded-xl font-semibold shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full bg-rose-500 hover:bg-rose-600 text-white py-2.5 sm:py-3 rounded-xl font-semibold shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 text-sm sm:text-base"
                     >
-                      <IoCloseOutline className="text-lg" />
+                      <IoCloseOutline className="text-base sm:text-lg" />
                       {isRevision
                         ? t("btnRejectModification")
                         : t("btnRejectListing")}
                     </button>
                   </div>
-                  <div className="space-y-3">
+                  <div className="space-y-2 sm:space-y-3">
                     <div className="flex items-center justify-between">
-                      <label className="text-[10px] uppercase font-bold text-white/50 tracking-widest">
+                      <label className="text-[9px] sm:text-[10px] uppercase font-bold text-white/50 tracking-widest">
                         {t("rejectionReasonLabel")}{" "}
                         <span className="text-rose-400">*</span>
                       </label>
                       {rejectionReason && (
                         <button
                           onClick={() => setRejectionReason("")}
-                          className="text-xs text-white/40 hover:text-white/70"
+                          className="text-[10px] sm:text-xs text-white/40 hover:text-white/70"
                         >
                           {t("clear")}
                         </button>
@@ -1378,7 +1382,7 @@ export default function AdminListingDetailPage() {
                       {REJECTION_REASONS.map((reason) => (
                         <label
                           key={reason}
-                          className={`flex items-center gap-2.5 p-2.5 rounded-xl cursor-pointer transition-all text-sm ${rejectionReason === reason ? "bg-rose-500/20 border border-rose-400/40 text-white" : "bg-white/10 border border-transparent hover:bg-white/20 text-white/80"}`}
+                          className={`flex items-center gap-2 p-2 sm:p-2.5 rounded-xl cursor-pointer transition-all text-xs sm:text-sm ${rejectionReason === reason ? "bg-rose-500/20 border border-rose-400/40 text-white" : "bg-white/10 border border-transparent hover:bg-white/20 text-white/80"}`}
                         >
                           <input
                             type="radio"
@@ -1386,15 +1390,15 @@ export default function AdminListingDetailPage() {
                             value={reason}
                             checked={rejectionReason === reason}
                             onChange={(e) => setRejectionReason(e.target.value)}
-                            className="w-3.5 h-3.5 border-2 border-white/30 text-rose-500 focus:ring-rose-500/20 bg-transparent checked:bg-rose-500"
+                            className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-2 border-white/30 text-rose-500 focus:ring-rose-500/20 bg-transparent checked:bg-rose-500"
                           />
-                          <span className="text-xs">{reason}</span>
+                          <span className="text-[11px] sm:text-xs break-words">{reason}</span>
                         </label>
                       ))}
                     </div>
                   </div>
-                  <div className="mt-4 space-y-2">
-                    <label className="text-[10px] uppercase font-bold text-white/50 tracking-widest">
+                  <div className="mt-3 sm:mt-4 space-y-2">
+                    <label className="text-[9px] sm:text-[10px] uppercase font-bold text-white/50 tracking-widest">
                       {t("rejectionDetailsLabel")}
                     </label>
                     <textarea
@@ -1402,11 +1406,11 @@ export default function AdminListingDetailPage() {
                       onChange={(e) => setRejectionDetails(e.target.value)}
                       placeholder={t("rejectionDetailsPlaceholder")}
                       rows={3}
-                      className="w-full bg-white/10 border border-white/20 rounded-xl p-3 text-xs text-white placeholder-white/40 focus:ring-2 focus:ring-sky-500/30 resize-none transition-all"
+                      className="w-full bg-white/10 border border-white/20 rounded-xl p-2 sm:p-3 text-[11px] sm:text-xs text-white placeholder-white/40 focus:ring-2 focus:ring-sky-500/30 resize-none transition-all"
                     />
                   </div>
                   <p
-                    className={`mt-4 text-[10px] text-center ${isRevision ? "text-violet-300/70" : "text-sky-300/70"}`}
+                    className={`mt-3 sm:mt-4 text-[9px] sm:text-[10px] text-center ${isRevision ? "text-violet-300/70" : "text-sky-300/70"}`}
                   >
                     {isRevision ? t("revisionNote") : t("validationNote")}
                   </p>
@@ -1416,9 +1420,9 @@ export default function AdminListingDetailPage() {
 
             {/* Owner Section */}
             <Section title={t("sectionOwner")} icon={<IoPeopleOutline />}>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-sky-100 to-violet-100 flex items-center justify-center flex-shrink-0 border border-gray-200">
+              <div className="space-y-2 sm:space-y-3">
+                <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl overflow-hidden bg-gradient-to-br from-sky-100 to-violet-100 flex items-center justify-center flex-shrink-0 border border-gray-200">
                     {listing.owner.profilePictureUrl ? (
                       <img
                         src={getImageUrl(listing.owner.profilePictureUrl)}
@@ -1426,22 +1430,22 @@ export default function AdminListingDetailPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-base font-bold text-sky-600">
+                      <span className="text-sm sm:text-base font-bold text-sky-600">
                         {listing.owner.firstName?.charAt(0)}
                         {listing.owner.lastName?.charAt(0)}
                       </span>
                     )}
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                  <div className="min-w-0">
+                    <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white break-words">
                       {listing.owner.firstName} {listing.owner.lastName}
                     </p>
-                    <p className="text-[10px] text-gray-400">
+                    <p className="text-[9px] sm:text-[10px] text-gray-400">
                       {t("memberSince")} {formatDate(listing.owner.createdAt)}
                     </p>
                     {listing.owner.isIdentityVerified && (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-600 mt-0.5">
-                        <IoCheckmarkDoneOutline className="text-[10px]" />{" "}
+                      <span className="inline-flex items-center gap-1 text-[8px] sm:text-[9px] font-bold text-emerald-600 mt-0.5">
+                        <IoCheckmarkDoneOutline className="text-[9px] sm:text-[10px]" />{" "}
                         {t("verified")}
                       </span>
                     )}
@@ -1449,20 +1453,20 @@ export default function AdminListingDetailPage() {
                 </div>
                 {listing.ownerBio && (
                   <div
-                    className={`p-3.5 rounded-xl border ${isFieldChanged(changes, "owner.bio") ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
+                    className={`p-2 sm:p-3.5 rounded-xl border ${isFieldChanged(changes, "owner.bio") ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                    <div className="flex items-center gap-2 mb-1 sm:mb-2 flex-wrap">
+                      <p className="text-[10px] sm:text-xs text-gray-500 dark:text-slate-400">
                         {t("owner.bio")}
                       </p>
                       <ModifiedBadge fieldName="owner.bio" changes={changes} />
                     </div>
-                    <p className="text-xs leading-relaxed text-gray-500 dark:text-slate-400">
+                    <p className="text-[11px] sm:text-xs leading-relaxed text-gray-500 dark:text-slate-400 break-words">
                       {listing.ownerBio}
                     </p>
                   </div>
                 )}
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {[
                     {
                       label: t("owner.phone"),
@@ -1479,16 +1483,16 @@ export default function AdminListingDetailPage() {
                   ].map(({ label, value, field, icon }) => (
                     <div
                       key={field}
-                      className={`flex items-center gap-3 p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
+                      className={`flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
                     >
-                      <span className="text-lg text-gray-400 dark:text-slate-500">
+                      <span className="text-base sm:text-lg text-gray-400 dark:text-slate-500 flex-shrink-0">
                         {icon}
                       </span>
-                      <div>
-                        <p className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
+                      <div className="min-w-0">
+                        <p className="text-[8px] sm:text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-widest font-semibold">
                           {label}
                         </p>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">
+                        <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white break-words">
                           <HighlightedValue
                             currentValue={value}
                             oldValue={getOldValue(changes, field)}
@@ -1504,7 +1508,7 @@ export default function AdminListingDetailPage() {
 
             {/* Dates */}
             <Section title={t("sectionDates")} icon={<IoCalendarOutline />}>
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {[
                   {
                     label: t("dateCreated"),
@@ -1525,15 +1529,17 @@ export default function AdminListingDetailPage() {
                 ].map(({ label, value, field, icon }) => (
                   <div
                     key={field}
-                    className={`flex items-center justify-between gap-3 p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
+                    className={`flex items-center justify-between gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border ${isFieldChanged(changes, field) ? "border-violet-400 bg-violet-50/30 dark:bg-violet-950/20" : "border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900"}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg text-gray-400 dark:text-slate-500">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                      <span className="text-base sm:text-lg text-gray-400 dark:text-slate-500 flex-shrink-0">
                         {icon}
                       </span>
-                      <span className="text-sm text-gray-500">{label}</span>
+                      <span className="text-[11px] sm:text-sm text-gray-500 break-words">
+                        {label}
+                      </span>
                     </div>
-                    <span className="text-sm font-bold text-gray-900 dark:text-white">
+                    <span className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white text-right flex-shrink-0">
                       <HighlightedValue
                         currentValue={value}
                         oldValue={
@@ -1547,15 +1553,15 @@ export default function AdminListingDetailPage() {
                   </div>
                 ))}
                 {listing.rejectionReason && (
-                  <div className="flex items-center gap-3 p-3.5 rounded-xl border border-red-400 bg-red-50/70 dark:bg-red-950/40">
-                    <span className="text-lg text-red-500 dark:text-red-400">
+                  <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3.5 rounded-xl border border-red-400 bg-red-50/70 dark:bg-red-950/40">
+                    <span className="text-base sm:text-lg text-red-500 dark:text-red-400 flex-shrink-0">
                       <IoAlertCircleOutline />
                     </span>
-                    <div>
-                      <p className="text-[10px] text-red-600 dark:text-red-400 uppercase tracking-widest font-semibold">
+                    <div className="min-w-0">
+                      <p className="text-[8px] sm:text-[10px] text-red-600 dark:text-red-400 uppercase tracking-widest font-semibold">
                         {t("previousRejectionReason")}
                       </p>
-                      <p className="text-sm font-bold text-red-800 dark:text-red-300">
+                      <p className="text-xs sm:text-sm font-bold text-red-800 dark:text-red-300 break-words">
                         <HighlightedValue
                           currentValue={listing.rejectionReason}
                           oldValue={getOldValue(changes, "rejectionReason")}

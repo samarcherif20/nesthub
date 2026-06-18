@@ -34,6 +34,8 @@ export default function DeleteListingModal({
   const [confirmText, setConfirmText] = useState("");
   const [step, setStep] = useState<"confirm" | "type">("confirm");
   const [mounted, setMounted] = useState(false);
+  
+  const CONFIRM_WORD = t("confirmWord").toUpperCase();
 
   useEffect(() => {
     setMounted(true);
@@ -55,7 +57,7 @@ export default function DeleteListingModal({
   if (!isOpen || !mounted) return null;
 
   const handleConfirm = () => {
-    if (step === "type" && confirmText !== "SUPPRIMER") return;
+    if (step === "type" && confirmText !== CONFIRM_WORD) return;
     onConfirm(cancelBookings);
   };
 
@@ -137,8 +139,8 @@ export default function DeleteListingModal({
                       <p className="text-sm font-semibold text-amber-800 dark:text-amber-400">
                         {bookingsCount}{" "}
                         {bookingsCount > 1
-                          ? "réservations en cours"
-                          : "réservation en cours"}
+                          ? t("bookingsPlural")
+                          : t("bookingsSingular")}
                       </p>
                       <p className="text-xs text-amber-700 dark:text-amber-500 mt-1">
                         {t("bookingsWarning")}
@@ -172,7 +174,7 @@ export default function DeleteListingModal({
                 <div className="w-full mb-4">
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2 text-left">
                     {t("confirmTextLabel")}{" "}
-                    <span className="font-bold text-rose-600">SUPPRIMER</span>
+                    <span className="font-bold text-rose-600">{CONFIRM_WORD}</span>
                   </label>
                   <input
                     type="text"
@@ -180,7 +182,7 @@ export default function DeleteListingModal({
                     onChange={(e) =>
                       setConfirmText(e.target.value.toUpperCase())
                     }
-                    placeholder="SUPPRIMER"
+                    placeholder={CONFIRM_WORD}
                     className="w-full px-4 py-2.5 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-rose-500/30 focus:border-rose-500 outline-none transition-all uppercase text-center font-mono"
                     autoFocus
                   />
@@ -196,7 +198,7 @@ export default function DeleteListingModal({
                   </button>
                   <button
                     onClick={handleConfirm}
-                    disabled={isLoading || confirmText !== "SUPPRIMER"}
+                    disabled={isLoading || confirmText !== CONFIRM_WORD}
                     className="flex-1 py-2.5 rounded-xl bg-rose-600 text-white font-bold text-sm hover:bg-rose-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isLoading ? (

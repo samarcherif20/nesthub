@@ -303,80 +303,56 @@ export function useSearch() {
     [getImageUrl],
   );
 
-  useEffect(() => {
-    fetchListings({
-      page: currentPage,
-      category: selectedCategory,
-      amenities: selectedAmenities,
-      price: priceRange,
-      destination: searchDestination,
-      guests: searchGuests,
-      sort: sortBy,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const selectCategory = useCallback((categoryId: string) => {
-    setSelectedCategory(categoryId);
-    setCurrentPage(1);
-  }, []);
+ useEffect(() => {
+  fetchListings({
+    page: currentPage,
+    category: selectedCategory,
+    amenities: selectedAmenities,
+    price: priceRange,
+    destination: searchDestination,
+    checkIn: searchDates.checkIn || undefined,
+    checkOut: searchDates.checkOut || undefined,
+    guests: searchGuests,
+    sort: sortBy,
+  });
+}, [
+  currentPage,
+  selectedCategory,
+  selectedAmenities,
+  priceRange[1],
+  searchDestination,
+  searchDates.checkIn,
+  searchDates.checkOut,
+  searchGuests,
+  sortBy,
+]);
+const selectCategory = useCallback((categoryId: string) => {
+  setSelectedCategory(categoryId);
+  setCurrentPage(1);
+}, []);
 
   const toggleAmenity = useCallback((amenity: string) => {
-    setSelectedAmenities((prev) =>
-      prev.includes(amenity)
-        ? prev.filter((a) => a !== amenity)
-        : [...prev, amenity],
-    );
-    setCurrentPage(1);
-  }, []);
-
-  const handleSearch = useCallback(() => {
-    setCurrentPage(1);
-    fetchListings({
-      page: 1,
-      category: selectedCategory,
-      amenities: selectedAmenities,
-      price: priceRange,
-      destination: searchDestination,
-      checkIn: searchDates.checkIn || undefined,
-      checkOut: searchDates.checkOut || undefined,
-      guests: searchGuests,
-      sort: sortBy,
-    });
-  }, [
-    selectedCategory,
-    selectedAmenities,
-    priceRange,
-    searchDestination,
-    searchDates,
-    searchGuests,
-    sortBy,
-    fetchListings,
-  ]);
-
-  const resetFilters = useCallback(() => {
-    setSelectedCategory("all");
-    setSelectedAmenities([]);
-    setPriceRange([0, 5000]);
-    setSortBy("relevance");
-    setSearchDestination("");
-    setSearchDates({ checkIn: "", checkOut: "" });
-    setSearchGuests(1);
-    setCurrentPage(1);
-    fetchListings({
-      page: 1,
-      category: "all",
-      amenities: [],
-      price: [0, 5000],
-      destination: "",
-      checkIn: "",
-      checkOut: "",
-      guests: 1,
-      sort: "relevance",
-    });
-  }, [fetchListings]);
-
-  // ✅ TOGGLE FAVORITE AVEC API BDD
+  setSelectedAmenities((prev) =>
+    prev.includes(amenity)
+      ? prev.filter((a) => a !== amenity)
+      : [...prev, amenity],
+  );
+  setCurrentPage(1);
+}, []);
+ const handleSearch = useCallback(() => {
+  setCurrentPage(1);
+}, []);
+const resetFilters = useCallback(() => {
+  setSelectedCategory("all");
+  setSelectedAmenities([]);
+  setPriceRange([0, 5000]);
+  setSortBy("relevance");
+  setSearchDestination("");
+  setSearchDates({ checkIn: "", checkOut: "" });
+  setSearchGuests(1);
+  setCurrentPage(1);
+}, []);
+  //  TOGGLE FAVORITE AVEC API BDD
   const toggleFavorite = useCallback(
     async (listingId: string, e: React.MouseEvent) => {
       e.preventDefault();

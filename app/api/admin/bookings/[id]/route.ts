@@ -86,7 +86,7 @@ export async function GET(
             id: true,
           },
         },
-        review: {
+        reviews: {
           select: {
             id: true,
             rating: true,
@@ -189,12 +189,12 @@ export async function GET(
     }
 
     // Ajout d'un avis si existant
-    if (booking.review) {
+    if (booking.reviews) {
       timeline.push({
         id: "review",
         action: "Avis laissé",
-        description: `${booking.tenant.firstName} a laissé un avis de ${booking.review.rating}/5 étoiles`,
-        createdAt: booking.review.createdAt,
+        description: `${booking.tenant.firstName} a laissé un avis de ${booking.reviews.rating}/5 étoiles`,
+        createdAt: booking.reviews.createdAt,
         actor: booking.tenant.firstName,
       });
     }
@@ -270,7 +270,7 @@ export async function GET(
       },
       payments: booking.payments,
       conversationId: booking.conversation?.id,
-      review: booking.review,
+      review: booking.reviews,
       dispute: booking.dispute,
       recentMessages: booking.messages,
       timeline: timeline,

@@ -69,7 +69,6 @@ export async function GET(request: NextRequest) {
       };
     }
 
-    // 🔥RECHERCHE AMÉLIORÉE 
     if (search) {
       where.OR = [
         // Recherche dans le titre de l'annonce

@@ -2,11 +2,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useTranslations } from "next-intl";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Clock, Shield, ChevronRight } from "lucide-react";
 import { MdOutlineSupportAgent } from "react-icons/md";
-
+import Link from "next/link";
+import { useTranslations, useLocale } from "next-intl";
 interface IdentityVerificationModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -21,6 +21,7 @@ export function IdentityVerificationModal({
   requiredAction,
 }: IdentityVerificationModalProps) {
   const t = useTranslations("IdentityVerification");
+  const locale = useLocale();
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [timeLeft, setTimeLeft] = useState("24:00");
@@ -40,7 +41,7 @@ export function IdentityVerificationModal({
   // Timer animation
   useEffect(() => {
     if (!isOpen) return;
-    
+
     let time = 48 * 60;
     const timer = setInterval(() => {
       if (time <= 0) {
@@ -50,9 +51,11 @@ export function IdentityVerificationModal({
       time--;
       const hours = Math.floor(time / 60);
       const minutes = time % 60;
-      setTimeLeft(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`);
+      setTimeLeft(
+        `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`,
+      );
     }, 60000);
-    
+
     return () => clearInterval(timer);
   }, [isOpen]);
 
@@ -79,9 +82,9 @@ export function IdentityVerificationModal({
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             ref={containerRef}
             className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden"
-            style={{ 
+            style={{
               transform: `rotateY(${rotation.x}deg) rotateX(${rotation.y}deg)`,
-              perspective: "1000px"
+              perspective: "1000px",
             }}
           >
             {/* Bouton fermer */}
@@ -120,7 +123,7 @@ export function IdentityVerificationModal({
                     {t("gradientText")}
                   </span>
                 </h1>
-                
+
                 {/* Timer badge */}
                 <div className="flex items-center justify-center gap-2 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-4 py-2 rounded-full w-fit mx-auto">
                   <Clock size={16} />
@@ -144,20 +147,29 @@ export function IdentityVerificationModal({
                   <div className="overflow-hidden h-1.5 text-xs flex rounded-full bg-slate-100 dark:bg-slate-800">
                     <div className="w-2/3 h-full rounded-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 animate-pulse" />
                   </div>
-                  <p className="text-xs text-slate-400 mt-2">{t("progressLabel")}</p>
+                  <p className="text-xs text-slate-400 mt-2">
+                    {t("progressLabel")}
+                  </p>
                 </div>
               </div>
 
               {/* Boutons */}
               <div className="mt-8 w-full max-w-md flex flex-col gap-3">
-                <button 
-                  onClick={onClose}
+                <Link
+                  href={`/${locale}/#support-contact`}
                   className="w-full py-3 px-6 rounded-full border-2 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 font-medium text-base transition-all duration-300 flex items-center justify-center gap-2 group"
+                  onClick={onClose}
                 >
-                  <MdOutlineSupportAgent size={18} className="group-hover:scale-110 transition-transform" />
+                  <MdOutlineSupportAgent
+                    size={18}
+                    className="group-hover:scale-110 transition-transform"
+                  />
                   {t("buttonSupport")}
-                  <ChevronRight size={16} className="group-hover:translate-x-1 transition-transform" />
-                </button>
+                  <ChevronRight
+                    size={16}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
+                </Link>
               </div>
 
               {/* Status Label */}

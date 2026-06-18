@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   IoCheckmarkCircle,
   IoCloseCircleOutline,
@@ -125,8 +126,19 @@ export default function NotificationItem({
   onClose,
   processingAction,
 }: NotificationItemProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
+  const t = useTranslations("NotificationItem");
 
+  const [isProcessing, setIsProcessing] = useState(false);
+  useEffect(() => {
+    console.log("🔍 NOTIFICATION COMPLETE:", notification);
+    console.log("🔍 Type:", notification.type);
+    console.log("🔍 Data:", notification.data);
+    console.log("🔍 infoRequestId:", notification.data?.infoRequestId);
+    console.log(
+      "🔍 Type de infoRequestId:",
+      typeof notification.data?.infoRequestId,
+    );
+  }, [notification]);
   // Debug log
   useEffect(() => {
     if (notification.type === "BOOKING_REQUEST") {
@@ -142,13 +154,24 @@ export default function NotificationItem({
   };
 
   const handleAccept = async () => {
+    console.log("🔍 handleAccept appelé");
+    console.log(
+      "🔍 notification.data?.infoRequestId:",
+      notification.data?.infoRequestId,
+    );
+
     if (onAccept && notification.data?.infoRequestId) {
+      console.log(
+        "🔍 Appel API vers:",
+        `/api/info-requests/${notification.data.infoRequestId}/accept`,
+      );
       setIsProcessing(true);
       try {
         const response = await fetch(
           `/api/info-requests/${notification.data.infoRequestId}/accept`,
           { method: "POST" },
         );
+        console.log("🔍 Réponse API:", response.status, response.statusText);
         if (response.ok) {
           onAccept(notification.data.infoRequestId, notification.id);
         }
@@ -157,6 +180,13 @@ export default function NotificationItem({
       } finally {
         setIsProcessing(false);
       }
+    } else {
+      console.log(
+        "🔍 Condition non remplie - onAccept:",
+        !!onAccept,
+        "infoRequestId:",
+        notification.data?.infoRequestId,
+      );
     }
   };
 
@@ -170,7 +200,7 @@ export default function NotificationItem({
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              reason: "Le propriétaire n'est pas disponible pour ces dates",
+              reason: t("rejectReason"),
             }),
           },
         );
@@ -199,7 +229,7 @@ export default function NotificationItem({
   const displayName =
     notification.data?.tenantUsername ||
     notification.data?.tenantName ||
-    "Un locataire";
+    t("anonymousTenant");
 
   return (
     <div
@@ -261,8 +291,7 @@ export default function NotificationItem({
                 <p className="flex items-center gap-1.5">
                   <IoPersonOutline className="text-gray-400 text-[11px]" />
                   <span>
-                    {notification.data.guests} voyageur
-                    {notification.data.guests > 1 ? "s" : ""}
+                    {t("guestsCount", { count: notification.data.guests })}
                   </span>
                 </p>
               )}
@@ -277,21 +306,21 @@ export default function NotificationItem({
                 disabled={isProcessingAction}
                 className="px-3 py-1 text-xs font-medium bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg transition disabled:opacity-50"
               >
-                Accepter
+                {t("accept")}
               </button>
               <button
                 onClick={handleReject}
                 disabled={isProcessingAction}
                 className="px-3 py-1 text-xs font-medium bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition disabled:opacity-50"
               >
-                Refuser
+                {t("reject")}
               </button>
-              <button
-                onClick={handleMarkAsRead}
-                className="px-3 py-1 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition"
+              <Link
+                href={`/fr/profile/${notification.data?.tenantUsername || notification.data?.tenantId}`}
+                className="px-3 py-1 text-xs font-medium bg-sky-500 hover:bg-sky-600 text-white rounded-lg transition"
               >
-                Ignorer
-              </button>
+                {t("viewProfile")}
+              </Link>
             </div>
           )}
 
@@ -316,13 +345,13 @@ export default function NotificationItem({
                 }}
                 className="flex-1 px-3 py-1.5 text-xs font-semibold bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition"
               >
-                Voir la demande
+                {t("viewRequest")}
               </button>
               <button
                 onClick={handleMarkAsRead}
                 className="px-3 py-1.5 text-xs font-medium bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition"
               >
-                Marquer comme lu
+                {t("markAsRead")}
               </button>
             </div>
           )}
@@ -333,7 +362,7 @@ export default function NotificationItem({
               onClick={handleMarkAsRead}
               className="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
             >
-              Marquer comme lu
+              {t("markAsRead")}
             </button>
           )}
         </div>

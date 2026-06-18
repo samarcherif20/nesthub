@@ -20,9 +20,9 @@ import {
   IoHomeOutline,
   IoArchiveOutline,
   IoCloseCircleOutline,
+  IoSearchOutline,
 } from "react-icons/io5";
 import { MdOutlineVerified, MdOutlineClose } from "react-icons/md";
-import SearchBar from "@/components/ui/SearchBar";
 import Pagination from "@/components/ui/Pagination";
 import { useAuth } from "@clerk/nextjs";
 import { useTranslations } from "next-intl";
@@ -31,6 +31,7 @@ interface ActionsHistoryModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId?: string;
+  onUndo?: (actionId: string) => Promise<void>;
 }
 
 interface UserAction {
@@ -60,7 +61,55 @@ interface UserAction {
   };
 }
 
-// ✅ Fonction pour formater un motif JSON en texte lisible - TOUS LES TYPES
+//  Fonction pour convertir du texte avec balises HTML simples en JSX
+const parseFormattedText = (text: string): React.ReactNode => {
+  if (!text) return null;
+
+  const withStrong = text.replace(
+    /<(?:strong|b)>([^<]*)<\/(?:strong|b)>/g,
+    "<strong>$1</strong>",
+  );
+  const withEm = withStrong.replace(
+    /<(?:em|i)>([^<]*)<\/(?:em|i)>/g,
+    "<em>$1</em>",
+  );
+  const withU = withEm.replace(/<u>([^<]*)<\/u>/g, "<u>$1</u>");
+  const withBr = withU.replace(/\n/g, "<br/>");
+
+  const temp = document.createElement("div");
+  temp.innerHTML = withBr;
+
+  const convertNode = (node: Node): React.ReactNode => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.textContent;
+    }
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      const tagName = element.tagName.toLowerCase();
+      const children = Array.from(element.childNodes).map(convertNode);
+
+      switch (tagName) {
+        case "strong":
+        case "b":
+          return <strong key={Math.random()}>{children}</strong>;
+        case "em":
+        case "i":
+          return <em key={Math.random()}>{children}</em>;
+        case "u":
+          return <u key={Math.random()}>{children}</u>;
+        case "br":
+          return <br key={Math.random()} />;
+        default:
+          return children;
+      }
+    }
+    return null;
+  };
+
+  return Array.from(temp.childNodes).map(convertNode);
+};
+
+//  Fonction pour formater un motif JSON en texte lisible
 const formatMotif = (
   motif: string | null | undefined,
   actionType: string,
@@ -73,7 +122,6 @@ const formatMotif = (
 
     if (typeof data === "object" && data !== null) {
       switch (actionType) {
-        // ==================== LISTING ACTIONS ====================
         case "CREATE_LISTING":
           const newTitle = data.title || data.listingTitle || data.name;
           const newId = data.listingId || data.id;
@@ -132,14 +180,14 @@ const formatMotif = (
           }
           if (changes.length > 0) {
             const changesPreview = changes.slice(0, 5).join(", ");
-            const moreCount = changes.length > 5 ? ` +${changes.length - 5}` : "";
+            const moreCount =
+              changes.length > 5 ? ` +${changes.length - 5}` : "";
             updateLines.push(
               `${t("motifs.changes")}: ${changesPreview}${moreCount}`,
             );
           }
           return updateLines;
 
-        // ==================== USER ACTIONS ====================
         case "SUSPEND_USER":
         case "BAN_USER":
         case "ACTIVATE_USER":
@@ -170,7 +218,6 @@ const formatMotif = (
         case "ADD_NOTE":
           return [data.content || data.note || motif];
 
-        // ==================== VERIFICATION ACTIONS ====================
         case "REJECT_VERIFICATION":
         case "VALIDATE_VERIFICATION":
           const userName =
@@ -184,7 +231,6 @@ const formatMotif = (
             verifyLines.push(`${t("motifs.reason")}: ${data.reason}`);
           return verifyLines;
 
-        // ==================== DEFAULT ====================
         default:
           const defaultLines = [];
           if (data.reason)
@@ -215,7 +261,7 @@ const formatMotif = (
   return [motif];
 };
 
-// ✅ Fonction pour obtenir l'icône en fonction du type d'action
+// Fonction pour obtenir l'icône en fonction du type d'action
 const getActionIcon = (actionType: string) => {
   const baseType = actionType.replace("_UNDONE", "");
 
@@ -226,7 +272,6 @@ const getActionIcon = (actionType: string) => {
   }
 
   switch (baseType) {
-    // Listing actions
     case "CREATE_LISTING":
       return (
         <IoHomeOutline className="w-5 h-5 text-green-600 dark:text-green-400" />
@@ -251,8 +296,6 @@ const getActionIcon = (actionType: string) => {
       return (
         <IoCreateOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
       );
-
-    // User actions
     case "SUSPEND_USER":
       return (
         <IoPauseCircleOutline className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -285,8 +328,6 @@ const getActionIcon = (actionType: string) => {
       return (
         <IoCreateOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
       );
-
-    // Verification actions
     case "REJECT_VERIFICATION":
       return (
         <MdOutlineClose className="w-5 h-5 text-red-600 dark:text-red-400" />
@@ -295,7 +336,6 @@ const getActionIcon = (actionType: string) => {
       return (
         <MdOutlineVerified className="w-5 h-5 text-green-600 dark:text-green-400" />
       );
-
     default:
       return (
         <IoCreateOutline className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -303,7 +343,7 @@ const getActionIcon = (actionType: string) => {
   }
 };
 
-// ✅ Fonction pour obtenir les couleurs
+// Fonction pour obtenir les couleurs
 const getActionColors = (actionType: string) => {
   const baseType = actionType.replace("_UNDONE", "");
 
@@ -379,7 +419,7 @@ const getActionColors = (actionType: string) => {
   }
 };
 
-// ✅ Fonction pour obtenir le libellé en français
+//  Fonction pour obtenir le libellé en français
 const getActionLabel = (actionType: string, t: any) => {
   const baseType = actionType.replace("_UNDONE", "");
 
@@ -399,14 +439,12 @@ const getActionLabel = (actionType: string, t: any) => {
   }
 
   const labels: Record<string, string> = {
-    // Listing
     CREATE_LISTING: "Annonce créée",
     DELETE_LISTING: "Annonce supprimée",
     ARCHIVE_LISTING: "Annonce archivée",
     APPROVE_LISTING: "Annonce approuvée",
     REJECT_LISTING: "Annonce rejetée",
     UPDATE_LISTING: "Annonce modifiée",
-    // User
     SUSPEND_USER: "Suspension",
     BAN_USER: "Bannissement",
     ACTIVATE_USER: "Activation",
@@ -415,7 +453,6 @@ const getActionLabel = (actionType: string, t: any) => {
     WARNING: "Avertissement",
     ESCALATE_USER: "Escalade",
     ADD_NOTE: "Note ajoutée",
-    // Verification
     REJECT_VERIFICATION: "Vérification rejetée",
     VALIDATE_VERIFICATION: "Vérification validée",
   };
@@ -441,11 +478,22 @@ export default function ActionsHistoryModal({
   const [totalItems, setTotalItems] = useState(0);
   const itemsPerPage = 5;
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isOpen) {
+        setCurrentPage(1);
+        fetchActions();
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search, filter]);
+
   useEffect(() => {
     if (isOpen) {
       fetchActions();
     }
-  }, [isOpen, userId, currentPage, filter, search]);
+  }, [isOpen, userId, currentPage]);
 
   const fetchActions = async () => {
     setLoading(true);
@@ -478,7 +526,7 @@ export default function ActionsHistoryModal({
       setTotalPages(data.pagination?.totalPages || 1);
       setTotalItems(data.pagination?.totalCount || 0);
     } catch (error) {
-      console.error("❌ Erreur chargement actions:", error);
+      console.error(" Erreur chargement actions:", error);
       setError(t("errors.loadFailed"));
     } finally {
       setLoading(false);
@@ -492,14 +540,13 @@ export default function ActionsHistoryModal({
       await onUndo(actionId);
       fetchActions();
     } catch (error) {
-      console.error("❌ Erreur annulation:", error);
+      console.error(" Erreur annulation:", error);
     } finally {
       setUndoingId(null);
     }
   };
 
   const handlePageChange = (page: number) => setCurrentPage(page);
-  const handleSearch = () => setCurrentPage(1);
   const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setFilter(e.target.value);
     setCurrentPage(1);
@@ -595,9 +642,9 @@ export default function ActionsHistoryModal({
     { value: "APPROVE_LISTING", label: t("actionTypes.approveListing") },
     { value: "REJECT_LISTING", label: t("actionTypes.rejectListing") },
     { value: "UPDATE_LISTING", label: t("actionTypes.updateListing") },
-    { value: "CREATE_LISTING", label: "Annonce créée" },
-    { value: "DELETE_LISTING", label: "Annonce supprimée" },
-    { value: "ARCHIVE_LISTING", label: "Annonce archivée" },
+    { value: "CREATE_LISTING", label: t("actionTypes.createListing") },
+    { value: "DELETE_LISTING", label: t("actionTypes.deleteListing") },
+    { value: "ARCHIVE_LISTING", label: t("actionTypes.archiveListing") },
   ];
 
   const canUndo = (action: UserAction) => {
@@ -614,32 +661,30 @@ export default function ActionsHistoryModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} showCloseButton={true} size="xl">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="p-1.5 bg-primary/10 rounded-full">
-          <IoArrowUndoOutline className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-            {t("title")}
-          </h2>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {t("subtitle")}
-          </p>
-        </div>
-      </div>
-
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      showCloseButton={true} 
+      size="xl"
+      title={t("title")}
+      subtitle={t("subtitle")}
+      icon={<IoArrowUndoOutline className="h-5 w-5 text-primary" />}
+    >
       {/* Controls */}
       <div className="p-4 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-gray-700">
         <div className="flex flex-col md:flex-row gap-4">
+          {/* Search Bar - Version simple et fonctionnelle */}
           <div className="flex-grow md:w-96">
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder={t("search.placeholder")}
-              onSearch={handleSearch}
-              className="text-sm"
-            />
+            <div className="relative">
+              <IoSearchOutline className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500 text-sm" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder={t("search.placeholder")}
+                className="w-full py-2 pl-9 pr-4 text-sm border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all"
+              />
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -735,7 +780,6 @@ export default function ActionsHistoryModal({
                           </div>
                         )}
 
-                        {/* Motif formaté en français */}
                         {motifLines.length > 0 && (
                           <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700">
                             <p className="text-xs text-gray-700 dark:text-gray-300 font-medium mb-1">
@@ -743,18 +787,21 @@ export default function ActionsHistoryModal({
                             </p>
                             <div className="space-y-1">
                               {motifLines.map((line, index) => (
-                                <p
+                                <div
                                   key={index}
                                   className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap break-words pl-2 border-l-2 border-gray-300 dark:border-gray-600"
                                 >
-                                  {line}
-                                </p>
+                                  {parseFormattedText(line)}
+                                </div>
                               ))}
                             </div>
                           </div>
                         )}
 
-                        {getStatusBadge(action.previousStatus, action.newStatus)}
+                        {getStatusBadge(
+                          action.previousStatus,
+                          action.newStatus,
+                        )}
                       </div>
                     </div>
 

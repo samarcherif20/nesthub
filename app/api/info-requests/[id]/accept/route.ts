@@ -54,14 +54,21 @@ export async function POST(
       );
     }
 
-    // 1. Vérifier si une conversation existe déjà
-    let conversation = await prisma.conversation.findUnique({
+    // Vérifier si une notification a déjà été envoyée
+    const existingNotification = await prisma.notification.findFirst({
       where: {
-        listingId_ownerId_tenantId: {
-          listingId: infoRequest.listingId,
-          ownerId: infoRequest.ownerId,
-          tenantId: infoRequest.tenantId,
-        },
+        userId: infoRequest.tenantId,
+        type: "INFO_REQUEST_ACCEPTED",
+        data: { path: ["infoRequestId"], equals: infoRequest.id }
+      }
+    });
+
+    // 1. Vérifier si une conversation existe déjà
+    let conversation = await prisma.conversation.findFirst({
+      where: {
+        listingId: infoRequest.listingId,
+        ownerId: infoRequest.ownerId,
+        tenantId: infoRequest.tenantId,
       },
     });
 
@@ -77,6 +84,9 @@ export async function POST(
           lastMessageAt: new Date(),
         },
       });
+      console.log(" Nouvelle conversation créée:", conversation.id);
+    } else {
+      console.log(" Conversation existante trouvée:", conversation.id);
     }
 
     // 3. Mettre à jour la demande
@@ -91,8 +101,8 @@ export async function POST(
       },
     });
 
-    // 4. Vérifier si un message système existe déjà pour éviter les doublons
-    const existingSystemMessage = await prisma.message.findFirst({
+    // 4. SUPPRIMER l'ancien message système (s'il existe)
+    const deletedMessages = await prisma.message.deleteMany({
       where: {
         conversationId: conversation.id,
         isSystem: true,
@@ -100,47 +110,71 @@ export async function POST(
       },
     });
 
-    if (!existingSystemMessage) {
-      // Créer un message système dans le chat
-      const systemMessage = ` Le propriétaire a accepté votre demande. Vous pouvez maintenant discuter.`;
-
-      await prisma.message.create({
-        data: {
-          conversationId: conversation.id,
-          senderId: infoRequest.ownerId,
-          receiverId: infoRequest.tenantId,
-          content: systemMessage,
-          isRead: false,
-          isSystem: true,
-        },
-      });
+    if (deletedMessages.count > 0) {
+      console.log(
+        ` ${deletedMessages.count} ancien(s) message(s) système supprimé(s)`,
+      );
     }
 
-    // 5. Notifier le locataire
-    await prisma.notification.create({
+    // 5. CRÉER le nouveau message système
+    const checkInDate = new Date(infoRequest.checkIn).toLocaleDateString(
+      "fr-FR",
+    );
+    const checkOutDate = new Date(infoRequest.checkOut).toLocaleDateString(
+      "fr-FR",
+    );
+
+    const systemMessage = ` Le propriétaire a accepté votre demande pour les dates du ${checkInDate} au ${checkOutDate}. Vous pouvez maintenant discuter.`;
+
+    const newMessage = await prisma.message.create({
       data: {
-        userId: infoRequest.tenantId,
-        type: "INFO_REQUEST_ACCEPTED",
-        title: " Demande acceptée !",
-        content: `Le propriétaire a accepté votre demande pour "${infoRequest.listing.title}". Vous pouvez maintenant discuter avec lui.`,
-        data: {
-          infoRequestId: infoRequest.id,
-          conversationId: conversation.id,
-          listingId: infoRequest.listingId,
-        },
-        channels: ["IN_APP", "EMAIL"],
+        conversationId: conversation.id,
+        senderId: infoRequest.ownerId,
+        receiverId: infoRequest.tenantId,
+        content: systemMessage,
+        isRead: false,
+        isSystem: true,
       },
     });
 
-    // 6. Mettre à jour les compteurs de messages non lus
+    console.log(" Nouveau message système créé:", newMessage.id);
+
+    // 6. Mettre à jour le dernier message de la conversation
     await prisma.conversation.update({
       where: { id: conversation.id },
       data: {
+        lastMessage: systemMessage,
+        lastMessageAt: new Date(),
         unreadCountTenant: {
           increment: 1,
         },
       },
     });
+
+    // 7. Envoyer une notification au locataire (si pas déjà envoyée)
+    if (!existingNotification) {
+      await prisma.notification.create({
+        data: {
+          userId: infoRequest.tenantId,
+          type: "INFO_REQUEST_ACCEPTED",
+          title: "Demande acceptée ",
+          content: `Votre demande d'information pour "${infoRequest.listing.title}" a été acceptée par le propriétaire`,
+          data: {
+            infoRequestId: infoRequest.id,
+            listingId: infoRequest.listingId,
+            listingTitle: infoRequest.listing.title,
+            tenantId: infoRequest.tenantId,
+            tenantUsername: infoRequest.tenant?.username,
+            checkIn: infoRequest.checkIn,
+            checkOut: infoRequest.checkOut,
+            guests: infoRequest.guests,
+            status: "ACCEPTED",
+          },
+          channels: ["IN_APP"],
+        },
+      });
+      console.log("Notification envoyée au locataire");
+    }
 
     return NextResponse.json({
       success: true,
@@ -149,7 +183,7 @@ export async function POST(
       message: "Demande acceptée, chat ouvert",
     });
   } catch (error) {
-    console.error("Erreur acceptation:", error);
+    console.error(" Erreur acceptation:", error);
     return NextResponse.json(
       { error: "Erreur interne du serveur" },
       { status: 500 },

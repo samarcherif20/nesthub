@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useTranslations } from "next-intl";
 import {
   MapContainer,
   TileLayer,
@@ -160,7 +161,7 @@ function MapController({
   return null;
 }
 
-// ✅ Composant pour centrer la carte sur tous les marqueurs
+// Composant pour centrer la carte sur tous les marqueurs
 function FitBoundsOnMarkers({
   markers,
   enabled,
@@ -219,7 +220,7 @@ export default function MapPicker({
   longitude,
   onLocationChange,
   onAddressChange,
-  onLocationDetected, // ✅ AJOUTE CETTE LIGNE
+  onLocationDetected,
 
   className = "",
   readOnly = false,
@@ -228,6 +229,7 @@ export default function MapPicker({
   onMarkerClick,
   isGeocoding = false,
 }: MapPickerProps) {
+  const t = useTranslations("MapPicker");
   const defaultCenter: [number, number] = [34.0, 9.0];
   const defaultZoom = 6;
 
@@ -246,7 +248,7 @@ export default function MapPicker({
   const reverseGeocode = useCallback(
     async (lat: number, lng: number) => {
       try {
-        // ✅ Appelle TON API
+        //  Appelle TON API
         const response = await fetch(
           `/api/geocode/reverse?lat=${lat}&lng=${lng}`,
         );
@@ -276,7 +278,7 @@ export default function MapPicker({
       setMapCenter([lat, lng]);
       reverseGeocode(lat, lng);
 
-      // ✅ Appeler aussi onLocationDetected pour remplir les champs
+      //  Appeler aussi onLocationDetected pour remplir les champs
       if (onLocationDetected) {
         onLocationDetected(lat, lng, null);
       }
@@ -289,7 +291,7 @@ export default function MapPicker({
     if (readOnly) return;
 
     if (!navigator.geolocation) {
-      alert("La géolocalisation n'est pas supportée par votre navigateur");
+      alert(t("geolocationNotSupported"));
       return;
     }
 
@@ -302,10 +304,10 @@ export default function MapPicker({
         // Mettre à jour la position
         handleLocationChange(lat, lng);
 
-        // ✅ Appeler le callback avec les coordonnées et l'adresse
+        //  Appeler le callback avec les coordonnées et l'adresse
         if (onLocationDetected) {
           try {
-            // ✅ APPELLER TON API, PAS NOMINATIM DIRECTEMENT
+            //  APPELLER TON API, PAS NOMINATIM DIRECTEMENT
             const response = await fetch(
               `/api/geocode/reverse?lat=${lat}&lng=${lng}`,
             );
@@ -336,13 +338,13 @@ export default function MapPicker({
       (error) => {
         console.error("Geolocation error:", error);
         setIsLocating(false);
-        let message = "Impossible d'obtenir votre position";
+        let message = t("unableToGetPosition");
         if (error.code === 1) {
-          message = "Veuillez autoriser l'accès à votre position";
+          message = t("allowAccess");
         } else if (error.code === 2) {
-          message = "Position indisponible, réessayez plus tard";
+          message = t("positionUnavailable");
         } else if (error.code === 3) {
-          message = "Délai d'attente dépassé, vérifiez votre connexion";
+          message = t("timeoutExceeded");
         }
         alert(message);
       },
@@ -395,7 +397,7 @@ export default function MapPicker({
           <CenterMapOnPosition position={position} readOnly={readOnly} />
         )}
 
-        {/* ✅ Centrage automatique sur tous les marqueurs */}
+        {/*  Centrage automatique sur tous les marqueurs */}
         {mapReady && showAllMarkers && !hasFittedBounds && (
           <FitBoundsOnMarkers markers={markers} enabled={true} />
         )}
@@ -449,7 +451,7 @@ export default function MapPicker({
                     }}
                     className="mt-2 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-medium"
                   >
-                    Voir les détails →
+                    {t("viewDetails")}
                   </button>
                 </div>
               </Popup>
@@ -464,7 +466,7 @@ export default function MapPicker({
           onClick={getCurrentLocation}
           disabled={isLocating}
           className="absolute bottom-4 right-4 z-[20] flex items-center justify-center w-10 h-10 bg-white dark:bg-slate-800 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer disabled:opacity-50 hover:scale-105 active:scale-95 border border-slate-200 dark:border-slate-700 group"
-          title="Utiliser ma position"
+          title={t("useMyLocation")}
         >
           {isLocating ? (
             <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
@@ -480,7 +482,7 @@ export default function MapPicker({
           <div className="flex items-center gap-2 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md rounded-full px-4 py-2 shadow-lg border border-indigo-200 dark:border-indigo-800">
             <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-              Localisation en cours...
+              {t("locating")}
             </span>
           </div>
         </div>
@@ -505,7 +507,7 @@ export default function MapPicker({
             <div className="flex items-center gap-2">
               <Target className="w-4 h-4 text-indigo-500" />
               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                Cliquez sur la carte pour placer le marqueur
+                {t("clickToPlaceMarker")}
               </p>
             </div>
           </div>
@@ -532,7 +534,7 @@ export default function MapPicker({
           <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-3 py-1.5 shadow-md border border-slate-200 dark:border-slate-700">
             <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
             <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
-              Vue seule
+              {t("readOnlyView")}
             </p>
           </div>
         </div>
@@ -545,31 +547,31 @@ export default function MapPicker({
             <div className="flex items-center gap-1">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                Active
+                {t("legend.active")}
               </span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2.5 h-2.5 rounded-full bg-orange-500"></div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                Inactive
+                {t("legend.inactive")}
               </span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2.5 h-2.5 rounded-full bg-slate-500"></div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                Brouillon
+                {t("legend.draft")}
               </span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                Archivé
+                {t("legend.archived")}
               </span>
             </div>
             <div className="flex items-center gap-1">
               <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
               <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                En attente
+                {t("legend.pending")}
               </span>
             </div>
           </div>

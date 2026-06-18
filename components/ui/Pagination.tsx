@@ -2,6 +2,7 @@
 'use client';
 
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { useTranslations } from 'next-intl';
 
 interface PaginationProps {
   currentPage: number;
@@ -13,13 +14,15 @@ interface PaginationProps {
 }
 
 export default function Pagination({
+  
   currentPage,
   totalPages,
   totalItems,
   pageSize,
   onPageChange,
   className = '',
-}: PaginationProps) {
+}: PaginationProps) {  const t = useTranslations('Pagination');
+
   // Calcul des plages uniquement si totalItems et pageSize sont fournis
   const startItem = totalItems && pageSize ? (currentPage - 1) * pageSize + 1 : null;
   const endItem = totalItems && pageSize ? Math.min(currentPage * pageSize, totalItems) : null;
@@ -28,12 +31,12 @@ export default function Pagination({
     <div className={`flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-800 ${className}`}>
       {/* Afficher les infos seulement si les données sont disponibles */}
       {totalItems !== undefined && pageSize !== undefined && (
-        <p className="text-sm text-slate-500">
-          Affichage{' '}
-          <span className="font-medium text-slate-900 dark:text-white">{startItem}</span> à{' '}
-          <span className="font-medium text-slate-900 dark:text-white">{endItem}</span> sur{' '}
-          <span className="font-medium text-slate-900 dark:text-white">{totalItems}</span> résultats
-        </p>
+         <p className="text-sm text-slate-500">
+      {t('showing')}{' '}
+      <span className="font-medium text-slate-900 dark:text-white">{startItem}</span> {t('to')}{' '}
+      <span className="font-medium text-slate-900 dark:text-white">{endItem}</span> {t('of')}{' '}
+      <span className="font-medium text-slate-900 dark:text-white">{totalItems}</span> {t('results')}
+    </p>
       )}
 
       {/* Espace vide pour maintenir l'alignement si pas d'infos */}

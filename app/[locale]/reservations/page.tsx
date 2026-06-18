@@ -839,7 +839,7 @@ export default function Reservations() {
                                 </button>
                               </Link>
                               <Link
-                                href={`/${locale}/bookings/${b.id}`}
+                                href={`/${locale}/reservations/${b.id}`}
                                 className="flex-1"
                               >
                                 <button

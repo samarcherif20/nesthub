@@ -189,34 +189,23 @@ const COLORS = {
 };
 
 function getDaysShort(locale: string): string[] {
-  const days = [
-    "lundi",
-    "mardi",
-    "mercredi",
-    "jeudi",
-    "vendredi",
-    "samedi",
-    "dimanche",
-  ];
-  return days.map((day) => day.charAt(0).toUpperCase() + day.slice(1));
+  const baseDate = new Date(2024, 0, 7); // un dimanche
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(baseDate);
+    date.setDate(baseDate.getDate() + i);
+    const dayName = date.toLocaleDateString(locale, { weekday: 'long' });
+    return dayName.charAt(0).toUpperCase() + dayName.slice(1);
+  });
 }
 
 function getMonths(locale: string): string[] {
-  const months = [
-    "janvier",
-    "février",
-    "mars",
-    "avril",
-    "mai",
-    "juin",
-    "juillet",
-    "août",
-    "septembre",
-    "octobre",
-    "novembre",
-    "décembre",
-  ];
-  return months.map((month) => month.charAt(0).toUpperCase() + month.slice(1));
+  const months = [];
+  for (let i = 0; i < 12; i++) {
+    const date = new Date(2024, i, 1);
+    const monthName = date.toLocaleDateString(locale, { month: 'long' });
+    months.push(monthName.charAt(0).toUpperCase() + monthName.slice(1));
+  }
+  return months;
 }
 
 const getEventInfo = (day: any, dark: boolean, t: any) => {

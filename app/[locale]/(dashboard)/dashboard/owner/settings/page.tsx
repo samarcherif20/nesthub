@@ -418,7 +418,7 @@ export default function SettingsPage() {
 
       <div className="bg-white dark:bg-slate-900/0 border-b border-slate-100 dark:border-slate-800">
         <div className="px-6 lg:px-10 py-7">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             {t("page.title")}
           </h1>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-xl">

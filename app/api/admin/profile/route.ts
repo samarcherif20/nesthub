@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: auth.error }, { status: auth.status });
     }
 
-    console.log('🔍 Recherche admin avec clerkId:', auth.userId);
+    console.log(' Recherche admin avec clerkId:', auth.userId);
     
     const admin = await prisma.user.findUnique({
       where: { clerkId: auth.userId },
@@ -31,14 +31,14 @@ export async function GET(request: NextRequest) {
     });
 
     if (!admin) {
-      console.log('❌ Admin non trouvé avec clerkId:', auth.userId);
+      console.log(' Admin non trouvé avec clerkId:', auth.userId);
       return NextResponse.json(
         { error: 'Admin non trouvé' },
         { status: 404 }
       );
     }
 
-    console.log('✅ Admin trouvé:', admin.email);
+    console.log(' Admin trouvé:', admin.email);
 
     // Statistiques (à adapter selon votre logique métier)
     const totalActions = await prisma.userAction.count({
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error fetching profile:', error);
+    console.error(' Error fetching profile:', error);
     return NextResponse.json(
       { error: 'Erreur serveur interne' },
       { status: 500 }
@@ -107,7 +107,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const { firstName, lastName, email, phoneNumber, bio } = body;
 
-    console.log('📝 Mise à jour profil pour:', auth.userId);
+    console.log(' Mise à jour profil pour:', auth.userId);
 
     const updatedAdmin = await prisma.user.update({
       where: { clerkId: auth.userId },
@@ -128,7 +128,7 @@ export async function PATCH(request: NextRequest) {
       }
     });
 
-    console.log('✅ Profil mis à jour:', updatedAdmin.email);
+    console.log(' Profil mis à jour:', updatedAdmin.email);
 
     return NextResponse.json({ 
       success: true, 
@@ -136,7 +136,7 @@ export async function PATCH(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('❌ Error updating profile:', error);
+    console.error(' Error updating profile:', error);
     return NextResponse.json(
       { error: 'Erreur serveur interne' },
       { status: 500 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useTranslations } from "next-intl";
 import {
   IoCheckmarkCircle,
   IoCloseCircle,
@@ -16,55 +17,57 @@ interface AlertProps {
   autoClose?: number;
 }
 
-const CFG = {
-  success: {
-    icon: IoCheckmarkCircle,
-    title: "Succès",
-    light: "bg-green-50 border-green-500 text-green-800",
-    dark: "dark:bg-green-950 dark:border-green-500 dark:text-green-300",
-    iconLight: "bg-green-100 text-green-600",
-    iconDark: "dark:bg-green-900 dark:text-green-400",
-    barLight: "bg-green-500",
-    barDark: "dark:bg-green-400",
-  },
-  error: {
-    icon: IoCloseCircle,
-    title: "Erreur",
-    light: "bg-red-50 border-red-500 text-red-800",
-    dark: "dark:bg-red-950 dark:border-red-500 dark:text-red-300",
-    iconLight: "bg-red-100 text-red-600",
-    iconDark: "dark:bg-red-900 dark:text-red-400",
-    barLight: "bg-red-500",
-    barDark: "dark:bg-red-400",
-  },
-  info: {
-    icon: IoInformation,
-    title: "Information",
-    light: "bg-blue-50 border-blue-500 text-blue-800",
-    dark: "dark:bg-blue-950 dark:border-blue-500 dark:text-blue-300",
-    iconLight: "bg-blue-100 text-blue-600",
-    iconDark: "dark:bg-blue-900 dark:text-blue-400",
-    barLight: "bg-blue-500",
-    barDark: "dark:bg-blue-400",
-  },
-  warning: {
-    icon: IoWarning,
-    title: "Attention",
-    light: "bg-amber-50 border-amber-500 text-amber-800",
-    dark: "dark:bg-amber-950 dark:border-amber-500 dark:text-amber-300",
-    iconLight: "bg-amber-100 text-amber-600",
-    iconDark: "dark:bg-amber-900 dark:text-amber-400",
-    barLight: "bg-amber-500",
-    barDark: "dark:bg-amber-400",
-  },
-};
-
 export default function Alert({
   type,
   message,
   onClose,
   autoClose = 5000,
 }: AlertProps) {
+  const t = useTranslations("Alert");
+  
+  const CFG = {
+    success: {
+      icon: IoCheckmarkCircle,
+      title: t("success"),
+      light: "bg-green-50 border-green-500 text-green-800",
+      dark: "dark:bg-green-950 dark:border-green-500 dark:text-green-300",
+      iconLight: "bg-green-100 text-green-600",
+      iconDark: "dark:bg-green-900 dark:text-green-400",
+      barLight: "bg-green-500",
+      barDark: "dark:bg-green-400",
+    },
+    error: {
+      icon: IoCloseCircle,
+      title: t("error"),
+      light: "bg-red-50 border-red-500 text-red-800",
+      dark: "dark:bg-red-950 dark:border-red-500 dark:text-red-300",
+      iconLight: "bg-red-100 text-red-600",
+      iconDark: "dark:bg-red-900 dark:text-red-400",
+      barLight: "bg-red-500",
+      barDark: "dark:bg-red-400",
+    },
+    info: {
+      icon: IoInformation,
+      title: t("info"),
+      light: "bg-blue-50 border-blue-500 text-blue-800",
+      dark: "dark:bg-blue-950 dark:border-blue-500 dark:text-blue-300",
+      iconLight: "bg-blue-100 text-blue-600",
+      iconDark: "dark:bg-blue-900 dark:text-blue-400",
+      barLight: "bg-blue-500",
+      barDark: "dark:bg-blue-400",
+    },
+    warning: {
+      icon: IoWarning,
+      title: t("warning"),
+      light: "bg-amber-50 border-amber-500 text-amber-800",
+      dark: "dark:bg-amber-950 dark:border-amber-500 dark:text-amber-300",
+      iconLight: "bg-amber-100 text-amber-600",
+      iconDark: "dark:bg-amber-900 dark:text-amber-400",
+      barLight: "bg-amber-500",
+      barDark: "dark:bg-amber-400",
+    },
+  };
+
   const [visible, setVisible] = useState(true);
   const [progress, setProgress] = useState(100);
   const config = CFG[type];

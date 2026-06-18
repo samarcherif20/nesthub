@@ -6,13 +6,21 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
-
+enum EscrowStatus {
+  PENDING   
+  HELD      
+  RELEASED  
+  REFUNDED  
+  CANCELLED 
+  READY_FOR_MANUAL_PAYOUT  
+  PAID_MANUALLY            
+}
 enum UserRole {
   ADMIN
   PROPERTY_OWNER
   TENANT
   BOTH
-  CO_HOST // ✅ AJOUTER CETTE LIGNE
+  CO_HOST 
 }
 
 enum AccountStatus {
@@ -536,6 +544,7 @@ enum BookingStatus {
   CONFIRMED
   CHECKED_IN
   CHECKED_OUT
+  
   COMPLETED
   CANCELLED
   REJECTED
@@ -551,9 +560,13 @@ enum PaymentStatus {
   PARTIALLY_REFUNDED
   HELD
   RELEASED
+  READY_FOR_PAYOUT        
+  PAID_MANUALLY           
 }
 
 enum NotificationType {
+  PAYOUT_REQUIRED 
+  PAYMENT_READY
   REVIEW_HIDDEN     // Avis masqué par admin
   REVIEW_SHOWN      // Avis réactivé par admin
   REVIEW_DELETED    // Avis supprimé par admin
@@ -921,7 +934,21 @@ model Booking {
   hasListingReview      Boolean                @default(false) // Avis sur l'annonce
   hasTenantReview       Boolean                @default(false) // Avis sur le locataire
   reviews               Review[] // ← AJOUTEZ CETTE LIGNE (relation one-to-many)
-
+  escrowStatus        String   @default("PENDING")
+  escrowHeldAt        DateTime?
+  escrowReleasedAt    DateTime?
+  checkInConfirmedAt  DateTime?
+  escrowReleaseScheduledAt DateTime?
+  stripeTransferId    String?
+  ownerPayoutAmount   Float?
+  
+  // ═══════════════════════════════════════════════════════════════
+  // ✅ CHAMPS POUR LES REMBOURSEMENTS
+  // ═══════════════════════════════════════════════════════════════
+  
+  refundReason        String?
+  refundedAt          DateTime?
+  refundedBy          String?
   @@index([listingId])
   @@index([tenantId])
   @@index([ownerId])

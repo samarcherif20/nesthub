@@ -128,8 +128,7 @@ export default function DisputeActionModal({
             onClick={toggleNoteInput}
             className="text-xs text-indigo-500 hover:text-indigo-600 flex items-center gap-1"
           >
-            {showNoteInput ? "📝 Masquer la note" : "📝 Ajouter une note explicative"}
-          </button>
+{showNoteInput ? t("hideNote") : t("addNote")}          </button>
         </div>
 
         {showNoteInput && (

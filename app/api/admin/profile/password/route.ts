@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       message: "Mot de passe mis à jour avec succès",
     });
   } catch (error) {
-    console.error("❌ Error updating password:", error);
+    console.error(" Error updating password:", error);
     return NextResponse.json(
       { error: "Erreur serveur interne" },
       { status: 500 },

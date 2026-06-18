@@ -74,7 +74,7 @@ export async function GET(
         },
         revealedInfo: true,
         contract: true,
-        review: true,
+        reviews: true,
         offer: {
           select: { id: true },
         },
@@ -117,7 +117,7 @@ export async function GET(
       conversationId = conversation?.id || null;
     }
 
-    const hasReview = !!booking.review;
+    const hasReview = !!booking.reviews;
     console.log(" [API BOOKING] Listing:", {
       id: booking.listing.id,
       title: booking.listing.title,

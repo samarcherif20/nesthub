@@ -11,20 +11,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
-    const { bookingId, type, subject, description, evidence, priority } = await request.json();
+    const { bookingId, type, subject, description, evidence, priority } =
+      await request.json();
 
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { listing: true, tenant: true, owner: true }
+      include: { listing: true, tenant: true, owner: true },
     });
 
     if (!booking) {
-      return NextResponse.json({ error: "Reservation non trouvee" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Reservation non trouvee" },
+        { status: 404 },
+      );
     }
 
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) {
-      return NextResponse.json({ error: "Utilisateur non trouve" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouve" },
+        { status: 404 },
+      );
     }
 
     const isTenant = booking.tenantId === user.id;
@@ -35,15 +42,18 @@ export async function POST(request: NextRequest) {
     }
 
     const existing = await prisma.dispute.findFirst({
-      where: { bookingId }
+      where: { bookingId },
     });
 
     if (existing) {
-      return NextResponse.json({ error: "Un litige existe deja pour cette reservation" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Un litige existe deja pour cette reservation" },
+        { status: 400 },
+      );
     }
 
-    const fullDescription = subject 
-      ? `Sujet: ${subject}\n\nDescription: ${description}` 
+    const fullDescription = subject
+      ? `Sujet: ${subject}\n\nDescription: ${description}`
       : description;
 
     const finalPriority = priority || "MEDIUM";
@@ -57,9 +67,9 @@ export async function POST(request: NextRequest) {
         evidence: evidence || [],
         status: "OPEN",
         priority: finalPriority,
-      }
+      },
     });
-    
+
     await onDisputeOpened(dispute.id);
 
     const otherUserId = isTenant ? booking.ownerId : booking.tenantId;
@@ -70,8 +80,8 @@ export async function POST(request: NextRequest) {
           type: "DISPUTE_OPENED",
           title: "Nouveau litige ouvert",
           content: `Un litige a ete ouvert concernant ${booking.listing.title}`,
-          data: { disputeId: dispute.id }
-        }
+          data: { disputeId: dispute.id },
+        },
       });
     }
 
@@ -83,8 +93,8 @@ export async function POST(request: NextRequest) {
           type: "DISPUTE_OPENED_ADMIN",
           title: "Nouveau litige a traiter",
           content: `${isTenant ? "Locataire" : "Proprietaire"} a ouvert un litige pour "${booking.listing.title}" (Priorite: ${finalPriority})`,
-          data: { disputeId: dispute.id }
-        }
+          data: { disputeId: dispute.id },
+        },
       });
     }
 
@@ -98,61 +108,110 @@ export async function POST(request: NextRequest) {
 // GET - Recuperer les litiges
 export async function GET(request: NextRequest) {
   try {
+    console.log(" [API] Début GET /api/disputes");
+
     const { userId } = await auth();
+    console.log(" [API] userId:", userId);
+
     if (!userId) {
       return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    console.log(" [API] Utilisateur trouvé:", user?.id, user?.username);
+
     if (!user) {
-      return NextResponse.json({ error: "Utilisateur non trouve" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Utilisateur non trouve" },
+        { status: 404 },
+      );
     }
+
+    console.log(" [API] Recherche des disputes...");
 
     const disputes = await prisma.dispute.findMany({
       where: {
         OR: [
           { openedBy: user.id },
           { booking: { ownerId: user.id } },
-          { booking: { tenantId: user.id } }
-        ]
+          { booking: { tenantId: user.id } },
+        ],
       },
       include: {
         booking: {
           include: {
-            listing: { 
-              select: { 
-                id: true, 
-                title: true, 
-                governorate: true, 
-                delegation: true
-              } 
+            listing: {
+              select: {
+                id: true,
+                title: true,
+                governorate: true,
+                delegation: true,
+                photos: {
+                  where: { isMain: true },
+                  take: 1,
+                  select: { url: true },
+                },
+              },
             },
-            tenant: { 
-              select: { 
-                id: true, 
-                firstName: true, 
-                lastName: true, 
-                username: true, 
-                email: true 
-              } 
+            tenant: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true,
+                email: true,
+                    profilePictureUrl: true  
+
+              },
             },
-            owner: { 
-              select: { 
-                id: true, 
-                firstName: true, 
-                lastName: true, 
-                username: true 
-              } 
-            }
-          }
-        }
+            owner: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                username: true,
+              },
+            },
+          },
+        },
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(disputes);
+    console.log(" [API] Nombre de disputes trouvées:", disputes.length);
+
+    if (disputes.length > 0) {
+      console.log(" [API] Premier dispute - listing:", {
+        id: disputes[0].booking.listing.id,
+        title: disputes[0].booking.listing.title,
+        photos: disputes[0].booking.listing.photos,
+        photosLength: disputes[0].booking.listing.photos?.length || 0,
+      });
+    }
+
+    // Formater les disputes pour inclure les images
+    const formattedDisputes = disputes.map((dispute) => ({
+      ...dispute,
+      booking: {
+        ...dispute.booking,
+        listing: {
+          ...dispute.booking.listing,
+          images: dispute.booking.listing.photos?.map((p) => p.url) || [],
+        },
+      },
+    }));
+
+    if (formattedDisputes.length > 0) {
+      console.log(
+        " [API] Après formatage - images:",
+        formattedDisputes[0].booking.listing.images,
+      );
+    }
+
+    console.log(" [API] Réponse envoyée");
+    return NextResponse.json(formattedDisputes);
   } catch (error) {
-    console.error("Erreur recuperation litiges:", error);
+    console.error(" [API] Erreur recuperation litiges:", error);
     return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

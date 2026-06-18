@@ -17,14 +17,25 @@ export interface Transaction {
     title: string;
     image?: string;
   };
-  status: "SUCCESS" | "PENDING" | "REFUNDED" | "FAILED";
+  status:
+    | "SUCCESS"
+    | "PENDING"
+    | "REFUNDED"
+    | "FAILED"
+    | "HELD"
+    | "RELEASED"
+    | "READY_FOR_MANUAL_PAYOUT"
+    | "PAID_MANUALLY";
   provider: string;
   tenantName?: string;
   tenantEmail?: string;
   ownerName?: string;
+  ownerRib?: string;
+  ownerId?: string;
   type: "PAYMENT" | "REFUND";
   paymentIntentId?: string;
   bookingId?: string;
+  payoutStatus?: "PENDING" | "PAID";
 }
 
 export interface Kpis {
@@ -51,6 +62,14 @@ export interface RefundModalState {
   transaction: Transaction | null;
   amount: number;
   reason: string;
+}
+
+export interface PayoutModalState {
+  isOpen: boolean;
+  transaction: Transaction | null;
+  amount: number;
+  ownerRib: string;
+  ownerName: string;
 }
 
 export function useAdminTransactions(locale: string = "fr") {
@@ -91,7 +110,7 @@ export function useAdminTransactions(locale: string = "fr") {
     end: new Date().toISOString().split("T")[0],
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
-  
+
   // États pour la modale de remboursement
   const [refundModal, setRefundModal] = useState<RefundModalState>({
     isOpen: false,
@@ -100,6 +119,16 @@ export function useAdminTransactions(locale: string = "fr") {
     reason: "",
   });
   const [refundLoading, setRefundLoading] = useState(false);
+
+  // États pour la modale de payout manuel
+  const [payoutModal, setPayoutModal] = useState<PayoutModalState>({
+    isOpen: false,
+    transaction: null,
+    amount: 0,
+    ownerRib: "",
+    ownerName: "",
+  });
+  const [payoutLoading, setPayoutLoading] = useState(false);
 
   const showToast = (type: "success" | "error", message: string) => {
     setToast({ type, message });
@@ -216,8 +245,6 @@ export function useAdminTransactions(locale: string = "fr") {
 
   // Ouvrir la modale de remboursement
   const openRefundModal = (transaction: Transaction) => {
-     console.log(" Transaction:", transaction); 
-  console.log(" Montant original:", transaction.amount);
     setRefundModal({
       isOpen: true,
       transaction,
@@ -250,7 +277,7 @@ export function useAdminTransactions(locale: string = "fr") {
             reason: refundModal.reason || t("refundDefaultReason"),
             amount: refundModal.amount,
           }),
-        }
+        },
       );
 
       if (res.ok) {
@@ -265,6 +292,59 @@ export function useAdminTransactions(locale: string = "fr") {
       showToast("error", t("connectionError"));
     } finally {
       setRefundLoading(false);
+    }
+  };
+
+  // Ouvrir la modale de payout manuel
+  const openPayoutModal = (transaction: Transaction) => {
+    setPayoutModal({
+      isOpen: true,
+      transaction,
+      amount: transaction.amount,
+      ownerRib: transaction.ownerRib || "Non renseigné",
+      ownerName: transaction.ownerName || "Propriétaire",
+    });
+  };
+
+  // Fermer la modale de payout
+  const closePayoutModal = () => {
+    setPayoutModal({
+      isOpen: false,
+      transaction: null,
+      amount: 0,
+      ownerRib: "",
+      ownerName: "",
+    });
+  };
+
+  // Confirmer le payout (marquer comme payé manuellement)
+  const confirmPayout = async () => {
+    if (!payoutModal.transaction) return;
+
+    setPayoutLoading(true);
+    try {
+      const res = await authFetch(
+        `/api/admin/transactions/${payoutModal.transaction.id}/mark-paid`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            amount: payoutModal.amount,
+          }),
+        },
+      );
+
+      if (res.ok) {
+        showToast("success", t("payoutSuccess"));
+        fetchTransactions();
+        closePayoutModal();
+      } else {
+        const error = await res.json();
+        showToast("error", error.error || t("payoutError"));
+      }
+    } catch {
+      showToast("error", t("connectionError"));
+    } finally {
+      setPayoutLoading(false);
     }
   };
 
@@ -298,6 +378,8 @@ export function useAdminTransactions(locale: string = "fr") {
     toast,
     refundModal,
     refundLoading,
+    payoutModal,
+    payoutLoading,
     PAGE_SIZE,
     // Setters
     setSearch,
@@ -313,6 +395,9 @@ export function useAdminTransactions(locale: string = "fr") {
     openRefundModal,
     closeRefundModal,
     confirmRefund,
+    openPayoutModal,
+    closePayoutModal,
+    confirmPayout,
     resetFilters,
     showToast,
   };

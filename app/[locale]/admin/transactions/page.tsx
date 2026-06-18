@@ -97,7 +97,6 @@ function RefundModal({
         onClick={onCancel}
       />
       <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
-        {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-slate-800">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
@@ -115,9 +114,7 @@ function RefundModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-5 space-y-4">
-          {/* Transaction Info */}
           <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
             <div className="flex justify-between text-sm mb-2">
               <span className="text-gray-500 dark:text-slate-400">
@@ -145,7 +142,6 @@ function RefundModal({
             </div>
           </div>
 
-          {/* Refund Type */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               {t("refundTypeLabel")}
@@ -153,28 +149,19 @@ function RefundModal({
             <div className="flex gap-3">
               <button
                 onClick={handleFullRefund}
-                className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  showFullRefund
-                    ? "bg-red-600 text-white shadow-md"
-                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200"
-                }`}
+                className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${showFullRefund ? "bg-red-600 text-white shadow-md" : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200"}`}
               >
                 {t("refundFull")}
               </button>
               <button
                 onClick={handlePartialRefund}
-                className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                  !showFullRefund
-                    ? "bg-amber-600 text-white shadow-md"
-                    : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200"
-                }`}
+                className={`flex-1 px-4 py-2 rounded-xl text-sm font-medium transition-all ${!showFullRefund ? "bg-amber-600 text-white shadow-md" : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 hover:bg-gray-200"}`}
               >
                 {t("refundPartial")}
               </button>
             </div>
           </div>
 
-          {/* Partial Refund Amount */}
           {!showFullRefund && (
             <div className="animate-in fade-in slide-in-from-top-2 duration-200">
               <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
@@ -200,7 +187,6 @@ function RefundModal({
             </div>
           )}
 
-          {/* Refund Reason */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
               {t("refundReasonLabel")}{" "}
@@ -215,7 +201,6 @@ function RefundModal({
             />
           </div>
 
-          {/* Warning Message */}
           <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
             <div className="flex items-start gap-2">
               <IoAlertCircleOutline className="text-amber-600 dark:text-amber-400 text-base mt-0.5 flex-shrink-0" />
@@ -226,7 +211,6 @@ function RefundModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="flex gap-3 p-5 border-t border-gray-100 dark:border-slate-800">
           <button
             onClick={onCancel}
@@ -245,6 +229,152 @@ function RefundModal({
               <IoRefreshCircleOutline className="text-lg" />
             )}
             {t("confirmRefund")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Composant Modal de paiement manuel (Payout)
+function PayoutModal({
+  isOpen,
+  transaction,
+  amount,
+  ownerName,
+  ownerRib,
+  onConfirm,
+  onCancel,
+  isLoading,
+  t,
+}: {
+  isOpen: boolean;
+  transaction: any;
+  amount: number;
+  ownerName: string;
+  ownerRib: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isLoading: boolean;
+  t: any;
+}) {
+  if (!isOpen || !transaction) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        onClick={onCancel}
+      />
+      <div className="relative bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-md w-full mx-4 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between p-5 border-b border-gray-100 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+              <BsBank2 className="text-emerald-600 dark:text-emerald-400 text-xl" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+              {t("payoutModalTitle")}
+            </h3>
+          </div>
+          <button
+            onClick={onCancel}
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800"
+          >
+            <X className="w-5 h-5 text-gray-400" />
+          </button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="p-3 rounded-xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700">
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-500 dark:text-slate-400">
+                {t("payoutTransactionRef")}
+              </span>
+              <span className="font-mono text-xs text-gray-700 dark:text-slate-300">
+                {transaction.reference}
+              </span>
+            </div>
+            <div className="flex justify-between text-sm mb-2">
+              <span className="text-gray-500 dark:text-slate-400">
+                {t("payoutAmount")}
+              </span>
+              <span className="font-bold text-gray-900 dark:text-white">
+                {amount.toFixed(2)} TND
+              </span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-500 dark:text-slate-400">
+                {t("payoutProperty")}
+              </span>
+              <span className="text-gray-700 dark:text-slate-300 truncate max-w-[200px]">
+                {transaction.property.title}
+              </span>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-800">
+            <div className="flex items-center gap-2 mb-2">
+              <IoPersonOutline className="text-indigo-500 text-sm" />
+              <span className="text-sm font-semibold text-indigo-700 dark:text-indigo-400">
+                {t("payoutBeneficiary")}
+              </span>
+            </div>
+            <p className="text-sm text-slate-800 dark:text-slate-200 font-medium">
+              {ownerName}
+            </p>
+            <div className="flex items-center justify-between mt-2">
+              <p className="text-xs font-mono text-slate-600 dark:text-slate-400">
+                {ownerRib}
+              </p>
+              <button
+                onClick={() => navigator.clipboard.writeText(ownerRib)}
+                className="p-1 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 rounded transition-colors"
+              >
+                <svg
+                  className="w-4 h-4 text-indigo-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
+                  />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+            <div className="flex items-start gap-2">
+              <IoAlertCircleOutline className="text-amber-600 dark:text-amber-400 text-base mt-0.5 flex-shrink-0" />
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                {t("payoutWarning")}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-3 p-5 border-t border-gray-100 dark:border-slate-800">
+          <button
+            onClick={onCancel}
+            className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-400 font-medium hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+          >
+            {t("cancel")}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isLoading ? (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <IoCheckmarkCircleOutline className="text-lg" />
+            )}
+            {t("confirmPayout")}
           </button>
         </div>
       </div>
@@ -273,6 +403,8 @@ export default function AdminTransactionsPage() {
     toast,
     refundModal,
     refundLoading,
+    payoutModal,
+    payoutLoading,
     PAGE_SIZE,
     setSearch,
     setStatusFilter,
@@ -286,6 +418,9 @@ export default function AdminTransactionsPage() {
     openRefundModal,
     closeRefundModal,
     confirmRefund,
+    openPayoutModal,
+    closePayoutModal,
+    confirmPayout,
     resetFilters,
   } = useAdminTransactions(locale);
 
@@ -298,21 +433,14 @@ export default function AdminTransactionsPage() {
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString(
       locale === "fr" ? "fr-FR" : "en-US",
-      {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      },
+      { day: "2-digit", month: "short", year: "numeric" },
     );
   };
 
   const formatTime = (date: string) => {
     return new Date(date).toLocaleTimeString(
       locale === "fr" ? "fr-FR" : "en-US",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      },
+      { hour: "2-digit", minute: "2-digit" },
     );
   };
 
@@ -345,6 +473,12 @@ export default function AdminTransactionsPage() {
         cls: "bg-red-100 dark:bg-red-950/40 text-red-800",
         icon: <IoCloseCircleOutline className="text-red-700 text-xs" />,
       },
+       HELD: {
+      label: t("statusHeldLabel"),
+      dot: "bg-blue-500",
+      cls: "bg-blue-100 dark:bg-blue-950/40 text-blue-700",
+      icon: <IoHourglassOutline className="text-blue-500 text-xs" />,
+    },
     };
     const { label, dot, cls, icon } = map[status] || map.PENDING;
     return (
@@ -416,7 +550,7 @@ export default function AdminTransactionsPage() {
         </div>
       )}
 
-      {/* Refund Modal */}
+      {/* Modales */}
       <RefundModal
         isOpen={refundModal.isOpen}
         transaction={refundModal.transaction}
@@ -424,14 +558,23 @@ export default function AdminTransactionsPage() {
         onConfirm={confirmRefund}
         onCancel={closeRefundModal}
         onAmountChange={(amount) => {
-          const modal = refundModal;
-          modal.amount = amount;
+          refundModal.amount = amount;
         }}
         onReasonChange={(reason) => {
-          const modal = refundModal;
-          modal.reason = reason;
+          refundModal.reason = reason;
         }}
         isLoading={refundLoading}
+        t={t}
+      />
+      <PayoutModal
+        isOpen={payoutModal.isOpen}
+        transaction={payoutModal.transaction}
+        amount={payoutModal.amount}
+        ownerName={payoutModal.ownerName}
+        ownerRib={payoutModal.ownerRib}
+        onConfirm={confirmPayout}
+        onCancel={closePayoutModal}
+        isLoading={payoutLoading}
         t={t}
       />
 
@@ -450,16 +593,14 @@ export default function AdminTransactionsPage() {
             onClick={fetchTransactions}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:border-indigo-300 hover:text-indigo-600 transition-all text-sm font-medium"
           >
-            <IoRefreshOutline className="text-base" />
-            {t("refresh")}
+            <IoRefreshOutline className="text-base" /> {t("refresh")}
           </button>
           <div className="relative">
             <button
               onClick={() => setShowExport(!showExport)}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-semibold shadow-sm transition-all"
             >
-              <IoDownloadOutline className="text-base" />
-              {t("export")}
+              <IoDownloadOutline className="text-base" /> {t("export")}{" "}
               <FiChevronDown className="text-xs" />
             </button>
             {showExport && (
@@ -513,7 +654,6 @@ export default function AdminTransactionsPage() {
             </p>
           </div>
         </div>
-
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -537,7 +677,6 @@ export default function AdminTransactionsPage() {
             </p>
           </div>
         </div>
-
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl border border-red-100 dark:border-red-900/40 p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -556,7 +695,6 @@ export default function AdminTransactionsPage() {
             </p>
           </div>
         </div>
-
         <div
           className={`bg-white dark:bg-slate-900 rounded-2xl border border-amber-100 dark:border-amber-900/40 p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -575,7 +713,6 @@ export default function AdminTransactionsPage() {
             </p>
           </div>
         </div>
-
         <div
           className={`bg-gradient-to-br from-sky-500 to-purple-600 rounded-2xl p-4 flex items-center gap-4 ${card3d}`}
         >
@@ -620,7 +757,7 @@ export default function AdminTransactionsPage() {
               onClick={() => setShowDatePicker(!showDatePicker)}
               className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-800 border border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:border-indigo-400 transition-colors"
             >
-              <IoCalendarOutline />
+              <IoCalendarOutline />{" "}
               {new Date(dateRange.start).toLocaleDateString()} -{" "}
               {new Date(dateRange.end).toLocaleDateString()}
             </button>
@@ -806,6 +943,17 @@ export default function AdminTransactionsPage() {
                     </td>
                     <td className="px-4 py-3.5">
                       <div className="flex flex-col gap-1">
+                        {tx.status === "SUCCESS" &&
+                          tx.type === "PAYMENT" &&
+                          tx.payoutStatus !== "PAID" && (
+                            <button
+                              onClick={() => openPayoutModal(tx)}
+                              className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium text-left flex items-center gap-1 mb-2"
+                            >
+                              <BsBank2 className="text-xs" />{" "}
+                              {t("payoutButton")}
+                            </button>
+                          )}
                         {tx.status === "SUCCESS" && tx.type === "PAYMENT" && (
                           <button
                             onClick={() => openRefundModal(tx)}
@@ -817,7 +965,7 @@ export default function AdminTransactionsPage() {
                         )}
                         {tx.provider === "STRIPE" && tx.paymentIntentId && (
                           <a
-                            href={`https://dashboard.stripe.com/payments/${tx.id}`}
+                            href={`https://dashboard.stripe.com/payments/${tx.paymentIntentId}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-xs text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"

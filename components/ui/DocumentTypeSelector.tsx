@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useTranslations } from "next-intl";
 import { FaIdCard} from "react-icons/fa";
 import { GiPassport } from "react-icons/gi";
 
@@ -10,10 +11,12 @@ interface DocumentTypeSelectorProps {
 }
 
 export function DocumentTypeSelector({ value, onChange }: DocumentTypeSelectorProps) {
+  const t = useTranslations("DocumentTypeSelector");
+  
   return (
     <div className="mb-0">
       <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-        Type de document d'identité <span className="text-red-500">*</span>
+        {t("label")} <span className="text-red-500">*</span>
       </label>
       <div className="grid grid-cols-2 gap-2">
         <motion.button
@@ -30,7 +33,7 @@ export function DocumentTypeSelector({ value, onChange }: DocumentTypeSelectorPr
         >
           <FaIdCard className={`text-base ${value === "cin" ? "text-blue-500" : "text-gray-400 dark:text-gray-500"}`} />
           <span className={`font-medium text-xs ${value === "cin" ? "text-blue-600 dark:text-blue-400" : "text-gray-600 dark:text-gray-400"}`}>
-            Carte d'identité (CIN)
+            {t("cin")}
           </span>
         </motion.button>
 
@@ -48,7 +51,7 @@ export function DocumentTypeSelector({ value, onChange }: DocumentTypeSelectorPr
         >
           <GiPassport className={`text-base ${value === "passport" ? "text-blue-500" : "text-gray-400 dark:text-gray-500"}`} />
           <span className={`font-medium text-xs ${value === "passport" ? "text-blue-600 dark:text-blue-400" : "text-gray-600 dark:text-gray-400"}`}>
-            Passeport
+            {t("passport")}
           </span>
         </motion.button>
       </div>

@@ -1,369 +1,461 @@
 // app/[locale]/disputes/[id]/page.tsx
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useAuth } from "@clerk/nextjs";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import {
-  IoArrowBackOutline,
-  IoSendOutline,
-  IoChatbubbleOutline,
   IoCalendarOutline,
   IoLocationOutline,
-  IoPersonOutline,
   IoHomeOutline,
   IoTimeOutline,
-  IoWalletOutline,
+  IoScaleOutline,
+  IoChatbubblesOutline,
+  IoFlagOutline,
+  IoChevronForwardOutline,
+  IoDocumentTextOutline,
+  IoPersonOutline,
   IoCheckmarkCircleOutline,
-  IoCloseOutline,
+  IoCloseCircleOutline,
+  IoChevronBack,
 } from "react-icons/io5";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import AlertBanner from "@/components/ui/Alert";
+import { TenantHeader } from "@/components/ui/header/TenantHeader";
+import { useDisputeDetail } from "./hooks/useDisputeDetail";
 
-const pipAvatar = (url: string) => `/api/users/avatar?url=${encodeURIComponent(url)}`;
-const pipListingImage = (url: string) => `/api/listings/image?url=${encodeURIComponent(url)}`;
+const GRADIENT_BUTTON = `
+  bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-600 
+  hover:from-sky-600 hover:via-indigo-600 hover:to-purple-700
+  text-white shadow-md hover:shadow-lg 
+  transition-all duration-300
+`;
 
-interface Message {
-  id: string;
-  content: string;
-  senderId: string;
-  sender: { firstName: string; lastName: string; profilePictureUrl: string | null };
-  isAdmin: boolean;
-  attachments: string[];
-  createdAt: string;
-}
+const GRADIENT_TEXT =
+  "bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent";
 
-interface DisputeDetail {
-  id: string;
-  reference: string;
-  status: string;
-  type: string;
-  description: string;
-  refundAmount: number | null;
-  resolvedAmount: number | null;
-  priority: string;
-  resolution: string | null;
-  createdAt: string;
-  updatedAt: string;
-  booking: {
-    id: string;
-    reference: string;
-    checkIn: string;
-    checkOut: string;
-    totalPrice: number;
-    listing: {
-      id: string;
-      title: string;
-      governorate: string;
-      delegation: string;
-      images?: string[];
-    };
-    tenant: { id: string; firstName: string; lastName: string; profilePictureUrl: string | null };
-    owner: { id: string; firstName: string; lastName: string; profilePictureUrl: string | null };
-  };
-}
-
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  OPEN: { label: "En attente", color: "bg-amber-100 text-amber-700" },
-  IN_REVIEW: { label: "En cours d'examen", color: "bg-blue-100 text-blue-700" },
-  RESOLVED: { label: "Résolu", color: "bg-green-100 text-green-700" },
-  REJECTED: { label: "Rejeté", color: "bg-red-100 text-red-700" },
+const pipListingImage = (url: string) => {
+  if (!url) return "";
+  return `/api/listings/image?url=${encodeURIComponent(url)}`;
 };
+
+const pipAvatar = (url: string) => {
+  if (!url) return "";
+  return `/api/users/avatar?url=${encodeURIComponent(url)}`;
+};
+
+const STATUS_CONFIG: Record<
+  string,
+  { color: string; bg: string; border: string; icon: any }
+> = {
+  OPEN: {
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+    border: "border-amber-200",
+    icon: IoTimeOutline,
+  },
+  IN_REVIEW: {
+    color: "text-sky-600",
+    bg: "bg-sky-50",
+    border: "border-sky-200",
+    icon: IoTimeOutline,
+  },
+  RESOLVED: {
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    border: "border-emerald-200",
+    icon: IoCheckmarkCircleOutline,
+  },
+  REJECTED: {
+    color: "text-rose-600",
+    bg: "bg-rose-50",
+    border: "border-rose-200",
+    icon: IoCloseCircleOutline,
+  },
+};
+
+const TYPE_LABELS: Record<string, string> = {
+  DAMAGE: "damage",
+  CLEANING: "cleaning",
+  MISREPRESENTATION: "misrepresentation",
+  NOISE: "noise",
+  PAYMENT: "payment",
+  CANCELLATION: "cancellation",
+  OTHER: "other",
+};
+
+function formatDate(dateStr: string) {
+  if (!dateStr) return "Date non spécifiée";
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatShort(dateStr: string) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "short",
+  });
+}
 
 export default function DisputeDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { getToken } = useAuth();
-  const [dispute, setDispute] = useState<DisputeDetail | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [alert, setAlert] = useState<{ type: "success" | "error"; message: string } | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const locale = params.locale as string;
+  const { resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const t = useTranslations("DisputesPage");
 
-  useEffect(() => {
-    fetchDispute();
-    fetchMessages();
-  }, []);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const fetchDispute = async () => {
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const res = await fetch(`/api/disputes/${params.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setDispute(data);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const fetchMessages = async () => {
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const res = await fetch(`/api/disputes/${params.id}/messages`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      setMessages(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
-    setSending(true);
-    try {
-      const token = await getToken({ template: "my-app-template" });
-      const res = await fetch(`/api/disputes/${params.id}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ content: newMessage }),
-      });
-      if (res.ok) {
-        const newMsg = await res.json();
-        setMessages(prev => [...prev, newMsg]);
-        setNewMessage("");
-      }
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSending(false);
-    }
-  };
+  const {
+    dispute,
+    loading,
+    error,
+    imgError,
+    mainImage,
+    isResolved,
+    disputeRef,
+    nights,
+    setImgError,
+  } = useDisputeDetail(params.id as string);
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f9f9ff]">
-        <LoadingSpinner size="lg" color="primary" />
-      </div>
+      <LoadingSpinner
+        fullScreen={true}
+        variant="spinner"
+        size="lg"
+        color="primary"
+        text={t("loading")}
+        speed="normal"
+      />
     );
   }
 
-  if (!dispute) {
+  if (error || !dispute) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#f9f9ff]">
+      <div
+        className={`min-h-screen flex items-center justify-center ${isDark ? "bg-slate-950" : "bg-gradient-to-br from-sky-50 via-white to-indigo-50"}`}
+      >
         <div className="text-center">
+          <IoDocumentTextOutline className="text-5xl text-slate-400 mx-auto mb-4" />
           <p className="text-slate-500">Litige non trouvé</p>
-          <button onClick={() => router.back()} className="mt-4 text-indigo-600 hover:underline">
-            Retour
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const isResolved = dispute.status === "RESOLVED" || dispute.status === "REJECTED";
-  const mainImage = dispute.booking.listing.images?.[0];
-
-  return (
-    <div className="min-h-screen bg-[#f9f9ff] dark:bg-slate-950">
-      {alert && (
-        <div className="fixed top-20 right-8 z-50">
-          <AlertBanner type={alert.type} message={alert.message} onClose={() => setAlert(null)} />
-        </div>
-      )}
-
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-6">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-slate-600 hover:text-indigo-600 mb-4 transition-colors"
+            className="mt-4 text-indigo-600 hover:underline"
           >
-            <IoArrowBackOutline className="text-lg" />
             Retour
           </button>
-          <div className="flex justify-between items-start flex-wrap gap-4">
+        </div>
+      </div>
+    );
+  }
+
+  const statusConfig = STATUS_CONFIG[dispute.status] || STATUS_CONFIG.OPEN;
+  const StatusIcon = statusConfig.icon;
+  const typeKey = TYPE_LABELS[dispute.type] || "other";
+  const typeLabel = t(`types.${typeKey}`);
+  const statusLabel = t(`status.${dispute.status.toLowerCase()}`);
+
+  return (
+    <div
+      className={`min-h-screen ${isDark ? "bg-slate-950" : "bg-gradient-to-br from-sky-50 via-white to-indigo-50"}`}
+    >
+      <TenantHeader />
+
+      <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+        {/* Breadcrumb */}
+        <div className="mb-8">
+          <div className="flex items-center gap-2 text-xs font-bold tracking-wider">
+            <Link
+              href={`/${locale}/search`}
+              className="text-slate-500 hover:text-indigo-600 transition uppercase"
+            >
+              {t("breadcrumb.home")}
+            </Link>
+            <IoChevronForwardOutline className="h-3 w-3 text-slate-400" />
+            <Link
+              href={`/${locale}/disputes`}
+              className="text-slate-500 hover:text-indigo-600 transition uppercase"
+            >
+              {t("breadcrumb.disputes")}
+            </Link>
+            <IoChevronForwardOutline className="h-3 w-3 text-slate-400" />
+            <span className="text-indigo-600 dark:text-indigo-400 uppercase font-extrabold">
+              {disputeRef}
+            </span>
+          </div>
+        </div>
+
+        {/* Header */}
+        <div className="mb-10">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] shadow-sm bg-white/75 border-white/70 text-indigo-600 dark:bg-slate-900/70 dark:border-white/10 dark:text-indigo-300">
+            <IoScaleOutline className="h-3 w-3" />
+            {t("detail.badge")}
+          </div>
+          <div className="flex flex-wrap justify-between items-start gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Litige #{dispute.reference?.slice(-8) || dispute.id.slice(-8)}
+              <h1 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+                {t("detail.title")}{" "}
+                <span className={GRADIENT_TEXT}>{disputeRef}</span>
               </h1>
-              <p className="text-slate-500 text-sm mt-1">
+              <p className="mt-2 text-base text-slate-500 dark:text-slate-400">
                 {dispute.booking.listing.title}
               </p>
             </div>
             <div className="flex gap-2">
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${STATUS_LABELS[dispute.status]?.color || "bg-gray-100"}`}>
-                {STATUS_LABELS[dispute.status]?.label || dispute.status}
+              <span
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${statusConfig.bg} ${statusConfig.color} border ${statusConfig.border}`}
+              >
+                <StatusIcon className="text-xs" />
+                {statusLabel}
               </span>
               {dispute.priority === "HIGH" && (
-                <span className="px-3 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                  Urgent
+                <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-rose-100 text-rose-700 border border-rose-200">
+                  <IoFlagOutline className="text-xs" />
+                  {t("detail.urgent")}
                 </span>
               )}
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main Chat Area */}
-          <div className="lg:col-span-8">
-            <div className="bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700 flex flex-col h-[600px]">
-              {/* Chat Header */}
-              <div className="p-5 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-indigo-50/40 to-violet-50/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white font-bold">
-                    N
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900 dark:text-white">Médiateur Nesthub</h3>
-                    <p className="text-xs text-slate-500">En ligne • Répond généralement en 2h</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-4">
-                {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                    <IoChatbubbleOutline className="text-4xl mb-3" />
-                    <p className="text-sm">Aucun message pour le moment</p>
-                  </div>
+        <div className="grid gap-8 lg:grid-cols-12 lg:gap-12">
+          {/* Colonne gauche */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Carte du logement */}
+            <div className="rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm hover:shadow-md transition-all">
+              <div className="relative h-56 overflow-hidden">
+                {mainImage && !imgError ? (
+                  <img
+                    src={pipListingImage(mainImage)}
+                    alt={dispute.booking.listing.title}
+                    className="w-full h-full object-cover"
+                    onError={() => setImgError(true)}
+                  />
                 ) : (
-                  messages.map((msg) => {
-                    const isUser = !msg.isAdmin;
-                    return (
-                      <div
-                        key={msg.id}
-                        className={`flex gap-3 ${isUser ? "flex-row-reverse" : ""}`}
-                      >
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                          {msg.sender.profilePictureUrl ? (
-                            <img src={pipAvatar(msg.sender.profilePictureUrl)} alt="" className="w-full h-full object-cover" />
-                          ) : (
-                            <span className="text-indigo-600 font-bold text-xs">
-                              {msg.sender.firstName?.charAt(0)}
-                            </span>
-                          )}
-                        </div>
-                        <div className={`max-w-[70%] ${isUser ? "items-end flex flex-col" : ""}`}>
-                          <div
-                            className={`p-3 rounded-2xl text-sm ${
-                              isUser
-                                ? "bg-indigo-600 text-white rounded-tr-none"
-                                : "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none"
-                            }`}
-                          >
-                            {msg.content}
-                            {msg.attachments?.map((url, i) => (
-                              <img key={i} src={url} className="mt-2 rounded-lg max-w-full h-auto" />
-                            ))}
-                          </div>
-                          <span className="text-[10px] text-slate-400 mt-1">
-                            {format(new Date(msg.createdAt), "HH:mm", { locale: fr })}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-
-              {/* Input */}
-              {!isResolved && (
-                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
-                      placeholder="Écrivez votre message..."
-                      className="flex-1 px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/20"
-                    />
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={sending || !newMessage.trim()}
-                      className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all disabled:opacity-50"
-                    >
-                      <IoSendOutline className="text-lg" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Sidebar - Info */}
-          <div className="lg:col-span-4 space-y-6">
-            {/* Booking Info */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-              <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Informations</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <IoHomeOutline className="text-slate-400" />
-                  <span>{dispute.booking.listing.title}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <IoLocationOutline className="text-slate-400" />
-                  <span>{dispute.booking.listing.governorate}, {dispute.booking.listing.delegation}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <IoCalendarOutline className="text-slate-400" />
-                  <span>{format(new Date(dispute.booking.checkIn), "dd MMM yyyy", { locale: fr })} - {format(new Date(dispute.booking.checkOut), "dd MMM yyyy", { locale: fr })}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <IoWalletOutline className="text-slate-400" />
-                  <span>Total: {dispute.booking.totalPrice.toLocaleString("fr-FR")} TND</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Dispute Info */}
-            <div className="bg-white dark:bg-slate-900 rounded-xl p-5 shadow-sm border border-slate-200 dark:border-slate-700">
-              <h3 className="font-bold text-lg mb-4 text-slate-900 dark:text-white">Détails du litige</h3>
-              <div className="space-y-3">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  <span className="font-semibold text-slate-900 dark:text-white">Motif:</span> {dispute.type}
-                </p>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  <span className="font-semibold text-slate-900 dark:text-white">Description:</span> {dispute.description}
-                </p>
-                {dispute.refundAmount && (
-                  <p className="text-sm text-amber-600">
-                    <span className="font-semibold">Montant demandé:</span> {dispute.refundAmount.toLocaleString("fr-FR")} TND
-                  </p>
-                )}
-                {dispute.resolvedAmount && (
-                  <p className="text-sm text-green-600">
-                    <span className="font-semibold">Montant accordé:</span> {dispute.resolvedAmount.toLocaleString("fr-FR")} TND
-                  </p>
-                )}
-                {dispute.resolution && (
-                  <div className="mt-3 p-3 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                    <p className="text-sm font-semibold text-green-700">✅ Résolution</p>
-                    <p className="text-sm text-green-600 mt-1">{dispute.resolution}</p>
+                  <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-sky-100 to-indigo-100 dark:from-sky-950/50 dark:to-indigo-950/50">
+                    <IoHomeOutline className="text-5xl text-slate-400" />
                   </div>
                 )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute bottom-4 left-5 right-5">
+                  <h3 className="text-white font-bold text-xl">
+                    {dispute.booking.listing.title}
+                  </h3>
+                  <p className="text-white/80 text-sm flex items-center gap-1 mt-1">
+                    <IoLocationOutline className="text-sm" />
+                    {dispute.booking.listing.governorate},{" "}
+                    {dispute.booking.listing.delegation}
+                  </p>
+                </div>
+              </div>
+              <div className="p-5">
+                <div className="grid grid-cols-3 gap-3">
+                  <div className="text-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {t("detail.arrival")}
+                    </p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white">
+                      {formatShort(dispute.booking.checkIn)}
+                    </p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {t("detail.departure")}
+                    </p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white">
+                      {formatShort(dispute.booking.checkOut)}
+                    </p>
+                  </div>
+                  <div className="text-center p-3 rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {t("detail.duration")}
+                    </p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white">
+                      {nights} {t("detail.nights")}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Listing Image */}
-            {mainImage && (
-              <div className="rounded-xl overflow-hidden">
-                <img src={pipListingImage(mainImage)} alt="" className="w-full h-40 object-cover" />
+            {/* Description du litige */}
+            <div className="rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-6 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-950/50 flex items-center justify-center">
+                  <IoFlagOutline className="text-indigo-500 text-lg" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800 dark:text-white">
+                    {t("detail.reason")}
+                  </h3>
+                  <span className="inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                    {typeLabel}
+                  </span>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                {dispute.description}
+              </p>
+            </div>
+
+            {/* Résolution */}
+            {dispute.resolution && (
+              <div className="rounded-2xl border bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 p-6">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                    <IoCheckmarkCircleOutline className="text-emerald-500 text-lg" />
+                  </div>
+                  <h3 className="text-base font-bold text-emerald-700 dark:text-emerald-400">
+                    {t("detail.resolution")}
+                  </h3>
+                </div>
+                <p className="text-sm text-emerald-700 dark:text-emerald-400/80 leading-relaxed">
+                  {dispute.resolution}
+                </p>
               </div>
             )}
           </div>
+
+          {/* Colonne droite */}
+          <div className="lg:col-span-4 space-y-5">
+            {/* Participants */}
+            <div className="rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 uppercase tracking-wide">
+                <IoPersonOutline className="text-indigo-500" />
+                {t("detail.participants")}
+              </h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+                    {dispute.booking.tenant.profilePictureUrl ? (
+                      <img
+                        src={pipAvatar(
+                          dispute.booking.tenant.profilePictureUrl,
+                        )}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-500">
+                        {dispute.booking.tenant.username
+                          ?.charAt(0)
+                          ?.toUpperCase() || "U"}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {t("detail.tenant")}
+                    </p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                      @{dispute.booking.tenant.username}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition">
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+                    {dispute.booking.owner.profilePictureUrl ? (
+                      <img
+                        src={pipAvatar(dispute.booking.owner.profilePictureUrl)}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-500">
+                        {dispute.booking.owner.username
+                          ?.charAt(0)
+                          ?.toUpperCase() || "U"}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                      {t("detail.owner")}
+                    </p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                      @{dispute.booking.owner.username}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-2 rounded-xl bg-gradient-to-r from-indigo-50/30 to-purple-50/30 dark:from-indigo-950/20 dark:to-purple-950/20">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
+                    <IoScaleOutline className="text-white text-lg" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                      {t("detail.mediator")}
+                    </p>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                      {t("detail.mediatorTeam")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Dates */}
+            <div className="rounded-2xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 uppercase tracking-wide">
+                <IoCalendarOutline className="text-indigo-500" />
+                {t("detail.timeline")}
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-slate-100 dark:border-slate-800">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    {t("detail.openedOn")}
+                  </p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                    {formatDate(dispute.createdAt)}
+                  </p>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                    {t("detail.lastUpdate")}
+                  </p>
+                  <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                    {formatDate(dispute.updatedAt)}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Bouton conversation */}
+            {!isResolved && (
+              <Link href={`/${locale}/messages`}>
+                <motion.button
+                  whileHover={{ scale: 1.02, y: -2 }}
+                  whileTap={{ scale: 0.98 }}
+                  className={`w-full flex items-center justify-center gap-3 rounded-xl px-5 py-3.5 text-sm font-bold uppercase tracking-wide ${GRADIENT_BUTTON}`}
+                >
+                  <IoChatbubblesOutline className="text-xl" />
+                  {t("actions.goToConversation")}
+                </motion.button>
+              </Link>
+            )}
+
+            {/* Message si résolu */}
+            {isResolved && (
+              <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 p-4 text-center">
+                <p className="text-xs text-slate-500">{t("detail.closed")}</p>
+              </div>
+            )}
+
+            {/* Bouton retour */}
+            <button
+              onClick={() => router.back()}
+              className="w-full flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-medium border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition mt-4"
+            >
+              <IoChevronBack className="text-lg" />
+              {t("actions.backToList")}
+            </button>
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// components/modals/BanUserModal.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,15 +8,16 @@ import { User } from '@/lib/types/user';
 import { useTranslations } from 'next-intl';
 import { IoBanOutline } from 'react-icons/io5';
 
-const BAN_REASONS = [
-  { value: 'SPAM', label: 'Spam / Publicité' },
-  { value: 'HARASSMENT', label: 'Harcèlement' },
-  { value: 'TOS_VIOLATION', label: 'Violation des conditions d\'utilisation' },
-  { value: 'FRAUD', label: 'Fraude ou tentative de phishing' },
-  { value: 'IDENTITY_THEFT', label: 'Usurpation d\'identité' },
-  { value: 'MULTIPLE_WARNINGS', label: 'Avertissements multiples ignorés' },
-  { value: 'ILLEGAL_ACTIVITY', label: 'Activité illégale' },
-  { value: 'OTHER', label: 'Autre raison' },
+// ✅ Traduire les raisons de bannissement
+const getBanReasons = (t: any) => [
+  { value: 'SPAM', label: t('reasons.spam') },
+  { value: 'HARASSMENT', label: t('reasons.harassment') },
+  { value: 'TOS_VIOLATION', label: t('reasons.tosViolation') },
+  { value: 'FRAUD', label: t('reasons.fraud') },
+  { value: 'IDENTITY_THEFT', label: t('reasons.identityTheft') },
+  { value: 'MULTIPLE_WARNINGS', label: t('reasons.multipleWarnings') },
+  { value: 'ILLEGAL_ACTIVITY', label: t('reasons.illegalActivity') },
+  { value: 'OTHER', label: t('reasons.other') },
 ];
 
 const pip = (url: string) =>
@@ -32,11 +32,13 @@ interface BanUserModalProps {
 
 export default function BanUserModal({ isOpen, onClose, user, onConfirm }: BanUserModalProps) {
   const t = useTranslations('admin.usersManagement.banModal');
+  const BAN_REASONS = getBanReasons(t);
   const [reason, setReason] = useState('');
   const [motif, setMotif] = useState('');
   const [notify, setNotify] = useState(false);
   const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+  const CONFIRM_KEYWORD = t('confirmKeyword').toUpperCase();
 
   // Reset quand le modal se ferme
   useEffect(() => {
@@ -50,7 +52,7 @@ export default function BanUserModal({ isOpen, onClose, user, onConfirm }: BanUs
   }, [isOpen]);
 
   const handleConfirm = async () => {
-    if (!user || !reason || confirmText !== 'BANNIR') return;
+    if (!user || !reason || confirmText !== CONFIRM_KEYWORD) return;
     setLoading(true);
     try {
       await onConfirm(user.id, reason, motif, notify);
@@ -154,8 +156,8 @@ export default function BanUserModal({ isOpen, onClose, user, onConfirm }: BanUs
             notify={notify}
             setNotify={setNotify}
             userEmail={user.email}
-            label={t('notify') || "Notifier l'utilisateur par email"}
-            message="Un email sera envoyé à {email} pour le notifier de ce bannissement."
+            label={t('notify')}
+            message={t('notifyMessage', { email: user.email })}
             colorScheme="red"
           />
         </div>
@@ -163,14 +165,14 @@ export default function BanUserModal({ isOpen, onClose, user, onConfirm }: BanUs
         {/* Security Confirmation Input */}
         <div className="p-2 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 rounded-lg">
           <label className="block text-[10px] font-medium text-red-800 dark:text-red-300 mb-1">
-            {t('confirmLabel')} <span className="font-bold underline">BANNIR</span>
+            {t('confirmLabel')} <span className="font-bold underline">{CONFIRM_KEYWORD}</span>
           </label>
           <input
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             className="w-full px-2 py-1 text-xs rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-red-500 focus:border-red-500 uppercase font-bold text-center tracking-widest"
-            placeholder="BANNIR"
+            placeholder={CONFIRM_KEYWORD}
           />
         </div>
       </div>
@@ -186,7 +188,7 @@ export default function BanUserModal({ isOpen, onClose, user, onConfirm }: BanUs
         </button>
         <button
           onClick={handleConfirm}
-          disabled={loading || !reason || confirmText !== 'BANNIR'}
+          disabled={loading || !reason || confirmText !== CONFIRM_KEYWORD}
           className="px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 shadow-sm transition-all disabled:opacity-50 flex items-center gap-1"
           type="button"
         >

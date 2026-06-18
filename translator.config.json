@@ -1,0 +1,14 @@
+{
+  "source": {
+    "path": "./fr.json",
+    "code": "fr"
+  },
+  "targets": [
+    {
+      "path": "./ar.json",
+      "code": "ar"
+    }
+  ],
+  "provider": "google",
+  "overwrite": true
+}

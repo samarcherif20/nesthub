@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get("status");
     const type = searchParams.get("type");
 
-    // 1. Récupérer les paiements de la base de données d'abord
+    // 1. Récupérer les paiements de la base de données
     const dbPayments = await prisma.payment.findMany({
       where: {
         ...(startDate &&
@@ -65,6 +65,9 @@ export async function GET(request: NextRequest) {
                 firstName: true,
                 lastName: true,
                 email: true,
+                rib: true,
+                bankName: true,
+                accountHolder: true,
               },
             },
           },
@@ -73,7 +76,7 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    // Transformer les paiements DB en transactions
+    // Transformer les paiements DB en transactions avec mapping des statuts
     const dbTransactions = dbPayments.map((payment) => {
       const tenantName = payment.booking?.tenant
         ? `${payment.booking.tenant.firstName || ""} ${payment.booking.tenant.lastName || ""}`.trim()
@@ -82,6 +85,35 @@ export async function GET(request: NextRequest) {
       const ownerName = payment.booking?.owner
         ? `${payment.booking.owner.firstName || ""} ${payment.booking.owner.lastName || ""}`.trim()
         : undefined;
+
+      const ownerRib = payment.booking?.owner?.rib || undefined;
+
+      // ✅ Mapping amélioré du statut avec prise en compte de l'escrowStatus
+      let transactionStatus: "SUCCESS" | "PENDING" | "REFUNDED" | "FAILED" = "PENDING";
+      
+      if (payment.status === "PAID") {
+        transactionStatus = "SUCCESS";
+      } else if (payment.status === "REFUNDED") {
+        transactionStatus = "REFUNDED";
+      } else if (payment.status === "FAILED") {
+        transactionStatus = "FAILED";
+      } else if (payment.status === "PENDING") {
+        // Vérifier l'escrowStatus de la réservation
+        const escrowStatus = payment.booking?.escrowStatus;
+        if (escrowStatus === "HELD") {
+          transactionStatus = "PENDING";
+        } else if (escrowStatus === "RELEASED") {
+          transactionStatus = "SUCCESS";
+        } else if (escrowStatus === "READY_FOR_MANUAL_PAYOUT") {
+          transactionStatus = "PENDING";
+        } else if (escrowStatus === "PAID_MANUALLY") {
+          transactionStatus = "SUCCESS";
+        } else if (escrowStatus === "REFUNDED") {
+          transactionStatus = "REFUNDED";
+        } else {
+          transactionStatus = "PENDING";
+        }
+      }
 
       return {
         id: payment.id,
@@ -95,21 +127,17 @@ export async function GET(request: NextRequest) {
           title: payment.booking?.listing?.title || "N/A",
           image: payment.booking?.listing?.photos?.[0]?.url,
         },
-        status:
-          payment.status === "PAID"
-            ? "SUCCESS"
-            : payment.status === "REFUNDED"
-              ? "REFUNDED"
-              : payment.status === "PENDING"
-                ? "PENDING"
-                : "FAILED",
+        status: transactionStatus,
         provider: payment.provider,
         tenantName: tenantName,
-        ownerName: ownerName,
         tenantEmail: payment.booking?.tenant?.email,
+        ownerName: ownerName,
+        ownerRib: ownerRib,
         type: "PAYMENT" as const,
         paymentIntentId: payment.providerTransactionId,
         bookingId: payment.bookingId,
+        payoutStatus: payment.status === "PAID" ? "PENDING" : undefined,
+        escrowStatus: payment.booking?.escrowStatus, // Ajout pour référence
       };
     });
 
@@ -132,26 +160,20 @@ export async function GET(request: NextRequest) {
       console.error("Stripe fetch error:", error);
     }
 
-    // Enrichir les transactions Stripe avec les données de la BD
     const stripeTransactions = stripeCharges.map((charge) => {
       const metadata = charge.metadata || {};
       const bookingId = metadata.booking_id;
 
-      // Chercher le paiement correspondant dans la base de données
       const matchingPayment = dbPayments.find(
         (p) => p.providerTransactionId === charge.id || p.id === bookingId,
       );
 
-      let txStatus: "SUCCESS" | "PENDING" | "REFUNDED" | "FAILED" = "PENDING";
-      if (charge.status === "succeeded") {
-        txStatus = "SUCCESS";
-      } else if (charge.status === "failed") {
-        txStatus = "FAILED";
-      } else if (charge.refunded) {
-        txStatus = "REFUNDED";
-      }
+      const ownerName = matchingPayment?.booking?.owner
+        ? `${matchingPayment.booking.owner.firstName || ""} ${matchingPayment.booking.owner.lastName || ""}`.trim()
+        : metadata.owner_name || undefined;
 
-      // Utiliser les données de la BD si disponibles
+      const ownerRib = matchingPayment?.booking?.owner?.rib || metadata.owner_rib || undefined;
+
       const property = matchingPayment?.booking?.listing
         ? {
             id: matchingPayment.booking.listing.id,
@@ -160,19 +182,18 @@ export async function GET(request: NextRequest) {
           }
         : {
             id: metadata.listing_id || "",
-            title:
-              metadata.listing_title ||
-              metadata.property_title ||
-              "Réservation",
+            title: metadata.listing_title || metadata.property_title || "Réservation",
             image: "",
           };
 
       const tenantName = matchingPayment?.booking?.tenant
         ? `${matchingPayment.booking.tenant.firstName || ""} ${matchingPayment.booking.tenant.lastName || ""}`.trim()
-        : metadata.customer_name ||
-          metadata.tenant_name ||
-          charge.billing_details?.name ||
-          "";
+        : metadata.customer_name || metadata.tenant_name || charge.billing_details?.name || "";
+
+      let txStatus: "SUCCESS" | "PENDING" | "REFUNDED" | "FAILED" = "PENDING";
+      if (charge.status === "succeeded") txStatus = "SUCCESS";
+      else if (charge.status === "failed") txStatus = "FAILED";
+      else if (charge.refunded) txStatus = "REFUNDED";
 
       return {
         id: charge.id,
@@ -186,14 +207,14 @@ export async function GET(request: NextRequest) {
         provider: "STRIPE",
         tenantName: tenantName,
         tenantEmail: charge.billing_details?.email || metadata.customer_email,
+        ownerName: ownerName,
+        ownerRib: ownerRib,
         type: "PAYMENT" as const,
-        paymentIntentId:
-          typeof charge.payment_intent === "string"
-            ? charge.payment_intent
-            : charge.payment_intent?.id,
+        paymentIntentId: typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id,
         description: charge.description || `Réservation: ${property.title}`,
         receiptUrl: charge.receipt_url,
         bookingId: bookingId,
+        payoutStatus: "PENDING",
       };
     });
 
@@ -215,7 +236,6 @@ export async function GET(request: NextRequest) {
       console.error("Stripe refunds fetch error:", error);
     }
 
-    // Enrichir les remboursements avec les données de la BD
     const refundTransactions = stripeRefunds.map((refund) => {
       const originalCharge = stripeCharges.find((c) => c.id === refund.charge);
       const metadata = originalCharge?.metadata || {};
@@ -240,6 +260,10 @@ export async function GET(request: NextRequest) {
         ? `${matchingPayment.booking.tenant.firstName || ""} ${matchingPayment.booking.tenant.lastName || ""}`.trim()
         : metadata.customer_name || "";
 
+      const ownerName = matchingPayment?.booking?.owner
+        ? `${matchingPayment.booking.owner.firstName || ""} ${matchingPayment.booking.owner.lastName || ""}`.trim()
+        : metadata.owner_name || "";
+
       return {
         id: refund.id,
         reference: refund.id.slice(-8).toUpperCase(),
@@ -251,6 +275,7 @@ export async function GET(request: NextRequest) {
         status: "REFUNDED" as const,
         provider: "STRIPE",
         tenantName: tenantName,
+        ownerName: ownerName,
         type: "REFUND" as const,
         refundId: refund.id,
         refundReason: refund.reason,
@@ -258,20 +283,12 @@ export async function GET(request: NextRequest) {
       };
     });
 
-    // Combiner toutes les transactions (éviter les doublons)
+    // Combiner toutes les transactions
     const allDbIds = new Set(dbTransactions.map((t) => t.id));
-    const uniqueStripeTransactions = stripeTransactions.filter(
-      (t) => !allDbIds.has(t.id),
-    );
-    const uniqueRefundTransactions = refundTransactions.filter(
-      (t) => !allDbIds.has(t.id),
-    );
+    const uniqueStripeTransactions = stripeTransactions.filter((t) => !allDbIds.has(t.id));
+    const uniqueRefundTransactions = refundTransactions.filter((t) => !allDbIds.has(t.id));
 
-    let allTransactions = [
-      ...dbTransactions,
-      ...uniqueStripeTransactions,
-      ...uniqueRefundTransactions,
-    ];
+    let allTransactions = [...dbTransactions, ...uniqueStripeTransactions, ...uniqueRefundTransactions];
 
     // Filtrer par recherche
     if (search) {
@@ -292,32 +309,16 @@ export async function GET(request: NextRequest) {
       allTransactions = allTransactions.filter((tx) => tx.type === type);
     }
 
-    // Trier par date
-    allTransactions.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
-    );
+    allTransactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     // Calculer les KPIs
-    const successfulPayments = allTransactions.filter(
-      (tx) => tx.status === "SUCCESS" && tx.type === "PAYMENT",
-    );
-    const refunds = allTransactions.filter(
-      (tx) => tx.type === "REFUND" || tx.status === "REFUNDED",
-    );
+    const successfulPayments = allTransactions.filter((tx) => tx.status === "SUCCESS" && tx.type === "PAYMENT");
+    const refunds = allTransactions.filter((tx) => tx.type === "REFUND" || tx.status === "REFUNDED");
     const pending = allTransactions.filter((tx) => tx.status === "PENDING");
 
-    const totalVolume = successfulPayments.reduce(
-      (sum, tx) => sum + tx.amount,
-      0,
-    );
-    const totalCommissions = successfulPayments.reduce(
-      (sum, tx) => sum + tx.commission,
-      0,
-    );
-    const totalRefunds = refunds.reduce(
-      (sum, tx) => sum + Math.abs(tx.amount),
-      0,
-    );
+    const totalVolume = successfulPayments.reduce((sum, tx) => sum + tx.amount, 0);
+    const totalCommissions = successfulPayments.reduce((sum, tx) => sum + tx.commission, 0);
+    const totalRefunds = refunds.reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
     const pendingPayouts = pending.reduce((sum, tx) => sum + tx.netAmount, 0);
 
     const kpis = {
@@ -329,20 +330,14 @@ export async function GET(request: NextRequest) {
       commissionsGrowth: 8.4,
       totalRefunds,
       refundsCount: refunds.length,
-      successRate:
-        allTransactions.length > 0
-          ? (successfulPayments.length / allTransactions.length) * 100
-          : 100,
+      successRate: allTransactions.length > 0 ? (successfulPayments.length / allTransactions.length) * 100 : 100,
       totalTransactions: allTransactions.length,
       successfulCount: successfulPayments.length,
     };
 
     // Pagination
     const start = (page - 1) * pageSize;
-    const paginatedTransactions = allTransactions.slice(
-      start,
-      start + pageSize,
-    );
+    const paginatedTransactions = allTransactions.slice(start, start + pageSize);
 
     return NextResponse.json({
       success: true,
@@ -357,9 +352,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error("Error fetching transactions:", error);
-    return NextResponse.json(
-      { error: "Erreur lors de la récupération des transactions" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Erreur lors de la récupération des transactions" }, { status: 500 });
   }
 }

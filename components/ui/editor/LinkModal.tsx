@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { TbLink, TbX } from 'react-icons/tb'
 
 interface LinkModalProps {
@@ -11,6 +12,7 @@ interface LinkModalProps {
 }
 
 export default function LinkModal({ isOpen, onClose, onSave, initialUrl = '' }: LinkModalProps) {
+  const t = useTranslations("LinkModal")
   const [url, setUrl] = useState(initialUrl)
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function LinkModal({ isOpen, onClose, onSave, initialUrl = '' }: 
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold flex items-center gap-2">
             <TbLink className="text-primary" />
-            Ajouter un lien
+            {t("title")}
           </h3>
           <button onClick={onClose} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">
             <TbX className="text-xl" />
@@ -42,7 +44,7 @@ export default function LinkModal({ isOpen, onClose, onSave, initialUrl = '' }: 
         
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">URL du lien</label>
+            <label className="block text-sm font-medium mb-2">{t("urlLabel")}</label>
             <input
               type="url"
               value={url}
@@ -59,13 +61,13 @@ export default function LinkModal({ isOpen, onClose, onSave, initialUrl = '' }: 
               onClick={onClose}
               className="px-4 py-2 text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
             >
-              Annuler
+              {t("cancel")}
             </button>
             <button
               type="submit"
               className="px-4 py-2 text-sm font-medium bg-primary text-white rounded-lg hover:bg-primary/90"
             >
-              Ajouter
+              {t("add")}
             </button>
           </div>
         </form>

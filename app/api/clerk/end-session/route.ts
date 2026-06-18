@@ -1,4 +1,3 @@
-// ✅ API route corrigée - app/api/clerk/end-session/route.ts
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {

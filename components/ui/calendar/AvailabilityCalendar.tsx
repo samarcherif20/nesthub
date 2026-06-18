@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { IoChevronBackOutline, IoChevronForwardOutline } from "react-icons/io5";
 import { TbBeach } from "react-icons/tb";
 
@@ -38,6 +39,8 @@ export default function AvailabilityCalendar({
   onSelectRange,
   listing,
 }: AvailabilityCalendarProps) {
+  const t = useTranslations("Calendar");
+
   const [currentDate, setCurrentDate] = useState(new Date());
   const [tempStart, setTempStart] = useState<string | null>(null);
   const [tempEnd, setTempEnd] = useState<string | null>(null);
@@ -358,7 +361,15 @@ export default function AvailabilityCalendar({
       </div>
 
       <div className="grid grid-cols-7 mb-2">
-        {["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"].map((d) => (
+        {[
+          t("days.monday"),
+          t("days.tuesday"),
+          t("days.wednesday"),
+          t("days.thursday"),
+          t("days.friday"),
+          t("days.saturday"),
+          t("days.sunday"),
+        ].map((d) => (
           <div
             key={d}
             className="text-center text-xs font-bold text-gray-500 dark:text-gray-500 py-2"
@@ -376,13 +387,13 @@ export default function AvailabilityCalendar({
           const blocked = isBlocked(day);
           const isStart = isStartDate(day);
           const isEnd = isEndDate(day);
-          const vacation = isVacationMode(day); // ✅ AJOUTÉ
+          const vacation = isVacationMode(day);
 
           return (
             <button
               key={day}
               onClick={() => handleDateClick(day)}
-              disabled={isPast(day) || blocked || pending || vacation} // ✅ MODIFIÉ
+              disabled={isPast(day) || blocked || pending || vacation}
               className={`
         aspect-square flex flex-col items-center justify-center rounded-xl text-sm font-medium transition-all duration-200
         relative
@@ -392,14 +403,12 @@ export default function AvailabilityCalendar({
               <span>{day}</span>
               {special && !blocked && !pending && !vacation && (
                 <span className="text-[9px] font-bold text-purple-600 dark:text-purple-400 mt-0.5">
-                  {specialPrice} TND
+                  {specialPrice} {t("currency")}
                 </span>
               )}
-              {/* ✅ AJOUTÉ - Icône mode vacances */}
               {vacation && !isPast(day) && (
                 <TbBeach className="absolute -top-1 -right-1 text-sm"></TbBeach>
               )}
-              {/* Point ORANGE */}
               {pending && !isPast(day) && !blocked && !vacation && (
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-amber-500" />
               )}
@@ -419,37 +428,37 @@ export default function AvailabilityCalendar({
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-emerald-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            Disponible
+            {t("legend.available")}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-red-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            Réservé / Indisponible
+            {t("legend.booked")}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-amber-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            En attente de paiement
+            {t("legend.pending")}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-purple-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            Prix spécial
+            {t("legend.specialPrice")}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-sky-500" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            Début / Fin du séjour
+            {t("legend.startEnd")}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-sky-100 dark:bg-sky-950/50 border border-sky-200" />
           <span className="text-xs text-gray-600 dark:text-gray-400">
-            Nuits du séjour
+            {t("legend.stayNights")}
           </span>
         </div>
       </div>

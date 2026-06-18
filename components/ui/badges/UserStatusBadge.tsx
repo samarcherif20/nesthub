@@ -19,63 +19,62 @@ export default function UserStatusBadge({
       dotColor: string;
       textColor: string;
       darkTextColor: string;
-      label: string;
+      translationKey: string;
     }
   > = {
     ACTIVE: {
       dotColor: "bg-emerald-600",
       textColor: "text-emerald-700",
       darkTextColor: "dark:text-emerald-500",
-      label: t("filters.status.active"),
+      translationKey: "active",
     },
     TEMPORARILY_SUSPENDED: {
       dotColor: "bg-violet-600",
       textColor: "text-violet-700",
       darkTextColor: "dark:text-violet-500",
-      label: t("filters.status.suspended"),
+      translationKey: "suspended",
     },
     PERMANENTLY_BANNED: {
       dotColor: "bg-red-600",
       textColor: "text-red-700",
       darkTextColor: "dark:text-red-500",
-      label: t("filters.status.banned"),
+      translationKey: "banned",
     },
     PENDING_VALIDATION: {
       dotColor: "bg-amber-500",
       textColor: "text-amber-500",
       darkTextColor: "dark:text-amber-400",
-      label: t("filters.status.pending"),
+      translationKey: "pending",
     },
     SECURITY_LOCKED: {
       dotColor: "bg-orange-600",
       textColor: "text-orange-700",
       darkTextColor: "dark:text-orange-500",
-      label: "Bloqué (sécurité)",
+      translationKey: "security_locked",
     },
     MANUALLY_BLOCKED: {
       dotColor: "bg-red-800",
       textColor: "text-red-900",
       darkTextColor: "dark:text-red-400",
-      label: "Bloqué (admin)",
+      translationKey: "manually_blocked",
     },
     REJECTED: {
       dotColor: "bg-slate-600",
       textColor: "text-slate-700",
       darkTextColor: "dark:text-slate-400",
-      label: t("filters.status.rejected"),
+      translationKey: "rejected",
     },
     INACTIVE: {
       dotColor: "bg-gray-400",
       textColor: "text-gray-500",
       darkTextColor: "dark:text-gray-300",
-      label: "Inactif",
+      translationKey: "inactive",
     },
-    // Ajout du statut LOCKED pour compatibilité
     LOCKED: {
       dotColor: "bg-orange-600",
       textColor: "text-orange-700",
       darkTextColor: "dark:text-orange-500",
-      label: "Bloqué",
+      translationKey: "locked",
     },
   };
 
@@ -84,7 +83,7 @@ export default function UserStatusBadge({
     dotColor: "bg-stone-600",
     textColor: "text-stone-700",
     darkTextColor: "dark:text-stone-500",
-    label: status,
+    translationKey: "unknown",
   };
 
   // Formater la date de suspension
@@ -96,29 +95,28 @@ export default function UserStatusBadge({
     }
   };
 
+  const label = t(`filters.status.${config.translationKey}`);
+
   return (
     <div className="flex flex-col items-start gap-1">
       <div className="flex items-center gap-2">
-        {/* Point coloré */}
         <span className={`w-2 h-2 rounded-full ${config.dotColor}`} />
-
-        {/* Texte du statut avec couleur */}
         <span
           className={`text-xs font-medium ${config.textColor} ${config.darkTextColor}`}
         >
-          {config.label}
+          {label}
         </span>
       </div>
 
       {suspendedUntil && status === "TEMPORARILY_SUSPENDED" && (
         <span className="text-[10px] text-slate-500 dark:text-slate-400 ml-4">
-          Jusqu'au {formatSuspendedUntil(suspendedUntil)}
+          {t("until")} {formatSuspendedUntil(suspendedUntil)}
         </span>
       )}
 
       {status === "SECURITY_LOCKED" && (
         <span className="text-[10px] text-orange-500 dark:text-orange-400 ml-4">
-          Déblocage auto après 24h
+          {t("auto_unlock")}
         </span>
       )}
     </div>

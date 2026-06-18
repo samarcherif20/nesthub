@@ -1100,7 +1100,6 @@ export default function AdminDashboardPage() {
       t("userDistribution.tenants"),
       t("userDistribution.owners"),
       t("userDistribution.both"),
-      t("userDistribution.coHosts"),
       t("userDistribution.admins"),
     ],
     datasets: [
@@ -1109,7 +1108,6 @@ export default function AdminDashboardPage() {
           data.userDistribution?.tenants || 0,
           data.userDistribution?.owners || 0,
           data.userDistribution?.both || 0,
-          data.userDistribution?.coHosts || 0,
           data.userDistribution?.admins || 0,
         ],
         backgroundColor: [

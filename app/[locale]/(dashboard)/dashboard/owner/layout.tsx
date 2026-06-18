@@ -2,7 +2,7 @@
 
 import { useUser, useClerk } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import * as React from "react";
@@ -35,6 +35,8 @@ import NotificationBell from "@/components/ui/notifications/NotificationBell";
 import { GiDuality, GiDualityMask } from "react-icons/gi";
 import { TbHomeSearch } from "react-icons/tb";
 import { FaGavel } from "react-icons/fa6";
+import { Wallet2Icon } from "lucide-react";
+
 // Fonction pip pour les images Vercel Blob (avatar)
 const pipAvatar = (url: string) =>
   `/api/users/avatar?url=${encodeURIComponent(url)}`;
@@ -61,6 +63,48 @@ const avatarColors = [
   "bg-emerald-500",
   "bg-teal-500",
 ];
+
+// Composant Avatar simple pour le dropdown
+function SimpleAvatar({
+  src,
+  name,
+  size = 32,
+}: {
+  src?: string;
+  name: string;
+  size?: number;
+}) {
+  const [err, setErr] = useState(false);
+  const url = src ? pipAvatar(src) : null;
+  const safeName = name || "?";
+  const firstChar = safeName.charAt(0).toUpperCase();
+
+  return (
+    <div
+      className="relative flex-shrink-0 rounded-full overflow-hidden flex items-center justify-center font-bold text-white"
+      style={{
+        width: size,
+        height: size,
+        background:
+          !url || err
+            ? "linear-gradient(135deg, #0ea5e9, #6366f1, #a855f7)"
+            : "#e2e8f0",
+        fontSize: size * 0.36,
+      }}
+    >
+      {url && !err ? (
+        <img
+          src={url}
+          alt={safeName}
+          className="w-full h-full object-cover"
+          onError={() => setErr(true)}
+        />
+      ) : (
+        firstChar
+      )}
+    </div>
+  );
+}
 
 export default function OwnerLayout({
   children,
@@ -92,6 +136,19 @@ export default function OwnerLayout({
     "OWNER",
   );
   const [hasListings, setHasListings] = useState<boolean | null>(null);
+
+  // États pour les compteurs
+  const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
+  const [pendingReservationsCount, setPendingReservationsCount] = useState(0);
+  const [pendingDisputesCount, setPendingDisputesCount] = useState(0);
+  const [pendingBookingsCount, setPendingBookingsCount] = useState(0);
+  const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
+
+  // États pour le dropdown chat
+  const [isChatDropdownOpen, setIsChatDropdownOpen] = useState(false);
+  const [chatConversations, setChatConversations] = useState<any[]>([]);
+  const [chatDropdownLoading, setChatDropdownLoading] = useState(false);
+  const chatDropdownRef = useRef<HTMLDivElement>(null);
 
   // Refs pour les dropdowns
   const profileDropdownRef = useRef<HTMLDivElement>(null);
@@ -151,9 +208,8 @@ export default function OwnerLayout({
 
         if (userRes.ok) {
           const data = await userRes.json();
-          // ✅ Correction ici : data.user (pas data.user || data)
           setAppUser(data.user);
-          setDbRole(data.user?.role); // ← Stocke le rôle de la DB
+          setDbRole(data.user?.role);
           console.log("🔍 Rôle DB (user.role):", data.user?.role);
         }
 
@@ -178,6 +234,128 @@ export default function OwnerLayout({
   // Pour vérifier si l'utilisateur est en mode BOTH (Propriétaire + Locataire)
   const isBothTenantOwner = dbRole === "BOTH";
 
+  // Fonctions pour les compteurs
+  const fetchUnreadMessagesCount = useCallback(async () => {
+    if (!isSignedIn) return;
+    try {
+      const res = await fetch("/api/conversations/unread-count");
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadMessagesCount(data.count ?? 0);
+      }
+    } catch (error) {
+      console.error("Erreur chargement messages non lus:", error);
+    }
+  }, [isSignedIn]);
+
+  const fetchPendingReservationsCount = useCallback(async () => {
+    if (!isSignedIn) return;
+    try {
+      const res = await fetch(
+        "/api/owner/reservations?status=PENDING&pageSize=1",
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setPendingReservationsCount(
+          data.pagination?.totalCount || data.length || 0,
+        );
+      }
+    } catch (error) {
+      console.error("Erreur chargement réservations:", error);
+    }
+  }, [isSignedIn]);
+
+  const fetchPendingDisputesCount = useCallback(async () => {
+    if (!isSignedIn) return;
+    try {
+      const res = await fetch("/api/disputes?status=OPEN&pageSize=1");
+      if (res.ok) {
+        const data = await res.json();
+        setPendingDisputesCount(
+          data.pagination?.totalCount || data.length || 0,
+        );
+      }
+    } catch (error) {
+      console.error("Erreur chargement litiges:", error);
+    }
+  }, [isSignedIn]);
+
+  const fetchUnreadNotificationsCount = useCallback(async () => {
+    if (!isSignedIn) return;
+    try {
+      const res = await fetch("/api/notifications/unread-count");
+      if (res.ok) {
+        const data = await res.json();
+        setUnreadNotificationsCount(data.count ?? 0);
+      }
+    } catch (error) {
+      console.error("Erreur chargement notifications:", error);
+    }
+  }, [isSignedIn]);
+
+  const fetchPendingBookingsCount = useCallback(async () => {
+    if (!isSignedIn) return;
+    try {
+      const res = await fetch("/api/owner/bookings?status=PENDING&pageSize=1");
+      if (res.ok) {
+        const data = await res.json();
+        setPendingBookingsCount(
+          data.pagination?.totalCount || data.length || 0,
+        );
+      }
+    } catch (error) {
+      console.error("Erreur chargement bookings:", error);
+    }
+  }, [isSignedIn]);
+
+  // Charger les conversations pour le dropdown
+  const loadChatDropdownConversations = useCallback(async () => {
+    if (!isSignedIn) return;
+    setChatDropdownLoading(true);
+    try {
+      const res = await fetch("/api/conversations?limit=5");
+      if (res.ok) {
+        const data = await res.json();
+        setChatConversations(data.slice(0, 5));
+      }
+    } catch (error) {
+      console.error("Error loading chat conversations:", error);
+    } finally {
+      setChatDropdownLoading(false);
+    }
+  }, [isSignedIn]);
+
+  // Ouvrir une conversation dans le FloatingChat
+  const openConversationInFloatingChat = (conversationId: string) => {
+    setIsChatDropdownOpen(false);
+    const event = new CustomEvent("open-floating-chat-conversation", {
+      detail: { conversationId },
+    });
+    window.dispatchEvent(event);
+  };
+
+  // Gestion du clic sur le bouton chat
+  const handleChatButtonClick = () => {
+    if (!isChatDropdownOpen) {
+      loadChatDropdownConversations();
+    }
+    setIsChatDropdownOpen(!isChatDropdownOpen);
+  };
+
+  // Fermer le dropdown au clic outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        chatDropdownRef.current &&
+        !chatDropdownRef.current.contains(e.target as Node)
+      ) {
+        setIsChatDropdownOpen(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   // Vérifier l'authentification
   useEffect(() => {
     if (!mounted) return;
@@ -185,6 +363,34 @@ export default function OwnerLayout({
       router.push(`/${locale}/login`);
     }
   }, [isLoaded, isSignedIn, router, locale, mounted]);
+
+  // Intervalle pour les compteurs
+  useEffect(() => {
+    if (isSignedIn) {
+      fetchUnreadMessagesCount();
+      fetchPendingReservationsCount();
+      fetchPendingDisputesCount();
+      fetchUnreadNotificationsCount();
+      fetchPendingBookingsCount();
+
+      const interval = setInterval(() => {
+        fetchUnreadMessagesCount();
+        fetchPendingReservationsCount();
+        fetchPendingDisputesCount();
+        fetchUnreadNotificationsCount();
+        fetchPendingBookingsCount();
+      }, 30000);
+
+      return () => clearInterval(interval);
+    }
+  }, [
+    isSignedIn,
+    fetchUnreadMessagesCount,
+    fetchPendingReservationsCount,
+    fetchPendingDisputesCount,
+    fetchUnreadNotificationsCount,
+    fetchPendingBookingsCount,
+  ]);
 
   // Fermer les dropdowns
   useEffect(() => {
@@ -236,42 +442,49 @@ export default function OwnerLayout({
     router.push(`/${locale}/login`);
   };
 
-  // Navigation items
+  // Navigation items avec badges
   const navItems = [
     {
       name: t("nav.dashboard"),
       href: `/${locale}/dashboard/owner`,
       icon: LuLayoutDashboard,
+      badge: null,
+      badgeColor: null,
     },
     {
       name: t("nav.listings"),
       href: `/${locale}/dashboard/owner/listings`,
       icon: MdOutlineHomeWork,
+      badge: null,
+      badgeColor: null,
     },
     {
       name: t("nav.calendar"),
       href: `/${locale}/dashboard/owner/calendar`,
       icon: MdOutlineCalendarMonth,
+      badge: pendingBookingsCount > 0 ? pendingBookingsCount : null,
+      badgeColor: "bg-amber-500",
     },
     {
       name: t("nav.reservations"),
       href: `/${locale}/dashboard/owner/reservations`,
       icon: MdOutlineBookOnline,
+      badge: pendingReservationsCount > 0 ? pendingReservationsCount : null,
+      badgeColor: "bg-blue-500",
     },
     {
       name: t("nav.messages"),
       href: `/${locale}/dashboard/owner/messages`,
       icon: MdOutlineChatBubble,
-    },
-    {
-      name: t("nav.team"),
-      href: `/${locale}/dashboard/owner/team`,
-      icon: PiMicrosoftTeamsLogo,
+      badge: unreadMessagesCount > 0 ? unreadMessagesCount : null,
+      badgeColor: "bg-indigo-500",
     },
     {
       name: t("nav.disputes"),
       href: `/${locale}/dashboard/owner/disputes`,
       icon: FaGavel,
+      badge: pendingDisputesCount > 0 ? pendingDisputesCount : null,
+      badgeColor: "bg-red-500",
     },
   ];
 
@@ -296,20 +509,20 @@ export default function OwnerLayout({
   const isVerified = appUser?.isIdentityVerified === true;
 
   const getRoleLabel = () => {
-    if (userRole === "BOTH") return "Propriétaire + Co-hôte";
-    if (userRole === "CO_HOST") return "Co-hôte";
-    return "Propriétaire";
+    if (userRole === "BOTH") return t("role.both");
+    if (userRole === "CO_HOST") return t("role.cohost");
+    return t("role.owner");
   };
 
   const getSidebarSubtitle = () => {
-    if (userRole === "BOTH") return "Espace mixte";
-    if (userRole === "CO_HOST") return "Espace Co-hôte";
+    if (userRole === "BOTH") return t("sidebar.bothSpace");
+    if (userRole === "CO_HOST") return t("sidebar.cohostSpace");
     return t("sidebar.ownerSuite");
   };
 
   const getHeaderRoleLabel = () => {
-    if (userRole === "BOTH") return "Propriétaire + Locataire";
-    if (userRole === "CO_HOST") return "Co-hôte";
+    if (userRole === "BOTH") return t("header.both");
+    if (userRole === "CO_HOST") return t("header.cohost");
     return t("header.owner");
   };
 
@@ -329,7 +542,7 @@ export default function OwnerLayout({
   const sidebarW = sidebarCollapsed ? "w-20" : "w-64";
 
   return (
-    <div className="flex h-screen bg-light dark:bg-slate-900/20erflow-hidden">
+    <div className="flex h-screen bg-light dark:bg-slate-900/20 overflow-hidden">
       {/* Overlay mobile */}
       {isSidebarOpen && (
         <div
@@ -434,6 +647,7 @@ export default function OwnerLayout({
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
+              const hasBadge = item.badge !== null && item.badge > 0;
               return (
                 <li key={item.href} className="group">
                   <Link
@@ -448,11 +662,27 @@ export default function OwnerLayout({
                   >
                     <Icon size={18} className="flex-shrink-0" />
                     {!sidebarCollapsed && (
-                      <span className="font-medium text-sm truncate">
-                        {item.name}
-                      </span>
+                      <>
+                        <span className="font-medium text-sm truncate flex-1">
+                          {item.name}
+                        </span>
+                        {hasBadge && (
+                          <span
+                            className={`min-w-[20px] h-5 flex items-center justify-center text-[10px] font-bold text-white ${item.badgeColor} rounded-full px-1.5 shadow-sm`}
+                          >
+                            {item.badge > 99 ? "99+" : item.badge}
+                          </span>
+                        )}
+                      </>
                     )}
                   </Link>
+                  {sidebarCollapsed && hasBadge && (
+                    <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 z-50 hidden group-hover:block">
+                      <div className="bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap">
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </div>
+                    </div>
+                  )}
                 </li>
               );
             })}
@@ -503,7 +733,7 @@ export default function OwnerLayout({
           </div>
         )}
         {/* Bottom section */}
-        <div className=" mt-auto border-t border-slate-200 dark:border-slate-800 pt-2 pb-4">
+        <div className="mt-auto border-t border-slate-200 dark:border-slate-800 pt-2 pb-4">
           <ul className="space-y-1 px-2">
             <li>
               <button
@@ -558,80 +788,84 @@ export default function OwnerLayout({
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder={t("header.searchPlaceholder")}
-                  className="  rounded-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none  text-sm w-64 xl:w-80 focus:ring-2 focus:ring-blue-300 focus:bg-white dark:focus:bg-slate-700 transition-all outline-none"
+                  className="rounded-full pl-9 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none text-sm w-64 xl:w-80 focus:ring-2 focus:ring-blue-300 focus:bg-white dark:focus:bg-slate-700 transition-all outline-none"
                 />
               </div>
-            {searchQuery.length >= 2 && (
-  <div className="absolute right-0 mt-2 w-[450px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
-    <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-slate-200 dark:border-slate-800">
-      <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
-        {isSearching
-          ? "Recherche..."
-          : `${searchResults.length} résultat(s)`}
-      </p>
-    </div>
-    <div className="max-h-[400px] overflow-y-auto">
-      {isSearching ? (
-        <div className="p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto" />
-        </div>
-      ) : searchResults.length > 0 ? (
-        searchResults.map((result, index) => (
-          <Link
-            key={index}
-            href={`/${locale}${result.href}`}
-            onClick={() => {
-              setSearchQuery("");
-              setSearchResults([]);
-            }}
-            className="block px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b last:border-b-0 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              {/* Icône React selon le type */}
-              <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                  result.type === "listing"
-                    ? "bg-blue-100 text-blue-700"
-                    : result.type === "booking"
-                      ? "bg-purple-100 text-purple-700"
-                      : "bg-green-100 text-green-700"
-                }`}
-              >
-                {result.type === "listing" && <MdOutlineHomeWork size={20} />}
-                {result.type === "booking" && <MdOutlineBookOnline size={20} />}
-                {result.type === "user" && <IoPersonOutline size={20} />}
-              </div>
-
-              {/* Infos */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                  {result.title}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                  {result.subtitle}
-                </p>
-              </div>
-
-              {/* Badge statut */}
-              {result.status && (
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full ${result.statusColor}`}
-                >
-                  {result.statusLabel}
-                </span>
+              {searchQuery.length >= 2 && (
+                <div className="absolute right-0 mt-2 w-[450px] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden z-50">
+                  <div className="px-4 py-3 bg-blue-50 dark:bg-blue-900/20 border-b border-slate-200 dark:border-slate-800">
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                      {isSearching
+                        ? t("search.searching")
+                        : t("search.resultsCount", {
+                            count: searchResults.length,
+                          })}
+                    </p>
+                  </div>
+                  <div className="max-h-[400px] overflow-y-auto">
+                    {isSearching ? (
+                      <div className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto" />
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      searchResults.map((result, index) => (
+                        <Link
+                          key={index}
+                          href={`/${locale}${result.href}`}
+                          onClick={() => {
+                            setSearchQuery("");
+                            setSearchResults([]);
+                          }}
+                          className="block px-4 py-3 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b last:border-b-0 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                                result.type === "listing"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : result.type === "booking"
+                                    ? "bg-purple-100 text-purple-700"
+                                    : "bg-green-100 text-green-700"
+                              }`}
+                            >
+                              {result.type === "listing" && (
+                                <MdOutlineHomeWork size={20} />
+                              )}
+                              {result.type === "booking" && (
+                                <MdOutlineBookOnline size={20} />
+                              )}
+                              {result.type === "user" && (
+                                <IoPersonOutline size={20} />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                                {result.title}
+                              </p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                {result.subtitle}
+                              </p>
+                            </div>
+                            {result.status && (
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${result.statusColor}`}
+                              >
+                                {result.statusLabel}
+                              </span>
+                            )}
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                        {t("search.noResults")}
+                      </div>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
-          </Link>
-        ))
-      ) : (
-        <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-          Aucun résultat trouvé
-        </div>
-      )}
-    </div>
-  </div>
-)}
-            </div>
+
             {/* === ROLE SWITCHER (Propriétaire ↔ Locataire) === */}
             {isBothTenantOwner && (
               <div className="bg-gray-300/35 dark:bg-slate-800 backdrop-blur-sm p-0.5 rounded-full flex items-center gap-0.5 shadow-inner">
@@ -664,6 +898,99 @@ export default function OwnerLayout({
                 </button>
               </div>
             )}
+
+            {/* Bouton Chat avec dropdown */}
+            <div className="relative" ref={chatDropdownRef}>
+              <button
+                onClick={handleChatButtonClick}
+                className="relative p-2 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+              >
+                <MdOutlineChatBubble size={20} />
+                {unreadMessagesCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-4 flex items-center justify-center text-[9px] font-bold text-white bg-gradient-to-r from-rose-500 to-pink-500 rounded-full px-1 shadow-sm">
+                    {unreadMessagesCount > 99 ? "99+" : unreadMessagesCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Dropdown des conversations */}
+              {isChatDropdownOpen && (
+                <div className="absolute right-0 mt-2 w-95 bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                    <h4 className="font-semibold text-sm text-slate-900 dark:text-white">
+                      {t("chat.recentMessages")}
+                    </h4>
+                    <p className="text-[10px] text-slate-500">
+                      {t("chat.clickToOpen")}
+                    </p>
+                  </div>
+
+                  <div className="max-h-[450px] overflow-y-auto">
+                    {chatDropdownLoading ? (
+                      <div className="p-8 text-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-2 border-indigo-500 border-t-transparent mx-auto" />
+                      </div>
+                    ) : chatConversations.length === 0 ? (
+                      <div className="p-8 text-center text-slate-500 text-sm">
+                        {t("chat.noConversations")}
+                      </div>
+                    ) : (
+                      chatConversations.map((conv) => (
+                        <button
+                          key={conv.id}
+                          onClick={() =>
+                            openConversationInFloatingChat(conv.id)
+                          }
+                          className="w-full p-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800 last:border-b-0"
+                        >
+                          <div className="flex gap-3">
+                            <SimpleAvatar
+                              src={conv.otherUser?.image}
+                              name={conv.otherUser?.username || "?"}
+                              size={40}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex justify-between items-start">
+                                <p className="font-medium text-sm text-slate-900 dark:text-white truncate">
+                                  {conv.otherUser?.username || "Utilisateur"}
+                                </p>
+                                {conv.unreadCount > 0 && (
+                                  <span className="min-w-[18px] h-4 flex items-center justify-center text-[9px] font-bold text-white bg-indigo-500 rounded-full px-1">
+                                    {conv.unreadCount > 99
+                                      ? "99+"
+                                      : conv.unreadCount}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-slate-500 truncate">
+                                {conv.listing?.title}
+                              </p>
+                              {conv.lastMessage && (
+                                <p className="text-xs text-slate-400 truncate mt-1">
+                                  {conv.lastMessage}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+
+                  <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                    <Link
+                      href={`/${locale}/dashboard/owner/messages`}
+                      onClick={() => setIsChatDropdownOpen(false)}
+                      className="flex items-center justify-between text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700"
+                    >
+                      <span>{t("chat.viewAll")}</span>{" "}
+                      <MdOutlineKeyboardDoubleArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button
               className="lg:hidden p-2 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
               onClick={() => setIsMobileSearchOpen(true)}
@@ -671,7 +998,7 @@ export default function OwnerLayout({
               <IoSearch size={20} />
             </button>
 
-            {/* ✅ NotificationBell - composant réutilisable */}
+            {/* NotificationBell - composant réutilisable */}
             <NotificationBell />
 
             {/* Profile dropdown */}
@@ -762,6 +1089,14 @@ export default function OwnerLayout({
                       <IoSettingsOutline size={16} />{" "}
                       <span>{t("profile.settings")}</span>
                     </Link>
+                    <Link
+                      href={`/${locale}/dashboard/owner/wallet`}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                      onClick={() => setIsProfileDropdownOpen(false)}
+                    >
+                      <Wallet2Icon size={16} />{" "}
+                      <span>{t("profile.Wallet")}</span>
+                    </Link>
                   </div>
 
                   <div className="pt-1 mt-1 border-t border-slate-100 dark:border-slate-800">
@@ -815,96 +1150,98 @@ export default function OwnerLayout({
         </div>
       )}
 
-  {/* Mobile search modal */}
-{isMobileSearchOpen && (
-  <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 p-4 lg:hidden">
-    <div className="flex items-center gap-2 mb-4">
-      <div className="relative flex-1">
-        <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-        <input
-          type="text"
-          autoFocus
-          placeholder={t("header.searchPlaceholder")}
-          className="w-full pl-9 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-2 focus:ring-blue-300 outline-none"
-          onChange={(e) => handleSearch(e.target.value)}
-        />
-      </div>
-      <button
-        onClick={() => {
-          setIsMobileSearchOpen(false);
-          setSearchQuery("");
-          setSearchResults([]);
-        }}
-        className="px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
-      >
-        {t("search.cancel")}
-      </button>
-    </div>
-    {searchQuery.length >= 2 && (
-      <div className="mt-2 max-h-[calc(100vh-120px)] overflow-y-auto">
-        {isSearching ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto" />
-          </div>
-        ) : searchResults.length > 0 ? (
-          searchResults.map((result, index) => (
-            <Link
-              key={index}
-              href={`/${locale}${result.href}`}
+      {/* Mobile search modal */}
+      {isMobileSearchOpen && (
+        <div className="fixed inset-0 z-50 bg-white dark:bg-slate-900 p-4 lg:hidden">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="relative flex-1">
+              <IoSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                autoFocus
+                placeholder={t("header.searchPlaceholder")}
+                className="w-full pl-9 pr-4 py-3 bg-slate-100 dark:bg-slate-800 rounded-lg focus:ring-2 focus:ring-blue-300 outline-none"
+                onChange={(e) => handleSearch(e.target.value)}
+              />
+            </div>
+            <button
               onClick={() => {
                 setIsMobileSearchOpen(false);
                 setSearchQuery("");
                 setSearchResults([]);
               }}
-              className="block p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-slate-200 dark:border-slate-800 transition-colors"
+              className="px-4 py-3 text-slate-600 dark:text-slate-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
             >
-              <div className="flex items-center gap-3">
-                {/* Icône React selon le type - PAS D'ÉMOJIS */}
-                <div
-                  className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    result.type === "listing"
-                      ? "bg-blue-100 text-blue-700"
-                      : result.type === "booking"
-                        ? "bg-purple-100 text-purple-700"
-                        : "bg-green-100 text-green-700"
-                  }`}
-                >
-                  {result.type === "listing" && <MdOutlineHomeWork size={20} />}
-                  {result.type === "booking" && <MdOutlineBookOnline size={20} />}
-                  {result.type === "user" && <IoPersonOutline size={20} />}
-                </div>
-
-                {/* Infos */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-medium text-slate-900 dark:text-white truncate">
-                    {result.title}
-                  </p>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                    {result.subtitle}
-                  </p>
-                </div>
-
-                {/* Badge statut */}
-                {result.status && (
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full ${result.statusColor}`}
-                  >
-                    {result.statusLabel}
-                  </span>
-                )}
-              </div>
-            </Link>
-          ))
-        ) : (
-          <div className="p-8 text-center text-slate-500">
-            {t("search.noResults")}
+              {t("search.cancel")}
+            </button>
           </div>
-        )}
-      </div>
-    )}
-  </div>
-)}
-      <FloatingChat />
+          {searchQuery.length >= 2 && (
+            <div className="mt-2 max-h-[calc(100vh-120px)] overflow-y-auto">
+              {isSearching ? (
+                <div className="p-8 text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-4 border-blue-500 border-t-transparent mx-auto" />
+                </div>
+              ) : searchResults.length > 0 ? (
+                searchResults.map((result, index) => (
+                  <Link
+                    key={index}
+                    href={`/${locale}${result.href}`}
+                    onClick={() => {
+                      setIsMobileSearchOpen(false);
+                      setSearchQuery("");
+                      setSearchResults([]);
+                    }}
+                    className="block p-4 hover:bg-blue-50 dark:hover:bg-blue-900/20 cursor-pointer border-b border-slate-200 dark:border-slate-800 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          result.type === "listing"
+                            ? "bg-blue-100 text-blue-700"
+                            : result.type === "booking"
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-green-100 text-green-700"
+                        }`}
+                      >
+                        {result.type === "listing" && (
+                          <MdOutlineHomeWork size={20} />
+                        )}
+                        {result.type === "booking" && (
+                          <MdOutlineBookOnline size={20} />
+                        )}
+                        {result.type === "user" && (
+                          <IoPersonOutline size={20} />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-base font-medium text-slate-900 dark:text-white truncate">
+                          {result.title}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
+                          {result.subtitle}
+                        </p>
+                      </div>
+                      {result.status && (
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${result.statusColor}`}
+                        >
+                          {result.statusLabel}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="p-8 text-center text-slate-500">
+                  {t("search.noResults")}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+          <FloatingChat />
+
     </div>
   );
 }

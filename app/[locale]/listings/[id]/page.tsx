@@ -1,4 +1,3 @@
-// app/[locale]/listings/[id]/page.tsx
 "use client";
 
 import { useParams } from "next/navigation";
@@ -67,20 +66,23 @@ import AvailabilityCalendar from "@/components/ui/calendar/AvailabilityCalendar"
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { IdentityVerificationModal } from "@/components/ui/IdentityVerificationModal";
 import { TbBeach } from "react-icons/tb";
-import { Calendar, Plane } from "lucide-react";
+import { AlertCircle, Calendar, CheckCircle, Plane, X } from "lucide-react";
 
 // Dynamically import map with no SSR
-const ListingMap = dynamic(() => import("@/components/ui/maps/ListingMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-2xl">
-      <div className="flex flex-col items-center gap-2">
-        <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-        <p className="text-xs text-gray-500">Chargement de la carte...</p>
+const ListingMap = dynamic(
+  () => import("@/components/ui/maps/ListingMap").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-2xl">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <p className="text-xs text-gray-500">Chargement de la carte...</p>
+        </div>
       </div>
-    </div>
-  ),
-});
+    ),
+  },
+);
 
 // Types for POIs
 interface NearbyPOI {
@@ -136,9 +138,6 @@ const EQUIP_ICONS: Record<string, React.ReactNode> = {
   washer: <FaWind />,
   tv: <IoTvOutline />,
   garden: <IoLeafOutline />,
-  bbq: <FaFire />,
-  iron: <MdOutlineIron />,
-  sea: <IoEyeOutline />,
   elevator: <MdOutlineElevator />,
   balcony: <MdBalcony />,
   shower: <FaShower />,
@@ -149,7 +148,6 @@ const EQUIP_NAMES_FR: Record<string, string> = {
   wifi: "Wi-Fi haut débit",
   tv: "Télévision",
   smartTv: "Smart TV",
-  netflix: "Netflix",
   ac: "Climatisation",
   airConditioning: "Climatisation",
   heating: "Chauffage",
@@ -157,8 +155,6 @@ const EQUIP_NAMES_FR: Record<string, string> = {
   washer: "Machine à laver",
   dryer: "Sèche-linge",
   dishwasher: "Lave-vaisselle",
-  microwave: "Micro-ondes",
-  oven: "Four",
   coffeeMaker: "Cafetière",
   parking: "Parking gratuit",
   garage: "Garage",
@@ -167,13 +163,8 @@ const EQUIP_NAMES_FR: Record<string, string> = {
   garden: "Jardin",
   terrace: "Terrasse",
   balcony: "Balcon",
-  bbq: "Barbecue",
   gym: "Salle de sport",
   elevator: "Ascenseur",
-  iron: "Fer à repasser",
-  seaView: "Vue sur mer",
-  mountainView: "Vue sur montagne",
-  cityView: "Vue sur ville",
   smokingAllowed: "Fumeurs acceptés",
   petsAllowed: "Animaux acceptés",
   isFurnished: "Meublé",
@@ -630,17 +621,17 @@ function HGallery({
         {canL && (
           <button
             onClick={() => scroll(-1)}
-            className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full backdrop-blur-xl border flex items-center justify-center text-white/60 hover:text-white transition-all opacity-0 group-hover/g:opacity-100 ${dark ? "bg-black/80 border-white/10" : "bg-white/80 border-gray-200"}`}
+            className={`absolute left-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all opacity-0 group-hover/g:opacity-100 hover:scale-110 ${dark ? "bg-sky-600/90 border-indigo-400 text-white" : "bg-sky-600 text-white border-indigo-400"}`}
           >
-            <IoChevronBackOutline className="text-sm" />
+            <IoChevronBackOutline className="text-lg" />
           </button>
         )}
         {canR && (
           <button
             onClick={() => scroll(1)}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full backdrop-blur-xl border flex items-center justify-center text-white/60 hover:text-white transition-all opacity-0 group-hover/g:opacity-100 ${dark ? "bg-black/80 border-white/10" : "bg-white/80 border-gray-200"}`}
+            className={`absolute right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full shadow-lg flex items-center justify-center transition-all opacity-0 group-hover/g:opacity-100 hover:scale-110 ${dark ? "bg-sky-600/90 border-indigo-400 text-white" : "bg-sky-600 text-white border-indigo-400"}`}
           >
-            <IoChevronForwardOutline className="text-sm" />
+            <IoChevronForwardOutline className="text-lg" />
           </button>
         )}
         <div
@@ -674,38 +665,40 @@ function Toast({
   message,
   type,
   onClose,
-  dark,
 }: {
   message: string;
   type: "success" | "error" | "info";
   onClose: () => void;
-  dark: boolean;
 }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3500);
     return () => clearTimeout(t);
   }, [onClose]);
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
-      className="fixed top-6 right-6 z-[100]"
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="fixed top-24 left-1/2 -translate-x-1/2 z-50"
     >
       <div
-        className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-2xl text-sm font-bold shadow-2xl backdrop-blur-2xl border ${type === "success" ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20" : type === "error" ? "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:border-rose-500/20" : "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:border-sky-500/20"}`}
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+          type === "success"
+            ? "bg-green-500 text-white"
+            : type === "error"
+              ? "bg-red-500 text-white"
+              : "bg-blue-500 text-white"
+        }`}
       >
         {type === "success" ? (
-          <IoCheckmarkCircleOutline />
+          <CheckCircle className="w-5 h-5" />
         ) : (
-          <IoInformationCircleOutline />
+          <AlertCircle className="w-5 h-5" />
         )}
-        <span>{message}</span>
-        <button
-          onClick={onClose}
-          className="ml-2 p-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10"
-        >
-          <IoCloseOutline className="text-xs" />
+        <span className="text-sm font-medium">{message}</span>
+        <button onClick={onClose} className="ml-2 hover:opacity-70">
+          <X className="w-4 h-4" />
         </button>
       </div>
     </motion.div>
@@ -715,6 +708,7 @@ function Toast({
 export default function ListingDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const locale = (params.locale as string) || "fr";
   const t = useTranslations("ListingPage");
 
   const {
@@ -753,7 +747,10 @@ export default function ListingDetailPage() {
   const [infoRequestLoading, setInfoRequestLoading] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [sentInfoRequest, setSentInfoRequest] = useState<any>(null);
-
+  const [infoRequestCount, setInfoRequestCount] = useState(0);
+  // Owner/Admin states
+  const [isOwner, setIsOwner] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   // POI states
   const [nearbyPOIs, setNearbyPOIs] = useState<NearbyPOI[]>([]);
   const [poiFilters, setPoiFilters] = useState<string[]>([]);
@@ -772,13 +769,70 @@ export default function ListingDetailPage() {
       setToast({ message: m, type: t }),
     [],
   );
+  // Nettoyage de la carte au démontage du composant
+  useEffect(() => {
+    return () => {
+      const mapContainer = document.querySelector(".leaflet-container");
+      if (mapContainer && (mapContainer as any)._leaflet_id) {
+        const map = (mapContainer as any)._leaflet_map;
+        if (map && typeof map.remove === "function") {
+          map.remove();
+        }
+      }
+    };
+  }, []);
+  useEffect(() => {
+    if (showInfoModal) {
+      const timer = setTimeout(() => {
+        setShowInfoModal(false);
+      }, 10000);
 
+      return () => clearTimeout(timer);
+    }
+  }, [showInfoModal]);
   useEffect(() => {
     setMounted(true);
     const saved = localStorage.getItem("favorites");
     if (saved) setIsFav((JSON.parse(saved) as string[]).includes(id));
+    const savedRequestCount = localStorage.getItem(`info_requests_${id}`);
+    if (savedRequestCount) {
+      setInfoRequestCount(parseInt(savedRequestCount, 10));
+    }
   }, [id]);
+  // Vérifier si l'utilisateur est le propriétaire ou admin
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const res = await fetch("/api/users/me");
+        if (res.ok) {
+          const data = await res.json();
+          const user = data.user;
+          console.log(" Utilisateur connecté:", {
+            id: user?.id,
+            role: user?.role,
+          });
+          console.log("Propriétaire annonce:", {
+            id: listing?.owner?.id,
+            name: listing?.owner?.name,
+          });
+          console.log("IDs identiques?", user?.id === listing?.owner?.id);
 
+          setIsAdmin(user?.role === "ADMIN");
+          setIsOwner(user?.id === listing?.owner?.id);
+
+          console.log(" Résultat final:", {
+            isOwner: user?.id === listing?.owner?.id,
+            isAdmin: user?.role === "ADMIN",
+          });
+        }
+      } catch (error) {
+        console.error("Erreur vérification rôle:", error);
+      }
+    };
+    if (listing?.owner?.id) {
+      checkUserRole();
+    }
+  }, [listing?.owner?.id]);
   // Force map remount when listing or dark mode changes
   useEffect(() => {
     if (listing?.id) {
@@ -787,38 +841,38 @@ export default function ListingDetailPage() {
   }, [listing?.id, dark]);
 
   const fetchNearbyPOIs = useCallback(async () => {
-    console.log("🔍 fetchNearbyPOIs START");
+    console.log(" fetchNearbyPOIs START");
 
     if (!listing?.latitude || !listing?.longitude) {
-      console.log("❌ Pas de coordonnées pour les POIs");
+      console.log(" Pas de coordonnées pour les POIs");
       setNearbyPOIs([]);
       return;
     }
 
     console.log(
-      `📍 Chargement POIs pour: lat=${listing.latitude}, lng=${listing.longitude}`,
+      ` Chargement POIs pour: lat=${listing.latitude}, lng=${listing.longitude}`,
     );
     setLoadingPOIs(true);
 
     try {
       const url = `/api/listings/${id}/pois?radius=2000`;
-      console.log("🌐 Appel API:", url);
+      console.log(" Appel API:", url);
 
       const res = await fetch(url);
-      console.log("📡 Réponse reçue, status:", res.status);
+      console.log(" Réponse reçue, status:", res.status);
 
       const data = await res.json();
-      console.log("📦 Données POIs reçues:", data);
+      console.log(" Données POIs reçues:", data);
 
       if (data.success && data.pois) {
-        console.log(`✅ ${data.pois.length} POIs trouvés`);
+        console.log(` ${data.pois.length} POIs trouvés`);
         setNearbyPOIs(data.pois);
       } else {
-        console.log("⚠️ Aucun POI ou erreur dans la réponse");
+        console.log("Aucun POI ou erreur dans la réponse");
         setNearbyPOIs([]);
       }
     } catch (error) {
-      console.error("❌ Erreur fetchNearbyPOIs:", error);
+      console.error(" Erreur fetchNearbyPOIs:", error);
       setNearbyPOIs([]);
     } finally {
       setLoadingPOIs(false);
@@ -862,8 +916,13 @@ export default function ListingDetailPage() {
 
   // Handle info request
   const sendInfoRequest = async () => {
+    if (infoRequestCount >= 3) {
+      showToast(t("toastLimitReached"), "error");
+      return;
+    }
+
     if (!checkIn || !checkOut) {
-      showToast("Sélectionnez vos dates", "error");
+      showToast(t("toastDateRequired"), "error");
       return;
     }
     setInfoRequestLoading(true);
@@ -881,14 +940,18 @@ export default function ListingDetailPage() {
       });
       const data = await response.json();
       if (response.ok) {
+        const newCount = infoRequestCount + 1;
+        setInfoRequestCount(newCount);
+        localStorage.setItem(`info_requests_${id}`, newCount.toString());
+
         setSentInfoRequest(data.infoRequest);
         setShowInfoModal(true);
-        showToast("Demande envoyée avec succès !", "success");
+        showToast(t("toastRequestSent"), "success");
       } else {
-        showToast(data.error || "Une erreur est survenue", "error");
+        showToast(data.error || t("toastError"), "error");
       }
     } catch {
-      showToast("Erreur de connexion", "error");
+      showToast(t("toastConnectionError"), "error");
     } finally {
       setInfoRequestLoading(false);
     }
@@ -910,7 +973,7 @@ export default function ListingDetailPage() {
     localStorage.setItem("favorites", JSON.stringify(ids));
     window.dispatchEvent(new Event("favorites-updated"));
     showToast(
-      next ? "Ajouté aux favoris" : "Retiré des favoris",
+      next ? t("toastFavoriteAdded") : t("toastFavoriteRemoved"),
       next ? "success" : "info",
     );
   };
@@ -923,22 +986,19 @@ export default function ListingDetailPage() {
       url: window.location.href,
     };
 
-    // Vérifier si l'API Web Share est disponible (mobile/ navigateurs compatibles)
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share(shareData);
-        showToast("Partagé avec succès !", "success");
+        showToast(t("toastShareSuccess"), "success");
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          // Fallback : copier le lien
           await navigator.clipboard.writeText(window.location.href);
-          showToast("Lien copié dans le presse-papier", "success");
+          showToast(t("toastLinkCopied"), "success");
         }
       }
     } else {
-      // Fallback pour les navigateurs qui ne supportent pas Web Share
       await navigator.clipboard.writeText(window.location.href);
-      showToast("Lien copié dans le presse-papier", "success");
+      showToast(t("toastLinkCopied"), "success");
     }
     setShowShare(false);
   };
@@ -959,13 +1019,13 @@ export default function ListingDetailPage() {
       <div className="min-h-screen bg-gradient-to-br from-sky-100 via-white to-purple-100 dark:from-slate-950 dark:via-slate-800 dark:to-purple-900 flex items-center justify-center">
         <div className="text-center space-y-4">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Logement non trouvé
+            {t("notFound")}
           </h3>
           <Link
-            href="/fr/search"
+            href={`/${locale}/search`}
             className="text-sky-600 dark:text-sky-400 hover:underline text-sm font-medium"
           >
-            Retour à la recherche
+            {t("backToSearch")}
           </Link>
         </div>
       </div>
@@ -985,7 +1045,6 @@ export default function ListingDetailPage() {
       ? nearbyPOIs.filter((p) => poiFilters.includes(p.category))
       : nearbyPOIs;
 
-  // Si pas encore monté, retourner un placeholder
   if (!mounted) return null;
 
   return (
@@ -993,15 +1052,13 @@ export default function ListingDetailPage() {
       className={`min-h-screen transition-colors duration-700 ${dark ? "text-white" : "text-gray-900"}`}
     >
       <Background />
-      <TenantHeader />
-
+      {!isOwner && !isAdmin && <TenantHeader />}
       <AnimatePresence>
         {toast && (
           <Toast
             message={toast.message}
             type={toast.type}
             onClose={() => setToast(null)}
-            dark={dark}
           />
         )}
       </AnimatePresence>
@@ -1018,125 +1075,163 @@ export default function ListingDetailPage() {
 
       {/* Info Request Modal */}
       {showInfoModal && sentInfoRequest && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-2xl animate-in zoom-in-95 duration-200">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          onClick={() => setShowInfoModal(false)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-6 shadow-2xl"
+          >
+            <button
+              onClick={() => setShowInfoModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-all hover:scale-110"
+            >
+              <IoCloseOutline className="text-lg" />
+            </button>
+
             <div className="text-center">
-              <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center mx-auto mb-3">
-                <IoCheckmarkCircleOutline className="text-2xl text-emerald-500" />
-              </div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                Demande envoyée !
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.1, type: "spring", stiffness: 200 }}
+                className="w-16 h-16 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center mx-auto mb-4"
+              >
+                <IoCheckmarkCircleOutline className="text-3xl text-emerald-500" />
+              </motion.div>
+
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                {t("modalTitle")}
               </h3>
-              <div className="bg-sky-50 dark:bg-sky-950/30 rounded-xl p-3 mb-4 text-left">
-                <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">
-                  Votre demande d'information a été transmise à l'hôte.
-                </p>
-                <div className="border-t border-sky-100 dark:border-sky-900/50 my-2 pt-2">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    <IoCalendarOutline className="text-sky-500" />{" "}
-                    <span className="font-semibold">Dates :</span>{" "}
+
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                {t("modalMessage")}
+              </p>
+
+              <div className="bg-sky-50 dark:bg-sky-950/30 rounded-xl p-4 mb-4 text-left">
+                <div className="space-y-2">
+                  <p className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                    <IoCalendarOutline className="text-sky-500 text-sm" />
+                    <span className="font-semibold">{t("modalDates")}</span>
                     {fmtDate(checkIn)} → {fmtDate(checkOut)}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-2 mt-1">
-                    <IoPeopleOutline className="text-sky-500" />{" "}
-                    <span className="font-semibold">Voyageurs :</span>{" "}
-                    {localGuests === 0 ? "Non spécifié" : localGuests}
+                  <p className="text-xs text-gray-600 dark:text-gray-300 flex items-center gap-2">
+                    <IoPeopleOutline className="text-sky-500 text-sm" />
+                    <span className="font-semibold">{t("modalGuests")}</span>
+                    {localGuests === 0 ? t("modalNotSpecified") : localGuests}
                   </p>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setShowInfoModal(false)}
-                  className="flex-1 px-3 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-200 transition"
-                >
-                  Fermer
-                </button>
-                <Link href="/fr/notifications" className="flex-1">
-                  <button className="w-full px-3 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition">
-                    Voir notifications
-                  </button>
-                </Link>
-              </div>
+
+              <p className="text-[10px] text-gray-400 dark:text-gray-500">
+                {t("modalClosing")}
+              </p>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
 
-      {/* Header with Breadcrumb inline */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={`relative z-20 transition-colors duration-700 bg-transparent`}
-      >
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* Breadcrumb inline with back button */}
-            <div className="flex items-center gap-4">
-              {/* Breadcrumb navigation */}
-              <div className="flex items-center gap-3 text-sm">
-                <Link
-                  href="/fr/search"
-                  className={`flex items-center gap-1.5 transition-all duration-300 ${dark ? "text-white/40 hover:text-indigo-400" : "text-gray-500 hover:text-indigo-600"} font-medium uppercase tracking-wide`}
-                >
-                  <span>RECHERCHE</span>
-                </Link>
-                <IoChevronForwardOutline
-                  className={`text-[10px] ${dark ? "text-white/20" : "text-gray-300"}`}
-                />
-                <span
-                  className={`font-semibold truncate max-w-[220px] uppercase tracking-wide ${dark ? "text-white/80" : "text-gray-800"}`}
-                >
-                  {listing.title}
-                </span>
+            {/* Header pour owner/admin - seulement le message d'aperçu, pas de boutons */}
+      {(isOwner || isAdmin) && (
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`relative z-20 transition-colors duration-700 bg-transparent mt-2`}
+        >
+          <div className="max-w-7xl mx-auto px-6 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <IoEyeOutline className="text-amber-600 dark:text-amber-400 text-xl" />
+                </div>
+                <div>
+                  <p className="text-base font-bold text-amber-600 dark:text-amber-400">
+                    {isAdmin ? t("adminPreview") : t("ownerPreview")}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {isAdmin ? t("adminPreviewMessage") : t("ownerPreviewMessage")}
+                  </p>
+                </div>
               </div>
+              {/* Pas de boutons share/favorite pour owner/admin */}
             </div>
+          </div>
+        </motion.header>
+      )}
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-2">
-              <div className="relative">
+      {/* Header pour les visiteurs normaux - breadcrumb complet avec boutons */}
+      {!isOwner && !isAdmin && (
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className={`relative z-20 transition-colors duration-700 bg-transparent`}
+        >
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3 text-sm">
+                  <Link
+                    href={`/${locale}/search`}
+                    className={`flex items-center gap-1.5 transition-all duration-300 ${dark ? "text-white/40 hover:text-indigo-400" : "text-gray-500 hover:text-indigo-600"} font-medium uppercase tracking-wide`}
+                  >
+                    <span>{t("search")}</span>
+                  </Link>
+                  <IoChevronForwardOutline
+                    className={`text-[20px] ${dark ? "text-white/20" : "text-gray-300"}`}
+                  />
+                  <span
+                    className={`font-semibold truncate max-w-[220px] uppercase tracking-wide ${dark ? "text-white/80" : "text-gray-800"}`}
+                  >
+                    {listing.title}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* share button */}
+                <div className="relative">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setShowShare(!showShare)}
+                    className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${dark ? "bg-white/5 border-white/10 text-white/40 hover:text-white/60" : "bg-white border-gray-200 text-gray-400 hover:text-gray-600"}`}
+                  >
+                    <IoShareSocialOutline className="text-sm" />
+                  </motion.button>
+                  {showShare && (
+                    <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden">
+                      <button onClick={handleShare} className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                        <IoShareSocialOutline className="text-sm text-sky-500" />
+                        {t("share")}
+                      </button>
+                      <button onClick={() => { navigator.clipboard.writeText(window.location.href); showToast(t("toastLinkCopied"), "success"); setShowShare(false); }} className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors border-t border-gray-100 dark:border-slate-700">
+                        <IoCopyOutline className="text-sm text-sky-500" />
+                        {t("copyLink")}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                {/* favorite button */}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => setShowShare(!showShare)}
-                  className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${dark ? "bg-white/5 border-white/10 text-white/40 hover:text-white/60" : "bg-white border-gray-200 text-gray-400 hover:text-gray-600"}`}
+                  onClick={handleToggleFavorite}
+                  className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${isFav ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : dark ? "bg-white/5 border-white/10 text-white/40 hover:text-rose-400" : "bg-white border-gray-200 text-gray-400 hover:text-rose-400 hover:border-rose-200"}`}
                 >
-                  <IoShareSocialOutline className="text-sm" />
+                  {isFav ? <IoHeart /> : <IoHeartOutline />}
                 </motion.button>
-                {showShare && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl z-40 overflow-hidden">
-                    <button
-                      onClick={handleShare}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
-                    >
-                      <IoShareSocialOutline className="text-sm text-sky-500" />
-                      Partager
-                    </button>
-                    <button
-                      onClick={() => {
-                        navigator.clipboard.writeText(window.location.href);
-                        showToast("Lien copié !", "success");
-                        setShowShare(false);
-                      }}
-                      className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors border-t border-gray-100 dark:border-slate-700"
-                    >
-                      <IoCopyOutline className="text-sm text-sky-500" />
-                      Copier le lien
-                    </button>
-                  </div>
-                )}
               </div>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleToggleFavorite}
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all ${isFav ? "bg-rose-500/10 border-rose-500/20 text-rose-400" : dark ? "bg-white/5 border-white/10 text-white/40 hover:text-rose-400" : "bg-white border-gray-200 text-gray-400 hover:text-rose-400 hover:border-rose-200"}`}
-              >
-                {isFav ? <IoHeart /> : <IoHeartOutline />}
-              </motion.button>
             </div>
           </div>
-        </div>
-      </motion.header>
+        </motion.header>
+      )}
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-24">
         <HGallery images={images} onOpen={setLbIdx} dark={dark} />
@@ -1153,14 +1248,14 @@ export default function ListingDetailPage() {
                 <span
                   className={`text-[9px] font-extrabold uppercase tracking-[0.15em] px-2.5 py-0.5 rounded-full border ${dark ? "text-white/30 bg-white/5 border-white/10" : "text-indigo-500 bg-indigo-50 border-indigo-100"}`}
                 >
-                  {listing.type || "Logement"}
+                  {listing.type || t("property")}
                 </span>
                 {listing.isVerified && (
                   <span
                     className={`flex items-center gap-1 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border ${dark ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" : "text-emerald-600 bg-emerald-50 border-emerald-200"}`}
                   >
                     <IoShieldCheckmarkOutline className="text-[10px]" />
-                    Vérifié
+                    {t("verified")}
                   </span>
                 )}
                 {listing.rating > 0 && (
@@ -1168,7 +1263,7 @@ export default function ListingDetailPage() {
                     className={`text-[9px] flex items-center gap-1 ${dark ? "text-white/20" : "text-gray-400"}`}
                   >
                     <IoStar className="text-amber-400 text-[10px]" />
-                    {listing.rating} · {listing.reviewCount} avis
+                    {listing.rating} · {listing.reviewCount} {t("reviewsCount")}
                   </span>
                 )}
               </div>
@@ -1186,7 +1281,7 @@ export default function ListingDetailPage() {
                 {listing.governorate}
               </p>
             </motion.div>
-            {/* ✅ AJOUTE ICI - BANDEAU MODE VACANCES */}
+
             {listing.vacationMode &&
               listing.vacationStartDate &&
               listing.vacationEndDate && (
@@ -1204,16 +1299,15 @@ export default function ListingDetailPage() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-bold text-violet-800 dark:text-violet-300 flex items-center gap-2">
-                        Mode vacances
+                        {t("vacationMode")}
                       </h4>
                       <p className="text-sm text-violet-600 dark:text-violet-400">
-                        {listing.vacationMessage ||
-                          "L'hôte est actuellement en vacances."}
+                        {listing.vacationMessage || t("vacationModeMessage")}
                       </p>
                       {listing.vacationEndDate && (
                         <p className="text-xs text-violet-500 dark:text-violet-500 mt-1 flex items-center gap-1">
                           <Calendar size={12} />
-                          Disponible à partir du{" "}
+                          {t("availableFrom")}{" "}
                           {new Date(listing.vacationEndDate).toLocaleDateString(
                             "fr-FR",
                             { day: "numeric", month: "long", year: "numeric" },
@@ -1225,7 +1319,6 @@ export default function ListingDetailPage() {
                 </motion.div>
               )}
 
-            {/* Quick Stats Cards */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1234,36 +1327,34 @@ export default function ListingDetailPage() {
               <h2
                 className={`text-sm font-extrabold mb-4 uppercase tracking-wide ${dark ? "text-white/80" : "text-gray-800"}`}
               >
-                EN UN COUP D'ŒIL
+                {t("atAGlance")}
               </h2>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {[
                   {
                     icon: <IoBedOutline className="text-xl" />,
                     value: listing.bedrooms,
-                    unit: "CHAMBRES",
+                    unit: t("bedrooms"),
                   },
                   {
                     icon: <FaShower className="text-xl" />,
                     value: listing.bathrooms,
-                    unit: "SALLES DE BAIN",
+                    unit: t("bathrooms"),
                   },
                   {
                     icon: <MdOutlineSquareFoot className="text-xl" />,
                     value: listing.surfaceArea,
-                    unit: "M²",
+                    unit: t("surfaceArea"),
                   },
                   {
                     icon: <IoPeopleOutline className="text-xl" />,
-                    value: listing.maxGuests
-                      ? listing.maxGuests
-                      : "Non spécifié",
-                    unit: "VOYAGEURS MAX",
+                    value: listing.maxGuests || t("notSpecified"),
+                    unit: t("maxGuestsLabel"),
                   },
                   {
                     icon: <FaUtensils className="text-xl" />,
                     value: listing.numberOfKitchens || 1,
-                    unit: "CUISINE(S)",
+                    unit: t("kitchens"),
                   },
                   {
                     icon: <IoLeafOutline className="text-xl" />,
@@ -1273,7 +1364,7 @@ export default function ListingDetailPage() {
                         : listing.hasGarden === false
                           ? "✗"
                           : "—",
-                    unit: "JARDIN",
+                    unit: t("garden"),
                   },
                   {
                     icon: <MdBalcony className="text-xl" />,
@@ -1283,7 +1374,7 @@ export default function ListingDetailPage() {
                         : listing.hasBalcony === false
                           ? "✗"
                           : "—",
-                    unit: "BALCON",
+                    unit: t("balcony"),
                   },
                   {
                     icon: <MdOutlineElevator className="text-xl" />,
@@ -1293,7 +1384,7 @@ export default function ListingDetailPage() {
                         : listing.hasElevator === false
                           ? "✗"
                           : "—",
-                    unit: "ASCENSEUR",
+                    unit: t("elevator"),
                   },
                   {
                     icon: <FaParking className="text-xl" />,
@@ -1303,7 +1394,7 @@ export default function ListingDetailPage() {
                         : listing.hasGarage === false
                           ? "✗"
                           : "—",
-                    unit: "PARKING",
+                    unit: t("parking"),
                   },
                   {
                     icon: <IoHomeOutline className="text-xl" />,
@@ -1313,7 +1404,7 @@ export default function ListingDetailPage() {
                         : listing.isFurnished === false
                           ? "✗"
                           : "—",
-                    unit: "MEUBLÉ",
+                    unit: t("furnished"),
                   },
                 ]
                   .slice(0, 10)
@@ -1323,11 +1414,7 @@ export default function ListingDetailPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 + idx * 0.05 }}
-                      className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${
-                        dark
-                          ? "bg-slate-800/40 border border-white/10"
-                          : "bg-white border border-white shadow-sm"
-                      }`}
+                      className={`flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 ${dark ? "bg-slate-800/40 border border-white/10" : "bg-white border border-white shadow-sm"}`}
                     >
                       <span
                         className={dark ? "text-white/40" : "text-indigo-400"}
@@ -1349,11 +1436,10 @@ export default function ListingDetailPage() {
               </div>
             </motion.div>
 
-            {/* Description */}
             {listing.description && (
               <Section
-                title="À PROPOS"
-                sub="Ce que cette propriété offre de spécial"
+                title={t("about")}
+                sub={t("aboutSub")}
                 delay={0.22}
                 dark={dark}
               >
@@ -1365,11 +1451,10 @@ export default function ListingDetailPage() {
               </Section>
             )}
 
-            {/* Equipment - 3D cards */}
             {equipmentItems.length > 0 && (
               <Section
-                title="ÉQUIPEMENTS"
-                sub={`${equipmentItems.length} disponibles`}
+                title={t("equipment")}
+                sub={t("equipmentSub", { count: equipmentItems.length })}
                 delay={0.25}
                 action={
                   equipmentItems.length > 9 ? (
@@ -1379,8 +1464,8 @@ export default function ListingDetailPage() {
                       className={`text-[10px] font-bold transition-colors uppercase ${dark ? "text-white/40 hover:text-white/60" : "text-indigo-500 hover:text-indigo-700"}`}
                     >
                       {showAllEq
-                        ? "VOIR MOINS"
-                        : `VOIR LES ${equipmentItems.length}`}
+                        ? t("seeLess")
+                        : t("seeMore", { count: equipmentItems.length })}
                     </motion.button>
                   ) : undefined
                 }
@@ -1405,12 +1490,11 @@ export default function ListingDetailPage() {
               </Section>
             )}
 
-            {/* Calendar */}
-            <Section title="DISPONIBILITÉS" delay={0.28} dark={dark}>
+            <Section title={t("availability")} delay={0.28} dark={dark}>
               <p
                 className={`text-xs ${dark ? "text-white/30" : "text-gray-400"} mb-3`}
               >
-                Sélectionnez vos dates
+                {t("selectDates")}
               </p>
               {checkIn && checkOut && nights > 0 && (
                 <motion.div
@@ -1420,8 +1504,8 @@ export default function ListingDetailPage() {
                 >
                   <IoCalendarOutline className="text-sky-500 text-sm" />
                   <span className="text-[11px] font-semibold text-sky-700 dark:text-sky-400">
-                    {nights} nuit{nights > 1 ? "s" : ""} · {fmtDate(checkIn)} →{" "}
-                    {fmtDate(checkOut)}
+                    {nights} {nights > 1 ? t("nights_plural") : t("nights")} ·{" "}
+                    {fmtDate(checkIn)} → {fmtDate(checkOut)}
                   </span>
                   <button
                     onClick={() => {
@@ -1445,7 +1529,6 @@ export default function ListingDetailPage() {
                   selectedStart={checkIn}
                   selectedEnd={checkOut}
                   onSelectRange={handleCalendarSelect}
-                  // ✅ AJOUTE CETTE LIGNE
                   listing={{
                     vacationMode: listing.vacationMode,
                     vacationStartDate: listing.vacationStartDate,
@@ -1455,29 +1538,35 @@ export default function ListingDetailPage() {
               </div>
             </Section>
 
-            {/* Host Section - AVEC BIO DYNAMIQUE */}
-            <Section title="VOTRE HÔTE" delay={0.2} dark={dark}>
+            <Section title={t("host")} delay={0.2} dark={dark}>
               <div className="flex flex-col sm:flex-row gap-4">
-                <motion.div whileHover={{ scale: 1.05 }} className="relative">
-                  {listing.owner?.avatar ? (
-                    <img
-                      src={getAvatarUrl(listing.owner.avatar)}
-                      alt={listing.owner.name}
-                      className="w-14 h-14 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-lg shadow-lg">
-                      {listing.owner?.name?.charAt(0)?.toUpperCase() || "H"}
-                    </div>
-                  )}
-                  {listing.owner?.isVerified && (
-                    <div
-                      className={`absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border-2 ${dark ? "border-slate-900" : "border-white"}`}
-                    >
-                      <IoCheckmarkCircleOutline className="text-white text-[8px]" />
-                    </div>
-                  )}
-                </motion.div>
+                <Link
+                  href={`/${locale}/profile/${listing.owner?.username || listing.owner?.id}`}
+                >
+                  <motion.div
+                    whileHover={{ scale: 1.05 }}
+                    className="relative cursor-pointer"
+                  >
+                    {listing.owner?.avatar ? (
+                      <img
+                        src={getAvatarUrl(listing.owner.avatar)}
+                        alt={listing.owner.name}
+                        className="w-14 h-14 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 flex items-center justify-center text-white font-extrabold text-lg shadow-lg">
+                        {listing.owner?.name?.charAt(0)?.toUpperCase() || "H"}
+                      </div>
+                    )}
+                    {listing.owner?.isVerified && (
+                      <div
+                        className={`absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full flex items-center justify-center border-2 ${dark ? "border-slate-900" : "border-white"}`}
+                      >
+                        <IoCheckmarkCircleOutline className="text-white text-[8px]" />
+                      </div>
+                    )}
+                  </motion.div>
+                </Link>
                 <div className="flex-1">
                   <p
                     className={`text-sm font-bold ${dark ? "text-white/80" : "text-gray-800"}`}
@@ -1488,66 +1577,65 @@ export default function ListingDetailPage() {
                     <span
                       className={`text-[10px] flex items-center gap-1 ${dark ? "text-white/30" : "text-gray-400"}`}
                     >
-                      <FaHome className="text-[10px]" /> Membre depuis{" "}
-                      {listing.owner?.memberSince || 2023}
+                      <FaHome className="text-[10px]" />{" "}
+                      {t("memberSince", {
+                        year: listing.owner?.memberSince || 2026,
+                      })}
                     </span>
                     <span
                       className={`text-[10px] flex items-center gap-1 ${dark ? "text-white/30" : "text-gray-400"}`}
                     >
-                      <IoTimeOutline className="text-[10px]" /> Réponse rapide
+                      <IoTimeOutline className="text-[10px]" />{" "}
+                      {t("fastResponse")}
                     </span>
                     <span
                       className={`text-[10px] flex items-center gap-1 text-emerald-500`}
                     >
                       <IoCheckmarkCircleOutline className="text-[10px]" />{" "}
-                      Vérifié
+                      {t("verified")}
                     </span>
                   </div>
-                  {/* ✅ BIO DYNAMIQUE - utiliser listing.owner?.bio */}
                   <p
                     className={`text-xs leading-relaxed ${dark ? "text-white/40" : "text-gray-500"}`}
                   >
-                    {listing.owner?.bio ||
-                      "Passionné par l'hospitalité, je serai ravi de vous accueillir et de rendre votre séjour unique."}
+                    {listing.owner?.bio || t("defaultBio")}
                   </p>
                 </div>
               </div>
             </Section>
 
-            {/* Reviews Section - DYNAMIQUE avec reviewScores */}
             <Section
-              title="AVIS"
-              sub={`${listing.reviewCount || 0} témoignages`}
+              title={t("reviews")}
+              sub={t("reviewsSub", { count: listing.reviewCount || 0 })}
               delay={0.32}
               dark={dark}
             >
               {listing.reviews && listing.reviews.length > 0 ? (
                 <>
-                  {/* Barres de scores - seulement s'il y a des avis */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     {[
                       {
-                        label: "Propreté",
+                        label: t("cleanliness"),
                         value: listing.reviewScores?.cleanliness || 4.5,
                       },
                       {
-                        label: "Précision",
+                        label: t("accuracy"),
                         value: listing.reviewScores?.accuracy || 4.5,
                       },
                       {
-                        label: "Communication",
+                        label: t("communication"),
                         value: listing.reviewScores?.communication || 4.5,
                       },
                       {
-                        label: "Emplacement",
+                        label: t("locationScore"),
                         value: listing.reviewScores?.location || 4.5,
                       },
                       {
-                        label: "Arrivée",
+                        label: t("checkinScore"),
                         value: listing.reviewScores?.checkin || 4.5,
                       },
                       {
-                        label: "Qualité-prix",
+                        label: t("valueScore"),
                         value: listing.reviewScores?.value || 4.5,
                       },
                     ].map((score, idx) => (
@@ -1584,8 +1672,6 @@ export default function ListingDetailPage() {
                       </motion.div>
                     ))}
                   </div>
-
-                  {/* Liste des avis */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {listing.reviews.slice(0, 2).map((review, i) => (
                       <motion.div
@@ -1594,11 +1680,7 @@ export default function ListingDetailPage() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.2 + i * 0.1 }}
                         whileHover={{ y: -4 }}
-                        className={`p-4 rounded-xl transition-all duration-300 ${
-                          dark
-                            ? "bg-slate-800/40 border border-white/10"
-                            : "bg-white border border-white shadow-sm"
-                        }`}
+                        className={`p-4 rounded-xl transition-all duration-300 ${dark ? "bg-slate-800/40 border border-white/10" : "bg-white border border-white shadow-sm"}`}
                       >
                         <div className="flex items-center justify-between mb-3">
                           <div>
@@ -1614,10 +1696,10 @@ export default function ListingDetailPage() {
                             </p>
                           </div>
                           <div className="flex gap-0.5">
-                            {[1, 2, 3, 4, 5].map((s) => (
+                            {[...Array(5)].map((_, s) => (
                               <IoStar
                                 key={s}
-                                className={`text-[11px] ${s <= (review.rating || 5) ? "text-amber-400" : dark ? "text-white/20" : "text-gray-200"}`}
+                                className={`text-[11px] ${s < (review.rating || 5) ? "text-amber-400" : dark ? "text-white/20" : "text-gray-200"}`}
                               />
                             ))}
                           </div>
@@ -1630,18 +1712,17 @@ export default function ListingDetailPage() {
                       </motion.div>
                     ))}
                   </div>
-
-                  {/* Bouton voir tous les avis - seulement s'il y a des avis */}
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`mt-4 w-full py-2.5 rounded-xl border border-dashed text-xs font-medium uppercase tracking-wide transition-all ${dark ? "border-white/10 text-white/30 hover:text-white/50 hover:border-white/20" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"}`}
-                  >
-                    VOIR TOUS LES {listing.reviewCount || 0} AVIS
-                  </motion.button>
+                  {listing.reviews.length > 2 && (
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`mt-4 w-full py-2.5 rounded-xl border border-dashed text-xs font-medium uppercase tracking-wide transition-all ${dark ? "border-white/10 text-white/30 hover:text-white/50 hover:border-white/20" : "border-gray-200 text-gray-400 hover:text-gray-600 hover:border-gray-300"}`}
+                    >
+                      {t("viewAllReviews", { count: listing.reviewCount || 0 })}
+                    </motion.button>
+                  )}
                 </>
               ) : (
-                // Message "Aucun avis" - sans barres de scores ni bouton
                 <div
                   className={`p-6 rounded-xl text-center ${dark ? "bg-slate-800/40 border border-white/10" : "bg-gray-50 border border-white shadow-sm"}`}
                 >
@@ -1656,22 +1737,22 @@ export default function ListingDetailPage() {
                     <p
                       className={`text-sm font-medium ${dark ? "text-white/60" : "text-gray-600"}`}
                     >
-                      Aucun avis pour le moment
+                      {t("noReviews")}
                     </p>
                     <p
                       className={`text-xs ${dark ? "text-white/30" : "text-gray-400"}`}
                     >
-                      Soyez le premier à donner votre avis !
+                      {t("beFirstReview")}
                     </p>
                   </div>
                 </div>
               )}
             </Section>
-            {/* Rules */}
+
             {houseRules.length > 0 && (
               <Section
-                title="RÈGLEMENT"
-                sub="Conditions et horaires"
+                title={t("rules")}
+                sub={t("rulesSub")}
                 delay={0.3}
                 dark={dark}
               >
@@ -1734,7 +1815,7 @@ export default function ListingDetailPage() {
                         <p
                           className={`text-[9px] uppercase tracking-[0.15em] font-bold mb-1 ${dark ? "text-white/30" : "text-indigo-400/60"}`}
                         >
-                          Par nuit
+                          {t("pricePerNight")}
                         </p>
                         <p
                           className={`text-3xl font-black ${dark ? "text-white" : "text-gray-900"}`}
@@ -1760,7 +1841,10 @@ export default function ListingDetailPage() {
                           <p
                             className={`text-[9px] ${dark ? "text-white/20" : "text-gray-400"}`}
                           >
-                            {listing.reviewCount} avis
+                            {listing.reviewCount}{" "}
+                            {listing.reviewCount > 1
+                              ? t("review_plural")
+                              : t("review_singular")}{" "}
                           </p>
                         </div>
                       )}
@@ -1774,7 +1858,7 @@ export default function ListingDetailPage() {
                         <label
                           className={`text-[8px] uppercase tracking-[0.15em] font-bold block mb-1.5 ${dark ? "text-white/30" : "text-indigo-500"}`}
                         >
-                          Arrivée
+                          {t("checkIn")}
                         </label>
                         <input
                           type="date"
@@ -1794,7 +1878,7 @@ export default function ListingDetailPage() {
                         <label
                           className={`text-[8px] uppercase tracking-[0.15em] font-bold block mb-1.5 ${dark ? "text-white/30" : "text-indigo-500"}`}
                         >
-                          Départ
+                          {t("checkOut")}
                         </label>
                         <input
                           type="date"
@@ -1808,25 +1892,22 @@ export default function ListingDetailPage() {
                       </div>
                     </div>
 
-                    {/* Section Voyageurs - OPTIONNEL */}
                     <div
                       className={`p-3 rounded-xl border ${dark ? "bg-white/5 border-white/10" : "bg-gray-50 border-gray-200"}`}
                     >
                       <label
                         className={`text-[8px] uppercase tracking-[0.15em] font-bold block mb-2 ${dark ? "text-white/30" : "text-indigo-500"}`}
                       >
-                        Voyageurs (optionnel)
+                        {t("guests")}
                       </label>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <button
                             type="button"
                             onClick={() => {
-                              if (localGuests > 1) {
+                              if (localGuests > 1)
                                 setLocalGuests(localGuests - 1);
-                              } else if (localGuests === 1) {
-                                setLocalGuests(0);
-                              }
+                              else if (localGuests === 1) setLocalGuests(0);
                             }}
                             disabled={localGuests === 0}
                             className={`w-8 h-8 rounded-lg border flex items-center justify-center disabled:opacity-30 transition-all ${dark ? "bg-white/10 border-white/10 text-white/40 hover:text-white hover:bg-white/20" : "bg-gray-100 border-gray-200 text-gray-500 hover:bg-gray-200"}`}
@@ -1841,17 +1922,12 @@ export default function ListingDetailPage() {
                           <button
                             type="button"
                             onClick={() => {
-                              if (localGuests === 0) {
-                                setLocalGuests(1);
-                              } else if (listing.maxGuests) {
-                                if (localGuests < listing.maxGuests) {
+                              if (localGuests === 0) setLocalGuests(1);
+                              else if (listing.maxGuests) {
+                                if (localGuests < listing.maxGuests)
                                   setLocalGuests(localGuests + 1);
-                                }
-                              } else {
-                                if (localGuests < 20) {
-                                  setLocalGuests(localGuests + 1);
-                                }
-                              }
+                              } else if (localGuests < 20)
+                                setLocalGuests(localGuests + 1);
                             }}
                             disabled={
                               listing.maxGuests
@@ -1867,16 +1943,16 @@ export default function ListingDetailPage() {
                           className={`text-[10px] ${dark ? "text-white/20" : "text-gray-400"}`}
                         >
                           {listing.maxGuests
-                            ? `Max ${listing.maxGuests} pers.`
-                            : "Aucune limite"}
+                            ? t("maxGuests", { count: listing.maxGuests })
+                            : t("noLimit")}
                         </span>
                       </div>
                       <p
                         className={`text-[9px] mt-2 ${dark ? "text-white/15" : "text-gray-400"}`}
                       >
                         {localGuests === 0
-                          ? "Non spécifié — vous pouvez indiquer le nombre plus tard"
-                          : `${localGuests} voyageur${localGuests > 1 ? "s" : ""} sélectionné${localGuests > 1 ? "s" : ""}`}
+                          ? t("guestsNotSpecified")
+                          : t("guestsSelected", { count: localGuests })}
                       </p>
                     </div>
 
@@ -1891,7 +1967,7 @@ export default function ListingDetailPage() {
                             className={dark ? "text-white/30" : "text-gray-400"}
                           >
                             {fmtPrice(listing.pricePerNight)} TND × {nights}{" "}
-                            nuit{nights > 1 ? "s" : ""}
+                            {nights > 1 ? t("nights_plural") : t("nights")}
                           </span>
                           <span
                             className={`font-bold ${dark ? "text-white/50" : "text-gray-600"}`}
@@ -1903,7 +1979,7 @@ export default function ListingDetailPage() {
                           <span
                             className={dark ? "text-white/30" : "text-gray-400"}
                           >
-                            Ménage
+                            {t("cleaningFee")}
                           </span>
                           <span
                             className={`font-bold ${dark ? "text-white/50" : "text-gray-600"}`}
@@ -1915,7 +1991,7 @@ export default function ListingDetailPage() {
                           <span
                             className={dark ? "text-white/30" : "text-gray-400"}
                           >
-                            Service (5%)
+                            {t("serviceFee")}
                           </span>
                           <span
                             className={`font-bold ${dark ? "text-white/50" : "text-gray-600"}`}
@@ -1929,7 +2005,7 @@ export default function ListingDetailPage() {
                           <span
                             className={`text-xs font-extrabold ${dark ? "text-white/60" : "text-gray-700"}`}
                           >
-                            Total
+                            {t("total")}
                           </span>
                           <span
                             className={`text-xl font-black ${dark ? "text-white/80" : "text-gray-900"}`}
@@ -1947,7 +2023,7 @@ export default function ListingDetailPage() {
                       <div
                         className={`py-5 text-center text-[11px] border border-dashed rounded-xl ${dark ? "text-white/20 border-white/10" : "text-gray-400 border-gray-200"}`}
                       >
-                        Sélectionnez vos dates
+                        {t("selectDates")}
                       </div>
                     )}
                     <button
@@ -1957,41 +2033,46 @@ export default function ListingDetailPage() {
                         infoRequestLoading ||
                         !checkIn ||
                         !checkOut ||
-                        listing.vacationMode
+                        listing.vacationMode ||
+                        infoRequestCount >= 3 ||
+                        isOwner ||
+                        isAdmin
                       }
-                      className={`w-full py-3.5 rounded-xl text-sm font-extrabold transition-all disabled:opacity-20 disabled:cursor-not-allowed ${
-                        listing.vacationMode
-                          ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed"
-                          : dark
-                            ? "bg-white/10 border border-white/20 text-white/60 hover:text-white/80 hover:bg-white/20"
-                            : "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/30"
-                      }`}
+                      className={`w-full py-3.5 rounded-xl text-sm font-extrabold transition-all disabled:opacity-20 disabled:cursor-not-allowed ${listing.vacationMode ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" : infoRequestCount >= 3 ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" : isOwner || isAdmin ? "bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed" : dark ? "bg-white/10 border border-white/20 text-white/60 hover:text-white/80 hover:bg-white/20" : "bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/20 hover:shadow-xl hover:shadow-violet-500/30"}`}
                     >
                       {listing.vacationMode ? (
                         <span className="flex items-center justify-center gap-2">
-                          <Plane size={16} /> Mode vacances - Indisponible
+                          <Plane size={16} /> {t("vacationMode")}
+                        </span>
+                      ) : infoRequestCount >= 3 ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <IoCloseOutline size={16} /> {t("limitReached")}
+                        </span>
+                      ) : isOwner || isAdmin ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <IoEyeOutline size={16} /> Vue aperçu
                         </span>
                       ) : infoRequestLoading ? (
                         <span className="flex items-center justify-center gap-2">
-                          <span className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-                          Envoi...
+                          <span className="w-3 h-3 rounded-full border-2 border-white/30 border-t-white animate-spin" />{" "}
+                          {t("sending")}
                         </span>
                       ) : !checkIn || !checkOut ? (
-                        "Choisissez vos dates"
+                        t("requestInfoDisabled")
                       ) : (
-                        "Demander une information"
+                        t("requestInfo")
                       )}
                     </button>
                     <p
                       className={`text-center text-[10px] ${dark ? "text-white/20" : "text-gray-400"}`}
                     >
-                      Annulation flexible · Sans engagement
+                      {t("cancelFlexible")}
                     </p>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { i: <IoShieldCheckmarkOutline />, l: "Sécurisé" },
-                        { i: <IoCheckmarkCircleOutline />, l: "Garanti" },
-                        { i: <IoPersonOutline />, l: "24h/24" },
+                        { i: <IoShieldCheckmarkOutline />, l: t("secure") },
+                        { i: <IoCheckmarkCircleOutline />, l: t("guaranteed") },
+                        { i: <IoPersonOutline />, l: t("support247") },
                       ].map((b) => (
                         <div
                           key={b.l}
@@ -2025,7 +2106,7 @@ export default function ListingDetailPage() {
           transition={{ duration: 0.5 }}
           className="mt-16"
         >
-          <Section title="LOCALISATION ET QUARTIER" delay={0.32} dark={dark}>
+          <Section title={t("location")} delay={0.32} dark={dark}>
             <div className="space-y-4">
               <div
                 className={`flex items-center justify-between p-3 rounded-xl ${dark ? "bg-slate-800/40 border border-white/10" : "bg-gray-50 border border-white shadow-sm"}`}
@@ -2053,12 +2134,10 @@ export default function ListingDetailPage() {
                   onClick={openInGoogleMaps}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-500 text-white text-xs font-semibold hover:opacity-90 transition"
                 >
-                  <IoNavigateOutline className="text-sm" />
-                  Ouvrir dans Maps
+                  <IoNavigateOutline className="text-sm" /> {t("openInMaps")}
                 </motion.button>
               </div>
 
-              {/* Map */}
               <div className="relative rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-slate-700">
                 <div className="w-full h-[500px] sm:h-[550px]">
                   {listing?.latitude && listing?.longitude ? (
@@ -2076,13 +2155,11 @@ export default function ListingDetailPage() {
                     <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100 dark:bg-slate-800">
                       <IoMapOutline className="text-4xl text-gray-400 mb-2" />
                       <p className="text-sm text-gray-500">
-                        Position non disponible
+                        {t("positionNotAvailable")}
                       </p>
                     </div>
                   )}
                 </div>
-
-                {/* POI Legend */}
                 {nearbyPOIs.length > 0 && (
                   <POILegend
                     pois={nearbyPOIs}
@@ -2091,31 +2168,29 @@ export default function ListingDetailPage() {
                     showAllDistances={showAllDistances}
                   />
                 )}
-
                 {loadingPOIs && (
                   <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm flex items-center justify-center z-20">
                     <div className="flex flex-col items-center gap-2">
                       <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
                       <p className="text-xs text-gray-500">
-                        Chargement des points d'intérêt...
+                        {t("loadingPOIs")}
                       </p>
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* POI List */}
               {nearbyPOIs.length > 0 && (
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3
                       className={`text-sm font-bold ${dark ? "text-white" : "text-gray-900"} flex items-center gap-2`}
                     >
-                      <IoLocationSharp className="text-sky-500" />
-                      Points d'intérêt à proximité
+                      <IoLocationSharp className="text-sky-500" />{" "}
+                      {t("nearbyPOIs")}
                     </h3>
                     <span className="text-[10px] text-gray-400">
-                      {nearbyPOIs.length} lieux trouvés
+                      {nearbyPOIs.length} {t("placesFound")}
                     </span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-64 overflow-y-auto pr-1">
@@ -2127,13 +2202,7 @@ export default function ListingDetailPage() {
                         transition={{ delay: idx * 0.03 }}
                         whileHover={{ scale: 1.01, x: 2 }}
                         onClick={() => handlePoiClick(poi)}
-                        className={`flex items-center justify-between gap-2 p-2 rounded-lg transition-all duration-300 cursor-pointer overflow-hidden ${
-                          selectedPoi?.id === poi.id
-                            ? "bg-indigo-100 dark:bg-indigo-900/50 border-l-4 border-indigo-500"
-                            : dark
-                              ? "bg-slate-800/40 hover:bg-slate-800 border border-white/10"
-                              : "bg-gray-50 hover:bg-gray-100 border border-white shadow-sm"
-                        }`}
+                        className={`flex items-center justify-between gap-2 p-2 rounded-lg transition-all duration-300 cursor-pointer overflow-hidden ${selectedPoi?.id === poi.id ? "bg-indigo-100 dark:bg-indigo-900/50 border-l-4 border-indigo-500" : dark ? "bg-slate-800/40 hover:bg-slate-800 border border-white/10" : "bg-gray-50 hover:bg-gray-100 border border-white shadow-sm"}`}
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0">
                           <div
@@ -2168,12 +2237,8 @@ export default function ListingDetailPage() {
                               window.open(url, "_blank");
                             }
                           }}
-                          className={`p-1.5 rounded-lg transition-all duration-200 shrink-0 ${
-                            dark
-                              ? "hover:bg-white/10 text-white/40 hover:text-indigo-400"
-                              : "hover:bg-gray-200 text-gray-400 hover:text-indigo-600"
-                          }`}
-                          title="Itinéraire sur Google Maps"
+                          className={`p-1.5 rounded-lg transition-all duration-200 shrink-0 ${dark ? "hover:bg-white/10 text-white/40 hover:text-indigo-400" : "hover:bg-gray-200 text-gray-400 hover:text-indigo-600"}`}
+                          title={t("openDirections")}
                         >
                           <IoNavigateOutline className="text-sm" />
                         </button>
@@ -2182,8 +2247,7 @@ export default function ListingDetailPage() {
                   </div>
                   {filteredPOIs.length > 12 && (
                     <p className="text-center text-[10px] text-gray-400 mt-2">
-                      +{filteredPOIs.length - 12} autres lieux disponibles sur
-                      la carte
+                      +{filteredPOIs.length - 12} {t("morePlaces")}
                     </p>
                   )}
                 </div>
@@ -2198,14 +2262,12 @@ export default function ListingDetailPage() {
                     <p
                       className={`text-xs font-semibold ${dark ? "text-sky-400" : "text-sky-700"} mb-1`}
                     >
-                      Transport à proximité
+                      {t("transportNearby")}
                     </p>
                     <p
                       className={`text-[11px] ${dark ? "text-sky-300" : "text-sky-600"} leading-relaxed`}
                     >
-                      Le quartier est bien desservi. De nombreux commerces,
-                      restaurants et services sont accessibles à pied ou à
-                      quelques minutes en voiture.
+                      {t("transportDesc")}
                     </p>
                   </div>
                 </div>
@@ -2214,7 +2276,7 @@ export default function ListingDetailPage() {
           </Section>
         </motion.div>
       </main>
-      {/* Modal de vérification d'identité */}
+
       <IdentityVerificationModal
         isOpen={showVerificationModal}
         onClose={handleCloseVerificationModal}

@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
     }
 
-    // ✅ Récupérer les paramètres de filtres depuis l'URL
+    // Récupérer les paramètres de filtres depuis l'URL
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const dateFilter = searchParams.get("dateFilter") || "all";
     const search = searchParams.get("search") || "";
 
-    // ✅ Construire la clause WHERE dynamique
+    //  Construire la clause WHERE dynamique
     let where: any = {};
 
     // Filtre par type (all, flagged, pending)
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // ✅ Filtre par date (all, today, week, month)
+    //  Filtre par date (all, today, week, month)
     if (dateFilter !== "all") {
       const now = new Date();
       let startDate = new Date();
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
       where.createdAt = { gte: startDate };
     }
 
-    // ✅ Recherche textuelle
+    //  Recherche textuelle
     if (search) {
       where.OR = [
         { comment: { contains: search, mode: "insensitive" } },
@@ -75,10 +75,10 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // ✅ Compter le total des avis (pour la pagination)
+    //  Compter le total des avis (pour la pagination)
     const totalCount = await prisma.review.count({ where });
 
-    // ✅ Récupérer les avis avec pagination
+    //  Récupérer les avis avec pagination
     const reviews = await prisma.review.findMany({
       where,
       include: {
@@ -120,7 +120,7 @@ export async function GET(request: NextRequest) {
       take: limit,
     });
 
-    // ✅ Formater les données (optionnel, l'interface l'attend déjà)
+    // Formater les données (optionnel, l'interface l'attend déjà)
     const formattedReviews = reviews.map((review) => ({
       id: review.id,
       rating: review.rating,
@@ -157,7 +157,7 @@ export async function GET(request: NextRequest) {
       },
     }));
 
-    // ✅ Retourner les données avec les infos de pagination
+    //  Retourner les données avec les infos de pagination
     return NextResponse.json({
       reviews: formattedReviews,
       page,

@@ -33,7 +33,7 @@ interface ConfirmActionModalProps {
   itemTitle?: string;
   onConfirm: () => Promise<void>;
   loading?: boolean;
-  namespace?: string; // Pour utiliser différentes traductions (AdminProperties, etc.)
+  namespace?: string;
 }
 
 export default function ConfirmActionModal({
@@ -66,7 +66,7 @@ export default function ConfirmActionModal({
           description: t("activerConfirmMessage"),
           confirmText: t("confirm"),
           buttonColor: "bg-emerald-600 hover:bg-emerald-700",
-          confirmWord: "ACTIVER",
+          confirmWord: t("confirmWord.activate").toUpperCase(),
         };
       case "DEACTIVATE":
         return {
@@ -77,7 +77,7 @@ export default function ConfirmActionModal({
           description: t("desactiverConfirmMessage"),
           confirmText: t("confirm"),
           buttonColor: "bg-amber-600 hover:bg-amber-700",
-          confirmWord: "DÉSACTIVER",
+          confirmWord: t("confirmWord.deactivate").toUpperCase(),
         };
       case "ARCHIVE":
         return {
@@ -88,7 +88,7 @@ export default function ConfirmActionModal({
           description: t("archiverConfirmMessage"),
           confirmText: t("confirm"),
           buttonColor: "bg-purple-600 hover:bg-purple-700",
-          confirmWord: "ARCHIVER",
+          confirmWord: t("confirmWord.archive").toUpperCase(),
         };
       case "VALIDATE":
         return {
@@ -99,7 +99,7 @@ export default function ConfirmActionModal({
           description: t("validerConfirmMessage"),
           confirmText: t("confirm"),
           buttonColor: "bg-emerald-600 hover:bg-emerald-700",
-          confirmWord: "VALIDER",
+          confirmWord: t("confirmWord.validate").toUpperCase(),
         };
       case "REJECT":
         return {
@@ -110,7 +110,7 @@ export default function ConfirmActionModal({
           description: t("rejeterConfirmMessage"),
           confirmText: t("confirm"),
           buttonColor: "bg-red-600 hover:bg-red-700",
-          confirmWord: "REJETER",
+          confirmWord: t("confirmWord.reject").toUpperCase(),
         };
       case "DELETE":
         return {
@@ -121,7 +121,7 @@ export default function ConfirmActionModal({
           description: t("supprimerConfirmMessage"),
           confirmText: t("confirm"),
           buttonColor: "bg-red-600 hover:bg-red-700",
-          confirmWord: "SUPPRIMER",
+          confirmWord: t("confirmWord.delete").toUpperCase(),
           isDanger: true,
         };
       case "BULK_ACTIVATE":
@@ -135,7 +135,7 @@ export default function ConfirmActionModal({
           }),
           confirmText: t("confirm"),
           buttonColor: "bg-emerald-600 hover:bg-emerald-700",
-          confirmWord: "ACTIVER",
+          confirmWord: t("confirmWord.activate").toUpperCase(),
         };
       case "BULK_DEACTIVATE":
         return {
@@ -148,7 +148,7 @@ export default function ConfirmActionModal({
           }),
           confirmText: t("confirm"),
           buttonColor: "bg-amber-600 hover:bg-amber-700",
-          confirmWord: "DÉSACTIVER",
+          confirmWord: t("confirmWord.deactivate").toUpperCase(),
         };
       case "BULK_ARCHIVE":
         return {
@@ -161,7 +161,7 @@ export default function ConfirmActionModal({
           }),
           confirmText: t("confirm"),
           buttonColor: "bg-purple-600 hover:bg-purple-700",
-          confirmWord: "ARCHIVER",
+          confirmWord: t("confirmWord.archive").toUpperCase(),
         };
       default:
         return {
@@ -172,7 +172,7 @@ export default function ConfirmActionModal({
           description: t("confirm"),
           confirmText: t("confirm"),
           buttonColor: "bg-indigo-600 hover:bg-indigo-700",
-          confirmWord: "CONFIRMER",
+          confirmWord: t("confirmWord.default").toUpperCase(),
         };
     }
   };
@@ -221,7 +221,7 @@ export default function ConfirmActionModal({
           )}
           {isBulk && itemIds && itemIds.length > 0 && (
             <p className="text-xs font-medium text-slate-800 dark:text-slate-200 mt-2">
-              {itemIds.length} élément(s) concerné(s)
+              {t("itemsCount", { count: itemIds.length })}
             </p>
           )}
         </div>

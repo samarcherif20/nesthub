@@ -257,6 +257,14 @@ export async function PUT(request: NextRequest) {
 
     const infoRequest = await prisma.infoRequest.findUnique({
       where: { id: infoRequestId },
+      include: {
+        listing: {
+          select: { id: true, title: true },
+        },
+        tenant: {
+          select: { id: true, username: true },
+        },
+      },
     });
 
     if (!infoRequest) {
@@ -265,7 +273,12 @@ export async function PUT(request: NextRequest) {
         { status: 404 },
       );
     }
-
+    if (infoRequest.status !== "PENDING") {
+      return NextResponse.json(
+        { error: "Cette demande a déjà été traitée" },
+        { status: 400 },
+      );
+    }
     // Vérifier que l'utilisateur a le droit de modifier (propriétaire ou admin)
     if (infoRequest.ownerId !== user.id && user.role !== "ADMIN") {
       return NextResponse.json({ error: "Non autorisé" }, { status: 403 });
@@ -279,7 +292,7 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    // Créer une notification pour le locataire
+    // Créer une notification pour le locataire avec tous les détails
     await prisma.notification.create({
       data: {
         userId: infoRequest.tenantId,
@@ -287,16 +300,23 @@ export async function PUT(request: NextRequest) {
           status === "ACCEPTED"
             ? "INFO_REQUEST_ACCEPTED"
             : "INFO_REQUEST_REJECTED",
-        title: status === "ACCEPTED" ? "Demande acceptée" : "Demande refusée",
+        title: status === "ACCEPTED" ? "Demande acceptée " : "Demande refusée",
         content:
           status === "ACCEPTED"
-            ? "Votre demande d'information a été acceptée par le propriétaire"
-            : "Votre demande d'information a été refusée par le propriétaire",
+            ? `Votre demande d'information pour "${infoRequest.listing.title}" a été acceptée par le propriétaire`
+            : `Votre demande d'information pour "${infoRequest.listing.title}" a été refusée par le propriétaire`,
         data: {
           infoRequestId: infoRequest.id,
           listingId: infoRequest.listingId,
+          listingTitle: infoRequest.listing.title,
+          tenantId: infoRequest.tenantId,
+          tenantUsername: infoRequest.tenant?.username,
+          checkIn: infoRequest.checkIn,
+          checkOut: infoRequest.checkOut,
+          guests: infoRequest.guests,
+          status: status,
         },
-        channels: ["IN_APP", "EMAIL"],
+        channels: ["IN_APP"],
       },
     });
 

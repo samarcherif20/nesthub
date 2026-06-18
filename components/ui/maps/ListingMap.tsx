@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   MapContainer,
   TileLayer,
@@ -308,6 +309,7 @@ function HoverCard({
   position,
   onMouseLeave,
   showAllDistances = false,
+  t,
 }: {
   poi: POI;
   walkingData: any;
@@ -315,6 +317,7 @@ function HoverCard({
   position: { x: number; y: number };
   onMouseLeave: () => void;
   showAllDistances?: boolean;
+  t: any;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
 
@@ -365,12 +368,12 @@ function HoverCard({
             {!isInRadius && (
               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-600 dark:text-orange-400 flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
-                +{poi.distance.toFixed(1)}km du rayon
+                +{poi.distance.toFixed(1)} {t("distanceKm")}
               </span>
             )}
             {isExtended && isInRadius && (
               <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-600 dark:text-green-400">
-                ✓ Dans le rayon
+                ✓ {t("inRadius")}
               </span>
             )}
           </div>
@@ -382,7 +385,7 @@ function HoverCard({
           <div className="flex items-center gap-2">
             <FaWalking className="text-green-500 text-sm" />
             <span className="text-xs text-gray-600 dark:text-gray-400">
-              À pied
+              {t("walking")}
             </span>
           </div>
           <div className="text-right">
@@ -400,7 +403,7 @@ function HoverCard({
           <div className="flex items-center gap-2">
             <FaCar className="text-blue-500 text-sm" />
             <span className="text-xs text-gray-600 dark:text-gray-400">
-              En voiture
+              {t("driving")}
             </span>
           </div>
           <div className="text-right">
@@ -420,7 +423,7 @@ function HoverCard({
           className="w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl text-xs font-semibold hover:opacity-90 transition-all flex items-center justify-center gap-2"
         >
           <FaWalking className="text-sm" />
-          Ouvrir dans Google Maps
+          {t("openInGoogleMaps")}
         </button>
       </div>
     </div>
@@ -460,11 +463,14 @@ export default function ListingMap({
   homeLat,
   homeLng,
   pois,
-  zoom = 14,
+  zoom = 16,
   onPoiClick,
   showAllDistances = false,
 }: ListingMapProps) {
+  const t = useTranslations("ListingMap");
   const position: [number, number] = [homeLat, homeLng];
+  const mapRef = useRef<L.Map | null>(null);
+
   const [hoveredPoi, setHoveredPoi] = useState<POI | null>(null);
   const [walkingRouteData, setWalkingRouteData] = useState<any>(null);
   const [drivingRouteData, setDrivingRouteData] = useState<any>(null);
@@ -475,7 +481,14 @@ export default function ListingMap({
   const displayedPois = showAllDistances
     ? pois
     : pois.filter((poi) => poi.distance <= 3);
-
+  useEffect(() => {
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []);
   // Charger les itinéraires
   useEffect(() => {
     if (!hoveredPoi) {
@@ -530,6 +543,7 @@ export default function ListingMap({
   return (
     <>
       <MapContainer
+        ref={mapRef}
         center={position}
         zoom={zoom}
         style={{ height: "100%", width: "100%" }}
@@ -549,9 +563,9 @@ export default function ListingMap({
         <Marker position={position} icon={createHomePinIcon()}>
           <Popup>
             <div className="p-2">
-              <strong>📍 Votre bien</strong>
+              <strong>{t("yourProperty")}</strong>
               <p className="text-xs text-gray-500 mt-1">
-                {showAllDistances ? "Mode étendu actif" : "Rayon 3km"}
+                {showAllDistances ? t("extendedModeActive") : t("radius3km")}
               </p>
             </div>
           </Popup>
@@ -605,6 +619,7 @@ export default function ListingMap({
           position={hoverPosition}
           onMouseLeave={handleMouseLeave}
           showAllDistances={showAllDistances}
+          t={t}
         />
       )}
     </>

@@ -1,10 +1,11 @@
-// app/confirmation/page.tsx
+// app/[locale]/confirmation/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, useParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 import dynamic from "next/dynamic";
 
 const MapPicker = dynamic(() => import("@/components/ui/maps/MapPicker"), {
@@ -16,7 +17,6 @@ import {
   IoChatbubbleOutline,
   IoLocationOutline,
   IoCallOutline,
-  IoKeyOutline,
   IoInformationCircleOutline,
   IoHomeOutline,
   IoShieldCheckmarkOutline,
@@ -26,7 +26,6 @@ import {
   IoPeopleOutline,
   IoLogInOutline,
   IoLogOutOutline,
-  IoMoonOutline,
   IoChevronForwardOutline,
   IoMailOutline,
   IoCardOutline,
@@ -39,17 +38,17 @@ import {
   IoFlashOutline,
   IoDiamondOutline,
   IoTrophyOutline,
-  IoGlobeOutline,
   IoFingerPrintOutline,
   IoNavigateOutline,
   IoMapOutline,
-  IoSunnyOutline,
+  IoMoonOutline,
 } from "react-icons/io5";
 import { TenantHeader } from "@/components/ui/header/TenantHeader";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useBookingConfirmation } from "./hooks/useBookingConfirmation";
 
 // ============================================
-// UTILS
+// UTILS - helpers qui restent en dur (formatage)
 // ============================================
 function fmtDate(d: string | Date) {
   if (!d) return "";
@@ -74,7 +73,7 @@ const pipListing = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
 
 // ============================================
-// THEME BACKGROUND (Remplace AuroraBackground)
+// THEME BACKGROUND
 // ============================================
 function ThemeBackground() {
   const { resolvedTheme } = useTheme();
@@ -82,7 +81,6 @@ function ThemeBackground() {
 
   return (
     <div className="fixed inset-0 overflow-hidden pointer-events-none">
-      {/* Base gradient selon le thème */}
       <div
         className={`absolute inset-0 transition-colors duration-500 ${
           isDark
@@ -90,8 +88,6 @@ function ThemeBackground() {
             : "bg-gradient-to-br from-sky-50 via-white to-indigo-50"
         }`}
       />
-
-      {/* Animations lumineuses selon le thème */}
       <motion.div
         className={`absolute w-[600px] h-[600px] rounded-full blur-[120px] transition-colors duration-500 ${
           isDark ? "opacity-20" : "opacity-30"
@@ -142,8 +138,6 @@ function ThemeBackground() {
         animate={{ x: [0, 50, -30, 0], y: [0, -40, 30, 0] }}
         transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
       />
-
-      {/* Grid pattern */}
       <div
         className={`absolute inset-0 transition-opacity duration-500 ${
           isDark ? "opacity-[0.03]" : "opacity-[0.02]"
@@ -159,10 +153,9 @@ function ThemeBackground() {
 }
 
 // ============================================
-// CONFETTI (Garde l'existant)
+// CONFETTI
 // ============================================
 function Confetti() {
-  // ... (garde ton code Confetti existant)
   const particles = Array.from({ length: 50 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
@@ -225,67 +218,44 @@ function Confetti() {
 }
 
 // ============================================
-// TOAST (Version light/dark)
+// TOAST
 // ============================================
 function Toast({
   message,
   type,
   onClose,
+  t,
 }: {
   message: string;
   type: "success" | "error" | "info";
   onClose: () => void;
+  t: any;
 }) {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-
   useEffect(() => {
-    const t = setTimeout(onClose, 4000);
-    return () => clearTimeout(t);
+    const tm = setTimeout(onClose, 4000);
+    return () => clearTimeout(tm);
   }, [onClose]);
 
-  const getStyles = () => {
-    if (type === "success") {
-      return isDark
-        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
-        : "bg-emerald-500/10 text-emerald-700 border-emerald-500/20";
-    }
-    if (type === "error") {
-      return isDark
-        ? "bg-rose-500/10 text-rose-300 border-rose-500/20"
-        : "bg-rose-500/10 text-rose-700 border-rose-500/20";
-    }
-    return isDark
-      ? "bg-sky-500/10 text-sky-300 border-sky-500/20"
-      : "bg-sky-500/10 text-sky-700 border-sky-500/20";
-  };
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -30, scale: 0.9 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -30, scale: 0.9 }}
-      className="fixed top-6 left-1/2 -translate-x-1/2 z-[100]"
-    >
+    <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
       <div
-        className={`flex items-center gap-3 pl-5 pr-4 py-3.5 rounded-2xl text-sm font-bold shadow-2xl backdrop-blur-2xl border ${getStyles()}`}
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+          type === "success"
+            ? "bg-green-500 text-white"
+            : "bg-red-500 text-white"
+        }`}
       >
         {type === "success" ? (
-          <IoCheckmarkCircleOutline className="text-lg" />
-        ) : type === "error" ? (
-          <IoAlertCircleOutline className="text-lg" />
+          <IoCheckmarkCircleOutline className="w-5 h-5" />
         ) : (
-          <IoSparklesOutline className="text-lg" />
+          <IoAlertCircleOutline className="w-5 h-5" />
         )}
-        <span>{message}</span>
-        <button
-          onClick={onClose}
-          className="ml-2 p-1 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-        >
-          <IoCloseOutline className="text-sm" />
+        <span className="text-sm font-medium">{message}</span>
+        <button onClick={onClose} className="ml-2 hover:opacity-70">
+          <IoCloseOutline className="w-4 h-4" />
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -317,9 +287,9 @@ function AnimatedPrice({
 }
 
 // ============================================
-// ACCESS CODE DISPLAY (Version light/dark)
+// ACCESS CODE DISPLAY
 // ============================================
-function AccessCodeDisplay({ code }: { code: string }) {
+function AccessCodeDisplay({ code, t }: { code: string; t: any }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
@@ -351,7 +321,7 @@ function AccessCodeDisplay({ code }: { code: string }) {
 }
 
 // ============================================
-// SENSITIVE DATA FIELD (Version light/dark)
+// SENSITIVE DATA FIELD
 // ============================================
 function SensitiveField({
   label,
@@ -426,7 +396,7 @@ function SensitiveField({
 }
 
 // ============================================
-// PERSON ID CARD (Version light/dark)
+// PERSON ID CARD (TOUT TRADUIT)
 // ============================================
 function PersonCard({
   role,
@@ -439,6 +409,7 @@ function PersonCard({
   verified,
   delay = 0,
   profilePictureUrl,
+  t,
 }: {
   role: string;
   firstName?: string;
@@ -450,6 +421,7 @@ function PersonCard({
   verified?: boolean;
   delay?: number;
   profilePictureUrl?: string;
+  t: any;
 }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
@@ -551,7 +523,7 @@ function PersonCard({
               <span
                 className={`text-[9px] font-bold ${isDark ? "text-emerald-400" : "text-emerald-600"}`}
               >
-                Vérifié
+                {t("verified")}
               </span>
             </div>
           )}
@@ -559,7 +531,7 @@ function PersonCard({
         <div className="p-5 space-y-3.5">
           {cinNumber && (
             <SensitiveField
-              label="Numéro CIN"
+              label={t("cinNumber")}
               value={cinNumber}
               icon={<IoFingerPrintOutline />}
               mono
@@ -568,7 +540,7 @@ function PersonCard({
           )}
           {email && (
             <SensitiveField
-              label="Adresse e-mail"
+              label={t("email")}
               value={email}
               icon={<IoMailOutline />}
             />
@@ -584,7 +556,7 @@ function PersonCard({
                 <span
                   className={`text-[9px] font-extrabold uppercase tracking-[0.15em] ${isDark ? "text-white/30" : "text-slate-400"}`}
                 >
-                  Téléphone
+                  {t("phone")}
                 </span>
               </div>
               <div
@@ -625,9 +597,17 @@ function PersonCard({
 }
 
 // ============================================
-// COORDINATE DISPLAY (Version light/dark)
+// COORDINATE DISPLAY (sans l'animation GPS)
 // ============================================
-function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
+function CoordinateDisplay({
+  lat,
+  lng,
+  t,
+}: {
+  lat?: number;
+  lng?: number;
+  t: any;
+}) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
   const [copied, setCopied] = useState<string | null>(null);
@@ -641,97 +621,7 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
 
   return (
     <div className="space-y-3">
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5 }}
-        className={`relative h-44 rounded-2xl overflow-hidden border ${
-          isDark ? "border-white/[0.06]" : "border-slate-200"
-        }`}
-      >
-        <div
-          className={`absolute inset-0 ${
-            isDark
-              ? "bg-gradient-to-br from-[#0a1628] via-[#0f1f3a] to-[#0a1628]"
-              : "bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100"
-          }`}
-        />
-        <div
-          className="absolute inset-0 opacity-10"
-          style={{
-            backgroundImage: isDark
-              ? "linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)"
-              : "linear-gradient(rgba(99,102,241,0.15) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.15) 1px, transparent 1px)",
-            backgroundSize: "30px 30px",
-          }}
-        />
-        <div className="absolute inset-0 flex items-center justify-center">
-          <motion.div
-            initial={{ y: -30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{
-              delay: 0.8,
-              type: "spring",
-              stiffness: 200,
-              damping: 12,
-            }}
-            className="relative"
-          >
-            <motion.div
-              className="absolute inset-0 w-16 h-16 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 rounded-full border-2 border-indigo-500/30"
-              animate={{ scale: [1, 2.5], opacity: [0.5, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-            <motion.div
-              className="absolute w-16 h-16 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 rounded-full border-2 border-violet-500/20"
-              animate={{ scale: [1, 2.5], opacity: [0.5, 0] }}
-              transition={{ duration: 2, repeat: Infinity, delay: 0.5 }}
-            />
-            <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center shadow-2xl shadow-indigo-500/40">
-              <IoHomeOutline className="text-white text-xl" />
-            </div>
-            <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-1 bg-black/20 rounded-full blur-sm" />
-          </motion.div>
-        </div>
-        <div
-          className={`absolute top-3 left-3 px-2 py-1 rounded-lg backdrop-blur-sm border ${
-            isDark
-              ? "bg-white/[0.06] border-white/[0.08]"
-              : "bg-white/60 border-white/80"
-          }`}
-        >
-          <span
-            className={`text-[8px] font-bold uppercase tracking-wider ${
-              isDark ? "text-white/40" : "text-slate-500"
-            }`}
-          >
-            Position GPS
-          </span>
-        </div>
-        <div
-          className={`absolute top-3 right-3 px-2 py-1 rounded-lg backdrop-blur-sm border ${
-            isDark
-              ? "bg-indigo-500/10 border-indigo-500/20"
-              : "bg-indigo-100 border-indigo-200"
-          }`}
-        >
-          <span
-            className={`text-[8px] font-bold uppercase tracking-wider ${
-              isDark ? "text-indigo-400" : "text-indigo-600"
-            }`}
-          >
-            Précis
-          </span>
-        </div>
-        <div
-          className={`absolute bottom-0 left-0 right-0 h-12 bg-gradient-to-t ${
-            isDark
-              ? "from-[#070b14] to-transparent"
-              : "from-white/80 to-transparent"
-          }`}
-        />
-      </motion.div>
-
+      {/* GARDÉ : Latitude et Longitude */}
       <div className="grid grid-cols-2 gap-3">
         <motion.div
           initial={{ opacity: 0, x: -10 }}
@@ -754,7 +644,7 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
                   isDark ? "text-white/25" : "text-slate-400"
                 }`}
               >
-                Latitude
+                {t("latitude")}
               </span>
             </div>
             <p className="text-lg font-mono font-black text-indigo-400 tracking-wider">
@@ -763,7 +653,7 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
             <p
               className={`text-[9px] mt-0.5 ${isDark ? "text-white/15" : "text-slate-300"}`}
             >
-              {lat > 0 ? "Nord" : "Sud"}
+              {lat > 0 ? t("north") : t("south")}
             </p>
           </div>
         </motion.div>
@@ -788,7 +678,7 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
                   isDark ? "text-white/25" : "text-slate-400"
                 }`}
               >
-                Longitude
+                {t("longitude")}
               </span>
             </div>
             <p className="text-lg font-mono font-black text-violet-400 tracking-wider">
@@ -797,7 +687,7 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
             <p
               className={`text-[9px] mt-0.5 ${isDark ? "text-white/15" : "text-slate-300"}`}
             >
-              {lng > 0 ? "Est" : "Ouest"}
+              {lng > 0 ? t("east") : t("west")}
             </p>
           </div>
         </motion.div>
@@ -812,12 +702,13 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
             className="text-center"
           >
             <span className="text-[10px] font-bold text-emerald-400">
-              ✓ Copié dans le presse-papier
+              ✓ {t("copied")}
             </span>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/*  GARDÉ : Lien Google Maps */}
       <motion.a
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -832,24 +723,23 @@ function CoordinateDisplay({ lat, lng }: { lat?: number; lng?: number }) {
         }`}
       >
         <IoNavigateOutline className="text-sm group-hover:rotate-[-15deg] transition-transform" />
-        Ouvrir dans Google Maps
+        {t("openInGoogleMaps")}
         <IoChevronForwardOutline className="text-[10px] group-hover:translate-x-0.5 transition-transform" />
       </motion.a>
     </div>
   );
 }
-
 // ============================================
-// STEP INDICATOR (Version light/dark)
+// STEP INDICATOR (TOUT TRADUIT)
 // ============================================
-function StepIndicator({ activeStep }: { activeStep: number }) {
+function StepIndicator({ activeStep, t }: { activeStep: number; t: any }) {
   const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
 
   const steps = [
-    { label: "Offre acceptée", icon: IoCheckmarkCircleOutline },
-    { label: "Paiement", icon: IoCardOutline },
-    { label: "Confirmation", icon: IoSparklesOutline },
+    { label: t("stepOffer"), icon: IoCheckmarkCircleOutline },
+    { label: t("stepPayment"), icon: IoCardOutline },
+    { label: t("stepConfirmation"), icon: IoSparklesOutline },
   ];
 
   return (
@@ -934,7 +824,7 @@ function StepIndicator({ activeStep }: { activeStep: number }) {
 }
 
 // ============================================
-// SECTION HEADER (Version light/dark)
+// SECTION HEADER (TRADUIT)
 // ============================================
 function SectionHeader({
   icon,
@@ -981,234 +871,23 @@ function SectionHeader({
 // MAIN PAGE
 // ============================================
 export default function ConfirmationPage() {
-  const { resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const offerId = searchParams.get("offerId");
-  const bookingId = searchParams.get("bookingId");
-  const paymentIntent = searchParams.get("payment_intent");
+  const t = useTranslations("ConfirmationPage");
 
-  const [booking, setBooking] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [showConfetti, setShowConfetti] = useState(false);
-  const [toast, setToast] = useState<{
-    message: string;
-    type: "success" | "error" | "info";
-  } | null>(null);
-  const [imgError, setImgError] = useState(false);
-  const [contractLoading, setContractLoading] = useState(false);
-
-  const showToast = useCallback(
-    (message: string, type: "success" | "error" | "info" = "info") =>
-      setToast({ message, type }),
-    [],
-  );
-
-  // Toggle theme
-  const toggleTheme = () => {
-    setTheme(isDark ? "light" : "dark");
-  };
-
-  // Chargement dynamique des données
-  useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-
-      try {
-        let data;
-        let conversationIdTemp = null;
-
-        if (paymentIntent) {
-          const transactionRes = await fetch(
-            `/api/payments/transaction?payment_intent=${paymentIntent}`,
-          );
-
-          if (transactionRes.ok) {
-            const transaction = await transactionRes.json();
-
-            if (transaction.bookingId) {
-              const bookingRes = await fetch(
-                `/api/bookings/${transaction.bookingId}`,
-              );
-              if (bookingRes.ok) {
-                data = await bookingRes.json();
-                console.log("🔍 data reçu de /api/bookings:", data);
-                console.log("🔍 data.id =", data.id); // ← Vérifie ici
-                conversationIdTemp = data.conversationId;
-              }
-            } else if (transaction.offerId) {
-              const offerRes = await fetch(
-                `/api/offers/${transaction.offerId}`,
-              );
-              if (offerRes.ok) {
-                data = await offerRes.json();
-                data = data.offer || data;
-              }
-            }
-          }
-        }
-
-        if (!data && bookingId) {
-          const res = await fetch(`/api/bookings/${bookingId}`);
-          if (res.ok) {
-            data = await res.json();
-            conversationIdTemp = data.conversationId;
-          } else {
-            const offerRes = await fetch(`/api/offers/${bookingId}`);
-            if (offerRes.ok) {
-              data = await offerRes.json();
-              data = data.offer || data;
-            } else {
-              throw new Error("Réservation non trouvée");
-            }
-          }
-        }
-
-        if (!data && offerId) {
-          const res = await fetch(`/api/offers/${offerId}`);
-          if (!res.ok) throw new Error("Erreur chargement offre");
-          data = await res.json();
-          data = data.offer || data;
-
-          const bookingRes = await fetch(`/api/bookings?offerId=${offerId}`);
-          if (bookingRes.ok) {
-            const bookingData = await bookingRes.json();
-            if (bookingData.bookings && bookingData.bookings.length > 0) {
-              conversationIdTemp = bookingData.bookings[0].conversationId;
-            }
-          }
-        }
-
-        if (!data) {
-          throw new Error("Aucun identifiant de réservation trouvé");
-        }
-
-        const nights =
-          data.nights ||
-          Math.ceil(
-            (new Date(data.checkOut).getTime() -
-              new Date(data.checkIn).getTime()) /
-              86400000,
-          );
-
-        setBooking({
-          id: data.id,
-          reference: data.reference,
-          issuedAt: data.createdAt,
-          checkIn: data.checkIn,
-          checkOut: data.checkOut,
-          nights: nights,
-          guests: data.guests,
-          totalPrice: data.totalPrice,
-          pricePerNight: data.pricePerNight,
-          cleaningFee: data.cleaningFee || 0,
-          serviceFee: data.serviceFee || 0,
-          checkInTime: data.checkInTime || "15:00",
-          checkOutTime: data.checkOutTime || "11:00",
-          accessCode:
-            data.revealedInfo?.accessCode ||
-            Math.floor(1000 + Math.random() * 9000).toString(),
-          tenant: {
-            id: data.tenant?.id,
-            firstName: data.tenant?.firstName,
-            lastName: data.tenant?.lastName,
-            cinNumber: data.tenant?.cinNumber,
-            email: data.tenant?.email,
-            phone: data.tenant?.phone,
-            verified: data.tenant?.isIdentityVerified,
-            profilePictureUrl: data.tenant?.profilePictureUrl,
-          },
-          owner: {
-            id: data.owner?.id,
-            firstName: data.owner?.firstName,
-            lastName: data.owner?.lastName,
-            cinNumber: data.owner?.cinNumber,
-            email: data.owner?.email,
-            phone: data.owner?.phone,
-            verified: data.owner?.isIdentityVerified,
-            joinedYear: data.owner?.joinedYear,
-            listings: data.owner?.listingsCount,
-            profilePictureUrl: data.owner?.profilePictureUrl,
-          },
-          listing: {
-            id: data.listing?.id,
-            title: data.listing?.title,
-            type: data.listing?.type,
-            address: data.listing?.fullAddress || data.listing?.location,
-            image: data.listing?.photos?.[0]?.url || data.listing?.image,
-            location: data.listing?.governorate || data.listing?.location,
-            rating: data.owner?.rating,
-            latitude: data.listing?.latitude,
-            longitude: data.listing?.longitude,
-          },
-          conversationId: conversationIdTemp || data.conversationId,
-        });
-
-        setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 4000);
-      } catch (err) {
-        console.error("Erreur:", err);
-        showToast("Erreur lors du chargement des données", "error");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [offerId, bookingId, paymentIntent, showToast]);
-
-  const handleDownloadContract = async () => {
-    if (!booking) return;
-    console.log("🔍 booking complet:", booking);
-    console.log("🔍 booking.id:", booking.id);
-    console.log("🔍 offerId de l'URL:", offerId);
-    setContractLoading(true);
-    try {
-      const requestBody: { offerId?: string; bookingId?: string } = {};
-      if (booking.id) {
-        requestBody.bookingId = booking.id;
-      } else if (booking.offerId) {
-        requestBody.offerId = booking.offerId;
-      }
-
-      const res = await fetch("/api/contracts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestBody),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Erreur génération contrat");
-      }
-
-      if (data.contract?.id) {
-        window.open(`/api/contracts/${data.contract.id}/download`, "_blank");
-        showToast("Contrat généré avec succès !", "success");
-      } else {
-        showToast("Erreur lors de la génération", "error");
-      }
-    } catch (error) {
-      console.error("Erreur:", error);
-      showToast("Erreur technique lors de la génération du contrat", "error");
-    } finally {
-      setContractLoading(false);
-    }
-  };
-
-  const handleContactHost = () => {
-    if (booking?.conversationId) {
-      router.push(`/fr/messages/${booking.conversationId}`);
-    } else {
-      router.push("/fr/messages");
-    }
-  };
-
-  const handleMyBookings = () => {
-    router.push("/fr/reservations");
-  };
+  const {
+    booking,
+    isLoading,
+    showConfetti,
+    toast,
+    setToast,
+    imgError,
+    setImgError,
+    contractLoading,
+    handleDownloadContract,
+    handleContactHost,
+    handleMyBookings,
+  } = useBookingConfirmation();
 
   if (isLoading) {
     return (
@@ -1216,7 +895,7 @@ export default function ConfirmationPage() {
         variant="spinner"
         size="lg"
         color="primary"
-        text="Vérification de votre paiement..."
+        text={t("loading.verifyingPayment")}
         fullScreen
       />
     );
@@ -1231,13 +910,13 @@ export default function ConfirmationPage() {
       >
         <div className="text-center">
           <h1 className="text-xl font-bold text-red-500 mb-4">
-            Réservation non trouvée
+            {t("errors.bookingNotFound")}
           </h1>
           <button
             onClick={handleMyBookings}
             className="text-indigo-500 hover:underline"
           >
-            Voir mes réservations
+            {t("buttons.viewMyBookings")}
           </button>
         </div>
       </div>
@@ -1260,6 +939,7 @@ export default function ConfirmationPage() {
             message={toast.message}
             type={toast.type}
             onClose={() => setToast(null)}
+            t={t}
           />
         )}
       </AnimatePresence>
@@ -1267,25 +947,6 @@ export default function ConfirmationPage() {
       <TenantHeader />
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-24">
-        {/* Theme Toggle Button */}
-        <motion.button
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.1 }}
-          onClick={toggleTheme}
-          className={`fixed bottom-6 right-6 z-50 p-3 rounded-full shadow-lg transition-all duration-300 ${
-            isDark
-              ? "bg-slate-800 text-yellow-400 hover:bg-slate-700"
-              : "bg-white text-indigo-600 hover:bg-slate-100"
-          }`}
-        >
-          {isDark ? (
-            <IoSunnyOutline className="text-xl" />
-          ) : (
-            <IoMoonOutline className="text-xl" />
-          )}
-        </motion.button>
-
         {/* SUCCESS HERO */}
         <motion.section
           initial={{ opacity: 0, y: 20 }}
@@ -1294,15 +955,15 @@ export default function ConfirmationPage() {
           className="text-center mb-14"
         >
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-3">
-            Paiement{" "}
+            {t("hero.title")}{" "}
             <span className="bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 bg-clip-text text-transparent">
-              confirmé !
+              {t("hero.confirmed")}
             </span>
           </h1>
           <p
             className={`text-sm mb-5 max-w-md mx-auto ${isDark ? "text-white/30" : "text-slate-500"}`}
           >
-            Votre réservation est finalisée. Tous les détails sont ci-dessous.
+            {t("hero.subtitle")}
           </p>
 
           <motion.div
@@ -1315,7 +976,7 @@ export default function ConfirmationPage() {
                 isDark ? "text-white/25" : "text-slate-400"
               }`}
             >
-              Montant payé
+              {t("hero.amountPaid")}
             </p>
             <p
               className={`text-4xl font-black ${isDark ? "text-white" : "text-slate-900"}`}
@@ -1344,7 +1005,7 @@ export default function ConfirmationPage() {
                 isDark ? "text-white/25" : "text-slate-400"
               }`}
             >
-              Réf:
+              {t("hero.reference")}:
             </span>
             <span
               className={`font-mono font-extrabold text-sm tracking-wider ${
@@ -1386,8 +1047,8 @@ export default function ConfirmationPage() {
                 <div className="p-4 sm:p-6">
                   <SectionHeader
                     icon={<IoCalendarOutline />}
-                    title="Détails du séjour"
-                    subtitle={`Émis le ${fmtDate(booking.issuedAt)}`}
+                    title={t("sections.stayDetails")}
+                    subtitle={`${t("sections.issuedOn")} ${fmtDate(booking.issuedAt)}`}
                   />
 
                   <div
@@ -1412,7 +1073,7 @@ export default function ConfirmationPage() {
                           isDark ? "text-indigo-400" : "text-indigo-600"
                         }`}
                       >
-                        Propriété
+                        {t("sections.property")}
                       </p>
                       <p
                         className={`text-sm font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}
@@ -1434,35 +1095,30 @@ export default function ConfirmationPage() {
                     {[
                       {
                         icon: <IoLogInOutline className="text-indigo-400" />,
-                        label: "Arrivée",
+                        label: t("sections.checkIn"),
                         value: fmtDate(booking.checkIn),
-                        sub: `Dès ${booking.checkInTime}`,
-                        bg: isDark
-                          ? "border-indigo-500/10"
-                          : "border-indigo-200/50",
+                        sub: `${t("sections.from")} ${booking.checkInTime}`,
                       },
                       {
                         icon: <IoMoonOutline className="text-violet-400" />,
-                        label: "Durée",
-                        value: `${booking.nights} nuits`,
-                        sub: `${booking.guests} voyageurs`,
-                        bg: isDark
-                          ? "border-violet-500/10"
-                          : "border-violet-200/50",
+                        label: t("sections.duration"),
+                        value: `${booking.nights} ${t("sections.nights")}`,
+                        sub: `${booking.guests} ${booking.guests > 1 ? t("sections.travelers") : t("sections.traveler")}`,
                       },
                       {
                         icon: <IoLogOutOutline className="text-purple-400" />,
-                        label: "Départ",
+                        label: t("sections.checkOut"),
                         value: fmtDate(booking.checkOut),
-                        sub: `Avant ${booking.checkOutTime}`,
-                        bg: isDark
-                          ? "border-purple-500/10"
-                          : "border-purple-200/50",
+                        sub: `${t("sections.before")} ${booking.checkOutTime}`,
                       },
                     ].map((d) => (
                       <div
                         key={d.label}
-                        className={`rounded-xl p-3.5 bg-white/[0.02] border ${d.bg} flex flex-col gap-1.5`}
+                        className={`rounded-xl p-3.5 bg-white/[0.02] border ${
+                          isDark
+                            ? "border-indigo-500/10"
+                            : "border-indigo-200/50"
+                        } flex flex-col gap-1.5`}
                       >
                         <div className="flex items-center gap-1.5">
                           <span className="text-base">{d.icon}</span>
@@ -1493,12 +1149,15 @@ export default function ConfirmationPage() {
                   <div className="space-y-2.5 mb-4">
                     {[
                       {
-                        label: `${fmtPrice(booking.pricePerNight)} TND × ${booking.nights} nuits`,
+                        label: `${fmtPrice(booking.pricePerNight)} TND × ${booking.nights} ${t("sections.nights")}`,
                         value: nightsTotal,
                       },
-                      { label: "Frais de ménage", value: booking.cleaningFee },
                       {
-                        label: "Frais de service",
+                        label: t("sections.cleaningFee"),
+                        value: booking.cleaningFee,
+                      },
+                      {
+                        label: t("sections.serviceFee"),
                         value: booking.serviceFee,
                         accent: true,
                       },
@@ -1536,7 +1195,7 @@ export default function ConfirmationPage() {
                     <p
                       className={`text-sm font-extrabold ${isDark ? "text-white" : "text-slate-800"}`}
                     >
-                      Total payé
+                      {t("sections.totalPaid")}
                     </p>
                     <p className="text-xl font-black bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 bg-clip-text text-transparent">
                       {fmtPrice(booking.totalPrice)}{" "}
@@ -1550,7 +1209,7 @@ export default function ConfirmationPage() {
             {/* PERSONAL DATA — TENANT & OWNER */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <PersonCard
-                role="Locataire (Vous)"
+                role={t("roles.tenant")}
                 firstName={booking.tenant.firstName}
                 lastName={booking.tenant.lastName}
                 cinNumber={booking.tenant.cinNumber}
@@ -1559,9 +1218,10 @@ export default function ConfirmationPage() {
                 verified={booking.tenant.verified}
                 profilePictureUrl={booking.tenant.profilePictureUrl}
                 delay={0.3}
+                t={t}
               />
               <PersonCard
-                role="Propriétaire (Hôte)"
+                role={t("roles.owner")}
                 firstName={booking.owner.firstName}
                 lastName={booking.owner.lastName}
                 cinNumber={booking.owner.cinNumber}
@@ -1570,16 +1230,8 @@ export default function ConfirmationPage() {
                 verified={booking.owner.verified}
                 profilePictureUrl={booking.owner.profilePictureUrl}
                 delay={0.35}
-                extra={[
-                  {
-                    label: "Hôte depuis",
-                    value: booking.owner.joinedYear?.toString(),
-                  },
-                  {
-                    label: "Propriétés",
-                    value: `${booking.owner.listings} annonces`,
-                  },
-                ].filter((e) => e.value)}
+                extra={[]}
+                t={t}
               />
             </div>
 
@@ -1604,16 +1256,11 @@ export default function ConfirmationPage() {
                     : "bg-white/70 border-white/50 shadow-lg shadow-slate-200/50"
                 }`}
               >
-                <div
-                  className={`h-px bg-gradient-to-r from-transparent to-transparent ${
-                    isDark ? "via-indigo-500/30" : "via-indigo-500/20"
-                  }`}
-                />
                 <div className="p-6">
                   <SectionHeader
                     icon={<IoDocumentTextOutline />}
-                    title="Contrat & documents"
-                    subtitle="Téléchargez votre contrat de location"
+                    title={t("sections.contract")}
+                    subtitle={t("sections.downloadContract")}
                   />
 
                   <div
@@ -1636,21 +1283,22 @@ export default function ConfirmationPage() {
                       <p
                         className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}
                       >
-                        Contrat de location
+                        {t("sections.rentalContract")}
                       </p>
                       <p
                         className={`text-[11px] mt-0.5 ${
                           isDark ? "text-white/30" : "text-slate-500"
                         }`}
                       >
-                        {booking.listing.title} · Réf {booking.reference}
+                        {booking.listing.title} · {t("sections.ref")}{" "}
+                        {booking.reference}
                       </p>
                       <p
                         className={`text-[10px] mt-1 ${
                           isDark ? "text-white/20" : "text-slate-400"
                         }`}
                       >
-                        PDF · Généré automatiquement · Signé électroniquement
+                        {t("sections.pdfDescription")}
                       </p>
                     </div>
                     <div
@@ -1666,7 +1314,7 @@ export default function ConfirmationPage() {
                           isDark ? "text-emerald-400" : "text-emerald-600"
                         }`}
                       >
-                        Prêt
+                        {t("sections.ready")}
                       </span>
                     </div>
                   </div>
@@ -1679,8 +1327,8 @@ export default function ConfirmationPage() {
                     >
                       <IoDocumentTextOutline className="text-lg" />
                       {contractLoading
-                        ? "Génération..."
-                        : "Télécharger le contrat"}
+                        ? t("buttons.generating")
+                        : t("buttons.downloadContract")}
                     </button>
                     <button
                       onClick={handleContactHost}
@@ -1691,7 +1339,7 @@ export default function ConfirmationPage() {
                       }`}
                     >
                       <IoChatbubbleOutline className="text-lg" />
-                      Contacter l'hôte
+                      {t("buttons.contactHost")}
                     </button>
                   </div>
 
@@ -1708,7 +1356,7 @@ export default function ConfirmationPage() {
                         isDark ? "text-emerald-400/70" : "text-emerald-600/70"
                       }`}
                     >
-                      Transaction sécurisée · Données chiffrées · PCI Compliant
+                      {t("sections.secureTransaction")}
                     </p>
                   </div>
                 </div>
@@ -1797,21 +1445,21 @@ export default function ConfirmationPage() {
                           <IoCalendarOutline className="text-indigo-400 text-sm" />
                         ),
                         val: fmtShort(booking.checkIn),
-                        lbl: "Arrivée",
+                        lbl: t("cards.checkInShort"),
                       },
                       {
                         icon: (
                           <IoMoonOutline className="text-violet-400 text-sm" />
                         ),
-                        val: `${booking.nights}N`,
-                        lbl: "Durée",
+                        val: `${booking.nights}${t("cards.nightsShort")}`,
+                        lbl: t("cards.durationShort"),
                       },
                       {
                         icon: (
                           <IoPeopleOutline className="text-purple-400 text-sm" />
                         ),
                         val: booking.guests,
-                        lbl: "Voyag.",
+                        lbl: t("cards.travelersShort"),
                       },
                     ].map(({ icon, val, lbl }) => (
                       <div
@@ -1851,7 +1499,7 @@ export default function ConfirmationPage() {
                         isDark ? "text-white/30" : "text-slate-400"
                       }`}
                     >
-                      Total
+                      {t("cards.total")}
                     </span>
                     <span className="text-base font-black bg-gradient-to-r from-indigo-500 via-violet-500 to-purple-500 bg-clip-text text-transparent">
                       {fmtPrice(booking.totalPrice)} TND
@@ -1882,67 +1530,38 @@ export default function ConfirmationPage() {
                       : "bg-white/70 border-white/50 shadow-lg shadow-slate-200/50"
                   }`}
                 >
-                  <div
-                    className={`h-px bg-gradient-to-r from-transparent to-transparent ${
-                      isDark ? "via-indigo-500/30" : "via-indigo-500/20"
-                    }`}
-                  />
                   <div className="p-5">
                     <SectionHeader
                       icon={<IoNavigateOutline />}
-                      title="Emplacement exact"
+                      title={t("sections.exactLocation")}
                       subtitle={
                         booking.listing.address || booking.listing.location
                       }
                     />
 
-                    {/* MAP PICKER - Vue seule (readOnly) */}
                     <div className="h-64 sm:h-80 w-full rounded-xl overflow-hidden">
                       <MapPicker
                         latitude={booking.listing.latitude}
                         longitude={booking.listing.longitude}
-                        onLocationChange={() => {}} // readOnly donc pas de changement
+                        onLocationChange={() => {}}
                         readOnly={true}
                         showAllMarkers={false}
                         className="w-full h-full"
                       />
                     </div>
 
-                    {/* Coordonnées textuelles sous la carte */}
-                    <div className="mt-4 flex items-center justify-between px-2 py-2">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isDark ? "bg-emerald-400" : "bg-emerald-500"
-                          } animate-pulse`}
-                        />
-                        <code
-                          className={`text-[10px] font-mono font-medium ${
-                            isDark ? "text-white/40" : "text-slate-500"
-                          }`}
-                        >
-                          {booking.listing.latitude.toFixed(6)},{" "}
-                          {booking.listing.longitude.toFixed(6)}
-                        </code>
-                      </div>
-                      <a
-                        href={`https://www.google.com/maps?q=${booking.listing.latitude},${booking.listing.longitude}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all group ${
-                          isDark
-                            ? "bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/15"
-                            : "bg-indigo-50 text-indigo-600 hover:bg-indigo-100"
-                        }`}
-                      >
-                        <IoNavigateOutline className="text-xs group-hover:rotate-[-15deg] transition-transform" />
-                        Ouvrir dans Google Maps
-                      </a>
+                    <div className="mt-6">
+                      <CoordinateDisplay
+                        lat={booking.listing.latitude}
+                        lng={booking.listing.longitude}
+                        t={t}
+                      />
                     </div>
                   </div>
                 </div>
               </motion.div>
             )}
+
             {/* Info notes */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
@@ -1968,9 +1587,9 @@ export default function ConfirmationPage() {
                   isDark ? "text-amber-400/50" : "text-amber-600/70"
                 }`}
               >
-                Le code d'accès sera activé le jour de votre arrivée à partir de{" "}
-                {booking.checkInTime}. Contactez l'hôte via le chat pour toute
-                question.
+                {t("info.accessCodeActivation", {
+                  checkInTime: booking.checkInTime,
+                })}
               </p>
             </motion.div>
 
@@ -1999,14 +1618,14 @@ export default function ConfirmationPage() {
                     isDark ? "text-indigo-400" : "text-indigo-600"
                   }`}
                 >
-                  E-mail envoyé
+                  {t("info.messageSent")}
                 </p>
                 <p
                   className={`text-[11px] leading-relaxed ${
                     isDark ? "text-indigo-400/40" : "text-indigo-600/60"
                   }`}
                 >
-                  Un récapitulatif complet a été envoyé à votre adresse e-mail.
+                  {t("info.recapSent")}
                 </p>
               </div>
             </motion.div>
@@ -2037,12 +1656,12 @@ export default function ConfirmationPage() {
                   <p
                     className={`text-sm font-bold ${isDark ? "text-white" : "text-slate-800"}`}
                   >
-                    Mes réservations
+                    {t("navigation.myBookings")}
                   </p>
                   <p
                     className={`text-[10px] ${isDark ? "text-white/25" : "text-slate-400"}`}
                   >
-                    Voir tous vos séjours
+                    {t("navigation.viewAllStays")}
                   </p>
                 </div>
               </div>
@@ -2078,79 +1697,25 @@ export default function ConfirmationPage() {
                 <p
                   className={`text-xs font-bold ${isDark ? "text-white/60" : "text-slate-600"}`}
                 >
-                  Besoin d'aide ?
+                  {t("help.needHelp")}
                 </p>
                 <p
                   className={`text-[10px] ${isDark ? "text-white/20" : "text-slate-400"}`}
                 >
-                  Support 24h/7j
+                  {t("help.support247")}
                 </p>
               </div>
               <button
+                onClick={handleContactHost}
                 className={`text-xs font-bold transition-colors flex items-center gap-1 group ${
                   isDark
                     ? "text-indigo-400 hover:text-indigo-300"
                     : "text-indigo-600 hover:text-indigo-700"
                 }`}
               >
-                Centre d'aide{" "}
+                {t("help.helpCenter")}{" "}
                 <IoChevronForwardOutline className="text-[10px] group-hover:translate-x-0.5 transition-transform" />
               </button>
-            </motion.div>
-
-            {/* Guarantee badges */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.65 }}
-              className="grid grid-cols-3 gap-3"
-            >
-              {[
-                {
-                  icon: <IoTrophyOutline />,
-                  label: "Meilleur prix",
-                  sub: "Garanti",
-                },
-                {
-                  icon: <IoFlashOutline />,
-                  label: "Confirmation",
-                  sub: "Instantanée",
-                },
-                {
-                  icon: <IoDiamondOutline />,
-                  label: "Qualité",
-                  sub: "Premium",
-                },
-              ].map((b) => (
-                <div
-                  key={b.label}
-                  className={`text-center py-3 px-2 rounded-xl border transition-colors ${
-                    isDark
-                      ? "bg-white/[0.02] border-white/[0.04] hover:border-white/[0.08]"
-                      : "bg-white/50 border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div
-                    className={`text-lg mb-1.5 flex justify-center ${
-                      isDark ? "text-white/20" : "text-slate-400"
-                    }`}
-                  >
-                    {b.icon}
-                  </div>
-                  <p
-                    className={`text-[9px] font-extrabold uppercase tracking-wider ${
-                      isDark ? "text-white/40" : "text-slate-500"
-                    }`}
-                  >
-                    {b.label}
-                  </p>
-                  <p
-                    className={`text-[8px] ${isDark ? "text-white/15" : "text-slate-300"}`}
-                  >
-                    {b.sub}
-                  </p>
-                </div>
-              ))}
             </motion.div>
           </div>
         </div>
@@ -2169,18 +1734,12 @@ export default function ConfirmationPage() {
               isDark ? "text-white/20" : "text-slate-400"
             }`}
           >
-            "Merci de faire confiance à{" "}
+            {t("footer.thankYou")}{" "}
             <span className="not-italic font-bold text-indigo-400">
               NESTHUB
             </span>
-            . Nous espérons que votre séjour sera inoubliable."
+            . {t("footer.hopeEnjoy")}
           </p>
-          <div className="flex items-center gap-2 opacity-50">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500" />
-            <span className="text-lg font-extrabold tracking-tight text-white">
-              NESTHUB
-            </span>
-          </div>
         </motion.div>
       </main>
     </div>

@@ -9,26 +9,23 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 });
 
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     const { sessionClaims } = await auth();
     const role = (sessionClaims as any)?.role;
-    const { id } = await params;
 
-    // Vérifier que l'utilisateur est ADMIN
     if (role !== "ADMIN") {
       return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
     }
 
-    // Lire le body
-    const body = await request.json().catch(() => ({}));
-    const { amount, reason } = body;
+    const { reason, amount } = await req.json();
+    const transactionId = params.id;
 
-    // 1. Récupérer la transaction depuis la base de données
-    const payment = await prisma.payment.findUnique({
-      where: { id },
+    // Trouver la transaction
+    let payment = await prisma.payment.findUnique({
+      where: { id: transactionId },
       include: {
         booking: {
           include: {
@@ -40,166 +37,121 @@ export async function POST(
       },
     });
 
+    let stripePaymentIntentId = payment?.providerTransactionId;
+    let booking = payment?.booking;
+
     if (!payment) {
-      return NextResponse.json(
-        { error: "Transaction non trouvée" },
-        { status: 404 },
-      );
-    }
-
-    // Vérifier si déjà remboursé
-    if (payment.status === "REFUNDED") {
-      return NextResponse.json(
-        { error: "Cette transaction a déjà été remboursée" },
-        { status: 400 },
-      );
-    }
-
-    // Vérifier que le paiement peut être remboursé
-    if (payment.status !== "PAID" && payment.status !== "SUCCESS") {
-      return NextResponse.json(
-        { error: "Cette transaction ne peut pas être remboursée" },
-        { status: 400 },
-      );
-    }
-
-    const refundAmount = amount || payment.amount;
-    let stripeRefund = null;
-
-    // 2. Si c'est un paiement Stripe, effectuer le remboursement via Stripe
-    if (payment.provider === "STRIPE" && payment.providerTransactionId) {
-      try {
-        // Récupérer le PaymentIntent
-        const paymentIntent = await stripe.paymentIntents.retrieve(
-          payment.providerTransactionId,
-        );
-
-        if (!paymentIntent) {
-          throw new Error("PaymentIntent non trouvé");
+      const paymentTransaction = await prisma.paymentTransaction.findUnique({
+        where: { id: transactionId },
+        include: {
+          offer: {
+            include: {
+              listing: { include: { owner: true } },
+              tenant: true,
+            }
+          }
         }
+      });
+      stripePaymentIntentId = paymentTransaction?.stripePaymentIntentId;
+      booking = paymentTransaction?.offer?.booking;
+    }
 
-        // Créer le refund
-        stripeRefund = await stripe.refunds.create({
-          payment_intent: payment.providerTransactionId,
-          amount: Math.round(refundAmount * 100), // Convertir en centimes
-          reason: "requested_by_customer",
-          metadata: {
-            admin_reason: reason || "Remboursement administratif",
-            transaction_id: payment.id,
-            booking_id: payment.bookingId || "",
+    if (!stripePaymentIntentId) {
+      return NextResponse.json({ error: "Transaction non trouvée" }, { status: 404 });
+    }
+
+    // Effectuer le remboursement Stripe
+    const refund = await stripe.refunds.create({
+      payment_intent: stripePaymentIntentId,
+      amount: amount ? amount * 100 : undefined,
+      reason: "requested_by_customer",
+      metadata: {
+        adminReason: reason || "Remboursement admin",
+        transactionId: transactionId,
+      },
+    });
+
+    const refundAmount = amount || payment?.amount || 0;
+
+    // Mettre à jour la base de données
+    if (payment) {
+      await prisma.payment.update({
+        where: { id: transactionId },
+        data: {
+          status: "REFUNDED",
+          refundAmount: refundAmount,
+          refundReason: reason || "Remboursement admin",
+          refundedAt: new Date(),
+          providerData: {
+            refundId: refund.id,
+            refundReason: reason,
+          },
+        },
+      });
+
+      // Mettre à jour la réservation
+      if (payment.booking) {
+        await prisma.booking.update({
+          where: { id: payment.booking.id },
+          data: {
+            paymentStatus: "REFUNDED",
+            status: "CANCELLED",
+            refundAmount: refundAmount,
+            refundReason: reason || "Remboursement admin",
+            refundedAt: new Date(),
           },
         });
-
-        console.log(` Refund Stripe créé: ${stripeRefund.id}`);
-      } catch (stripeError) {
-        console.error(" Erreur Stripe:", stripeError);
-        return NextResponse.json(
-          { error: "Erreur lors du remboursement Stripe" },
-          { status: 500 },
-        );
       }
-    }
-
-    // 3. Mettre à jour le statut du paiement
-    const updatedPayment = await prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: "REFUNDED",
-        refundAmount: refundAmount,
-        refundReason: reason || "Remboursement effectué par l'administrateur",
-        refundedAt: new Date(),
-        providerData: stripeRefund
-          ? {
-              refundId: stripeRefund.id,
-              refundStatus: stripeRefund.status,
-              refundAmount: stripeRefund.amount / 100,
-            }
-          : undefined,
-      },
-    });
-
-    // 4. Créer une transaction de type REFUND
-    await prisma.payment.create({
-      data: {
-        bookingId: payment.bookingId,
-        amount: -refundAmount,
-        type: "REFUND",
-        status: "SUCCESS",
-        provider: payment.provider,
-        refundReason: reason || "Remboursement administratif",
-        providerTransactionId: stripeRefund?.id,
-      },
-    });
-
-    // 5. Mettre à jour le statut de la réservation (si elle existe)
-    if (payment.bookingId) {
-      await prisma.booking.update({
-        where: { id: payment.bookingId },
+    } else {
+      await prisma.paymentTransaction.update({
+        where: { id: transactionId },
         data: {
-          status: "CANCELLED",
-          paymentStatus: "REFUNDED",
-          cancellationReason: reason || "Remboursement administratif",
-          cancelledAt: new Date(),
+          status: "REFUNDED",
+          metadata: {
+            refundId: refund.id,
+            refundReason: reason,
+            refundedAt: new Date().toISOString(),
+          },
         },
       });
     }
 
-    // 6. Envoyer des notifications
-    if (payment.booking) {
-      const tenantId = payment.booking.tenantId;
-      const ownerId = payment.booking.ownerId;
-      const listingTitle = payment.booking.listing?.title || "la propriété";
+    //  NOTIFICATION au locataire
+    if (booking?.tenantId) {
+      await prisma.notification.create({
+        data: {
+          userId: booking.tenantId,
+          type: "PAYMENT_REFUNDED",
+          title: " Remboursement effectué",
+          content: `Votre paiement de ${refundAmount.toLocaleString("fr-FR")} TND a été remboursé pour la réservation #${booking.reference || transactionId.slice(-8)}.`,
+          data: { bookingId: booking.id, amount: refundAmount },
+        },
+      });
+    }
 
-      if (tenantId) {
-        await prisma.notification.create({
-          data: {
-            userId: tenantId,
-            type: "PAYMENT_REFUNDED",
-            title: "Remboursement effectué",
-            content: `Votre paiement de ${refundAmount.toFixed(2)} TND a été remboursé. Motif: ${reason || "Remboursement administratif"}`,
-            channels: ["IN_APP", "EMAIL"],
-            data: {
-              transactionId: payment.id,
-              bookingId: payment.bookingId,
-              amount: refundAmount,
-            },
-          },
-        });
-      }
-
-      if (ownerId) {
-        await prisma.notification.create({
-          data: {
-            userId: ownerId,
-            type: "PAYMENT_REFUNDED",
-            title: "Remboursement effectué",
-            content: `Un remboursement de ${refundAmount.toFixed(2)} TND a été effectué pour la réservation "${listingTitle}". Motif: ${reason || "Remboursement administratif"}`,
-            channels: ["IN_APP", "EMAIL"],
-            data: {
-              transactionId: payment.id,
-              bookingId: payment.bookingId,
-              amount: refundAmount,
-            },
-          },
-        });
-      }
+    //  NOTIFICATION au propriétaire
+    if (booking?.ownerId) {
+      await prisma.notification.create({
+        data: {
+          userId: booking.ownerId,
+          type: "SYSTEM_ALERT",
+          title: " Réservation annulée",
+          content: `La réservation #${booking.reference || transactionId.slice(-8)} a été annulée et remboursée au locataire.`,
+          data: { bookingId: booking.id },
+        },
+      });
     }
 
     return NextResponse.json({
       success: true,
-      message: "Remboursement effectué avec succès",
       refund: {
-        id: updatedPayment.id,
-        amount: refundAmount,
-        status: "REFUNDED",
-        stripeRefundId: stripeRefund?.id,
+        id: refund.id,
+        amount: refund.amount / 100,
+        status: refund.status,
       },
     });
   } catch (error) {
-    console.error(" Refund error:", error);
-    return NextResponse.json(
-      { error: "Erreur lors du remboursement" },
-      { status: 500 },
-    );
+    console.error("Refund error:", error);
+    return NextResponse.json({ error: "Erreur lors du remboursement" }, { status: 500 });
   }
 }

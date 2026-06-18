@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 1. Récupérer les listings depuis Prisma
+    // 1. Récupérer les listings depuis Prisma (CORRIGÉ)
     const listings = await prisma.listing.findMany({
       where: { id: { in: listingIds }, status: "ACTIVE" },
       include: {
@@ -219,12 +219,15 @@ export async function POST(req: NextRequest) {
         },
         bookings: {
           where: {
-            review: { isNot: null },
             status: { in: ["COMPLETED", "CONFIRMED"] },
           },
           include: {
-            review: {
-              select: { rating: true, comment: true, createdAt: true },
+            reviews: {
+              select: {
+                rating: true,
+                comment: true,
+                createdAt: true,
+              },
             },
           },
         },
@@ -243,8 +246,8 @@ export async function POST(req: NextRequest) {
       const regionPrice = getRegionPrice(listing.governorate);
 
       const reviews = listing.bookings
-        .filter((b) => b.review !== null)
-        .map((b) => b.review);
+        .filter((b) => b.reviews && b.reviews.length > 0)
+        .flatMap((b) => b.reviews);
 
       const avgRating =
         reviews.length > 0
@@ -275,7 +278,7 @@ export async function POST(req: NextRequest) {
               : "élevé"
         : "non défini";
 
-      //  Calcul des distances
+      // Calcul des distances
       let nearestBeach = null;
       let distanceToBeach = null;
       let nearestCity = null;
@@ -375,7 +378,6 @@ export async function POST(req: NextRequest) {
             ? listing.pricePerNight < regionPrice.avg
             : false,
         },
-        //  NOUVEAUX CHAMPS DE DISTANCE
         nearestBeach,
         distanceToBeach,
         beachProximityCategory,

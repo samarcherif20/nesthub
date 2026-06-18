@@ -1,6 +1,6 @@
 // app/api/admin/counters/route.ts
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma"; // Ajustez le chemin selon votre projet
+import { prisma } from "@/lib/prisma"; 
 
 export async function GET() {
   try {

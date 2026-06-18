@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   IoNotificationsOutline,
   IoNotifications,
@@ -24,6 +25,7 @@ interface NotificationBellProps {
 }
 
 export default function NotificationBell({ muted = false }: NotificationBellProps) {
+  const t = useTranslations("NotificationBell");
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -154,14 +156,14 @@ export default function NotificationBell({ muted = false }: NotificationBellProp
     }
   };
 
-  // ✅ CAS 1: Muet - Bell OFF (barrée)
+  // CAS 1: Muet
   if (muted) {
     return (
       <div className="relative">
         <button
           className="relative p-2 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors focus:outline-none opacity-60 cursor-not-allowed"
           disabled
-          title="Notifications désactivées"
+          title={t("disabled")}
         >
           <IoNotificationsOff className="text-2xl text-gray-400 dark:text-gray-500" />
         </button>
@@ -169,7 +171,7 @@ export default function NotificationBell({ muted = false }: NotificationBellProp
     );
   }
 
-  // ✅ CAS 2: Non muet - Bell pleine si notifications, vide sinon
+  // CAS 2: Non muet - Bell pleine si notifications, vide sinon
   return (
     <div className="relative">
       <button
@@ -199,14 +201,14 @@ export default function NotificationBell({ muted = false }: NotificationBellProp
           <div className="absolute right-0 top-full mt-2 w-96 bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-slate-700 z-[9999] overflow-hidden">
             <div className="flex items-center justify-between p-4 border-b border-gray-100 dark:border-slate-800">
               <h3 className="font-bold text-gray-900 dark:text-white">
-                Notifications
+                {t("title")}
               </h3>
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAllAsRead}
                   className="text-xs text-blue-500 hover:text-blue-600 transition"
                 >
-                  Tout marquer comme lu
+                  {t("markAllAsRead")}
                 </button>
               )}
             </div>

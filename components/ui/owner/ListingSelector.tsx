@@ -2,8 +2,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { ChevronDown, Home, Building2, Hotel, Check } from 'lucide-react';
-import Link from 'next/link';  // ← Correction : import séparé de Link
+import Link from 'next/link';
 
 interface Listing {
   id: string;
@@ -30,6 +31,7 @@ const typeIcons: Record<string, any> = {
 };
 
 export default function ListingSelector({ selectedListingId, onSelectListing }: ListingSelectorProps) {
+  const t = useTranslations("ListingSelector");
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOpen, setIsOpen] = useState(false);
@@ -69,9 +71,9 @@ export default function ListingSelector({ selectedListingId, onSelectListing }: 
     return (
       <div className="bg-white dark:bg-slate-900 rounded-xl p-6 text-center border border-slate-200 dark:border-slate-800">
         <Home size={32} className="mx-auto text-slate-400 mb-3" />
-        <p className="text-slate-600 dark:text-slate-400 text-sm">Vous n'avez pas encore d'annonce</p>
+        <p className="text-slate-600 dark:text-slate-400 text-sm">{t("noListings")}</p>
         <Link href="/owner/listings/create" className="mt-3 inline-block text-primary text-sm font-bold">
-          Créer une annonce
+          {t("createListing")}
         </Link>
       </div>
     );
@@ -92,10 +94,10 @@ export default function ListingSelector({ selectedListingId, onSelectListing }: 
           </div>
           <div className="text-left">
             <p className="font-bold text-slate-900 dark:text-white text-sm">
-              {selectedListing?.title || 'Sélectionner une annonce'}
+              {selectedListing?.title || t("selectListing")}
             </p>
             <p className="text-xs text-slate-400">
-              {selectedListing?.governorate} • {selectedListing?.pricePerNight || selectedListing?.pricePerMonth} TND/nuit
+              {selectedListing?.governorate} • {selectedListing?.pricePerNight || selectedListing?.pricePerMonth} {t("pricePerNight")}
             </p>
           </div>
         </div>

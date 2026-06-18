@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useTranslations } from "next-intl";
 import Modal from "@/components/ui/Modal";
 import {
   IoCloseOutline,
@@ -36,7 +37,7 @@ interface TenantCancelModalProps {
   onConfirm: (reason: string, notes: string) => Promise<void>;
 }
 
-// ✅ Fonction pip pour les images des listings
+// Fonction pip pour les images des listings
 const pipListingImage = (url: string) =>
   `/api/listings/image?url=${encodeURIComponent(url)}`;
 
@@ -46,6 +47,8 @@ export default function TenantCancelModal({
   onClose,
   onConfirm,
 }: TenantCancelModalProps) {
+  const t = useTranslations('tenant.cancel.modal');
+  
   const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -79,21 +82,21 @@ export default function TenantCancelModal({
     if (daysUntilCheckIn > 30) {
       return {
         percentage: 100,
-        label: "Remboursement total",
+        label: t('full_refund'),
         color: "text-green-600",
         bg: "bg-green-50",
       };
     } else if (daysUntilCheckIn > 7) {
       return {
         percentage: 50,
-        label: "Remboursement partiel (50%)",
+        label: t('partial_refund'),
         color: "text-yellow-600",
         bg: "bg-yellow-50",
       };
     } else {
       return {
         percentage: 0,
-        label: "Aucun remboursement",
+        label: t('no_refund'),
         color: "text-red-600",
         bg: "bg-red-50",
       };
@@ -104,12 +107,12 @@ export default function TenantCancelModal({
   const refundAmount = (booking.totalPrice * currentRefund.percentage) / 100;
   const cancellationFee = booking.totalPrice - refundAmount;
 
-  // Les 3 cas de politique (toujours visibles)
+  // Les 3 cas de politique
   const refundTiers = [
     {
       percentage: 100,
-      label: "Remboursement total",
-      days: "> 30 jours",
+      label: t('full_refund'),
+      days: t('days_30_plus'),
       dotColor: "bg-green-500",
       activeClass:
         "bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800",
@@ -117,8 +120,8 @@ export default function TenantCancelModal({
     },
     {
       percentage: 50,
-      label: "Remboursement partiel (50%)",
-      days: "30 à 7 jours",
+      label: t('partial_refund'),
+      days: t('days_7_to_30'),
       dotColor: "bg-yellow-500",
       activeClass:
         "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-800",
@@ -126,8 +129,8 @@ export default function TenantCancelModal({
     },
     {
       percentage: 0,
-      label: "Aucun remboursement",
-      days: "< 7 jours",
+      label: t('no_refund'),
+      days: t('days_less_than_7'),
       dotColor: "bg-red-500",
       activeClass:
         "bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800",
@@ -137,11 +140,11 @@ export default function TenantCancelModal({
 
   const handleSubmit = async () => {
     if (!reason) {
-      alert("Veuillez sélectionner une raison");
+      alert(t('alert_select_reason'));
       return;
     }
     if (confirmText !== "ANNULER") {
-      alert('Veuillez saisir "ANNULER" pour confirmer');
+      alert(t('alert_confirm_word'));
       return;
     }
     setLoading(true);
@@ -149,19 +152,17 @@ export default function TenantCancelModal({
       await onConfirm(reason, notes);
     } catch (error) {
       console.error("Erreur lors de l'annulation:", error);
-      alert("Une erreur est survenue lors de l'annulation");
+      alert(t('alert_error'));
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Récupérer l'URL de la photo principale (isMain = true) ou la première photo
   const mainPhoto =
     booking.listing?.photos?.find((p) => p.isMain) ||
     booking.listing?.photos?.[0];
   const imageUrl = mainPhoto?.url ? pipListingImage(mainPhoto.url) : null;
 
-  // Vérifier si le bouton doit être activé
   const isButtonEnabled = !loading && reason && confirmText === "ANNULER";
 
   return (
@@ -177,17 +178,17 @@ export default function TenantCancelModal({
           </div>
           <div className="flex flex-col">
             <h2 className="text-slate-900 dark:text-white text-sm font-bold leading-tight">
-              Annuler ma réservation
+              {t('title')}
             </h2>
             <p className="text-slate-500 dark:text-slate-400 text-xs">
-              Vérifiez les détails du remboursement avant de confirmer.
+              {t('subtitle')}
             </p>
           </div>
         </div>
       }
     >
       <div className="p-4 space-y-4 -mt-6">
-        {/* Booking Summary avec PIP */}
+        {/* Booking Summary */}
         <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-700">
           <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 overflow-hidden flex-shrink-0">
             {imageUrl && !imageError ? (
@@ -219,10 +220,10 @@ export default function TenantCancelModal({
           </div>
         </div>
 
-        {/* Politique de remboursement - Les 3 cas visibles */}
+        {/* Politique de remboursement */}
         <div className="space-y-2">
           <label className="block text-slate-700 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1">
-            Politique de remboursement
+            {t('refund_policy')}
           </label>
           <div className="space-y-1.5">
             {refundTiers.map((tier) => (
@@ -253,18 +254,20 @@ export default function TenantCancelModal({
         {/* Détail du remboursement */}
         <div className="space-y-1.5">
           <label className="block text-slate-700 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wider flex items-center gap-1">
-            Détail du remboursement
+            {t('refund_details')}
           </label>
           <div className="bg-gray-200/80 dark:bg-gray-800/30 rounded-lg p-3 space-y-1.5">
             <div className="flex justify-between text-xs">
-              <span className="text-slate-600">Total ({nights} nuits)</span>
+              <span className="text-slate-600">
+                {t('total_nights', { nights })}
+              </span>
               <span className="font-medium text-slate-900">
                 {booking.totalPrice.toLocaleString("fr-FR")} TND
               </span>
             </div>
             <div className="flex justify-between text-xs">
               <span className="text-slate-600">
-                Frais d'annulation ({100 - currentRefund.percentage}%)
+                {t('cancellation_fee', { percentage: 100 - currentRefund.percentage })}
               </span>
               <span className="font-medium text-slate-900">
                 {cancellationFee.toLocaleString("fr-FR")} TND
@@ -272,7 +275,7 @@ export default function TenantCancelModal({
             </div>
             <div className="pt-1.5 mt-1 border-t border-slate-200 flex justify-between">
               <span className="font-semibold text-sm text-slate-900">
-                Total remboursé
+                {t('total_refunded')}
               </span>
               <span className={`font-bold text-sm ${currentRefund.color}`}>
                 {refundAmount.toLocaleString("fr-FR")} TND
@@ -284,33 +287,31 @@ export default function TenantCancelModal({
         {/* Raison de l'annulation */}
         <div className="space-y-1.5">
           <label className="block text-slate-700 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wider">
-            Raison de l'annulation <span className="text-red-500">*</span>
+            {t('reason_label')} <span className="text-red-500">{t('reason_required')}</span>
           </label>
           <select
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors"
           >
-            <option value="">Sélectionnez une raison...</option>
-            <option value="plans_changed">Mes plans ont changé</option>
-            <option value="better_option">
-              J'ai trouvé une meilleure option
-            </option>
-            <option value="emergency">Urgence personnelle</option>
-            <option value="mistake">Réservation faite par erreur</option>
-            <option value="other">Autre</option>
+            <option value="">{t('reason_placeholder')}</option>
+            <option value="plans_changed">{t('reason_plans_changed')}</option>
+            <option value="better_option">{t('reason_better_option')}</option>
+            <option value="emergency">{t('reason_emergency')}</option>
+            <option value="mistake">{t('reason_mistake')}</option>
+            <option value="other">{t('reason_other')}</option>
           </select>
         </div>
 
         {/* Notes supplémentaires */}
         <div className="space-y-1.5">
           <label className="block text-slate-700 dark:text-slate-300 text-[10px] font-semibold uppercase tracking-wider">
-            Notes supplémentaires (optionnel)
+            {t('notes_label')} {t('notes_optional')}
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="Dites-nous en plus sur votre annulation..."
+            placeholder={t('notes_placeholder')}
             rows={2}
             className="w-full px-3 py-2 text-xs rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-1 focus:ring-red-500 focus:border-red-500 transition-colors resize-none"
           />
@@ -319,15 +320,15 @@ export default function TenantCancelModal({
         {/* Confirmation */}
         <div className="p-3 border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 rounded-lg">
           <label className="block text-[10px] font-medium text-red-800 dark:text-red-300 mb-1">
-            Pour confirmer, saisissez{" "}
-            <span className="font-bold underline">ANNULER</span>
+            {t('confirm_label')}{" "}
+            <span className="font-bold underline">{t('confirm_word')}</span>
           </label>
           <input
             type="text"
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
             className="w-full px-3 py-2 text-xs rounded-lg border border-red-200 dark:border-red-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:ring-1 focus:ring-red-500 focus:border-red-500 uppercase font-bold text-center tracking-widest"
-            placeholder="ANNULER"
+            placeholder={t('confirm_placeholder')}
           />
         </div>
       </div>
@@ -339,7 +340,7 @@ export default function TenantCancelModal({
           className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
           type="button"
         >
-          Retour
+          {t('button_back')}
         </button>
         <button
           onClick={handleSubmit}
@@ -354,10 +355,10 @@ export default function TenantCancelModal({
           {loading ? (
             <>
               <span className="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Annulation...
+              {t('button_cancelling')}
             </>
           ) : (
-            "Confirmer l'annulation"
+            t('button_confirm')
           )}
         </button>
       </div>

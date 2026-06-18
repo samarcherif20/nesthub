@@ -6,8 +6,8 @@ import { randomUUID } from "crypto";
 
 export async function POST(req: NextRequest) {
   try {
-    const { email } = await req.json();
-    
+    const { email, locale } = await req.json(); 
+
     if (!email || !email.includes("@")) {
       return NextResponse.json({ error: "Email invalide" }, { status: 400 });
     }
@@ -17,25 +17,30 @@ export async function POST(req: NextRequest) {
     // Vérifier si l'utilisateur existe
     const user = await prisma.user.findUnique({
       where: { email: normalizedEmail },
-      select: { 
-        email: true, 
-        firstName: true, 
+      select: {
+        email: true,
+        firstName: true,
         lastName: true,
-        clerkId: true 
-      }
+        clerkId: true,
+      },
     });
 
     if (!user) {
-      // Sécurité : on ne révèle pas si l'email existe
-      return NextResponse.json({ success: true });
+      return NextResponse.json(
+        {
+          error: "Aucun compte trouvé avec cette adresse email",
+          code: "EMAIL_NOT_FOUND",
+        },
+        { status: 404 },
+      );
     }
 
     // Supprimer les anciens tokens
     await prisma.passwordResetToken.deleteMany({
       where: {
         email: normalizedEmail,
-        expiresAt: { lt: new Date() }
-      }
+        expiresAt: { lt: new Date() },
+      },
     });
 
     // Créer un nouveau token
@@ -47,27 +52,33 @@ export async function POST(req: NextRequest) {
         email: normalizedEmail,
         token,
         expiresAt,
-      }
+      },
     });
 
-    // Construire le lien de réinitialisation (votre propre page)
+    //  Construire le lien avec la locale de l'interface
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-    const resetLink = `${baseUrl}/fr/reset-password?token=${token}`;
+    const userLocale = locale || "fr"; // Fallback sur "fr" si locale non fournie
+    const resetLink = `${baseUrl}/${userLocale}/reset-password?token=${token}`;
 
     // Envoyer l'email via Brevo
     await passwordResetEmailService.sendResetEmail({
       toEmail: normalizedEmail,
       resetLink,
-      userName: `${user.firstName || ""} ${user.lastName || ""}`.trim() || undefined,
+      userName:
+        `${user.firstName || ""} ${user.lastName || ""}`.trim() || undefined,
     });
 
-    console.log(`[ResetPassword] Email envoyé à ${normalizedEmail}`);
+    console.log(
+      `[ResetPassword] Email envoyé à ${normalizedEmail} (langue: ${userLocale})`,
+    );
     return NextResponse.json({ success: true });
-    
   } catch (error: any) {
     console.error("[POST /api/auth/reset-password] Erreur:", error);
-    return NextResponse.json({ 
-      error: "Une erreur est survenue. Veuillez réessayer plus tard." 
-    }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: "Une erreur est survenue. Veuillez réessayer plus tard.",
+      },
+      { status: 500 },
+    );
   }
 }

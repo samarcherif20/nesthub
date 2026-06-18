@@ -9,12 +9,6 @@ import { User, EscalationLevel } from '@/lib/types/user';
 import { useTranslations } from 'next-intl';
 import { IoWarningOutline, IoPauseCircleOutline, IoBanOutline, IoArrowUpCircleOutline } from 'react-icons/io5';
 
-const ESCALATION_LEVELS = [
-  { level: 1, name: 'Avertissement', color: 'info', icon: IoWarningOutline, description: 'Premier avertissement' },
-  { level: 2, name: 'Suspension', color: 'warning', icon: IoPauseCircleOutline, description: 'Suspension temporaire' },
-  { level: 3, name: 'Bannissement', color: 'danger', icon: IoBanOutline, description: 'Bannissement définitif' },
-];
-
 const pip = (url: string) =>
   `/api/admin/serve-image?url=${encodeURIComponent(url)}`;
 
@@ -42,6 +36,12 @@ export default function EscalateUserModal({
   const [reason, setReason] = useState('');
   const [notify, setNotify] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  const ESCALATION_LEVELS = [
+    { level: 1, name: t('levels.warning'), color: 'info', icon: IoWarningOutline, description: t('levels.warningDesc') },
+    { level: 2, name: t('levels.suspension'), color: 'warning', icon: IoPauseCircleOutline, description: t('levels.suspensionDesc') },
+    { level: 3, name: t('levels.ban'), color: 'danger', icon: IoBanOutline, description: t('levels.banDesc') },
+  ];
 
   useEffect(() => {
     if (user) {
@@ -116,18 +116,18 @@ export default function EscalateUserModal({
   };
 
   const getCurrentLevelText = () => {
-    if (userCurrentLevel === 0) return 'Aucune sanction';
-    if (userCurrentLevel === 1) return 'Avertissement donné';
-    if (userCurrentLevel === 2) return 'Suspension en cours';
-    if (userCurrentLevel === 3) return 'Bannissement appliqué';
+    if (userCurrentLevel === 0) return t('current.none');
+    if (userCurrentLevel === 1) return t('current.warning');
+    if (userCurrentLevel === 2) return t('current.suspension');
+    if (userCurrentLevel === 3) return t('current.ban');
     return '';
   };
 
   const getNextLevelText = () => {
-    if (userCurrentLevel === 0) return 'Avertissement';
-    if (userCurrentLevel === 1) return 'Suspension';
-    if (userCurrentLevel === 2) return 'Bannissement';
-    if (userCurrentLevel === 3) return 'Aucune (maximum atteint)';
+    if (userCurrentLevel === 0) return t('next.warning');
+    if (userCurrentLevel === 1) return t('next.suspension');
+    if (userCurrentLevel === 2) return t('next.ban');
+    if (userCurrentLevel === 3) return t('next.maxReached');
     return '';
   };
 
@@ -138,12 +138,19 @@ export default function EscalateUserModal({
     return "blue";
   };
 
-  const getNotificationMessage = () => {
-    if (selectedLevel === 1) return "Un email sera envoyé à {email} pour lui notifier cet avertissement.";
-    if (selectedLevel === 2) return "Un email sera envoyé à {email} pour lui notifier cette suspension.";
-    if (selectedLevel === 3) return "Un email sera envoyé à {email} pour lui notifier ce bannissement.";
-    return "Un email sera envoyé à {email} pour le notifier de cette sanction.";
-  };
+ const getNotificationMessage = (level: string, email?: string) => {
+  const emailValue = email || "l'utilisateur";
+  switch (level) {
+    case "warning":
+      return t("notifyMessages.warning", { email: emailValue });
+    case "suspension":
+      return t("notifyMessages.suspension", { email: emailValue });
+    case "ban":
+      return t("notifyMessages.ban", { email: emailValue });
+    default:
+      return t("notifyMessages.default", { email: emailValue });
+  }
+};
 
   return (
     <Modal
@@ -171,10 +178,10 @@ export default function EscalateUserModal({
               ${levelBadges[userCurrentLevel as keyof typeof levelBadges]?.text || ''} 
               border ${levelBadges[userCurrentLevel as keyof typeof levelBadges]?.border || ''}`}
           >
-            {userCurrentLevel === 0 && 'Nouveau'}
-            {userCurrentLevel === 1 && t('warning')}
-            {userCurrentLevel === 2 && t('suspension')}
-            {userCurrentLevel === 3 && t('ban')}
+            {userCurrentLevel === 0 && t('badge.new')}
+            {userCurrentLevel === 1 && t('badge.warning')}
+            {userCurrentLevel === 2 && t('badge.suspension')}
+            {userCurrentLevel === 3 && t('badge.ban')}
           </span>
         </div>
       }
@@ -209,14 +216,14 @@ export default function EscalateUserModal({
         <div className={`p-2 rounded-lg border ${levelColors[selectedLevel as keyof typeof levelColors]?.bg || 'bg-blue-50 dark:bg-blue-900/10'} ${levelColors[selectedLevel as keyof typeof levelColors]?.border || 'border-blue-200 dark:border-blue-800'}`}>
           <div className="flex items-center justify-between gap-2">
             <div>
-              <p className="text-[9px] text-gray-500 dark:text-gray-400">Niveau actuel</p>
+              <p className="text-[9px] text-gray-500 dark:text-gray-400">{t('currentLevelLabel')}</p>
               <p className="text-xs font-semibold text-blue-700 dark:text-blue-300">
                 {getCurrentLevelText()}
               </p>
             </div>
             <div className="w-px h-6 bg-gray-300 dark:bg-gray-600"></div>
             <div>
-              <p className="text-[9px] text-gray-500 dark:text-gray-400">Prochaine étape</p>
+              <p className="text-[9px] text-gray-500 dark:text-gray-400">{t('nextStepLabel')}</p>
               <p className={`text-xs font-semibold ${userCurrentLevel >= 3 ? 'text-gray-400' : levelColors[selectedLevel as keyof typeof levelColors]?.text || 'text-blue-600 dark:text-blue-400'}`}>
                 {getNextLevelText()}
               </p>
@@ -224,7 +231,7 @@ export default function EscalateUserModal({
           </div>
           {userCurrentLevel >= 3 && (
             <p className="text-[9px] text-red-500 dark:text-red-400 mt-1 flex items-center gap-1">
-            L'utilisateur a déjà atteint le niveau maximum.
+              {t('maxLevelReached')}
             </p>
           )}
         </div>
@@ -338,8 +345,8 @@ export default function EscalateUserModal({
             notify={notify}
             setNotify={setNotify}
             userEmail={user.email}
-            label={t('notify') || "Notifier l'utilisateur par email"}
-            message={getNotificationMessage()}
+            label={t('notify')}
+message={getNotificationMessage(selectedLevel === 1 ? "warning" : selectedLevel === 2 ? "suspension" : "ban", user?.email)}
             colorScheme={getCheckboxColorScheme()}
           />
         </div>

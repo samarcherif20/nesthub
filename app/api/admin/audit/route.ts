@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
     const targetType = searchParams.get("targetType");
     const dateRange = searchParams.get("dateRange");
     const search = searchParams.get("search") || "";
-    const isExport = searchParams.get("export") === "true"; // ✅ Nouveau paramètre
+    const isExport = searchParams.get("export") === "true"; 
 
     let where: any = {};
 
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
       ];
     }
 
-    // ✅ Pour l'export, on prend TOUS les logs sans pagination
+    //  Pour l'export, on prend TOUS les logs sans pagination
     const take = isExport ? undefined : limit;
     const skip = isExport ? undefined : (page - 1) * limit;
 

@@ -41,6 +41,15 @@ export async function POST(
       return NextResponse.json({ error: "Cette demande a déjà été traitée" }, { status: 400 });
     }
 
+    // Vérifier si une notification a déjà été envoyée
+    const existingNotification = await prisma.notification.findFirst({
+      where: {
+        userId: infoRequest.tenantId,
+        type: "INFO_REQUEST_REJECTED",
+        data: { path: ["infoRequestId"], equals: infoRequest.id }
+      }
+    });
+
     // Mettre à jour la demande
     const updated = await prisma.infoRequest.update({
       where: { id },
@@ -50,26 +59,33 @@ export async function POST(
       },
     });
 
-    // Notifier le locataire
-    const rejectionMessage = reason || "Le propriétaire n'est pas disponible pour ces dates";
-    
-    await prisma.notification.create({
-      data: {
-        userId: infoRequest.tenantId,
-        type: "INFO_REQUEST_REJECTED",
-        title: " Demande refusée",
-        content: `${rejectionMessage}. Vous pouvez faire une nouvelle demande avec d'autres dates.`,
+    // Notifier le locataire (seulement si pas déjà envoyé)
+    if (!existingNotification) {
+      const rejectionMessage = reason || "Le propriétaire n'est pas disponible pour ces dates";
+      
+      await prisma.notification.create({
         data: {
-          infoRequestId: infoRequest.id,
-          listingId: infoRequest.listingId,
-          rejectedDates: {
+          userId: infoRequest.tenantId,
+          type: "INFO_REQUEST_REJECTED",
+          title: "Demande refusée",
+          content: `Votre demande d'information pour "${infoRequest.listing.title}" a été refusée : ${rejectionMessage}. Vous pouvez faire une nouvelle demande avec d'autres dates.`,
+          data: {
+            infoRequestId: infoRequest.id,
+            listingId: infoRequest.listingId,
+            listingTitle: infoRequest.listing.title,
+            tenantId: infoRequest.tenantId,
+            tenantUsername: infoRequest.tenant?.username,
             checkIn: infoRequest.checkIn,
             checkOut: infoRequest.checkOut,
+            guests: infoRequest.guests,
+            status: "REJECTED",
+            rejectionReason: rejectionMessage,
           },
+          channels: ["IN_APP"],
         },
-        channels: ["IN_APP", "EMAIL"],
-      },
-    });
+      });
+      console.log("Notification de refus envoyée au locataire");
+    }
 
     return NextResponse.json({
       success: true,

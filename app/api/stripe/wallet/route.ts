@@ -18,7 +18,7 @@ export async function GET() {
       return NextResponse.json({ error: "Utilisateur non trouvé" }, { status: 404 });
     }
 
-    // ✅ Récupérer les paiements AVEC les infos du booking et listing
+    // Récupérer les paiements AVEC les infos du booking et listing
     const payments = await prisma.payment.findMany({
       where: {
         booking: { tenantId: user.id },
@@ -41,7 +41,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    // ✅ Récupérer les cautions avec détails du séjour
+    //  Récupérer les cautions avec détails du séjour
     const depositAuthorizations = await prisma.depositAuthorization.findMany({
       where: {
         booking: { tenantId: user.id },
@@ -62,7 +62,7 @@ export async function GET() {
       },
     });
 
-    // ✅ Récupérer les réservations futures pour les échéances
+    //  Récupérer les réservations futures pour les échéances
     const futureBookings = await prisma.booking.findMany({
       where: {
         tenantId: user.id,
@@ -85,7 +85,7 @@ export async function GET() {
       take: 10,
     });
 
-    // ✅ Formater les transactions avec les infos du séjour
+    // Formater les transactions avec les infos du séjour
     const transactions = payments.map(p => ({
       id: p.id,
       amount: p.amount,
@@ -98,7 +98,7 @@ export async function GET() {
       refundAmount: p.refundAmount,
       refundReason: p.refundReason,
       refundedAt: p.refundedAt,
-      // 🏠 INFOS DU SÉJOUR (via booking existant)
+      //  INFOS DU SÉJOUR (via booking existant)
       stay: p.booking ? {
         bookingId: p.booking.id,
         listingId: p.booking.listing.id,
@@ -114,7 +114,7 @@ export async function GET() {
       } : null,
     }));
 
-    // ✅ Cautions avec détails du séjour
+    //  Cautions avec détails du séjour
     const securityDeposits = depositAuthorizations.map(d => ({
       id: d.id,
       amount: d.amount,
@@ -131,7 +131,7 @@ export async function GET() {
       bookingReference: d.booking.reference,
     }));
 
-    // ✅ Échéances à venir
+    //  Échéances à venir
     const upcomingPayments = futureBookings.map(b => ({
       id: b.id,
       type: "RENT" as const,
@@ -149,7 +149,7 @@ export async function GET() {
       bookingReference: b.reference,
     }));
 
-    // ✅ Calculer les soldes
+    //  Calculer les soldes
     const totalSpent = payments
       .filter(p => p.status === "PAID" || p.status === "COMPLETED")
       .reduce((sum, p) => sum + p.amount, 0);

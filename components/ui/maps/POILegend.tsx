@@ -2,6 +2,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   IoRestaurantOutline,
   IoCafeOutline,
@@ -106,6 +107,7 @@ export function POILegend({
   onToggleDistance?: () => void;
   showAllDistances?: boolean;
 }) {
+  const t = useTranslations("POILegend");
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const [isMinimized, setIsMinimized] = useState(false);
 
@@ -149,6 +151,19 @@ export function POILegend({
     );
   }
 
+  const getCategoryLabel = (category: string) => {
+    switch (category) {
+      case "Commodités":
+        return t("categories.commodities");
+      case "Transports":
+        return t("categories.transport");
+      case "Loisirs":
+        return t("categories.leisure");
+      default:
+        return t("categories.services");
+    }
+  };
+
   return (
     <div className="absolute bottom-4 left-4 z-10 bg-gray/20 dark:bg-slate-950/80 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 p-3 max-w-[260px] transition-all duration-200">
       {/* Header */}
@@ -159,10 +174,10 @@ export function POILegend({
           </div>
           <div>
             <h4 className="text-xs font-semibold text-gray-800 dark:text-white">
-              À proximité
+              {t("nearby")}
             </h4>
             <p className="text-[9px] text-gray-500 dark:text-gray-400">
-              {poisInRadius} dans 3km · {poisOutRadius} plus loin
+              {t("stats", { inRadius: poisInRadius, outRadius: poisOutRadius })}
             </p>
           </div>
         </div>
@@ -183,14 +198,14 @@ export function POILegend({
             : "bg-white/10 text-indigo-700 dark:text-gray-300 hover:bg-white/20"
         }`}
       >
-        {showAllDistances ? "Masquer les POIs éloignés" : "Afficher plus loins ?"}
+        {showAllDistances ? t("hideDistant") : t("showMore")}
       </button>
 
       {/* Indicateur de rayon 3km */}
       <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/10">
         <IoRadioButtonOnOutline className="text-[10px] text-indigo-400" />
         <span className="text-[9px] text-gray-500 dark:text-gray-400">
-          Cercle = 3km autour du logement
+          {t("radiusInfo")}
         </span>
       </div>
 
@@ -203,7 +218,7 @@ export function POILegend({
           return (
             <div key={group.category}>
               <p className="text-[9px] font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                {group.category}
+                {getCategoryLabel(group.category)}
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {group.items.map((item) => {
@@ -252,7 +267,7 @@ export function POILegend({
           className="w-full mt-3 pt-2 text-[10px] font-medium text-gray-500 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition flex items-center justify-center gap-1 border-t border-white/20"
         >
           <IoCloseOutline className="text-xs" />
-          Effacer ({activeFilters.length})
+          {t("clear", { count: activeFilters.length })}
         </button>
       )}
     </div>

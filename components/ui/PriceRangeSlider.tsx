@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useTranslations } from "next-intl";
 
 interface PriceRangeSliderProps {
   minPrice: string;
@@ -22,6 +23,8 @@ export function PriceRangeSlider({
   maxLimit = 10000,
   isLoading = false,
 }: PriceRangeSliderProps) {
+  const t = useTranslations("PriceRangeSlider");
+
   const [localMin, setLocalMin] = useState(minPrice);
   const [localMax, setLocalMax] = useState(maxPrice);
   const [isDragging, setIsDragging] = useState(false);
@@ -36,23 +39,29 @@ export function PriceRangeSlider({
   }, [minPrice, maxPrice, isDragging]);
 
   // Fonction avec debounce pour éviter trop d'appels API
-  const debouncedOnMinChange = useCallback((value: string) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      onMinChange(value);
-    }, 300);
-  }, [onMinChange]);
+  const debouncedOnMinChange = useCallback(
+    (value: string) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        onMinChange(value);
+      }, 300);
+    },
+    [onMinChange],
+  );
 
-  const debouncedOnMaxChange = useCallback((value: string) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      onMaxChange(value);
-    }, 300);
-  }, [onMaxChange]);
+  const debouncedOnMaxChange = useCallback(
+    (value: string) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        onMaxChange(value);
+      }, 300);
+    },
+    [onMaxChange],
+  );
 
   const min = parseInt(localMin) || minLimit;
   const max = parseInt(localMax) || maxLimit;
@@ -112,7 +121,7 @@ export function PriceRangeSlider({
       <div className="flex items-center justify-between gap-2">
         <div className="flex-1">
           <span className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
-            Min
+            {t("min")}
           </span>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">
@@ -131,7 +140,7 @@ export function PriceRangeSlider({
         </div>
         <div className="flex-1">
           <span className="block text-[10px] font-semibold text-slate-500 dark:text-slate-400 mb-1">
-            Max
+            {t("max")}
           </span>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">

@@ -127,7 +127,8 @@ function GroupAvatar({
     return p.username;
   };
 
-  const tooltipText = participants?.map((p) => getDisplayName(p)).join(", ") || "";
+  const tooltipText =
+    participants?.map((p) => getDisplayName(p)).join(", ") || "";
 
   return (
     <div className="relative flex-shrink-0 group">
@@ -293,9 +294,7 @@ function GroupConvItem({
           )}
         </div>
         {group.unreadCount > 0 && (
-          <div
-            className="w-5 h-5 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm"
-          >
+          <div className="w-5 h-5 rounded-full bg-purple-500 text-white text-[10px] font-bold flex items-center justify-center shrink-0 shadow-sm">
             {group.unreadCount > 9 ? "9+" : group.unreadCount}
           </div>
         )}
@@ -371,13 +370,7 @@ function ResizableDiv({
 }
 
 // ─── Empty State Component ────────────────────────────────────────────────────
-function EmptyState({
-  title,
-  message,
-}: {
-  title: string;
-  message: string;
-}) {
+function EmptyState({ title, message }: { title: string; message: string }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center p-8">
       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-sky-100 to-purple-100 dark:from-sky-950/50 dark:to-purple-950/50 flex items-center justify-center mb-4">
@@ -524,48 +517,79 @@ export default function TenantMessagesPage() {
                         </p>
                       </div>
                     </>
-                  ) : activeGroup && (
-                    <>
-                      <GroupAvatar participants={activeGroup.participants} />
-                      <div>
-                        <p className="font-medium text-slate-900 dark:text-white">
-                          {activeGroup.name || t("conversations.disputeGroup")}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {activeGroup.listing?.title || t("conversations.unknownListing")}
-                        </p>
-                      </div>
-                    </>
+                  ) : (
+                    activeGroup && (
+                      <>
+                        <GroupAvatar participants={activeGroup.participants} />
+                        <div>
+                          <p className="font-medium text-slate-900 dark:text-white">
+                            {activeGroup.name ||
+                              t("conversations.disputeGroup")}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {activeGroup.listing?.title ||
+                              t("conversations.unknownListing")}
+                          </p>
+                        </div>
+                      </>
+                    )
                   )}
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <ChatBox
-                    conversationId={isActiveGroup ? `group_${activeGroup?.id}` : activeConversation?.id || ""}
-                    recipientId={isActiveGroup ? "group" : activeConversation?.otherUser.id || ""}
+                    conversationId={
+                      isActiveGroup
+                        ? `group_${activeGroup?.id}`
+                        : activeConversation?.id || ""
+                    }
+                    recipientId={
+                      isActiveGroup
+                        ? "group"
+                        : activeConversation?.otherUser.id || ""
+                    }
                     recipientName={
                       isActiveGroup
                         ? activeGroup?.name || t("conversations.disputeGroup")
                         : activeConversation?.otherUser.username || ""
                     }
-                    recipientImage={!isActiveGroup ? activeConversation?.otherUser.image : undefined}
+                    recipientImage={
+                      !isActiveGroup
+                        ? activeConversation?.otherUser.image
+                        : undefined
+                    }
                     listingTitle={
                       isActiveGroup
                         ? activeGroup?.listing?.title || ""
                         : activeConversation?.listing.title || ""
                     }
-                    offerId={!isActiveGroup ? activeConversation?.offer?.id : undefined}
-                    offerStatus={!isActiveGroup ? activeConversation?.offer?.status : undefined}
+                    offerId={
+                      !isActiveGroup ? activeConversation?.offer?.id : undefined
+                    }
+                    offerStatus={
+                      !isActiveGroup
+                        ? activeConversation?.offer?.status
+                        : undefined
+                    }
                     isPaid={isPaid}
                     listing={{
-                      id: isActiveGroup ? activeGroup?.listing?.id || "" : activeConversation?.listing.id || "",
-                      title: isActiveGroup ? activeGroup?.listing?.title || "" : activeConversation?.listing.title || "",
-                      image: isActiveGroup ? activeGroup?.listing?.image : activeConversation?.listing.image,
+                      id: isActiveGroup
+                        ? activeGroup?.listing?.id || ""
+                        : activeConversation?.listing.id || "",
+                      title: isActiveGroup
+                        ? activeGroup?.listing?.title || ""
+                        : activeConversation?.listing.title || "",
+                      image: isActiveGroup
+                        ? activeGroup?.listing?.image
+                        : activeConversation?.listing.image,
                       pricePerNight: activeConversation?.listing.pricePerNight,
                       location: activeConversation?.listing.location,
                       bedrooms: activeConversation?.listing.bedrooms,
                       maxGuests: activeConversation?.listing.maxGuests,
                       cleaningFee: activeConversation?.listing.cleaningFee,
                       infoRequestId: activeConversation?.infoRequest?.id,
+                      checkIn: activeConversation?.infoRequest?.checkIn,
+                      checkOut: activeConversation?.infoRequest?.checkOut,
+                      guests: activeConversation?.infoRequest?.guests,
                     }}
                     userRole="TENANT"
                     isGroup={isActiveGroup}
@@ -595,8 +619,14 @@ export default function TenantMessagesPage() {
                 <div className="flex-1 overflow-y-auto">
                   {filtered.length === 0 && filteredGroups.length === 0 ? (
                     <EmptyState
-                      title={searchQuery ? t("noResults") : t("noConversations")}
-                      message={searchQuery ? t("noResultsHint") : t("noConversationsHint")}
+                      title={
+                        searchQuery ? t("noResults") : t("noConversations")
+                      }
+                      message={
+                        searchQuery
+                          ? t("noResultsHint")
+                          : t("noConversationsHint")
+                      }
                     />
                   ) : (
                     <div className="py-2">
@@ -666,7 +696,8 @@ export default function TenantMessagesPage() {
                           : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-slate-700"
                       }`}
                     >
-                      {t("filters.all")} ({conversations.length + groups.length})
+                      {t("filters.all")} ({conversations.length + groups.length}
+                      )
                     </button>
                     <button
                       onClick={() => setFilterType("unread")}
@@ -711,8 +742,14 @@ export default function TenantMessagesPage() {
                 <div className="flex-1 overflow-y-auto p-2">
                   {filtered.length === 0 && filteredGroups.length === 0 ? (
                     <EmptyState
-                      title={searchQuery ? t("noResults") : t("noConversations")}
-                      message={searchQuery ? t("noResultsHint") : t("noConversationsHint")}
+                      title={
+                        searchQuery ? t("noResults") : t("noConversations")
+                      }
+                      message={
+                        searchQuery
+                          ? t("noResultsHint")
+                          : t("noConversationsHint")
+                      }
                     />
                   ) : (
                     <div className="space-y-1">
@@ -747,33 +784,67 @@ export default function TenantMessagesPage() {
                   {/* ChatBox */}
                   <div className="flex-1 overflow-hidden rounded-xl bg-white dark:bg-slate-900 shadow-sm border border-slate-200/50 dark:border-slate-700/50">
                     <ChatBox
-                      conversationId={isActiveGroup ? `group_${activeGroup?.id}` : activeConversation?.id || ""}
-                      recipientId={isActiveGroup ? "group" : activeConversation?.otherUser.id || ""}
+                      conversationId={
+                        isActiveGroup
+                          ? `group_${activeGroup?.id}`
+                          : activeConversation?.id || ""
+                      }
+                      recipientId={
+                        isActiveGroup
+                          ? "group"
+                          : activeConversation?.otherUser.id || ""
+                      }
                       recipientName={
                         isActiveGroup
                           ? activeGroup?.name || t("conversations.disputeGroup")
                           : activeConversation?.otherUser.username || ""
                       }
-                      recipientImage={!isActiveGroup ? activeConversation?.otherUser.image : undefined}
-                      recipientRole={!isActiveGroup ? activeConversation?.otherUser.role : undefined}
+                      recipientImage={
+                        !isActiveGroup
+                          ? activeConversation?.otherUser.image
+                          : undefined
+                      }
+                      recipientRole={
+                        !isActiveGroup
+                          ? activeConversation?.otherUser.role
+                          : undefined
+                      }
                       listingTitle={
                         isActiveGroup
                           ? activeGroup?.listing?.title || ""
                           : activeConversation?.listing.title || ""
                       }
-                      offerId={!isActiveGroup ? activeConversation?.offer?.id : undefined}
-                      offerStatus={!isActiveGroup ? activeConversation?.offer?.status : undefined}
+                      offerId={
+                        !isActiveGroup
+                          ? activeConversation?.offer?.id
+                          : undefined
+                      }
+                      offerStatus={
+                        !isActiveGroup
+                          ? activeConversation?.offer?.status
+                          : undefined
+                      }
                       isPaid={isPaid}
                       listing={{
-                        id: isActiveGroup ? activeGroup?.listing?.id || "" : activeConversation?.listing.id || "",
-                        title: isActiveGroup ? activeGroup?.listing?.title || "" : activeConversation?.listing.title || "",
-                        image: isActiveGroup ? activeGroup?.listing?.image : activeConversation?.listing.image,
-                        pricePerNight: activeConversation?.listing.pricePerNight,
+                        id: isActiveGroup
+                          ? activeGroup?.listing?.id || ""
+                          : activeConversation?.listing.id || "",
+                        title: isActiveGroup
+                          ? activeGroup?.listing?.title || ""
+                          : activeConversation?.listing.title || "",
+                        image: isActiveGroup
+                          ? activeGroup?.listing?.image
+                          : activeConversation?.listing.image,
+                        pricePerNight:
+                          activeConversation?.listing.pricePerNight,
                         location: activeConversation?.listing.location,
                         bedrooms: activeConversation?.listing.bedrooms,
                         maxGuests: activeConversation?.listing.maxGuests,
                         cleaningFee: activeConversation?.listing.cleaningFee,
                         infoRequestId: activeConversation?.infoRequest?.id,
+                        checkIn: activeConversation?.infoRequest?.checkIn,
+                        checkOut: activeConversation?.infoRequest?.checkOut,
+                        guests: activeConversation?.infoRequest?.guests,
                       }}
                       userRole="TENANT"
                       isGroup={isActiveGroup}
@@ -788,11 +859,15 @@ export default function TenantMessagesPage() {
                         listing={activeConversation.listing}
                         infoRequestId={activeConversation.infoRequest.id}
                         initialCheckIn={activeConversation.infoRequest.checkIn}
-                        initialCheckOut={activeConversation.infoRequest.checkOut}
+                        initialCheckOut={
+                          activeConversation.infoRequest.checkOut
+                        }
                         initialGuests={activeConversation.infoRequest.guests}
                         onUpdate={handleUpdateInfoRequest}
                         onSendSystemMessage={handleSendSystemMessage}
-                        isOfferAccepted={activeConversation.offer?.status === "ACCEPTED"}
+                        isOfferAccepted={
+                          activeConversation.offer?.status === "ACCEPTED"
+                        }
                         offerStatus={activeConversation.offer?.status}
                         isPaid={isPaid}
                       />

@@ -1,23 +1,13 @@
 import { NextResponse } from "next/server";
-import { otpStore } from "../add-whatsapp/route";
 import { prisma } from "@/lib/prisma";
 import { onUserVerified } from "@/lib/risk-scoring";
-async function cleanupExpiredOtps() {
-  await prisma.otpCode.deleteMany({
-    where: {
-      expiresAt: { lt: new Date() },
-    },
-  });
-}
+
 export async function POST(req: Request) {
   try {
     const { userId, phoneNumber, code } = await req.json();
 
-    console.log(" verify-whatsapp appelé");
-    console.log(" Données reçues:", { userId, phoneNumber, code });
-    console.log(" OTP store size:", otpStore.size);
-    console.log(" OTP store keys:", Array.from(otpStore.keys()));
-    await cleanupExpiredOtps();
+    console.log("verify-whatsapp appelé");
+    console.log("Données reçues:", { userId, phoneNumber, code });
 
     if (!userId || !phoneNumber || !code) {
       return NextResponse.json(
@@ -26,59 +16,33 @@ export async function POST(req: Request) {
       );
     }
 
-    // Vérifier le code en mémoire
-    const stored = otpStore.get(userId);
+    // ✅ Trouver l'utilisateur avec son clerkId
+    const user = await prisma.user.findUnique({
+      where: { clerkId: userId }
+    });
 
-    console.log(
-      " OTP stocké pour",
-      userId,
-      ":",
-      stored
-        ? {
-            code: stored.code,
-            phone: stored.phone,
-            expiresAt: stored.expiresAt,
-            isExpired: stored.expiresAt < new Date(),
-          }
-        : "AUCUN OTP TROUVÉ",
-    );
-
-    if (!stored) {
+    if (!user) {
+      console.error("Utilisateur non trouvé pour clerkId:", userId);
       return NextResponse.json(
-        { error: "Aucun code trouvé. Demandez un nouveau code." },
-        { status: 400 },
+        { error: "Utilisateur non trouvé" },
+        { status: 404 },
       );
     }
 
-    // Check phone number matches
-    if (stored.phone !== phoneNumber) {
-      console.log(
-        ` Phone mismatch: stored=${stored.phone}, received=${phoneNumber}`,
-      );
-      return NextResponse.json(
-        { error: "Numéro de téléphone incorrect" },
-        { status: 400 },
-      );
-    }
+    console.log("Utilisateur trouvé:", { id: user.id, clerkId: user.clerkId });
 
-    // Check if expired
-    if (stored.expiresAt < new Date()) {
-      otpStore.delete(userId);
-      console.log(" OTP expiré pour:", userId);
-      return NextResponse.json(
-        { error: "Code expiré. Demandez un nouveau code." },
-        { status: 400 },
-      );
-    }
+    // ✅ Nettoyer les OTP expirés avant de vérifier
+    await prisma.otpCode.deleteMany({
+      where: {
+        expiresAt: { lt: new Date() },
+      },
+    });
 
-    // Check code
-    if (stored.code !== code) {
-      console.log(` Code incorrect. Attendu: ${stored.code}, Reçu: ${code}`);
-      return NextResponse.json({ error: "Code incorrect" }, { status: 400 });
-    }
+    // ✅ Vérifier le code en BASE DE DONNÉES (pas en mémoire)
     const dbOtp = await prisma.otpCode.findFirst({
       where: {
-        userId: userId,
+        userId: user.id,  // Utiliser l'UUID
+        phoneNumber: phoneNumber,
         code: code,
         used: false,
         expiresAt: { gt: new Date() },
@@ -86,47 +50,49 @@ export async function POST(req: Request) {
     });
 
     if (!dbOtp) {
+      console.log("OTP non trouvé ou invalide pour user.id:", user.id);
       return NextResponse.json(
         { error: "Code invalide ou expiré" },
         { status: 400 },
       );
     }
 
-    // 2. Marquer le code comme utilisé en BDD
+    console.log("OTP trouvé en BDD:", dbOtp.id);
+
+    // ✅ Marquer le code comme utilisé
     await prisma.otpCode.update({
       where: { id: dbOtp.id },
       data: { used: true },
     });
 
-    // Supprimer le code utilisé
-    otpStore.delete(userId);
+    // ✅ Mettre à jour l'utilisateur
+    await prisma.user.update({
+      where: { clerkId: userId },
+      data: {
+        phoneNumber: phoneNumber,
+        isPhoneVerified: true,
+        phoneVerifiedAt: new Date(),
+      },
+    });
 
-    console.log(" OTP vérifié pour:", userId);
+    console.log("✅ Phone verified pour:", userId);
 
-    //  Sauvegarder dans Prisma
+    // Déclencher le recalcul du score (si la fonction existe)
     try {
-      await prisma.user.update({
-        where: { clerkId: userId },
-        data: {
-          phoneNumber,
-          isPhoneVerified: true, // Make sure this matches your schema
-          phoneVerifiedAt: new Date(),
-        },
-      });
-      console.log(" Phone verified sauvegardé en DB");
-      //  AJOUTER ICI - Déclencher le recalcul du score
-      await onUserVerified(userId);
-    } catch (prismaError: any) {
-      console.error(" Erreur Prisma (non bloquant):", prismaError.message);
-      // On continue même si Prisma échoue car l'OTP est vérifié
+      if (typeof onUserVerified === 'function') {
+        await onUserVerified(userId);
+      }
+    } catch (error) {
+      console.error("Erreur lors du scoring:", error);
     }
 
     return NextResponse.json({
       success: true,
       message: "Numéro vérifié avec succès",
     });
+    
   } catch (error: any) {
-    console.error(" Erreur verify-whatsapp:", error);
+    console.error("❌ Erreur verify-whatsapp:", error);
     return NextResponse.json(
       { error: error.message || "Erreur serveur" },
       { status: 500 },

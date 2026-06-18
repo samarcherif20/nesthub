@@ -41,6 +41,11 @@ export function startDevCron() {
       path: "/api/cron/reactivate-users",
       schedule: "0 */6 * * *", // Every 6 hours
     },
+    {
+    name: "release-payments",
+    path: "/api/cron/release-payments",
+    schedule: "*/30 * * * *", // Toutes les 30 minutes
+  },
   ];
 
   // Schedule each job

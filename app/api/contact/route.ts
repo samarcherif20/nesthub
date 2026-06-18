@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getAuth } from "@clerk/nextjs/server"; // ← AJOUTER
+import { getAuth } from "@clerk/nextjs/server"; 
 
 export async function POST(req: NextRequest) {
   try {
-    // ← AJOUTER : Récupérer l'utilisateur connecté
+    // Récupérer l'utilisateur connecté
     const { userId } = getAuth(req);
 
     const body = await req.json();
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // ← AJOUTER : Si utilisateur connecté, récupérer ses infos
+    //  Si utilisateur connecté, récupérer ses infos
     let dbUser = null;
     if (userId) {
       dbUser = await prisma.user.findUnique({

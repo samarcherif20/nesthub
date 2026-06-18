@@ -24,6 +24,7 @@ import {
   Camera,
   QrCode,
 } from "lucide-react";
+import { useTranslations } from "next-intl"; // ✅ AJOUTÉ
 
 // ─── Upload Zone Component ──────────────────────────────────────────────
 function UploadZone({
@@ -41,6 +42,7 @@ function UploadZone({
   onRemove: () => void;
   disabled?: boolean;
 }) {
+  const t = useTranslations('Identity.uploadZone'); // ✅ AJOUTÉ
   const [drag, setDrag] = useState(false);
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -67,7 +69,7 @@ function UploadZone({
         </h3>
         {required && (
           <span className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold uppercase tracking-wider">
-            Requis
+            {t('required')} 
           </span>
         )}
       </div>
@@ -130,10 +132,10 @@ function UploadZone({
                 <IoCameraOutline className="text-indigo-600 dark:text-indigo-400 text-xl sm:text-2xl" />
               </div>
               <p className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Cliquer ou déposer
+                {t('clickOrDrop')} 
               </p>
               <p className="text-[9px] sm:text-[10px] text-gray-400 dark:text-slate-500 mt-1">
-                JPG, PNG (Max 5MB)
+                {t('fileFormat')} 
               </p>
             </div>
           )}
@@ -145,15 +147,15 @@ function UploadZone({
 
 // ─── Tips Component - Version que tu aimes ──────────────────────────
 function TipsCard() {
+  const t = useTranslations('Identity.tips'); // ✅ AJOUTÉ
   const tips = [
     {
       icon: (
         <IoSunnyOutline className="text-amber-500 text-base sm:text-lg md:text-xl" />
       ),
-      title: "Éclairage naturel",
-      desc: "Privilégiez la lumière du jour",
-      descFull:
-        "Privilégiez la lumière du jour pour éviter les ombres portées.",
+      title: t('lighting.title'), // ✅ MODIFIÉ
+      desc: t('lighting.desc'), // ✅ MODIFIÉ
+      descFull: t('lighting.descFull'), // ✅ MODIFIÉ
       color: "from-amber-500/20 to-amber-500/5",
       borderColor: "border-amber-500/30",
       iconBg: "bg-amber-100 dark:bg-amber-900/30",
@@ -162,9 +164,9 @@ function TipsCard() {
       icon: (
         <IoFlashOutline className="text-yellow-500 text-base sm:text-lg md:text-xl" />
       ),
-      title: "Évitez les reflets",
-      desc: "Désactivez le flash",
-      descFull: "Désactivez le flash pour éviter tout éblouissement.",
+      title: t('reflections.title'), // ✅ MODIFIÉ
+      desc: t('reflections.desc'), // ✅ MODIFIÉ
+      descFull: t('reflections.descFull'), // ✅ MODIFIÉ
       color: "from-yellow-500/20 to-yellow-500/5",
       borderColor: "border-yellow-500/30",
       iconBg: "bg-yellow-100 dark:bg-yellow-900/30",
@@ -173,9 +175,9 @@ function TipsCard() {
       icon: (
         <IoScanOutline className="text-emerald-500 text-base sm:text-lg md:text-xl" />
       ),
-      title: "Cadrage complet",
-      desc: "4 coins visibles",
-      descFull: "Assurez-vous que les quatre coins de la carte sont visibles.",
+      title: t('framing.title'), // ✅ MODIFIÉ
+      desc: t('framing.desc'), // ✅ MODIFIÉ
+      descFull: t('framing.descFull'), // ✅ MODIFIÉ
       color: "from-emerald-500/20 to-emerald-500/5",
       borderColor: "border-emerald-500/30",
       iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
@@ -184,9 +186,9 @@ function TipsCard() {
       icon: (
         <IoEyeOutline className="text-sky-500 text-base sm:text-lg md:text-xl" />
       ),
-      title: "Lisibilité",
-      desc: "CIN et nom nets",
-      descFull: "Vérifiez que le numéro CIN et le nom sont parfaitement nets.",
+      title: t('readability.title'), // ✅ MODIFIÉ
+      desc: t('readability.desc'), // ✅ MODIFIÉ
+      descFull: t('readability.descFull'), // ✅ MODIFIÉ
       color: "from-sky-500/20 to-sky-500/5",
       borderColor: "border-sky-500/30",
       iconBg: "bg-sky-100 dark:bg-sky-900/30",
@@ -197,7 +199,7 @@ function TipsCard() {
     <div className="bg-gradient-to-br from-gay-50/50 to-purple-50/50 dark:from-gray-950/20 dark:to-purple-950/20 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-gray-100 dark:border-gray-800/30">
       <h4 className="font-bold text-indigo-600 dark:text-indigo-400 mb-4 sm:mb-5 flex items-center gap-2 text-xs sm:text-sm">
         <RiShieldCheckLine className="text-sm sm:text-base" />
-        Conseils photo
+        {t('title')} 
       </h4>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -253,6 +255,7 @@ function MobileSyncSection({
   userId,
   onClose,
 }: MobileSyncSectionProps) {
+  const t = useTranslations('Identity.mobileSync'); // ✅ AJOUTÉ
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -384,31 +387,30 @@ function MobileSyncSection({
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[15px] font-semibold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                Transfert mobile sécurisé
+                {t('secureTransfer')} 
               </span>
             </div>
 
             <h3 className="text-base font-bold text-gray-800 dark:text-white mb-1">
-              Synchronisation express
+              {t('title')} 
             </h3>
 
             <p className="text-ms text-gray-500 dark:text-gray-400 leading-relaxed mb-3">
-              Scannez ce code QR avec l'appareil photo de votre smartphone pour
-              transférer instantanément vos documents d'identité.
+              {t('description')} 
             </p>
 
             <div className="flex items-center gap-3 text-[10px] text-gray-500 dark:text-gray-400">
-              <span className="flex items-center gap-1">1. Scanner</span>
+              <span className="flex items-center gap-1">{t('steps.scan')}</span> 
               <span className="w-3 h-px bg-gray-300 dark:bg-slate-600" />
-              <span className="flex items-center gap-1">2. Upload</span>
+              <span className="flex items-center gap-1">{t('steps.upload')}</span> 
               <span className="w-3 h-px bg-gray-300 dark:bg-slate-600" />
-              <span className="flex items-center gap-1">3. Automatique</span>
+              <span className="flex items-center gap-1">{t('steps.auto')}</span> 
             </div>
 
             {uploadProgress > 0 && (
               <div className="mt-3">
                 <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                  <span>Transfert en cours</span>
+                  <span>{t('transferInProgress')}</span> 
                   <span className="font-medium text-indigo-600 dark:text-indigo-400">
                     {uploadProgress}/2
                   </span>
@@ -422,7 +424,7 @@ function MobileSyncSection({
                 {uploadProgress === 2 && (
                   <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-1.5 flex items-center gap-1">
                     <IoCheckmarkCircle className="w-3 h-3" />
-                    Documents reçus avec succès
+                    {t('filesReceived')} 
                   </p>
                 )}
               </div>
@@ -440,7 +442,7 @@ function MobileSyncSection({
               )}
             </div>
             <p className="text-[9px] text-center text-gray-400 dark:text-gray-500 mt-1.5">
-              valable 10 minutes
+              {t('validFor')} 
             </p>
           </div>
         </div>
@@ -464,6 +466,7 @@ export default function IdentityPage({
   initialRejectionReason,
   userId,
 }: IdentityPageProps = {}) {
+  const t = useTranslations('Identity'); // ✅ AJOUTÉ
   const [showMobileSync, setShowMobileSync] = useState(false);
   const [rectoPreview, setRectoPreview] = useState<string | null>(null);
   const [versoPreview, setVersoPreview] = useState<string | null>(null);
@@ -575,10 +578,10 @@ export default function IdentityPage({
               </div>
               <div>
                 <h2 className="text-sm sm:text-lg font-bold text-gray-900 dark:text-white">
-                  Verification d'identite
+                  {t('title')} 
                 </h2>
                 <p className="text-[8px] sm:text-[10px] text-gray-500 dark:text-gray-400 font-semibold uppercase tracking-wider">
-                  Carte d'identite nationale
+                  {t('subtitle')} 
                 </p>
               </div>
             </div>
@@ -589,8 +592,8 @@ export default function IdentityPage({
                   className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:shadow-lg transition-all"
                 >
                   <Smartphone className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden sm:inline">Sync mobile</span>
-                  <span className="sm:hidden">Mobile</span>
+                  <span className="hidden sm:inline">{t('mobileSync')}</span> 
+                  <span className="sm:hidden">{t('mobileSyncShort')}</span> 
                 </button>
               )}
               <button
@@ -610,17 +613,16 @@ export default function IdentityPage({
                   <IoCheckmarkCircle className="text-white text-3xl sm:text-4xl" />
                 </div>
                 <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                  Dossier depose
+                  {t('success.title')} 
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-4 sm:mb-6 max-w-md">
-                  Merci ! Votre carte d'identite a ete envoyee a notre equipe.
-                  Vous recevrez une reponse sous 24h.
+                  {t('success.message')} 
                 </p>
                 <button
                   onClick={handleClose}
                   className="px-5 sm:px-6 py-1.5 sm:py-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white text-xs sm:text-sm font-semibold shadow-md hover:shadow-lg transition-all active:scale-95"
                 >
-                  Fermer
+                  {t('success.close')} 
                 </button>
               </div>
             ) : (
@@ -633,13 +635,13 @@ export default function IdentityPage({
                     </div>
                     <div>
                       <p className="text-xs sm:text-sm font-semibold text-red-700 dark:text-red-400">
-                        Dernier refus
+                        {t('rejection.title')} 
                       </p>
                       <p className="text-[10px] sm:text-xs text-red-600 dark:text-red-300 mt-0.5">
                         {initialRejectionReason}
                       </p>
                       <p className="text-[8px] sm:text-[10px] text-red-500/70 dark:text-red-400/70 mt-1">
-                        Veuillez soumettre des documents valides et lisibles.
+                        {t('rejection.hint')} 
                       </p>
                     </div>
                   </div>
@@ -662,7 +664,7 @@ export default function IdentityPage({
                     </div>
                     <div className="relative flex justify-center">
                       <span className="px-4 bg-white dark:bg-slate-900 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-                        Soumission manuelle
+                        {t('manualSubmission')} 
                       </span>
                     </div>
                   </div>
@@ -672,7 +674,7 @@ export default function IdentityPage({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
                   <UploadZone
                     key={`recto-${rectoPreview || "empty"}`}
-                    label="Recto (Face avant)"
+                    label={t('rectoLabel')} // ✅ MODIFIÉ
                     required
                     preview={rectoPreview}
                     onFile={handleFile("recto")}
@@ -680,7 +682,7 @@ export default function IdentityPage({
                   />
                   <UploadZone
                     key={`verso-${versoPreview || "empty"}`}
-                    label="Verso (Face arriere)"
+                    label={t('versoLabel')} // ✅ MODIFIÉ
                     required
                     preview={versoPreview}
                     onFile={handleFile("verso")}
@@ -705,7 +707,7 @@ export default function IdentityPage({
                   className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full transition-all duration-300 ${versoPreview ? "bg-emerald-500" : "bg-gray-300 dark:bg-slate-600"}`}
                 />
                 <span className="text-[8px] sm:text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider ml-1">
-                  {isReady ? "Pret pour l'envoi" : "2 fichiers requis"}
+                  {isReady ? t('status.ready') : t('status.required')} 
                 </span>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
@@ -713,7 +715,7 @@ export default function IdentityPage({
                   onClick={handleClose}
                   className="px-3 sm:px-5 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-semibold text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
                 >
-                  Annuler
+                  {t('buttons.cancel')} 
                 </button>
                 <button
                   onClick={handleSubmit}
@@ -723,13 +725,13 @@ export default function IdentityPage({
                   {submitting ? (
                     <>
                       <div className="w-3 h-3 sm:w-3.5 sm:h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span className="hidden sm:inline">Envoi...</span>
+                      <span className="hidden sm:inline">{t('buttons.sending')}</span> 
                     </>
                   ) : (
                     <>
                       <IoSendOutline className="text-[10px] sm:text-xs" />
-                      <span className="hidden sm:inline">Soumettre</span>
-                      <span className="sm:hidden">Envoyer</span>
+                      <span className="hidden sm:inline">{t('buttons.submit')}</span> 
+                      <span className="sm:hidden">{t('buttons.send')}</span> 
                     </>
                   )}
                 </button>
@@ -745,7 +747,7 @@ export default function IdentityPage({
           <div className="bg-emerald-500 text-white px-4 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-lg flex items-center gap-1.5 sm:gap-2">
             <IoCheckmarkCircle className="text-xs sm:text-base" />
             <span className="text-[10px] sm:text-xs font-medium">
-              Documents envoyes avec succes
+              {t('toast.success')} 
             </span>
           </div>
         </div>

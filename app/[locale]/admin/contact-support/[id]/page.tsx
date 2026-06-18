@@ -133,7 +133,7 @@ export default function AdminContactReplyPage() {
               
               <div className="flex items-center gap-2 text-sm">
                 <button
-                  onClick={() => router.push(`/${locale}/admin/contacts`)}
+                  onClick={() => router.push(`/${locale}/admin/contact-support`)}
                   className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                 >
                   {t("header.inquiries")}

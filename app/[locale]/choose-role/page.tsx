@@ -172,7 +172,7 @@ function Header({
   const [scrolled, setScrolled] = useState(false);
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const t = useTranslations("Common");
+  const t = useTranslations("Commonn");
   const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {

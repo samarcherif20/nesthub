@@ -20,6 +20,7 @@ import {
   X,
   FlipHorizontal,
   User,
+  AlertCircle,
 } from "lucide-react";
 import { TfiEmail } from "react-icons/tfi";
 import { RiLockPasswordLine } from "react-icons/ri";
@@ -54,7 +55,6 @@ import { DocumentTypeSelector } from "@/components/ui/DocumentTypeSelector";
 import { DocumentUploader } from "@/components/ui/DocumentUploader";
 import { useRouter } from "next/navigation";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { BiErrorAlt } from "react-icons/bi";
 
@@ -140,7 +140,22 @@ const pipAvatar = (url: string) => {
   if (url.startsWith("blob:")) return url;
   return `/api/users/avatar?url=${encodeURIComponent(url)}`;
 };
+
 export default function InscriptionPage() {
+  const router = useRouter();
+  const locale = useLocale();
+  const [customToast, setCustomToast] = useState<{
+    message: string;
+    type: "success" | "error" | "warning";
+  } | null>(null);
+
+  const showToast = (
+    message: string,
+    type: "success" | "error" | "warning",
+  ) => {
+    setCustomToast({ message, type });
+    setTimeout(() => setCustomToast(null), 4000);
+  };
   const {
     t,
     mounted,
@@ -271,18 +286,15 @@ export default function InscriptionPage() {
     step2Errors,
     validateStep2,
     handleAnalyzeDocuments,
-  } = useInscription();
-
-  const router = useRouter();
-  const locale = useLocale();
+  } = useInscription(showToast);
 
   // États pour l'erreur générale avec timer
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [showGeneralError, setShowGeneralError] = useState(false);
   const [isCompletingProfile, setIsCompletingProfile] = useState(false);
-
   const totalDone = [cinRecto, cinVerso, profilePhoto].filter(Boolean).length;
   const docsDone = !!(cinRecto && cinVerso);
+
   // Timer pour masquer l'erreur après 5 secondes
   useEffect(() => {
     if (generalError) {
@@ -363,9 +375,7 @@ export default function InscriptionPage() {
         if (data.extracted.country) setPassportCountry(data.extracted.country);
         if (data.extracted.firstName) setFirstName(data.extracted.firstName);
         if (data.extracted.lastName) setLastName(data.extracted.lastName);
-        toast.success(t("ocrDetected"), {
-          description: t("ocrDetectedDescription"),
-        });
+        showToast(t("ocrDetected"), "success");
 
         // Retourner les données extraites
         return data.extracted;
@@ -375,9 +385,8 @@ export default function InscriptionPage() {
       }
     } catch (error) {
       console.error("Erreur OCR:", error);
-      toast.error(t("ocrError"), {
-        description: t("ocrErrorDescription"),
-      });
+      showToast(t("ocrError"), "error");
+
       return null;
     }
   };
@@ -402,7 +411,7 @@ export default function InscriptionPage() {
 
     const userId = currentUserId || localStorage.getItem("currentUserId");
     if (!userId) {
-      toast.error(t("errors.error"), { description: t("errors.userNotFound") });
+      showToast(t("errors.userNotFound"), "error");
       setIsMobileUploading(false);
       return;
     }
@@ -432,7 +441,7 @@ export default function InscriptionPage() {
           if (interval) clearInterval(interval);
           setShowQRCode(false);
           setIsMobileUploading(false);
-          toast.info(t("sessionExpired"));
+          showToast(t("sessionExpired"), "warning");
         }, 600000);
 
         interval = setInterval(async () => {
@@ -447,7 +456,7 @@ export default function InscriptionPage() {
               setShowQRCode(false);
 
               setIsMobileUploading(false);
-              toast.info(t("sessionExpired"));
+              showToast(t("sessionExpired"), "warning");
               return;
             }
 
@@ -501,9 +510,7 @@ export default function InscriptionPage() {
                 }
                 setShowQRCode(false);
                 setIsMobileUploading(false);
-                toast.success(t("mobile.receivedPassport"), {
-                  description: t("mobile.clickToAnalyze"),
-                });
+                showToast(t("mobile.receivedPassport"), "success");
               } else {
                 //  MODE CIN : 3 fichiers (recto + verso + selfie)
                 if (files.recto?.data) {
@@ -535,9 +542,7 @@ export default function InscriptionPage() {
                 }
                 setShowQRCode(false);
                 setIsMobileUploading(false);
-                toast.success(t("mobile.receivedDocuments"), {
-                  description: t("mobile.clickToAnalyze"),
-                });
+                showToast(t("mobile.receivedDocuments"), "success");
               }
             }
           } catch (error) {
@@ -547,9 +552,7 @@ export default function InscriptionPage() {
       }
     } catch (error) {
       console.error("Erreur création session:", error);
-      toast.error(t("errors.error"), {
-        description: t("mobile.sessionCreationFailed"),
-      });
+      showToast(t("mobile.sessionCreationFailed"), "error");
       setIsMobileUploading(false);
     }
   }, [
@@ -620,15 +623,12 @@ export default function InscriptionPage() {
     console.log(` ${side} - imageSrc:`, imageSrc);
     const handleFile = (f: File) => {
       if (!f.type.startsWith("image/")) {
-        toast.error(t("errors.formatNotSupported"), {
-          description: t("errors.chooseImage"),
-        });
+        showToast(t("errors.formatNotSupported"), "error");
+
         return;
       }
       if (f.size > 10 * 1024 * 1024) {
-        toast.error(t("errors.fileTooLarge"), {
-          description: t("errors.maxSize10MB"),
-        });
+        showToast(t("errors.fileTooLarge"), "error");
         return;
       }
       onFile(f);
@@ -860,7 +860,6 @@ export default function InscriptionPage() {
     <div className="relative min-h-screen w-full flex flex-col items-center justify-start p-3 sm:p-4 md:p-6">
       {" "}
       {/* ── Arrière-plan ciel bleu avec coupure diagonale écarlate ── */}
-      {/* ── Arrière-plan ciel bleu avec coupure diagonale écarlate ── */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         {" "}
         <div className="absolute -top-24 left-[-6rem] h-72 w-72 rounded-full bg-white blur-3xl dark:bg-blue-500/10" />
@@ -1053,6 +1052,43 @@ export default function InscriptionPage() {
             </button>
           </motion.div>
         )}
+        {/* Toast personnalisé */}
+        <AnimatePresence>
+          {customToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="fixed top-24 left-1/2 -translate-x-1/2 z-50"
+            >
+              <div
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg ${
+                  customToast.type === "success"
+                    ? "bg-green-500 text-white"
+                    : customToast.type === "error"
+                      ? "bg-red-500 text-white"
+                      : "bg-orange-500 text-white"
+                }`}
+              >
+                {customToast.type === "success" ? (
+                  <CheckCircle className="w-5 h-5" />
+                ) : (
+                  <AlertCircle className="w-5 h-5" />
+                )}
+                <span className="text-sm font-medium">
+                  {customToast.message}
+                </span>
+                <button
+                  onClick={() => setCustomToast(null)}
+                  className="ml-2 hover:opacity-70 transition-opacity"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <AnimatePresence mode="wait">
           {/* ÉTAPE 1 : COMPTE (EMAIL) */}
           {currentStep === 1 && !pendingVerification && (
@@ -3308,7 +3344,7 @@ export default function InscriptionPage() {
                       if (validateStep2()) {
                         handleSendWhatsApp();
                       } else {
-                        toast.error(t("errors.correctErrors"));
+                        showToast(t("errors.correctErrors"), "error");
                       }
                     }}
                     disabled={isWhatsappLoading}
@@ -3595,16 +3631,13 @@ export default function InscriptionPage() {
                     style={{ overflow: "visible" }}
                   >
                     {" "}
-                    <div
-                      className={`flex gap-3 ${isMobileUploading ? "opacity-60 pointer-events-none" : ""}`}
-                    >
+                    <div className="flex gap-3">
                       <IDCard
                         side="recto"
                         file={cinRecto}
                         fileUrl={cinRectoUrl}
                         onFile={(file) => {
                           setCinRecto(file);
-                          handleOCR(file, "recto");
                         }}
                         onRemove={() => {
                           setCinRecto(null);
@@ -3617,7 +3650,6 @@ export default function InscriptionPage() {
                         fileUrl={cinVersoUrl}
                         onFile={(file) => {
                           setCinVerso(file);
-                          handleOCR(file, "verso");
                         }}
                         onRemove={() => {
                           setCinVerso(null);
@@ -3748,7 +3780,7 @@ export default function InscriptionPage() {
             </motion.div>
           )}
         </AnimatePresence>
-        {/* Modal QR Code */}
+        {/* Modal QR Code - Version adaptative avec traductions */}
         {showQRCode && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -3773,11 +3805,12 @@ export default function InscriptionPage() {
                   </div>
                   <div>
                     <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                      {t("uploadViaMobile") || "Upload via mobile"}
+                      {t("uploadViaMobile")}
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {t("scanToContinue") ||
-                        "Scannez le QR code avec votre téléphone"}
+                      {documentType === "cin"
+                        ? t("mobile.cin.title")
+                        : t("mobile.passport.title")}
                     </p>
                   </div>
                 </div>
@@ -3800,7 +3833,7 @@ export default function InscriptionPage() {
                 </div>
               </div>
 
-              {/*  QR Code centré */}
+              {/* QR Code centré */}
               <div className="flex flex-col items-center justify-center mb-4">
                 <div className="relative bg-white p-4 rounded-2xl shadow-xl mb-4">
                   {qrUrl ? (
@@ -3825,52 +3858,80 @@ export default function InscriptionPage() {
                   ))}
                 </div>
 
-                {/* Instructions */}
+                {/* Instructions adaptatives selon le type */}
                 <div className="space-y-2 w-full">
-                  {[
-                    {
-                      icon: <QrCode className="w-4 h-4" />,
-                      text:
-                        t("qrStep1") ||
-                        "Ouvrez l'appareil photo de votre téléphone",
-                    },
-                    {
-                      icon: <Camera className="w-4 h-4" />,
-                      text: t("qrStep2") || "Scannez le QR code ci-dessus",
-                    },
-                    {
-                      icon: <RefreshCw className="w-4 h-4" />,
-                      text:
-                        t("qrStep3") ||
-                        "Les documents seront automatiquement synchronisés",
-                    },
-                  ].map(({ icon, text }, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50"
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center flex-shrink-0">
-                        {icon}
-                      </div>
-                      <span className="text-sm text-slate-600 dark:text-slate-400">
-                        {text}
-                      </span>
-                    </div>
-                  ))}
+                  {documentType === "cin" ? (
+                    // Mode CIN : 3 documents
+                    <>
+                      {[
+                        {
+                          icon: <BsFillPersonVcardFill className="w-4 h-4" />,
+                          text: t("mobile.cin.step1"),
+                        },
+                        {
+                          icon: <BsFillPostcardFill className="w-4 h-4" />,
+                          text: t("mobile.cin.step2"),
+                        },
+                        {
+                          icon: <Camera className="w-4 h-4" />,
+                          text: t("mobile.cin.step3"),
+                        },
+                      ].map(({ icon, text }, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center flex-shrink-0">
+                            {icon}
+                          </div>
+                          <span className="text-sm text-slate-600 dark:text-slate-400">
+                            {text}
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    // Mode Passeport : 2 documents
+                    <>
+                      {[
+                        {
+                          icon: <MdVerified className="w-4 h-4" />,
+                          text: t("mobile.passport.step1"),
+                        },
+                        {
+                          icon: <Camera className="w-4 h-4" />,
+                          text: t("mobile.passport.step2"),
+                        },
+                      ].map(({ icon, text }, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-3 p-2 rounded-lg bg-slate-50 dark:bg-slate-800/50"
+                        >
+                          <div className="w-8 h-8 rounded-lg bg-blue-500/15 text-blue-500 flex items-center justify-center flex-shrink-0">
+                            {icon}
+                          </div>
+                          <span className="text-sm text-slate-600 dark:text-slate-400">
+                            {text}
+                          </span>
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
 
-                {/* Barre de progression */}
+                {/* Barre de progression adaptative */}
                 {uploadProgress > 0 && (
                   <div className="mt-4 w-full">
                     <div className="flex justify-between text-xs text-slate-500 mb-1">
-                      <span>{t("progress") || "Progression"}</span>
+                      <span>{t("progress")}</span>
                       <span className="font-mono font-bold">
-                        {uploadProgress === 3 ? (
+                        {uploadProgress === (documentType === "cin" ? 3 : 2) ? (
                           <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                            <CheckCircle className="w-3.5 h-3.5" /> Terminé !
+                            <CheckCircle className="w-3.5 h-3.5" />{" "}
+                            {t("completed")}
                           </span>
                         ) : (
-                          `${uploadProgress}/3`
+                          `${uploadProgress}/${documentType === "cin" ? 3 : 2}`
                         )}
                       </span>
                     </div>
@@ -3878,18 +3939,41 @@ export default function InscriptionPage() {
                       <motion.div
                         className="h-full bg-gradient-to-r from-blue-500 to-green-500"
                         initial={{ width: "0%" }}
-                        animate={{ width: `${(uploadProgress / 3) * 100}%` }}
+                        animate={{
+                          width: `${(uploadProgress / (documentType === "cin" ? 3 : 2)) * 100}%`,
+                        }}
                         transition={{ duration: 0.3, ease: "easeOut" }}
                       />
                     </div>
                   </div>
+                )}
+
+                {/* Message de fin adaptatif */}
+                {uploadProgress === (documentType === "cin" ? 3 : 2) && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-3 text-center"
+                  >
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      ✓{" "}
+                      {documentType === "cin"
+                        ? t("mobile.cin.completed")
+                        : t("mobile.passport.completed")}
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-1">
+                      {documentType === "cin"
+                        ? t("mobile.cin.closeMessage")
+                        : t("mobile.passport.closeMessage")}
+                    </p>
+                  </motion.div>
                 )}
               </div>
 
               <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                 <span className="text-xs text-slate-500 dark:text-slate-400">
-                  {t("sessionEncrypted") || "Session sécurisée et chiffrée"}
+                  {t("sessionEncrypted")}
                 </span>
               </div>
             </motion.div>

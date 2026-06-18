@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useAuth } from "@clerk/nextjs";
 import { CheckCircle, AlertCircle, X, Loader2 } from "lucide-react";
@@ -32,6 +31,7 @@ import {
 } from "react-icons/io5";
 import { useAdminProfile } from "./hooks/useAdminProfile";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 
 interface ToastState {
   type: "success" | "error";
@@ -175,12 +175,14 @@ export default function AdminProfilePage() {
   const params = useParams();
   const router = useRouter();
   const locale = (params?.locale as string) || "fr";
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
   const t = useTranslations("AdminProfile");
   const { getToken } = useAuth();
 
   const [toast, setToast] = useState<ToastState | null>(null);
   const [tab, setTab] = useState<"general" | "security" | "preferences">(
-    "general",
+    tabParam === "security" ? "security" : "general",
   );
   const [editing, setEditing] = useState(false);
   const [savingPw, setSavingPw] = useState(false);
@@ -382,7 +384,15 @@ export default function AdminProfilePage() {
     router.push(`/${langCode}/admin/profile`);
     showToast("success", t("success.languageUpdated"));
   };
-
+  useEffect(() => {
+    if (tabParam === "security") {
+      setTab("security");
+    } else if (tabParam === "preferences") {
+      setTab("preferences");
+    } else {
+      setTab("general");
+    }
+  }, [tabParam]);
   useEffect(() => {
     if (error) {
       showToast("error", error);
@@ -583,8 +593,7 @@ export default function AdminProfilePage() {
                       ID:{" "}
                       <span className="font-mono">{profile.id?.slice(-8)}</span>
                       {" · "}
-                      {t("memberSince")}{" "}
-                      {formatDate(profile.createdAt)}
+                      {t("memberSince")} {formatDate(profile.createdAt)}
                     </p>
                   </div>
                   <button
@@ -654,11 +663,7 @@ export default function AdminProfilePage() {
             <Section>
               <SectionHead
                 title={t("accountDetails")}
-                sub={
-                  editing
-                    ? t("editInstructions")
-                    : t("viewInstructions")
-                }
+                sub={editing ? t("editInstructions") : t("viewInstructions")}
               />
               <form onSubmit={handleSaveProfile} className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

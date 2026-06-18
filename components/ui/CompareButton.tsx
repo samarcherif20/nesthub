@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { IoGitCompare } from 'react-icons/io5'
 
 export default function CompareButton() {
+  const t = useTranslations('CompareButton')
   const [compareCount, setCompareCount] = useState(0)
 
   useEffect(() => {
@@ -32,7 +34,7 @@ export default function CompareButton() {
         className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full font-bold flex items-center gap-2 shadow-2xl hover:scale-105 transition-transform active:scale-95"
       >
         <IoGitCompare className="text-xl" />
-        Comparer ({compareCount})
+        {t('compare', { count: compareCount })}
       </button>
     </div>
   )

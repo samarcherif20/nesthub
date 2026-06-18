@@ -20,15 +20,24 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Accès refusé" }, { status: 403 });
     }
 
-    const blobUrl = req.nextUrl.searchParams.get("url");
+    let blobUrl = req.nextUrl.searchParams.get("url");
     if (!blobUrl) {
       return NextResponse.json({ error: "URL manquante" }, { status: 400 });
     }
 
+    // CORRECTION: Ajouter le préfixe 'nesthub/' si nécessaire
+    if (blobUrl.includes('vbo9rhe8h0j7ewhr.private.blob.vercel-storage.com') && 
+        !blobUrl.includes('/nesthub/')) {
+      blobUrl = blobUrl.replace(
+        'vbo9rhe8h0j7ewhr.private.blob.vercel-storage.com/',
+        'vbo9rhe8h0j7ewhr.private.blob.vercel-storage.com/nesthub/'
+      );
+      console.log("[serve-image] URL corrigée:", blobUrl);
+    }
+
     // AJOUTER LA QUALITE MAXIMALE DIRECTEMENT DANS L'URL
-    let finalUrl = blobUrl;
     const separator = blobUrl.includes("?") ? "&" : "?";
-    finalUrl = `${blobUrl}${separator}q=100`;
+    const finalUrl = `${blobUrl}${separator}q=100`;
 
     console.log("[serve-image] Récupération de:", finalUrl);
 

@@ -85,7 +85,7 @@
     "autoVerification": "Vérification automatique",
     "autoVerificationDesc": "Votre identité est vérifiée automatiquement via le lien d'invitation sécurisé.",
     "expiryTime": "Durée de validité",
-    "expiryLabel": "7 jours",
+    "expiryLabel": "2 jours",
     "limitedAccess": "Accès limité",
     "fullAccess": "Accès complet",
     "cohostAccessLabel": "Gestion du bien uniquement",
@@ -93,6 +93,7 @@
   },
 
   "Login": {
+    "verifying": "vérifcation en cours",
     "completeLogin": "Veuillez compléter votre connexion",
     "newCodeSent": "Un nouveau code a été envoyé !",
     "successLogin": "Connexion réussie ! Redirection en cours...",
@@ -208,8 +209,9 @@
 
     "2faAlt": "Schéma illustratif du processus d'authentification à deux facteurs"
   },
-  "admin": {"reviews": "Avis",
-"auditLog": "Journal d'audit",
+  "admin": {
+    "reviews": "Avis",
+    "auditLog": "Journal d'audit",
     "dashboard": "Tableau de bord",
     "users": "Utilisateurs",
     "invitations": "Invitations",
@@ -288,7 +290,9 @@
           "rejected": "Rejeté",
           "security_locked": "Bloqués (sécurité)",
           "manually_blocked": "Bloqués (manuel)",
-          "inactive": "Inactifs"
+          "inactive": "Inactifs",
+          "locked": "Bloqué",
+          "unknown": "Statut inconnu"
         },
 
         "advanced": {
@@ -300,12 +304,16 @@
           "maxFraudPlaceholder": "≤ 30"
         }
       },
+      "until": "Jusqu'au",
+      "auto_unlock": "Déblocage auto après 24h",
       "verification": {
         "label": "Vérification",
         "all": "Toutes",
         "verified": "Vérifié",
+        "validated": "Vérifié",
         "pending": "En attente",
-        "rejected": "Rejeté"
+        "rejected": "Rejeté",
+        "not_verified": "Non vérifié"
       },
       "table": {
         "headers": {
@@ -405,6 +413,8 @@
         }
       },
       "warningModal": {
+        "notifyMessage": "Un email sera envoyé à {email} pour lui notifier cet avertissement.",
+        "infoMessage": "Cet avertissement sera visible dans le dashboard de l'utilisateur.",
         "title": "Envoyer un avertissement",
         "description": "Cette action sera enregistrée dans l'historique",
         "reason": "Motif",
@@ -413,7 +423,6 @@
         "optionalMessage": "Message (optionnel)",
         "explainReason": "Expliquez la raison...",
         "additionalDetails": "Détails supplémentaires...",
-        "infoMessage": "L'utilisateur recevra un avertissement visible dans son tableau de bord.",
         "emailSent": "Email envoyé.",
         "previousWarnings": "Déjà {count} avertissement(s).",
         "cancel": "Annuler",
@@ -472,9 +481,58 @@
         "confirmLabel": "Tapez",
         "cancel": "Annuler",
         "confirm": "Confirmer le bannissement",
-        "processing": "Traitement..."
+        "processing": "Traitement...",
+        "notifyMessage": "Un email sera envoyé à {email} pour le notifier de ce bannissement.",
+        "confirmKeyword": "BANNIR",
+        "reasons": {
+          "spam": "Spam / Publicité",
+          "harassment": "Harcèlement",
+          "tosViolation": "Violation des conditions d'utilisation",
+          "fraud": "Fraude ou tentative de phishing",
+          "identityTheft": "Usurpation d'identité",
+          "multipleWarnings": "Avertissements multiples ignorés",
+          "illegalActivity": "Activité illégale",
+          "other": "Autre raison"
+        }
       },
       "escalateModal": {
+        "levels": {
+          "warning": "Avertissement",
+          "warningDesc": "Premier avertissement",
+          "suspension": "Suspension",
+          "suspensionDesc": "Suspension temporaire",
+          "ban": "Bannissement",
+          "banDesc": "Bannissement définitif"
+        },
+        "current": {
+          "none": "Aucune sanction",
+          "warning": "Avertissement donné",
+          "suspension": "Suspension en cours",
+          "ban": "Bannissement appliqué"
+        },
+        "next": {
+          "warning": "Avertissement",
+          "suspension": "Suspension",
+          "ban": "Bannissement",
+          "maxReached": "Aucune (maximum atteint)"
+        },
+        "notifyMessages": {
+          "warning": "Un email sera envoyé à {email} pour lui notifier cet avertissement.",
+          "suspension": "Un email sera envoyé à {email} pour lui notifier cette suspension.",
+          "ban": "Un email sera envoyé à {email} pour lui notifier ce bannissement.",
+          "default": "Un email sera envoyé à {email} pour le notifier de cette sanction."
+        },
+        "badge": {
+          "new": "Nouveau",
+          "warning": "Averti",
+          "suspension": "Suspendu",
+          "ban": "Banni"
+        },
+        "currentLevelLabel": "Niveau actuel",
+        "nextStepLabel": "Prochaine étape",
+
+        "maxLevelReached": "L'utilisateur a déjà atteint le niveau maximum.",
+
         "title": "Escalade progressive",
         "description": "Système de sanctions graduelles",
         "currentLevel": "Niveau actuel",
@@ -493,7 +551,9 @@
         "cancel": "Annuler",
         "processing": "Traitement..."
       },
+
       "suspendModal": {
+        "notifyMessage": "Un email sera envoyé à {email} pour le notifier de cette suspension.",
         "title": "Suspendre temporairement l'utilisateur",
         "description": "L'utilisateur ne pourra pas se connecter pendant la durée choisie",
         "duration": "Durée de la suspension",
@@ -534,7 +594,9 @@
         "unlock": "Débloquer",
         "cancel": "Annuler",
         "processing": "Traitement...",
-        "enterLinkUrl": "Entrez l'URL du lien:"
+        "enterLinkUrl": "Entrez l'URL du lien:",
+        "notifyMessageUnlock": "Un email sera envoyé à {email} pour le notifier du déblocage de son compte.",
+        "notifyMessageLock": "Un email sera envoyé à {email} pour le notifier du blocage de son compte."
       },
       "actionsHistoryModal": {
         "motifs": {
@@ -616,19 +678,19 @@
           "loadFailed": "Impossible de charger l'historique des actions",
           "retry": "Réessayer"
         }
+      },
+      "common": {
+        "yes": "Oui",
+        "no": "Non",
+        "save": "Enregistrer",
+        "cancel": "Annuler",
+        "delete": "Supprimer",
+        "edit": "Modifier",
+        "close": "Fermer",
+        "confirm": "Confirmer",
+        "back": "Retour"
       }
     }
-  },
-  "common": {
-    "yes": "Oui",
-    "no": "Non",
-    "save": "Enregistrer",
-    "cancel": "Annuler",
-    "delete": "Supprimer",
-    "edit": "Modifier",
-    "close": "Fermer",
-    "confirm": "Confirmer",
-    "back": "Retour"
   },
   "Terms": {
     "title": "Conditions Générales d'Utilisation",
@@ -1044,10 +1106,10 @@
     "checking": "Vérification...",
 
     "errors": {
-      "linkInvalid": "Invalid link",
-      "linkInvalidDescription": "The verification link is invalid. Please request a new one.",
-      "linkExpired": "Link expired",
-      "linkExpiredDescription": "The verification link has expired. Please request a new verification email.",
+      "linkInvalid": "Lien invalide",
+      "linkInvalidDescription": "Le lien de vérification est invalide. Veuillez vous réinscrire.",
+      "linkExpired": "Lien expiré",
+      "linkExpiredDescription": "Le lien de vérification a expiré. Veuillez vous réinscrire.",
       "correctErrors": "Veuillez corriger les erreurs",
 
       "chooseRole": "Veuillez choisir un rôle (Propriétaire ou Locataire)",
@@ -1156,7 +1218,10 @@
       "enterCodeInstruction": "Entrez les 6 chiffres puis appuyez sur Entrée",
       "back": "Retour",
       "sending": "Envoi",
-      "resendCode": "Renvoyer le code"
+      "resendCode": "Renvoyer le code",
+      "codeExpiresIn": "Le code expire dans 30 minutes",
+      "waitBeforeResend": "Attendre avant renvoi",
+      "restant": "restants"
     },
 
     "toasts": {
@@ -1178,8 +1243,8 @@
       "codeSentTitle": "Code envoyé !",
       "gotCode": "J'ai reçu le code",
       "verificationLinkSent": "Un lien de vérification a été envoyé à {email}",
-      "emailVerified": "Email verified successfully!",
-      "continueInscription": "Please continue your registration."
+      "emailVerified": "Email verifié avec succés!",
+      "continueInscription": "s'il vous plait continuer votre inscription."
     },
 
     "whatsapp": {
@@ -1210,14 +1275,37 @@
     "bothSidesRequired": "Recto + Verso requis",
     "analyzing": "Analyse en cours... (30-60s)",
     "analyzeDocuments": "Analyser mes documents",
+
     "uploadViaMobile": "Upload via mobile",
+    "refresh": "Rafraîchir",
+    "close": "Fermer",
+    "completed": "Terminé !",
+    "sessionEncrypted": "Session sécurisée et chiffrée",
+    "progress": "Progression",
+    "mobile": {
+      "receivedDocuments": "Documents reçus avec succès",
+
+      "cin": {
+        "title": "Scannez pour uploader votre CIN (recto, verso, selfie)",
+        "step1": "1. Prenez en photo le recto de votre CIN",
+        "step2": "2. Prenez en photo le verso de votre CIN",
+        "step3": "3. Prenez un selfie",
+        "completed": "Tous les documents ont été reçus !",
+        "closeMessage": "Vous pouvez fermer cette fenêtre"
+      },
+      "passport": {
+        "title": "Scannez pour uploader votre passeport et selfie",
+        "step1": "1. Prenez en photo votre passeport",
+        "step2": "2. Prenez un selfie",
+        "completed": "Tous les documents ont été reçus !",
+        "closeMessage": "Vous pouvez fermer cette fenêtre"
+      }
+    },
     "scanToContinue": "Scannez pour continuer sur votre téléphone",
     "qrStep1": "Scannez le QR code",
     "qrStep2": "Photographiez votre CIN",
     "qrStep3": "Sync automatique ici",
-    "progress": "Progression",
-    "refresh": "Actualiser",
-    "sessionEncrypted": "Session chiffrée · expire dans 15 min",
+
     "ocrDetected": "CIN détecté !",
     "ocrDetectedDescription": "Les informations ont été extraites automatiquement",
     "documentsReceived": "Documents reçus !",
@@ -1264,15 +1352,7 @@
 
     "sessionExpired": "Session expirée",
 
-    "close": "Fermer",
-
-    "passportDocumentLabel": "Passeport",
-    "mobile": {
-      "receivedPassport": "2 documents reçus du mobile (passeport + selfie) !",
-      "receivedDocuments": "3 documents reçus du mobile !",
-      "clickToAnalyze": "Cliquez sur 'Analyser les documents' pour finaliser",
-      "sessionCreationFailed": "Impossible de créer la session mobile"
-    }
+    "passportDocumentLabel": "Passeport"
   },
 
   "AdminInvitations": {
@@ -1517,7 +1597,8 @@
       "emailRequired": "L'email est requis",
       "emailInvalid": "Email invalide",
       "general": "Une erreur est survenue",
-      "connection": "Erreur de connexion"
+      "connection": "Erreur de connexion",
+      "emailNotFound": "Aucun compte trouvé avec cette adresse email"
     },
     "success": {
       "message": "Un lien de réinitialisation a été envoyé à {email}"
@@ -1636,6 +1717,11 @@
     "clearSearch": "Effacer la recherche"
   },
   "OwnerLayout": {
+    "role": {
+      "both": "Propriétaire + Co-hôte",
+      "cohost": "Co-hôte",
+      "owner": "Propriétaire"
+    },
     "roleSwitcher": {
       "owner": "Propriétaire",
       "tenant": "Locataire"
@@ -1651,7 +1737,9 @@
       "searchPlaceholder": "Rechercher une annonce...",
       "addListing": "Ajouter",
       "owner": "Propriétaire",
-      "ownerBadge": "PROPRIÉTAIRE"
+      "ownerBadge": "PROPRIÉTAIRE",
+      "both": "Propriétaire + Locataire",
+      "cohost": "Co-hôte"
     },
     "nav": {
       "dashboard": "Tableau de bord",
@@ -1661,7 +1749,7 @@
       "messages": "Messages",
       "analytics": "Statistiques",
       "team": "Équipe",
-      "disputes": "Ligites"
+      "disputes": "Litiges"
     },
     "sidebar": {
       "ownerSuite": "Espace propriétaire",
@@ -1671,9 +1759,12 @@
       "proDesc": "Accédez aux statistiques avancées et boostez votre visibilité.",
       "upgrade": "Passer au Pro",
       "collapse": "Réduire",
-      "logout": "Déconnexion"
+      "logout": "Déconnexion",
+      "bothSpace": "Espace mixte",
+      "cohostSpace": "Espace Co-hôte"
     },
     "profile": {
+      "Wallet": "Mon portfeuille",
       "myProfile": "Mon profil",
       "settings": "Paramètres",
       "logout": "Se déconnecter"
@@ -1684,12 +1775,20 @@
     },
     "search": {
       "cancel": "Annuler",
-      "noResults": "Aucun résultat"
+      "noResults": "Aucun résultat trouvé",
+      "searching": "Recherche...",
+      "resultsCount": "{count} résultat(s) "
     },
     "logout": {
       "confirm": "Déconnexion",
       "message": "Êtes-vous sûr de vouloir vous déconnecter ?",
       "cancel": "Annuler"
+    },
+    "chat": {
+      "recentMessages": "Messages récents",
+      "clickToOpen": "Cliquez pour ouvrir une conversation",
+      "noConversations": "Aucune conversation",
+      "viewAll": "Voir tous les messages"
     }
   },
 
@@ -1911,6 +2010,8 @@
     },
 
     "houseRules": {
+      "title": "RÈGLEMENT INTÉRIEUR",
+
       "noParties": "Pas de fêtes",
       "quietHours": "Silence après 22h",
       "petsAllowed": "Animaux acceptés",
@@ -2604,7 +2705,12 @@
       "deleting": "Suppression...",
       "bookingsWarning": "Cette annonce a des réservations actives.",
       "cancelBookingsOption": "Annuler automatiquement les réservations en cours",
-      "continue": "Continuer"
+      "continue": "Continuer",
+
+      "bookingsSingular": "réservation en cours",
+      "bookingsPlural": "réservations en cours",
+
+      "confirmWord": "SUPPRIMER"
     },
     "qrCodeModal": {
       "title": "QR Code - Partager l'annonce",
@@ -3070,6 +3176,24 @@
   },
 
   "Calendar": {
+    "days": {
+      "monday": "Lun",
+      "tuesday": "Mar",
+      "wednesday": "Mer",
+      "thursday": "Jeu",
+      "friday": "Ven",
+      "saturday": "Sam",
+      "sunday": "Dim"
+    },
+    "legend": {
+      "available": "Disponible",
+      "booked": "Réservé / Indisponible",
+      "pending": "En attente de paiement",
+      "specialPrice": "Prix spécial",
+      "startEnd": "Début / Fin du séjour",
+      "stayNights": "Nuits du séjour"
+    },
+    "currency": "TND",
     "tooltip": {
       "clickToUnblock": "Cliquer pour débloquer cette date",
       "clickToRemovePrice": "Cliquer pour supprimer le prix spécial",
@@ -3185,7 +3309,7 @@
       "error": "Une erreur est survenue. Veuillez réessayer."
     }
   },
-  "Profile": {
+  "Profilee": {
     "page": {
       "title": "  Mon Profil",
       "description": "Gérez vos informations personnelles et préférences"
@@ -3408,22 +3532,21 @@
     "strength_weak": "Faible",
     "strength_medium": "Moyen",
     "strength_good": "Bon",
-    "strength_strong": "Fort"
-  },
-
-  "toast": {
-    "password_success": "Mot de passe mis à jour avec succès !",
-    "password_error": "Erreur lors du changement de mot de passe",
-    "language_success": "Langue mise à jour avec succès",
-    "language_error": "Erreur lors du changement de langue",
-    "vacation_enabled": "Mode vacances activé",
-    "vacation_disabled": "Mode vacances désactivé",
-    "vacation_error": "Erreur lors du changement du mode vacances",
-    "vacation_saved": "Message de vacances sauvegardé",
-    "vacation_save_error": "Erreur lors de la sauvegarde du message",
-    "session_revoked": "Session révoquée avec succès",
-    "session_error": "Erreur lors de la révocation de la session",
-    "coming_soon": "Fonctionnalité à venir"
+    "strength_strong": "Fort",
+    "toast": {
+      "password_success": "Mot de passe mis à jour avec succès !",
+      "password_error": "Erreur lors du changement de mot de passe",
+      "language_success": "Langue mise à jour avec succès",
+      "language_error": "Erreur lors du changement de langue",
+      "vacation_enabled": "Mode vacances activé",
+      "vacation_disabled": "Mode vacances désactivé",
+      "vacation_error": "Erreur lors du changement du mode vacances",
+      "vacation_saved": "Message de vacances sauvegardé",
+      "vacation_save_error": "Erreur lors de la sauvegarde du message",
+      "session_revoked": "Session révoquée avec succès",
+      "session_error": "Erreur lors de la révocation de la session",
+      "coming_soon": "Fonctionnalité à venir"
+    }
   },
 
   "SearchPage": {
@@ -3936,6 +4059,7 @@
 
   "MessagesPage": {
     "booking": {
+      "offerAcceptedPendingPayment": "Offre acceptée - En attente paiement",
       "title": "Détails du séjour",
       "confirmed": "Réservation confirmée",
       "offerPending": "Offre en attente",
@@ -4056,12 +4180,12 @@
       "acceptError": "Erreur lors de l'acceptation",
       "rejectError": "Erreur lors du refus",
       "connectionError": "Erreur de connexion",
-      "offerAccepted": "Offer accepted successfully!",
-      "offerError": "Error accepting offer",
-      "messageSent": "Message sent",
-      "messageError": "Error sending message",
-      "updateSuccess": "Request updated successfully",
-      "updateError": "Error updating request"
+      "offerAccepted": "Offer accepté  avec succéss!",
+      "offerError": "Erreur lors de l'acceptation de l'offer",
+      "messageSent": "Message envoyé",
+      "messageError": "Error lors de l'envoie du message",
+      "updateSuccess": "demende changé avec succéss s",
+      "updateError": "Erreur lors de changement de demande"
     },
     "empty": {
       "title": "Aucune conversation",
@@ -4073,6 +4197,11 @@
     }
   },
   "ListingPage": {
+    "ownerPreview": " APERÇU PROPRIÉTAIRE",
+    "adminPreview": " MODE ADMINISTRATEUR",
+    "ownerPreviewMessage": "Vous visualisez votre propre annonce",
+    "adminPreviewMessage": "Visualisation en tant qu'administrateur",
+    "previewMessage": "Vous visualisez cette annonce en mode aperçu",
     "loading": "Chargement de l'annonce...",
     "notFound": "Annonce introuvable",
     "backToSearch": "Retour à la recherche",
@@ -4129,12 +4258,158 @@
     },
     "lightbox": {
       "reset": "Reset"
+    },
+    "property": "Logement",
+    "reviewsCount": "avis",
+    "guestsNotSpecified": "Non spécifié — vous pouvez indiquer le nombre plus tard",
+    "guestsSelected": "{count} voyageur(s) sélectionné(s)",
+    "maxGuests": "Max {count} pers.",
+    "noLimit": "Aucune limite",
+
+    "requestInfoDisabled": "Choisissez vos dates",
+    "vacationMode": "Mode vacances - Indisponible",
+    "vacationModeMessage": "L'hôte est actuellement en vacances.",
+    "availableFrom": "Disponible à partir du",
+    "limitReached": "Limite atteinte (3/3)",
+    "cancelFlexible": "Annulation flexible · Selon les politique de la plateforme",
+    "secure": "Sécurisé",
+    "guaranteed": "Garanti",
+    "notSpecified": "Non spécifié",
+    "toastLimitReached": "Limite atteinte ! Vous ne pouvez plus envoyer de demande pour ce logement.",
+    "toastDateRequired": "Sélectionnez vos dates",
+    "toastRequestSent": "Demande envoyée avec succès !",
+    "toastError": "Une erreur est survenue",
+    "toastConnectionError": "Erreur de connexion",
+    "toastFavoriteAdded": "Ajouté aux favoris",
+    "toastFavoriteRemoved": "Retiré des favoris",
+    "toastLinkCopied": "Lien copié dans le presse-papier",
+    "toastShareSuccess": "Partagé avec succès !",
+    "modalTitle": "Demande envoyée !",
+    "modalMessage": "Votre demande d'information a été transmise à l'hôte.",
+    "modalDates": "Dates :",
+    "modalGuests": "Voyageurs :",
+    "modalNotSpecified": "Non spécifié",
+    "modalClosing": "Fermeture automatique dans quelques secondes...",
+    "search": "RECHERCHE",
+    "copyLink": "Copier le lien",
+    "aboutSub": "Ce que cette propriété offre de spécial",
+    "equipment": "ÉQUIPEMENTS",
+    "equipmentSub": "{count} disponibles",
+    "seeMore": "VOIR LES {count}",
+    "seeLess": "VOIR MOINS",
+    "host": "VOTRE HÔTE",
+    "reviewsSub": "{count} témoignages",
+    "noReviews": "Aucun avis pour le moment",
+    "beFirstReview": "Soyez le premier à donner votre avis !",
+    "rules": "RÈGLEMENT",
+    "rulesSub": "Conditions et horaires",
+    "location": "LOCALISATION ET QUARTIER",
+    "openInMaps": "Ouvrir dans Maps",
+    "nearbyPOIs": "Points d'intérêt à proximité",
+    "placesFound": "lieux trouvés",
+    "morePlaces": "autres lieux disponibles sur la carte",
+    "transportNearby": "Transport à proximité",
+    "transportDesc": "Le quartier est bien desservi. De nombreux commerces, restaurants et services sont accessibles à pied ou à quelques minutes en voiture.",
+    "positionNotAvailable": "Position non disponible",
+    "loadingPOIs": "Chargement des points d'intérêt...",
+    "openDirections": "Itinéraire sur Google Maps",
+    "atAGlance": "EN UN COUP D'ŒIL",
+    "bedrooms": "CHAMBRES",
+    "bathrooms": "SALLES DE BAIN",
+    "surfaceArea": "M²",
+    "maxGuestsLabel": "VOYAGEURS MAX",
+    "kitchens": "CUISINE(S)",
+    "garden": "JARDIN",
+    "balcony": "BALCON",
+    "elevator": "ASCENSEUR",
+    "parking": "PARKING",
+    "furnished": "MEUBLÉ",
+    "nights": "nuit",
+    "nights_plural": "nuits",
+    "cleanliness": "Propreté",
+    "accuracy": "Précision",
+    "communication": "Communication",
+    "locationScore": "Emplacement",
+    "checkinScore": "Arrivée",
+    "valueScore": "Qualité-prix",
+    "viewAllReviews": "VOIR TOUS LES {count} AVIS",
+    "memberSince": "Membre depuis {year}",
+    "fastResponse": "Réponse rapide",
+    "defaultBio": "Passionné par l'hospitalité, je serai ravi de vous accueillir et de rendre votre séjour unique.",
+    "review_singular": "avis",
+    "review_plural": "avis",
+
+    "payment": {
+      "securePayment": "Paiement sécurisé",
+      "finalizeBooking": "Finaliser votre",
+      "reservation": "réservation",
+      "subtitle": "Carte bancaire · Visa · Mastercard · American Express",
+      "offer": "Offre",
+      "payment": "Paiement",
+      "confirmed": "Confirmé",
+      "villa": "Villa",
+      "checkIn": "Arrivée",
+      "durationLabel": "Durée",
+      "checkOut": "Départ",
+      "nights_one": "nuit",
+      "nights_other": "nuits",
+      "travelers": "voyageurs",
+      "traveler": "voyageur",
+      "property": "Propriété",
+      "dates": "Dates",
+      "nights": "nuit(s)",
+      "duration": "Durée",
+      "cleaningFee": "Frais de ménage",
+      "serviceFee": "Frais de service",
+      "totalToPay": "Total à payer",
+      "acceptTerms": "J'accepte les conditions générales et la politique de confidentialité",
+      "payButton": "Payer {amount} TND",
+      "processing": "Traitement sécurisé…",
+      "offerExpiredButton": "Offre expirée (24h dépassé)",
+      "paymentBlockedButton": "Paiement bloqué - Réessayez plus tard",
+      "encryption": "Chiffrement SSL 256-bit · Données jamais stockées",
+      "timeRemaining": "Temps restant pour payer",
+      "loadingForm": "Chargement du formulaire de paiement...",
+      "attemptInfo": "Tentative {current}/3 - {remaining} essai(s) restant(s)",
+      "cardRefused": "Carte refusée. Il vous reste {remaining} tentative(s)",
+      "threeAttemptsFailed": "3 tentatives échouées. Paiement bloqué pendant 30 minutes. Redirection...",
+      "bookingConfirmError": "Erreur lors de la confirmation de la réservation",
+      "connectionError": "Erreur de connexion. Tentative {attempt}/3",
+      "paymentSuccessful": "Paiement validé ! Redirection...",
+      "paymentBlockedInfo": "Paiement temporairement bloqué. Réessayez dans {time}.",
+      "paymentBlockedInfoSimple": "Paiement temporairement bloqué. Réessayez dans 30 minutes.",
+      "offerExpired": "Offre expirée",
+      "offerExpiredDesc": "Vous n'avez pas effectué le paiement dans les 24h.",
+      "backToMessages": "Retour aux messages",
+      "bookingNotFound": "Aucune réservation trouvée",
+      "bookingNotFoundDesc": "Vérifiez le lien ou retournez à vos messages.",
+      "loadingPayment": "Initialisation du paiement sécurisé…",
+      "paymentConfirmed": "Paiement confirmé !",
+      "bookingRecorded": "Votre réservation a été enregistrée avec succès",
+      "summary": "Récapitulatif",
+      "redirecting": "Redirection en cours…",
+      "paymentInfo": "Informations de paiement",
+      "encryptedData": "Toutes les données sont chiffrées",
+      "flexibleCancellation": "Annulation flexible",
+      "flexibleCancellationDesc": "Annulation gratuite jusqu'à 30 jours avant l'arrivée.",
+      "needHelp": "Besoin d'aide ?",
+      "available247": "Disponible 24h/7j",
+      "help": "Aide",
+      "bestPrice": "Meilleur prix",
+      "bestPriceSub": "Garanti",
+      "instantConfirmation": "Confirmation",
+      "instantConfirmationSub": "Instantanée",
+      "premiumQuality": "Qualité",
+      "premiumQualitySub": "Premium",
+      "minutes": "minutes",
+      "seconds": "secondes",
+      "cardHolder": "Titulaire",
+      "cardHolderName": "VOTRE NOM",
+      "expiry": "Expire",
+      "securityCode": "Code de sécurité",
+      "cardFooter": "Cette carte est la propriété de l'établissement bancaire émetteur."
     }
   },
- 
-
- 
-
   "search": {
     "placeholder": "Où voulez-vous aller ?...",
     "results": "Résultats de recherche",
@@ -4256,9 +4531,18 @@
     "archiverBatchConfirmMessage": "Êtes-vous sûr de vouloir archiver {count} annonce(s) ?",
 
     "supprimerConfirmTitle": "Supprimer l'annonce",
-    "supprimerConfirmMessage": "Êtes-vous sûr de vouloir supprimer définitivement cette annonce ? Cette action est irréversible."
+    "supprimerConfirmMessage": "Êtes-vous sûr de vouloir supprimer définitivement cette annonce ? Cette action est irréversible.",
+    "confirmWord": {
+      "activate": "ACTIVER",
+      "deactivate": "DÉSACTIVER",
+      "archive": "ARCHIVER",
+      "validate": "VALIDER",
+      "reject": "REJETER",
+      "delete": "SUPPRIMER",
+      "default": "CONFIRMER"
+    },
+    "itemsCount": "{count} élément(s) concerné(s)"
   },
-
   "Moderation": {
     "title": "Modération des Conversations",
     "description": "Surveillez, signalez et résolvez les interactions utilisateurs",
@@ -4371,7 +4655,22 @@
       "reopen": "Êtes-vous sûr de vouloir rouvrir cette conversation ?",
       "bulkFlag": "Êtes-vous sûr de vouloir signaler {count} conversation(s) ?",
       "bulkClose": "Êtes-vous sûr de vouloir fermer {count} conversation(s) ?",
-      "default": "Êtes-vous sûr de vouloir effectuer cette action ?"
+      "default": "Êtes-vous sûr de vouloir effectuer cette action ?",
+      "deleteReviewTitle": "Supprimer cet avis",
+      "deleteReviewDescription": "Cette action est irréversible. L'avis sera définitivement supprimé.",
+      "deleteReviewConfirm": "SUPPRIMER",
+      "hideReviewTitle": "Masquer cet avis",
+      "hideReviewDescription": "L'avis ne sera plus visible sur le site public. Vous pourrez le réafficher plus tard.",
+      "hideReviewConfirm": "MASQUER",
+      "showReviewTitle": "Afficher cet avis",
+      "showReviewDescription": "L'avis redeviendra visible sur le site public.",
+      "showReviewConfirm": "AFFICHER",
+      "flagConfirm": "SIGNALER",
+      "unflagConfirm": "RETIRER",
+      "closeConfirm": "FERMER",
+      "reopenConfirm": "ROUVRIR",
+      "defaultConfirm": "CONFIRMER",
+      "conversationsCount": "conversation(s) concernée(s)"
     }
   },
   "ConversationDetail": {
@@ -4430,6 +4729,8 @@
     }
   },
   "Disputes": {
+    "hideNote": " Masquer la note",
+    "addNote": " Ajouter une note explicative",
     "confirmResolveTitle": "Résoudre le litige",
     "confirmResolveDescription": "Êtes-vous sûr de vouloir résoudre ce litige ? Les deux parties seront notifiées.",
     "confirmResolve": " Résoudre",
@@ -4630,7 +4931,7 @@
     "languageJapanese": "Japonais"
   },
 
-  "Common": {
+  "Commonn": {
     "logoutConfirm": "Déconnexion",
     "logoutMessage": "Voulez-vous vraiment quitter votre espace ?",
     "cancel": "Annuler",
@@ -5432,6 +5733,7 @@
       "yes": "Oui",
       "no": "Non"
     }
+
   },
 
   "AdminBookings": {
@@ -5802,6 +6104,17 @@
     }
   },
   "AdminTransactions": {
+    "statusHeldLabel": "capturé",
+    "payoutModalTitle": "Virement manuel",
+    "payoutTransactionRef": "Référence",
+    "payoutAmount": "Montant à virer",
+    "payoutProperty": "Propriété",
+    "payoutBeneficiary": "Bénéficiaire",
+    "payoutWarning": "Après avoir effectué le virement bancaire, cliquez sur confirmer pour marquer cette transaction comme payée.",
+    "payoutButton": "Virement manuel",
+    "confirmPayout": "Confirmer le virement",
+    "payoutSuccess": "Virement marqué comme effectué",
+    "payoutError": "Erreur lors du marquage du virement",
     "title": "Transactions",
     "description": "Gérez et suivez toutes les transactions financières",
     "refresh": "Actualiser",
@@ -6267,6 +6580,12 @@
     }
   },
   "ChatBox": {
+    "checkin": {
+      "title": " Vous êtes arrivé(e) ?",
+      "description": "Confirmez votre arrivée pour que le propriétaire reçoive le paiement. L'argent sera libéré dans 2h.",
+      "confirming": "Confirmation...",
+      "confirmArrival": "Confirmer mon arrivée"
+    },
     "loading": "Chargement de votre conversation...",
     "header": {
       "dispute": "Litige",
@@ -6292,7 +6611,8 @@
     "payment": {
       "offerAccepted": "Offre acceptée !",
       "proceedToPayment": "Procédez au paiement pour finaliser votre réservation",
-      "payNow": "Payer maintenant"
+      "payNow": "Payer maintenant",
+      "cooldownEnded": "Période d'attente terminée. Vous pouvez maintenant réessayer le paiement."
     },
     "block": {
       "youAreBlocked": "{name} vous a bloqué. Vous ne pouvez plus lui envoyer de messages.",
@@ -6419,7 +6739,9 @@
     "booking": {
       "label": "Réservation concernée",
       "select": "Sélectionnez une réservation...",
-      "noBookings": "Aucune réservation terminée"
+      "noBookings": "Aucune réservation terminée",
+      "tenant": "Locataire",
+      "tenantLabel": "Locataire"
     },
     "category": {
       "label": "Catégorie du litige",
@@ -6700,7 +7022,7 @@
     "cleaningFee": "Ménage",
     "serviceFee": "Service",
     "total": "Total",
-        "guestsAndNights": "{guests} voyageur(s) · {nights} nuit(s)",
+    "guestsAndNights": "{guests} voyageur(s) · {nights} nuit(s)",
 
     "cancelConfirm": "Confirmer l'annulation de cette réservation ?",
     "status": {
@@ -6804,7 +7126,7 @@
       "receiptError": "Erreur lors du téléchargement du reçu"
     }
   },
-  
+
   "ReviewModal": {
     "badge": "Votre avis compte",
     "title": "Partager votre expérience",
@@ -6839,7 +7161,7 @@
       "submitError": "Erreur lors de la publication de l'avis"
     }
   },
-  
+
   "TenantHeader": {
     "explorer": "Explorer",
     "favorites": "Favoris",
@@ -6969,8 +7291,10 @@
       "waitMessage": "Vous avez déjà envoyé un rappel récemment. Veuillez patienter {hours} heures.",
       "startButton": "Commencer la vérification",
       "rejectionReason": "Motif"
-    }},
+    }
+  },
   "Common": {
+    
     "saving": "Enregistrement en cours...",
     "saveFailed": "Échec de l'enregistrement",
     "loading": "Chargement en cours...",
@@ -7106,218 +7430,127 @@
       "loading": "Erreur lors du chargement"
     }
   },
-  "Reviews":{
-  "dashboard": {
-    "badge": "RÉPUTATION",
-    "title": "Tableau de bord",
-    "highlight": "Réputation",
-    "subtitle": "Consultez les retours clients, optimisez vos réponses publiques et suivez en temps réel l'évolution de vos indicateurs de confiance."
-  },
-  "stats": {
-    "globalRating": "Note globale",
-    "reliability": "Fiabilité",
-    "trustScore": "Score de confiance",
-    "memberSince": "Membre depuis",
-    "superTraveler": "Super Voyageur",
-    "stays": "Séjours",
-    "reviewsReceived": "Avis reçus",
-    "basedOn": "Basé sur {count} avis"
-  },
-  "tabs": {
-    "received": "Avis reçus",
-    "given": "Avis donnés"
-  },
-  "filters": {
-    "placeholder": "Rechercher par titre de bien, nom du voyageur, ville...",
-    "clear": "Effacer",
-    "all": "Tous",
-    "replied": "Répondus",
-    "unreplied": "À Répondre",
-    "sortRecent": "Tri : Plus récents",
-    "sortRatingDesc": "Note : Décroissante (5 → 1)",
-    "sortRatingAsc": "Note : Croissante (1 → 5)",
-    "activeFilters": "Filtres actifs :",
-    "resetAll": "Réinitialiser tout",
-    "searchFor": "Recherche",
-    "rating": "Note",
-    "status": "Statut",
-    "stars": "étoiles"
-  }
-  ,
-  "emptyState": {
-    "noReviewsReceived": "Aucun avis reçu pour le moment",
-    "noReviewsGiven": "Aucun avis donné pour le moment",
-    "receivedDescription": "Les avis laissés par vos hôtes apparaîtront ici.",
-    "givenDescription": "Partagez votre expérience après vos séjours.",
-    "simulateReview": "Simuler un avis"
-  },
-  "toasts": {
-    "replySuccess": "Réponse publiée avec succès !",
-    "replyError": "Erreur lors de la publication",
-    "reportSuccess": "Avis signalé. Notre équipe l'examinera sous 24h.",
-    "reportError": "Erreur lors du signalement",
-    "exportSuccess": "Export CSV généré avec succès !",
-    "reviewCreated": "Nouvel avis ajouté avec succès !",
-    "reviewError": "Erreur lors de la création de l'avis",
-    "connectionError": "Erreur de connexion",
-    "loadingError": "Erreur de chargement"
-  },
-  "confirmations": {
-    "reportReview": "Êtes-vous sûr de vouloir signaler cet avis ?"
-  },"reviewCard": {
-  "yourResponse": "Votre réponse",
-  "editResponse": "Modifier votre réponse",
-  "writeResponse": "Écrire une réponse",
-  "responsePlaceholder": "Écrivez votre réponse ici...",
-  "replyTo": "Répondre à",
-  "reportReview": "Signaler cet avis",
-  "reportReason": "Pourquoi signalez-vous cet avis ?",
-  "selectReason": "Sélectionnez une raison",
-  "describeReason": "Décrivez le problème (optionnel)",
-  "submitReport": "Envoyer le signalement",
-  "host": "Hôte",
-    "for": "Pour",
-    "viewListing": "Voir le bien",
-    "report": "Signaler",
-    "reply": "Répondre",
-    "modifyReply": "Modifier la réponse",
-    "enterResponse": "Votre réponse:",
-  "reasons": {
-    "inappropriate": "Contenu inapproprié",
-    "fake": "Avis suspect / faux",
-    "offensive": "Langage offensant",
-    "spam": "Spam / publicité",
-    "other": "Autre raison"
-  }
-},
-"actions": {
-  "publish": "Publier",
-  "edit": "Modifier",
-  "cancel":"Annuler"
 
-}
-},"Wallet":{
-  "badge": "PORTEFEUILLE",
-  "title": "Mes",
-  "titleHighlight": "Transactions",
-  "subtitle": "Suivez tous vos paiements et cautions en un seul endroit.",
-  "stats": {
-    "available": "Solde disponible",
-    "creditAvailable": "Crédit disponible",
-    "totalSpent": "Total dépensé",
-    "totalSpentDesc": "Somme de tous vos paiements",
-    "transactions": "Transactions",
-    "total": "Au total",
-    "average": "Moyenne:",
-    "deposits": "Cautions",
-    "activeGuarantees": "Garanties en cours",
-    "released": "Libérées:"
+  "Wallet": {
+    "badge": "PORTEFEUILLE",
+    "title": "Mes",
+    "titleHighlight": "Transactions",
+    "subtitle": "Suivez tous vos paiements et cautions en un seul endroit.",
+    "stats": {
+      "available": "Solde disponible",
+      "creditAvailable": "Crédit disponible",
+      "totalSpent": "Total dépensé",
+      "totalSpentDesc": "Somme de tous vos paiements",
+      "transactions": "Transactions",
+      "total": "Au total",
+      "average": "Moyenne:",
+      "deposits": "Cautions",
+      "activeGuarantees": "Garanties en cours",
+      "released": "Libérées:"
+    },
+    "filters": {
+      "all": "Toutes",
+      "payments": "Paiements",
+      "deposits": "Cautions",
+      "allStatus": "Tous statuts",
+      "completed": "Terminés",
+      "pending": "En attente",
+      "failed": "Échoués",
+      "allDates": "Toutes dates",
+      "last30Days": "30 derniers jours",
+      "last3Months": "3 derniers mois",
+      "last12Months": "12 derniers mois",
+      "search": "Rechercher..."
+    },
+    "table": {
+      "date": "Date",
+      "stay": "Séjour / Description",
+      "reference": "Référence",
+      "amount": "Montant",
+      "status": "Statut",
+      "actions": "Actions",
+      "details": "Détails"
+    },
+    "deposits": {
+      "title": "Cautions de sécurité",
+      "count": "cautions",
+      "subtitle": "Garanties prélevées ou en attente de libération",
+      "checkout": "Check-out",
+      "authorized": "Autorisée"
+    },
+    "upcoming": {
+      "title": "Paiements à venir",
+      "count": "échéances",
+      "subtitle": "Séjours à payer prochainement",
+      "nights": "nuits",
+      "payBefore": "À payer avant le"
+    },
+    "modal": {
+      "title": "Détail de la transaction",
+      "stay": "Séjour associé",
+      "date": "Date de la transaction",
+      "status": "Statut",
+      "description": "Description",
+      "amount": "Montant",
+      "reference": "Référence",
+      "copy": "Copier la référence",
+      "copied": "Copié !"
+    },
+    "toasts": {
+      "referenceCopied": "Référence copiée dans le presse-papier"
+    },
+    "empty": "Aucune transaction trouvée",
+    "showLess": "Voir moins",
+    "showMore": "Voir {count} transactions supplémentaires"
   },
-  "filters": {
-    "all": "Toutes",
-    "payments": "Paiements",
-    "deposits": "Cautions",
-    "allStatus": "Tous statuts",
-    "completed": "Terminés",
-    "pending": "En attente",
-    "failed": "Échoués",
-    "allDates": "Toutes dates",
-    "last30Days": "30 derniers jours",
-    "last3Months": "3 derniers mois",
-    "last12Months": "12 derniers mois",
-    "search": "Rechercher..."
-  },
-  "table": {
-    "date": "Date",
-    "stay": "Séjour / Description",
-    "reference": "Référence",
-    "amount": "Montant",
-    "status": "Statut",
-    "actions": "Actions",
-    "details": "Détails"
-  },
-  "deposits": {
-    "title": "Cautions de sécurité",
-    "count": "cautions",
-    "subtitle": "Garanties prélevées ou en attente de libération",
-    "checkout": "Check-out",
-    "authorized": "Autorisée"
-  },
-  "upcoming": {
-    "title": "Paiements à venir",
-    "count": "échéances",
-    "subtitle": "Séjours à payer prochainement",
-    "nights": "nuits",
-    "payBefore": "À payer avant le"
-  },
-  "modal": {
-    "title": "Détail de la transaction",
-    "stay": "Séjour associé",
-    "date": "Date de la transaction",
-    "status": "Statut",
-    "description": "Description",
-    "amount": "Montant",
-    "reference": "Référence",
-    "copy": "Copier la référence",
-    "copied": "Copié !"
-  },
-  "toasts": {
-    "referenceCopied": "Référence copiée dans le presse-papier"
-  },
-  "empty": "Aucune transaction trouvée",
-  "showLess": "Voir moins",
-  "showMore": "Voir {count} transactions supplémentaires"
-},
-  
- 
+
   "AdminReviews": {
-  "badge": "CENTRE DE MODÉRATION",
-  "title": "NESTHUB - Centre de Modération",
-  "filters": {
-    "all": "Tous les avis",
-    "flagged": "Avis signalés",
-    "pending": "En attente",
-    "allRatings": "Toutes les notes",
-    "lowRatings": "Notes faibles (1-2★)",
-    "highRatings": "Notes élevées (4-5★)",
-    "stars": "★"
-  },
-  "stats": {
-    "total": "Total des avis",
-    "avgRating": "Note moyenne",
-    "flagged": "Contenu signalé"
-  },
-  "message": "Modérez les avis pour garantir la qualité des échanges.",
-  "submessage": "Les avis signalés nécessitent une attention particulière.",
-  "searchPlaceholder": "Rechercher un avis, un bien ou un utilisateur...",
-  "empty": "Aucun avis trouvé",
-  "modal": {
-    "cancel": "Annuler",
-    "delete": {
-      "title": "Supprimer cet avis ?",
-      "message": "Cette action est irréversible. L'avis sera définitivement supprimé.",
-      "confirm": "Supprimer"
+    "badge": "CENTRE DE MODÉRATION",
+    "title": "NESTHUB - Centre de Modération",
+    "filters": {
+      "all": "Tous les avis",
+      "flagged": "Avis signalés",
+      "pending": "En attente",
+      "allRatings": "Toutes les notes",
+      "lowRatings": "Notes faibles (1-2★)",
+      "highRatings": "Notes élevées (4-5★)",
+      "stars": "★"
     },
-    "hide": {
-      "title": "Masquer cet avis ?",
-      "message": "L'avis ne sera plus visible sur le site public. Vous pourrez le réafficher plus tard.",
-      "confirm": "Masquer"
+    "stats": {
+      "total": "Total des avis",
+      "avgRating": "Note moyenne",
+      "flagged": "Contenu signalé"
     },
-    "show": {
-      "title": "Afficher cet avis ?",
-      "message": "L'avis redeviendra visible sur le site public.",
-      "confirm": "Afficher"
+    "message": "Modérez les avis pour garantir la qualité des échanges.",
+    "submessage": "Les avis signalés nécessitent une attention particulière.",
+    "searchPlaceholder": "Rechercher un avis, un bien ou un utilisateur...",
+    "empty": "Aucun avis trouvé",
+    "modal": {
+      "cancel": "Annuler",
+      "delete": {
+        "title": "Supprimer cet avis ?",
+        "message": "Cette action est irréversible. L'avis sera définitivement supprimé.",
+        "confirm": "Supprimer"
+      },
+      "hide": {
+        "title": "Masquer cet avis ?",
+        "message": "L'avis ne sera plus visible sur le site public. Vous pourrez le réafficher plus tard.",
+        "confirm": "Masquer"
+      },
+      "show": {
+        "title": "Afficher cet avis ?",
+        "message": "L'avis redeviendra visible sur le site public.",
+        "confirm": "Afficher"
+      }
+    },
+    "toasts": {
+      "reviewHidden": "Avis masqué avec succès",
+      "reviewShown": "Avis affiché avec succès",
+      "reviewDeleted": "Avis supprimé définitivement",
+      "error": "Une erreur est survenue"
     }
   },
-  "toasts": {
-    "reviewHidden": "Avis masqué avec succès",
-    "reviewShown": "Avis affiché avec succès",
-    "reviewDeleted": "Avis supprimé définitivement",
-    "error": "Une erreur est survenue"
-  }
-},
   "AuditLog": {
-    
     "badge": "SYSTÈME",
     "title": "Journal d'audit",
     "description": "Surveillance complète des actions administratives sur la plateforme NESTHUB.",
@@ -7345,18 +7578,18 @@
       "allTypes": "Tous les types"
     },
     "export": {
-    "headers": {
-      "date": "Date",
-      "administrator": "Administrateur",
-      "email": "Email",
-      "action": "Action",
-      "targetType": "Type cible",
-      "targetId": "ID cible",
-      "details": "Détails",
-      "motif": "Motif",
-      "ipAddress": "Adresse IP"
-    }
-  },
+      "headers": {
+        "date": "Date",
+        "administrator": "Administrateur",
+        "email": "Email",
+        "action": "Action",
+        "targetType": "Type cible",
+        "targetId": "ID cible",
+        "details": "Détails",
+        "motif": "Motif",
+        "ipAddress": "Adresse IP"
+      }
+    },
     "categories": {
       "deleteListing": "Suppression d'annonce",
       "userSuspension": "Suspension d'utilisateur",
@@ -7371,7 +7604,7 @@
       "listing": "Annonce",
       "booking": "Réservation",
       "contactMessage": "Message contact",
-    "verificationRequest": "Demande vérification"
+      "verificationRequest": "Demande vérification"
     },
     "table": {
       "timestamp": "Date et heure",
@@ -7383,7 +7616,7 @@
       "viewDetails": "Voir"
     },
     "modal": {
-          "id": "ID",
+      "id": "ID",
 
       "title": "Détail de l'événement",
       "date": "Date",
@@ -7400,117 +7633,1008 @@
     "empty": "Aucun log trouvé",
     "toasts": {
       "exportSuccess": "Export CSV généré avec succès",
-        "pdfExportSuccess": "PDF généré avec succès"
-
+      "pdfExportSuccess": "PDF généré avec succès"
     },
     "errors": {
       "loading": "Erreur lors du chargement"
-    }
-  ,"actions": {
-    "deleteListing": "Suppression annonce",
-    "reviewDeleted": "Avis supprimé",
-    "userSuspension": "Suspension user",
-    "escalateUser": "Escalade user",
-    "banUser": "Bannir user",
-    "lockUser": "Verrouiller user",
-    "rejectVerification": "Rejeter vérification",
-    "activateUser": "Activer user",
-    "reviewShown": "Avis visible",
-    "validateVerification": "Vérification validée",
-    "verificationValidated": "Vérification validée",
-    "reviewHidden": "Avis masqué",
-    "reviewVisibilityChanged": "Visibilité modifiée",
-    "addNote": "Note ajoutée",
-    "replyToContact": "Réponse contact",
-    "updateStaticPage": "Màj page statique",
-    "restoreVersion": "Restaurer version",
-    "reviewReported": "Avis signalé",
-    "verificationReminderSent": "Rappel vérification",
-    "loginSuccess": "Connexion réussie",
-    "dbBackup": "Backup BDD",
-    "moderation": "Modération"
-  },
-  "reasons": {
-    "inappropriate": "Contenu inapproprié",
-    "fake": "Avis suspect / faux",
-    "offensive": "Langage offensant",
-    "spam": "Spam / publicité",
-    "other": "Autre raison"
-  },
-  "details": {
-    "reason": "Raison",
-    "reportedBy": "Signalé par",
-    "status": "Statut",
-    "visible": "Visible",
-    "hidden": "Masqué",
-    "rating": "Note",
-    "level": "Niveau",
-    "levelValue": "Niveau {level}",
-    "visitor": "Visiteur",
-    "email": "Email",
-    "replyLength": "Longueur réponse",
-    "characters": "caractères",
-    "standard": "Standard",
-    "message": "Message",
-    "adminsNotified": "Admins notifiés"
-  }
-},
-"ownerDashboard":{
-  "searchPlaceholder": "Rechercher...",
-  "ownerBadge": "Propriétaire",
-  "sidebar": {
-    "title": "Espace Propriétaire",
-    "subtitle": "Gérez vos biens immobiliers",
-    "dashboard": "Tableau de bord",
-    "listings": "Mes Annonces",
-    "history": "Historique",
-    "bookings": "Réservations",
-    "settings": "Paramètres",
-    "addListing": "Ajouter une annonce"
-  },
-  "kpi": {
-    "title": "Aperçu de Performance",
-    "subtitle": "Résumé financier et réputation de votre portefeuille",
-    "last7days": "7 derniers jours",
-    "thisMonth": "Ce mois-ci",
-    "totalRevenue": "Revenu Total",
-    "projectedRevenue": "Gains Projetés",
-    "averageRating": "Note Moyenne",
-    "vsLastMonth": "vs mois dernier",
-    "basedOn": "Basé sur {count} réservations à venir",
-    "reviewsCount": "{count} avis vérifiés"
-  },
-  "earnings": {
-    "title": "Gains par Propriété",
-    "download": "Télécharger le Relevé",
-    "table": {
-      "property": "Propriété",
-      "bookings": "Réservations",
-      "netRevenue": "Revenu Net",
+    },
+    "actions": {
+      "deleteListing": "Suppression annonce",
+      "reviewDeleted": "Avis supprimé",
+      "userSuspension": "Suspension user",
+      "escalateUser": "Escalade user",
+      "banUser": "Bannir user",
+      "lockUser": "Verrouiller user",
+      "rejectVerification": "Rejeter vérification",
+      "activateUser": "Activer user",
+      "reviewShown": "Avis visible",
+      "validateVerification": "Vérification validée",
+      "verificationValidated": "Vérification validée",
+      "reviewHidden": "Avis masqué",
+      "reviewVisibilityChanged": "Visibilité modifiée",
+      "addNote": "Note ajoutée",
+      "replyToContact": "Réponse contact",
+      "updateStaticPage": "Màj page statique",
+      "restoreVersion": "Restaurer version",
+      "reviewReported": "Avis signalé",
+      "verificationReminderSent": "Rappel vérification",
+      "loginSuccess": "Connexion réussie",
+      "dbBackup": "Backup BDD",
+      "moderation": "Modération"
+    },
+    "reasons": {
+      "inappropriate": "Contenu inapproprié",
+      "fake": "Avis suspect / faux",
+      "offensive": "Langage offensant",
+      "spam": "Spam / publicité",
+      "other": "Autre raison"
+    },
+    "details": {
+      "reason": "Raison",
+      "reportedBy": "Signalé par",
       "status": "Statut",
-      "action": "Action"
+      "visible": "Visible",
+      "hidden": "Masqué",
+      "rating": "Note",
+      "level": "Niveau",
+      "levelValue": "Niveau {level}",
+      "visitor": "Visiteur",
+      "email": "Email",
+      "replyLength": "Longueur réponse",
+      "characters": "caractères",
+      "standard": "Standard",
+      "message": "Message",
+      "adminsNotified": "Admins notifiés"
+    }
+  },
+  "ownerDashboard": {
+    "searchPlaceholder": "Rechercher...",
+    "ownerBadge": "Propriétaire",
+    "sidebar": {
+      "title": "Espace Propriétaire",
+      "subtitle": "Gérez vos biens immobiliers",
+      "dashboard": "Tableau de bord",
+      "listings": "Mes Annonces",
+      "history": "Historique",
+      "bookings": "Réservations",
+      "settings": "Paramètres",
+      "addListing": "Ajouter une annonce"
+    },
+    "kpi": {
+      "title": "Aperçu de Performance",
+      "subtitle": "Résumé financier et réputation de votre portefeuille",
+      "last7days": "7 derniers jours",
+      "thisMonth": "Ce mois-ci",
+      "totalRevenue": "Revenu Total",
+      "projectedRevenue": "Gains Projetés",
+      "averageRating": "Note Moyenne",
+      "vsLastMonth": "vs mois dernier",
+      "basedOn": "Basé sur {count} réservations à venir",
+      "reviewsCount": "{count} avis vérifiés"
+    },
+    "earnings": {
+      "title": "Gains par Propriété",
+      "download": "Télécharger le Relevé",
+      "table": {
+        "property": "Propriété",
+        "bookings": "Réservations",
+        "netRevenue": "Revenu Net",
+        "status": "Statut",
+        "action": "Action"
+      },
+      "status": {
+        "active": "Actif",
+        "full": "Complet"
+      }
+    },
+    "reviews": {
+      "received": "Avis Reçus",
+      "given": "Avis Donnés",
+      "filterByDate": "Filtrer par date",
+      "writeResponse": "Écrivez votre réponse ici...",
+      "sendResponse": "Envoyer",
+      "cancel": "Annuler",
+      "respond": "Répondre à l'avis",
+      "modifyResponse": "Modifier la réponse",
+      "yourResponse": "Votre réponse",
+      "evaluationFor": "Évaluation pour",
+      "recommended": "Recommandé",
+      "notRecommended": "Non recommandé",
+      "cleanliness": "Propreté",
+      "communication": "Communication",
+      "noReceived": "Aucun avis reçu pour le moment",
+      "noGiven": "Aucun avis donné pour le moment"
+    }
+  },
+
+  "Reviews": {
+    "title": "Donner votre avis",
+    "comment": "Commentaire",
+    "commentPlaceholder": "Partagez votre expérience avec ce locataire...",
+    "recommend": "Recommanderiez-vous ce locataire ?",
+    "cancel": "Annuler",
+    "publish": "Publier l'avis",
+    "publishing": "Publication en cours...",
+    "criteria": {
+      "cleanliness": "Propreté",
+      "communication": "Communication",
+      "houseRules": "Respect des règles de la maison"
+    },
+    "errors": {
+      "ratingRequired": "Veuillez évaluer tous les critères",
+      "submitError": "Une erreur est survenue. Veuillez réessayer plus tard."
+    },
+    "success": {
+      "published": "Votre avis a été publié avec succès !"
+    },
+    "placeholders": {
+      "goodReview": "Très bon locataire, respectueux et facile à communiquer.",
+      "badReview": "Déçu de l'expérience, le locataire n'a pas respecté les règles..."
+    }
+  },
+
+  "ConfirmationPage": {
+    "loading": {
+      "verifyingPayment": "Vérification de votre paiement..."
+    },
+    "errors": {
+      "bookingNotFound": "Réservation non trouvée"
+    },
+    "buttons": {
+      "viewMyBookings": "Voir mes réservations",
+      "generating": "Génération...",
+      "downloadContract": "Télécharger le contrat",
+      "contactHost": "Contacter l'hôte"
+    },
+    "hero": {
+      "title": "Paiement",
+      "confirmed": "confirmé !",
+      "subtitle": "Votre réservation est finalisée. Tous les détails sont ci-dessous.",
+      "amountPaid": "Montant payé",
+      "reference": "Réf"
+    },
+    "sections": {
+      "stayDetails": "Détails du séjour",
+      "issuedOn": "Émis le",
+      "property": "Propriété",
+      "checkIn": "Arrivée",
+      "from": "Dès",
+      "duration": "Durée",
+      "nights": "nuits",
+      "travelers": "voyageurs",
+      "traveler": "voyageur",
+      "checkOut": "Départ",
+      "before": "Avant",
+      "cleaningFee": "Frais de ménage",
+      "serviceFee": "Frais de service",
+      "totalPaid": "Total payé",
+      "contract": "Contrat & documents",
+      "downloadContract": "Téléchargez votre contrat de location",
+      "rentalContract": "Contrat de location",
+      "ref": "Réf",
+      "pdfDescription": "PDF · Généré automatiquement · Signé électroniquement",
+      "ready": "Prêt",
+      "secureTransaction": "Transaction sécurisée · Données chiffrées · PCI Compliant",
+      "exactLocation": "Emplacement exact"
+    },
+    "roles": {
+      "tenant": "Locataire (Vous)",
+      "owner": "Propriétaire (Hôte)"
+    },
+    "cards": {
+      "checkInShort": "Arrivée",
+      "nightsShort": "N",
+      "durationShort": "Durée",
+      "travelersShort": "Voyag.",
+      "total": "Total"
+    },
+    "info": {
+      "accessCodeActivation": "Le code d'accès sera activé le jour de votre arrivée à partir de {checkInTime}. Contactez l'hôte via le chat pour toute question.",
+      "messageSent": "Message envoyé !",
+      "recapSent": "Un récapitulatif complet a été envoyé dans votre chat"
+    },
+    "navigation": {
+      "myBookings": "Mes réservations",
+      "viewAllStays": "Voir tous vos séjours"
+    },
+    "help": {
+      "needHelp": "Besoin d'aide ?",
+      "support247": "Support 24h/7j",
+      "helpCenter": "Centre d'aide"
+    },
+    "footer": {
+      "thankYou": "Merci de faire confiance à",
+      "hopeEnjoy": "Nous espérons que votre séjour sera inoubliable."
+    },
+    "verified": "Vérifié",
+    "cinNumber": "Numéro CIN",
+    "email": "Adresse e-mail",
+    "phone": "Téléphone",
+    "gpsPosition": "Position GPS",
+    "precise": "Précis",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "north": "Nord",
+    "south": "Sud",
+    "east": "Est",
+    "west": "Ouest",
+    "copied": "Copié dans le presse-papier",
+    "openInGoogleMaps": "Ouvrir dans Google Maps",
+    "stepOffer": "Offre acceptée",
+    "stepPayment": "Paiement",
+    "stepConfirmation": "Confirmation"
+  },
+
+  "OwnerWallet": {
+    "page": {
+      "title": "Portefeuille",
+      "description": "Gérez vos revenus et transactions"
+    },
+    "stats": {
+      "available": "Disponible",
+      "pending": "En attente",
+      "totalEarned": "Total gagné"
+    },
+    "tabs": {
+      "all": "Toutes",
+      "paid": "Payées",
+      "pending": "En attente"
+    },
+    "dateOptions": {
+      "all": "Toutes",
+      "week": "7 jours",
+      "month": "30 jours",
+      "year": "12 mois"
+    },
+    "security": {
+      "title": "Sécurité des paiements",
+      "description": "Toutes les transactions sont sécurisées et chiffrées"
+    },
+    "history": {
+      "title": "Historique des transactions",
+      "transactions_singular": "transaction",
+      "transactions_plural": "transactions",
+      "paid": "Payé",
+      "pending": "En attente",
+      "booking": "Réservation",
+      "nights_singular": "nuit",
+      "nights_plural": "nuits"
+    },
+    "emptyState": {
+      "title": "Aucune transaction",
+      "description": "Vous n'avez pas encore de transactions. Les revenus de vos réservations apparaîtront ici."
+    },
+    "footer": {
+      "info": "Les paiements sont traités sous 24-48h après validation de la réservation."
+    },
+    "errors": {
+      "loadFailed": "Erreur lors du chargement des données"
+    },
+    "messages": {
+      "refreshed": "Données actualisées"
+    },
+    "actions": {
+      "refresh": "Actualiser"
+    }
+  },
+
+  "ProfilePage": {
+    "loading": "Chargement du profil...",
+    "profileNotFound": "Profil non trouvé",
+    "userNotFound": "L'utilisateur \"{username}\" n'existe pas",
+    "identityVerified": "Identité vérifiée",
+    "profileVerified": "Profil vérifié",
+    "identityAndContactVerified": "Identité et contact vérifiés",
+    "responseRate": "Taux de réponse : {rate}%",
+    "listingsCount": "{count} annonce(s)",
+    "travelerCertified": "Voyageur certifié",
+    "verifiedTraveler": "Voyageur vérifié, {count} avis reçu(s)",
+    "verifiedHost": "Hôte expérimenté, {count} annonce(s) publiée(s)",
+    "viewListings": "Voir ses annonces",
+    "memberSince": "Membre depuis",
+    "profession": "Profession",
+    "languages": "Langues",
+    "acceptsForeigners": "Accueille les étrangers",
+    "yes": "Oui",
+    "no": "Non",
+    "trustScore": "Score de confiance",
+    "overallRating": "Note globale",
+    "responseTime": "Délai moyen",
+    "identityVerifiedBadge": "Identité vérifiée",
+    "emailVerifiedBadge": "Email vérifié",
+    "phoneVerifiedBadge": "Téléphone confirmé",
+    "internationalBadge": "Ouvert aux voyageurs internationaux",
+    "about": "À propos",
+    "aboutTitle": "Un profil qui inspire confiance avant même le premier message",
+    "aboutDescription": "La page met en avant l'essentiel sans surcharger la lecture: une bio claire, des infos utiles et des signaux de confiance lisibles en un coup d'œil.",
+    "trustSection": "Confiance",
+    "trustTitle": "Des indicateurs de qualité visibles sans bruit visuel",
+    "trustDescription": "Les données de confiance sont présentées comme un tableau de bord discret, pour garder une lecture élégante et rapide.",
+    "listingsSection": "Annonces",
+    "listingsTitle": "Biens mis en avant",
+    "listingsDescription": "Chaque annonce est présentée comme un objet simple et lisible, avec une image forte, quelques détails utiles et un appel à l'action direct.",
+    "noListings": "Aucune annonce pour le moment",
+    "noListingsHint": "Cet hôte n'a pas encore publié d'annonces.",
+    "reviewsSectionTenant": "Avis voyageur",
+    "reviewsTitleTenant": "Ce que les hôtes disent de lui",
+    "reviewsDescriptionTenant": "Retours d'hôtes ayant accueilli ce voyageur. La confiance est réciproque.",
+    "reviewsSectionHost": "Avis hôte",
+    "reviewsTitleHost": "Ce que les voyageurs disent de lui",
+    "reviewsDescriptionHost": "Témoignages de voyageurs ayant séjourné chez cet hôte. La qualité du service se lit ici.",
+    "noReviews": "Aucun avis pour le moment",
+    "noReviewsHint": "Soyez le premier à laisser un avis !",
+    "guests": "voyageurs",
+    "bedrooms": "chambre(s)",
+    "bathrooms": "salle(s) de bain",
+    "viewDetails": "Voir détails",
+    "requestInfo": "Demander une information",
+    "infoRequestTitle": "Demander une information",
+    "infoRequestDescription": "Envoyer une demande à @{username} concernant \"{listingTitle}\"",
+    "arrivalDate": "Date d'arrivée",
+    "departureDate": "Date de départ",
+    "travelers": "Nombre de voyageurs",
+    "messageOptional": "Message (optionnel)",
+    "messagePlaceholder": "Bonjour @{username}, je suis intéressé par votre logement...",
+    "cancel": "Annuler",
+    "send": "Envoyer",
+    "sending": "Envoi...",
+    "requestSent": "Demande envoyée !",
+    "requestSentDescription": "Votre demande d'information a été transmise à l'hôte.",
+    "close": "Fermer",
+    "infoRequestSuccess": "Demande envoyée avec succès !",
+    "infoRequestError": "Une erreur est survenue",
+    "connectionError": "Erreur de connexion"
+  },
+  "Reviews": {
+    "dashboard": {
+      "badge": "RÉPUTATION",
+      "title": "Tableau de bord",
+      "highlight": "Réputation",
+      "subtitle": "Consultez les retours clients, optimisez vos réponses publiques et suivez en temps réel l'évolution de vos indicateurs de confiance."
+    },
+    "stats": {
+      "globalRating": "Note globale",
+      "reliability": "Fiabilité",
+      "trustScore": "Score de confiance",
+      "memberSince": "Membre depuis",
+      "superTraveler": "Super Voyageur",
+      "stays": "Séjours",
+      "reviewsReceived": "Avis reçus",
+      "basedOn": "Basé sur {count} avis"
+    },
+    "tabs": {
+      "received": "Avis reçus",
+      "given": "Avis donnés"
+    },
+    "filters": {
+      "placeholder": "Rechercher par titre de bien, nom du voyageur, ville...",
+      "clear": "Effacer",
+      "all": "Tous",
+      "replied": "Répondus",
+      "unreplied": "À Répondre",
+      "sortRecent": "Tri : Plus récents",
+      "sortRatingDesc": "Note : Décroissante (5 → 1)",
+      "sortRatingAsc": "Note : Croissante (1 → 5)",
+      "activeFilters": "Filtres actifs :",
+      "resetAll": "Réinitialiser tout",
+      "searchFor": "Recherche",
+      "rating": "Note",
+      "status": "Statut",
+      "stars": "étoiles"
+    },
+    "emptyState": {
+      "noReviewsReceived": "Aucun avis reçu pour le moment",
+      "noReviewsGiven": "Aucun avis donné pour le moment",
+      "receivedDescription": "Les avis laissés par vos hôtes apparaîtront ici.",
+      "givenDescription": "Partagez votre expérience après vos séjours.",
+      "simulateReview": "Simuler un avis"
+    },
+    "toasts": {
+      "replySuccess": "Réponse publiée avec succès !",
+      "replyError": "Erreur lors de la publication",
+      "reportSuccess": "Avis signalé. Notre équipe l'examinera sous 24h.",
+      "reportError": "Erreur lors du signalement",
+      "exportSuccess": "Export CSV généré avec succès !",
+      "reviewCreated": "Nouvel avis ajouté avec succès !",
+      "reviewError": "Erreur lors de la création de l'avis",
+      "connectionError": "Erreur de connexion",
+      "loadingError": "Erreur de chargement"
+    },
+    "confirmations": {
+      "reportReview": "Êtes-vous sûr de vouloir signaler cet avis ?"
+    },
+    "reviewCard": {
+      "yourResponse": "Votre réponse",
+      "editResponse": "Modifier votre réponse",
+      "writeResponse": "Écrire une réponse",
+      "responsePlaceholder": "Écrivez votre réponse ici...",
+      "replyTo": "Répondre à",
+      "reportReview": "Signaler cet avis",
+      "reportReason": "Pourquoi signalez-vous cet avis ?",
+      "selectReason": "Sélectionnez une raison",
+      "describeReason": "Décrivez le problème (optionnel)",
+      "submitReport": "Envoyer le signalement",
+      "host": "Hôte",
+      "for": "Pour",
+      "viewListing": "Voir le bien",
+      "report": "Signaler",
+      "reply": "Répondre",
+      "modifyReply": "Modifier la réponse",
+      "enterResponse": "Votre réponse:",
+      "reasons": {
+        "inappropriate": "Contenu inapproprié",
+        "fake": "Avis suspect / faux",
+        "offensive": "Langage offensant",
+        "spam": "Spam / publicité",
+        "other": "Autre raison"
+      }
+    },
+    "actions": {
+      "publish": "Publier",
+      "edit": "Modifier",
+      "cancel": "Annuler"
+    }
+  },
+
+  "DisputesPage": {
+    "loading": "Chargement des litiges...",
+    "badge": "Service litige",
+    "title": "Suivi des",
+    "titleHighlight": "litiges",
+    "description": "Gérez vos réclamations actives et consultez l'historique de vos résolutions.",
+    "newDispute": "Nouveau litige",
+    "activeDisputes": "Litiges actifs",
+    "history": "Historique",
+    "inProgress": "en cours",
+    "closed": "terminé(s)",
+    "search": {
+      "placeholder": "Rechercher par logement ou référence..."
+    },
+    "filters": {
+      "all": "Tous",
+      "active": "Actifs",
+      "resolved": "Terminés"
+    },
+    "stats": {
+      "pending": "En attente",
+      "inReview": "En examen",
+      "resolved": "Résolus",
+      "rejected": "Rejetés"
+    },
+    "summary": {
+      "title": "Résumé",
+      "resolutionRate": "Taux de résolution",
+      "totalDisputes": "Total litiges",
+      "successRate": "Taux de succès"
+    },
+    "process": {
+      "title": "Processus de résolution",
+      "step1": "Soumission",
+      "step1Desc": "Décrivez le problème et joignez des preuves",
+      "step1Label": "Étape 1",
+      "step2": "Examen",
+      "step2Desc": "Analyse de votre demande sous 24h",
+      "step2Label": "Étape 2",
+      "step3": "Médiation",
+      "step3Desc": "Contact avec l'hôte pour sa version",
+      "step3Label": "Étape 3",
+      "step4": "Résolution",
+      "step4Desc": "Décision finale",
+      "step4Label": "Étape 4"
+    },
+    "types": {
+      "damage": "Dégâts matériels",
+      "cleaning": "Propreté",
+      "misrepresentation": "Non conforme à l'annonce",
+      "noise": "Nuisances sonores",
+      "payment": "Problème de paiement",
+      "cancellation": "Annulation",
+      "other": "Autre motif"
     },
     "status": {
-      "active": "Actif",
-      "full": "Complet"
+      "open": "En attente",
+      "inReview": "En examen",
+      "resolved": "Résolu",
+      "rejected": "Rejeté"
+    },
+    "priority": {
+      "high": "Priorité haute"
+    },
+    "actions": {
+      "viewDetails": "Voir détails",
+      "backToList": "Retour à la liste",
+      "goToConversation": "Accéder à la conversation"
+    },
+    "date": {
+      "today": "Aujourd'hui",
+      "yesterday": "Hier",
+      "daysAgo": "Il y a {days} jours",
+      "unknown": "Date inconnue"
+    },
+    "common": {
+      "listing": "Logement",
+      "user": "Utilisateur"
+    },
+    "empty": {
+      "title": "Aucun litige trouvé",
+      "description": "Modifiez vos filtres ou créez un nouveau litige."
+    },
+    "toast": {
+      "error": "Erreur lors du chargement des litiges"
+    },
+    "detail": {
+      "badge": "DÉTAIL DU LITIGE",
+      "title": "Litige",
+      "arrival": "ARRIVÉE",
+      "departure": "DÉPART",
+      "duration": "DURÉE",
+      "nights": "nuits",
+      "reason": "Motif du litige",
+      "resolution": "Résolution",
+      "participants": "Participants",
+      "tenant": "LOCATAIRE",
+      "owner": "PROPRIÉTAIRE",
+      "mediator": "MÉDIATEUR",
+      "mediatorTeam": "Équipe NESTHUB",
+      "timeline": "Chronologie",
+      "openedOn": "OUVERT LE",
+      "lastUpdate": "DERNIÈRE MISE À JOUR",
+      "closed": "Ce litige est désormais clos. La conversation n'est plus accessible.",
+      "back": "Retour à la liste",
+      "urgent": "URGENT"
+    },
+    "breadcrumb": {
+      "home": "ACCUEIL",
+      "disputes": "LITIGES"
     }
   },
-  "reviews": {
-    "received": "Avis Reçus",
-    "given": "Avis Donnés",
-    "filterByDate": "Filtrer par date",
-    "writeResponse": "Écrivez votre réponse ici...",
-    "sendResponse": "Envoyer",
+  "NewDisputeModal": {
+    "title": "Nouveau litige",
+    "subtitle": "Décrivez votre problème, nous vous aiderons à trouver une solution",
+    "steps": {
+      "booking": "Réservation",
+      "type": "Type",
+      "evidence": "Preuves",
+      "description": "Description"
+    },
+    "step1": {
+      "title": "Sélectionnez la réservation concernée",
+      "loading": "Chargement de vos réservations...",
+      "noBookings": "Aucune réservation terminée",
+      "noBookingsHint": "Les litiges ne peuvent être ouverts que pour des séjours terminés",
+      "listingAlt": "Logement",
+      "defaultTitle": "Logement"
+    },
+    "step2": {
+      "title": "Type de problème",
+      "damage": "Dommages matériels",
+      "damageDesc": "Biens endommagés, cassés ou détériorés",
+      "cleaning": "Propreté insuffisante",
+      "cleaningDesc": "Le logement n'était pas propre à votre arrivée",
+      "misrepresentation": "Logement non conforme",
+      "misrepresentationDesc": "Ne correspond pas à la description ou aux photos",
+      "noise": "Bruit et nuisances",
+      "noiseDesc": "Troubles de voisinage ou bruit excessif",
+      "payment": "Problème de paiement",
+      "paymentDesc": "Facturation incorrecte ou frais non justifiés",
+      "cancellation": "Annulation abusive",
+      "cancellationDesc": "Annulation par l'hôte sans motif valable",
+      "other": "Autre problème",
+      "otherDesc": "Votre situation ne correspond à aucune catégorie"
+    },
+    "step3": {
+      "title": "Ajoutez des preuves photographiques",
+      "clickToAdd": "Cliquez pour ajouter des photos",
+      "fileHint": "Jusqu'à 10 Mo par photo, formats JPG, PNG",
+      "photosAdded": "photo(s) ajoutée(s)",
+      "noPhotos": "Aucune photo ajoutée pour le moment",
+      "photosOptional": "Les preuves sont optionnelles mais recommandées"
+    },
+    "step4": {
+      "title": "Décrivez la situation",
+      "placeholder": "Décrivez l'incident en détail : date, heure, personnes impliquées, séquence des événements..."
+    },
+    "buttons": {
+      "cancel": "Annuler",
+      "back": "Retour",
+      "next": "Suivant",
+      "submit": "Soumettre le litige",
+      "submitting": "Soumission en cours...",
+      "uploading": "Upload des photos..."
+    },
+    "toast": {
+      "missingFields": "Veuillez remplir tous les champs obligatoires",
+      "success": "Litige soumis avec succès !",
+      "error": "Erreur lors de la soumission",
+      "connectionError": "Erreur de connexion"
+    }
+  },
+
+  "Bookings": {
+    "extend": {
+      "title": "Prolonger le séjour",
+      "currentDeparture": "Départ actuel",
+      "newDeparture": "Nouveau départ",
+      "selectDate": "Choisir une nouvelle date de départ",
+      "night": "nuit",
+      "nights": "nuits",
+      "extraNight": "nuit supplémentaire",
+      "extraNights": "nuits supplémentaires",
+      "priceDetails": "Détail du prix",
+      "serviceFee": "Frais de service (9%)",
+      "total": "Total",
+      "sendRequest": "Envoyer la demande",
+      "sending": "Envoi...",
+      "cancel": "Annuler",
+      "infoNote": "La prolongation est sujette à l'acceptation du propriétaire. Les dates sélectionnées seront temporairement réservées.",
+      "errors": {
+        "afterCurrent": "La date doit être après votre départ actuel",
+        "pastDate": "Vous ne pouvez pas sélectionner une date passée",
+        "notAvailable": "Cette date n'est pas disponible (déjà réservée ou bloquée)",
+        "selectDate": "Veuillez sélectionner une date après votre départ actuel",
+        "datesNotAvailable": "Certaines dates entre votre départ et la date sélectionnée ne sont pas disponibles",
+        "requestError": "Erreur lors de la demande de prolongation",
+        "network": "Erreur réseau. Veuillez réessayer."
+      },
+      "success": {
+        "title": "Demande envoyée !",
+        "message": "Votre demande de prolongation a été transmise au propriétaire."
+      }
+    },
+    "calendar": {
+      "january": "Janvier",
+      "february": "Février",
+      "march": "Mars",
+      "april": "Avril",
+      "may": "Mai",
+      "june": "Juin",
+      "july": "Juillet",
+      "august": "Août",
+      "september": "Septembre",
+      "october": "Octobre",
+      "november": "Novembre",
+      "december": "Décembre",
+      "monday": "L",
+      "tuesday": "M",
+      "wednesday": "M",
+      "thursday": "J",
+      "friday": "V",
+      "saturday": "S",
+      "sunday": "D"
+    }
+  },
+
+  "tenant": {
+    "cancel": {
+      "modal": {
+        "title": "Annuler ma réservation",
+        "subtitle": "Vérifiez les détails du remboursement avant de confirmer.",
+        "refund_policy": "Politique de remboursement",
+        "refund_details": "Détail du remboursement",
+        "full_refund": "Remboursement total",
+        "partial_refund": "Remboursement partiel (50%)",
+        "no_refund": "Aucun remboursement",
+        "days_30_plus": "> 30 jours",
+        "days_7_to_30": "7 à 30 jours",
+        "days_less_than_7": "< 7 jours",
+        "total_nights": "Total ({nights} nuits)",
+        "cancellation_fee": "Frais d'annulation ({percentage}%)",
+        "total_refunded": "Total remboursé",
+        "reason_label": "Raison de l'annulation",
+        "reason_required": "*",
+        "reason_placeholder": "Sélectionnez une raison...",
+        "reason_plans_changed": "Mes plans ont changé",
+        "reason_better_option": "J'ai trouvé une meilleure option",
+        "reason_emergency": "Urgence personnelle",
+        "reason_mistake": "Réservation faite par erreur",
+        "reason_other": "Autre",
+        "notes_label": "Notes supplémentaires",
+        "notes_optional": "(optionnel)",
+        "notes_placeholder": "Dites-nous en plus sur votre annulation...",
+        "confirm_label": "Pour confirmer, saisissez",
+        "confirm_word": "ANNULER",
+        "confirm_placeholder": "ANNULER",
+        "button_back": "Retour",
+        "button_confirm": "Confirmer l'annulation",
+        "button_cancelling": "Annulation...",
+        "alert_select_reason": "Veuillez sélectionner une raison",
+        "alert_confirm_word": "Veuillez saisir \"ANNULER\" pour confirmer",
+        "alert_error": "Une erreur est survenue lors de l'annulation"
+      }
+    }
+  },
+  "ChatDrawer": {
+    "title": "Messages",
+    "search": {
+      "placeholder": "Rechercher une conversation…"
+    },
+    "empty": {
+      "noResults": "Aucun résultat",
+      "noConversations": "Aucune conversation",
+      "tryDifferent": "Essayez un autre terme",
+      "messagesWillAppear": "Les messages apparaîtront ici"
+    },
+    "fallback": {
+      "user": "Utilisateur"
+    },
+    "footer": {
+      "viewAll": "Voir tous les messages",
+      "security": "Messages sécurisés · Ne partagez pas vos informations personnelles"
+    }
+  },
+
+  "FloatingChat": {
+    "messages": "Messages",
+    "empty": {
+      "noConversations": "Aucune conversation",
+      "messagesWillAppear": "Vos messages apparaîtront ici"
+    },
+    "fallback": {
+      "user": "Utilisateur"
+    }
+  },
+
+  "ImageModal": {
+    "title": "Ajouter une image",
+    "tabs": {
+      "url": "URL",
+      "upload": "Upload"
+    },
+    "urlLabel": "URL de l'image",
     "cancel": "Annuler",
-    "respond": "Répondre à l'avis",
-    "modifyResponse": "Modifier la réponse",
-    "yourResponse": "Votre réponse",
-    "evaluationFor": "Évaluation pour",
-    "recommended": "Recommandé",
-    "notRecommended": "Non recommandé",
-    "cleanliness": "Propreté",
-    "communication": "Communication",
-    "noReceived": "Aucun avis reçu pour le moment",
-    "noGiven": "Aucun avis donné pour le moment"
+    "add": "Ajouter",
+    "uploading": "Upload en cours...",
+    "ready": "Image prête à être uploadée",
+    "change": "Changer",
+    "dragAndDrop": "Glissez une image ou cliquez pour parcourir",
+    "fileInfo": "PNG, JPG, GIF • Max 5MB",
+    "chooseFile": "Choisir un fichier",
+    "errors": {
+      "invalidType": "Veuillez sélectionner une image (JPG, PNG, GIF)",
+      "fileTooLarge": "L'image ne doit pas dépasser 5MB",
+      "uploadError": "Erreur lors de l'upload"
+    }
+  },
+
+  "LinkModal": {
+    "title": "Ajouter un lien",
+    "urlLabel": "URL du lien",
+    "cancel": "Annuler",
+    "add": "Ajouter"
+  },
+
+  "RichTextEditor": {
+    "undo": "Annuler",
+    "redo": "Rétablir",
+    "bold": "Gras",
+    "italic": "Italique",
+    "underline": "Souligné",
+    "bulletList": "Liste à puces",
+    "orderedList": "Liste numérotée",
+    "link": "Lien",
+    "image": "Image",
+    "code": "Code",
+    "quote": "Citation",
+    "clearFormatting": "Effacer le formatage"
+  },
+  "ListingMap": {
+    "distanceKm": "km du rayon",
+    "inRadius": "Dans le rayon",
+    "walking": "À pied",
+    "driving": "En voiture",
+    "openInGoogleMaps": "Ouvrir dans Google Maps",
+    "yourProperty": " Votre bien",
+    "extendedModeActive": "Mode étendu actif",
+    "radius3km": "Rayon 3km"
+  },
+  "MapPicker": {
+    "useMyLocation": "Utiliser ma localisation",
+    "geolocationNotSupported": "La géolocalisation n'est pas supportée par votre navigateur",
+    "unableToGetPosition": "Impossible d'obtenir votre position",
+    "allowAccess": "Veuillez autoriser l'accès à votre position",
+    "positionUnavailable": "Position indisponible, réessayez plus tard",
+    "timeoutExceeded": "Délai d'attente dépassé, vérifiez votre connexion",
+    "viewDetails": "Voir les détails →",
+    "locating": "Localisation en cours...",
+    "clickToPlaceMarker": "Cliquez sur la carte pour placer le marqueur",
+    "readOnlyView": "Vue seule",
+    "legend": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "draft": "Brouillon",
+      "archived": "Archivé",
+      "pending": "En attente"
+    }
+  },
+
+  "MapPickerWrapper": {
+    "loading": "Chargement de la carte..."
+  },
+  "POILegend": {
+    "nearby": "À proximité",
+    "stats": "{inRadius} dans 3km · {outRadius} plus loin",
+    "hideDistant": "Masquer les POIs éloignés",
+    "showMore": "Afficher plus loin ?",
+    "radiusInfo": "Cercle = 3km autour du logement",
+    "clear": "Effacer ({count})",
+    "categories": {
+      "commodities": "Commodités",
+      "transport": "Transports",
+      "leisure": "Loisirs",
+      "services": "Services"
+    }
+  },
+  "Identity": {
+    "title": "Vérification d'identité",
+    "subtitle": "Carte d'identité nationale",
+    "mobileSync": "Sync mobile",
+    "mobileSyncShort": "Mobile",
+    "manualSubmission": "Soumission manuelle",
+    "rectoLabel": "Recto (Face avant)",
+    "versoLabel": "Verso (Face arrière)",
+    "status": {
+      "ready": "Prêt pour l'envoi",
+      "required": "2 fichiers requis"
+    },
+    "buttons": {
+      "cancel": "Annuler",
+      "submit": "Soumettre",
+      "send": "Envoyer",
+      "sending": "Envoi..."
+    },
+    "success": {
+      "title": "Dossier déposé",
+      "message": "Merci ! Votre carte d'identité a été envoyée à notre équipe. Vous recevrez une réponse sous 24h.",
+      "close": "Fermer"
+    },
+    "rejection": {
+      "title": "Dernier refus",
+      "hint": "Veuillez soumettre des documents valides et lisibles."
+    },
+    "toast": {
+      "success": "Documents envoyés avec succès"
+    },
+    "uploadZone": {
+      "required": "Requis",
+      "clickOrDrop": "Cliquer ou déposer",
+      "fileFormat": "JPG, PNG (Max 5MB)"
+    },
+    "tips": {
+      "title": "Conseils photo",
+      "lighting": {
+        "title": "Éclairage naturel",
+        "desc": "Privilégiez la lumière du jour",
+        "descFull": "Privilégiez la lumière du jour pour éviter les ombres portées."
+      },
+      "reflections": {
+        "title": "Évitez les reflets",
+        "desc": "Désactivez le flash",
+        "descFull": "Désactivez le flash pour éviter tout éblouissement."
+      },
+      "framing": {
+        "title": "Cadrage complet",
+        "desc": "4 coins visibles",
+        "descFull": "Assurez-vous que les quatre coins de la carte sont visibles."
+      },
+      "readability": {
+        "title": "Lisibilité",
+        "desc": "CIN et nom nets",
+        "descFull": "Vérifiez que le numéro CIN et le nom sont parfaitement nets."
+      }
+    },
+    "mobileSync": {
+      "secureTransfer": "Transfert mobile sécurisé",
+      "title": "Synchronisation express",
+      "description": "Scannez ce code QR avec l'appareil photo de votre smartphone pour transférer instantanément vos documents d'identité.",
+      "steps": {
+        "scan": "1. Scanner",
+        "upload": "2. Upload",
+        "auto": "3. Automatique"
+      },
+      "transferInProgress": "Transfert en cours",
+      "filesReceived": "Documents reçus avec succès",
+      "validFor": "valable 10 minutes"
+    }
+  },
+
+  "NotificationBell": {
+    "disabled": "Notifications désactivées",
+    "title": "Notifications",
+    "markAllAsRead": "Tout marquer comme lu"
+  },
+
+  "NotificationItem": {
+    "anonymousTenant": "Un locataire",
+    "guestsCount": "{count} voyageur{count, plural, =1 {} other {s}}",
+    "accept": "Accepter",
+    "reject": "Refuser",
+    "viewProfile": "Voir le profil",
+    "viewRequest": "Voir la demande",
+    "markAsRead": "Marquer comme lu",
+    "rejectReason": "Le propriétaire n'est pas disponible pour ces dates"
+  },
+
+  "NotificationList": {
+    "loading": "Chargement...",
+    "noNotifications": "Aucune notification"
+  },
+
+  "ListingSelector": {
+    "noListings": "Vous n'avez pas encore d'annonce",
+    "createListing": "Créer une annonce",
+    "selectListing": "Sélectionner une annonce",
+    "pricePerNight": "TND/nuit"
+  },
+
+  "Alert": {
+    "success": "Succès",
+    "error": "Erreur",
+    "info": "Information",
+    "warning": "Attention"
+  },
+  "CompareButton": {
+    "compare": "Comparer ({count})"
+  },
+
+  "DateRangePicker": {
+    "today": "Aujourd'hui",
+    "last7Days": "7 derniers jours",
+    "last30Days": "30 derniers jours",
+    "thisMonth": "Ce mois-ci",
+    "lastMonth": "Mois dernier",
+    "fromDate": "À partir du {date}",
+    "selectPeriod": "Sélectionner une période",
+    "periods": "Périodes",
+    "clear": "Effacer",
+    "cancel": "Annuler",
+    "apply": "Appliquer"
+  },
+
+  "Dialog": {
+    "close": "Fermer"
+  },
+
+  "DocumentTypeSelector": {
+    "label": "Type de document d'identité",
+    "cin": "Carte d'identité (CIN)",
+    "passport": "Passeport"
+  },
+
+  "LanguageSelector": {
+    "changeLanguage": "Changer de langue"
+  },
+
+  "MobileUploadQR": {
+    "title": "Upload via Mobile",
+    "description": "Scannez le QR code avec votre téléphone pour prendre les photos",
+    "progress": "Progression:",
+    "rectoReceived": "CIN recto reçu",
+    "versoReceived": "CIN verso reçu",
+    "selfieReceived": "Selfie reçu",
+    "allReceived": "Toutes les photos reçues !"
+  },
+
+  "Pagination": {
+    "showing": "Affichage",
+    "to": "à",
+    "of": "sur",
+    "results": "résultats"
+  },
+
+  "PriceRangeSlider": {
+    "min": "Min",
+    "max": "Max"
+  },
+
+  "SearchBar": {
+    "recentSearches": "Recherches récentes",
+    "clear": "Effacer",
+    "searching": "Recherche en cours…",
+    "results": "{count} résultat | {count} résultats",
+    "perNight": "/nuit",
+    "viewAllResults": "Voir tous les résultats",
+    "noResults": "Aucun résultat",
+    "noResultsFor": "Aucune propriété ne correspond à « {query} »",
+    "searchFullPage": "Rechercher sur la page complète"
   }
-}}
+}

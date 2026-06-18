@@ -1,3 +1,4 @@
+// app/[locale]/profile/[username]/page.tsx
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
@@ -8,6 +9,7 @@ import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useTheme } from "next-themes";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   IoChatbubbleOutline,
   IoCheckmarkCircleOutline,
@@ -28,94 +30,7 @@ import { FaGlobe, FaMedal, FaUserCheck, FaBuilding } from "react-icons/fa";
 import { useIdentityVerification } from "@/hooks/useIdentityVerification";
 import { IdentityVerificationModal } from "@/components/ui/IdentityVerificationModal";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
-
-// ============================================
-// TYPES
-// ============================================
-
-type Listing = {
-  id: string;
-  title: string;
-  location: string;
-  image: string | null;
-  images?: string[];
-  guests: number;
-  bedrooms: number;
-  baths: number;
-  rating: number;
-  priceDisplay: string;
-  pricePerNight: number;
-  pricePerMonth: number;
-  rentalType: string;
-  summary: string;
-  ownerId?: string;
-};
-
-type Review = {
-  id: string;
-  author: string;
-  role: string;
-  avatar?: string;
-  rating: number;
-  date: string;
-  comment: string;
-};
-
-type ProfileData = {
-  id: string;
-  username: string;
-  role: string;
-  roleDisplay: string;
-  roleBadgeText: string;
-  location: string;
-  bio: string;
-  memberSince: Date;
-  profession: string | null;
-  languages: string[];
-  acceptsForeigners: boolean;
-  isIdentityVerified: boolean;
-  isEmailVerified: boolean;
-  phoneVerified: boolean;
-  profilePictureUrl: string | null;
-  stats: {
-    reliabilityScore: number;
-    trustLabel: string;
-    totalReviews: number;
-    averageRating: number;
-    responseRate: number;
-    responseTime: string;
-    totalListings: number;
-  };
-};
-
-// ============================================
-// FONCTIONS UTILITAIRES
-// ============================================
-
-function fmtDate(d: string) {
-  if (!d) return "";
-  return new Date(d).toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function getImageUrl(url: string) {
-  if (!url) return "";
-  if (url.includes("/api/listings/image")) return url;
-  return `/api/listings/image?url=${encodeURIComponent(url)}`;
-}
-
-function getAvatarUrl(url: string) {
-  if (!url) return "";
-  if (url.includes("/api/listings/image")) return url;
-  return `/api/listings/image?url=${encodeURIComponent(url)}`;
-}
-
-// ============================================
-// COMPOSANTS UI
-// ============================================
+import { useUserProfile } from "./hooks/useUserProfile";
 
 const motionContainer = {
   hidden: {},
@@ -264,45 +179,26 @@ function DetailChip({
 }
 
 function EmptyState({
-  type,
+  title,
+  hint,
   dark,
 }: {
-  type: "listings" | "reviews";
+  title: string;
+  hint: string;
   dark: boolean;
 }) {
-  if (type === "listings") {
-    return (
-      <div className="flex flex-col items-center justify-center rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center">
-        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-          <FaBuilding className="text-2xl text-slate-400 dark:text-slate-500" />
-        </div>
-        <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-          Aucune annonce pour le moment
-        </h3>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Cet hôte n'a pas encore publié d'annonces.
-        </p>
-      </div>
-    );
-  }
   return (
     <div className="flex flex-col items-center justify-center rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center">
       <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
-        <IoStar className="text-2xl text-slate-400 dark:text-slate-500" />
+        <FaBuilding className="text-2xl text-slate-400 dark:text-slate-500" />
       </div>
       <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-        Aucun avis pour le moment
+        {title}
       </h3>
-      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-        Soyez le premier à laisser un avis !
-      </p>
+      <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{hint}</p>
     </div>
   );
 }
-
-// ============================================
-// HERO IMAGE
-// ============================================
 
 function HeroImage({
   listings,
@@ -310,11 +206,22 @@ function HeroImage({
   username,
   dark,
 }: {
-  listings: Listing[];
+  listings: any[];
   profilePictureUrl: string | null;
   username: string;
   dark: boolean;
 }) {
+  const getImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.includes("/api/listings/image")) return url;
+    return `/api/listings/image?url=${encodeURIComponent(url)}`;
+  };
+
+  const getAvatarUrl = (url: string) => {
+    if (!url) return "";
+    return `/api/users/avatar?url=${encodeURIComponent(url)}`;
+  };
+
   const getHeroImageUrl = () => {
     if (listings.length > 0 && listings[0]?.image) {
       return getImageUrl(listings[0].image);
@@ -339,7 +246,7 @@ function HeroImage({
     <div className="absolute inset-0">
       <img
         src={heroUrl}
-        alt={`Photo de couverture de @${username}`}
+        alt={`Cover photo of @${username}`}
         className="h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-gradient-to-br from-slate-950/92 via-slate-950/72 to-slate-950/28" />
@@ -347,10 +254,6 @@ function HeroImage({
     </div>
   );
 }
-
-// ============================================
-// AVATAR
-// ============================================
 
 function ProfileAvatar({
   profilePictureUrl,
@@ -363,6 +266,11 @@ function ProfileAvatar({
   isVerified: boolean;
   dark: boolean;
 }) {
+  const getAvatarUrl = (url: string) => {
+    if (!url) return "";
+    return `/api/users/avatar?url=${encodeURIComponent(url)}`;
+  };
+
   return (
     <div className="relative h-20 w-20 overflow-hidden rounded-full border border-white/20 shadow-2xl shadow-slate-950/30 ring-4 ring-white/12 sm:h-24 sm:w-24">
       {profilePictureUrl ? (
@@ -385,184 +293,56 @@ function ProfileAvatar({
   );
 }
 
-// ============================================
-// INFO REQUEST MODAL
-// ============================================
-
-function InfoRequestModal({
-  isOpen,
-  onClose,
-  onSend,
-  listingTitle,
-  username,
-  isLoading,
+function ReviewAvatar({
+  avatar,
+  author,
+  dark,
 }: {
-  isOpen: boolean;
-  onClose: () => void;
-  onSend: (
-    checkIn: string,
-    checkOut: string,
-    guests: number,
-    message: string,
-  ) => void;
-  listingTitle: string;
-  username: string;
-  isLoading: boolean;
+  avatar?: string;
+  author: string;
+  dark: boolean;
 }) {
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [guests, setGuests] = useState(1);
-  const [message, setMessage] = useState("");
-
-  if (!isOpen) return null;
+  const getAvatarUrl = (url: string) => {
+    if (!url) return "";
+    return `/api/users/avatar?url=${encodeURIComponent(url)}`;
+  };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-2xl animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-            Demander une information
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition"
-          >
-            <IoCloseOutline className="text-xl text-gray-500" />
-          </button>
+    <div className="h-12 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700">
+      {avatar ? (
+        <img
+          src={getAvatarUrl(avatar)}
+          alt={author}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 text-sm font-semibold text-white">
+          {author.charAt(0)}
         </div>
-
-        <div className="space-y-4">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Envoyer une demande à{" "}
-            <span className="font-semibold">@{username}</span> concernant "
-            {listingTitle}"
-          </p>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Date d'arrivée
-              </label>
-              <input
-                type="date"
-                value={checkIn}
-                min={new Date().toISOString().split("T")[0]}
-                onChange={(e) => setCheckIn(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Date de départ
-              </label>
-              <input
-                type="date"
-                value={checkOut}
-                min={checkIn || new Date().toISOString().split("T")[0]}
-                onChange={(e) => setCheckOut(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Nombre de voyageurs
-            </label>
-            <input
-              type="number"
-              value={guests}
-              min={1}
-              max={20}
-              onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Message (optionnel)
-            </label>
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              rows={3}
-              placeholder={`Bonjour @${username}, je suis intéressé par votre logement...`}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm resize-none"
-            />
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <button
-              onClick={onClose}
-              className="flex-1 px-3 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-200 transition"
-            >
-              Annuler
-            </button>
-            <button
-              onClick={() => onSend(checkIn, checkOut, guests, message)}
-              disabled={!checkIn || !checkOut || isLoading}
-              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
-            >
-              {isLoading ? "Envoi..." : "Envoyer"}
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
-
-// ============================================
-// SUCCESS MODAL
-// ============================================
-
-function SuccessModal({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
-        <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center mx-auto mb-3">
-          <IoCheckmarkCircleOutline className="text-2xl text-emerald-500" />
-        </div>
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-          Demande envoyée !
-        </h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          Votre demande d'information a été transmise à l'hôte.
-        </p>
-        <button
-          onClick={onClose}
-          className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-200 transition"
-        >
-          Fermer
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ============================================
-// LISTING CARD - bouton "Demander des infos" au-dessus du prix
-// ============================================
 
 function ListingCard({
   listing,
+  username,
   onInfoRequest,
   dark,
+  t,
 }: {
-  listing: Listing;
+  listing: any;
   username: string;
-  onInfoRequest: (listing: Listing) => void;
+  onInfoRequest: (listing: any) => void;
   dark: boolean;
+  t: any;
 }) {
+  const getImageUrl = (url: string) => {
+    if (!url) return "";
+    if (url.includes("/api/listings/image")) return url;
+    return `/api/listings/image?url=${encodeURIComponent(url)}`;
+  };
+
   const imageUrl = listing?.image ? getImageUrl(listing.image) : null;
 
   return (
@@ -610,22 +390,23 @@ function ListingCard({
           </div>
 
           <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-slate-600 dark:text-slate-400">
-            <span>{listing.guests} voyageurs</span>
             <span>
-              {listing.bedrooms} chambre{listing.bedrooms > 1 ? "s" : ""}
+              {listing.guests} {t("guests")}
             </span>
             <span>
-              {listing.baths} salle{listing.baths > 1 ? "s" : ""} de bain
+              {listing.bedrooms} {t("bedrooms")}
+            </span>
+            <span>
+              {listing.baths} {t("bathrooms")}
             </span>
           </div>
         </Link>
 
-        {/* ✅ BOUTON DEMANDER DES INFOS - juste au-dessus du prix */}
         <button
           onClick={() => onInfoRequest(listing)}
           className="mt-4 w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-all hover:scale-[1.02]"
         >
-          Demander une information
+          {t("requestInfo")}
         </button>
 
         <div className="mt-3 flex items-center justify-between gap-3">
@@ -637,7 +418,7 @@ function ListingCard({
             href={`/listings/${listing.id}`}
             className="inline-flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white"
           >
-            Voir détails
+            {t("viewDetails")}
             <IoChevronForwardOutline className="text-base text-slate-400 dark:text-slate-500" />
           </Link>
         </div>
@@ -645,39 +426,164 @@ function ListingCard({
     </motion.div>
   );
 }
-// ============================================
-// REVIEW AVATAR
-// ============================================
 
-function ReviewAvatar({
-  avatar,
-  author,
-  dark,
+function InfoRequestModal({
+  isOpen,
+  onClose,
+  onSend,
+  listingTitle,
+  username,
+  isLoading,
+  t,
 }: {
-  avatar?: string;
-  author: string;
-  dark: boolean;
+  isOpen: boolean;
+  onClose: () => void;
+  onSend: (
+    checkIn: string,
+    checkOut: string,
+    guests: number,
+    message: string,
+  ) => void;
+  listingTitle: string;
+  username: string;
+  isLoading: boolean;
+  t: any;
 }) {
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [guests, setGuests] = useState(1);
+  const [message, setMessage] = useState("");
+
+  if (!isOpen) return null;
+
   return (
-    <div className="h-12 w-12 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 ring-1 ring-slate-200 dark:ring-slate-700">
-      {avatar ? (
-        <img
-          src={getAvatarUrl(avatar)}
-          alt={author}
-          className="h-full w-full object-cover"
-        />
-      ) : (
-        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-900 to-slate-700 text-sm font-semibold text-white">
-          {author.charAt(0)}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-2xl animate-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+            {t("infoRequestTitle")}
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 transition"
+          >
+            <IoCloseOutline className="text-xl text-gray-500" />
+          </button>
         </div>
-      )}
+
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {t("infoRequestDescription", { username, listingTitle })}
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("arrivalDate")}
+              </label>
+              <input
+                type="date"
+                value={checkIn}
+                min={new Date().toISOString().split("T")[0]}
+                onChange={(e) => setCheckIn(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t("departureDate")}
+              </label>
+              <input
+                type="date"
+                value={checkOut}
+                min={checkIn || new Date().toISOString().split("T")[0]}
+                onChange={(e) => setCheckOut(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t("travelers")}
+            </label>
+            <input
+              type="number"
+              value={guests}
+              min={1}
+              max={20}
+              onChange={(e) => setGuests(parseInt(e.target.value) || 1)}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              {t("messageOptional")}
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={3}
+              placeholder={t("messagePlaceholder", { username })}
+              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm resize-none"
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <button
+              onClick={onClose}
+              className="flex-1 px-3 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-200 transition"
+            >
+              {t("cancel")}
+            </button>
+            <button
+              onClick={() => onSend(checkIn, checkOut, guests, message)}
+              disabled={!checkIn || !checkOut || isLoading}
+              className="flex-1 px-3 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-purple-600 text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+            >
+              {isLoading ? t("sending") : t("send")}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
 
-// ============================================
-// BACKGROUND
-// ============================================
+function SuccessModal({
+  isOpen,
+  onClose,
+  t,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  t: any;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl max-w-md w-full p-5 shadow-2xl animate-in zoom-in-95 duration-200 text-center">
+        <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-950/40 rounded-full flex items-center justify-center mx-auto mb-3">
+          <IoCheckmarkCircleOutline className="text-2xl text-emerald-500" />
+        </div>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+          {t("requestSent")}
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          {t("requestSentDescription")}
+        </p>
+        <button
+          onClick={onClose}
+          className="px-4 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:bg-gray-200 transition"
+        >
+          {t("close")}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function Background({ dark }: { dark: boolean }) {
   return (
@@ -740,32 +646,34 @@ function Background({ dark }: { dark: boolean }) {
   );
 }
 
-// ============================================
-// PAGE PRINCIPALE
-// ============================================
-
 export default function HostProfilePage() {
   const params = useParams();
   const username = params?.username as string;
   const { theme, systemTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const t = useTranslations("ProfilePage");
 
   const isDark = !mounted
     ? false
     : theme === "dark" || (theme === "system" && systemTheme === "dark");
   const dark = isDark && mounted;
 
-  const [profile, setProfile] = useState<ProfileData | null>(null);
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [isHost, setIsHost] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    profile,
+    listings,
+    reviews,
+    isHost,
+    isLoading,
+    error,
+    totalListings,
+    responseRate,
+  } = useUserProfile(username);
+
   const [toast, setToast] = useState<string | null>(null);
 
-  // Info request states
   const [infoRequestLoading, setInfoRequestLoading] = useState(false);
   const [showInfoModal, setShowInfoModal] = useState(false);
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [selectedListing, setSelectedListing] = useState<any | null>(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showVerificationModal, setShowVerificationModal] = useState(false);
   const [pendingInfoRequest, setPendingInfoRequest] = useState(false);
@@ -778,31 +686,6 @@ export default function HostProfilePage() {
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    async function fetchProfile() {
-      if (!username) return;
-
-      setIsLoading(true);
-      try {
-        const res = await fetch(`/api/users/profile/${username}`);
-        if (!res.ok) throw new Error("Profil non trouvé");
-        const data = await res.json();
-
-        setProfile(data.profile);
-        setListings(data.listings || []);
-        setReviews(data.reviews || []);
-        setIsHost(data.isHost);
-      } catch (error) {
-        console.error("Erreur:", error);
-        setToast("Profil non trouvé");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchProfile();
-  }, [username]);
 
   useEffect(() => {
     if (!toast) return;
@@ -835,7 +718,7 @@ export default function HostProfilePage() {
           listingId: selectedListing.id,
           message:
             message ||
-            `Séjour du ${fmtDate(checkIn)} au ${fmtDate(checkOut)} pour ${guests} personne(s).\n\nJe suis intéressé(e) par votre logement, pourriez-vous me donner plus d'informations ?`,
+            `Stay from ${new Date(checkIn).toLocaleDateString("fr-FR")} to ${new Date(checkOut).toLocaleDateString("fr-FR")} for ${guests} person(s).\n\nI am interested in your property, could you give me more information?`,
           checkIn,
           checkOut,
           guests: guests,
@@ -846,21 +729,20 @@ export default function HostProfilePage() {
         setShowInfoModal(false);
         setShowSuccessModal(true);
         setSelectedListing(null);
-        setToast("Demande envoyée avec succès !");
+        setToast(t("infoRequestSuccess"));
       } else {
-        setToast(data.error || "Une erreur est survenue");
+        setToast(data.error || t("infoRequestError"));
       }
     } catch {
-      setToast("Erreur de connexion");
+      setToast(t("connectionError"));
     } finally {
       setInfoRequestLoading(false);
     }
   };
 
-  const openInfoRequest = (listing: Listing) => {
+  const openInfoRequest = (listing: any) => {
     setSelectedListing(listing);
 
-    // Vérifier si l'utilisateur peut envoyer une demande
     const { canProceed, needsVerification } =
       checkCanPerformAction("make_booking");
 
@@ -888,29 +770,61 @@ export default function HostProfilePage() {
     setSelectedListing(null);
   };
 
-  if (!mounted || isLoading) {
-  return (
-    <LoadingSpinner
-      fullScreen
-      text="Chargement du profil..."
-      size="lg"
-      color="primary"
-      variant="spinner"
-      speed="normal"
-    />
-  )
-}
+  const showListingsSection =
+    (profile?.role === "PROPERTY_OWNER" || profile?.role === "BOTH") &&
+    isHost &&
+    listings.length > 0;
 
-  if (!profile) {
+  const reviewsToShow = reviews;
+  const hasReviews = reviewsToShow.length > 0;
+
+  const getReviewsSectionText = () => {
+    if (profile?.role === "TENANT") {
+      return {
+        eyebrow: t("reviewsSectionTenant"),
+        title: t("reviewsTitleTenant"),
+        description: t("reviewsDescriptionTenant"),
+      };
+    }
+    return {
+      eyebrow: t("reviewsSectionHost"),
+      title: t("reviewsTitleHost"),
+      description: t("reviewsDescriptionHost"),
+    };
+  };
+
+  const reviewsText = getReviewsSectionText();
+
+  const getHeroDescription = () => {
+    if (profile?.role === "TENANT") {
+      return t("verifiedTraveler", { count: profile?.stats.totalReviews || 0 });
+    }
+    return t("verifiedHost", { count: totalListings });
+  };
+
+  if (!mounted || isLoading) {
+    return (
+      <LoadingSpinner
+        fullScreen
+        text={t("loading")}
+        size="lg"
+        color="primary"
+        variant="spinner"
+        speed="normal"
+      />
+    );
+  }
+
+  if (error || !profile) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="text-center">
           <IoPersonOutline className="text-6xl text-slate-400 dark:text-slate-500 mx-auto mb-4" />
           <p className="text-slate-600 dark:text-slate-400">
-            Profil non trouvé
+            {t("profileNotFound")}
           </p>
           <p className="text-sm text-slate-400 dark:text-slate-500 mt-2">
-            L'utilisateur "{username}" n'existe pas
+            {t("userNotFound", { username })}
           </p>
         </div>
       </div>
@@ -923,7 +837,6 @@ export default function HostProfilePage() {
     >
       <Background dark={dark} />
 
-      {/* HEADER */}
       <header className="relative isolate overflow-hidden bg-slate-950 text-white">
         <HeroImage
           listings={listings}
@@ -943,8 +856,8 @@ export default function HostProfilePage() {
               </p>
               <p className="text-[10px] sm:text-xs text-white/65">
                 {profile.isIdentityVerified
-                  ? "Identité vérifiée"
-                  : "Profil vérifié"}
+                  ? t("identityVerified")
+                  : t("profileVerified")}
               </p>
             </div>
           </div>
@@ -968,7 +881,7 @@ export default function HostProfilePage() {
               {profile.isIdentityVerified && profile.isEmailVerified && (
                 <div className="flex items-center gap-1 sm:gap-2">
                   <IoCheckmarkCircleOutline className="text-sm sm:text-base text-sky-300" />
-                  <span>Identité et contact vérifiés</span>
+                  <span>{t("identityAndContactVerified")}</span>
                 </div>
               )}
             </div>
@@ -986,12 +899,23 @@ export default function HostProfilePage() {
                   {profile.roleBadgeText}
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-white/80">
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 sm:px-3 sm:py-1 backdrop-blur-sm">
-                    Réponse rapide
-                  </span>
-                  <span className="rounded-full bg-white/10 px-2 py-0.5 sm:px-3 sm:py-1 backdrop-blur-sm">
-                    {isHost ? "Hôte expérimenté" : "Membre actif"}
-                  </span>
+                  {responseRate >= 80 && (
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 sm:px-3 sm:py-1 backdrop-blur-sm">
+                      {t("responseRate", { rate: responseRate })}
+                    </span>
+                  )}
+                  {(profile.role === "PROPERTY_OWNER" ||
+                    profile.role === "BOTH") &&
+                    totalListings > 0 && (
+                      <span className="rounded-full bg-white/10 px-2 py-0.5 sm:px-3 sm:py-1 backdrop-blur-sm">
+                        {t("listingsCount", { count: totalListings })}
+                      </span>
+                    )}
+                  {profile.role === "TENANT" && (
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 sm:px-3 sm:py-1 backdrop-blur-sm">
+                      {t("travelerCertified")}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1001,8 +925,7 @@ export default function HostProfilePage() {
                 @{profile.username}
               </h1>
               <p className="text-lg sm:text-xl lg:text-2xl leading-7 sm:leading-8 text-white/80">
-                {profile.roleDisplay}. Une présence rassurante, des services de
-                qualité et une relation simple.
+                {getHeroDescription()}
               </p>
             </div>
 
@@ -1011,7 +934,7 @@ export default function HostProfilePage() {
             </p>
 
             <div className="flex flex-wrap gap-2 sm:gap-3">
-              {isHost && listings.length > 0 && (
+              {showListingsSection && (
                 <button
                   type="button"
                   onClick={() => {
@@ -1023,7 +946,7 @@ export default function HostProfilePage() {
                   }}
                   className="inline-flex items-center gap-1 sm:gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 sm:px-5 sm:py-3 text-xs sm:text-sm font-semibold text-white transition hover:bg-white/12"
                 >
-                  Voir ses annonces
+                  {t("viewListings")}
                   <IoChevronForwardOutline className="text-sm sm:text-base" />
                 </button>
               )}
@@ -1034,7 +957,6 @@ export default function HostProfilePage() {
 
       <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-24">
         <div className="mx-auto max-w-7xl space-y-12 sm:space-y-16 lg:space-y-20">
-          {/* SECTION À PROPOS */}
           <motion.section
             variants={motionContainer}
             initial="hidden"
@@ -1047,9 +969,9 @@ export default function HostProfilePage() {
               className="space-y-5 sm:space-y-6"
             >
               <SectionHeader
-                eyebrow="À propos"
-                title="Un profil qui inspire confiance avant même le premier message"
-                description="La page met en avant l'essentiel sans surcharger la lecture: une bio claire, des infos utiles et des signaux de confiance lisibles en un coup d'œil."
+                eyebrow={t("about")}
+                title={t("aboutTitle")}
+                description={t("aboutDescription")}
                 dark={dark}
               />
               <div className="space-y-4 sm:space-y-5 text-slate-700 dark:text-slate-300">
@@ -1057,8 +979,7 @@ export default function HostProfilePage() {
                   {profile.bio}
                 </p>
                 <p className="text-xs sm:text-sm leading-5 sm:leading-6 text-slate-600 dark:text-slate-400">
-                  @{profile.username} s'engage à offrir une expérience fluide,
-                  avec une communication rapide et une attention aux détails.
+                  @{profile.username} {t("aboutDescription")}
                 </p>
               </div>
             </motion.div>
@@ -1069,28 +990,28 @@ export default function HostProfilePage() {
             >
               <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
                 <StatBlock
-                  label="Membre depuis"
+                  label={t("memberSince")}
                   value={memberSince}
                   icon={<IoTimeOutline className="text-sky-500" />}
                   dark={dark}
                 />
                 {profile.profession && (
                   <StatBlock
-                    label="Profession"
+                    label={t("profession")}
                     value={profile.profession}
                     icon={<IoHomeOutline className="text-emerald-500" />}
                     dark={dark}
                   />
                 )}
                 <StatBlock
-                  label="Langues"
+                  label={t("languages")}
                   value={profile.languages.slice(0, 3).join(", ")}
                   icon={<IoGlobeOutline className="text-violet-500" />}
                   dark={dark}
                 />
                 <StatBlock
-                  label="Accueille les étrangers"
-                  value={profile.acceptsForeigners ? "Oui" : "Non"}
+                  label={t("acceptsForeigners")}
+                  value={profile.acceptsForeigners ? t("yes") : t("no")}
                   icon={<FaGlobe className="text-amber-500" />}
                   dark={dark}
                 />
@@ -1098,7 +1019,6 @@ export default function HostProfilePage() {
             </motion.div>
           </motion.section>
 
-          {/* SECTION CONFIANCE */}
           <motion.section
             variants={motionContainer}
             initial="hidden"
@@ -1108,9 +1028,9 @@ export default function HostProfilePage() {
           >
             <motion.div variants={motionItem}>
               <SectionHeader
-                eyebrow="Confiance"
-                title="Des indicateurs de qualité visibles sans bruit visuel"
-                description="Les données de confiance sont présentées comme un tableau de bord discret, pour garder une lecture élégante et rapide."
+                eyebrow={t("trustSection")}
+                title={t("trustTitle")}
+                description={t("trustDescription")}
                 dark={dark}
               />
             </motion.div>
@@ -1120,28 +1040,28 @@ export default function HostProfilePage() {
               className="grid gap-px overflow-hidden rounded-[2rem] bg-slate-200 dark:bg-slate-800 shadow-sm"
             >
               <TrustMetric
-                label="Score de confiance"
+                label={t("trustScore")}
                 value={profile.stats.reliabilityScore}
                 suffix="/100"
                 accent="from-emerald-500 to-green-600"
                 dark={dark}
               />
               <TrustMetric
-                label="Note globale"
-                value={profile.stats.averageRating}
+                label={t("overallRating")}
+                value={profile.stats.averageRating.toFixed(1)}
                 suffix="/5"
                 accent="from-sky-500 to-indigo-600"
                 dark={dark}
               />
               <TrustMetric
-                label="Taux de réponse"
+                label={t("responseRate", { rate: profile.stats.responseRate })}
                 value={profile.stats.responseRate}
                 suffix="%"
                 accent="from-amber-500 to-orange-600"
                 dark={dark}
               />
               <TrustMetric
-                label="Délai moyen"
+                label={t("responseTime")}
                 value={profile.stats.responseTime}
                 suffix=""
                 accent="from-violet-500 to-fuchsia-600"
@@ -1156,14 +1076,14 @@ export default function HostProfilePage() {
               {profile.isIdentityVerified && (
                 <DetailChip
                   icon={<FaUserCheck className="text-emerald-600" />}
-                  label="Identité vérifiée"
+                  label={t("identityVerifiedBadge")}
                   dark={dark}
                 />
               )}
               {profile.isEmailVerified && (
                 <DetailChip
                   icon={<IoMailOutline className="text-sky-600" />}
-                  label="Email vérifié"
+                  label={t("emailVerifiedBadge")}
                   dark={dark}
                 />
               )}
@@ -1172,22 +1092,21 @@ export default function HostProfilePage() {
                   icon={
                     <IoShieldCheckmarkOutline className="text-violet-600" />
                   }
-                  label="Téléphone confirmé"
+                  label={t("phoneVerifiedBadge")}
                   dark={dark}
                 />
               )}
               {profile.acceptsForeigners && (
                 <DetailChip
                   icon={<FaGlobe className="text-amber-600" />}
-                  label="Ouvert aux voyageurs internationaux"
+                  label={t("internationalBadge")}
                   dark={dark}
                 />
               )}
             </motion.div>
           </motion.section>
 
-          {/* SECTION ANNONCES */}
-          {isHost && (
+          {showListingsSection && (
             <motion.section
               id="featured-listings"
               variants={motionContainer}
@@ -1198,14 +1117,18 @@ export default function HostProfilePage() {
             >
               <motion.div variants={motionItem}>
                 <SectionHeader
-                  eyebrow="Annonces"
-                  title="Biens mis en avant"
-                  description="Chaque annonce est présentée comme un objet simple et lisible, avec une image forte, quelques détails utiles et un appel à l'action direct."
+                  eyebrow={t("listingsSection")}
+                  title={t("listingsTitle")}
+                  description={t("listingsDescription")}
                   dark={dark}
                 />
               </motion.div>
               {listings.length === 0 ? (
-                <EmptyState type="listings" dark={dark} />
+                <EmptyState
+                  title={t("noListings")}
+                  hint={t("noListingsHint")}
+                  dark={dark}
+                />
               ) : (
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-2">
                   {listings.map((listing) => (
@@ -1215,6 +1138,7 @@ export default function HostProfilePage() {
                       username={profile.username}
                       onInfoRequest={openInfoRequest}
                       dark={dark}
+                      t={t}
                     />
                   ))}
                 </div>
@@ -1222,7 +1146,6 @@ export default function HostProfilePage() {
             </motion.section>
           )}
 
-          {/* SECTION AVIS */}
           <motion.section
             variants={motionContainer}
             initial="hidden"
@@ -1232,18 +1155,22 @@ export default function HostProfilePage() {
           >
             <motion.div variants={motionItem}>
               <SectionHeader
-                eyebrow="Avis"
-                title="Des retours récents qui racontent la qualité du service"
-                description="Les témoignages sont affichés sans artifice, pour souligner la confiance."
+                eyebrow={reviewsText.eyebrow}
+                title={reviewsText.title}
+                description={reviewsText.description}
                 dark={dark}
               />
             </motion.div>
 
-            {reviews.length === 0 ? (
-              <EmptyState type="reviews" dark={dark} />
+            {!hasReviews ? (
+              <EmptyState
+                title={t("noReviews")}
+                hint={t("noReviewsHint")}
+                dark={dark}
+              />
             ) : (
               <div className="divide-y divide-slate-200 dark:divide-slate-800 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 shadow-sm backdrop-blur-sm">
-                {reviews.map((review) => (
+                {reviewsToShow.map((review) => (
                   <motion.article
                     key={review.id}
                     variants={motionItem}
@@ -1283,7 +1210,6 @@ export default function HostProfilePage() {
         </div>
       </main>
 
-      {/* Info Request Modal */}
       <InfoRequestModal
         isOpen={showInfoModal}
         onClose={() => {
@@ -1294,15 +1220,15 @@ export default function HostProfilePage() {
         listingTitle={selectedListing?.title || ""}
         username={profile.username}
         isLoading={infoRequestLoading}
+        t={t}
       />
 
-      {/* Success Modal */}
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
+        t={t}
       />
 
-      {/* Identity Verification Modal */}
       <IdentityVerificationModal
         isOpen={showVerificationModal}
         onClose={handleCloseVerificationModal}
@@ -1310,7 +1236,6 @@ export default function HostProfilePage() {
         requiredAction="make_booking"
       />
 
-      {/* TOAST */}
       <AnimatePresence>
         {toast && (
           <motion.div

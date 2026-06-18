@@ -19,7 +19,6 @@ const expressApp = express(); // ← Renommé pour éviter conflit
 expressApp.use(express.json({ limit: "50mb" }));
 expressApp.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-
 const prisma = new PrismaClient();
 const dev = process.env.NODE_ENV !== "production";
 const app = next({ dev, hostname });
@@ -74,6 +73,8 @@ app.prepare().then(async () => {
     console.log(" Client connecté:", socket.id);
 
     const userId = socket.handshake.auth.userId;
+      socket.data.userId = userId;
+
     let currentConversationId = null;
 
     if (userId) {
@@ -277,15 +278,34 @@ app.prepare().then(async () => {
       } catch (dbError) {
         console.error(" Erreur sauvegarde DB:", dbError);
       }
-
     });
-
+    /*
     socket.on("typing-start", (data) => {
       socket.to(`conv:${data.conversationId}`).emit("user-typing", data);
     });
 
     socket.on("typing-stop", (data) => {
       socket.to(`conv:${data.conversationId}`).emit("user-stop-typing", data);
+    });
+*/
+    socket.on("typing", (data) => {
+      console.log(
+        ` [SERVER] Typing reçu pour: ${data.conversationId} de: ${socket.id}`,
+      );
+      socket.to(`conv:${data.conversationId}`).emit("user-typing", {
+    userId: socket.data.userId || "unknown",  
+        conversationId: data.conversationId,
+      });
+    });
+
+    socket.on("stop-typing", (data) => {
+      console.log(
+        ` [SERVER] Stop typing reçu pour: ${data.conversationId} de: ${socket.id}`,
+      );
+      socket.to(`conv:${data.conversationId}`).emit("user-stop-typing", {
+    userId: socket.data.userId || "unknown",  
+        conversationId: data.conversationId,
+      });
     });
 
     socket.on("disconnect", () => {
